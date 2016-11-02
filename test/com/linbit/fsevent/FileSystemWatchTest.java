@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
  */
 public class FileSystemWatchTest
 {
-    public static final String TEST_PATH = "test-data/drbdmanage-tests";
+    public static final String TEST_PATH = "test-data";
 
     private FileSystemWatch fsw;
 
