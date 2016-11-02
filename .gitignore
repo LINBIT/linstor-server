@@ -1,0 +1,15 @@
+/*
+!src/
+!test/
+!build.xml
+!nbproject/
+nbproject/genfiles.properties
+nbproject/private/
+nbproject/project.properties
+nbproject/project.xml
+!.gitignore
+!test-support
+!test-data
+test-data/*
+test-support/TestProcess
+test-support/TestOutput
