@@ -16,7 +16,7 @@ const int IDX_EXIT_CODE = 1;
 const int IDX_DELAY = 2;
 const int IDX_SIGTERM = 3;
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     int exit_code = 1;
     if (argc == 4)

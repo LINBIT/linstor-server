@@ -14,7 +14,7 @@ const size_t BUFFER_SIZE = 4096;
 
 void syntaxError(void);
 
-int main(int argc, char** argv)
+int main(int argc, char *argv[])
 {
     int exit_code = 1;
     if (argc == 5)
