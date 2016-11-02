@@ -3,7 +3,7 @@ package com.linbit.drbd.md;
 /**
  * Sanity checks for device size, peer count, activity log size and stripes count
  *
- * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class MdCommon
 {

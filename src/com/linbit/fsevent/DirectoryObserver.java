@@ -5,7 +5,7 @@ import java.nio.file.Path;
 /**
  * FileSystemWatch interface for observing changes in a filesystem directory
  *
- * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public interface DirectoryObserver
 {

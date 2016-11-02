@@ -3,7 +3,7 @@ package com.linbit.fsevent;
 /**
  * FileSystemWatch interface for observing changes on a group of file paths
  *
- * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public interface EntryGroupObserver
 {

@@ -1,5 +1,10 @@
 package com.linbit.timer;
 
+/**
+ * Implements functions that delay a thread
+ *
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
+ */
 public class Delay
 {
     /**
@@ -7,8 +12,6 @@ public class Delay
      * thread is interrupted
      *
      * @param waitTime time to wait in milliseconds
-     * 
-     * @author Robert Altnoeder <robert.altnoeder@linbit.com>
      */
     public static void sleep(long waitTime)
     {

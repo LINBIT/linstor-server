@@ -10,7 +10,7 @@ import com.linbit.timer.Action;
 /**
  * Process spawner &amp; handler for running external processes
  *
- * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class ChildProcessHandler
 {

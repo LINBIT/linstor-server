@@ -9,7 +9,7 @@ import java.io.InputStream;
 /**
  * Runs an external command, logs and saves its output
  *
- * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class ExtCmd extends ChildProcessHandler
 {

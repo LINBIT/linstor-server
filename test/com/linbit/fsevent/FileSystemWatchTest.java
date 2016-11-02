@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
 /**
  * Tests the FileSystemWatch class
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class FileSystemWatchTest
 {

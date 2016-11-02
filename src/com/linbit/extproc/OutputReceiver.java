@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 /**
  * Logs and saves the output of external commands
  *
- * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class OutputReceiver implements Runnable
 {

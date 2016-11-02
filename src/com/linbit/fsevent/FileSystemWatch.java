@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Watches file system paths for changes
  *
- * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class FileSystemWatch extends Thread
 {

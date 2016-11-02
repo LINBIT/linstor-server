@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 /**
  * Test the ClientProcessHandler class
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class ClientProcessHandlerTest
 {

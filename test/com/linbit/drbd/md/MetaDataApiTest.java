@@ -7,7 +7,7 @@ import static org.junit.Assert.*;
 /**
  * Test DRBD meta data size calculation
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class MetaDataApiTest
 {

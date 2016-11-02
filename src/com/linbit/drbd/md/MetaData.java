@@ -5,7 +5,7 @@ import com.linbit.drbd.md.MetaDataApi.SizeSpec;
 /**
  * Calculates DRBD data / meta data size
  *
- * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class MetaData extends MdCommon implements MetaDataApi
 {

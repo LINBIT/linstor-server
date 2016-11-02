@@ -3,7 +3,7 @@ package com.linbit.drbd.md;
 /**
  * Standard interface for implementations of DRBD data / meta data size calculations
  *
- * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public interface MetaDataApi
 {
