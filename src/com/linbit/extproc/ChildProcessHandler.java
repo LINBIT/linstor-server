@@ -1,0 +1,270 @@
+package com.linbit.extproc;
+
+import com.linbit.ImplementationError;
+import com.linbit.NegativeTimeException;
+import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.timer.GenericTimer;
+import com.linbit.timer.Action;
+
+/**
+ * Process spawner &amp; handler for running external processes
+ *
+ * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ */
+public class ChildProcessHandler
+{
+    // Default: Wait up to 45 seconds for a child process to exit
+    public static final long DEFAULT_WAIT_TIMEOUT = 45000;
+
+    // Default: Wait up to 15 seconds for a child process to exit
+    //          after receiving a signal
+    public static final long DEFAULT_TERM_TIMEOUT = 15000;
+
+    // Default: Wait up to 5 seconds for a child process to exit
+    //          after the operating system has been ordered to enforce
+    //          termination of the process
+    public static final long DEFAULT_KILL_TIMEOUT =  5000;
+
+    static enum TimeoutType
+    {
+        WAIT,
+        TERM,
+        KILL
+    }
+
+    private long waitTimeout = DEFAULT_WAIT_TIMEOUT;
+    private long termTimeout = DEFAULT_TERM_TIMEOUT;
+    private long killTimeout = DEFAULT_KILL_TIMEOUT;
+
+    private boolean autoTerm = true;
+    private boolean autoKill = true;
+
+    private final GenericTimer<String, Action<String>> timeoutScheduler;
+    private Process childProcess;
+
+    public ChildProcessHandler(GenericTimer<String, Action<String>> timer)
+    {
+        childProcess = null;
+        if (timer == null)
+        {
+            throw new ImplementationError(
+                ChildProcessHandler.class.getName() +
+                ": Attempted to construct instance with timer == null",
+                new NullPointerException()
+            );
+        }
+        timeoutScheduler = timer;
+    }
+
+    public ChildProcessHandler(Process child, GenericTimer<String, Action<String>> timer)
+    {
+        this(timer);
+        if (child == null)
+        {
+            throw new ImplementationError(
+                ChildProcessHandler.class.getName() +
+                ": Attempted to construct instance with child == null",
+                new NullPointerException()
+            );
+        }
+        childProcess = child;
+    }
+
+    public void setChild(Process child)
+    {
+        if (child == null)
+        {
+            throw new ImplementationError(
+                ChildProcessHandler.class.getName() +
+                ": method called with child == null",
+                new NullPointerException()
+            );
+        }
+        childProcess = child;
+    }
+
+    public void setTimeout(TimeoutType type, long timeout)
+    {
+        if (timeout < 0)
+        {
+            throw new ImplementationError(
+                ChildProcessHandler.class.getName() +
+                ": Bad timer value: timeout < 0",
+                new NegativeTimeException()
+            );
+        }
+
+        switch (type)
+        {
+            case TERM:
+                termTimeout = timeout;
+                break;
+            case KILL:
+                killTimeout = timeout;
+                break;
+            case WAIT:
+                // fall-through
+            default:
+                waitTimeout = timeout;
+                break;
+        }
+    }
+
+    public void setAutoTerm(boolean flag)
+    {
+        autoTerm = flag;
+    }
+
+    public void setAutoKill(boolean flag)
+    {
+        autoKill = flag;
+    }
+
+    public int waitFor() throws ChildProcessTimeoutException
+    {
+        if (childProcess == null)
+        {
+            throw new ImplementationError(
+                ChildProcessHandler.class.getName() +
+                ": method called while childProcess == null",
+                new NullPointerException()
+            );
+        }
+        int exitCode = -1;
+        try
+        {
+            exitCode = waitFor(waitTimeout);
+        }
+        catch (ChildProcessTimeoutException waitTimeoutExc)
+        {
+            if (autoTerm)
+            {
+                try
+                {
+                    waitForDestroy();
+                    waitTimeoutExc = new ChildProcessTimeoutException(true);
+                }
+                catch (ChildProcessTimeoutException termTimedOut)
+                {
+                    if (autoKill)
+                    {
+                        if (waitForDestroyForcibly())
+                        {
+                            waitTimeoutExc = new ChildProcessTimeoutException(true);
+                        }
+                    }
+                }
+            }
+            throw waitTimeoutExc;
+        }
+        return exitCode;
+    }
+
+    private int waitFor(long timeout) throws ChildProcessTimeoutException
+    {
+        if (childProcess == null)
+        {
+            throw new ImplementationError(
+                ChildProcessHandler.class.getName() +
+                ": method called while childProcess == null",
+                new NullPointerException()
+            );
+        }
+        int exitCode = -1;
+        try
+        {
+            Interruptor intrAction = new Interruptor();
+            try
+            {
+                timeoutScheduler.addDelayedAction(timeout, intrAction);
+            }
+            catch (NegativeTimeException | ValueOutOfRangeException implExc)
+            {
+                throw new ImplementationError("Bad timer value", implExc);
+            }
+            exitCode = childProcess.waitFor();
+
+            // If the waitFor() ended without being interrupted, cancel the timeout
+            // and cleanup the thread's interrupted status if the interrupt arrived
+            // between the return from waitFor() and the cancellation of the timeout
+            if (timeoutScheduler != null)
+            {
+                timeoutScheduler.cancelAction(intrAction.getId());
+            }
+            // Cancel this thread's interrupted status
+            Thread.interrupted();
+        }
+        catch (InterruptedException interrupted)
+        {
+            throw new ChildProcessTimeoutException();
+        }
+        return exitCode;
+    }
+
+    public int waitForDestroy() throws ChildProcessTimeoutException
+    {
+        if (childProcess == null)
+        {
+            throw new ImplementationError(
+                ChildProcessHandler.class.getName() +
+                ": method called while childProcess == null",
+                new NullPointerException()
+            );
+        }
+        childProcess.destroy();
+        return waitFor(termTimeout);
+    }
+
+    public boolean waitForDestroyForcibly()
+    {
+        if (childProcess == null)
+        {
+            throw new ImplementationError(
+                ChildProcessHandler.class.getName() +
+                ": method called while childProcess == null",
+                new NullPointerException()
+            );
+        }
+        boolean killed = false;
+        childProcess.destroyForcibly();
+        try
+        {
+            waitFor(killTimeout);
+            killed = true;
+        }
+        catch (ChildProcessTimeoutException timeoutExc)
+        {
+        }
+        return killed;
+    }
+
+    private static class Interruptor implements Action<String>
+    {
+        private final Thread targetThread;
+        private final Long targetThreadId;
+
+        private Interruptor()
+        {
+            this(Thread.currentThread());
+        }
+
+        private Interruptor(Thread target)
+        {
+            targetThread = target;
+            targetThreadId = target.getId();
+        }
+
+        @Override
+        public void run()
+        {
+            targetThread.interrupt();
+        }
+
+        @Override
+        public String getId()
+        {
+            return "INTR-" + Long.toString(targetThreadId);
+        }
+    }
+}
