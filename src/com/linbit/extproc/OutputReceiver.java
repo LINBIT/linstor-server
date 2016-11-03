@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 public class OutputReceiver implements Runnable
 {
     // Buffer size 64 kiB
-    public static final int IO_BUFFER_SIZE = 0x10000;
+    public static final int OF_BUFFER_SIZE = 0x10000;
 
     // Initial data buffer size 64 kiB
     public static final int INIT_DATA_SIZE = 0x10000;
@@ -110,6 +110,19 @@ public class OutputReceiver implements Runnable
                 lastSearchPos = dataSize;
             }
             while (readCount != -1);
+
+            // If there is more data than MAX_DATA_SIZE, read and discard
+            // the rest of the data to avoid blocking a child process that
+            // pipes data to this instance
+            if (overflow)
+            {
+                do
+                {
+                    byte[] ofBuffer = new byte[OF_BUFFER_SIZE];
+                    readCount = dataIn.read(ofBuffer, 0, ofBuffer.length);
+                }
+                while (readCount != -1);
+            }
         }
         catch (IOException ioExc)
         {
