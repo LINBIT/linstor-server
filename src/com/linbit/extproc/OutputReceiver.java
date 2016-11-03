@@ -92,7 +92,7 @@ public class OutputReceiver implements Runnable
                         // If the data would not fit into the buffer, read only until reaching
                         // the end of the buffer and let the next iteration take care of
                         // enlarging the buffer or aborting due to overflow
-                        if (data.length - dataSize >= readSize)
+                        if (data.length - dataSize < readSize)
                         {
                             readSize = data.length - dataSize;
                         }
