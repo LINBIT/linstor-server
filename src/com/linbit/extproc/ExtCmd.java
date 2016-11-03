@@ -67,19 +67,24 @@ public class ExtCmd extends ChildProcessHandler
 
     public OutputData syncProcess() throws IOException, ChildProcessTimeoutException
     {
-        waitFor();
+        int exitCode = waitFor();
         outReceiver.finish();
         errReceiver.finish();
-        OutputData outData = new OutputData(outReceiver.getData(), errReceiver.getData());
+        OutputData outData = new OutputData(outReceiver.getData(), errReceiver.getData(), exitCode);
         return outData;
     }
 
     public static class OutputData
     {
-        OutputData(byte[] out, byte[] err)
+        public byte[] stdoutData;
+        public byte[] stderrData;
+        public int exitCode;
+
+        OutputData(byte[] out, byte[] err, int retCode)
         {
             stdoutData = out;
             stderrData = err;
+            exitCode = retCode;
         }
 
         public InputStream getStdoutStream()
@@ -91,8 +96,5 @@ public class ExtCmd extends ChildProcessHandler
         {
             return new ByteArrayInputStream(stderrData);
         }
-
-        public byte[] stdoutData;
-        public byte[] stderrData;
     }
 }
