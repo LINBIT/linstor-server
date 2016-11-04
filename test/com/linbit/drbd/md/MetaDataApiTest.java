@@ -342,7 +342,7 @@ public class MetaDataApiTest
     @Test
     public void testGetInternalMdSize() throws Exception
     {
-        MetaDataApi.SizeSpec mode = MetaDataApi.SizeSpec.netSize;
+        MetaDataApi.SizeSpec mode = MetaDataApi.SizeSpec.NET_SIZE;
         long size = 245603100L;
         short peers = 11;
         int alStripes = 4;

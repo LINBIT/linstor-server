@@ -9,8 +9,8 @@ public interface MetaDataApi
 {
     public enum SizeSpec
     {
-        netSize,
-        grossSize
+        NET_SIZE,
+        GROSS_SIZE
     };
 
     public long getNetSize(long grossSize, short peers, int alStripes, long alStripeSize)
