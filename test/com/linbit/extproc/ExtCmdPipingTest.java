@@ -8,6 +8,11 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+/**
+ * Test external command execution and piping the output of external commands
+ *
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
+ */
 public class ExtCmdPipingTest
 {
     GenericTimer<String, Action<String>> intrTimer;

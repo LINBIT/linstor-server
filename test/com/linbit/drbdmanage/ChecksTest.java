@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.linbit.drbdmanage;
 
 import com.linbit.ImplementationError;
@@ -12,8 +7,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
+ * Test the Checks class methods
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class ChecksTest
 {

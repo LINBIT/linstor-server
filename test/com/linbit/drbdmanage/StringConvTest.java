@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.linbit.drbdmanage;
 
 import org.junit.After;
@@ -11,8 +6,9 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
+ * Test the various string conversions in the StringConv class
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class StringConvTest
 {
