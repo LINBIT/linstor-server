@@ -116,9 +116,9 @@ public class OutputReceiver implements Runnable
             // pipes data to this instance
             if (overflow)
             {
+                byte[] ofBuffer = new byte[OF_BUFFER_SIZE];
                 do
                 {
-                    byte[] ofBuffer = new byte[OF_BUFFER_SIZE];
                     readCount = dataIn.read(ofBuffer, 0, ofBuffer.length);
                 }
                 while (readCount != -1);
