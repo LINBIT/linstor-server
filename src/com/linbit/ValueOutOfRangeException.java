@@ -16,6 +16,12 @@ public class ValueOutOfRangeException extends Exception
         violation = violationSpec;
     }
 
+    public ValueOutOfRangeException(String message, ViolationType violationSpec)
+    {
+        super(message);
+        violation = violationSpec;
+    }
+
     public ViolationType getViolationType()
     {
         return violation;
