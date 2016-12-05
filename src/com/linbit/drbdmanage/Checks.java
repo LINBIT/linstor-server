@@ -14,6 +14,24 @@ public class Checks
     public static final int HOSTNAME_MAX_LENGTH = 255;
     public static final int HOSTNAME_LABEL_MAX_LENGTH = 63;
 
+    public static final int MINOR_NR_MIN = 0;
+    public static final int MINOR_NR_MAX = 1 << 19;
+
+    public static final int VOLUME_NR_MIN = 0;
+
+    // FIXME: VOLUME_NR_MAX is probably something else around ~65530
+    //        Check DRBD kernel module for the correct value
+    public static final int VOLUME_NR_MAX = (1 << 16) - 2;
+
+    private static final String MINOR_NR_EXC_FORMAT =
+        "Minor number %d is out of range [%d - %d]";
+
+    private static final String VOLUME_NR_EXC_FORMAT =
+        "Volume number %d is out of range [%d - %d]";
+
+    private static final String RANGE_EXC_FORMAT =
+        "Value %d is out of range [%d - %d]";
+
     /**
      * Universal name check
      *
@@ -253,7 +271,27 @@ public class Checks
      * @param maxValue Allowed maximum value
      * @throws ValueOutOfRangeException If the value is out of range
      */
-    public static void rangeCheck(long value, long minValue, long maxValue) throws ValueOutOfRangeException
+    public static void rangeCheck(long value, long minValue, long maxValue)
+        throws ValueOutOfRangeException
+    {
+        genericRangeCheck(value, minValue, maxValue, RANGE_EXC_FORMAT);
+    }
+
+    /**
+     * Checks whether a value is within the range [minValue, maxValue], and
+     * uses the specified format to generate an exception with a message
+     * describing the problem
+     *
+     * @param value The value to check
+     * @param minValue Allowed minimum value
+     * @param maxValue Allowed maximum value
+     * @throws ValueOutOfRangeException If the value is out of range
+     */
+    private static void genericRangeCheck(
+        long value,
+        long minValue, long maxValue,
+        String excFormat
+    ) throws ValueOutOfRangeException
     {
         if (minValue > maxValue)
         {
@@ -270,7 +308,7 @@ public class Checks
         {
             throw new ValueOutOfRangeException(
                 String.format(
-                    "Value %d is out of range [%d - %d]",
+                    excFormat,
                     value, minValue, maxValue
                 ),
                 ValueOutOfRangeException.ViolationType.TOO_LOW
@@ -280,11 +318,33 @@ public class Checks
         {
             throw new ValueOutOfRangeException(
                 String.format(
-                    "Value %d is out of range [%d - %d]",
+                    excFormat,
                     value, minValue, maxValue
                 ),
                 ValueOutOfRangeException.ViolationType.TOO_HIGH
             );
         }
+    }
+
+    /**
+     * Checks the validity of a DRBD volume number
+     *
+     * @param volNr The volume number to check
+     * @throws ValueOutOfRangeException If the volume number is out of range
+     */
+    public static void volumeNrCheck(int volNr) throws ValueOutOfRangeException
+    {
+        genericRangeCheck(volNr, VOLUME_NR_MIN, VOLUME_NR_MAX, VOLUME_NR_EXC_FORMAT);
+    }
+
+    /**
+     * Checks the validity of a UNIX minor number
+     *
+     * @param minorNr The minor number to check
+     * @throws ValueOutOfRangeException If the minor number is out of range
+     */
+    public static void minorNrCheck(int minorNr) throws ValueOutOfRangeException
+    {
+        genericRangeCheck(minorNr, MINOR_NR_MIN, MINOR_NR_MAX, MINOR_NR_EXC_FORMAT);
     }
 }
