@@ -102,12 +102,12 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
                 debugOut(GenericTimer.class, "addDelayedAction(): delay > 0");
             }
             long currentTime = System.currentTimeMillis();
-            if (Long.MAX_VALUE - currentTime >= delay)
+            try
             {
-                Long wakeupTime = currentTime + delay;
+                Long wakeupTime = Math.addExact(currentTime, delay);
                 addScheduledAction(wakeupTime, actionObj);
             }
-            else
+            catch (ArithmeticException arithExc)
             {
                 if (ENABLE_DEBUG)
                 {

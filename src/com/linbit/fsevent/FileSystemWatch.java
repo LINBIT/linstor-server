@@ -843,11 +843,14 @@ public class FileSystemWatch extends Thread
             long targetTime;
             {
                 long now = System.currentTimeMillis();
-                if (Long.MAX_VALUE - now < timeout)
+                try
+                {
+                    targetTime = Math.addExact(now, timeout);
+                }
+                catch (ArithmeticException arithExc)
                 {
                     throw new ValueOutOfRangeException(ValueOutOfRangeException.ViolationType.TOO_HIGH);
                 }
-                targetTime = now + timeout;
             }
             synchronized (this)
             {
