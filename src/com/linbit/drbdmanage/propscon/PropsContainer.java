@@ -1754,7 +1754,7 @@ public class PropsContainer implements Props
                                     }
                                 }
                                 break;
-                            case "debug-list":
+                            case "debug":
                                 {
                                     String key = tokens.nextToken();
                                     System.out.printf("%s %s\n", command.toUpperCase(), key);
@@ -1766,7 +1766,7 @@ public class PropsContainer implements Props
                                         while (pIter.hasNext())
                                         {
                                             Map.Entry<String, String> entry = pIter.next();
-                                            System.out.printf("  %-30s: %s\n", entry.getKey(), entry.getValue());
+                                            System.out.printf("  @ENTRY     %-30s: %s\n", entry.getKey(), entry.getValue());
                                         }
                                         Iterator<PropsContainer> cIter =
                                             ((PropsContainer) con).iterateContainers();
@@ -1774,7 +1774,7 @@ public class PropsContainer implements Props
                                         {
                                             PropsContainer subCon = cIter.next();
                                             System.out.printf(
-                                                "  %-30s, size = %d\n",
+                                                "  @CONTAINER %-30s, size = %d\n",
                                                 subCon.getPath(),
                                                 subCon.size()
                                             );
@@ -1803,7 +1803,70 @@ public class PropsContainer implements Props
                                         while (iter.hasNext())
                                         {
                                             Map.Entry<String, String> entry = iter.next();
-                                            System.out.printf("  %-30s: %s\n", entry.getKey(), entry.getValue());
+                                            System.out.printf(
+                                                "  @ENTRY %-30s: %s\n",
+                                                entry.getKey(), entry.getValue()
+                                            );
+                                        }
+                                        System.out.printf(
+                                            "End of list: Container '%s' size = %d\n",
+                                            con.getPath(),
+                                            con.size()
+                                        );
+                                        System.out.printf(
+                                            "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
+                                            serialGen.peekSerial(),
+                                            serialCon.getProp(SerialGenerator.KEY_SERIAL)
+                                        );
+                                    }
+                                    else
+                                    {
+                                        System.out.println("Path is not a container");
+                                    }
+                                }
+                                break;
+                            case "keys":
+                                {
+                                    String key = tokens.nextToken();
+                                    System.out.printf("%s %s\n", command.toUpperCase(), key);
+                                    Props con = rootCon.getNamespace(key);
+                                    if (con != null)
+                                    {
+                                        Iterator<String> iter = con.keysIterator();
+                                        while (iter.hasNext())
+                                        {
+                                            String conkey = iter.next();
+                                            System.out.printf("  @KEY %-30s\n", conkey);
+                                        }
+                                        System.out.printf(
+                                            "End of list: Container '%s' size = %d\n",
+                                            con.getPath(),
+                                            con.size()
+                                        );
+                                        System.out.printf(
+                                            "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
+                                            serialGen.peekSerial(),
+                                            serialCon.getProp(SerialGenerator.KEY_SERIAL)
+                                        );
+                                    }
+                                    else
+                                    {
+                                        System.out.println("Path is not a container");
+                                    }
+                                }
+                                break;
+                            case "values":
+                                {
+                                    String key = tokens.nextToken();
+                                    System.out.printf("%s %s\n", command.toUpperCase(), key);
+                                    Props con = rootCon.getNamespace(key);
+                                    if (con != null)
+                                    {
+                                        Iterator<String> iter = con.valuesIterator();
+                                        while (iter.hasNext())
+                                        {
+                                            String value = iter.next();
+                                            System.out.printf("  @VALUE %s\n", value);
                                         }
                                         System.out.printf(
                                             "End of list: Container '%s' size = %d\n",
