@@ -1,539 +1,439 @@
 package com.linbit.drbdmanage.drbdstate;
 
-import java.util.HashMap;
+import com.linbit.ImplementationError;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbdmanage.Checks;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 /**
+ * Drbdsetup events tracker
+ *
+ * Interprets the 'drbdsetup events2 all' event lines and updates/triggers the
+ * DRBD state tracker
  *
  * @author Rene Blauensteiner &lt;rene.blauensteiner@linbit.com&gt;
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class EventsTracker
 {
-    // ===============================================================================================
-    // Attributes
-    // ===============================================================================================
-    /* DEBUG-CONSTANTS */
-    // creates
-    private static String CREATE_RESOURCE = "create resource name:test role:Secondary suspended:no";
-    private static String CREATE_CONNECTION = "create connection name:test peer-node-id:0 conn-name:K14BoxThree connection:StandAlone role:Unknown";
-    private static String CREATE_VOLUME = "";
-    private static String CREATE_PEER_DEVICE = "create peer-device name:test peer-node-id:0 conn-name:K14BoxThree volume:0 replication:Off peer-disk:DUnknown resync-suspended:no";
-    private static String CREATE_DEVICE = "create device name:test volume:0 minor:100 disk:Diskless";
-    private static String CREATE_PATH = "create path name:test peer-node-id:0 conn-name:K14BoxThree local:ipv4:10.43.6.149:7000 peer:ipv4:10.43.6.150:7000 established:no";
-    // changes
-    private static String CHANGE_RESOURCE = "";
-    private static String CHANGE_CONNECTION = "change connection name:test peer-node-id:0 conn-name:K14BoxThree connection:TearDown role:Unknown";
-    private static String CHANGE_VOLUME = "";
-    private static String CHANGE_PEER_DEVICE = "change peer-device name:test peer-node-id:0 conn-name:K14BoxThree volume:0 replication:Established";
-    private static String CHANGE_DEVICE = "change device name:test volume:0 minor:100 disk:UpToDate";
-    private static String CHANGE_PATH = "change device name:test volume:0 minor:100 disk:UpToDate";
-    // deletes
-    private static String DESTROY_RESOURCE = "destroy resource name:test";
-    private static String DESTROY_CONNECTION = "destroy connection name:test peer-node-id:0 conn-name:K14BoxThree";
-    private static String DESTROY_VOLUMEN = "";
-    private static String DESTROY_PEER_DEVICE = "destroy peer-device name:test peer-node-id:0 conn-name:K14BoxThree volume:0";
-    private static String DESTROY_DEVICE = "destroy device name:test volume:0 minor:100";
-    private static String DESTROY_PATH = "";
+    public static final String ACTION_CREATE    = "create";
+    public static final String ACTION_CHANGE    = "change";
+    public static final String ACTION_DESTROY   = "destroy";
 
-    /* References */
-    private final StateTracker stateTracker;
+    public static final String OBJ_RESOURCE     = "resource";
+    public static final String OBJ_VOLUME       = "device";
+    public static final String OBJ_PEER_VOLUME  = "peer-device";
+    public static final String OBJ_CONNECTION   = "connection";
 
-    // ===============================================================================================
-    // Constructor
-    // ===============================================================================================
-    public EventsTracker()
+    // DRBD state tracker & events multiplexer reference
+    private final StateTracker tracker;
+
+    public EventsTracker(StateTracker trackerRef)
     {
-        this.stateTracker = new StateTracker();
+        tracker = trackerRef;
     }
 
-    public EventsTracker(StateTracker stateTracker)
-    {
-        this.stateTracker = stateTracker;
-    }
-
-    //================================================================================================
-    // Mechanisms
-    //================================================================================================
     public void receiveEvent(String eventString) throws EventsSourceException
     {
-        if (eventString != null && !eventString.isEmpty())
+        if (eventString == null)
         {
-            StringTokenizer st = new StringTokenizer(eventString, " ");
-            Map<String, String> props = new HashMap<>();
-            String action = null;
-            String object = null;
+            throw new ImplementationError(
+                "Event string passed by caller is a null pointer",
+                new NullPointerException()
+            );
+        }
 
-            while (st.hasMoreTokens())
+        // Skip empty lines
+        if (!eventString.isEmpty())
+        {
+            StringTokenizer tokens = new StringTokenizer(eventString, " ");
+            Map<String, String> props = new TreeMap<>();
+
+            if (tokens.hasMoreTokens())
             {
-                String token = st.nextToken();
-                if (token.contains(":"))
+                String action = tokens.nextToken();
+                if (tokens.hasMoreTokens())
                 {
-                    String nKey = token.substring(0, token.indexOf(":"));
-                    String nValue = token.substring(token.indexOf(":") + 1);
-                    props.put(nKey, nValue);
+                    String objType = tokens.nextToken();
+                    while (tokens.hasMoreTokens())
+                    {
+                        String kvPair = tokens.nextToken();
+                        int splitIdx = kvPair.indexOf(':');
+                        if (splitIdx != -1)
+                        {
+                            String key = kvPair.substring(0, splitIdx);
+                            String value = kvPair.substring(splitIdx + 1);
+                            props.put(key, value);
+                        }
+                    }
+
+                    // Select action
+                    switch (action)
+                    {
+                        case ACTION_CREATE:
+                            create(props, objType);
+                            break;
+                        case ACTION_CHANGE:
+                            change(props, objType);
+                            break;
+                        case ACTION_DESTROY:
+                            destroy(props, objType);
+                            break;
+                        default:
+                            // Other action type, such as a helper script call
+                            // Those are not tracked
+                            break;
+                    }
                 }
                 else
                 {
-                    if (action == null)
-                    {
-                        action = token;
-                    }
-                    else if (object == null)
-                    {
-                        object = token;
-                    }
-                    else
-                    {
-                        System.err.println("ups!");
-                    }
+                    throw new EventsSourceException("Received an event line without an object type parameter");
                 }
             }
-
-            // react on the specific action
-            switch (action)
+            else
             {
-                case "create":
-                    create(props, object);
-                    break;
-                case "change":
-                    change(props, object);
-                    break;
-                case "destroy":
-                    destroy(props, object);
-                    break;
+                throw new EventsSourceException("Received an event line without an action parameter");
             }
-        }
-        else
-        {
-            System.err.println("EventString is null or empty!");
         }
     }
 
-    //================================================================================================
-    // Action-Methods
-    //================================================================================================
-    private void create(Map<String, String> props, String object)
+    private void create(Map<String, String> props, String object) throws EventsSourceException
     {
-        System.out.println("creating...");
         switch (object)
         {
-            case "resource":
+            case OBJ_RESOURCE:
                 createResource(props);
                 break;
-            case "connection":
+            case OBJ_CONNECTION:
                 createConnection(props);
                 break;
-            case "volume":
+            case OBJ_VOLUME:
                 createVolume(props);
                 break;
-            case "peer-device":
-                createPeerDevice(props);
-                break;
-            case "device":
-                createDevice(props);
-                break;
-            case "path":
-                createPath(props);
+            case OBJ_PEER_VOLUME:
+                createPeerVolume(props);
                 break;
             default:
-                // FIXME: logging? exception?
+                // Other object type, such as a connection path
+                // Those types are currently ignored
                 break;
         }
     }
 
     private void change(Map<String, String> props, String object) throws EventsSourceException
     {
-        System.out.println("changing...");
         switch (object)
         {
-            case "resource":
+            case OBJ_RESOURCE:
                 changeResource(props);
                 break;
-            case "connection":
+            case OBJ_CONNECTION:
                 changeConnection(props);
                 break;
-            case "volume":
+            case OBJ_VOLUME:
                 changeVolume(props);
                 break;
-            case "peer-device":
-                changePeerDevice(props);
-                break;
-            case "device":
-                changeDevice(props);
-                break;
-            case "path":
-                changePath(props);
+            case OBJ_PEER_VOLUME:
+                changePeerVolume(props);
                 break;
             default:
-                // FIXME: logging? exception?
+                // Other object type, such as a connection path
+                // Those types are currently ignored
                 break;
         }
     }
 
     private void destroy(Map<String, String> props, String object) throws EventsSourceException
     {
-        System.out.println("destroying");
         switch (object)
         {
-            case "resource":
+            case OBJ_RESOURCE:
                 destroyResource(props);
                 break;
-            case "connection":
+            case OBJ_CONNECTION:
                 destroyConnection(props);
                 break;
-            case "volume":
+            case OBJ_VOLUME:
                 destroyVolume(props);
                 break;
-            case "peer-device":
-                destroyPeerDevice(props);
-                break;
-            case "device":
-                destroyDevice(props);
-                break;
-            case "path":
-                destroyPath(props);
+            case OBJ_PEER_VOLUME:
+                destroyPeerVolume(props);
                 break;
             default:
-                // FIXME: logging? exception?
+                // Other object type, such as a connection path
+                // Those types are currently ignored
+                break;
         }
     }
 
-    //================================================================================================
-    // Object-Methods - CREATE
-    //================================================================================================
-    private void createResource(Map<String, String> props)
+    private void createResource(Map<String, String> props) throws EventsSourceException
     {
-        try
-        {
-            DrbdResource resource = DrbdResource.newFromProps(props);
-            if (resource != null)
-            {
-                resource.update(props, null);   // FIXME: Observer
-            }
-            else
-            {
-                throw new EventsSourceException("Resource is null!");
-            }
-        }
-        catch (EventsSourceException ex)
-        {
-            System.err.println(ex.getMessage());
-        }
+        DrbdResource resource = DrbdResource.newFromProps(props);
+        tracker.putResource(resource);;
+        tracker.multiplexer.resourceCreated(resource);
+        resource.update(props, tracker.multiplexer);
     }
 
-    private void createConnection(Map<String, String> props)
+    private void createConnection(Map<String, String> props) throws EventsSourceException
     {
-        try
-        {
-            DrbdResource resource = stateTracker.resources.get(props.get("name"));
-            if (resource != null)
-            {
-                DrbdConnection connection = DrbdConnection.newFromProps(resource, props);
-                connection.update(props, null);   // FIXME: Observer
-            }
-            else
-            {
-                throw new EventsSourceException("Resource is null!");
-            }
-        }
-        catch (EventsSourceException ex)
-        {
-            System.err.println(ex.getMessage());
-        }
+        DrbdResource resource = getResource(props, ACTION_CREATE, OBJ_CONNECTION);
+        DrbdConnection connection = DrbdConnection.newFromProps(resource, props);
+        resource.putConnection(connection);
+        tracker.multiplexer.connectionCreated(resource, connection);
+        connection.update(props, tracker.multiplexer);
     }
 
-    private void createVolume(Map<String, String> props)
+    private void createVolume(Map<String, String> props) throws EventsSourceException
     {
-        try
-        {
-            DrbdResource resource = stateTracker.resources.get(props.get("name"));
-            if (resource != null)
-            {
-                DrbdVolume volume = DrbdVolume.newFromProps(resource, props);
-                volume.update(props, null);   // FIXME: Observer
-            }
-            else
-            {
-                throw new EventsSourceException("Resource is null!");
-            }
-        }
-        catch (EventsSourceException ex)
-        {
-            System.err.println(ex.getMessage());
-        }
+        DrbdResource resource = getResource(props, ACTION_CREATE, OBJ_VOLUME);
+        DrbdVolume volume = DrbdVolume.newFromProps(resource, props);
+        resource.putVolume(volume);
+        tracker.multiplexer.volumeCreated(resource, null, volume);
+        volume.update(props, tracker.multiplexer);
     }
 
-    private void createPeerDevice(Map<String, String> props)
+    private void createPeerVolume(Map<String, String> props) throws EventsSourceException
     {
-        try
-        {
-            DrbdResource resource = stateTracker.resources.get(props.get("name"));
-            if (resource != null)
-            {
-                DrbdConnection connection = resource.connList.get(props.get("conn-name"));
-                if (connection != null)
-                {
-                    DrbdVolume volume = DrbdVolume.newFromProps(resource, props);
-                    connection.volList.put(volume.getVolNr(), volume);
-                    volume.update(props, null);   // FIXME! Observer
-                }
-                else
-                {
-                    throw new EventsSourceException("Connection is null!");
-                }
-            }
-            else
-            {
-                throw new EventsSourceException("Resource is null!");
-            }
-        }
-        catch (EventsSourceException ex)
-        {
-            System.err.println(ex.getMessage());
-        }
+        DrbdResource resource = getResource(props, ACTION_CREATE, OBJ_PEER_VOLUME);
+        DrbdConnection connection = getConnection(resource, props, ACTION_CREATE, OBJ_PEER_VOLUME);
+        DrbdVolume volume = DrbdVolume.newFromProps(resource, props);
+        connection.putVolume(volume);
+        tracker.multiplexer.volumeCreated(resource, connection, volume);
+        volume.update(props, tracker.multiplexer);
     }
 
-    private void createDevice(Map<String, String> props)
-    {
-        // DRBD-Volume
-    }
-
-    private void createPath(Map<String, String> props)
-    {
-
-    }
-
-    //================================================================================================
-    // Object-Methods - CHANGE
-    //================================================================================================
     private void changeResource(Map<String, String> props) throws EventsSourceException
     {
-        Map<String, DrbdResource> resources = stateTracker.resources;
-        DrbdResource resource = resources.get(props.get("name"));
-        if (resource != null)
-        {
-            resource.update(props, null);   // FIXME! Observer
-        }
-        else
-        {
-            throw new EventsSourceException("Resource is null!");
-        }
+        DrbdResource resource = getResource(props, ACTION_CHANGE, OBJ_RESOURCE);
+        resource.update(props, tracker.multiplexer);
     }
 
     private void changeConnection(Map<String, String> props) throws EventsSourceException
     {
-        Map<String, DrbdResource> resources = stateTracker.resources;
-        DrbdResource resource = resources.get(props.get("name"));
-        if (resource != null)
-        {
-            DrbdConnection connection = resource.connList.get(props.get("conn-name"));
-            if (connection != null)
-            {
-                connection.update(props, null);   // FIXME! Observer
-            }
-            else
-            {
-                throw new EventsSourceException("Connection is null!");
-            }
-        }
-        else
-        {
-            throw new EventsSourceException("Resource is null!");
-        }
+        DrbdResource resource = getResource(props, ACTION_CHANGE, OBJ_CONNECTION);
+        DrbdConnection connection = getConnection(resource, props, ACTION_CHANGE, OBJ_CONNECTION);
+        connection.update(props, tracker.multiplexer);
     }
 
     private void changeVolume(Map<String, String> props) throws EventsSourceException
     {
-        Map<String, DrbdResource> resources = stateTracker.resources;
-        DrbdResource resource = resources.get(props.get("name"));
-        if (resource != null)
-        {
-            DrbdVolume volume = resource.volList.get(props.get("volume"));
-            if (volume != null)
-            {
-                volume.update(props, null);   // FIXME! Observer
-            }
-            else
-            {
-                throw new EventsSourceException("Volume is null!");
-            }
-        }
-        else
-        {
-            throw new EventsSourceException("Resource is null!");
-        }
+        DrbdResource resource = getResource(props, ACTION_CHANGE, OBJ_VOLUME);
+        DrbdVolume volume = getVolume(resource, null, props, ACTION_CHANGE, OBJ_VOLUME);
+        volume.update(props, tracker.multiplexer);
     }
 
-    private void changePeerDevice(Map<String, String> props) throws EventsSourceException
+    private void changePeerVolume(Map<String, String> props) throws EventsSourceException
     {
-        Map<String, DrbdResource> resources = stateTracker.resources;
-        DrbdResource resource = resources.get(props.get("name"));
-        if (resource != null)
-        {
-            DrbdConnection connection = resource.connList.get(props.get("conn-name"));
-            if (connection != null)
-            {
-                DrbdVolume volume = connection.volList.get(props.get("volume"));
-                if (volume != null)
-                {
-                    volume.update(props, null);   // FIXME! Observer
-                }
-                else
-                {
-                    throw new EventsSourceException("Volume is null!");
-                }
-            }
-            else
-            {
-                throw new EventsSourceException("Connection is null!");
-            }
-        }
-        else
-        {
-            throw new EventsSourceException("Resource is null!");
-        }
+        DrbdResource resource = getResource(props, ACTION_CHANGE, OBJ_PEER_VOLUME);
+        DrbdConnection connection = getConnection(resource, props, ACTION_CHANGE, OBJ_PEER_VOLUME);
+        DrbdVolume volume = getVolume(resource, connection, props, ACTION_CHANGE, OBJ_PEER_VOLUME);
+        volume.update(props, tracker.multiplexer);
     }
 
-    private void changeDevice(Map<String, String> props)
-    {
-
-    }
-
-    private void changePath(Map<String, String> props)
-    {
-
-    }
-
-    //================================================================================================
-    // Object-Methods - DESTROY
-    //================================================================================================
     private void destroyResource(Map<String, String> props) throws EventsSourceException
     {
-        Map<String, DrbdResource> resources = stateTracker.resources;
-        DrbdResource resource = resources.get(props.get("name"));
-        if (resource != null)
+        String resName = getProp(props, DrbdResource.PROP_KEY_RES_NAME, ACTION_DESTROY, OBJ_RESOURCE);
+        if (tracker.removeResource(resName) == null)
         {
-            resource.update(props, null);   // FIXME! Observer
-        }
-        else
-        {
-            throw new EventsSourceException("Resource is null!");
+            nonExistentResource(ACTION_DESTROY, OBJ_RESOURCE, resName);
         }
     }
 
     private void destroyConnection(Map<String, String> props) throws EventsSourceException
     {
-        Map<String, DrbdResource> resources = stateTracker.resources;
-        DrbdResource resource = resources.get(props.get("name"));
-        if (resource != null)
+        DrbdResource resource = getResource(props, ACTION_DESTROY, OBJ_CONNECTION);
+        String connName = getProp(props, DrbdConnection.PROP_KEY_CONN_NAME, ACTION_DESTROY, OBJ_CONNECTION);
+        if (resource.removeConnection(connName) == null)
         {
-            DrbdConnection connection = resource.connList.get(props.get("conn-name"));
-            if (connection != null)
-            {
-                connection.update(props, null);   // FIXME! Observer
-            }
-            else
-            {
-                throw new EventsSourceException("Connection is null!");
-            }
-        }
-        else
-        {
-            throw new EventsSourceException("Resource is null!");
+            nonExistentConnection(ACTION_DESTROY, OBJ_CONNECTION, resource, connName);
         }
     }
 
     private void destroyVolume(Map<String, String> props) throws EventsSourceException
     {
-        Map<String, DrbdResource> resources = stateTracker.resources;
-        DrbdResource resource = resources.get(props.get("name"));
-        if (resource != null)
+        DrbdResource resource = getResource(props, ACTION_DESTROY, OBJ_VOLUME);
+        int volNr = getVolumeNr(props, ACTION_DESTROY, OBJ_VOLUME);
+        if (resource.removeVolume(volNr) == null)
         {
-            DrbdVolume volume = resource.volList.get(props.get("volume"));  // props.get("volume") should deliver an integer (Volume-ID)!
-            if (volume != null)
-            {
-                volume.update(props, null);   // FIXME! Observer
-            }
-            else
-            {
-                throw new EventsSourceException("Volume is null!");
-            }
+            nonExistentVolume(ACTION_DESTROY, OBJ_VOLUME, resource, null, volNr);
+        }
+    }
+
+    private void destroyPeerVolume(Map<String, String> props) throws EventsSourceException
+    {
+        DrbdResource resource = getResource(props, ACTION_DESTROY, OBJ_PEER_VOLUME);
+        DrbdConnection connection = getConnection(resource, props, ACTION_DESTROY, OBJ_PEER_VOLUME);
+        int volNr = getVolumeNr(props, ACTION_DESTROY, OBJ_PEER_VOLUME);
+        if (connection.removeVolume(volNr) == null)
+        {
+            nonExistentVolume(ACTION_DESTROY, OBJ_PEER_VOLUME, resource, connection, volNr);
+        }
+    }
+
+    private DrbdResource getResource(Map<String, String> props, String action, String objType)
+        throws EventsSourceException
+    {
+        String resName = getProp(props, DrbdResource.PROP_KEY_RES_NAME, action, objType);
+        DrbdResource res = tracker.getResource(resName);
+        if (res == null)
+        {
+            nonExistentResource(ACTION_DESTROY, OBJ_PEER_VOLUME, resName);
+        }
+        return res;
+    }
+
+    private DrbdConnection getConnection(
+        DrbdResource resource,
+        Map<String, String> props,
+        String action,
+        String objType
+    )
+        throws EventsSourceException
+    {
+        String connName = getProp(props, DrbdConnection.PROP_KEY_CONN_NAME, action, objType);
+        DrbdConnection conn = resource.getConnection(connName);
+        if (conn == null)
+        {
+            nonExistentConnection(ACTION_DESTROY, OBJ_CONNECTION, resource, connName);
+        }
+        return conn;
+    }
+
+    private DrbdVolume getVolume(
+        DrbdResource resource,
+        DrbdConnection connection,
+        Map<String, String> props,
+        String action,
+        String objType
+    )
+        throws EventsSourceException
+    {
+        int volNr = getVolumeNr(props, action, objType);
+
+        DrbdVolume volume = null;
+        if (connection == null)
+        {
+            volume = resource.getVolume(volNr);
         }
         else
         {
-            throw new EventsSourceException("Resource is null!");
+            volume = connection.getVolume(volNr);
         }
+        if (volume == null)
+        {
+            nonExistentVolume(action, objType, resource, connection, volNr);
+        }
+        return volume;
     }
 
-    private void destroyPeerDevice(Map<String, String> props) throws EventsSourceException
+    private static final String getProp(
+        Map<String, String> props,
+        String propKey,
+        String action,
+        String objType
+    )
+        throws EventsSourceException
     {
-        Map<String, DrbdResource> resources = stateTracker.resources;
-        DrbdResource resource = resources.get(props.get("name"));
-        if (resource != null)
+        String propValue = props.get(propKey);
+        if (propValue == null)
         {
-            DrbdConnection connection = resource.connList.get(props.get("conn-name"));
-            if (connection != null)
-            {
-                DrbdVolume volume = connection.volList.get(props.get("volume"));
-                if (volume != null)
-                {
-                    volume.update(props, null);   // FIXME! Observer
-                }
-                else
-                {
-                    throw new EventsSourceException("Volume is null!");
-                }
-            }
-            else
-            {
-                throw new EventsSourceException("Connection is null!");
-            }
+            throw new EventsSourceException(
+                String.format(
+                    "Event line for operation '%s %s' does not contain the '%s' argument",
+                    action, objType, propKey
+                )
+            );
+        }
+        return propValue;
+    }
+
+    private static final int getVolumeNr(
+        Map<String, String> props,
+        String action,
+        String objType
+    )
+        throws EventsSourceException
+    {
+        String volNrText = getProp(props, DrbdVolume.PROP_KEY_VOL_NR, action, objType);
+        int volNr;
+        try
+        {
+            volNr = Integer.parseInt(volNrText);
+            Checks.volumeNrCheck(volNr);
+        }
+        catch (NumberFormatException | ValueOutOfRangeException exc)
+        {
+            throw new EventsSourceException(
+                String.format(
+                    "Event line for operation '%s %s' contains an invalid volume number",
+                    action, objType
+                ),
+                exc
+            );
+        }
+        return volNr;
+    }
+
+    private void nonExistentResource(
+        String action,
+        String objType,
+        String resName
+    )
+        throws EventsSourceException
+    {
+        throw new EventsSourceException(
+            String.format(
+                "Event line for operation '%s %s' references non-existent resource '%s'",
+                action, objType, resName
+            )
+        );
+    }
+
+    private void nonExistentConnection(
+        String action,
+        String objType,
+        DrbdResource resource,
+        String connName
+    )
+        throws EventsSourceException
+    {
+        throw new EventsSourceException(
+            String.format(
+                "Event line for operation '%s %s' references non-existent connection '%s' of resource '%s'",
+                action, objType, connName, resource.resName
+            )
+        );
+    }
+
+    private void nonExistentVolume(
+        String action,
+        String objType,
+        DrbdResource resource,
+        DrbdConnection connection,
+        int volNr
+    )
+        throws EventsSourceException
+    {
+        if (connection == null)
+        {
+            throw new EventsSourceException(
+                String.format(
+                    "Event line for operation '%s %s' references non-existent volume %d of resource '%s'",
+                    action, objType, volNr, resource.resName
+                )
+            );
         }
         else
         {
-            throw new EventsSourceException("Resource is null!");
+            throw new EventsSourceException(
+                String.format(
+                    "Event line for operation '%s %s' references non-existent peer-volume %d " +
+                    "of connection '%s' of resource '%s'",
+                    action, objType, volNr, connection.peerName, resource.resName
+                )
+            );
         }
     }
-
-    private void destroyDevice(Map<String, String> props)
-    {
-
-    }
-
-    private void destroyPath(Map<String, String> props)
-    {
-
-    }
-
-    // ===============================================================================================
-    // MAIN
-    // ===============================================================================================
-    public static void main(String[] args) throws EventsSourceException
-    {
-        StateTracker st = new StateTracker();
-        EventsTracker et = new EventsTracker(st);
-
-//    et.receiveEvent(CREATE_RESOURCE);
-//    et.receiveEvent(CREATE_CONNECTION);
-//    et.receiveEvent(CREATE_VOLUME);
-//    et.receiveEvent(CREATE_PEER_DEVICE);
-//    et.receiveEvent(CREATE_DEVICE);
-//    et.receiveEvent(CREATE_PATH);
-//
-//    et.receiveEvent(CHANGE_RESOURCE);
-        et.receiveEvent(CHANGE_CONNECTION);
-//    et.receiveEvent(CHANGE_VOLUME);
-//    et.receiveEvent(CHANGE_PEER_DEVICE);
-//    et.receiveEvent(CHANGE_DEVICE);
-//    et.receiveEvent(CHANGE_PATH);
-//
-//    et.receiveEvent(DESTROY_RESOURCE);
-//    et.receiveEvent(DESTROY_CONNECTION);
-//    et.receiveEvent(DESTROY_VOLUME);
-//    et.receiveEvent(DESTROY_PEER_DEVICE);
-//    et.receiveEvent(DESTROY_DEVICE);
-//    et.receiveEvent(DESTROY_PATH);
-    }
-
 }

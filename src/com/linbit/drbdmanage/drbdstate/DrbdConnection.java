@@ -1,5 +1,8 @@
 package com.linbit.drbdmanage.drbdstate;
 
+import com.linbit.ImplementationError;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbdmanage.Checks;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -102,8 +105,8 @@ public class DrbdConnection
     protected final int peerNodeId;
     protected DrbdResource.Role peerResRole;
     protected State connState;
-    protected Map<Integer, DrbdVolume> volList;
     protected DrbdResource resRef;
+    private final Map<Integer, DrbdVolume> volList;
 
     protected DrbdConnection(DrbdResource resource, String connName, int nodeId)
     {
@@ -193,5 +196,49 @@ public class DrbdConnection
                 obs.peerRoleChanged(resRef, this, prevRole, peerResRole);
             }
         }
+    }
+
+    public DrbdResource getResource()
+    {
+        return resRef;
+    }
+
+    public DrbdVolume getVolume(int volNr)
+    {
+        try
+        {
+            Checks.volumeNrCheck(volNr);
+        }
+        catch (ValueOutOfRangeException rangeExc)
+        {
+            throw new ImplementationError(
+                "Attempt to obtain a DrbdVolume object with an out-of-range volume number",
+                rangeExc
+            );
+        }
+        DrbdVolume vol = null;
+        synchronized (volList)
+        {
+            vol = volList.get(volNr);
+        }
+        return vol;
+    }
+
+    void putVolume(DrbdVolume volume)
+    {
+        synchronized (volList)
+        {
+            volList.put(volume.volId, volume);
+        }
+    }
+
+    DrbdVolume removeVolume(int volNr)
+    {
+        DrbdVolume removedVol = null;
+        synchronized (volList)
+        {
+            removedVol = volList.remove(volNr);
+        }
+        return removedVol;
     }
 }

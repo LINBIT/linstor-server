@@ -1,5 +1,8 @@
 package com.linbit.drbdmanage.drbdstate;
 
+import com.linbit.ImplementationError;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbdmanage.Checks;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -54,8 +57,8 @@ public class DrbdResource
 
     protected final String resName;
     protected Role resRole;
-    protected Map<String, DrbdConnection> connList;
-    protected Map<Integer, DrbdVolume> volList;
+    private final Map<String, DrbdConnection> connList;
+    private final Map<Integer, DrbdVolume> volList;
 
     protected DrbdResource(String name)
     {
@@ -101,5 +104,87 @@ public class DrbdResource
                 obs.roleChanged(this, prevResRole, resRole);
             }
         }
+    }
+
+    public DrbdConnection getConnection(String name)
+    {
+        if (name == null)
+        {
+            throw new ImplementationError(
+                "Attempt to obtain a DrbdConnection object with name == null",
+                new NullPointerException()
+            );
+        }
+        DrbdConnection conn = null;
+        synchronized (connList)
+        {
+            conn = connList.get(name);
+        }
+        return conn;
+    }
+
+    void putConnection(DrbdConnection connection)
+    {
+        synchronized (connList)
+        {
+            connList.put(connection.peerName, connection);
+        }
+    }
+
+    DrbdConnection removeConnection(String name)
+    {
+        // Map.remove(null) is a valid operation, avoid hiding bugs
+        if (name == null)
+        {
+            throw new ImplementationError(
+                "Attempt to remove a DrbdResource object with name == null",
+                new NullPointerException()
+            );
+        }
+        DrbdConnection removedConn = null;
+        synchronized (connList)
+        {
+            removedConn = connList.remove(name);
+        }
+        return removedConn;
+    }
+
+    public DrbdVolume getVolume(int volNr)
+    {
+        try
+        {
+            Checks.volumeNrCheck(volNr);
+        }
+        catch (ValueOutOfRangeException rangeExc)
+        {
+            throw new ImplementationError(
+                "Attempt to obtain a DrbdVolume object with an out-of-range volume number",
+                rangeExc
+            );
+        }
+        DrbdVolume vol = null;
+        synchronized (volList)
+        {
+            vol = volList.get(volNr);
+        }
+        return vol;
+    }
+
+    void putVolume(DrbdVolume volume)
+    {
+        synchronized (volList)
+        {
+            volList.put(volume.volId, volume);
+        }
+    }
+
+    DrbdVolume removeVolume(int volNr)
+    {
+        DrbdVolume removedVol = null;
+        synchronized (volList)
+        {
+            removedVol = volList.remove(volNr);
+        }
+        return removedVol;
     }
 }

@@ -291,6 +291,11 @@ public class DrbdVolume
         return newVolume;
     }
 
+    public DrbdResource getResource()
+    {
+        return resRef;
+    }
+
     public DrbdConnection getConnection()
     {
         return connRef;

@@ -1,9 +1,11 @@
 package com.linbit.drbdmanage.drbdstate;
 
+import com.linbit.ImplementationError;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Multiplexes state changes on DRBD resources to ResourceObserver instances
@@ -69,7 +71,8 @@ public class StateTracker
     private Set<ResourceObserver>[] observers;
     private Map<ResourceObserver, Long> obsMaskMap;
 
-    protected Map<String, DrbdResource> resources;
+    private final Map<String, DrbdResource> resList;
+    protected final ResObsMux multiplexer;
 
     private final long validEventsMask;
 
@@ -102,8 +105,56 @@ public class StateTracker
         }
         obsMaskMap = new HashMap<>();
 
+        resList = new TreeMap<>();
+
         // Initialize mask for valid event IDs
         validEventsMask = (1 << obsSlotCount) - 1;
+
+        multiplexer = new ResObsMux(this);
+    }
+
+    public DrbdResource getResource(String name)
+    {
+        // Map.get(null) returns null, avoid hiding bugs
+        if (name == null)
+        {
+            throw new ImplementationError(
+                "Attempt to obtain a DrbdResource object with name == null",
+                new NullPointerException()
+            );
+        }
+        DrbdResource res = null;
+        synchronized (resList)
+        {
+            res = resList.get(name);
+        }
+        return res;
+    }
+
+    void putResource(DrbdResource resource)
+    {
+        synchronized (resList)
+        {
+            resList.put(resource.resName, resource);
+        }
+    }
+
+    DrbdResource removeResource(String name)
+    {
+        // Map.remove(null) is a valid operation, avoid hiding bugs
+        if (name == null)
+        {
+            throw new ImplementationError(
+                "Attempt to remove a DrbdResource object with name == null",
+                new NullPointerException()
+            );
+        }
+        DrbdResource removedRes = null;
+        synchronized (resList)
+        {
+            removedRes = resList.remove(name);
+        }
+        return removedRes;
     }
 
     private int initBitToSlot(long eventId)
