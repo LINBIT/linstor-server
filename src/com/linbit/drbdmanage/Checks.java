@@ -15,7 +15,7 @@ public class Checks
     public static final int HOSTNAME_LABEL_MAX_LENGTH = 63;
 
     public static final int MINOR_NR_MIN = 0;
-    public static final int MINOR_NR_MAX = 1 << 19;
+    public static final int MINOR_NR_MAX = (1 << 20) - 1;
 
     public static final int VOLUME_NR_MIN = 0;
 
