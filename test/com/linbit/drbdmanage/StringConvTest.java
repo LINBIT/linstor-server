@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.StringConv;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -1,4 +1,4 @@
-package com.linbit.drbdmanage;
+package com.linbit;
 
 public class StringConv
 {
