@@ -101,39 +101,25 @@ public class SizeConv
     }
 
     // Factor 1
-    public static final BigInteger FACTOR_B   = new BigInteger(
-        new byte[] { 1 }
-    );
+    public static final BigInteger FACTOR_B   = BigInteger.valueOf(1L);
 
     // Factor 1,024
-    public static final BigInteger FACTOR_kiB = new BigInteger(
-        new byte[] { 0x04, 0x00 }
-    );
+    public static final BigInteger FACTOR_kiB = BigInteger.valueOf(1024L);
 
     // Factor 1,048,576
-    public static final BigInteger FACTOR_MiB = new BigInteger(
-        new byte[] { 0x10, 0x00, 0x00 }
-    );
+    public static final BigInteger FACTOR_MiB = BigInteger.valueOf(1048576L);
 
     // Factor 1,073,741,824
-    public static final BigInteger FACTOR_GiB = new BigInteger(
-        new byte[] { 0x40, 0x00, 0x00, 0x00 }
-    );
+    public static final BigInteger FACTOR_GiB = BigInteger.valueOf(1073741824L);
 
     // Factor 1,099,511,627,776
-    public static final BigInteger FACTOR_TiB = new BigInteger(
-        new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 }
-    );
+    public static final BigInteger FACTOR_TiB = BigInteger.valueOf(0x10000000000L);
 
     // Factor 1,125,899,906,842,624
-    public static final BigInteger FACTOR_PiB = new BigInteger(
-        new byte[] { 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
-    );
+    public static final BigInteger FACTOR_PiB = BigInteger.valueOf(0x4000000000000L);
 
     // Factor 1,152,921,504,606,846,976
-    public static final BigInteger FACTOR_EiB = new BigInteger(
-        new byte[] { 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
-    );
+    public static final BigInteger FACTOR_EiB = BigInteger.valueOf(0x1000000000000000L);
 
     // Factor 1,180,591,620,717,411,303,424
     public static final BigInteger FACTOR_ZiB = new BigInteger(
@@ -146,45 +132,22 @@ public class SizeConv
     );
 
     // Factor 1,000
-    public static final BigInteger FACTOR_kB = new BigInteger(
-        new byte[] { 0x03, (byte) 0xE8 }
-    );
+    public static final BigInteger FACTOR_kB = BigInteger.valueOf(1000L);
 
     // Factor 1,000,000
-    public static final BigInteger FACTOR_MB = new BigInteger(
-        new byte[] { 0x0F, 0x42, 0x40 }
-    );
+    public static final BigInteger FACTOR_MB = BigInteger.valueOf(1000000L);
 
     // Factor 1,000,000,000
-    public static final BigInteger FACTOR_GB = new BigInteger(
-        new byte[] { 0x3B, (byte) 0x9A, (byte) 0xCA, 0x00 }
-    );
+    public static final BigInteger FACTOR_GB = BigInteger.valueOf(1000000000L);
 
     // Factor 1,000,000,000,000
-    public static final BigInteger FACTOR_TB = new BigInteger(
-        new byte[]
-        {
-            0x00, (byte) 0xE8, (byte) 0xD4, (byte) 0xA5, 0x10, 0x00
-        }
-    );
+    public static final BigInteger FACTOR_TB = BigInteger.valueOf(1000000000000L);
 
     // Factor 1,000,000,000,000,000
-    public static final BigInteger FACTOR_PB = new BigInteger(
-        new byte[]
-        {
-            0x03, (byte) 0x8D, 0x7E, (byte) 0xA4,
-            (byte) 0xC6, (byte) 0x80, 0x00
-        }
-    );
+    public static final BigInteger FACTOR_PB = BigInteger.valueOf(1000000000000000L);
 
     // Factor 1,000,000,000,000,000,000
-    public static final BigInteger FACTOR_EB = new BigInteger(
-        new byte[]
-        {
-            0x0D, (byte) 0xE0, (byte) 0xB6, (byte) 0xB3,
-            (byte) 0xA7, 0x64, 0x00, 0x00
-        }
-    );
+    public static final BigInteger FACTOR_EB = BigInteger.valueOf(1000000000000000000L);
 
     // Factor 1,000,000,000,000,000,000,000
     public static final BigInteger FACTOR_ZB = new BigInteger(
