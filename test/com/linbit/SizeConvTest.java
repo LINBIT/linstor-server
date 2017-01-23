@@ -26,8 +26,6 @@ import static com.linbit.SizeConv.SizeUnit.UNIT_YB;
 /**
  * Tests for size conversion algorithms
  *
- * TODO: Tests for rounded conversion (using SizeConv.convertRoundUp())
- *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class SizeConvTest
