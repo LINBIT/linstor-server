@@ -1,6 +1,5 @@
 package com.linbit.fsevent;
 
-import com.linbit.fsevent.FsWatchTimeoutException;
 import com.linbit.NegativeTimeException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
