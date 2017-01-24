@@ -52,6 +52,12 @@ public class MinorNumber implements Comparable<MinorNumber>
         return other != null && other.value == this.value;
     }
 
+    @Override
+    public String toString()
+    {
+        return Integer.toString(value);
+    }
+
     /**
      * Checks the validity of a UNIX minor number
      *

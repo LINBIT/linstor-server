@@ -55,6 +55,12 @@ public class VolumeNumber implements Comparable<VolumeNumber>
         return other != null && other.value == this.value;
     }
 
+    @Override
+    public String toString()
+    {
+        return Integer.toString(value);
+    }
+
     /**
      * Checks the validity of a DRBD volume number
      *
