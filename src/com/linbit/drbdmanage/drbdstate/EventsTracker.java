@@ -254,7 +254,7 @@ public class EventsTracker
     private void destroyVolume(Map<String, String> props) throws EventsSourceException
     {
         DrbdResource resource = getResource(props, ACTION_DESTROY, OBJ_VOLUME);
-        int volNr = getVolumeNr(props, ACTION_DESTROY, OBJ_VOLUME);
+        VolumeNumber volNr = getVolumeNr(props, ACTION_DESTROY, OBJ_VOLUME);
         if (resource.removeVolume(volNr) == null)
         {
             nonExistentVolume(ACTION_DESTROY, OBJ_VOLUME, resource, null, volNr);
@@ -265,7 +265,7 @@ public class EventsTracker
     {
         DrbdResource resource = getResource(props, ACTION_DESTROY, OBJ_PEER_VOLUME);
         DrbdConnection connection = getConnection(resource, props, ACTION_DESTROY, OBJ_PEER_VOLUME);
-        int volNr = getVolumeNr(props, ACTION_DESTROY, OBJ_PEER_VOLUME);
+        VolumeNumber volNr = getVolumeNr(props, ACTION_DESTROY, OBJ_PEER_VOLUME);
         if (connection.removeVolume(volNr) == null)
         {
             nonExistentVolume(ACTION_DESTROY, OBJ_PEER_VOLUME, resource, connection, volNr);
@@ -310,7 +310,7 @@ public class EventsTracker
     )
         throws EventsSourceException
     {
-        int volNr = getVolumeNr(props, action, objType);
+        VolumeNumber volNr = getVolumeNr(props, action, objType);
 
         DrbdVolume volume = null;
         if (connection == null)
@@ -349,7 +349,7 @@ public class EventsTracker
         return propValue;
     }
 
-    private static final int getVolumeNr(
+    private static final VolumeNumber getVolumeNr(
         Map<String, String> props,
         String action,
         String objType
@@ -357,11 +357,12 @@ public class EventsTracker
         throws EventsSourceException
     {
         String volNrText = getProp(props, DrbdVolume.PROP_KEY_VOL_NR, action, objType);
-        int volNr;
+        int parsedNumber;
+        VolumeNumber volNr = null;
         try
         {
-            volNr = Integer.parseInt(volNrText);
-            VolumeNumber.volumeNrCheck(volNr);
+            parsedNumber = Integer.parseInt(volNrText);
+            volNr = new VolumeNumber(parsedNumber);
         }
         catch (NumberFormatException | ValueOutOfRangeException exc)
         {
@@ -412,7 +413,7 @@ public class EventsTracker
         String objType,
         DrbdResource resource,
         DrbdConnection connection,
-        int volNr
+        VolumeNumber volNr
     )
         throws EventsSourceException
     {

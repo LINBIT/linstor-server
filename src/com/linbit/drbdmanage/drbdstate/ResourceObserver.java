@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.drbdstate;
 
+import com.linbit.drbdmanage.MinorNumber;
+
 /**
  * Observes the state of a DRBD resource
  *
@@ -74,7 +76,7 @@ public interface ResourceObserver
      */
     void minorNrChanged(
         DrbdResource resource, DrbdVolume volume,
-        int previous, int current
+        MinorNumber previous, MinorNumber current
     );
 
     /**

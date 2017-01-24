@@ -207,37 +207,35 @@ public class DrbdVolume
         }
     }
 
-    protected final int volId;
-    protected int volMinorNr;
+    protected final VolumeNumber volId;
+    protected MinorNumber volMinorNr;
     protected DiskState volDiskState;
     protected ReplState volReplState;
     protected DrbdResource resRef;
     protected DrbdConnection connRef;
 
-    protected DrbdVolume(DrbdResource resource, int volNr)
+    protected DrbdVolume(DrbdResource resource, VolumeNumber volNr)
         throws ValueOutOfRangeException
     {
         this(resource, null, volNr);
     }
 
-    protected DrbdVolume(DrbdResource resource, DrbdConnection peerConn, int volNr)
-        throws ValueOutOfRangeException
+    protected DrbdVolume(DrbdResource resource, DrbdConnection peerConn, VolumeNumber volNr)
     {
-        VolumeNumber.volumeNrCheck(volNr);
         volId = volNr;
-        volMinorNr = -1;
+        volMinorNr = null;
         volDiskState = DiskState.UNKNOWN;
         volReplState = ReplState.UNKNOWN;
         resRef = resource;
         connRef = peerConn;
     }
 
-    public int getVolNr()
+    public VolumeNumber getVolNr()
     {
         return volId;
     }
 
-    public int getMinorNr()
+    public MinorNumber getMinorNr()
     {
         return volMinorNr;
     }
@@ -279,7 +277,7 @@ public class DrbdVolume
         DrbdVolume newVolume;
         try
         {
-            newVolume = new DrbdVolume(resource, volNr);
+            newVolume = new DrbdVolume(resource, new VolumeNumber(volNr));
         }
         catch (ValueOutOfRangeException rangeExc)
         {
@@ -320,7 +318,7 @@ public class DrbdVolume
 
         if (minorNrStr != null)
         {
-            int prevMinorNr = volMinorNr;
+            MinorNumber prevMinorNr = volMinorNr;
             int minorNr = -1;
             try
             {
@@ -335,7 +333,7 @@ public class DrbdVolume
 
             try
             {
-                MinorNumber.minorNrCheck(minorNr);
+                volMinorNr = new MinorNumber(minorNr);
             }
             catch (ValueOutOfRangeException valExc)
             {
@@ -344,15 +342,14 @@ public class DrbdVolume
                     valExc
                 );
             }
-            volMinorNr = minorNr;
-            if (prevMinorNr != volMinorNr)
+            if (!volMinorNr.equals(prevMinorNr))
             {
                 // Only local minor number changes are tracked
                 // Peer minor number changes do not normally trigger a local event,
                 // the check is just an additional safeguard
                 if (connRef == null)
                 {
-                    obs.minorNrChanged(resRef, this, prevMinorNr, minorNr);
+                    obs.minorNrChanged(resRef, this, prevMinorNr, volMinorNr);
                 }
             }
         }

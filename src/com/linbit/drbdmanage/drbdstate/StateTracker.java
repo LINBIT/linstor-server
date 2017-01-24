@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.drbdstate;
 
 import com.linbit.ImplementationError;
+import com.linbit.drbdmanage.MinorNumber;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -281,7 +282,7 @@ public class StateTracker
         @Override
         public void minorNrChanged(
             DrbdResource resource, DrbdVolume volume,
-            int previous, int current
+            MinorNumber previous, MinorNumber current
         )
         {
             for (ResourceObserver obs : container.observers[container.OBS_MINOR_SLOT])
