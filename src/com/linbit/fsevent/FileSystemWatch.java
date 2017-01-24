@@ -778,7 +778,10 @@ public class FileSystemWatch extends Thread
             int currentCount = eventCount.incrementAndGet();
             if (currentCount >= triggerCount)
             {
-                groupObserver.entryGroupEvent(this);
+                if (groupObserver != null)
+                {
+                    groupObserver.entryGroupEvent(this);
+                }
                 synchronized (this)
                 {
                     loopWait = false;
