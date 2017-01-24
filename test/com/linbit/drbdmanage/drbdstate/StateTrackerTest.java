@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.drbdstate;
 
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbdmanage.MinorNumber;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,8 +22,9 @@ import static com.linbit.drbdmanage.drbdstate.StateTracker.OBS_VOL_DSTR;
 import static com.linbit.drbdmanage.drbdstate.StateTracker.OBS_ALL;
 
 /**
+ * Test of the DRBD resource observers
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class StateTrackerTest
 {
@@ -50,7 +53,7 @@ public class StateTrackerTest
      * Test of addObserver method, of class StateTracker.
      */
     @Test
-    public void testObserveResCreate()
+    public void testObserveResCreate() throws ValueOutOfRangeException
     {
         resObs.expect(StateTracker.OBS_RES_CRT);
         tracker.addObserver(resObs, OBS_RES_CRT);
@@ -61,7 +64,7 @@ public class StateTrackerTest
         resObs.assertTriggered();
 
         // Should not trigger the ResourceObserver
-        mux.minorNrChanged(null, null, 5, 10);
+        mux.minorNrChanged(null, null, new MinorNumber(5), new MinorNumber(10));
 
         tracker.removeObserver(resObs);
     }
@@ -87,7 +90,7 @@ public class StateTrackerTest
     }
 
     @Test
-    public void testObserveVolEvents()
+    public void testObserveVolEvents() throws ValueOutOfRangeException
     {
         tracker.addObserver(
             resObs,
@@ -97,7 +100,7 @@ public class StateTrackerTest
         resObs.expect(StateTracker.OBS_MINOR);
         // Should trigger the ResourceObserver
         // FIXME: dummy DrbdResource, DrbdVolume instances?
-        mux.minorNrChanged(null, null, 5, 10);
+        mux.minorNrChanged(null, null, new MinorNumber(5), new MinorNumber(10));
         resObs.assertTriggered();
         resObs.reset();
 
@@ -113,7 +116,7 @@ public class StateTrackerTest
         tracker.removeObserver(resObs);
 
         resObs.expect(-1);
-        mux.minorNrChanged(null, null, 10, 20);
+        mux.minorNrChanged(null, null, new MinorNumber(10), new MinorNumber(20));
     }
 
     @Test
@@ -316,7 +319,7 @@ public class StateTrackerTest
         @Override
         public void minorNrChanged(
             DrbdResource resource, DrbdVolume volume,
-            int previous, int current
+            MinorNumber previous, MinorNumber current
         )
         {
             checkExpected(StateTracker.OBS_MINOR);
