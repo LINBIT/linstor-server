@@ -7,7 +7,7 @@ import com.linbit.ValueOutOfRangeException;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class VolumeNumber
+public class VolumeNumber implements Comparable<VolumeNumber>
 {
     public static final int VOLUME_NR_MIN = 0;
 
@@ -24,6 +24,35 @@ public class VolumeNumber
     {
         volumeNrCheck(number);
         value = number;
+    }
+
+    @Override
+    public int compareTo(VolumeNumber other)
+    {
+        int result = 0;
+        if (other == null)
+        {
+            // null sorts before any existing VolumeNumber
+            result = 1;
+        }
+        else
+        {
+            if (this.value < other.value)
+            {
+                result = -1;
+            }
+            else
+            if (this.value > other.value)
+            {
+                result = 1;
+            }
+        }
+        return result;
+    }
+
+    public boolean equals(VolumeNumber other)
+    {
+        return other != null && other.value == this.value;
     }
 
     /**

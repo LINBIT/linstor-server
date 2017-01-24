@@ -7,7 +7,7 @@ import com.linbit.ValueOutOfRangeException;
  *
  * @author raltnoeder
  */
-public class MinorNumber
+public class MinorNumber implements Comparable<MinorNumber>
 {
     public static final int MINOR_NR_MIN = 0;
     public static final int MINOR_NR_MAX = (1 << 20) - 1;
@@ -21,6 +21,35 @@ public class MinorNumber
     {
         minorNrCheck(number);
         value = number;
+    }
+
+    @Override
+    public int compareTo(MinorNumber other)
+    {
+        int result = 0;
+        if (other == null)
+        {
+            // null sorts before any existing VolumeNumber
+            result = 1;
+        }
+        else
+        {
+            if (this.value < other.value)
+            {
+                result = -1;
+            }
+            else
+            if (this.value > other.value)
+            {
+                result = 1;
+            }
+        }
+        return result;
+    }
+
+    public boolean equals(MinorNumber other)
+    {
+        return other != null && other.value == this.value;
     }
 
     /**
