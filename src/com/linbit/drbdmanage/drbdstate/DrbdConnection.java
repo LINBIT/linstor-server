@@ -2,7 +2,7 @@ package com.linbit.drbdmanage.drbdstate;
 
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbdmanage.Checks;
+import com.linbit.drbdmanage.VolumeNumber;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -207,7 +207,7 @@ public class DrbdConnection
     {
         try
         {
-            Checks.volumeNrCheck(volNr);
+            VolumeNumber.volumeNrCheck(volNr);
         }
         catch (ValueOutOfRangeException rangeExc)
         {

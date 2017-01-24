@@ -1,7 +1,8 @@
 package com.linbit.drbdmanage.drbdstate;
 
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbdmanage.Checks;
+import com.linbit.drbdmanage.MinorNumber;
+import com.linbit.drbdmanage.VolumeNumber;
 import java.util.Map;
 
 /**
@@ -222,7 +223,7 @@ public class DrbdVolume
     protected DrbdVolume(DrbdResource resource, DrbdConnection peerConn, int volNr)
         throws ValueOutOfRangeException
     {
-        Checks.volumeNrCheck(volNr);
+        VolumeNumber.volumeNrCheck(volNr);
         volId = volNr;
         volMinorNr = -1;
         volDiskState = DiskState.UNKNOWN;
@@ -334,7 +335,7 @@ public class DrbdVolume
 
             try
             {
-                Checks.minorNrCheck(minorNr);
+                MinorNumber.minorNrCheck(minorNr);
             }
             catch (ValueOutOfRangeException valExc)
             {

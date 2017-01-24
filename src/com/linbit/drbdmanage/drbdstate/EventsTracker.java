@@ -2,7 +2,7 @@ package com.linbit.drbdmanage.drbdstate;
 
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbdmanage.Checks;
+import com.linbit.drbdmanage.VolumeNumber;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -361,7 +361,7 @@ public class EventsTracker
         try
         {
             volNr = Integer.parseInt(volNrText);
-            Checks.volumeNrCheck(volNr);
+            VolumeNumber.volumeNrCheck(volNr);
         }
         catch (NumberFormatException | ValueOutOfRangeException exc)
         {
