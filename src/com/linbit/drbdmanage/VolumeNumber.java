@@ -58,6 +58,12 @@ public class VolumeNumber implements Comparable<VolumeNumber>
     }
 
     @Override
+    public int hashCode()
+    {
+        return value;
+    }
+
+    @Override
     public String toString()
     {
         return Integer.toString(value);
