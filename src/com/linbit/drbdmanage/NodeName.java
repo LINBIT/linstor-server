@@ -7,15 +7,9 @@ package com.linbit.drbdmanage;
  */
 public class NodeName extends GenericName
 {
-    private NodeName(String nodeName)
+    public NodeName(String nodeName) throws InvalidNameException
     {
         super(nodeName);
-    }
-
-    public NodeName fromString(String nodeName)
-        throws InvalidNameException
-    {
         Checks.hostNameCheck(nodeName);
-        return new NodeName(nodeName);
     }
 }

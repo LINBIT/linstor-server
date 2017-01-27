@@ -13,15 +13,9 @@ public class ResourceName extends GenericName
     public static final byte[] VALID_CHARS = { '_' };
     public static final byte[] VALID_INNER_CHARS = { '-' };
 
-    private ResourceName(String resName)
+    public ResourceName(String resName) throws InvalidNameException
     {
         super(resName);
-    }
-
-    public ResourceName fromString(String resName)
-        throws InvalidNameException
-    {
         Checks.nameCheck(resName, MIN_LENGTH, MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
-        return new ResourceName(resName);
     }
 }
