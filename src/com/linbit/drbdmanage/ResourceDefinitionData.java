@@ -82,4 +82,10 @@ public class ResourceDefinitionData implements ResourceDefinition
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return volumeMap.get(volNr);
     }
+
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        return objProt;
+    }
 }

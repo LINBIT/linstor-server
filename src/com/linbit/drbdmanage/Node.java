@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.drbdmanage.security.ObjectProtection;
 import java.util.UUID;
 
 /**
@@ -9,6 +10,8 @@ import java.util.UUID;
 public interface Node
 {
     public UUID getUuid();
+
+    public ObjectProtection getObjProt();
 
     public NodeName getName();
 

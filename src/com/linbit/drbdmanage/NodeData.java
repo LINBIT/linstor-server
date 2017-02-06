@@ -51,4 +51,10 @@ public class NodeData implements Node
     {
         return resourceList.get(resName);
     }
+
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        return objProt;
+    }
 }

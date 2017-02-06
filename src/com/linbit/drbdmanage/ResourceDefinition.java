@@ -2,6 +2,7 @@ package com.linbit.drbdmanage;
 
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.ObjectProtection;
 import java.util.UUID;
 
 /**
@@ -13,6 +14,8 @@ public interface ResourceDefinition
     public UUID getUuid();
 
     public ResourceName getName();
+
+    public ObjectProtection getObjProt();
 
     public ConnectionDefinition getConnectionDfn(AccessContext accCtx, NodeName clNodeName, Integer connNr)
         throws AccessDeniedException;

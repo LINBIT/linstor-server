@@ -9,7 +9,6 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
-import com.linbit.drbdmanage.security.ObjectProtection;
 import java.util.UUID;
 
 /**
@@ -33,9 +32,6 @@ public class VolumeDefinitionData implements VolumeDefinition
     // Net volume size in kiB
     private long volumeSize;
 
-    // Object access controls
-    private ObjectProtection objProt;
-
     VolumeDefinitionData(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
@@ -43,11 +39,14 @@ public class VolumeDefinitionData implements VolumeDefinition
         MinorNumber minor,
         long volSize
     )
-        throws MdException
+        throws MdException, AccessDeniedException
     {
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, VolumeNumber.class, volNr);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, MinorNumber.class, minor);
+
+        // Creating a new volume definition requires CHANGE access to the resource definition
+        resDfnRef.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         try
         {
@@ -77,7 +76,6 @@ public class VolumeDefinitionData implements VolumeDefinition
         volumeNr = volNr;
         minorNr = minor;
         volumeSize = volSize;
-        objProt = new ObjectProtection(accCtx);
     }
 
     @Override
@@ -96,7 +94,7 @@ public class VolumeDefinitionData implements VolumeDefinition
     public VolumeNumber getVolumeNumber(AccessContext accCtx)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumeNr;
     }
 
@@ -104,7 +102,7 @@ public class VolumeDefinitionData implements VolumeDefinition
     public MinorNumber getMinorNr(AccessContext accCtx)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return minorNr;
     }
 
@@ -112,7 +110,7 @@ public class VolumeDefinitionData implements VolumeDefinition
     public void setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         minorNr = newMinorNr;
     }
 
@@ -120,7 +118,7 @@ public class VolumeDefinitionData implements VolumeDefinition
     public long getVolumeSize(AccessContext accCtx)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumeSize;
     }
 
@@ -128,7 +126,7 @@ public class VolumeDefinitionData implements VolumeDefinition
     public void setVolumeSize(AccessContext accCtx, long newVolumeSize)
         throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         volumeSize = newVolumeSize;
     }
 }
