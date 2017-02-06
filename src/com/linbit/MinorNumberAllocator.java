@@ -1,10 +1,12 @@
 package com.linbit;
 
-import java.util.Arrays;
+import com.linbit.drbdmanage.MinorNumber;
 
 /**
+ * Allocator for finding unoccupied Unix/Posix special file minor numbers
  *
- * @author rblauen
+ * @author Rene Blauensteiner &lt;rene.blauensteiner@linbit.com&gt;
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class MinorNumberAllocator
 {
@@ -15,170 +17,71 @@ public class MinorNumberAllocator
      * A minor number that is unique across the drbdmanage cluster is allocated for each
      * volume.
      *
-     * @param occupied_list int[] filled with the minor numbers
-     * @return int - next free minor number; or -1 on error
+     * @param occupied List of unique occupied minor numbers sorted in ascending order
+     * @param minorOffset The start value for finding free minor numbers. The method will
+     *     attempt to find an unoccupied number equal or greater to minorOffset first, and
+     *     only if no such number can be found, it will attempt to find an unoccupied minor
+     *     number less than minorOffset (all within the specified range)
+     * @param minMinorNr Lower bound of the minor number range
+     * @param maxMinorNr Upper bound of the minor number range
+     * @return Free (unoccupied) minor number within the specified range
+     * @throws ExhaustedPoolException If all minor numbers within the specified range are occupied
      */
-    public int get_free_minor_nr(int[] occupied_list)
+    public MinorNumber getFreeMinorNumber(
+        int[] occupied,
+        MinorNumber minorOffset,
+        MinorNumber minMinorNr,
+        MinorNumber maxMinorNr
+    )
+        throws ExhaustedPoolException
     {
-        //try
-        //{
-        int min_nr = MinorNr.KEY_MIN_MINOR_NR;
-        int minor_nr = 0;   // ?
-
-        int occupied_list_length = occupied_list.length;
-        if (occupied_list_length > 0)
+        if (minMinorNr.value > maxMinorNr.value ||
+            minorOffset.value < minMinorNr.value || minorOffset.value > maxMinorNr.value)
         {
-            Arrays.sort(occupied_list);
-            int chk_idx = bisect_left(occupied_list, minor_nr);
-            if (chk_idx != occupied_list_length && occupied_list[chk_idx] == minor_nr)
+            throw new IllegalArgumentException(
+                String.format(
+                    "Invalid input values: minMinorNr(%d) maxMinorNr(%d), minorOffset(%d)",
+                    minMinorNr, maxMinorNr, minorOffset
+                )
+            );
+        }
+
+        int minorNr = minorOffset.value;
+        if (occupied.length > 0)
+        {
+            int chkIdx = NumberAlloc.findInsertIndex(occupied, minorNr);
+            if (chkIdx >= 0)
             {
-                /* Number is in use, recycle a free minor number
-                 *
-                 * Try finding a free number in the range of numbers
-                 * greater than the current minor number */
-                int free_nr = get_free_number(minor_nr, MinorNr.MINOR_NR_MAX, occupied_list, true);
-                if (free_nr == -1)
+                // Number is in use, recycle a free minor number
+                //
+                // Try finding a free number in the range of numbers
+                // greater than the current minor number offset
+                try
                 {
-                    /* No free numbers in the high range, try finding a free number
-                     * in the range of numbers less than the current minor number */
-                    free_nr = get_free_number(min_nr, minor_nr, occupied_list, true);
-                    if (free_nr == -1)
-                    {
-                        /* All minor numbers are occupied */
-                        // throw some kind of exception
-                    }
+                    minorNr = NumberAlloc.getFreeNumber(occupied, minorOffset.value, maxMinorNr.value);
                 }
-                minor_nr = free_nr;
+                catch (ExhaustedPoolException poolExc)
+                {
+                    // No free numbers in the high range, try finding a free number
+                    // in the range of numbers less than the current minor number
+                    // If there are no free numbers in the high range either,
+                    // an ExhaustedPoolException is thrown at this point
+                    minorNr = NumberAlloc.getFreeNumber(occupied, minMinorNr.value, minorOffset.value);
+                }
             }
         }
-        int next_number = minor_nr + 1;
-        if (next_number > MinorNr.MINOR_NR_MAX)
+        MinorNumber result;
+        try
         {
-            next_number = min_nr;
+            result = new MinorNumber(minorNr);
         }
-        // cluster_conf.set_prop(KEY_CUR_MINOR_NR, str(next_number))
-        //}
-        //catch (Exception ex)
-        //{
-        //minor_nr = MinorNr.MINOR_NR_ERROR;
-        //}
-        return minor_nr;
-    }
-
-    /**
-     * Returns the first number in the range min_nr..max_nr that is not in nr_list. <br>
-     *
-     * In the range min_nr to max_nr, finds and returns a number that is not in the
-     * supplied list of numbers.<br>
-     * min_nr and max_nr must be >= 0, and nr_list must be a list of integer numbers
-     *
-     * @param min_nr min-value: range start, >=0
-     * @param max_nr max-value: range end, >= 0, greater than or equl to min_nr
-     * @param nr_list int[] filled with the minor numbers
-     * @param nr_sorted true if the nr_list should be sorted
-     * @return int - first free number within min_nr and max_nr; or -1 on error
-     */
-    public int get_free_number(int min_nr, int max_nr, int[] nr_list, boolean nr_sorted)
-    {
-        int free_nr = -1;
-
-        if (!nr_sorted)
+        catch (ValueOutOfRangeException valueExc)
         {
-            Arrays.sort(nr_list);
+            throw new ImplementationError(
+                "The algorithm allocated an invalid minor number",
+                valueExc
+            );
         }
-
-        if (min_nr >= 0 && min_nr <= max_nr)
-        {
-            int nr_list_length = nr_list.length;
-            int index = 0;
-            int number = min_nr;
-            while (number <= max_nr && free_nr == -1)
-            {
-                boolean occupied = false;
-                while (index < nr_list_length)
-                {
-                    if (nr_list[index] >= number)
-                    {
-                        if (nr_list[index] == number)
-                        {
-                            occupied = true;
-                        }
-                        break;
-                    }
-                    index += 1;
-                }
-                if (occupied)
-                {
-                    index += 1;
-                }
-                else
-                {
-                    free_nr = number;
-                }
-                number += 1;
-            }
-        }
-
-        return free_nr;
-    }
-
-    /**
-     * Java-implementation of python's bisect_left()
-     *
-     * @param numbers int[] filled with the minor numbers
-     * @param nr int the number that shall be inserted
-     * @return int the insertion point for nr
-     */
-    public int bisect_left(int[]numbers, int nr)
-    {
-        int x = Arrays.binarySearch(numbers, nr);
-        if (x < 0)
-        {
-            x = (x * (-1)) -1;
-        }
-        return x;
-    }
-
-    /* For debugging purposes! */
-    private static class MinorNr
-    {
-        // =============================================================================================
-        // Attributes
-        // =============================================================================================
-        private static int MINOR_NR_MAX = (1 << 20 ) -1;
-        private static int KEY_MIN_MINOR_NR = 0;
-    }
-
-    /* MAIN */
-    public static void main(String[] args)
-    {
-        MinorNumberAllocator mna = new MinorNumberAllocator();
-        int[]numbers = new int[]{0,1,2,3,4,6,7,8,10};
-        int[]nrs = new int[]{-1, 100, 5, 6, 9};
-
-//    int free_number = MinorNumberAllocator.get_free_number(0, 20, numbers, false);
-//    System.out.println(free_number);
-
-        int in0 = Arrays.binarySearch(numbers, nrs[0]);
-        int in1 = Arrays.binarySearch(numbers, nrs[1]);
-        int in2 = Arrays.binarySearch(numbers, nrs[2]);
-        int in3 = Arrays.binarySearch(numbers, nrs[3]);
-        int in4 = Arrays.binarySearch(numbers, nrs[4]);
-
-        // original output
-        System.out.println(nrs[0] + ": " + in0);
-        System.out.println(nrs[1] + ": " + in1);
-        System.out.println(nrs[2] + ": " + in2);
-        System.out.println(nrs[3] + ": " + in3);
-        System.out.println(nrs[4] + ": " + in4);
-
-        System.out.println("----------------------------------------------");
-
-        // modified output
-        System.out.println(nrs[0] + ": " + mna.bisect_left(numbers, nrs[0]));
-        System.out.println(nrs[1] + ": " + mna.bisect_left(numbers, nrs[1]));
-        System.out.println(nrs[2] + ": " + mna.bisect_left(numbers, nrs[2]));
-        System.out.println(nrs[3] + ": " + mna.bisect_left(numbers, nrs[3]));
-        System.out.println(nrs[4] + ": " + mna.bisect_left(numbers, nrs[4]));
+        return result;
     }
 }
