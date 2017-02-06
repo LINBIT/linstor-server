@@ -11,7 +11,7 @@ import com.linbit.ValueOutOfRangeException;
  * @author Rene Blauensteiner &lt;rene.blauensteiner@linbit.com&gt;
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class MinorNumberAllocator
+public class MinorNumberAlloc
 {
     /**
      * Retrieves a free (unused) minor number
