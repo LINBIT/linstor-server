@@ -1,5 +1,9 @@
-package com.linbit;
+package com.linbit.drbdmanage;
 
+import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
+import com.linbit.NumberAlloc;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.MinorNumber;
 
 /**
