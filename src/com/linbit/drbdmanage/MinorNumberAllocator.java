@@ -4,7 +4,6 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.NumberAlloc;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbdmanage.MinorNumber;
 
 /**
  * Allocator for finding unoccupied Unix/Posix special file minor numbers
@@ -16,10 +15,6 @@ public class MinorNumberAllocator
 {
     /**
      * Retrieves a free (unused) minor number
-     * Minor numbers are allocated in the range from the configuration value
-     * KEY_MIN_MINOR_NR to the constant MinorNr.MINOR_NR_MAX. <br>
-     * A minor number that is unique across the drbdmanage cluster is allocated for each
-     * volume.
      *
      * @param occupied List of unique occupied minor numbers sorted in ascending order
      * @param minorOffset The start value for finding free minor numbers. The method will
