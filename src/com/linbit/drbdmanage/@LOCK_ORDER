@@ -1,0 +1,15 @@
+DRBDMANAGENG LOCK ORDER INFORMATION
+===================================
+
+To avoid deadlocks, locking on multiple objects must always take place
+in the same order.
+
+The current lock order, from the outer-most (taken first) lock to the
+inner-most (taken last) lock, is:
+
+1. Node
+2. ResourceDefinition
+3. VolumeDefinition
+4. Resource
+5. Volume
+
