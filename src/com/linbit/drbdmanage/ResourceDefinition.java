@@ -15,11 +15,20 @@ public interface ResourceDefinition
 
     public ResourceName getName();
 
-    public ObjectProtection getObjProt();
-
     public ConnectionDefinition getConnectionDfn(AccessContext accCtx, NodeName clNodeName, Integer connNr)
         throws AccessDeniedException;
 
     public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
         throws AccessDeniedException;
+
+    public Resource getResource(AccessContext accCtx, NodeName clNodeName)
+        throws AccessDeniedException;
+
+    public void addResource(AccessContext accCtx, Resource resRef)
+        throws AccessDeniedException;
+
+    public void removeResource(AccessContext accCtx, Resource resRef)
+        throws AccessDeniedException;
+
+    public ObjectProtection getObjProt();
 }

@@ -1,7 +1,9 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import java.util.Map;
 import java.util.TreeMap;
@@ -29,7 +31,7 @@ public class ResourceData implements Resource
     // Access control for this resource
     private ObjectProtection objProt;
 
-    ResourceData(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef)
+    private ResourceData(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef)
     {
         if (resDfnRef == null || nodeRef == null)
         {
@@ -68,5 +70,36 @@ public class ResourceData implements Resource
     public Node getAssignedNode()
     {
         return assgNode;
+    }
+
+    @Override
+    public Resource create(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef)
+        throws AccessDeniedException
+    {
+        ErrorCheck.ctorNotNull(Resource.class, ResourceDefinition.class, resDfnRef);
+        ErrorCheck.ctorNotNull(Resource.class, Node.class, nodeRef);
+
+        Resource newRes = new ResourceData(accCtx, resDfnRef, nodeRef);
+
+        // Access controls on the node and resource must not change
+        // while the transaction is in progress
+        synchronized (nodeRef)
+        {
+            synchronized (resDfnRef)
+            {
+                nodeRef.addResource(accCtx, newRes);
+                try
+                {
+                    resDfnRef.addResource(accCtx, newRes);
+                }
+                catch (AccessDeniedException accExc)
+                {
+                    // Rollback adding the resource to the node
+                    nodeRef.removeResource(accCtx, newRes);
+                }
+            }
+        }
+
+        return newRes;
     }
 }

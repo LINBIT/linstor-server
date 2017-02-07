@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 import java.util.UUID;
 
 /**
@@ -8,6 +10,9 @@ import java.util.UUID;
  */
 public interface Resource
 {
+    public Resource create(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef)
+        throws AccessDeniedException;
+
     public UUID getUuid();
 
     public ResourceDefinition getDefinition();

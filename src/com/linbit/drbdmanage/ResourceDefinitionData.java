@@ -27,6 +27,9 @@ public class ResourceDefinitionData implements ResourceDefinition
     // Volumes of the resource
     private Map<VolumeNumber, VolumeDefinition> volumeMap;
 
+    // Resources defined by this ResourceDefinition
+    private Map<NodeName, Resource> resourceMap;
+
     // Object access controls
     private ObjectProtection objProt;
 
@@ -46,6 +49,7 @@ public class ResourceDefinitionData implements ResourceDefinition
         resourceName = resName;
         connectionMap = new TreeMap<>();
         volumeMap = new TreeMap<>();
+        resourceMap = new TreeMap<>();
         objProt = new ObjectProtection(accCtx);
     }
 
@@ -87,5 +91,27 @@ public class ResourceDefinitionData implements ResourceDefinition
     public ObjectProtection getObjProt()
     {
         return objProt;
+    }
+
+    @Override
+    public Resource getResource(AccessContext accCtx, NodeName clNodeName)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return resourceMap.get(clNodeName);
+    }
+
+    @Override
+    public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    {
+        // TODO: Implement
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    {
+        // TODO: Implement
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
