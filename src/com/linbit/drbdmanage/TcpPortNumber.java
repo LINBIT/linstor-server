@@ -86,6 +86,12 @@ public class TcpPortNumber implements Comparable<TcpPortNumber>
         return hash;
     }
 
+    @Override
+    public String toString()
+    {
+        return Integer.toString(value);
+    }
+
     /**
      * Checks the validity of a TCP port number
      *
