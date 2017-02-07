@@ -26,7 +26,7 @@ public class MinorNumberAlloc
      * @return Free (unoccupied) minor number within the specified range
      * @throws ExhaustedPoolException If all minor numbers within the specified range are occupied
      */
-    public MinorNumber getFreeMinorNumber(
+    public static MinorNumber getFreeMinorNumber(
         int[] occupied,
         MinorNumber minorOffset,
         MinorNumber minMinorNr,
