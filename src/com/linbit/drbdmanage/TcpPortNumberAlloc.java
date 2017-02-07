@@ -16,12 +16,12 @@ public class TcpPortNumberAlloc
      * Retrieves a free (unused) TCP port number
      *
      * @param occupied List of unique occupied TCP port numbers sorted in ascending order
-     * @param minPortNr Lower bound of the minor number range
-     * @param maxPortNr Upper bound of the minor number range
+     * @param minPortNr Lower bound of the port number range
+     * @param maxPortNr Upper bound of the port number range
      * @return Free (unoccupied) TCP port number within the specified range
      * @throws ExhaustedPoolException If all TCP port numbers within the specified range are occupied
      */
-    public TcpPortNumber getFreeMinorNumber(
+    public TcpPortNumber getFreePortNumber(
         int[] occupied,
         TcpPortNumber minPortNr,
         TcpPortNumber maxPortNr
@@ -38,7 +38,7 @@ public class TcpPortNumberAlloc
         catch (ValueOutOfRangeException valueExc)
         {
             throw new ImplementationError(
-                "The algorithm allocated an invalid minor number",
+                "The algorithm allocated an invalid port number",
                 valueExc
             );
         }
