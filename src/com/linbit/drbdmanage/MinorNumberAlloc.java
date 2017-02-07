@@ -40,7 +40,7 @@ public class MinorNumberAlloc
             throw new IllegalArgumentException(
                 String.format(
                     "Invalid input values: minMinorNr(%d) maxMinorNr(%d), minorOffset(%d)",
-                    minMinorNr, maxMinorNr, minorOffset
+                    minMinorNr.value, maxMinorNr.value, minorOffset.value
                 )
             );
         }
