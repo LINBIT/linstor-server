@@ -27,10 +27,10 @@ public class MinorNumberAllocTest
         new MinorAllocTest(new int[] { 100, 101, 102, 103, 104, 105, 110, 111 }, 135, 100, 1000, 135),
 
         // Test free minor number at higher numbers
-        new MinorAllocTest(new int[] { 101, 102, 104, 108, 111, 132, 133, 134, 135 }, 132, 135, 1000, 136),
-        new MinorAllocTest(new int[] { 101, 102, 104, 108, 111, 132, 133, 134, 135, 140 }, 132, 135, 1000, 136),
-        new MinorAllocTest(new int[] { 101, 102, 104, 108, 111, 132, 133, 134 }, 132, 132, 1000, 135),
-        new MinorAllocTest(new int[] { 101, 102, 104, 108, 111, 132, 133, 134, 140 }, 132, 132, 1000, 135),
+        new MinorAllocTest(new int[] { 101, 102, 104, 108, 111, 132, 133, 134, 135 }, 132, 100, 1000, 136),
+        new MinorAllocTest(new int[] { 101, 102, 104, 108, 111, 132, 133, 134, 135, 140 }, 132, 100, 1000, 136),
+        new MinorAllocTest(new int[] { 101, 102, 104, 108, 111, 132, 133, 134 }, 132, 100, 1000, 135),
+        new MinorAllocTest(new int[] { 101, 102, 104, 108, 111, 132, 133, 134, 140 }, 132, 100, 1000, 135),
         new MinorAllocTest(new int[] { 100, 101, 102, 103, 104, 105, 106, 107 }, 102, 100, 1000, 108),
         new MinorAllocTest(new int[] { 100, 101, 102, 103, 104, 105, 106, 107, 200 }, 102, 100, 1000, 108),
 
@@ -48,9 +48,9 @@ public class MinorNumberAllocTest
         new MinorAllocTest(new int[] { 99, 100, 101, 102, 103, 104, 105, 1001, 1002 }, 135, 100, 1000, 135),
 
         // Range search - Test free minor number at higher numbers
-        new MinorAllocTest(new int[] { 70, 108, 111, 132, 133, 134, 135, 1001, 1002 }, 132, 135, 1000, 136),
-        new MinorAllocTest(new int[] { 70, 108, 111, 132, 133, 134, 135, 140, 1001, 1002 }, 132, 135, 1000, 136),
-        new MinorAllocTest(new int[] { 70, 80, 108, 111, 132, 133, 134, 1050 }, 132, 132, 1000, 135),
+        new MinorAllocTest(new int[] { 70, 108, 111, 132, 133, 134, 135, 1001, 1002 }, 132, 100, 1000, 136),
+        new MinorAllocTest(new int[] { 70, 108, 111, 132, 133, 134, 135, 140, 1001, 1002 }, 132, 100, 1000, 136),
+        new MinorAllocTest(new int[] { 70, 80, 108, 111, 132, 133, 134, 1050 }, 132, 100, 1000, 135),
         new MinorAllocTest(new int[] { 0, 50, 102, 103, 104, 105, 106, 107, 120, 1080 }, 102, 100, 1000, 108),
         new MinorAllocTest(new int[] { 0, 50, 102, 103, 104, 105, 106, 107, 1080 }, 102, 100, 1000, 108),
 
