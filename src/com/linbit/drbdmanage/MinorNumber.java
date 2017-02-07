@@ -59,7 +59,7 @@ public class MinorNumber implements Comparable<MinorNumber>
         {
             try
             {
-                if (value == ((TcpPortNumber) other).value)
+                if (value == ((MinorNumber) other).value)
                 {
                     result = true;
                 }
