@@ -21,7 +21,7 @@ public class TcpPortNumberAlloc
      * @return Free (unoccupied) TCP port number within the specified range
      * @throws ExhaustedPoolException If all TCP port numbers within the specified range are occupied
      */
-    public TcpPortNumber getFreePortNumber(
+    public static TcpPortNumber getFreePortNumber(
         int[] occupied,
         TcpPortNumber minPortNr,
         TcpPortNumber maxPortNr
