@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.storage;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Handles allocation and deallocation of backing storage for DRBD devices
@@ -82,6 +83,14 @@ public interface StorageDriver
      * @return Map of key/value strings describing the driver's characteristics
      */
     Map<String, String> getTraits();
+
+    /**
+     * Returns a set of this driver's configuration keys
+     * 
+     * @return Set of key strings describing the configuration keys accepted by the
+     *     setConfiguration() method
+     */
+    Set<String> getConfigurationKeys();
 
     /**
      * Sets the driver's configuration options
