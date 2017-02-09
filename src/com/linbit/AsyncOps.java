@@ -21,9 +21,17 @@ public class AsyncOps
     }
 
     public void await()
+        throws TimeoutException
     {
         try
         {
+            if (syncPoint.getCount() > 0)
+            {
+                throw new TimeoutException(
+                    "The thread waiting for the completion of asynchronously running " +
+                    "operations was interrupted before those operations were completed."
+                );
+            }
             syncPoint.await();
         }
         catch (InterruptedException intrExc)
@@ -35,6 +43,7 @@ public class AsyncOps
     }
 
     public void await(long timeout)
+        throws TimeoutException
     {
         try
         {
@@ -42,10 +51,26 @@ public class AsyncOps
         }
         catch (InterruptedException intrExc)
         {
+            if (syncPoint.getCount() > 0)
+            {
+                genIntrException();
+            }
             // No-op
-            // Allow intentional interruption to continue the
-            // waiting thread immediately
+            // Thread was interrupted, but the async operations completed
+            // in the meantime
         }
+        if (syncPoint.getCount() > 0)
+        {
+            genIntrException();
+        }
+    }
+
+    private void genIntrException() throws TimeoutException
+    {
+       throw new TimeoutException(
+            "The timeout for the completion of asynchronously running operations " +
+            "was exceeded before those operations were completed."
+        );
     }
 
     public static class Builder
