@@ -14,7 +14,7 @@ import com.linbit.ValueOutOfRangeException;
 public class MinorNumberAlloc
 {
     /**
-     * Retrieves a free (unused) minor number
+     * Allocates a free (unused) minor number
      *
      * @param occupied List of unique occupied minor numbers sorted in ascending order
      * @param minorOffset The start value for finding free minor numbers. The method will

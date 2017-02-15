@@ -13,7 +13,7 @@ import com.linbit.ValueOutOfRangeException;
 public class TcpPortNumberAlloc
 {
     /**
-     * Retrieves a free (unused) TCP port number
+     * Allocates a free (unused) TCP port number
      *
      * @param occupied List of unique occupied TCP port numbers sorted in ascending order
      * @param minPortNr Lower bound of the port number range
