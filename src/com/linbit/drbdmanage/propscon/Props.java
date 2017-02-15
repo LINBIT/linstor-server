@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.propscon;
 
+import com.linbit.drbdmanage.security.AccessDeniedException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -18,16 +19,16 @@ public interface Props
         throws InvalidKeyException;
 
     public String setProp(String key, String value)
-        throws InvalidKeyException, InvalidValueException;
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException;
     public String setProp(String key, String value, String namespace)
-        throws InvalidKeyException, InvalidValueException;
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException;
 
     public String removeProp(String key)
-        throws InvalidKeyException;
+        throws InvalidKeyException, AccessDeniedException;
     public String removeProp(String key, String namespace)
-        throws InvalidKeyException;
+        throws InvalidKeyException, AccessDeniedException;
 
-    public void clear();
+    public void clear() throws AccessDeniedException;
 
     public int size();
     public boolean isEmpty();
@@ -44,5 +45,5 @@ public interface Props
     public Iterator<String> valuesIterator();
 
     public Props getNamespace(String namespace)
-         throws InvalidKeyException;
+        throws InvalidKeyException;
 }
