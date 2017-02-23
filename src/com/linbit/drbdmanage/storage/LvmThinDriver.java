@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.storage;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -81,6 +82,13 @@ public class LvmThinDriver implements StorageDriver
     @Override
     public void setConfiguration(Map<String, String> config)
         throws StorageException
+    {
+        // TODO: Implement
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public Set<String> getConfigurationKeys()
     {
         // TODO: Implement
         throw new UnsupportedOperationException("Not supported yet.");
