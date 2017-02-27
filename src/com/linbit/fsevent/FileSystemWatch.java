@@ -1,5 +1,6 @@
 package com.linbit.fsevent;
 
+import com.linbit.ErrorCheck;
 import com.linbit.NegativeTimeException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
@@ -608,14 +609,8 @@ public class FileSystemWatch extends Thread
 
         Entry(Path pathSpec, Event eventSpec)
         {
-            if (pathSpec == null || eventSpec == null)
-            {
-                throw new ImplementationError(
-                    "Attempted to construct an instance of " + FileSystemWatch.Entry.class.getName() +
-                    " with a null argument",
-                    new NullPointerException()
-                );
-            }
+            ErrorCheck.ctorNotNull(Entry.class, Path.class, pathSpec);
+            ErrorCheck.ctorNotNull(Entry.class, Event.class, eventSpec);
 
             eventId = FileSystemWatch.nextEventId();
             watchFile = pathSpec.normalize();
@@ -665,14 +660,7 @@ public class FileSystemWatch extends Thread
         public FileEntry(Path pathSpec, Event eventSpec, FileObserver observer, boolean autoRemove)
         {
             super(pathSpec, eventSpec);
-            if (observer == null)
-            {
-                throw new ImplementationError(
-                    "Attempted to construct an instance of " + FileSystemWatch.FileEntry.class.getName() +
-                    " with a null argument",
-                    new NullPointerException()
-                );
-            }
+            ErrorCheck.ctorNotNull(FileEntry.class, FileObserver.class, observer);
             fObserver = observer;
             remove = autoRemove;
         }
@@ -694,14 +682,7 @@ public class FileSystemWatch extends Thread
         public DirectoryEntry(Path pathSpec, Event eventSpec, DirectoryObserver observer)
         {
             super(pathSpec, eventSpec);
-            if (observer == null)
-            {
-                throw new ImplementationError(
-                    "Attempted to construct an instance of " + FileSystemWatch.DirectoryEntry.class.getName() +
-                    " with a null argument",
-                    new NullPointerException()
-                );
-            }
+            ErrorCheck.ctorNotNull(DirectoryEntry.class, DirectoryObserver.class, observer);
             dObserver = observer;
         }
     }

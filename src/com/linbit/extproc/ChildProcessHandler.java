@@ -3,6 +3,7 @@ package com.linbit.extproc;
 import com.linbit.ImplementationError;
 import com.linbit.NegativeTimeException;
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ErrorCheck;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.timer.GenericTimer;
 import com.linbit.timer.Action;
@@ -46,28 +47,14 @@ public class ChildProcessHandler
     public ChildProcessHandler(GenericTimer<String, Action<String>> timer)
     {
         childProcess = null;
-        if (timer == null)
-        {
-            throw new ImplementationError(
-                ChildProcessHandler.class.getName() +
-                ": Attempted to construct instance with timer == null",
-                new NullPointerException()
-            );
-        }
+        ErrorCheck.ctorNotNull(ChildProcessHandler.class, GenericTimer.class, timer);
         timeoutScheduler = timer;
     }
 
     public ChildProcessHandler(Process child, GenericTimer<String, Action<String>> timer)
     {
         this(timer);
-        if (child == null)
-        {
-            throw new ImplementationError(
-                ChildProcessHandler.class.getName() +
-                ": Attempted to construct instance with child == null",
-                new NullPointerException()
-            );
-        }
+        ErrorCheck.ctorNotNull(ChildProcessHandler.class, Process.class, child);
         childProcess = child;
     }
 
