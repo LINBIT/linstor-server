@@ -1,6 +1,6 @@
 package com.linbit.drbdmanage;
 
-import com.linbit.ImplementationError;
+import com.linbit.ErrorCheck;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -38,13 +38,7 @@ public class ResourceDefinitionData implements ResourceDefinition
         ResourceName resName
     )
     {
-        if (resName == null)
-        {
-            throw new ImplementationError(
-                "Attempt to construct an instance with a null argument",
-                new NullPointerException()
-            );
-        }
+        ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceName.class, resName);
         objId = UUID.randomUUID();
         resourceName = resName;
         connectionMap = new TreeMap<>();

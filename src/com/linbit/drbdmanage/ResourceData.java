@@ -1,7 +1,6 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -33,13 +32,8 @@ public class ResourceData implements Resource
 
     private ResourceData(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef)
     {
-        if (resDfnRef == null || nodeRef == null)
-        {
-            throw new ImplementationError(
-                "Attempt to construct instance with a null argument",
-                new NullPointerException()
-            );
-        }
+        ErrorCheck.ctorNotNull(ResourceData.class, ResourceDefinition.class, resDfnRef);
+        ErrorCheck.ctorNotNull(ResourceData.class, Node.class, nodeRef);
         resourceDfn = resDfnRef;
         assgNode = nodeRef;
 
