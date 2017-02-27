@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.propscon;
 
+import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import java.io.BufferedReader;
@@ -80,13 +81,7 @@ public class PropsContainer implements Props
         {
             // Create sub PropsContainer
 
-            if (key == null)
-            {
-                throw new ImplementationError(
-                    "Attempt to create a new instance with a null argument",
-                    new NullPointerException()
-                );
-            }
+            ErrorCheck.ctorNotNull(PropsContainer.class, String.class, key);
 
             checkKey(key);
             containerKey = key;

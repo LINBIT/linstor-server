@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.propscon;
 
+import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 
 /**
@@ -16,13 +17,7 @@ public class SeqSerialGenerator implements SerialGenerator
 
     SeqSerialGenerator(SerialAccessor acc)
     {
-        if (acc == null)
-        {
-            throw new ImplementationError(
-                "Attempted to construct an instance with a null argument",
-                new NullPointerException()
-            );
-        }
+        ErrorCheck.ctorNotNull(SeqSerialGenerator.class, SerialAccessor.class, acc);
         accessor = acc;
         changeOpen = false;
         serialMutex = new Object();
