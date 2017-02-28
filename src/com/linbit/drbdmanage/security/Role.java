@@ -1,5 +1,8 @@
 package com.linbit.drbdmanage.security;
 
+import com.linbit.ImplementationError;
+import com.linbit.drbdmanage.InvalidNameException;
+
 /**
  * Security role
  *
@@ -12,6 +15,23 @@ public final class Role
 
     // Set of privileges assigned to this role
     public final PrivilegeSet privileges;
+
+    static final Role SYSTEM_ROLE;
+
+    static
+    {
+        try
+        {
+            SYSTEM_ROLE = new Role(new RoleName("SYSTEM"));
+        }
+        catch (InvalidNameException nameExc)
+        {
+            throw new ImplementationError(
+                "The name constant of the system role is invalid",
+                nameExc
+            );
+        }
+    }
 
     Role(RoleName roleName)
     {

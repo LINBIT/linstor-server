@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.security;
 
+import com.linbit.ImplementationError;
+import com.linbit.drbdmanage.InvalidNameException;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -16,6 +18,23 @@ public final class SecurityType
 
     // Access control rules for this type
     private final Map<SecTypeName, AccessType> rules;
+
+    static final SecurityType SYSTEM_TYPE;
+
+    static
+    {
+        try
+        {
+            SYSTEM_TYPE = new SecurityType(new SecTypeName("SYSTEM"));
+        }
+        catch (InvalidNameException nameExc)
+        {
+            throw new ImplementationError(
+                "The name constant of the system security type/domain is invalid",
+                nameExc
+            );
+        }
+    }
 
     SecurityType(SecTypeName typeName)
     {
@@ -88,5 +107,21 @@ public final class SecurityType
     public final AccessType queryAccess(SecurityType domain)
     {
         return rules.get(domain.name);
+    }
+
+    public final void addEntry(AccessContext context, SecurityType domain, AccessType grantedAccess)
+        throws AccessDeniedException
+    {
+        PrivilegeSet privs = context.getEffectivePrivs();
+        privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
+        rules.put(domain.name, grantedAccess);
+    }
+
+    public final void delEntry(AccessContext context, SecurityType domain)
+        throws AccessDeniedException
+    {
+        PrivilegeSet privs = context.getEffectivePrivs();
+        privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
+        rules.remove(domain.name);
     }
 }
