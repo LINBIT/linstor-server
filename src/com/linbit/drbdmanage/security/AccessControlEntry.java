@@ -10,7 +10,7 @@ public final class AccessControlEntry
     public final Role subjectRole;
     public final AccessType access;
 
-    private AccessControlEntry(Role subjRole, AccessType acc)
+    AccessControlEntry(Role subjRole, AccessType acc)
     {
         subjectRole = subjRole;
         access = acc;
