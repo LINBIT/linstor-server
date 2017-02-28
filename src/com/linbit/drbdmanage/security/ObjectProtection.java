@@ -29,6 +29,7 @@ public final class ObjectProtection
     // Security type for the object
     private final SecurityType objectType;
 
+    // FIXME: Test constructor; probably unnecessary
     private ObjectProtection(Identity creator, Role owner)
     {
         objectCreator = creator;
@@ -48,7 +49,7 @@ public final class ObjectProtection
     }
 
     /**
-     * Creates an ObjectProtection instance for an newly created object
+     * Creates an ObjectProtection instance for a newly created object
      *
      * @param accCtx The object creator's access context
      */
@@ -75,5 +76,25 @@ public final class ObjectProtection
     {
         objectType.requireAccess(context, requested);
         objectAcl.requireAccess(context, requested);
+    }
+
+    public Identity getCreator()
+    {
+        return objectCreator;
+    }
+
+    public Role getOwner()
+    {
+        return objectOwner;
+    }
+
+    public AccessControlList getAcl()
+    {
+        return objectAcl;
+    }
+
+    public SecurityType getSecurityType()
+    {
+        return objectType;
     }
 }
