@@ -58,4 +58,29 @@ public final class AccessContext implements Cloneable
         }
         return clonedCtx;
     }
+
+    public Identity getIdentity()
+    {
+        return subjectId;
+    }
+
+    public Role getRole()
+    {
+        return subjectRole;
+    }
+
+    public SecurityType getDomain()
+    {
+        return subjectDomain;
+    }
+
+    public PrivilegeSet getLimitPrivs()
+    {
+        return privLimit;
+    }
+
+    public PrivilegeSet getEffectivePrivs()
+    {
+        return privEffective;
+    }
 }
