@@ -87,6 +87,19 @@ public final class AccessControlList
         return access;
     }
 
+    final void addEntry(Role entryRole, AccessType grantedAccess)
+        throws AccessDeniedException
+    {
+        AccessControlEntry entry = new AccessControlEntry(entryRole, grantedAccess);
+        acl.put(entryRole.name, entry);
+    }
+
+    final void delEntry(Role entryRole)
+        throws AccessDeniedException
+    {
+        acl.remove(entryRole.name);
+    }
+
     private boolean hasAccessPrivilege(AccessContext context, AccessType requested)
     {
         PrivilegeSet privileges = context.subjectRole.privileges;
