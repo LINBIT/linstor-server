@@ -12,18 +12,31 @@ import java.io.IOException;
  */
 public final class Initializer
 {
-    private Identity        SYSTEM_ID;
+    static final Identity   SYSTEM_ID;
     private Role            SYSTEM_ROLE;
     private SecurityType    SYSTEM_SEC_DOMAIN;
     private AccessContext   SYSTEM_CTX;
 
-    public Initializer()
+    static
     {
         try
         {
             IdentityName sysIdName = new IdentityName("SYSTEM");
             SYSTEM_ID = new Identity(sysIdName);
+        }
+        catch (InvalidNameException nameExc)
+        {
+            throw new ImplementationError(
+                "The name constant of one of the system's security objects contains an invalid name",
+                nameExc
+            );
+        }
+    };
 
+    public Initializer()
+    {
+        try
+        {
             RoleName sysRoleName = new RoleName("SYSTEM");
             SYSTEM_ROLE = new Role(sysRoleName);
 
