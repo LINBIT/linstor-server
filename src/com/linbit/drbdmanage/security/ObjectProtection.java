@@ -27,7 +27,7 @@ public final class ObjectProtection
     private final AccessControlList objectAcl;
 
     // Security type for the object
-    private final SecurityType objectType;
+    private SecurityType objectType;
 
     // FIXME: Test constructor; probably unnecessary
     private ObjectProtection(Identity creator, Role owner)
@@ -83,9 +83,25 @@ public final class ObjectProtection
         return objectCreator;
     }
 
+    public void resetCreator(AccessContext context)
+        throws AccessDeniedException
+    {
+        PrivilegeSet privs = context.getEffectivePrivs();
+        privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
+        objectCreator = Identity.SYSTEM_ID;
+    }
+
     public Role getOwner()
     {
         return objectOwner;
+    }
+
+    public void setOwner(AccessContext context, Role newOwner)
+        throws AccessDeniedException
+    {
+        PrivilegeSet privs = context.getEffectivePrivs();
+        privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
+        objectOwner = newOwner;
     }
 
     public AccessControlList getAcl()
@@ -96,5 +112,53 @@ public final class ObjectProtection
     public SecurityType getSecurityType()
     {
         return objectType;
+    }
+
+    public void setSecurityType(AccessContext context, SecurityType newSecType)
+        throws AccessDeniedException
+    {
+        PrivilegeSet privs = context.getEffectivePrivs();
+        privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
+        objectType = newSecType;
+    }
+
+    public void addAclEntry(AccessContext context, Role entryRole, AccessType grantedAccess)
+        throws AccessDeniedException
+    {
+        objectType.requireAccess(context, AccessType.CONTROL);
+        if (context.subjectRole != objectOwner)
+        {
+            objectAcl.requireAccess(context, AccessType.CONTROL);
+            // Only object owners or privileged users may change the access controls for the
+            // role that is being used to change the entry
+            if (context.subjectRole == entryRole &&
+                !context.getEffectivePrivs().hasPrivileges(Privilege.PRIV_OBJ_CONTROL)
+            )
+            {
+                throw new AccessDeniedException(
+                    "Changing the access control entry for the role performing the change was denied"
+                );
+            }
+        }
+        objectAcl.addEntry(entryRole, grantedAccess);
+    }
+
+    public void delAclEntry(AccessContext context, Role entryRole)
+        throws AccessDeniedException
+    {
+        objectType.requireAccess(context, AccessType.CONTROL);
+        if (context.subjectRole != objectOwner)
+        {
+            objectAcl.requireAccess(context, AccessType.CONTROL);
+            if (context.subjectRole == entryRole &&
+                !context.getEffectivePrivs().hasPrivileges(Privilege.PRIV_OBJ_CONTROL)
+            )
+            {
+                throw new AccessDeniedException(
+                    "Deleting the access control entry for the role performing the change was denied"
+                );
+            }
+        }
+        objectAcl.delEntry(entryRole);
     }
 }
