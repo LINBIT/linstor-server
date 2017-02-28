@@ -16,6 +16,16 @@ public abstract class GenericName implements Comparable<GenericName>
         displayValue = genName;
     }
 
+    public String getName()
+    {
+        return value;
+    }
+
+    public String getDisplayName()
+    {
+        return displayValue;
+    }
+
     @Override
     public int compareTo(GenericName other)
     {
