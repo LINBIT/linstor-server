@@ -100,7 +100,7 @@ public final class ObjectProtection
         throws AccessDeniedException
     {
         PrivilegeSet privs = context.getEffectivePrivs();
-        privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
+        privs.requirePrivileges(Privilege.PRIV_OBJ_OWNER);
         objectOwner = newOwner;
     }
 
