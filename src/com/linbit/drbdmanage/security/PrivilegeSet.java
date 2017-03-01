@@ -106,7 +106,7 @@ public final class PrivilegeSet implements Cloneable
         else
         {
             throw new ImplementationError(
-                "Attempt to modify the privileges in an immutable privilege set",
+                "Attempt to enable privileges in the limit privilege set",
                 null
             );
         }
