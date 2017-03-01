@@ -58,7 +58,8 @@ public final class PrivilegeSet implements Cloneable
     public boolean hasPrivileges(Privilege... privList)
     {
         long privMask = getPrivMask(privList);
-        return (privileges & privMask) == privMask;
+        long limitMask = limitPrivs != null ? limitPrivs.privileges : ~(0L);
+        return (privileges & limitMask & privMask) == privMask;
     }
 
     /**
@@ -70,7 +71,8 @@ public final class PrivilegeSet implements Cloneable
     public boolean hasSomePrivilege(Privilege... privList)
     {
         long privMask = getPrivMask(privList);
-        return (privileges & privMask) != 0L;
+        long limitMask = limitPrivs != null ? limitPrivs.privileges : ~(0L);
+        return (privileges & limitMask & privMask) != 0L;
     }
 
     /**
@@ -160,6 +162,7 @@ public final class PrivilegeSet implements Cloneable
     {
         PrivilegeSet clonedPrivSet = clone();
         clonedPrivSet.limitPrivs = limit;
+        clonedPrivSet.privileges &= clonedPrivSet.limitPrivs.privileges;
         return clonedPrivSet;
     }
 }
