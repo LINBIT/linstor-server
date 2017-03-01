@@ -95,6 +95,7 @@ public class FileSystemWatch extends Thread
             if (watchThread == null)
             {
                 watchThread = Thread.currentThread();
+                watchThread.setName("FileEventService");
             }
         }
         List<FileEntry> fileObs = new LinkedList<>();

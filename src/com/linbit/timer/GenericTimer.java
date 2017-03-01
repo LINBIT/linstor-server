@@ -16,6 +16,7 @@ import java.util.TreeMap;
  */
 public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
 {
+    private static final String DEFAULT_NAME = "DefaultTimer";
     private static final boolean ENABLE_DEBUG = false;
 
     // Maps interrupt time value to action id & action object
@@ -30,6 +31,8 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
 
     private ActionScheduler<K, V> sched;
 
+    private String timerName;
+
     /**
      * Constructs a new timer instance
      */
@@ -38,6 +41,40 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
         timerMap = new TreeMap<>();
         actionMap = new TreeMap<>();
         sched = null;
+        timerName = DEFAULT_NAME;
+    }
+
+    /**
+     * Sets the name of this timer and its action scheduler thread
+     *
+     * @param name The name for this timer and its action scheduler thread
+     */
+    public void setTimerName(String name)
+    {
+        if (name != null)
+        {
+            synchronized (this)
+            {
+                timerName = name;
+                if (sched != null)
+                {
+                    sched.setName(name);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the name of this timer and its action scheduler thread
+     */
+    public String getTimerName()
+    {
+        String name;
+        synchronized (this)
+        {
+            name = timerName;
+        }
+        return name;
     }
 
     /**
@@ -300,6 +337,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
                     debugOut(GenericTimer.class, "start(): Starting new ActionScheduler thread");
                 }
                 sched = new ActionScheduler<>(this);
+                sched.setName(timerName);
                 sched.start();
             }
             else
