@@ -26,6 +26,9 @@ public class FileSystemWatchTest
 {
     public static final String TEST_PATH = "test-data";
 
+    // Test delays for racing threads in milliseconds
+    public static final long TEST_DELAY = 1000L;
+
     private FileSystemWatch fsw;
 
     public FileSystemWatchTest()
@@ -52,7 +55,10 @@ public class FileSystemWatchTest
         File targetFile = new File(filePath);
         if (!targetFile.delete())
         {
-            fail(String.format("Test failed, failed to delete file '%s'", filePath));
+            if (targetFile.exists())
+            {
+                fail(String.format("Test failed, failed to delete file '%s'", filePath));
+            }
         }
     }
 
@@ -136,6 +142,7 @@ public class FileSystemWatchTest
     public void singleFileCreateTest() throws Exception
     {
         String testFile = testFilePath("testfile.txt");
+        deleteFile(testFile);
 
         FileEventReceiver rec = new FileEventReceiver();
         rec.addExpected(testFile);
@@ -147,7 +154,7 @@ public class FileSystemWatchTest
         // Delete file; should not trigger the FileEventReceiver
         deleteFile(testFile);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         fileEventCheck(rec);
     }
@@ -172,7 +179,7 @@ public class FileSystemWatchTest
         // Delete file; should trigger the FileEventReceiver
         deleteFile(testFile);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         fileEventCheck(rec);
     }
@@ -195,7 +202,7 @@ public class FileSystemWatchTest
         // Modify the file; should trigger the FileEventReceiver
         modifyFile(testFile);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         fileEventCheck(rec);
 
@@ -213,6 +220,7 @@ public class FileSystemWatchTest
     public void singleFileMultiEntriesTest() throws Exception
     {
         String testFile = testFilePath("testfile");
+        deleteFile(testFile);
 
         FileMultiEventReceiver mRecOne = new FileMultiEventReceiver();
         FileMultiEventReceiver mRecTwo = new FileMultiEventReceiver();
@@ -228,7 +236,7 @@ public class FileSystemWatchTest
 
         createFile(testFile);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         if (mRecOne.isFailed())
         {
@@ -242,7 +250,7 @@ public class FileSystemWatchTest
         deleteFile(testFile);
         createFile(testFile);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         if (mRecOne.isFailed())
         {
@@ -271,6 +279,9 @@ public class FileSystemWatchTest
         String createFileOne = testFilePath("file1");
         String createFileTwo = testFilePath("file2");
 
+        deleteFile(createFileOne);
+        deleteFile(createFileTwo);
+
         FileEntryGroupBuilder gBuilder = new FileEntryGroupBuilder();
         gBuilder.newEntry(createFileOne, FileSystemWatch.Event.CREATE);
         gBuilder.newEntry(createFileTwo, FileSystemWatch.Event.CREATE);
@@ -285,7 +296,7 @@ public class FileSystemWatchTest
         }
         createFile(createFileTwo);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         entryGroupCheck(gRec, entryGroup);
 
@@ -316,14 +327,14 @@ public class FileSystemWatchTest
         FileEntryGroup entryGroup = gBuilder.create(fsw, gRec);
 
         deleteFile(deleteFileOne);
-        Delay.sleep(200L);
+        Delay.sleep(TEST_DELAY);
         if (gRec.isFinished(entryGroup))
         {
             fail("EntryGroupObserver triggered before all conditions are met");
         }
         deleteFile(deleteFileTwo);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         entryGroupCheck(gRec, entryGroup);
     }
@@ -339,6 +350,11 @@ public class FileSystemWatchTest
         String createFileTwo = testFilePath("file2");
         String deleteFileThree = testFilePath("file3");
         String deleteFileFour = testFilePath("file4");
+
+        deleteFile(createFileOne);
+        deleteFile(createFileTwo);
+        deleteFile(deleteFileThree);
+        deleteFile(deleteFileFour);
 
         // Set up test
         // Create files for the file deletion test
@@ -357,7 +373,7 @@ public class FileSystemWatchTest
         deleteFile(deleteFileThree);
         createFile(createFileOne);
 
-        Delay.sleep(200L);
+        Delay.sleep(TEST_DELAY);
         if (gRec.isFinished(entryGroup))
         {
             fail("EntryGroupObserver triggered before all conditions are met");
@@ -366,7 +382,7 @@ public class FileSystemWatchTest
         createFile(createFileTwo);
         deleteFile(deleteFileFour);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         entryGroupCheck(gRec, entryGroup);
 
@@ -395,7 +411,7 @@ public class FileSystemWatchTest
         // Delete file; should not trigger the FileEventReceiver
         deleteFile(testFile);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         fileEventCheck(rec);
     }
@@ -409,12 +425,14 @@ public class FileSystemWatchTest
     {
         String testFile = testFilePath("testfile.txt");
 
+        deleteFile(testFile);
+
         FileEventReceiver rec = new FileEventReceiver();
         rec.addExpected(testFile);
 
         FileEntry entry = fsw.newFileEntry(testFile, FileSystemWatch.Event.DELETE, rec);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         fileEventCheck(rec);
     }
@@ -431,6 +449,11 @@ public class FileSystemWatchTest
         String createFileTwo = testFilePath("file2");
         String deleteFileThree = testFilePath("file3");
         String deleteFileFour = testFilePath("file4");
+
+        deleteFile(createFileOne);
+        deleteFile(createFileTwo);
+        deleteFile(deleteFileThree);
+        deleteFile(deleteFileFour);
 
         // Set up test
         // Create files for the file deletion test
@@ -449,7 +472,7 @@ public class FileSystemWatchTest
         deleteFile(deleteFileThree);
         createFile(createFileOne);
 
-        Delay.sleep(200L);
+        Delay.sleep(TEST_DELAY);
         if (gRec.isFinished(entryGroup))
         {
             fail("EntryGroupObserver triggered before all conditions are met");
@@ -477,7 +500,7 @@ public class FileSystemWatchTest
             }
         ).start();
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         if (!flag.get())
         {
@@ -502,6 +525,12 @@ public class FileSystemWatchTest
         String deleteFileThree = testFilePath("file3");
         String deleteFileFour = testFilePath("file4");
 
+        // Clean up
+        deleteFile(createFileOne);
+        deleteFile(createFileTwo);
+        deleteFile(deleteFileThree);
+        deleteFile(deleteFileFour);
+
         // Set up test
         // Create files for the file deletion test
         createFile(deleteFileThree);
@@ -526,6 +555,7 @@ public class FileSystemWatchTest
                     try
                     {
                         entryGroup.waitGroup();
+                        System.out.println("multiFileConcurrentTest(): waitGroup() returned");
                         flag.set(true);
                     }
                     catch (InterruptedException ignored)
@@ -538,7 +568,7 @@ public class FileSystemWatchTest
         deleteFile(deleteFileThree);
         createFile(createFileOne);
 
-        Delay.sleep(200L);
+        Delay.sleep(TEST_DELAY);
         if (gRec.isFinished(entryGroup))
         {
             fail("EntryGroupObserver triggered before all conditions are met");
@@ -551,7 +581,7 @@ public class FileSystemWatchTest
         createFile(createFileTwo);
         deleteFile(deleteFileFour);
 
-        Delay.sleep(500L);
+        Delay.sleep(TEST_DELAY);
 
         if (!flag.get())
         {
