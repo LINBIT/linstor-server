@@ -1,6 +1,8 @@
 package com.linbit.drbdmanage.security;
 
 import com.linbit.ImplementationError;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Set of privileges
@@ -114,6 +116,33 @@ public final class PrivilegeSet implements Cloneable
                 null
             );
         }
+    }
+
+    public List<Privilege> getEnabledPrivileges()
+    {
+        List<Privilege> privList = new LinkedList<>();
+        long enabledPrivs = limitPrivs == null ? privileges : privileges & limitPrivs.privileges;
+        for (Privilege priv : Privilege.PRIVILEGE_LIST)
+        {
+            if ((enabledPrivs & priv.id) == priv.id)
+            {
+                privList.add(priv);
+            }
+        }
+        return privList;
+    }
+
+    public Privilege[] toArray()
+    {
+        List<Privilege> privList = getEnabledPrivileges();
+        Privilege[] privArray = new Privilege[privList.size()];
+        int index = 0;
+        for (Privilege priv : privList)
+        {
+            privArray[index] = priv;
+            ++index;
+        }
+        return privArray;
     }
 
     private long getPrivMask(Privilege... privList)
