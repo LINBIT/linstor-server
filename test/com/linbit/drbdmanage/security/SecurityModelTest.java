@@ -53,8 +53,7 @@ public class SecurityModelTest
         publicCtx = sysCtx.impersonate(
             new Identity(new IdentityName("PUBLIC")),
             new Role(new RoleName("PUBLIC")),
-            new SecurityType(new SecTypeName("PUBLIC")),
-            new PrivilegeSet()
+            new SecurityType(new SecTypeName("PUBLIC"))
         );
 
         userType = new SecurityType(new SecTypeName("User"));
@@ -63,8 +62,7 @@ public class SecurityModelTest
         creatorCtx = sysCtx.impersonate(
             new Identity(new IdentityName("ObjCreator")),
             new Role(new RoleName("ObjOwner")),
-            userType,
-            new PrivilegeSet()
+            userType
         );
 
         buddyId = new Identity(new IdentityName("Buddy"));
@@ -80,7 +78,7 @@ public class SecurityModelTest
         throws AccessDeniedException
     {
         AccessContext buddyCtx = sysCtx.impersonate(
-            buddyId, buddyRole, userType, new PrivilegeSet()
+            buddyId, buddyRole, userType
         );
         ObjectProtection prot = new ObjectProtection(creatorCtx);
         prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
@@ -104,7 +102,7 @@ public class SecurityModelTest
 
         // Impersonate the bandit role
         banditCtx = sysCtx.impersonate(
-            banditId, banditRole, userType, new PrivilegeSet()
+            banditId, banditRole, userType
         );
         // Attempt to access the object as bandit
         }
@@ -132,7 +130,7 @@ public class SecurityModelTest
             // Impersonate the buddy role, but in the 'public' domain instead of the 'user' domain
             // that the object protection was created in
             banditCtx = sysCtx.impersonate(
-                banditId, buddyRole, publicCtx.getDomain(), new PrivilegeSet()
+                banditId, buddyRole, publicCtx.getDomain()
             );
         }
         catch (AccessDeniedException deniedExc)
@@ -150,7 +148,7 @@ public class SecurityModelTest
         throws AccessDeniedException
     {
         AccessContext buddyCtx = sysCtx.impersonate(
-            buddyId, buddyRole, creatorCtx.getDomain(), new PrivilegeSet()
+            buddyId, buddyRole, creatorCtx.getDomain()
         );
         ObjectProtection prot = new ObjectProtection(creatorCtx);
         // Authorize buddy to change access control entries
@@ -175,7 +173,7 @@ public class SecurityModelTest
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
-                banditId, banditRole, creatorCtx.getDomain(), new PrivilegeSet()
+                banditId, banditRole, creatorCtx.getDomain()
             );
         }
         catch (AccessDeniedException deniedExc)
@@ -218,7 +216,7 @@ public class SecurityModelTest
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
-                banditId, banditRole, creatorCtx.getDomain(), new PrivilegeSet()
+                banditId, banditRole, creatorCtx.getDomain()
             );
 
         }
@@ -261,7 +259,7 @@ public class SecurityModelTest
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
-                banditId, banditRole, creatorCtx.getDomain(), new PrivilegeSet()
+                banditId, banditRole, creatorCtx.getDomain()
             );
         }
         catch (AccessDeniedException deniedExc)
@@ -318,13 +316,7 @@ public class SecurityModelTest
         {
             prot = new ObjectProtection(creatorCtx);
             buddyCtx = sysCtx.impersonate(
-                buddyId, buddyRole, userType,
-                new PrivilegeSet(
-                    new Privilege[]
-                    {
-                        Privilege.PRIV_OBJ_OWNER
-                    }
-                )
+                buddyId, buddyRole, userType, Privilege.PRIV_OBJ_OWNER
             );
         }
         catch (AccessDeniedException deniedExc)
@@ -368,13 +360,7 @@ public class SecurityModelTest
         {
             prot = new ObjectProtection(creatorCtx);
             buddyCtx = sysCtx.impersonate(
-                buddyId, buddyRole, userType,
-                new PrivilegeSet(
-                    new Privilege[]
-                    {
-                        Privilege.PRIV_OBJ_OWNER
-                    }
-                )
+                buddyId, buddyRole, userType, Privilege.PRIV_OBJ_OWNER
             );
         }
         catch (AccessDeniedException deniedExc)
@@ -438,7 +424,7 @@ public class SecurityModelTest
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
-                banditId, banditRole, creatorCtx.getDomain(), new PrivilegeSet()
+                banditId, banditRole, creatorCtx.getDomain()
             );
         }
         catch (AccessDeniedException deniedExc)
@@ -452,6 +438,6 @@ public class SecurityModelTest
     public void testImpersonateDeny()
         throws AccessDeniedException
     {
-        publicCtx.impersonate(Identity.SYSTEM_ID, Role.SYSTEM_ROLE, userType, new PrivilegeSet());
+        publicCtx.impersonate(Identity.SYSTEM_ID, Role.SYSTEM_ROLE, userType);
     }
 }
