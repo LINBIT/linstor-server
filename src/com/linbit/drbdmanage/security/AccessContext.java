@@ -29,12 +29,15 @@ public final class AccessContext implements Cloneable
         Identity subjId,
         Role subjRole,
         SecurityType secDomain,
-        PrivilegeSet privLimitRef
+        Privilege... limitPrivs
     )
         throws AccessDeniedException
     {
         privEffective.requirePrivileges(Privilege.PRIV_SYS_ALL);
-        AccessContext impCtx = new AccessContext(subjId, subjRole, secDomain, privLimitRef);
+        AccessContext impCtx = new AccessContext(
+            subjId, subjRole, secDomain,
+            new PrivilegeSet(limitPrivs)
+        );
         return impCtx;
     }
 
