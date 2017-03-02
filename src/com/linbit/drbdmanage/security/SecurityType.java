@@ -36,6 +36,13 @@ public final class SecurityType
         }
     }
 
+    public SecurityType(AccessContext accCtx, SecTypeName typeName)
+        throws AccessDeniedException
+    {
+        this(typeName);
+        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+    }
+
     SecurityType(SecTypeName typeName)
     {
         name = typeName;

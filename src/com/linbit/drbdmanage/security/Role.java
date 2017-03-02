@@ -38,4 +38,11 @@ public final class Role
         name = roleName;
         privileges = new PrivilegeSet();
     }
+
+    public Role(AccessContext accCtx, RoleName roleName)
+        throws AccessDeniedException
+    {
+        this(roleName);
+        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+    }
 }

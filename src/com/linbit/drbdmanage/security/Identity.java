@@ -34,4 +34,11 @@ public final class Identity
     {
         name = idName;
     }
+
+    public Identity(AccessContext accCtx, IdentityName idName)
+        throws AccessDeniedException
+    {
+        this(idName);
+        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+    }
 }
