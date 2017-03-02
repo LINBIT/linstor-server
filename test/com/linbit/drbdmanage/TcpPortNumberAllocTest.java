@@ -1,9 +1,8 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ValueOutOfRangeException;
 import java.util.Arrays;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -33,11 +32,6 @@ public class TcpPortNumberAllocTest
 
         // Test free number before the last element
         new PortTest(new int[] { 7000, 7001, 7002, 7003, 7004, 7005, 7006, 7007, 7015 }, 7000, 7015, 7008),
-
-        // Range search - Test free number at index 0
-        new PortTest(new int[] { 7002, 7003, 7004, 7005, 7007, 7008, 7012, 7013, 7015 }, 7000, 7015, 7000),
-        new PortTest(new int[] { 7001, 7002, 7003, 7004, 7006, 7008, 7012, 7013, 7015 }, 7000, 7015, 7000),
-        new PortTest(new int[] { 1, 2, 3, 5, 7, 8, 12, 613, 614, 615, 721, 731, 7015 }, 0, 65535, 0),
 
         // Range search - Test free number in the middle
         new PortTest(new int[] { 6999, 7000, 7001, 7002, 7003, 7006, 7007, 7008, 7010, 7011 }, 7000, 7015, 7004),
@@ -105,7 +99,6 @@ public class TcpPortNumberAllocTest
             4000, 4005, 0
         ),
 
-
         // Range search - Test single element range
         new PortTest(new int[] { 9000 }, 9000, 9000, 0),
         new PortTest(new int[] { 8999, 9000, 9001 }, 9000, 9000, 0),
@@ -116,21 +109,12 @@ public class TcpPortNumberAllocTest
     {
     }
 
-    @Before
-    public void setUp()
-    {
-    }
-
-    @After
-    public void tearDown()
-    {
-    }
-
     /**
      * Test of getFreeMinorNumber method, of class TcpPortNumberAlloc.
      */
     @Test
-    public void testGetFreePortNumber() throws Exception
+    public void testGetFreePortNumber()
+        throws ExhaustedPoolException, ValueOutOfRangeException
     {
         for (PortTest curTest : TEST_FREE_NUMBER)
         {
@@ -152,7 +136,8 @@ public class TcpPortNumberAllocTest
     }
 
     @Test
-    public void testExhaustedPool() throws Exception
+    public void testExhaustedPool()
+        throws ValueOutOfRangeException
     {
         for (PortTest curTest : TEST_EXHAUSTED_POOL)
         {
@@ -170,7 +155,7 @@ public class TcpPortNumberAllocTest
                 fail(
                     String.format(
                         "Free number %d allocated from an exhausted pool (pool with not free numbers)",
-                        freeNumber
+                        freeNumber.value
                     )
                 );
             }

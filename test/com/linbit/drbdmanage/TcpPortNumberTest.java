@@ -1,8 +1,6 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ValueOutOfRangeException;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -34,22 +32,12 @@ public class TcpPortNumberTest
     TcpPortNumber testEqual;
 
     public TcpPortNumberTest()
-    {
-    }
-
-    @Before
-    public void setUp()
         throws ValueOutOfRangeException
     {
         refNr = new TcpPortNumber(6799);
         testLess = new TcpPortNumber (230);
         testGreater = new TcpPortNumber (9811);
         testEqual = new TcpPortNumber(6799);
-    }
-
-    @After
-    public void tearDown()
-    {
     }
 
     @Test
@@ -61,7 +49,7 @@ public class TcpPortNumberTest
             try
             {
                 TcpPortNumber tmp = new TcpPortNumber(invalidNr);
-                fail(String.format("Constructor succeeded with minor number = %d", invalidNr));
+                fail(String.format("Constructor succeeded with port number = %d", invalidNr));
             }
             catch (ValueOutOfRangeException expectedExc)
             {
@@ -148,9 +136,6 @@ public class TcpPortNumberTest
         throws ValueOutOfRangeException
     {
         // Hash code generation normally uses multiplication with prime numbers
-        //
-        // Use two different prime numbers to make it unlikely that those two
-        // MinorNumbers generate the same hash.
         TcpPortNumber nrOne = new TcpPortNumber(37750);
         TcpPortNumber nrTwo = new TcpPortNumber(21);
 
