@@ -5,6 +5,8 @@ import com.linbit.ImplementationError;
 import com.linbit.WorkerPool;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
+import com.linbit.drbdmanage.debug.DebugMessageProcessor;
+import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -41,7 +43,7 @@ public class Controller implements Runnable, CoreServices
 {
     public static final String PROGRAM = "drbdmanageNG";
     public static final String MODULE = "Controller";
-    public static final String VERSION = "experimental 2017-03-02_001";
+    public static final String VERSION = "experimental 2017-03-07_001";
 
     public static final int MIN_WORKER_QUEUE_SIZE = 32;
     public static final int MAX_CPU_COUNT = 1024;
@@ -64,6 +66,8 @@ public class Controller implements Runnable, CoreServices
 
     private WorkerPool workers = null;
     private ErrorReporter errorLog = null;
+
+    private TcpConnectorService netComSvc = null;
 
     private boolean shutdownFinished;
     private ObjectProtection shutdownProt;
@@ -173,6 +177,21 @@ public class Controller implements Runnable, CoreServices
         }
         workers = WorkerPool.initialize(workerThreadCount, workerQueueSize, true, "MainWorkerPool");
 
+        logInit("Starting network communications service");
+        try
+        {
+            netComSvc = new TcpConnectorService(
+                this,
+                new DebugMessageProcessor(this)
+            );
+            netComSvc.initialize();
+            netComSvc.start();
+        }
+        catch (IOException ioExc)
+        {
+            errorLog.reportError(ioExc);
+        }
+
         System.out.printf("\n%s\n\n", SCREEN_DIV);
         runTimeInfo();
         System.out.printf("\n%s\n\n", SCREEN_DIV);
@@ -199,6 +218,11 @@ public class Controller implements Runnable, CoreServices
             // Stop the timer event service
             logInfo("Shutting down timer event service");
             timerEventSvc.shutdown();
+            if (netComSvc != null)
+            {
+                logInfo("Shutting down network communication service");
+                netComSvc.shutdown();
+            }
 
             if (workers != null)
             {
