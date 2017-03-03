@@ -3,7 +3,15 @@ package com.linbit.drbdmanage;
 import com.linbit.ImplementationError;
 import com.linbit.WorkerPool;
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.AccessType;
+import com.linbit.drbdmanage.security.Identity;
+import com.linbit.drbdmanage.security.IdentityName;
 import com.linbit.drbdmanage.security.Initializer;
+import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.security.Privilege;
+import com.linbit.drbdmanage.security.PrivilegeSet;
+import com.linbit.drbdmanage.security.SecurityType;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.timer.Action;
 import com.linbit.timer.GenericTimer;
@@ -23,7 +31,7 @@ public class Controller implements Runnable
 {
     public static final String PROGRAM = "drbdmanageNG";
     public static final String MODULE = "Controller";
-    public static final String VERSION = "experimental 2017-02-23_001";
+    public static final String VERSION = "experimental 2017-03-02_001";
 
     public static final int MIN_WORKER_QUEUE_SIZE = 32;
     public static final int MAX_CPU_COUNT = 1024;
@@ -47,6 +55,8 @@ public class Controller implements Runnable
     private WorkerPool workers = null;
     private ErrorReporter errorLog = null;
 
+    private ObjectProtection shutdownProt;
+
     public Controller(AccessContext sysCtxRef, String[] argsRef)
         throws IOException
     {
@@ -69,6 +79,8 @@ public class Controller implements Runnable
         }
 
         cpuCount = Runtime.getRuntime().availableProcessors();
+
+        shutdownProt = new ObjectProtection(sysCtx);
     }
 
     @Override
@@ -84,13 +96,42 @@ public class Controller implements Runnable
             errorLog.reportError(error);
         }
 
-        shutdown();
+        try
+        {
+            AccessContext shutdownCtx = sysCtx.clone();
+            // Just in case that someone removed the access control list entry
+            // for the system's role or changed the security type for shutdown,
+            // override access controls with the system context's privileges
+            shutdownCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_USE, Privilege.PRIV_MAC_OVRD);
+            shutdown(shutdownCtx);
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ImplementationError(
+                "Cannot shutdown() using the system's security context. " +
+                "Suspected removal of privileges from the system context.",
+                null
+            );
+        }
     }
 
     public void debugConsole()
     {
         try
         {
+            AccessContext debugCtx;
+            {
+                AccessContext impCtx = sysCtx.clone();
+                impCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+                debugCtx = impCtx.impersonate(
+                    new Identity(impCtx, new IdentityName("LocalDebugConsole")),
+                    sysCtx.subjectRole,
+                    sysCtx.subjectDomain,
+                    sysCtx.getLimitPrivs().toArray()
+                );
+            }
+            debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_VIEW);
+
             BufferedReader stdin = new BufferedReader(
                 new InputStreamReader(System.in)
             );
@@ -115,19 +156,20 @@ public class Controller implements Runnable
                             case "SHUTDOWN":
                                 break commandLoop;
                             case "DSPTHR":
-                                // fall-through
-                            case "THREADS":
                                 cmdThreads();
                                 break;
-                            case "TSTERRLOG":
+                            case "TSTERRRPT":
                                 // fall-through
-                            case "TESTERRORLOG":
+                            case "TSTERRLOG":
                                 throw new TestException(
                                     "Thrown by TSTERRLOG debug command for test purposes",
                                     new IllegalArgumentException(
                                         "Thrown by TSTERRLOG debug command for test purposes"
                                     )
                                 );
+                            case "DSPCTXINF":
+                                displayContextInfo(debugCtx);
+                                break;
                             default:
                                 if (!command.isEmpty())
                                 {
@@ -203,6 +245,9 @@ public class Controller implements Runnable
         programInfo();
         System.out.printf("\n%s\n\n", SCREEN_DIV);
 
+        logInit("Applying base security policy to system objects");
+        applyBaseSecurityPolicy();
+
         logInit("Starting timer event service");
         // Start the timer event service
         timerEventSvc.setTimerName("TimerEventService");
@@ -225,8 +270,10 @@ public class Controller implements Runnable
         System.out.printf("\n%s\n\n", SCREEN_DIV);
     }
 
-    public void shutdown()
+    public void shutdown(AccessContext accCtx) throws AccessDeniedException
     {
+        shutdownProt.requireAccess(accCtx, AccessType.USE);
+
         logInfo("Shutdown in progress");
         logInfo("Shutting down filesystem event service");
         // Stop the filesystem event service
@@ -239,6 +286,52 @@ public class Controller implements Runnable
         workers.shutdown();
 
         logInfo("Shutdown complete");
+    }
+
+    public void displayContextInfo(AccessContext accCtx)
+    {
+        System.out.printf("%-24s: %s\n", "Identity", accCtx.getIdentity().name.displayValue);
+        System.out.printf("%-24s: %s\n", "Role", accCtx.getRole().name.displayValue);
+        System.out.printf("%-24s: %s\n", "Domain", accCtx.getDomain().name.displayValue);
+
+        String privSeparator = String.format("\n%-24s  ", "");
+        String limitPrivs;
+        {
+            StringBuilder limitPrivsList = new StringBuilder();
+            for (Privilege priv : accCtx.getLimitPrivs().getEnabledPrivileges())
+            {
+                if (limitPrivsList.length() > 0)
+                {
+                    limitPrivsList.append(privSeparator);
+                }
+                limitPrivsList.append(priv.name);
+            }
+            if (limitPrivsList.length() <= 0)
+            {
+                limitPrivsList.append("None");
+            }
+            limitPrivs = limitPrivsList.toString();
+        }
+        System.out.printf("%-24s: %s\n", "Limit privileges", limitPrivs);
+
+        String effPrivs;
+        {
+            StringBuilder effPrivsList = new StringBuilder();
+            for (Privilege priv : accCtx.getEffectivePrivs().getEnabledPrivileges())
+            {
+                if (effPrivsList.length() > 0)
+                {
+                    effPrivsList.append(privSeparator);
+                }
+                effPrivsList.append(priv.name);
+            }
+            if (effPrivsList.length() <= 0)
+            {
+                effPrivsList.append("None");
+            }
+            effPrivs = effPrivsList.toString();
+        }
+        System.out.printf("%-24s: %s\n", "Effective privileges", effPrivs);
     }
 
     public static final void logInit(String what)
@@ -322,6 +415,32 @@ public class Controller implements Runnable
         printField("WORKER THREADS", Integer.toString(workers.getThreadCount()));
         printField("WORKER QUEUE SIZE", Integer.toString(workers.getQueueSize()));
         printField("WORKER SCHEDULING", workers.isFairQueue() ? "FIFO" : "Random");
+    }
+
+    private void applyBaseSecurityPolicy()
+    {
+        PrivilegeSet effPriv = sysCtx.getEffectivePrivs();
+        try
+        {
+            // Enable all privileges
+            effPriv.enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+            // Allow CONTROL access by domain SYSTEM to type SYSTEM
+            SecurityType sysType = sysCtx.getDomain();
+            sysType.addEntry(sysCtx, sysType, AccessType.CONTROL);
+
+            // Allow USE access by role SYSTEM to shutdownProt
+            shutdownProt.addAclEntry(sysCtx, sysCtx.getRole(), AccessType.USE);
+        }
+        catch (AccessDeniedException accExc)
+        {
+            logFailure("Applying the base security policy failed");
+            errorLog.reportError(accExc);
+        }
+        finally
+        {
+            effPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
+        }
     }
 
     public static void main(String[] args)
