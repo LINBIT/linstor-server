@@ -15,6 +15,7 @@ import java.util.TreeMap;
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
+    implements Timer<K, V>
 {
     private static final String DEFAULT_NAME = "DefaultTimer";
     private static final boolean ENABLE_DEBUG = false;
