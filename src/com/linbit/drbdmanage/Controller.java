@@ -2,6 +2,7 @@ package com.linbit.drbdmanage;
 
 import com.linbit.ImplementationError;
 import com.linbit.WorkerPool;
+import com.linbit.drbdmanage.debug.DebugErrorReporter;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -15,6 +16,7 @@ import com.linbit.drbdmanage.security.SecurityType;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.timer.Action;
 import com.linbit.timer.GenericTimer;
+import com.linbit.timer.Timer;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,7 +29,7 @@ import java.util.StringTokenizer;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class Controller implements Runnable
+public class Controller implements Runnable, CoreServices
 {
     public static final String PROGRAM = "drbdmanageNG";
     public static final String MODULE = "Controller";
@@ -334,6 +336,21 @@ public class Controller implements Runnable
         System.out.printf("%-24s: %s\n", "Effective privileges", effPrivs);
     }
 
+    public ErrorReporter getErrorReporter()
+    {
+        return errorLog;
+    }
+
+    public Timer<String, Action<String>> getTimer()
+    {
+        return (Timer) timerEventSvc;
+    }
+
+    public FileSystemWatch getFsWatch()
+    {
+        return fsEventSvc;
+    }
+
     public static final void logInit(String what)
     {
         System.out.println("INIT      " + what);
@@ -448,7 +465,7 @@ public class Controller implements Runnable
         logInit("System components initialization in progress");
 
         logInit("Constructing error reporter instance");
-        ErrorReporter errorLog = new ErrorReporter();
+        ErrorReporter errorLog = new DebugErrorReporter();
 
         try
         {
