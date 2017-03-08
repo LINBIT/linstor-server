@@ -1,7 +1,9 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.WorkerPool;
+import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -26,6 +28,9 @@ import java.text.ParseException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * drbdmanageNG controller prototype
@@ -106,8 +111,11 @@ public class Controller implements Runnable, CoreServices
                 );
             }
             debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_VIEW);
-            DebugConsole dbgConsole = new DebugConsole(this, debugCtx);
+            DebugConsoleImpl dbgConsoleInstance = new DebugConsoleImpl(this, debugCtx);
+            dbgConsoleInstance.loadDefaultCommands(System.out, System.err);
+            DebugConsole dbgConsole = dbgConsoleInstance;
             dbgConsole.stdStreamsConsole();
+            System.out.println();
         }
         catch (Throwable error)
         {
@@ -131,40 +139,6 @@ public class Controller implements Runnable, CoreServices
                 null
             );
         }
-    }
-
-    public void cmdThreads()
-    {
-        int thrCount = Thread.activeCount();
-        Thread[] activeThreads = new Thread[thrCount + 20];
-        thrCount = Thread.enumerate(activeThreads);
-
-        System.out.printf(
-            "%-32s %18s %4s %-6s %-6s %-6s\n",
-            "Thread name", "Id", "Prio", "Alive", "Daemon", "Intr"
-        );
-        System.out.printf("%s\n", SCREEN_DIV);
-
-        int slot = 0;
-        for (Thread thr : activeThreads)
-        {
-            System.out.printf(
-                "%-32s %18d %4d %-6s %-6s %-6s\n",
-                thr.getName(),
-                thr.getId(),
-                thr.getPriority(),
-                thr.isAlive() ? "Y" : "N",
-                thr.isDaemon() ? "Y" : "N",
-                thr.isInterrupted() ? "Y" : "N"
-            );
-
-            ++slot;
-            if (slot >= thrCount)
-            {
-                break;
-            }
-        }
-        System.out.printf("%s\n", SCREEN_DIV);
     }
 
     public void initialize(ErrorReporter errorLogRef)
@@ -204,6 +178,13 @@ public class Controller implements Runnable, CoreServices
     {
         shutdownProt.requireAccess(accCtx, AccessType.USE);
 
+        logInfo(
+            String.format(
+                "Shutdown initiated by subject '%s' using role '%s'\n",
+                accCtx.getIdentity().name.value, accCtx.getRole().name.value
+            )
+        );
+
         logInfo("Shutdown in progress");
         logInfo("Shutting down filesystem event service");
         // Stop the filesystem event service
@@ -218,62 +199,19 @@ public class Controller implements Runnable, CoreServices
         logInfo("Shutdown complete");
     }
 
-    public void displayContextInfo(AccessContext accCtx)
-    {
-        System.out.printf("%-24s: %s\n", "Identity", accCtx.getIdentity().name.displayValue);
-        System.out.printf("%-24s: %s\n", "Role", accCtx.getRole().name.displayValue);
-        System.out.printf("%-24s: %s\n", "Domain", accCtx.getDomain().name.displayValue);
-
-        String privSeparator = String.format("\n%-24s  ", "");
-        String limitPrivs;
-        {
-            StringBuilder limitPrivsList = new StringBuilder();
-            for (Privilege priv : accCtx.getLimitPrivs().getEnabledPrivileges())
-            {
-                if (limitPrivsList.length() > 0)
-                {
-                    limitPrivsList.append(privSeparator);
-                }
-                limitPrivsList.append(priv.name);
-            }
-            if (limitPrivsList.length() <= 0)
-            {
-                limitPrivsList.append("None");
-            }
-            limitPrivs = limitPrivsList.toString();
-        }
-        System.out.printf("%-24s: %s\n", "Limit privileges", limitPrivs);
-
-        String effPrivs;
-        {
-            StringBuilder effPrivsList = new StringBuilder();
-            for (Privilege priv : accCtx.getEffectivePrivs().getEnabledPrivileges())
-            {
-                if (effPrivsList.length() > 0)
-                {
-                    effPrivsList.append(privSeparator);
-                }
-                effPrivsList.append(priv.name);
-            }
-            if (effPrivsList.length() <= 0)
-            {
-                effPrivsList.append("None");
-            }
-            effPrivs = effPrivsList.toString();
-        }
-        System.out.printf("%-24s: %s\n", "Effective privileges", effPrivs);
-    }
-
+    @Override
     public ErrorReporter getErrorReporter()
     {
         return errorLog;
     }
 
+    @Override
     public Timer<String, Action<String>> getTimer()
     {
         return (Timer) timerEventSvc;
     }
 
+    @Override
     public FileSystemWatch getFsWatch()
     {
         return fsEventSvc;
@@ -308,7 +246,6 @@ public class Controller implements Runnable, CoreServices
     {
         System.out.printf("  %-32s: %s\n", fieldName, fieldContent);
     }
-
 
     public final void programInfo()
     {
@@ -429,7 +366,40 @@ public class Controller implements Runnable, CoreServices
         System.out.println();
     }
 
-    private static class DebugConsole
+    public interface DebugConsole
+    {
+        Map<String, ControllerDebugCmd> getCommandMap();
+        void stdStreamsConsole();
+        void streamsConsole(
+            InputStream debugIn,
+            PrintStream debugOut,
+            PrintStream debugErr,
+            boolean prompt
+        );
+        void processCommandLine(
+            PrintStream debugOut,
+            PrintStream debugErr,
+            String commandLine
+        );
+        void processCommand(
+            PrintStream debugOut,
+            PrintStream debugErr,
+            String commandUpperCase,
+            Map<String, String> parameters
+        );
+        void loadCommand(
+            PrintStream debugOut,
+            PrintStream debugErr,
+            String cmdClassName
+        );
+        void unloadCommand(
+            PrintStream debugOut,
+            PrintStream debugErr,
+            String cmdClassName
+        );
+    }
+
+    private static class DebugConsoleImpl implements DebugConsole
     {
         private enum ParamParserState
         {
@@ -448,20 +418,104 @@ public class Controller implements Runnable, CoreServices
 
         private Map<String, String> parameters;
 
+        private boolean loadedCmds  = false;
         private boolean exitConsole = false;
 
-        DebugConsole(Controller controllerRef, AccessContext accCtx)
+        private Map<String, ControllerDebugCmd> commandMap;
+        public static final String[] COMMAND_CLASS_LIST =
         {
+            "CmdDisplayThreads",
+            "CmdDisplayContextInfo",
+            "CmdShutdown"
+        };
+        public static final String COMMAND_CLASS_PKG = "com.linbit.drbdmanage.debug";
+
+        private DebugControl debugCtl;
+
+        DebugConsoleImpl(Controller controllerRef, AccessContext accCtx)
+        {
+            ErrorCheck.ctorNotNull(DebugConsoleImpl.class, Controller.class, controllerRef);
+            ErrorCheck.ctorNotNull(DebugConsoleImpl.class, AccessContext.class, accCtx);
             controller = controllerRef;
             debugCtx = accCtx;
             parameters = new TreeMap<>();
+            commandMap = new TreeMap<>();
+            loadedCmds = false;
+            debugCtl = new DebugControlImpl(controller);
         }
 
+        @Override
+        public Map<String, ControllerDebugCmd> getCommandMap()
+        {
+            return commandMap;
+        }
+
+        public void loadDefaultCommands(
+            PrintStream debugOut,
+            PrintStream debugErr
+        )
+        {
+            if (!loadedCmds)
+            {
+                for (String cmdClassName : COMMAND_CLASS_LIST)
+                {
+                    loadCommand(debugOut, debugErr, cmdClassName);
+                }
+            }
+            loadedCmds = true;
+        }
+
+        @Override
+        public void loadCommand(
+            PrintStream debugOut,
+            PrintStream debugErr,
+            String cmdClassName
+        )
+        {
+            try
+            {
+                Class<? extends Object> cmdClass = Class.forName(
+                    COMMAND_CLASS_PKG + "." + cmdClassName
+                );
+                try
+                {
+                    ControllerDebugCmd debugCmd = (ControllerDebugCmd) cmdClass.newInstance();
+                    debugCmd.initialize(controller, controller, debugCtl, this);
+
+                    // FIXME: Detect and report name collisions
+                    for (String cmdName : debugCmd.getCmdNames())
+                    {
+                        commandMap.put(cmdName.toUpperCase(), debugCmd);
+                    }
+                }
+                catch (IllegalAccessException | InstantiationException instantiateExc)
+                {
+                    controller.errorLog.reportError(instantiateExc);
+                }
+            }
+            catch (ClassNotFoundException cnfExc)
+            {
+                controller.errorLog.reportError(cnfExc);
+            }
+        }
+
+        @Override
+        public void unloadCommand(
+            PrintStream debugOut,
+            PrintStream debugErr,
+            String cmdClassName
+        )
+        {
+            // TODO: Implement
+        }
+
+        @Override
         public void stdStreamsConsole()
         {
             streamsConsole(System.in, System.out, System.err, true);
         }
 
+        @Override
         public void streamsConsole(
             InputStream debugIn,
             PrintStream debugOut,
@@ -490,7 +544,7 @@ public class Controller implements Runnable, CoreServices
                     inputLine = cmdIn.readLine();
                     if (inputLine != null)
                     {
-                        processCommandLine(inputLine);
+                        processCommandLine(debugOut, debugErr, inputLine);
                     }
                     else
                     {
@@ -509,43 +563,175 @@ public class Controller implements Runnable, CoreServices
             }
         }
 
-        public void processCommandLine(String inputLine)
+        @Override
+        public void processCommandLine(
+            PrintStream debugOut,
+            PrintStream debugErr,
+            String inputLine
+        )
         {
             String commandLine = inputLine.trim();
             if (!inputLine.isEmpty())
             {
-                // Parse the debug command line
-                char[] commandChars = commandLine.toCharArray();
-                String command = parseCommandName(commandChars);
+                if (inputLine.startsWith("?"))
+                {
+                    findCommands(debugOut, debugErr, inputLine.substring(1, inputLine.length()).trim());
+                }
+                else
+                {
+                    // Parse the debug command line
+                    char[] commandChars = commandLine.toCharArray();
+                    String command = parseCommandName(commandChars);
 
-                try
-                {
-                    parseCommandParameters(commandChars, parameters);
-                    processCommand(command, parameters);
-                }
-                catch (ParseException parseExc)
-                {
-                    System.err.println(parseExc.getMessage());
-                }
-                finally
-                {
-                    parameters.clear();
+                    try
+                    {
+                        parseCommandParameters(commandChars, parameters);
+                        processCommand(debugOut, debugErr, command, parameters);
+                    }
+                    catch (ParseException parseExc)
+                    {
+                        debugErr.println(parseExc.getMessage());
+                    }
+                    finally
+                    {
+                        parameters.clear();
+                    }
                 }
             }
         }
 
-        public void processCommand(String command, Map<String, String> parameters)
+        @Override
+        public void processCommand(
+            PrintStream debugOut,
+            PrintStream debugErr,
+            String command,
+            Map<String, String> parameters
+        )
         {
-            // BEGIN DEBUG
-            System.out.println(command);
-            for (Map.Entry<String, String> paramEntry : parameters.entrySet())
+            String cmdName = command.toUpperCase();
+            ControllerDebugCmd debugCmd = commandMap.get(cmdName);
+            if (debugCmd != null)
             {
-                System.out.printf(
-                    "    %-20s: %s\n",
-                    paramEntry.getKey(), paramEntry.getValue()
+                String displayCmdName = debugCmd.getDisplayName(cmdName);
+                if (displayCmdName == null)
+                {
+                    displayCmdName = "<unknown command>";
+                }
+
+                String cmdInfo = debugCmd.getCmdInfo();
+                if (cmdInfo == null)
+                {
+                    System.out.printf("\u001b[1;37m%-20s\u001b[0m\n", displayCmdName);
+                }
+                else
+                {
+                    System.out.printf("\u001b[1;37m%-20s\u001b[0m %s\n", displayCmdName, cmdInfo);
+                }
+                try
+                {
+                    debugCmd.execute(debugOut, debugErr, debugCtx, parameters);
+                }
+                catch (Exception exc)
+                {
+                    controller.errorLog.reportError(exc);
+                }
+            }
+            else
+            {
+                debugErr.printf(
+                    "Error:\n" +
+                    "    The statement '%s' is not a valid debug console command.\n" +
+                    "Correction:\n" +
+                    "    Enter a valid debug console command.\n" +
+                    "    Use the \"?\" builtin query (without quotes) to display a list\n" +
+                    "    of available commands.\n",
+                    command
                 );
             }
-            // END DEBUG
+        }
+
+        public void findCommands(PrintStream debugOut, PrintStream debugErr, String cmdPattern)
+        {
+            try
+            {
+                debugOut.printf("\u001b[1;37m%-20s\u001b[0m %s\n", "?", "Find commands");
+                Map<String, ControllerDebugCmd> selectedCmds;
+
+                if (cmdPattern.isEmpty())
+                {
+                    // Select all commands
+                    selectedCmds = commandMap;
+                }
+                else
+                {
+                    // Filter commands using the regular expression pattern
+                    selectedCmds = new TreeMap<>();
+                    Pattern cmdRegEx = Pattern.compile(cmdPattern, Pattern.CASE_INSENSITIVE);
+                    for (Map.Entry<String, ControllerDebugCmd> cmdEntry : commandMap.entrySet())
+                    {
+                        String cmdName = cmdEntry.getKey();
+                        Matcher cmdMatcher = cmdRegEx.matcher(cmdName);
+                        if (cmdMatcher.matches())
+                        {
+                            selectedCmds.put(cmdEntry.getKey(), cmdEntry.getValue());
+                        }
+                    }
+                }
+
+                // Generate the output list
+                StringBuilder cmdNameList = new StringBuilder();
+                for (Map.Entry<String, ControllerDebugCmd> cmdEntry : selectedCmds.entrySet())
+                {
+                    String cmdName = cmdEntry.getKey();
+                    ControllerDebugCmd debugCmd = cmdEntry.getValue();
+
+                    String cmdInfo = debugCmd.getCmdInfo();
+                    if (cmdInfo == null)
+                    {
+                        cmdNameList.append(
+                            String.format("    %-20s\n", cmdName)
+                        );
+                    }
+                    else
+                    {
+                        cmdNameList.append(
+                            String.format("    %-20s %s\n", cmdName, cmdInfo)
+                        );
+                    }
+                }
+
+                // Write results
+                if (cmdNameList.length() > 0)
+                {
+                    debugOut.println("Matching commands:");
+                    debugOut.print(cmdNameList.toString());
+                    debugOut.flush();
+                }
+                else
+                {
+                    if (cmdPattern.isEmpty())
+                    {
+                        debugOut.println("No commands are available.");
+                    }
+                    else
+                    {
+                        debugOut.println("No commands matching the pattern were found.");
+                    }
+                }
+            }
+            catch (PatternSyntaxException patternExc)
+            {
+                debugErr.println(
+                    "Error:\n" +
+                    "    The specified regular expression pattern is not valid.\n" +
+                    "    (See error details section for a more detailed description of the error)\n" +
+                    "Correction:\n" +
+                    "    If any text is entered following the ? sign, the text must form a valid\n" +
+                    "    regular expression pattern.\n" +
+                    "Error details:\n"
+                );
+                debugErr.println(patternExc.getMessage());
+            }
         }
 
         private String parseCommandName(char[] commandChars)
@@ -559,7 +745,7 @@ public class Controller implements Runnable, CoreServices
                     break;
                 }
             }
-            String command = new String(commandChars, 0, commandLength).toUpperCase();
+            String command = new String(commandChars, 0, commandLength);
             return command;
         }
 
@@ -607,7 +793,7 @@ public class Controller implements Runnable, CoreServices
                             {
                                 errorInvalidKey(keyOffset);
                             }
-                            key = new String(commandChars, keyOffset, length);
+                            key = new String(commandChars, keyOffset, length).toUpperCase();
                             valueOffset = idx + 1;
                             state = ParamParserState.READ_VALUE;
                         }
@@ -692,6 +878,33 @@ public class Controller implements Runnable, CoreServices
                 "The command line is not valid. The input line appears to have been truncated.",
                 pos
             );
+        }
+    }
+
+    public interface DebugControl
+    {
+        void shutdown(AccessContext accCtx);
+    }
+
+    private static class DebugControlImpl implements DebugControl
+    {
+        Controller controller;
+
+        DebugControlImpl(Controller controllerRef)
+        {
+            controller = controllerRef;
+        }
+
+        public void shutdown(AccessContext accCtx)
+        {
+            try
+            {
+                controller.shutdown(accCtx);
+            }
+            catch (AccessDeniedException accExc)
+            {
+                controller.errorLog.reportError(accExc);
+            }
         }
     }
 
