@@ -19,10 +19,13 @@ import com.linbit.timer.GenericTimer;
 import com.linbit.timer.Timer;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.NoSuchElementException;
+import java.io.PrintStream;
+import java.text.ParseException;
+import java.util.Map;
 import java.util.Properties;
-import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 /**
  * drbdmanageNG controller prototype
@@ -91,7 +94,20 @@ public class Controller implements Runnable, CoreServices
         try
         {
             logInfo("Entering debug console");
-            debugConsole();
+            AccessContext debugCtx;
+            {
+                AccessContext impCtx = sysCtx.clone();
+                impCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+                debugCtx = impCtx.impersonate(
+                    new Identity(impCtx, new IdentityName("LocalDebugConsole")),
+                    sysCtx.subjectRole,
+                    sysCtx.subjectDomain,
+                    sysCtx.getLimitPrivs().toArray()
+                );
+            }
+            debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_VIEW);
+            DebugConsole dbgConsole = new DebugConsole(this, debugCtx);
+            dbgConsole.stdStreamsConsole();
         }
         catch (Throwable error)
         {
@@ -114,94 +130,6 @@ public class Controller implements Runnable, CoreServices
                 "Suspected removal of privileges from the system context.",
                 null
             );
-        }
-    }
-
-    public void debugConsole()
-    {
-        try
-        {
-            AccessContext debugCtx;
-            {
-                AccessContext impCtx = sysCtx.clone();
-                impCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                debugCtx = impCtx.impersonate(
-                    new Identity(impCtx, new IdentityName("LocalDebugConsole")),
-                    sysCtx.subjectRole,
-                    sysCtx.subjectDomain,
-                    sysCtx.getLimitPrivs().toArray()
-                );
-            }
-            debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_VIEW);
-
-            BufferedReader stdin = new BufferedReader(
-                new InputStreamReader(System.in)
-            );
-
-            String commandLine;
-            commandLoop:
-            do
-            {
-                System.out.print("\nCommand ==> ");
-                System.out.flush();
-                commandLine = stdin.readLine();
-                if (commandLine != null)
-                {
-                    StringTokenizer cmdTokens = new StringTokenizer(commandLine);
-                    try
-                    {
-                        String command = cmdTokens.nextToken().toUpperCase();
-                        command = command.trim();
-
-                        switch (command)
-                        {
-                            case "SHUTDOWN":
-                                break commandLoop;
-                            case "DSPTHR":
-                                cmdThreads();
-                                break;
-                            case "TSTERRRPT":
-                                // fall-through
-                            case "TSTERRLOG":
-                                throw new TestException(
-                                    "Thrown by TSTERRLOG debug command for test purposes",
-                                    new IllegalArgumentException(
-                                        "Thrown by TSTERRLOG debug command for test purposes"
-                                    )
-                                );
-                            case "DSPCTXINF":
-                                displayContextInfo(debugCtx);
-                                break;
-                            default:
-                                if (!command.isEmpty())
-                                {
-                                    System.err.printf(
-                                        "The statement '%s' is not a valid command\n",
-                                        command
-                                    );
-                                }
-                                break;
-                        }
-                    }
-                    catch (NoSuchElementException missingToken)
-                    {
-                        logFailure("A required argument was missing in the command line");
-                    }
-                    catch (TestException testExc)
-                    {
-                        errorLog.reportError(testExc);
-                    }
-                }
-            }
-            while (commandLine != null);
-        }
-        catch (IOException ioExc)
-        {
-            errorLog.reportError(ioExc);
-        }
-        catch (Throwable error)
-        {
-            errorLog.reportError(error);
         }
     }
 
@@ -499,6 +427,272 @@ public class Controller implements Runnable, CoreServices
         }
 
         System.out.println();
+    }
+
+    private static class DebugConsole
+    {
+        private enum ParamParserState
+        {
+            SKIP_COMMAND,
+            SPACE,
+            OPTIONAL_SPACE,
+            READ_KEY,
+            READ_VALUE,
+            ESCAPE
+        };
+
+        private final Controller controller;
+        private final AccessContext debugCtx;
+
+        public static final String CONSOLE_PROMPT = "Command ==> ";
+
+        private Map<String, String> parameters;
+
+        private boolean exitConsole = false;
+
+        DebugConsole(Controller controllerRef, AccessContext accCtx)
+        {
+            controller = controllerRef;
+            debugCtx = accCtx;
+            parameters = new TreeMap<>();
+        }
+
+        public void stdStreamsConsole()
+        {
+            streamsConsole(System.in, System.out, System.err, true);
+        }
+
+        public void streamsConsole(
+            InputStream debugIn,
+            PrintStream debugOut,
+            PrintStream debugErr,
+            boolean prompt
+        )
+        {
+            try
+            {
+                BufferedReader cmdIn = new BufferedReader(
+                    new InputStreamReader(debugIn)
+                );
+
+                String inputLine;
+                commandLineLoop:
+                while (!exitConsole)
+                {
+                    // Print the console prompt if required
+                    if (prompt)
+                    {
+                        debugOut.print("\n");
+                        debugOut.print(CONSOLE_PROMPT);
+                        debugOut.flush();
+                    }
+
+                    inputLine = cmdIn.readLine();
+                    if (inputLine != null)
+                    {
+                        processCommandLine(inputLine);
+                    }
+                    else
+                    {
+                        // End of command input stream, exit console
+                        break;
+                    }
+                }
+            }
+            catch (IOException ioExc)
+            {
+                controller.errorLog.reportError(ioExc);
+            }
+            catch (Throwable error)
+            {
+                controller.errorLog.reportError(error);
+            }
+        }
+
+        public void processCommandLine(String inputLine)
+        {
+            String commandLine = inputLine.trim();
+            if (!inputLine.isEmpty())
+            {
+                // Parse the debug command line
+                char[] commandChars = commandLine.toCharArray();
+                String command = parseCommandName(commandChars);
+
+                try
+                {
+                    parseCommandParameters(commandChars, parameters);
+                    processCommand(command, parameters);
+                }
+                catch (ParseException parseExc)
+                {
+                    System.err.println(parseExc.getMessage());
+                }
+                finally
+                {
+                    parameters.clear();
+                }
+            }
+        }
+
+        public void processCommand(String command, Map<String, String> parameters)
+        {
+            // BEGIN DEBUG
+            System.out.println(command);
+            for (Map.Entry<String, String> paramEntry : parameters.entrySet())
+            {
+                System.out.printf(
+                    "    %-20s: %s\n",
+                    paramEntry.getKey(), paramEntry.getValue()
+                );
+            }
+            // END DEBUG
+        }
+
+        private String parseCommandName(char[] commandChars)
+        {
+            int commandLength = commandChars.length;
+            for (int idx = 0; idx < commandChars.length; ++idx)
+            {
+                if (commandChars[idx] == ' ' || commandChars[idx] == '\t')
+                {
+                    commandLength = idx;
+                    break;
+                }
+            }
+            String command = new String(commandChars, 0, commandLength).toUpperCase();
+            return command;
+        }
+
+        private void parseCommandParameters(char[] commandChars, Map<String, String> parameters)
+            throws ParseException
+        {
+            int keyOffset = 0;
+            int valueOffset = 0;
+            int length = 0;
+
+            ParamParserState state = ParamParserState.SKIP_COMMAND;
+            String key = null;
+            String value = null;
+            for (int idx = 0; idx < commandChars.length; ++idx)
+            {
+                char cc = commandChars[idx];
+                switch (state)
+                {
+                    case SKIP_COMMAND:
+                        if (cc == ' ' || cc == '\t')
+                        {
+                            state = ParamParserState.OPTIONAL_SPACE;
+                        }
+                        break;
+                    case SPACE:
+                        if (cc != ' ' && cc != '\t')
+                        {
+                            errorParser(idx);
+                        }
+                        state = ParamParserState.OPTIONAL_SPACE;
+                        break;
+                    case OPTIONAL_SPACE:
+                        if (cc == ' ' || cc == '\t')
+                        {
+                            break;
+                        }
+                        keyOffset = idx;
+                        state = ParamParserState.READ_KEY;
+                        // fall-through
+                    case READ_KEY:
+                        if (cc == '(')
+                        {
+                            length = idx - keyOffset;
+                            if (length < 1)
+                            {
+                                errorInvalidKey(keyOffset);
+                            }
+                            key = new String(commandChars, keyOffset, length);
+                            valueOffset = idx + 1;
+                            state = ParamParserState.READ_VALUE;
+                        }
+                        else
+                        if (!((cc >= 'a' && cc <= 'z') || (cc >= 'A' && cc <= 'Z')))
+                        {
+                            if (!(cc >= '0' && cc <= '9' && idx > keyOffset))
+                            {
+                                errorInvalidKey(keyOffset);
+                            }
+                        }
+                        break;
+                    case READ_VALUE:
+                        if (cc == ')')
+                        {
+                            length = idx - valueOffset;
+                            value = new String(commandChars, valueOffset, length);
+                            if (key != null)
+                            {
+                                parameters.put(key, value);
+                            }
+                            else
+                            {
+                                errorInvalidKey(keyOffset);
+                            }
+                            state = ParamParserState.OPTIONAL_SPACE;
+                        }
+                        else
+                        if (cc == '\\')
+                        {
+                            // Ignore the next character's special meaning
+                            state = ParamParserState.ESCAPE;
+                        }
+                        break;
+                    case ESCAPE:
+                        // Only values can be escaped, so the next state is always READ_VALUE
+                        state = ParamParserState.READ_VALUE;
+                        break;
+                    default:
+                        throw new ImplementationError(
+                            String.format(
+                                "Missing case label for enum member '%s'",
+                                state.name()
+                            ),
+                            null
+                        );
+                }
+            }
+            if (state != ParamParserState.SKIP_COMMAND && state != ParamParserState.OPTIONAL_SPACE)
+            {
+                errorIncompleteLine(commandChars.length);
+            }
+        }
+
+        private void errorInvalidKey(int pos) throws ParseException
+        {
+            throw new ParseException(
+                String.format(
+                    "The command line is not valid. " +
+                    "An invalid parameter key was encountered at position %d.",
+                    pos
+                ),
+                pos
+            );
+        }
+
+        private void errorParser(int pos) throws ParseException
+        {
+            throw new ParseException(
+                String.format(
+                    "The command line is not valid. " +
+                    "The parser encountered an error at position %d.",
+                    pos
+                ),
+                pos
+            );
+        }
+
+        private void errorIncompleteLine(int pos) throws ParseException
+        {
+            throw new ParseException(
+                "The command line is not valid. The input line appears to have been truncated.",
+                pos
+            );
+        }
     }
 
     static class TestException extends Exception
