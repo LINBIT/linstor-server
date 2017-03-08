@@ -405,7 +405,7 @@ public class Controller implements Runnable, CoreServices
         String sysArch = sysProps.getProperty("os.arch");
 
         System.out.println(
-            "Execution enviroment information\n" +
+            "Execution environment information\n" +
             "--------------------------------\n"
         );
 
