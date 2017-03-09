@@ -181,7 +181,7 @@ public class Controller implements Runnable, CoreServices
         logInfo(
             String.format(
                 "Shutdown initiated by subject '%s' using role '%s'\n",
-                accCtx.getIdentity().name.value, accCtx.getRole().name.value
+                accCtx.getIdentity(), accCtx.getRole()
             )
         );
 

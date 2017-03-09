@@ -35,9 +35,9 @@ public class CmdDisplayContextInfo extends BaseControllerDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        debugOut.printf("%-24s: %s\n", "Identity", accCtx.getIdentity().name.displayValue);
-        debugOut.printf("%-24s: %s\n", "Role", accCtx.getRole().name.displayValue);
-        debugOut.printf("%-24s: %s\n", "Domain", accCtx.getDomain().name.displayValue);
+        debugOut.printf("%-24s: %s\n", "Identity", accCtx.getIdentity());
+        debugOut.printf("%-24s: %s\n", "Role", accCtx.getRole());
+        debugOut.printf("%-24s: %s\n", "Domain", accCtx.getDomain());
 
         String privSeparator = String.format("\n%-24s  ", "");
         String limitPrivs;
