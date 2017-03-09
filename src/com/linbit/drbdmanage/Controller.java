@@ -65,6 +65,7 @@ public class Controller implements Runnable, CoreServices
     private WorkerPool workers = null;
     private ErrorReporter errorLog = null;
 
+    private boolean shutdownFinished;
     private ObjectProtection shutdownProt;
 
     public Controller(AccessContext sysCtxRef, String[] argsRef)
@@ -90,6 +91,7 @@ public class Controller implements Runnable, CoreServices
 
         cpuCount = Runtime.getRuntime().availableProcessors();
 
+        shutdownFinished = false;
         shutdownProt = new ObjectProtection(sysCtx);
     }
 
@@ -143,6 +145,8 @@ public class Controller implements Runnable, CoreServices
 
     public void initialize(ErrorReporter errorLogRef)
     {
+        shutdownFinished = false;
+
         errorLog = errorLogRef;
 
         System.out.printf("\n%s\n\n", SCREEN_DIV);
@@ -177,26 +181,35 @@ public class Controller implements Runnable, CoreServices
     public void shutdown(AccessContext accCtx) throws AccessDeniedException
     {
         shutdownProt.requireAccess(accCtx, AccessType.USE);
+        if (!shutdownFinished)
+        {
+            logInfo(
+                String.format(
+                    "Shutdown initiated by subject '%s' using role '%s'\n",
+                    accCtx.getIdentity(), accCtx.getRole()
+                )
+            );
 
-        logInfo(
-            String.format(
-                "Shutdown initiated by subject '%s' using role '%s'\n",
-                accCtx.getIdentity(), accCtx.getRole()
-            )
-        );
+            logInfo("Shutdown in progress");
 
-        logInfo("Shutdown in progress");
-        logInfo("Shutting down filesystem event service");
-        // Stop the filesystem event service
-        fsEventSvc.shutdown();
+            // Stop the filesystem event service
+            logInfo("Shutting down filesystem event service");
+            fsEventSvc.shutdown();
 
-        logInfo("Shutting down timer event service");
-        timerEventSvc.shutdown();
+            // Stop the timer event service
+            logInfo("Shutting down timer event service");
+            timerEventSvc.shutdown();
 
-        logInfo("Shutting down worker thread pool");
-        workers.shutdown();
+            if (workers != null)
+            {
+                logInfo("Shutting down worker thread pool");
+                workers.shutdown();
+                workers = null;
+            }
 
-        logInfo("Shutdown complete");
+            logInfo("Shutdown complete");
+        }
+        shutdownFinished = true;
     }
 
     @Override
@@ -397,6 +410,7 @@ public class Controller implements Runnable, CoreServices
             PrintStream debugErr,
             String cmdClassName
         );
+        void exitConsole();
     }
 
     private static class DebugConsoleImpl implements DebugConsole
@@ -419,7 +433,7 @@ public class Controller implements Runnable, CoreServices
         private Map<String, String> parameters;
 
         private boolean loadedCmds  = false;
-        private boolean exitConsole = false;
+        private boolean exitFlag    = false;
 
         private Map<String, ControllerDebugCmd> commandMap;
         public static final String[] COMMAND_CLASS_LIST =
@@ -531,7 +545,7 @@ public class Controller implements Runnable, CoreServices
 
                 String inputLine;
                 commandLineLoop:
-                while (!exitConsole)
+                while (!exitFlag)
                 {
                     // Print the console prompt if required
                     if (prompt)
@@ -732,6 +746,11 @@ public class Controller implements Runnable, CoreServices
                 );
                 debugErr.println(patternExc.getMessage());
             }
+        }
+
+        public void exitConsole()
+        {
+            exitFlag = true;
         }
 
         private String parseCommandName(char[] commandChars)

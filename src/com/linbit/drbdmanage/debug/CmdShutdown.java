@@ -38,5 +38,6 @@ public class CmdShutdown extends BaseControllerDebugCmd
     ) throws Exception
     {
         debugCtl.shutdown(accCtx);
+        debugCon.exitConsole();
     }
 }
