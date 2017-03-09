@@ -41,4 +41,10 @@ public final class Identity
         this(idName);
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
     }
+
+    @Override
+    public final String toString()
+    {
+        return name.displayValue;
+    }
 }

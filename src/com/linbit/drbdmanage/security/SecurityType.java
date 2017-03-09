@@ -131,4 +131,10 @@ public final class SecurityType
         privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
         rules.remove(domain.name);
     }
+
+    @Override
+    public final String toString()
+    {
+        return name.displayValue;
+    }
 }

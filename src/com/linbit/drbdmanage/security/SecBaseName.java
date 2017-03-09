@@ -23,4 +23,10 @@ public abstract class SecBaseName extends GenericName
         super(genName);
         Checks.nameCheck(genName, MIN_LENGTH, MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
     }
+
+    @Override
+    public String toString()
+    {
+        return displayValue;
+    }
 }
