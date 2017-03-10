@@ -103,6 +103,7 @@ public class TcpConnectorMessage implements Message
             );
         }
         dataBytes = data;
+        dataBuffer = ByteBuffer.wrap(dataBytes);
         headerBuffer.putInt(LENGTH_FIELD_OFFSET, data.length);
         currentPhase = Phase.HEADER;
     }
