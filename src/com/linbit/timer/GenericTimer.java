@@ -331,6 +331,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
                 {
                     debugOut(GenericTimer.class, "start(): Starting new ActionScheduler thread");
                 }
+                stopFlag = false;
                 sched = new ActionScheduler<>(this);
                 sched.setName(serviceInstanceName.getDisplayName());
                 sched.start();
@@ -369,6 +370,21 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
         if (ENABLE_DEBUG)
         {
             debugOut(GenericTimer.class, "EXIT shutdown()");
+        }
+    }
+
+    @Override
+    public void awaitShutdown(long timeout)
+        throws InterruptedException
+    {
+        Thread joinThr = null;
+        synchronized (this)
+        {
+            joinThr = sched;
+        }
+        if (joinThr != null)
+        {
+            joinThr.join(timeout);
         }
     }
 

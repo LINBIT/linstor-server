@@ -15,10 +15,18 @@ public interface SystemService extends SystemServiceInfo
     /**
      * Enables the service
      */
-    void start();
+    void start() throws SystemServiceStartException;
 
     /**
      * Disables the service
      */
     void shutdown();
+
+    /**
+     * Waits until the service has shut down or the timeout is exceeded
+     *
+     * @param timeout Timeout for the operation in milliseconds
+     * @throws java.lang.InterruptedException If the timeout is exceeded
+     */
+    void awaitShutdown(long timeout) throws InterruptedException;
 }

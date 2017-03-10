@@ -5,6 +5,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
@@ -226,13 +227,34 @@ public class Controller implements Runnable, CoreServices
         logInit("Applying base security policy to system objects");
         applyBaseSecurityPolicy();
 
-        logInit("Starting timer event service");
-        // Start the timer event service
-        timerEventSvc.start();
+        // Initialize the network communications service
+        logInit("Initializing network communications service");
+        initializeNetComService();
 
-        logInit("Starting filesystem event service");
-        // Start the filesystem event service
-        fsEventSvc.start();
+        // Start service threads
+        for (SystemService sysSvc : systemServicesMap.values())
+        {
+            logInfo(
+                String.format(
+                    "Starting service instance '%s' of type %s",
+                    sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
+                )
+            );
+            try
+            {
+                sysSvc.start();
+            }
+            catch (SystemServiceStartException startExc)
+            {
+                errorLog.reportError(startExc);
+                logFailure(
+                    String.format(
+                        "Start of the service instance '%s' of type %s failed",
+                        sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
+                    )
+                );
+            }
+        }
 
         logInit("Starting worker thread pool");
         workerThreadCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
@@ -241,12 +263,6 @@ public class Controller implements Runnable, CoreServices
             workerQueueSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
         }
         workers = WorkerPool.initialize(workerThreadCount, workerQueueSize, true, "MainWorkerPool");
-
-        logInit("Initializing network communications service");
-        initializeNetComService();
-
-        logInit("Starting network communications service");
-        netComSvc.start();
 
         System.out.printf("\n%s\n\n", SCREEN_DIV);
         runTimeInfo();
@@ -267,32 +283,30 @@ public class Controller implements Runnable, CoreServices
 
             logInfo("Shutdown in progress");
 
-            // Stop the filesystem event service
-            logInfo("Shutting down filesystem event service");
-            fsEventSvc.shutdown();
-            try
+            // Shutdown service threads
+            for (SystemService sysSvc : systemServicesMap.values())
             {
-                logInfo("Waiting for the filesystem event service to shut down");
-                fsEventSvc.join(SHUTDOWN_THR_JOIN_WAIT);
-            }
-            catch (InterruptedException ignored)
-            {
-            }
+                logInfo(
+                    String.format(
+                        "Shutting down service instance '%s' of type %s",
+                        sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
+                    )
+                );
+                sysSvc.shutdown();
 
-            // Stop the timer event service
-            logInfo("Shutting down timer event service");
-            timerEventSvc.shutdown();
-            if (netComSvc != null)
-            {
-                logInfo("Shutting down network communication service");
-                netComSvc.shutdown();
+                logInfo(
+                    String.format(
+                        "Waiting for service instance '%s' to complete shutdown",
+                        sysSvc.getInstanceName().displayValue
+                    )
+                );
                 try
                 {
-                    logInfo("Waiting for the network communication service to shut down");
-                    netComSvc.join(SHUTDOWN_THR_JOIN_WAIT);
+                    sysSvc.awaitShutdown(SHUTDOWN_THR_JOIN_WAIT);
                 }
-                catch (InterruptedException ignored)
+                catch (InterruptedException intrExc)
                 {
+                    errorLog.reportError(intrExc);
                 }
             }
 
@@ -502,9 +516,9 @@ public class Controller implements Runnable, CoreServices
             errorLog.reportError(accessExc);
             logFailure("Cannot create security context for the network communications service");
         }
-        catch (IOException ioExc)
+        catch (IOException | SystemServiceStartException exc)
         {
-            errorLog.reportError(ioExc);
+            errorLog.reportError(exc);
         }
     }
 

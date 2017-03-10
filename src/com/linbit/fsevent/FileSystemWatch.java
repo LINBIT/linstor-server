@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class FileSystemWatch extends Thread implements SystemService
+public class FileSystemWatch implements Runnable, SystemService
 {
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "Filesystem event tracking service";
@@ -118,14 +118,6 @@ public class FileSystemWatch extends Thread implements SystemService
     @Override
     public void run()
     {
-        synchronized (this)
-        {
-            if (watchThread == null)
-            {
-                watchThread = Thread.currentThread();
-                watchThread.setName(serviceInstanceName.getDisplayName());
-            }
-        }
         List<FileEntry> fileObs = new LinkedList<>();
         List<DirectoryEntry> dirObs = new LinkedList<>();
         while (!stopFlag.get())
@@ -234,11 +226,24 @@ public class FileSystemWatch extends Thread implements SystemService
         }
     }
 
+    @Override
+    public synchronized void start()
+    {
+        if (watchThread == null)
+        {
+            stopFlag.set(false);
+            watchThread = new Thread(this);
+            watchThread.setName(serviceInstanceName.getDisplayName());
+            watchThread.start();
+        }
+    }
+
     /**
      * Shuts down this instance's event loop
      *
      * This method does not wait until the event loop has stopped
      */
+    @Override
     public synchronized void shutdown()
     {
         stopFlag.set(true);
@@ -651,7 +656,22 @@ public class FileSystemWatch extends Thread implements SystemService
     @Override
     public synchronized boolean isStarted()
     {
-        return this.isAlive();
+        return watchThread != null;
+    }
+
+    @Override
+    public void awaitShutdown(long timeout)
+        throws InterruptedException
+    {
+        Thread joinThr = null;
+        synchronized (this)
+        {
+            joinThr = watchThread;
+        }
+        if (joinThr != null)
+        {
+            joinThr.join(timeout);
+        }
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.CoreServices;
@@ -38,7 +39,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class TcpConnectorService extends Thread implements TcpConnector, SystemService
+public class TcpConnectorService implements Runnable, TcpConnector, SystemService
 {
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "TCP/IP network communications service";
@@ -59,6 +60,9 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
 
     // Set by shutdown() to shut down the selector loop
     private AtomicBoolean shutdownFlag;
+
+    // Selector loop thread
+    private Thread selectorLoopThread;
 
     // Set to indicate that connections have been updated
     // outside of the selector loop
@@ -165,15 +169,31 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
         bindAddress = bindAddressRef;
     }
 
-    public void initialize() throws IOException, ClosedChannelException
+    public synchronized void initialize() throws SystemServiceStartException
     {
-        serverSocket = ServerSocketChannel.open();
-        serverSelector = Selector.open();
-        serverSocket.bind(bindAddress);
-        serverSocket.configureBlocking(false);
-        serverSocket.register(serverSelector, OP_ACCEPT);
-        // Enable entering the run() method's selector loop
-        shutdownFlag.set(false);
+        try
+        {
+            if (shutdownFlag.get())
+            {
+                serverSocket = ServerSocketChannel.open();
+                serverSelector = Selector.open();
+                serverSocket.bind(bindAddress);
+                serverSocket.configureBlocking(false);
+                serverSocket.register(serverSelector, OP_ACCEPT);
+                // Enable entering the run() method's selector loop
+                shutdownFlag.set(false);
+            }
+        }
+        catch (IOException ioExc)
+        {
+            throw new SystemServiceStartException(
+                String.format(
+                    "Initialization of the %s service instance '%s' failed.",
+                    TcpConnectorService.class.getName(), serviceInstanceName
+                ),
+                ioExc
+            );
+        }
     }
 
     @Override
@@ -183,10 +203,42 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public void shutdown()
+    @Override
+    public synchronized void start()
+        throws SystemServiceStartException
+    {
+        if (selectorLoopThread == null)
+        {
+            initialize();
+            selectorLoopThread = new Thread(this);
+            selectorLoopThread.setName(serviceInstanceName.getDisplayName());
+            selectorLoopThread.start();
+        }
+    }
+
+    @Override
+    public synchronized void shutdown()
     {
         shutdownFlag.set(true);
-        serverSelector.wakeup();
+        if (serverSelector != null)
+        {
+            serverSelector.wakeup();
+        }
+    }
+
+    @Override
+    public void awaitShutdown(long timeout)
+        throws InterruptedException
+    {
+        Thread joinThr = null;
+        synchronized (this)
+        {
+            joinThr = selectorLoopThread;
+        }
+        if (joinThr != null)
+        {
+            joinThr.join(timeout);
+        }
     }
 
     @Override
@@ -337,9 +389,12 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
 
         try
         {
-            for (SelectionKey currentKey : serverSelector.keys())
+            if (serverSelector != null)
             {
-                closeConnection(currentKey);
+                for (SelectionKey currentKey : serverSelector.keys())
+                {
+                    closeConnection(currentKey);
+                }
             }
             serverSelector.close();
         }
@@ -367,6 +422,10 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
         {
             // FIXME
             coreSvcs.getErrorReporter().reportError(ioExc);
+        }
+        synchronized (this)
+        {
+            selectorLoopThread = null;
         }
     }
 
@@ -498,7 +557,7 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
     @Override
     public synchronized boolean isStarted()
     {
-        return this.isAlive();
+        return selectorLoopThread != null;
     }
 
     @Override
@@ -512,6 +571,6 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
         {
             serviceInstanceName = instanceName;
         }
-        setName(serviceInstanceName.getDisplayName());
+        selectorLoopThread.setName(serviceInstanceName.getDisplayName());
     }
 }
