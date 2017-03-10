@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.netcom;
 
+import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
@@ -8,6 +9,7 @@ import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.TcpPortNumber;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage.ReadState;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage.WriteState;
+import com.linbit.drbdmanage.security.AccessContext;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -60,7 +62,7 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
     // outside of the selector loop
     private AtomicBoolean updateFlag;
 
-    static
+        static
     {
         try
         {
@@ -108,31 +110,44 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
     // Server socket for accepting incoming connections
     private ServerSocketChannel serverSocket;
 
+    // Default access context for a newly connected peer
+    private AccessContext defaultPeerAccCtx;
+
     // Selector for all connections
     Selector serverSelector;
 
     public TcpConnectorService(
         CoreServices coreSvcsRef,
-        MessageProcessor msgProcessorRef
+        MessageProcessor msgProcessorRef,
+        AccessContext defaultPeerAccCtxRef
     ) throws IOException
     {
+        ErrorCheck.ctorNotNull(TcpConnectorService.class, CoreServices.class, coreSvcsRef);
+        ErrorCheck.ctorNotNull(TcpConnectorService.class, MessageProcessor.class, msgProcessorRef);
+        ErrorCheck.ctorNotNull(TcpConnectorService.class, AccessContext.class, defaultPeerAccCtxRef);
         serviceInstanceName = SERVICE_NAME;
 
         bindAddress     = DEFAULT_BIND_ADDRESS;
         serverSocket    = null;
         serverSelector  = null;
-        shutdownFlag    = new AtomicBoolean(false);
         coreSvcs        = coreSvcsRef;
         msgProcessor    = msgProcessorRef;
+        // Prevent entering the run() method's selector loop
+        // until initialize() has completed
+        shutdownFlag    = new AtomicBoolean(true);
+
+        defaultPeerAccCtx = defaultPeerAccCtxRef;
     }
 
     public TcpConnectorService(
         CoreServices coreSvcsRef,
         MessageProcessor msgProcessorRef,
-        SocketAddress bindAddressRef
+        SocketAddress bindAddressRef,
+        AccessContext defaultPeerAccCtxRef
     ) throws IOException
     {
-        this(coreSvcsRef, msgProcessorRef);
+        this(coreSvcsRef, msgProcessorRef, defaultPeerAccCtxRef);
+        ErrorCheck.ctorNotNull(TcpConnectorService.class, SocketAddress.class, bindAddressRef);
         bindAddress = bindAddressRef;
     }
 
@@ -143,6 +158,8 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
         serverSocket.bind(bindAddress);
         serverSocket.configureBlocking(false);
         serverSocket.register(serverSelector, OP_ACCEPT);
+        // Enable entering the run() method's selector loop
+        shutdownFlag.set(false);
     }
 
     @Override
@@ -241,16 +258,6 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
                                     break;
                                 case FINISHED:
                                     connPeer.nextOutMessage();
-                                    if (connPeer.msgOut == null)
-                                    {
-                                        // No more outbound messages
-                                        currentKey.interestOps(OP_READ);
-                                    }
-                                    else
-                                    {
-                                        // More outbound messages pending
-                                        currentKey.interestOps(OP_READ | OP_WRITE);
-                                    }
                                     break;
                                 default:
                                     throw new ImplementationError(
@@ -365,7 +372,7 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
                 SelectionKey connKey = newSocket.register(serverSelector, SelectionKey.OP_READ);
 
                 // Prepare the peer object and message
-                TcpConnectorPeer connPeer = new TcpConnectorPeer(this);
+                TcpConnectorPeer connPeer = new TcpConnectorPeer(this, currentKey, defaultPeerAccCtx);
                 connKey.attach(connPeer);
 
                 // BEGIN DEBUG
@@ -401,6 +408,11 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
                 break;
             }
         }
+    }
+
+    void enableSend(SelectionKey currentKey)
+    {
+
     }
 
     private void establishConnection(SelectionKey currentKey)

@@ -6,6 +6,7 @@ import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.MessageProcessor;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
+import com.linbit.drbdmanage.security.AccessContext;
 
 /**
  * Debugger for messages
@@ -27,6 +28,11 @@ public class DebugMessageProcessor implements MessageProcessor
         try
         {
             System.out.println("MessageProcessor.processMessage() called");
+            AccessContext accCtx = client.getAccessContext();
+            System.out.printf(
+                "Message from '%s' (Role '%s', Domain '%s') received from peer\n",
+                accCtx.getIdentity(), accCtx.getRole(), accCtx.getDomain()
+            );
             HexViewer.dumpByteArray(msg.getData());
         }
         catch (IllegalMessageStateException msgExc)

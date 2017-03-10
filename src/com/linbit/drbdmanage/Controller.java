@@ -16,6 +16,9 @@ import com.linbit.drbdmanage.security.Initializer;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.Privilege;
 import com.linbit.drbdmanage.security.PrivilegeSet;
+import com.linbit.drbdmanage.security.Role;
+import com.linbit.drbdmanage.security.RoleName;
+import com.linbit.drbdmanage.security.SecTypeName;
 import com.linbit.drbdmanage.security.SecurityType;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.timer.Action;
@@ -43,10 +46,18 @@ public class Controller implements Runnable, CoreServices
 {
     public static final String PROGRAM = "drbdmanageNG";
     public static final String MODULE = "Controller";
-    public static final String VERSION = "experimental 2017-03-07_001";
+    public static final String VERSION = "experimental 2017-03-09_001";
 
     public static final int MIN_WORKER_QUEUE_SIZE = 32;
     public static final int MAX_CPU_COUNT = 1024;
+
+    // At shutdown, wait at most SHUTDOWN_THR_JOIN_WAIT milliseconds for
+    // a service thread to end
+    public static final long SHUTDOWN_THR_JOIN_WAIT = 3000L;
+
+    public static final IdentityName ID_ANON_CLIENT_NAME;
+    public static final RoleName ROLE_PUBLIC_NAME;
+    public static final SecTypeName TYPE_PUBLIC_NAME;
 
     // Defaults
     private int cpuCount = 8;
@@ -58,7 +69,15 @@ public class Controller implements Runnable, CoreServices
     public static final String SCREEN_DIV =
         "------------------------------------------------------------------------------";
 
+    // System security context
     private final AccessContext sysCtx;
+    // Default security identity for unauthenticated clients
+    private final Identity      anonClientId;
+    // Public access security role
+    private final Role          publicRole;
+    // Public access security type
+    private final SecurityType  publicType;
+
     private String[] args;
 
     private final GenericTimer<String, Action<String>> timerEventSvc;
@@ -72,11 +91,48 @@ public class Controller implements Runnable, CoreServices
     private boolean shutdownFinished;
     private ObjectProtection shutdownProt;
 
+    static
+    {
+        try
+        {
+            ID_ANON_CLIENT_NAME = new IdentityName("AnonymousClient");
+            ROLE_PUBLIC_NAME    = new RoleName("Public");
+            TYPE_PUBLIC_NAME    = new SecTypeName("Public");
+        }
+        catch (InvalidNameException nameExc)
+        {
+            throw new ImplementationError(
+                "The " + Controller.class.getName() + " class contains invalid " +
+                "security object name constants",
+                nameExc
+            );
+        }
+    }
+
     public Controller(AccessContext sysCtxRef, String[] argsRef)
         throws IOException
     {
         sysCtx = sysCtxRef;
         args = argsRef;
+
+        // Initialize security objects
+        {
+            AccessContext initCtx = sysCtx.clone();
+            try
+            {
+                initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+                anonClientId = new Identity(initCtx, ID_ANON_CLIENT_NAME);
+                publicRole = new Role(initCtx, ROLE_PUBLIC_NAME);
+                publicType = new SecurityType(initCtx, TYPE_PUBLIC_NAME);
+            }
+            catch (AccessDeniedException accessExc)
+            {
+                throw new ImplementationError(
+                    "Controller initialization failed: Initialization of security contexts failed",
+                    accessExc
+                );
+            }
+        }
 
         // Create the timer event service
         timerEventSvc = new GenericTimer<>();
@@ -162,7 +218,6 @@ public class Controller implements Runnable, CoreServices
 
         logInit("Starting timer event service");
         // Start the timer event service
-        timerEventSvc.setTimerName("TimerEventService");
         timerEventSvc.start();
 
         logInit("Starting filesystem event service");
@@ -177,20 +232,11 @@ public class Controller implements Runnable, CoreServices
         }
         workers = WorkerPool.initialize(workerThreadCount, workerQueueSize, true, "MainWorkerPool");
 
+        logInit("Initializing network communications service");
+        initializeNetComService();
+
         logInit("Starting network communications service");
-        try
-        {
-            netComSvc = new TcpConnectorService(
-                this,
-                new DebugMessageProcessor(this)
-            );
-            netComSvc.initialize();
-            netComSvc.start();
-        }
-        catch (IOException ioExc)
-        {
-            errorLog.reportError(ioExc);
-        }
+        netComSvc.start();
 
         System.out.printf("\n%s\n\n", SCREEN_DIV);
         runTimeInfo();
@@ -214,6 +260,14 @@ public class Controller implements Runnable, CoreServices
             // Stop the filesystem event service
             logInfo("Shutting down filesystem event service");
             fsEventSvc.shutdown();
+            try
+            {
+                logInfo("Waiting for the filesystem event service to shut down");
+                fsEventSvc.join(SHUTDOWN_THR_JOIN_WAIT);
+            }
+            catch (InterruptedException ignored)
+            {
+            }
 
             // Stop the timer event service
             logInfo("Shutting down timer event service");
@@ -222,6 +276,14 @@ public class Controller implements Runnable, CoreServices
             {
                 logInfo("Shutting down network communication service");
                 netComSvc.shutdown();
+                try
+                {
+                    logInfo("Waiting for the network communication service to shut down");
+                    netComSvc.join(SHUTDOWN_THR_JOIN_WAIT);
+                }
+                catch (InterruptedException ignored)
+                {
+                }
             }
 
             if (workers != null)
@@ -401,6 +463,38 @@ public class Controller implements Runnable, CoreServices
         }
 
         System.out.println();
+    }
+
+    private void initializeNetComService()
+    {
+        try
+        {
+            AccessContext defaultPeerAccCtx;
+            {
+                AccessContext impCtx = sysCtx.clone();
+                impCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+                defaultPeerAccCtx = impCtx.impersonate(
+                    anonClientId,
+                    publicRole,
+                    publicType
+                );
+            }
+            netComSvc = new TcpConnectorService(
+                this,
+                new DebugMessageProcessor(this),
+                defaultPeerAccCtx
+            );
+            netComSvc.initialize();
+        }
+        catch (AccessDeniedException accessExc)
+        {
+            errorLog.reportError(accessExc);
+            logFailure("Cannot create security context for the network communications service");
+        }
+        catch (IOException ioExc)
+        {
+            errorLog.reportError(ioExc);
+        }
     }
 
     public interface DebugConsole
