@@ -90,6 +90,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
      * @throws ValueOutOfRangeException If the calculated target time (delay and current time)
      *     would overflow Long.MAX_VALUE
      */
+    @Override
     public void addDelayedAction(Long delay, V actionObj)
         throws NegativeTimeException, ValueOutOfRangeException
     {
@@ -168,6 +169,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
      *     as System.currentTimeMillis()
      * @param actionObj Action to perform
      */
+    @Override
     public void addScheduledAction(Long scheduledTime, V actionObj)
     {
         if (ENABLE_DEBUG)
@@ -239,6 +241,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
      *
      * @param actionId Action to cancel
      */
+    @Override
     public void cancelAction(K actionId)
     {
         if (ENABLE_DEBUG)
