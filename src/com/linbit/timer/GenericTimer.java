@@ -1,6 +1,7 @@
 package com.linbit.timer;
 
 import com.linbit.NegativeTimeException;
+import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import java.util.Map;
 import java.util.TreeMap;
@@ -15,10 +16,11 @@ import java.util.TreeMap;
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
-    implements Timer<K, V>
+    implements Timer<K, V>, SystemService
 {
-    private static final String DEFAULT_NAME = "DefaultTimer";
-    private static final boolean ENABLE_DEBUG = false;
+    private static final String SERVICE_NAME    = "TimerEventService";
+    private static final String SERVICE_INFO    = "Timed actions scheduler";
+    private static final boolean ENABLE_DEBUG   = false;
 
     // Maps interrupt time value to action id & action object
     private final TreeMap<Long, TreeMap<K, V>> timerMap;
@@ -32,7 +34,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
 
     private ActionScheduler<K, V> sched;
 
-    private String timerName;
+    private String serviceInstanceName;
 
     /**
      * Constructs a new timer instance
@@ -42,27 +44,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
         timerMap = new TreeMap<>();
         actionMap = new TreeMap<>();
         sched = null;
-        timerName = DEFAULT_NAME;
-    }
-
-    /**
-     * Sets the name of this timer and its action scheduler thread
-     *
-     * @param name The name for this timer and its action scheduler thread
-     */
-    public void setTimerName(String name)
-    {
-        if (name != null)
-        {
-            synchronized (this)
-            {
-                timerName = name;
-                if (sched != null)
-                {
-                    sched.setName(name);
-                }
-            }
-        }
+        serviceInstanceName = SERVICE_NAME;
     }
 
     /**
@@ -73,7 +55,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
         String name;
         synchronized (this)
         {
-            name = timerName;
+            name = serviceInstanceName;
         }
         return name;
     }
@@ -323,6 +305,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
     /**
      * Starts this timer instance's ActionScheduler thread
      */
+    @Override
     public void start()
     {
         if (ENABLE_DEBUG)
@@ -338,7 +321,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
                     debugOut(GenericTimer.class, "start(): Starting new ActionScheduler thread");
                 }
                 sched = new ActionScheduler<>(this);
-                sched.setName(timerName);
+                sched.setName(serviceInstanceName);
                 sched.start();
             }
             else
@@ -360,6 +343,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
      *
      * This method does not wait for the ActionScheduler thread to end.
      */
+    @Override
     public void shutdown()
     {
         if (ENABLE_DEBUG)
@@ -374,6 +358,52 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
         if (ENABLE_DEBUG)
         {
             debugOut(GenericTimer.class, "EXIT shutdown()");
+        }
+    }
+
+    @Override
+    public String getServiceName()
+    {
+        return SERVICE_NAME;
+    }
+
+    @Override
+    public String getServiceInfo()
+    {
+        return SERVICE_INFO;
+    }
+
+    @Override
+    public String getInstanceName()
+    {
+        return serviceInstanceName;
+    }
+
+    @Override
+    public synchronized boolean isStarted()
+    {
+        return sched != null;
+    }
+
+    /**
+     * Sets the name of this timer and its action scheduler thread
+     *
+     * @param name The name for this timer and its action scheduler thread
+     */
+    @Override
+    public synchronized void setServiceInstanceName(String instanceName)
+    {
+        if (instanceName == null)
+        {
+            serviceInstanceName = SERVICE_NAME;
+        }
+        else
+        {
+            serviceInstanceName = instanceName;
+        }
+        if (sched != null)
+        {
+            sched.setName(serviceInstanceName);
         }
     }
 

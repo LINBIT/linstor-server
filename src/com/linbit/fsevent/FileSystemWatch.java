@@ -3,6 +3,7 @@ package com.linbit.fsevent;
 import com.linbit.ErrorCheck;
 import com.linbit.NegativeTimeException;
 import com.linbit.ImplementationError;
+import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import java.io.File;
 import java.io.IOException;
@@ -30,8 +31,54 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class FileSystemWatch extends Thread
+public class FileSystemWatch extends Thread implements SystemService
 {
+    private static final String SERVICE_NAME = "FileEventService";
+    private static final String SERVICE_INFO = "Filesystem event tracking service";
+
+    private String serviceInstanceName = SERVICE_NAME;
+
+    @Override
+    public String getServiceName()
+    {
+        return SERVICE_NAME;
+    }
+
+    @Override
+    public String getServiceInfo()
+    {
+        return SERVICE_INFO;
+    }
+
+    @Override
+    public String getInstanceName()
+    {
+        return serviceInstanceName;
+    }
+
+    @Override
+    public synchronized boolean isStarted()
+    {
+        return this.isAlive();
+    }
+
+    @Override
+    public synchronized void setServiceInstanceName(String instanceName)
+    {
+        if (instanceName == null)
+        {
+            serviceInstanceName = SERVICE_NAME;
+        }
+        else
+        {
+            serviceInstanceName = instanceName;
+        }
+        if (watchThread != null)
+        {
+            watchThread.setName(serviceInstanceName);
+        }
+    }
+
     public static enum Event
     {
         CREATE,
@@ -95,7 +142,7 @@ public class FileSystemWatch extends Thread
             if (watchThread == null)
             {
                 watchThread = Thread.currentThread();
-                watchThread.setName("FileEventService");
+                watchThread.setName(serviceInstanceName);
             }
         }
         List<FileEntry> fileObs = new LinkedList<>();

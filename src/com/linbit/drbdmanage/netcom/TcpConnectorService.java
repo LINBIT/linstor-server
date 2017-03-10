@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.netcom;
 
 import com.linbit.ImplementationError;
+import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.CoreServices;
@@ -29,11 +30,17 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
+ * TCP/IP network communication service
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class TcpConnectorService extends Thread implements TcpConnector
+public class TcpConnectorService extends Thread implements TcpConnector, SystemService
 {
+    private static final String SERVICE_NAME = "NetComService";
+    private static final String SERVICE_INFO = "TCP/IP network communications service";
+
+    private String serviceInstanceName;
+
     public static final int DEFAULT_PORT_VALUE = 9977;
     public static final TcpPortNumber DEFAULT_PORT;
 
@@ -109,6 +116,8 @@ public class TcpConnectorService extends Thread implements TcpConnector
         MessageProcessor msgProcessorRef
     ) throws IOException
     {
+        serviceInstanceName = SERVICE_NAME;
+
         bindAddress     = DEFAULT_BIND_ADDRESS;
         serverSocket    = null;
         serverSelector  = null;
@@ -432,5 +441,43 @@ public class TcpConnectorService extends Thread implements TcpConnector
             coreSvcs.getErrorReporter().reportError(closeIoExc);
         }
         currentKey.cancel();
+    }
+
+    @Override
+    public String getServiceName()
+    {
+        return SERVICE_NAME;
+    }
+
+    @Override
+    public String getServiceInfo()
+    {
+        return SERVICE_INFO;
+    }
+
+    @Override
+    public String getInstanceName()
+    {
+        return serviceInstanceName;
+    }
+
+    @Override
+    public synchronized boolean isStarted()
+    {
+        return this.isAlive();
+    }
+
+    @Override
+    public synchronized void setServiceInstanceName(String instanceName)
+    {
+        if (instanceName == null)
+        {
+            serviceInstanceName = SERVICE_NAME;
+        }
+        else
+        {
+            serviceInstanceName = instanceName;
+        }
+        setName(serviceInstanceName);
     }
 }
