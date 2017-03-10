@@ -11,8 +11,6 @@ import java.util.Map;
  */
 public class CmdShutdown extends BaseControllerDebugCmd
 {
-    private static final int OVERFLOW_SPACE = 20;
-
     public CmdShutdown()
     {
         super(
