@@ -586,6 +586,7 @@ public class Controller implements Runnable, CoreServices
             "CmdDisplayServices",
             "CmdStartService",
             "CmdEndService",
+            "CmdTestErrorLog",
             "CmdShutdown"
         };
         public static final String COMMAND_CLASS_PKG = "com.linbit.drbdmanage.debug";
@@ -1078,28 +1079,6 @@ public class Controller implements Runnable, CoreServices
             {
                 controller.errorLog.reportError(accExc);
             }
-        }
-    }
-
-    static class TestException extends Exception
-    {
-        TestException()
-        {
-        }
-
-        TestException(String message)
-        {
-            super(message);
-        }
-
-        TestException(Throwable cause)
-        {
-            super(cause);
-        }
-
-        TestException(String message, Throwable cause)
-        {
-            super(message, cause);
         }
     }
 }
