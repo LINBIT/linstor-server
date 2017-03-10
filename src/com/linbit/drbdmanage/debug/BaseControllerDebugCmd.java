@@ -5,6 +5,9 @@ import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.Controller.DebugConsole;
 import com.linbit.drbdmanage.Controller.DebugControl;
 import com.linbit.drbdmanage.CoreServices;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -133,5 +136,71 @@ public abstract class BaseControllerDebugCmd implements ControllerDebugCmd
     public boolean acceptsUndeclaredParameters()
     {
         return acceptsUndeclared;
+    }
+
+    public void printError(
+        PrintStream debugErr,
+        String errorText,
+        String causeText,
+        String correctionText,
+        String errorDetailsText
+    )
+        throws IOException
+    {
+        if (errorText != null)
+        {
+            debugErr.println("Error:");
+            printIndentedLines(debugErr, 4, errorText);
+        }
+        if (causeText != null)
+        {
+            debugErr.println("Cause:");
+            printIndentedLines(debugErr, 4, causeText);
+        }
+        if (correctionText != null)
+        {
+            debugErr.println("Correction:");
+            printIndentedLines(debugErr, 4, correctionText);
+        }
+        if (errorDetailsText != null)
+        {
+            debugErr.println("Error details:");
+            printIndentedLines(debugErr, 4, errorDetailsText);
+        }
+    }
+
+    private void printIndentedLines(
+        PrintStream debugErr,
+        int indent,
+        String text
+    )
+        throws IOException
+    {
+        byte[] spacer = new byte[indent];
+        Arrays.fill(spacer, (byte) ' ');
+        byte[] data = text.getBytes();
+        int offset = 0;
+        for (int index = 0; index < data.length; ++index)
+        {
+            if (data[index] == '\n')
+            {
+                if (index > offset)
+                {
+                    debugErr.write(spacer);
+                    debugErr.write(data, offset, index - offset);
+                }
+                else
+                {
+                    debugErr.println();
+                }
+                offset = index + 1;
+            }
+        }
+        if (offset < data.length)
+        {
+            debugErr.write(spacer);
+            debugErr.write(data, offset, data.length - offset);
+            debugErr.println();
+        }
     }
 }
