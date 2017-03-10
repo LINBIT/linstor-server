@@ -50,7 +50,7 @@ public class Controller implements Runnable, CoreServices
 {
     public static final String PROGRAM = "drbdmanageNG";
     public static final String MODULE = "Controller";
-    public static final String VERSION = "experimental 2017-03-09_001";
+    public static final String VERSION = "experimental 2017-03-10_001";
 
     public static final int MIN_WORKER_QUEUE_SIZE = 32;
     public static final int MAX_CPU_COUNT = 1024;
