@@ -304,6 +304,14 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
                 // A possible recovery would be to reinitialize the TcpConnectorService
                 coreSvcs.getErrorReporter().reportError(ioExc);
             }
+            catch (Exception exc)
+            {
+                coreSvcs.getErrorReporter().reportError(exc);
+            }
+            catch (ImplementationError implErr)
+            {
+                coreSvcs.getErrorReporter().reportError(implErr);
+            }
         }
 
         try
