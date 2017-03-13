@@ -7,12 +7,13 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
+import com.linbit.drbdmanage.controllerapi.Ping;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
-import com.linbit.drbdmanage.debug.DebugMessageProcessor;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnectionObserver;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
+import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -96,6 +97,7 @@ public class Controller implements Runnable, CoreServices
     private ErrorReporter errorLog = null;
 
     private TcpConnectorService netComSvc = null;
+    private CommonMessageProcessor msgProc = null;
 
     private boolean shutdownFinished;
     private ObjectProtection shutdownProt;
@@ -229,6 +231,24 @@ public class Controller implements Runnable, CoreServices
         logInit("Applying base security policy to system objects");
         applyBaseSecurityPolicy();
 
+        logInit("Starting worker thread pool");
+        workerThreadCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
+        {
+            int qSize = workerThreadCount * workerQueueFactor;
+            workerQueueSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
+        }
+        workers = WorkerPool.initialize(workerThreadCount, workerQueueSize, true, "MainWorkerPool", errorLog);
+
+        // Initialize the message processor
+        logInit("Initializing API call dispatcher");
+        msgProc = new CommonMessageProcessor(this, workers);
+
+        logInit("Initializing test APIs");
+        {
+            ApiCall pingCall = new Ping(this, this);
+            msgProc.addApiCall(pingCall);
+        }
+
         // Initialize the network communications service
         logInit("Initializing network communications service");
         initializeNetComService();
@@ -258,13 +278,6 @@ public class Controller implements Runnable, CoreServices
             }
         }
 
-        logInit("Starting worker thread pool");
-        workerThreadCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
-        {
-            int qSize = workerThreadCount * workerQueueFactor;
-            workerQueueSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
-        }
-        workers = WorkerPool.initialize(workerThreadCount, workerQueueSize, true, "MainWorkerPool");
 
         System.out.printf("\n%s\n\n", SCREEN_DIV);
         runTimeInfo();
@@ -507,7 +520,7 @@ public class Controller implements Runnable, CoreServices
             }
             netComSvc = new TcpConnectorService(
                 this,
-                new DebugMessageProcessor(this),
+                msgProc,
                 defaultPeerAccCtx
             );
             netComSvc.initialize();
@@ -532,7 +545,7 @@ public class Controller implements Runnable, CoreServices
         {
             controller = controllerRef;
         }
-        
+
         @Override
         public void outboundConnectionEstablished(Peer connPeer)
         {

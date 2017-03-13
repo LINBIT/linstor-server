@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// Message header
+message MsgHeader
+{
+    // Identifying number for this message
+    //
+    // Immediate answers to this message will be sent
+    // back with the same msg_id
+    int32   msg_id      = 1;
+
+    // Name of the API call to execute
+    //
+    // The message content (parameters) following this
+    // message header will be processed by the API method
+    // that is selected by this field
+    string  api_call    = 2;
+}
