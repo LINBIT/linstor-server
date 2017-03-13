@@ -17,6 +17,20 @@ public interface Peer
     AccessContext getAccessContext();
 
     /**
+     * Attaches the object to the peer
+     *
+     * @param attachment The object to attach to the peer
+     */
+    void attach(Object attachment);
+
+    /**
+     * Fetches the object attached to the peer
+     *
+     * @return The object attached to the peer
+     */
+    Object getAttachment();
+
+    /**
      * Queues a message for sending to the peer
      *
      * @param msg Message to send

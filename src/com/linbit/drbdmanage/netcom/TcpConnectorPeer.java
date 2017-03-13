@@ -30,6 +30,8 @@ public class TcpConnectorPeer implements Peer
 
     private AccessContext peerAccCtx;
 
+    private Object attachment;
+
     TcpConnectorPeer(TcpConnector connectorRef, SelectionKey key, AccessContext accCtx)
     {
         connector = connectorRef;
@@ -39,6 +41,7 @@ public class TcpConnectorPeer implements Peer
         peerAccCtx = accCtx;
     }
 
+    @Override
     public void sendMessage(Message msg)
         throws IllegalMessageStateException
     {
@@ -64,8 +67,10 @@ public class TcpConnectorPeer implements Peer
             {
                 msgOutQueue.add(tcpConMsg);
             }
+
             // Outbound messages present, enable OP_WRITE
             selKey.interestOps(OP_READ | OP_WRITE);
+            connector.wakeup();
         }
     }
 
@@ -91,5 +96,17 @@ public class TcpConnectorPeer implements Peer
     public AccessContext getAccessContext()
     {
         return peerAccCtx;
+    }
+
+    @Override
+    public void attach(Object attachmentRef)
+    {
+        attachment = attachmentRef;
+    }
+
+    @Override
+    public Object getAttachment()
+    {
+        return attachment;
     }
 }
