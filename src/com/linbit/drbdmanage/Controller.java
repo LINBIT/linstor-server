@@ -10,6 +10,8 @@ import com.linbit.WorkerPool;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
 import com.linbit.drbdmanage.debug.DebugMessageProcessor;
+import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.netcom.TcpConnectionObserver;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -519,6 +521,36 @@ public class Controller implements Runnable, CoreServices
         catch (IOException | SystemServiceStartException exc)
         {
             errorLog.reportError(exc);
+        }
+    }
+
+    private class TcpConnTracker implements TcpConnectionObserver
+    {
+        private Controller controller;
+
+        TcpConnTracker(Controller controllerRef)
+        {
+            controller = controllerRef;
+        }
+        
+        @Override
+        public void outboundConnectionEstablished(Peer connPeer)
+        {
+            // TODO: Satellite or utility connection connected
+        }
+
+        @Override
+        public void inboundConnectionEstablished(Peer connPeer)
+        {
+            CtlPeerContext peerCtx = new CtlPeerContext();
+            connPeer.attach(peerCtx);
+        }
+
+        @Override
+        public void connectionClosed(Peer connPeer)
+        {
+            // TODO: Implement
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
