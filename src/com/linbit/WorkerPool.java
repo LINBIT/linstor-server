@@ -1,10 +1,11 @@
 package com.linbit;
 
+import com.linbit.drbdmanage.ErrorReporter;
 import java.util.ArrayDeque;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class WorkerPool
+public class WorkerPool implements WorkQueue
 {
     private final ArrayDeque<Runnable> workQueue;
     private final Semaphore workQueueGuard;
@@ -17,7 +18,15 @@ public class WorkerPool
     private int workQueueSize;
     private final String threadNamePrefix;
 
-    private WorkerPool(int parallelism, int queueSize, boolean fair, String namePrefix)
+    private ErrorReporter errorLog;
+
+    private WorkerPool(
+        int parallelism,
+        int queueSize,
+        boolean fair,
+        String namePrefix,
+        ErrorReporter errorLogRef
+    )
     {
         workQueue = new ArrayDeque<>(queueSize);
         workQueueGuard = new Semaphore(queueSize, fair);
@@ -26,11 +35,18 @@ public class WorkerPool
         unfinishedTasks = new AtomicInteger();
         workQueueSize = queueSize;
         threadNamePrefix = namePrefix;
+        errorLog = errorLogRef;
     }
 
-    public static WorkerPool initialize(int parallelism, int queueSize, boolean fair, String namePrefix)
+    public static WorkerPool initialize(
+        int parallelism,
+        int queueSize,
+        boolean fair,
+        String namePrefix,
+        ErrorReporter errorLogRef
+    )
     {
-        WorkerPool pool = new WorkerPool(parallelism, queueSize, fair, namePrefix);
+        WorkerPool pool = new WorkerPool(parallelism, queueSize, fair, namePrefix, errorLogRef);
 
         for (int threadIndex = 0; threadIndex < parallelism; ++threadIndex)
         {
@@ -43,6 +59,7 @@ public class WorkerPool
         return pool;
     }
 
+    @Override
     public void submit(Runnable task)
     {
         workQueueGuard.acquireUninterruptibly();
@@ -151,7 +168,18 @@ public class WorkerPool
                 if (task != null)
                 {
                     pool.workQueueGuard.release();
-                    task.run();
+                    try
+                    {
+                        task.run();
+                    }
+                    catch (Exception exc)
+                    {
+                        pool.errorLog.reportError(exc);
+                    }
+                    catch (ImplementationError implError)
+                    {
+                        pool.errorLog.reportError(implError);
+                    }
                     if (pool.unfinishedTasks.decrementAndGet() == 0)
                     {
                         synchronized (pool)
