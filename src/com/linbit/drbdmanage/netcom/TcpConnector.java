@@ -9,5 +9,7 @@ public interface TcpConnector
 {
     // TODO: Experimental; some means of adding a new connection that is to
     //       be created by the TcpConnector implementation
-    public Peer connect();
+    Peer connect();
+
+    void wakeup();
 }

@@ -483,9 +483,10 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         }
     }
 
-    void enableSend(SelectionKey currentKey)
+    @Override
+    public void wakeup()
     {
-
+        serverSelector.wakeup();
     }
 
     private void establishConnection(SelectionKey currentKey)
