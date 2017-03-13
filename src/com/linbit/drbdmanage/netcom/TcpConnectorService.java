@@ -445,7 +445,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                 SelectionKey connKey = newSocket.register(serverSelector, SelectionKey.OP_READ);
 
                 // Prepare the peer object and message
-                TcpConnectorPeer connPeer = new TcpConnectorPeer(this, currentKey, defaultPeerAccCtx);
+                TcpConnectorPeer connPeer = new TcpConnectorPeer(this, connKey, defaultPeerAccCtx);
                 connKey.attach(connPeer);
 
                 // BEGIN DEBUG
