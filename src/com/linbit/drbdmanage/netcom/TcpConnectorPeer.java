@@ -42,6 +42,12 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
+    public Message createMessage()
+    {
+        return new TcpConnectorMessage(true);
+    }
+
+    @Override
     public void sendMessage(Message msg)
         throws IllegalMessageStateException
     {

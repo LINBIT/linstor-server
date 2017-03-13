@@ -31,6 +31,13 @@ public interface Peer
     Object getAttachment();
 
     /**
+     * Creates a new message for sending to this peer
+     *
+     * @return New message instance
+     */
+    Message createMessage();
+
+    /**
      * Queues a message for sending to the peer
      *
      * @param msg Message to send
