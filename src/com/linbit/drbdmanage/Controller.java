@@ -1,7 +1,10 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.InvalidNameException;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.ServiceName;
+import com.linbit.SystemService;
 import com.linbit.WorkerPool;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
@@ -83,6 +86,9 @@ public class Controller implements Runnable, CoreServices
     private final GenericTimer<String, Action<String>> timerEventSvc;
     private final FileSystemWatch fsEventSvc;
 
+    // Map of controllable system services
+    private final Map<ServiceName, SystemService> systemServicesMap;
+
     private WorkerPool workers = null;
     private ErrorReporter errorLog = null;
 
@@ -148,6 +154,10 @@ public class Controller implements Runnable, CoreServices
             // FIXME: Generate a startup exception
             throw ioExc;
         }
+
+        systemServicesMap = new TreeMap<>();
+        systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
+        systemServicesMap.put(fsEventSvc.getInstanceName(), fsEventSvc);
 
         cpuCount = Runtime.getRuntime().availableProcessors();
 
@@ -485,6 +495,7 @@ public class Controller implements Runnable, CoreServices
                 defaultPeerAccCtx
             );
             netComSvc.initialize();
+            systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
         }
         catch (AccessDeniedException accessExc)
         {
@@ -558,6 +569,9 @@ public class Controller implements Runnable, CoreServices
         {
             "CmdDisplayThreads",
             "CmdDisplayContextInfo",
+            "CmdDisplayServices",
+            "CmdStartService",
+            "CmdEndService",
             "CmdShutdown"
         };
         public static final String COMMAND_CLASS_PKG = "com.linbit.drbdmanage.debug";
@@ -1020,6 +1034,7 @@ public class Controller implements Runnable, CoreServices
 
     public interface DebugControl
     {
+        Map<ServiceName, SystemService> getSystemServiceMap();
         void shutdown(AccessContext accCtx);
     }
 
@@ -1030,6 +1045,13 @@ public class Controller implements Runnable, CoreServices
         DebugControlImpl(Controller controllerRef)
         {
             controller = controllerRef;
+        }
+
+        public Map<ServiceName, SystemService> getSystemServiceMap()
+        {
+            Map<ServiceName, SystemService> svcCpy = new TreeMap<>();
+            svcCpy.putAll(controller.systemServicesMap);
+            return svcCpy;
         }
 
         public void shutdown(AccessContext accCtx)

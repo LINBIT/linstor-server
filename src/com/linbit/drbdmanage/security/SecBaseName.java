@@ -1,8 +1,8 @@
 package com.linbit.drbdmanage.security;
 
-import com.linbit.drbdmanage.Checks;
-import com.linbit.drbdmanage.GenericName;
-import com.linbit.drbdmanage.InvalidNameException;
+import com.linbit.Checks;
+import com.linbit.GenericName;
+import com.linbit.InvalidNameException;
 
 /**
  * Base class for security object names

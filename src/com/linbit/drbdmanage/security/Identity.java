@@ -1,7 +1,7 @@
 package com.linbit.drbdmanage.security;
 
 import com.linbit.ImplementationError;
-import com.linbit.drbdmanage.InvalidNameException;
+import com.linbit.InvalidNameException;
 
 /**
  * Identity of a security subject (user...)

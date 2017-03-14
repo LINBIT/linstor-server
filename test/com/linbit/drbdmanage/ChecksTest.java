@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.InvalidNameException;
+import com.linbit.Checks;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import org.junit.After;

@@ -138,6 +138,24 @@ public abstract class BaseControllerDebugCmd implements ControllerDebugCmd
         return acceptsUndeclared;
     }
 
+    public void printMissingParamError(
+        PrintStream debugErr,
+        String paramName
+    )
+        throws IOException
+    {
+        printError(
+            debugErr,
+            String.format(
+                "The required parameter '%s' is not present.",
+                paramName
+            ),
+            null,
+            "Reenter the command including the required parameter",
+            null
+        );
+    }
+
     public void printError(
         PrintStream debugErr,
         String errorText,

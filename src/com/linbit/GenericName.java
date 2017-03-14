@@ -1,4 +1,4 @@
-package com.linbit.drbdmanage;
+package com.linbit;
 
 /**
  * Base class for classes keeping the name of a drbdmanageNG object

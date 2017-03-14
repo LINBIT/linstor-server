@@ -1,7 +1,4 @@
-package com.linbit.drbdmanage;
-
-import com.linbit.ImplementationError;
-import com.linbit.ValueOutOfRangeException;
+package com.linbit;
 
 /**
  * Universal validity checks

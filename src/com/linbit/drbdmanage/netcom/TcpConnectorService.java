@@ -2,6 +2,8 @@ package com.linbit.drbdmanage.netcom;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Controller;
@@ -38,10 +40,10 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
  */
 public class TcpConnectorService extends Thread implements TcpConnector, SystemService
 {
-    private static final String SERVICE_NAME = "NetComService";
+    private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "TCP/IP network communications service";
 
-    private String serviceInstanceName;
+    private ServiceName serviceInstanceName;
 
     public static final int DEFAULT_PORT_VALUE = 9977;
     public static final TcpPortNumber DEFAULT_PORT;
@@ -62,11 +64,13 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
     // outside of the selector loop
     private AtomicBoolean updateFlag;
 
-        static
+    static
     {
         try
         {
             DEFAULT_PORT = new TcpPortNumber(DEFAULT_PORT_VALUE);
+
+            SERVICE_NAME = new ServiceName("NetComService");
         }
         catch (ValueOutOfRangeException valueExc)
         {
@@ -76,6 +80,16 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
                     TcpConnectorService.class.getName(), DEFAULT_PORT_VALUE
                 ),
                 valueExc
+            );
+        }
+        catch (InvalidNameException nameExc)
+        {
+            throw new ImplementationError(
+                String.format(
+                    "%s class contains an invalid name constant",
+                    TcpConnectorService.class.getName()
+                ),
+                nameExc
             );
         }
 
@@ -464,7 +478,7 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
     }
 
     @Override
-    public String getServiceName()
+    public ServiceName getServiceName()
     {
         return SERVICE_NAME;
     }
@@ -476,7 +490,7 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
     }
 
     @Override
-    public String getInstanceName()
+    public ServiceName getInstanceName()
     {
         return serviceInstanceName;
     }
@@ -488,7 +502,7 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
     }
 
     @Override
-    public synchronized void setServiceInstanceName(String instanceName)
+    public synchronized void setServiceInstanceName(ServiceName instanceName)
     {
         if (instanceName == null)
         {
@@ -498,6 +512,6 @@ public class TcpConnectorService extends Thread implements TcpConnector, SystemS
         {
             serviceInstanceName = instanceName;
         }
-        setName(serviceInstanceName);
+        setName(serviceInstanceName.getDisplayName());
     }
 }

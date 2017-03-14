@@ -2,7 +2,7 @@ package com.linbit.drbdmanage.security;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.drbdmanage.InvalidNameException;
+import com.linbit.InvalidNameException;
 
 /**
  * Security protection for drbdmanageNG object

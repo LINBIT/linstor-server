@@ -1,4 +1,4 @@
-package com.linbit.drbdmanage;
+package com.linbit;
 
 /**
  * Thrown to indicate that a name or identifier is not valid

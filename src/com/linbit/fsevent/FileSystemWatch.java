@@ -3,6 +3,8 @@ package com.linbit.fsevent;
 import com.linbit.ErrorCheck;
 import com.linbit.NegativeTimeException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import java.io.File;
@@ -33,49 +35,26 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class FileSystemWatch extends Thread implements SystemService
 {
-    private static final String SERVICE_NAME = "FileEventService";
+    private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "Filesystem event tracking service";
 
-    private String serviceInstanceName = SERVICE_NAME;
+    private ServiceName serviceInstanceName;
 
-    @Override
-    public String getServiceName()
+    static
     {
-        return SERVICE_NAME;
-    }
-
-    @Override
-    public String getServiceInfo()
-    {
-        return SERVICE_INFO;
-    }
-
-    @Override
-    public String getInstanceName()
-    {
-        return serviceInstanceName;
-    }
-
-    @Override
-    public synchronized boolean isStarted()
-    {
-        return this.isAlive();
-    }
-
-    @Override
-    public synchronized void setServiceInstanceName(String instanceName)
-    {
-        if (instanceName == null)
+        try
         {
-            serviceInstanceName = SERVICE_NAME;
+            SERVICE_NAME = new ServiceName("FileEventService");
         }
-        else
+        catch (InvalidNameException nameExc)
         {
-            serviceInstanceName = instanceName;
-        }
-        if (watchThread != null)
-        {
-            watchThread.setName(serviceInstanceName);
+            throw new ImplementationError(
+                String.format(
+                    "%s class contains an invalid name constant",
+                    FileSystemWatch.class.getName()
+                ),
+                nameExc
+            );
         }
     }
 
@@ -118,6 +97,8 @@ public class FileSystemWatch extends Thread implements SystemService
 
     public FileSystemWatch() throws IOException
     {
+        serviceInstanceName = SERVICE_NAME;
+
         mapLock = new Object();
 
         fileSys = FileSystems.getDefault();
@@ -142,7 +123,7 @@ public class FileSystemWatch extends Thread implements SystemService
             if (watchThread == null)
             {
                 watchThread = Thread.currentThread();
-                watchThread.setName(serviceInstanceName);
+                watchThread.setName(serviceInstanceName.getDisplayName());
             }
         }
         List<FileEntry> fileObs = new LinkedList<>();
@@ -646,6 +627,47 @@ public class FileSystemWatch extends Thread implements SystemService
                     watchMap.remove(watchPath);
                 }
             }
+        }
+    }
+
+    @Override
+    public ServiceName getServiceName()
+    {
+        return SERVICE_NAME;
+    }
+
+    @Override
+    public String getServiceInfo()
+    {
+        return SERVICE_INFO;
+    }
+
+    @Override
+    public ServiceName getInstanceName()
+    {
+        return serviceInstanceName;
+    }
+
+    @Override
+    public synchronized boolean isStarted()
+    {
+        return this.isAlive();
+    }
+
+    @Override
+    public synchronized void setServiceInstanceName(ServiceName instanceName)
+    {
+        if (instanceName == null)
+        {
+            serviceInstanceName = SERVICE_NAME;
+        }
+        else
+        {
+            serviceInstanceName = instanceName;
+        }
+        if (watchThread != null)
+        {
+            watchThread.setName(serviceInstanceName.getDisplayName());
         }
     }
 

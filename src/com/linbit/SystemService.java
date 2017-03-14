@@ -10,7 +10,7 @@ public interface SystemService extends SystemServiceInfo
     /**
      * Changes the service instance's name
      */
-    void setServiceInstanceName(String instanceName);
+    void setServiceInstanceName(ServiceName instanceName);
 
     /**
      * Enables the service

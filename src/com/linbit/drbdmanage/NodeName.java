@@ -1,5 +1,9 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.InvalidNameException;
+import com.linbit.GenericName;
+import com.linbit.Checks;
+
 /**
  * Valid name of a drbdmanageNG node
  *

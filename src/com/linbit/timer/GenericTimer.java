@@ -1,6 +1,9 @@
 package com.linbit.timer;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.NegativeTimeException;
+import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import java.util.Map;
@@ -18,7 +21,7 @@ import java.util.TreeMap;
 public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
     implements Timer<K, V>, SystemService
 {
-    private static final String SERVICE_NAME    = "TimerEventService";
+    private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO    = "Timed actions scheduler";
     private static final boolean ENABLE_DEBUG   = false;
 
@@ -34,7 +37,25 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
 
     private ActionScheduler<K, V> sched;
 
-    private String serviceInstanceName;
+    private ServiceName serviceInstanceName;
+
+    static
+    {
+        try
+        {
+            SERVICE_NAME = new ServiceName("TimerEventService");
+        }
+        catch (InvalidNameException nameExc)
+        {
+            throw new ImplementationError(
+                String.format(
+                    "%s class contains an invalid name constant",
+                    GenericTimer.class.getName()
+                ),
+                nameExc
+            );
+        }
+    }
 
     /**
      * Constructs a new timer instance
@@ -45,19 +66,6 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
         actionMap = new TreeMap<>();
         sched = null;
         serviceInstanceName = SERVICE_NAME;
-    }
-
-    /**
-     * Returns the name of this timer and its action scheduler thread
-     */
-    public String getTimerName()
-    {
-        String name;
-        synchronized (this)
-        {
-            name = serviceInstanceName;
-        }
-        return name;
     }
 
     /**
@@ -321,7 +329,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
                     debugOut(GenericTimer.class, "start(): Starting new ActionScheduler thread");
                 }
                 sched = new ActionScheduler<>(this);
-                sched.setName(serviceInstanceName);
+                sched.setName(serviceInstanceName.getDisplayName());
                 sched.start();
             }
             else
@@ -362,7 +370,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
     }
 
     @Override
-    public String getServiceName()
+    public ServiceName getServiceName()
     {
         return SERVICE_NAME;
     }
@@ -374,7 +382,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
     }
 
     @Override
-    public String getInstanceName()
+    public ServiceName getInstanceName()
     {
         return serviceInstanceName;
     }
@@ -391,7 +399,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
      * @param name The name for this timer and its action scheduler thread
      */
     @Override
-    public synchronized void setServiceInstanceName(String instanceName)
+    public synchronized void setServiceInstanceName(ServiceName instanceName)
     {
         if (instanceName == null)
         {
@@ -403,7 +411,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
         }
         if (sched != null)
         {
-            sched.setName(serviceInstanceName);
+            sched.setName(serviceInstanceName.getDisplayName());
         }
     }
 

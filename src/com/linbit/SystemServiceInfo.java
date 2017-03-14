@@ -10,7 +10,7 @@ public interface SystemServiceInfo
     /**
      * Returns the name for all instances of this service
      */
-    String getServiceName();
+    ServiceName getServiceName();
 
     /**
      * Returns a short description of what the service is,
@@ -21,7 +21,7 @@ public interface SystemServiceInfo
     /**
      * Returns the name of this instance of the service
      */
-    String getInstanceName();
+    ServiceName getInstanceName();
 
     /**
      * Indicates whether the service is started or not

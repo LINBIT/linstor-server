@@ -1,6 +1,6 @@
 package com.linbit.drbdmanage.security;
 
-import com.linbit.drbdmanage.InvalidNameException;
+import com.linbit.InvalidNameException;
 
 /**
  * Name of a security identity
