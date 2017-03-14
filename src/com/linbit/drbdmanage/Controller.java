@@ -629,6 +629,7 @@ public class Controller implements Runnable, CoreServices
             "CmdDisplayThreads",
             "CmdDisplayContextInfo",
             "CmdDisplayServices",
+            "CmdDisplaySecLevel",
             "CmdStartService",
             "CmdEndService",
             "CmdTestErrorLog",
@@ -895,13 +896,20 @@ public class Controller implements Runnable, CoreServices
                     if (cmdInfo == null)
                     {
                         cmdNameList.append(
-                            String.format("    %-20s\n", cmdName)
+                            String.format(
+                                "    %-20s\n",
+                                debugCmd.getDisplayName(cmdName)
+                            )
                         );
                     }
                     else
                     {
                         cmdNameList.append(
-                            String.format("    %-20s %s\n", cmdName, cmdInfo)
+                            String.format(
+                                "    %-20s %s\n",
+                                debugCmd.getDisplayName(cmdName),
+                                cmdInfo
+                            )
                         );
                     }
                 }
