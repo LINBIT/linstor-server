@@ -1,6 +1,6 @@
 package com.linbit.drbdmanage.security;
 
-import com.linbit.drbdmanage.InvalidNameException;
+import com.linbit.InvalidNameException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +26,10 @@ public class SecurityModelTest
 
     @Before
     public void setUp()
+        throws AccessDeniedException
     {
+        // Restore the global security level to MAC before each test
+        SecurityLevel.set(sysCtx, SecurityLevel.MAC);
     }
 
     @After
@@ -41,12 +44,7 @@ public class SecurityModelTest
             new Identity(new IdentityName("SYSTEM")),
             new Role(new RoleName("SYSTEM")),
             new SecurityType(new SecTypeName("SYSTEM")),
-            new PrivilegeSet(
-                new Privilege[]
-                {
-                    Privilege.PRIV_SYS_ALL
-                }
-            )
+            new PrivilegeSet(Privilege.PRIV_SYS_ALL)
         );
         sysCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
@@ -74,7 +72,7 @@ public class SecurityModelTest
 
     // Access allowed by ACL and type
     @Test
-    public void objProtAllow()
+    public void testObjProtAllow()
         throws AccessDeniedException
     {
         AccessContext buddyCtx = sysCtx.impersonate(
@@ -88,23 +86,23 @@ public class SecurityModelTest
     }
 
     @Test(expected=AccessDeniedException.class)
-    public void objProtAclDeny()
+    public void testSecLevelMacObjProtAclDeny()
         throws AccessDeniedException
     {
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
         try
         {
-        // Create object as creator
-        prot = new ObjectProtection(creatorCtx);
-        // Grant access to buddy
-        prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
+            // Create object as creator
+            prot = new ObjectProtection(creatorCtx);
+            // Grant access to buddy
+            prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
-        // Impersonate the bandit role
-        banditCtx = sysCtx.impersonate(
-            banditId, banditRole, userType
-        );
-        // Attempt to access the object as bandit
+            // Impersonate the bandit role
+            banditCtx = sysCtx.impersonate(
+                banditId, banditRole, userType
+            );
+            // Attempt to access the object as bandit
         }
         catch (AccessDeniedException deniedExc)
         {
@@ -115,7 +113,36 @@ public class SecurityModelTest
     }
 
     @Test(expected=AccessDeniedException.class)
-    public void objProtTypeDeny()
+    public void testSecLevelRbacObjProtAclDeny()
+        throws AccessDeniedException
+    {
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+
+        ObjectProtection prot = null;
+        AccessContext banditCtx = null;
+        try
+        {
+            // Create object as creator
+            prot = new ObjectProtection(creatorCtx);
+            // Grant access to buddy
+            prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
+
+            // Impersonate the bandit role
+            banditCtx = sysCtx.impersonate(
+                banditId, banditRole, userType
+            );
+            // Attempt to access the object as bandit
+        }
+        catch (AccessDeniedException deniedExc)
+        {
+            fail("AccessDeniedException while preparing the test");
+        }
+        prot.requireAccess(banditCtx, AccessType.VIEW);
+        fail("Access by unauthorized role succeeded");
+    }
+
+    @Test(expected=AccessDeniedException.class)
+    public void testSecLevelMacTypeDeny()
         throws AccessDeniedException
     {
         ObjectProtection prot = null;
@@ -142,9 +169,9 @@ public class SecurityModelTest
         fail("Access by unauthorized domain succeeded");
     }
 
-    // Test ACL modification by owner and authorized user
+    // Test ACL modification by owner and authorized user at the MAC security level
     @Test
-    public void testBuddyAclModify()
+    public void testSecLevelMacBuddyAclModify()
         throws AccessDeniedException
     {
         AccessContext buddyCtx = sysCtx.impersonate(
@@ -157,11 +184,58 @@ public class SecurityModelTest
         prot.addAclEntry(buddyCtx, publicCtx.getRole(), AccessType.VIEW);
     }
 
-    // Test ACL modification by unauthorized user
-    @Test(expected=AccessDeniedException.class)
-    public void testBanditAclModify()
+    // Test ACL modification by owner and authorized user at the RBAC security level
+    @Test
+    public void testSecLevelRbacBuddyAclModify()
         throws AccessDeniedException
     {
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+
+        AccessContext buddyCtx = sysCtx.impersonate(
+            buddyId, buddyRole, creatorCtx.getDomain()
+        );
+        ObjectProtection prot = new ObjectProtection(creatorCtx);
+        // Authorize buddy to change access control entries
+        prot.addAclEntry(creatorCtx, buddyRole, AccessType.CONTROL);
+        // As buddy, add an entry allowing public VIEW access
+        prot.addAclEntry(buddyCtx, publicCtx.getRole(), AccessType.VIEW);
+    }
+
+    // Test ACL modification by unauthorized user at the MAC security level
+    @Test(expected=AccessDeniedException.class)
+    public void testSecLevelMacBanditAclModify()
+        throws AccessDeniedException
+    {
+        ObjectProtection prot = null;
+        AccessContext banditCtx = null;
+        try
+        {
+            // Create object as creator
+            prot = new ObjectProtection(creatorCtx);
+            // Grant CONTROL access to buddy
+            prot.addAclEntry(creatorCtx, buddyRole, AccessType.CONTROL);
+
+            // Impersonate bandit
+            banditCtx = sysCtx.impersonate(
+                banditId, banditRole, creatorCtx.getDomain()
+            );
+        }
+        catch (AccessDeniedException deniedExc)
+        {
+            fail("AccessDeniedException while preparing the test");
+        }
+        // As an unauthorized user, attempt to add an entry allowing public VIEW access
+        prot.addAclEntry(banditCtx, publicCtx.getRole(), AccessType.VIEW);
+        fail("Access by unauthorized domain succeeded");
+    }
+
+    // Test ACL modification by unauthorized user at the RBAC security level
+    @Test(expected=AccessDeniedException.class)
+    public void testSecLevelRbacBanditAclModify()
+        throws AccessDeniedException
+    {
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
         try
@@ -204,9 +278,35 @@ public class SecurityModelTest
     }
 
     @Test(expected=AccessDeniedException.class)
-    public void testBanditTypeModify()
+    public void testSecLevelMacBanditTypeModify()
         throws AccessDeniedException
     {
+        ObjectProtection prot = null;
+        AccessContext banditCtx = null;
+        try
+        {
+            // Create object as creator
+            prot = new ObjectProtection(creatorCtx);
+
+            // Impersonate bandit
+            banditCtx = sysCtx.impersonate(
+                banditId, banditRole, creatorCtx.getDomain()
+            );
+
+        }
+        catch (AccessDeniedException deniedExc)
+        {
+            fail("AccessDeniedException while preparing the test");
+        }
+        prot.setSecurityType(banditCtx, sysCtx.getDomain());
+    }
+
+    @Test(expected=AccessDeniedException.class)
+    public void testSecLevelRbacBanditTypeModify()
+        throws AccessDeniedException
+    {
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
         try
@@ -247,9 +347,34 @@ public class SecurityModelTest
     }
 
     @Test(expected=AccessDeniedException.class)
-    public void testBanditOwnerModify()
+    public void testSecLevelMacBanditOwnerModify()
         throws AccessDeniedException
     {
+        ObjectProtection prot = null;
+        AccessContext banditCtx = null;
+        try
+        {
+            // Create object as creator
+            prot = new ObjectProtection(creatorCtx);
+
+            // Impersonate bandit
+            banditCtx = sysCtx.impersonate(
+                banditId, banditRole, creatorCtx.getDomain()
+            );
+        }
+        catch (AccessDeniedException deniedExc)
+        {
+            fail("AccessDeniedException while preparing the test");
+        }
+        prot.setOwner(banditCtx, buddyRole);
+    }
+
+    @Test(expected=AccessDeniedException.class)
+    public void testSecLevelRbacBanditOwnerModify()
+        throws AccessDeniedException
+    {
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
         try
@@ -321,6 +446,7 @@ public class SecurityModelTest
         }
         catch (AccessDeniedException deniedExc)
         {
+            fail("AccessDeniedException while preparing the test");
         }
 
         try
@@ -365,6 +491,7 @@ public class SecurityModelTest
         }
         catch (AccessDeniedException deniedExc)
         {
+            fail("AccessDeniedException while preparing the test");
         }
 
         buddyCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_OWNER);
@@ -374,7 +501,6 @@ public class SecurityModelTest
         buddyCtx.getLimitPrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
         try
         {
-            // This should fail again
             prot.setOwner(buddyCtx, publicCtx.getRole());
             fail("Privileged access succeeded after disabling the privilege in the limit set");
         }
@@ -399,20 +525,14 @@ public class SecurityModelTest
     {
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
-        try
-        {
-            // Create object as creator
-            prot = new ObjectProtection(creatorCtx);
-            prot.resetCreator(sysCtx);
-        }
-        catch (AccessDeniedException deniedExc)
-        {
-            fail("AccessDeniedException while preparing the test");
-        }
+
+        // Create object as creator
+        prot = new ObjectProtection(creatorCtx);
+        prot.resetCreator(sysCtx);
     }
 
     @Test(expected=AccessDeniedException.class)
-    public void testBanditCreatorModify()
+    public void testSecLevelMacBanditCreatorModify()
         throws AccessDeniedException
     {
         ObjectProtection prot = null;
@@ -435,9 +555,97 @@ public class SecurityModelTest
     }
 
     @Test(expected=AccessDeniedException.class)
-    public void testImpersonateDeny()
+    public void testSecLevelMacImpersonateDeny()
         throws AccessDeniedException
     {
         publicCtx.impersonate(Identity.SYSTEM_ID, Role.SYSTEM_ROLE, userType);
+    }
+
+    @Test(expected=AccessDeniedException.class)
+    public void testSecLevelRbacImpersonateDeny()
+        throws AccessDeniedException
+    {
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+
+        publicCtx.impersonate(Identity.SYSTEM_ID, Role.SYSTEM_ROLE, userType);
+    }
+
+    @Test
+    public void testSecLevelRbacTypeOvrd()
+        throws AccessDeniedException
+    {
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+
+        ObjectProtection prot = null;
+        AccessContext otherDomainCtx = null;
+        try
+        {
+            // Create object as creator
+            prot = new ObjectProtection(creatorCtx);
+            // Grant access to buddy
+            prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
+
+            // Impersonate the buddy role, but in the 'public' domain instead of the 'user' domain
+            // that the object protection was created in
+            otherDomainCtx = sysCtx.impersonate(
+                banditId, buddyRole, publicCtx.getDomain()
+            );
+        } catch (AccessDeniedException deniedExc)
+        {
+            fail("AccessDeniedException while preparing the test");
+        }
+        // Attempt to access the object from an unauthorized domain, but with
+        // security level = RBAC, domains/types not enforced
+        prot.requireAccess(otherDomainCtx, AccessType.VIEW);
+    }
+
+    @Test(expected=AccessDeniedException.class)
+    public void testSecLevelRbacAclDeny()
+        throws AccessDeniedException
+    {
+        ObjectProtection prot = null;
+        AccessContext banditCtx = null;
+        try
+        {
+            // Create object as creator
+            prot = new ObjectProtection(creatorCtx);
+            // Grant access to buddy
+            prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
+
+            // Impersonate the bandit role
+            banditCtx = sysCtx.impersonate(
+                banditId, banditRole, userType
+            );
+            // Attempt to access the object as bandit
+        }
+        catch (AccessDeniedException deniedExc)
+        {
+            fail("AccessDeniedException while preparing the test");
+        }
+        prot.requireAccess(banditCtx, AccessType.VIEW);
+        fail("Access by unauthorized role succeeded");
+    }
+
+    @Test
+    public void testSecLevelNoneObjProtOvrd()
+        throws AccessDeniedException
+    {
+        SecurityLevel.set(sysCtx, SecurityLevel.NO_SECURITY);
+
+        ObjectProtection prot = null;
+        // Create the object as creator
+        prot = new ObjectProtection(creatorCtx);
+        prot.requireAccess(publicCtx, AccessType.CONTROL);
+    }
+
+    @Test(expected=AccessDeniedException.class)
+    public void testBanditSetSecLevel()
+        throws AccessDeniedException
+    {
+        AccessContext banditCtx = sysCtx.impersonate(
+            banditId, banditRole, publicCtx.getDomain()
+        );
+        SecurityLevel.set(banditCtx, SecurityLevel.NO_SECURITY);
+        fail("SecurityLevel change by unauthorized role succeeded");
     }
 }

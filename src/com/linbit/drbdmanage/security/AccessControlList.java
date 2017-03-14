@@ -29,30 +29,45 @@ public final class AccessControlList
     public final void requireAccess(AccessContext context, AccessType requested)
         throws AccessDeniedException
     {
-        boolean allowFlag = false;
-
-        // Look for an entry for the subject's role in this access control list
-        AccessControlEntry entry = acl.get(context.subjectRole.name);
-
-        // If an entry was found, check whether the requested level of access
-        // is within the bounds of the level of access allowed by the
-        // access control entry.
-        // If no entry was found, access is denied.
-        if (entry != null)
+        SecurityLevel globalSecLevel = SecurityLevel.get();
+        switch (globalSecLevel)
         {
-            allowFlag = entry.access.hasAccess(requested);
-        }
+            case NO_SECURITY:
+                break;
+            case RBAC:
+                // fall-through
+            case MAC:
+                boolean allowFlag = false;
 
-        if (!allowFlag)
-        {
-            allowFlag |= hasAccessPrivilege(context, requested);
-        }
+                // Look for an entry for the subject's role in this access control list
+                AccessControlEntry entry = acl.get(context.subjectRole.name);
 
-        if (!allowFlag)
-        {
-            throw new AccessDeniedException(
-                "Access of type '" + requested + "' not allowed by the access control list"
-            );
+                // If an entry was found, check whether the requested level of access
+                // is within the bounds of the level of access allowed by the
+                // access control entry.
+                // If no entry was found, access is denied.
+                if (entry != null)
+                {
+                    allowFlag = entry.access.hasAccess(requested);
+                }
+
+                if (!allowFlag)
+                {
+                    allowFlag |= hasAccessPrivilege(context, requested);
+                }
+
+                if (!allowFlag)
+                {
+                    throw new AccessDeniedException(
+                        "Access of type '" + requested + "' not allowed by the access control list"
+                    );
+                }
+                break;
+            default:
+                throw new ImplementationError(
+                    "Missing case label for enum constant " + globalSecLevel.name(),
+                    null
+                );
         }
     }
 

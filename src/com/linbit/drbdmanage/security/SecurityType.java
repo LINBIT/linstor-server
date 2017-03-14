@@ -60,36 +60,54 @@ public final class SecurityType
     public final void requireAccess(AccessContext context, AccessType requested)
         throws AccessDeniedException
     {
-        boolean allowFlag = false;
-
-        // Get the name of the subject's security domain
-        SecTypeName typeName = context.subjectDomain.name;
-
-        // Look for a rule allowing a certain type of access
-        // between from the subject's security domain to this
-        // security type
-        AccessType accType = rules.get(typeName);
-
-        // If a rule entry was found, check whether the requested type
-        // of access is within the bounds of the type of access
-        // allowed by the rule entry
-        if (accType != null)
+        SecurityLevel globalSecLevel = SecurityLevel.get();
+        switch (globalSecLevel)
         {
-            allowFlag = accType.hasAccess(requested);
-        }
+            case NO_SECURITY:
+                break;
+            case RBAC:
+                break;
+            case MAC:
+                {
+                    boolean allowFlag = false;
 
-        // Allow access if the current role has MAC_OVRD privileges
-        if (!allowFlag)
-        {
-            PrivilegeSet privileges = context.subjectRole.privileges;
-            allowFlag |= privileges.hasPrivileges(Privilege.PRIV_MAC_OVRD);
-        }
+                    // Get the name of the subject's security domain
+                    SecTypeName typeName = context.subjectDomain.name;
 
-        if (!allowFlag)
-        {
-            throw new AccessDeniedException(
-                "Access of type '" + requested + "' not allowed by mandatory access control rules"
-            );
+                    // Look for a rule allowing a certain type of access
+                    // between from the subject's security domain to this
+                    // security type
+                    AccessType accType = rules.get(typeName);
+
+                    // If a rule entry was found, check whether the requested type
+                    // of access is within the bounds of the type of access
+                    // allowed by the rule entry
+                    if (accType != null)
+                    {
+                        allowFlag = accType.hasAccess(requested);
+                    }
+
+                    // Allow access if the current role has MAC_OVRD privileges
+                    if (!allowFlag)
+                    {
+                        PrivilegeSet privileges = context.subjectRole.privileges;
+                        allowFlag = privileges.hasPrivileges(Privilege.PRIV_MAC_OVRD);
+                    }
+
+                    if (!allowFlag)
+                    {
+                        throw new AccessDeniedException(
+                            "Access of type '" + requested +
+                            "' not allowed by mandatory access control rules"
+                        );
+                    }
+                }
+                break;
+            default:
+                throw new ImplementationError(
+                    "Missing case label for enum constant " + globalSecLevel.name(),
+                    null
+                );
         }
     }
 

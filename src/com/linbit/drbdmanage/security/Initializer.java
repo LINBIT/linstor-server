@@ -14,12 +14,7 @@ public final class Initializer
 
     public Initializer()
     {
-        PrivilegeSet sysPrivs = new PrivilegeSet(
-            new Privilege[]
-            {
-                Privilege.PRIV_SYS_ALL
-            }
-        );
+        PrivilegeSet sysPrivs = new PrivilegeSet(Privilege.PRIV_SYS_ALL);
 
         // Create the system's security context
         SYSTEM_CTX = new AccessContext(

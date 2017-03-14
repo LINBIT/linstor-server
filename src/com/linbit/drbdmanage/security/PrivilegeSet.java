@@ -43,11 +43,27 @@ public final class PrivilegeSet implements Cloneable
         throws AccessDeniedException
     {
         long privMask = getPrivMask(privList);
-        if (!hasPrivileges(privList))
+
+        SecurityLevel globalSecLevel = SecurityLevel.get();
+        switch (globalSecLevel)
         {
-            throw new AccessDeniedException(
-                "Required privileges " + getPrivList(privMask) + " not present"
-            );
+            case NO_SECURITY:
+                break;
+            case RBAC:
+                // fall-through
+            case MAC:
+                if (!hasPrivileges(privList))
+                {
+                    throw new AccessDeniedException(
+                        "Required privileges " + getPrivList(privMask) + " not present"
+                    );
+                }
+                break;
+            default:
+                throw new ImplementationError(
+                    "Missing case label for enum constant " + globalSecLevel.name(),
+                    null
+                );
         }
     }
 
