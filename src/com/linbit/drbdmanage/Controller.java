@@ -1,48 +1,26 @@
 package com.linbit.drbdmanage;
 
-import com.linbit.InvalidNameException;
-import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
-import com.linbit.ServiceName;
-import com.linbit.SystemService;
-import com.linbit.SystemServiceStartException;
-import com.linbit.WorkerPool;
+import com.linbit.*;
 import com.linbit.drbdmanage.controllerapi.Ping;
+import com.linbit.drbdmanage.debug.BaseDebugConsole;
+import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
-import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
+import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
-import com.linbit.drbdmanage.security.AccessContext;
-import com.linbit.drbdmanage.security.AccessDeniedException;
-import com.linbit.drbdmanage.security.AccessType;
-import com.linbit.drbdmanage.security.Identity;
-import com.linbit.drbdmanage.security.IdentityName;
-import com.linbit.drbdmanage.security.Initializer;
-import com.linbit.drbdmanage.security.ObjectProtection;
-import com.linbit.drbdmanage.security.Privilege;
-import com.linbit.drbdmanage.security.PrivilegeSet;
-import com.linbit.drbdmanage.security.Role;
-import com.linbit.drbdmanage.security.RoleName;
-import com.linbit.drbdmanage.security.SecTypeName;
-import com.linbit.drbdmanage.security.SecurityType;
+import com.linbit.drbdmanage.security.*;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.timer.Action;
 import com.linbit.timer.GenericTimer;
 import com.linbit.timer.Timer;
-import java.io.BufferedReader;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.text.ParseException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * drbdmanageNG controller prototype
@@ -190,7 +168,7 @@ public class Controller implements Runnable, CoreServices
             debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_VIEW);
             DebugConsoleImpl dbgConsoleInstance = new DebugConsoleImpl(this, debugCtx);
             dbgConsoleInstance.loadDefaultCommands(System.out, System.err);
-            DebugConsole dbgConsole = dbgConsoleInstance;
+            DebugConsoleImpl dbgConsole = dbgConsoleInstance;
             dbgConsole.stdStreamsConsole();
             System.out.println();
         }
@@ -566,63 +544,15 @@ public class Controller implements Runnable, CoreServices
         }
     }
 
-    public interface DebugConsole
+    private static class DebugConsoleImpl extends BaseDebugConsole
     {
-        Map<String, ControllerDebugCmd> getCommandMap();
-        void stdStreamsConsole();
-        void streamsConsole(
-            InputStream debugIn,
-            PrintStream debugOut,
-            PrintStream debugErr,
-            boolean prompt
-        );
-        void processCommandLine(
-            PrintStream debugOut,
-            PrintStream debugErr,
-            String commandLine
-        );
-        void processCommand(
-            PrintStream debugOut,
-            PrintStream debugErr,
-            String commandUpperCase,
-            Map<String, String> parameters
-        );
-        void loadCommand(
-            PrintStream debugOut,
-            PrintStream debugErr,
-            String cmdClassName
-        );
-        void unloadCommand(
-            PrintStream debugOut,
-            PrintStream debugErr,
-            String cmdClassName
-        );
-        void exitConsole();
-    }
-
-    private static class DebugConsoleImpl implements DebugConsole
-    {
-        private enum ParamParserState
-        {
-            SKIP_COMMAND,
-            SPACE,
-            OPTIONAL_SPACE,
-            READ_KEY,
-            READ_VALUE,
-            ESCAPE
-        };
-
         private final Controller controller;
-        private final AccessContext debugCtx;
 
         public static final String CONSOLE_PROMPT = "Command ==> ";
-
-        private Map<String, String> parameters;
 
         private boolean loadedCmds  = false;
         private boolean exitFlag    = false;
 
-        private Map<String, ControllerDebugCmd> commandMap;
         public static final String[] COMMAND_CLASS_LIST =
         {
             "CmdDisplayThreads",
@@ -640,18 +570,24 @@ public class Controller implements Runnable, CoreServices
 
         DebugConsoleImpl(Controller controllerRef, AccessContext accCtx)
         {
+            super(accCtx, controllerRef);
             ErrorCheck.ctorNotNull(DebugConsoleImpl.class, Controller.class, controllerRef);
             ErrorCheck.ctorNotNull(DebugConsoleImpl.class, AccessContext.class, accCtx);
+
             controller = controllerRef;
-            debugCtx = accCtx;
             parameters = new TreeMap<>();
             commandMap = new TreeMap<>();
             loadedCmds = false;
             debugCtl = new DebugControlImpl(controller);
         }
 
+        public void stdStreamsConsole()
+        {
+            stdStreamsConsole(CONSOLE_PROMPT);
+        }
+
         @Override
-        public Map<String, ControllerDebugCmd> getCommandMap()
+        public Map<String, CommonDebugCmd> getCommandMap()
         {
             return commandMap;
         }
@@ -713,389 +649,6 @@ public class Controller implements Runnable, CoreServices
         )
         {
             // TODO: Implement
-        }
-
-        @Override
-        public void stdStreamsConsole()
-        {
-            streamsConsole(System.in, System.out, System.err, true);
-        }
-
-        @Override
-        public void streamsConsole(
-            InputStream debugIn,
-            PrintStream debugOut,
-            PrintStream debugErr,
-            boolean prompt
-        )
-        {
-            try
-            {
-                BufferedReader cmdIn = new BufferedReader(
-                    new InputStreamReader(debugIn)
-                );
-
-                String inputLine;
-                commandLineLoop:
-                while (!exitFlag)
-                {
-                    // Print the console prompt if required
-                    if (prompt)
-                    {
-                        debugOut.print("\n");
-                        debugOut.print(CONSOLE_PROMPT);
-                        debugOut.flush();
-                    }
-
-                    inputLine = cmdIn.readLine();
-                    if (inputLine != null)
-                    {
-                        processCommandLine(debugOut, debugErr, inputLine);
-                    }
-                    else
-                    {
-                        // End of command input stream, exit console
-                        break;
-                    }
-                }
-            }
-            catch (IOException ioExc)
-            {
-                controller.errorLog.reportError(ioExc);
-            }
-            catch (Throwable error)
-            {
-                controller.errorLog.reportError(error);
-            }
-        }
-
-        @Override
-        public void processCommandLine(
-            PrintStream debugOut,
-            PrintStream debugErr,
-            String inputLine
-        )
-        {
-            String commandLine = inputLine.trim();
-            if (!inputLine.isEmpty())
-            {
-                if (inputLine.startsWith("?"))
-                {
-                    findCommands(debugOut, debugErr, inputLine.substring(1, inputLine.length()).trim());
-                }
-                else
-                {
-                    // Parse the debug command line
-                    char[] commandChars = commandLine.toCharArray();
-                    String command = parseCommandName(commandChars);
-
-                    try
-                    {
-                        parseCommandParameters(commandChars, parameters);
-                        processCommand(debugOut, debugErr, command, parameters);
-                    }
-                    catch (ParseException parseExc)
-                    {
-                        debugErr.println(parseExc.getMessage());
-                    }
-                    finally
-                    {
-                        parameters.clear();
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void processCommand(
-            PrintStream debugOut,
-            PrintStream debugErr,
-            String command,
-            Map<String, String> parameters
-        )
-        {
-            String cmdName = command.toUpperCase();
-            ControllerDebugCmd debugCmd = commandMap.get(cmdName);
-            if (debugCmd != null)
-            {
-                String displayCmdName = debugCmd.getDisplayName(cmdName);
-                if (displayCmdName == null)
-                {
-                    displayCmdName = "<unknown command>";
-                }
-
-                String cmdInfo = debugCmd.getCmdInfo();
-                if (cmdInfo == null)
-                {
-                    System.out.printf("\u001b[1;37m%-20s\u001b[0m\n", displayCmdName);
-                }
-                else
-                {
-                    System.out.printf("\u001b[1;37m%-20s\u001b[0m %s\n", displayCmdName, cmdInfo);
-                }
-                try
-                {
-                    debugCmd.execute(debugOut, debugErr, debugCtx, parameters);
-                }
-                catch (Exception exc)
-                {
-                    controller.errorLog.reportError(exc);
-                }
-            }
-            else
-            {
-                debugErr.printf(
-                    "Error:\n" +
-                    "    The statement '%s' is not a valid debug console command.\n" +
-                    "Correction:\n" +
-                    "    Enter a valid debug console command.\n" +
-                    "    Use the \"?\" builtin query (without quotes) to display a list\n" +
-                    "    of available commands.\n",
-                    command
-                );
-            }
-        }
-
-        public void findCommands(PrintStream debugOut, PrintStream debugErr, String cmdPattern)
-        {
-            try
-            {
-                debugOut.printf("\u001b[1;37m%-20s\u001b[0m %s\n", "?", "Find commands");
-                Map<String, ControllerDebugCmd> selectedCmds;
-
-                if (cmdPattern.isEmpty())
-                {
-                    // Select all commands
-                    selectedCmds = commandMap;
-                }
-                else
-                {
-                    // Filter commands using the regular expression pattern
-                    selectedCmds = new TreeMap<>();
-                    Pattern cmdRegEx = Pattern.compile(cmdPattern, Pattern.CASE_INSENSITIVE);
-                    for (Map.Entry<String, ControllerDebugCmd> cmdEntry : commandMap.entrySet())
-                    {
-                        String cmdName = cmdEntry.getKey();
-                        Matcher cmdMatcher = cmdRegEx.matcher(cmdName);
-                        if (cmdMatcher.matches())
-                        {
-                            selectedCmds.put(cmdEntry.getKey(), cmdEntry.getValue());
-                        }
-                    }
-                }
-
-                // Generate the output list
-                StringBuilder cmdNameList = new StringBuilder();
-                for (Map.Entry<String, ControllerDebugCmd> cmdEntry : selectedCmds.entrySet())
-                {
-                    String cmdName = cmdEntry.getKey();
-                    ControllerDebugCmd debugCmd = cmdEntry.getValue();
-
-                    String cmdInfo = debugCmd.getCmdInfo();
-                    if (cmdInfo == null)
-                    {
-                        cmdNameList.append(
-                            String.format(
-                                "    %-20s\n",
-                                debugCmd.getDisplayName(cmdName)
-                            )
-                        );
-                    }
-                    else
-                    {
-                        cmdNameList.append(
-                            String.format(
-                                "    %-20s %s\n",
-                                debugCmd.getDisplayName(cmdName),
-                                cmdInfo
-                            )
-                        );
-                    }
-                }
-
-                // Write results
-                if (cmdNameList.length() > 0)
-                {
-                    debugOut.println("Matching commands:");
-                    debugOut.print(cmdNameList.toString());
-                    debugOut.flush();
-                }
-                else
-                {
-                    if (cmdPattern.isEmpty())
-                    {
-                        debugOut.println("No commands are available.");
-                    }
-                    else
-                    {
-                        debugOut.println("No commands matching the pattern were found.");
-                    }
-                }
-            }
-            catch (PatternSyntaxException patternExc)
-            {
-                debugErr.println(
-                    "Error:\n" +
-                    "    The specified regular expression pattern is not valid.\n" +
-                    "    (See error details section for a more detailed description of the error)\n" +
-                    "Correction:\n" +
-                    "    If any text is entered following the ? sign, the text must form a valid\n" +
-                    "    regular expression pattern.\n" +
-                    "Error details:\n"
-                );
-                debugErr.println(patternExc.getMessage());
-            }
-        }
-
-        public void exitConsole()
-        {
-            exitFlag = true;
-        }
-
-        private String parseCommandName(char[] commandChars)
-        {
-            int commandLength = commandChars.length;
-            for (int idx = 0; idx < commandChars.length; ++idx)
-            {
-                if (commandChars[idx] == ' ' || commandChars[idx] == '\t')
-                {
-                    commandLength = idx;
-                    break;
-                }
-            }
-            String command = new String(commandChars, 0, commandLength);
-            return command;
-        }
-
-        private void parseCommandParameters(char[] commandChars, Map<String, String> parameters)
-            throws ParseException
-        {
-            int keyOffset = 0;
-            int valueOffset = 0;
-            int length = 0;
-
-            ParamParserState state = ParamParserState.SKIP_COMMAND;
-            String key = null;
-            String value = null;
-            for (int idx = 0; idx < commandChars.length; ++idx)
-            {
-                char cc = commandChars[idx];
-                switch (state)
-                {
-                    case SKIP_COMMAND:
-                        if (cc == ' ' || cc == '\t')
-                        {
-                            state = ParamParserState.OPTIONAL_SPACE;
-                        }
-                        break;
-                    case SPACE:
-                        if (cc != ' ' && cc != '\t')
-                        {
-                            errorParser(idx);
-                        }
-                        state = ParamParserState.OPTIONAL_SPACE;
-                        break;
-                    case OPTIONAL_SPACE:
-                        if (cc == ' ' || cc == '\t')
-                        {
-                            break;
-                        }
-                        keyOffset = idx;
-                        state = ParamParserState.READ_KEY;
-                        // fall-through
-                    case READ_KEY:
-                        if (cc == '(')
-                        {
-                            length = idx - keyOffset;
-                            if (length < 1)
-                            {
-                                errorInvalidKey(keyOffset);
-                            }
-                            key = new String(commandChars, keyOffset, length).toUpperCase();
-                            valueOffset = idx + 1;
-                            state = ParamParserState.READ_VALUE;
-                        }
-                        else
-                        if (!((cc >= 'a' && cc <= 'z') || (cc >= 'A' && cc <= 'Z')))
-                        {
-                            if (!(cc >= '0' && cc <= '9' && idx > keyOffset))
-                            {
-                                errorInvalidKey(keyOffset);
-                            }
-                        }
-                        break;
-                    case READ_VALUE:
-                        if (cc == ')')
-                        {
-                            length = idx - valueOffset;
-                            value = new String(commandChars, valueOffset, length);
-                            if (key != null)
-                            {
-                                parameters.put(key, value);
-                            }
-                            else
-                            {
-                                errorInvalidKey(keyOffset);
-                            }
-                            state = ParamParserState.OPTIONAL_SPACE;
-                        }
-                        else
-                        if (cc == '\\')
-                        {
-                            // Ignore the next character's special meaning
-                            state = ParamParserState.ESCAPE;
-                        }
-                        break;
-                    case ESCAPE:
-                        // Only values can be escaped, so the next state is always READ_VALUE
-                        state = ParamParserState.READ_VALUE;
-                        break;
-                    default:
-                        throw new ImplementationError(
-                            String.format(
-                                "Missing case label for enum member '%s'",
-                                state.name()
-                            ),
-                            null
-                        );
-                }
-            }
-            if (state != ParamParserState.SKIP_COMMAND && state != ParamParserState.OPTIONAL_SPACE)
-            {
-                errorIncompleteLine(commandChars.length);
-            }
-        }
-
-        private void errorInvalidKey(int pos) throws ParseException
-        {
-            throw new ParseException(
-                String.format(
-                    "The command line is not valid. " +
-                    "An invalid parameter key was encountered at position %d.",
-                    pos
-                ),
-                pos
-            );
-        }
-
-        private void errorParser(int pos) throws ParseException
-        {
-            throw new ParseException(
-                String.format(
-                    "The command line is not valid. " +
-                    "The parser encountered an error at position %d.",
-                    pos
-                ),
-                pos
-            );
-        }
-
-        private void errorIncompleteLine(int pos) throws ParseException
-        {
-            throw new ParseException(
-                "The command line is not valid. The input line appears to have been truncated.",
-                pos
-            );
         }
     }
 

@@ -2,16 +2,12 @@ package com.linbit.drbdmanage.debug;
 
 import com.linbit.ErrorCheck;
 import com.linbit.drbdmanage.Controller;
-import com.linbit.drbdmanage.Controller.DebugConsole;
 import com.linbit.drbdmanage.Controller.DebugControl;
 import com.linbit.drbdmanage.CoreServices;
+
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Base class for debug console commands
