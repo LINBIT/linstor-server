@@ -11,7 +11,7 @@ import com.linbit.drbdmanage.controllerapi.Ping;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.netcom.TcpConnectionObserver;
+import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -537,11 +537,11 @@ public class Controller implements Runnable, CoreServices
         }
     }
 
-    private class TcpConnTracker implements TcpConnectionObserver
+    private class ConnTracker implements ConnectionObserver
     {
         private Controller controller;
 
-        TcpConnTracker(Controller controllerRef)
+        ConnTracker(Controller controllerRef)
         {
             controller = controllerRef;
         }
@@ -562,8 +562,7 @@ public class Controller implements Runnable, CoreServices
         @Override
         public void connectionClosed(Peer connPeer)
         {
-            // TODO: Implement
-            throw new UnsupportedOperationException("Not supported yet.");
+            // TODO: Satellite or utility connection closed
         }
     }
 
