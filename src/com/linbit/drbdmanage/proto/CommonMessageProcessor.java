@@ -74,6 +74,11 @@ public class CommonMessageProcessor implements MessageProcessor
                 );
                 workQ.submit(apiCallInv);
             }
+            else
+            {
+                // FIXME: Debug code
+                System.err.printf("Unknown API call '%s'\n", apiCallName);
+            }
         }
         catch (IOException ioExc)
         {

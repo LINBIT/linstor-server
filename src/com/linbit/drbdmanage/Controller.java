@@ -1,11 +1,8 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.*;
-import com.linbit.drbdmanage.controllerapi.Ping;
-import com.linbit.drbdmanage.debug.BaseDebugConsole;
-import com.linbit.drbdmanage.debug.CommonDebugCmd;
-import com.linbit.drbdmanage.debug.ControllerDebugCmd;
-import com.linbit.drbdmanage.debug.DebugErrorReporter;
+import com.linbit.drbdmanage.controllerapi.*;
+import com.linbit.drbdmanage.debug.*;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
@@ -223,8 +220,11 @@ public class Controller implements Runnable, CoreServices
 
         logInit("Initializing test APIs");
         {
-            ApiCall pingCall = new Ping(this, this);
-            msgProc.addApiCall(pingCall);
+            msgProc.addApiCall(new Ping(this, this));
+            msgProc.addApiCall(new CreateDebugConsole(this, this));
+            msgProc.addApiCall(new DestroyDebugConsole(this, this));
+            msgProc.addApiCall(new DebugCommand(this, this));
+            msgProc.addApiCall(new DebugMakeSuperuser(this, this));
         }
 
         // Initialize the network communications service
@@ -313,6 +313,62 @@ public class Controller implements Runnable, CoreServices
             logInfo("Shutdown complete");
         }
         shutdownFinished = true;
+    }
+
+    public DebugConsole createDebugConsole(AccessContext accCtx, Peer client)
+        throws AccessDeniedException
+    {
+        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+
+        CtlPeerContext peerContext = (CtlPeerContext) client.getAttachment();
+        DebugConsoleImpl peerDbgConsole = new DebugConsoleImpl(this, accCtx);
+        peerDbgConsole.loadDefaultCommands(System.out, System.err);
+        peerContext.setDebugConsole(peerDbgConsole);
+
+        return new DebugConsoleImpl(this, accCtx);
+    }
+
+    public void destroyDebugConsole(AccessContext accCtx, Peer client)
+        throws AccessDeniedException
+    {
+        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+
+        CtlPeerContext peerContext = (CtlPeerContext) client.getAttachment();
+        peerContext.setDebugConsole(null);
+    }
+
+    /**
+     * FIXME: DEBUG CODE, Overrides security -- Remove before production use
+     *
+     * @param client The peer client to set a privileged security context on
+     * @return True if the operation succeeded, false otherwise
+     */
+    public boolean debugMakePeerPrivileged(Peer client)
+    {
+        boolean successFlag = false;
+        try
+        {
+            AccessContext impCtx = sysCtx.clone();
+            impCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+            AccessContext privPeerCtx = impCtx.impersonate(
+                new Identity(impCtx, new IdentityName("DebugClient")),
+                sysCtx.getRole(),
+                sysCtx.getDomain(),
+                Privilege.PRIV_SYS_ALL
+            );
+            client.setAccessContext(impCtx, privPeerCtx);
+            successFlag = true;
+        }
+        catch (InvalidNameException nameExc)
+        {
+            errorLog.reportError(nameExc);
+        }
+        catch (AccessDeniedException accessExc)
+        {
+            errorLog.reportError(accessExc);
+        }
+        return successFlag;
     }
 
     @Override
@@ -446,7 +502,7 @@ public class Controller implements Runnable, CoreServices
         logInit("System components initialization in progress");
 
         logInit("Constructing error reporter instance");
-        ErrorReporter errorLog = new DebugErrorReporter();
+        ErrorReporter errorLog = new DebugErrorReporter(System.err);
 
         try
         {
@@ -499,7 +555,8 @@ public class Controller implements Runnable, CoreServices
             netComSvc = new TcpConnectorService(
                 this,
                 msgProc,
-                defaultPeerAccCtx
+                defaultPeerAccCtx,
+                new ConnTracker(this)
             );
             netComSvc.initialize();
             systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
@@ -568,7 +625,10 @@ public class Controller implements Runnable, CoreServices
 
         private DebugControl debugCtl;
 
-        DebugConsoleImpl(Controller controllerRef, AccessContext accCtx)
+        DebugConsoleImpl(
+            Controller controllerRef,
+            AccessContext accCtx
+        )
         {
             super(accCtx, controllerRef);
             ErrorCheck.ctorNotNull(DebugConsoleImpl.class, Controller.class, controllerRef);
