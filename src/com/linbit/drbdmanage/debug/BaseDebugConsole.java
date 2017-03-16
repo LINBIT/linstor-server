@@ -183,11 +183,11 @@ public abstract class BaseDebugConsole implements DebugConsole
         {
             debugErr.printf(
                 "Error:\n" +
-                    "    The statement '%s' is not a valid debug console command.\n" +
-                    "Correction:\n" +
-                    "    Enter a valid debug console command.\n" +
-                    "    Use the \"?\" builtin query (without quotes) to display a list\n" +
-                    "    of available commands.\n",
+                "    The statement '%s' is not a valid debug console command.\n" +
+                "Correction:\n" +
+                "    Enter a valid debug console command.\n" +
+                "    Use the \"?\" builtin query (without quotes) to display a list\n" +
+                "    of available commands.\n",
                 command
             );
         }
@@ -278,12 +278,12 @@ public abstract class BaseDebugConsole implements DebugConsole
         {
             debugErr.println(
                 "Error:\n" +
-                    "    The specified regular expression pattern is not valid.\n" +
-                    "    (See error details section for a more detailed description of the error)\n" +
-                    "Correction:\n" +
-                    "    If any text is entered following the ? sign, the text must form a valid\n" +
-                    "    regular expression pattern.\n" +
-                    "Error details:\n"
+                "    The specified regular expression pattern is not valid.\n" +
+                "    (See error details section for a more detailed description of the error)\n" +
+                "Correction:\n" +
+                "    If any text is entered following the ? sign, the text must form a valid\n" +
+                "    regular expression pattern.\n" +
+                "Error details:\n"
             );
             debugErr.println(patternExc.getMessage());
         }

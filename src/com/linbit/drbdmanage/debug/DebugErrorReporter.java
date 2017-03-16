@@ -1,6 +1,8 @@
 package com.linbit.drbdmanage.debug;
 
 import com.linbit.drbdmanage.ErrorReporter;
+
+import java.io.PrintStream;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -13,14 +15,21 @@ public class DebugErrorReporter implements ErrorReporter
     public static final String ID_FAILED = "<UNKNOWN>";
 
     private final AtomicLong errorNr;
+    private final PrintStream defaultErrorOut;
 
-    public DebugErrorReporter()
+    public DebugErrorReporter(PrintStream errorOutRef)
     {
         errorNr = new AtomicLong();
+        defaultErrorOut = errorOutRef;
     }
 
     @Override
     public final void reportError(Throwable errorInfo)
+    {
+        reportError(errorInfo, System.err);
+    }
+
+    public final void reportError(Throwable errorInfo, PrintStream errorOut)
     {
         // Generate and report a null pointer exception if this
         // method is called with a null argument
@@ -29,18 +38,18 @@ public class DebugErrorReporter implements ErrorReporter
             errorInfo = new NullPointerException();
         }
 
-        System.err.println("\n\nERROR REPORT\n============\n");
+        errorOut.println("\n\nERROR REPORT\n============\n");
 
         int loopCtr = 0;
         for (Throwable curErrorInfo = errorInfo; curErrorInfo != null; curErrorInfo = curErrorInfo.getCause())
         {
             if (loopCtr <= 0)
             {
-                System.err.println("Reported error:");
+                errorOut.println("Reported error:");
             }
             else
             {
-                System.err.println("Caused by:");
+                errorOut.println("Caused by:");
             }
 
             String category;
@@ -145,27 +154,31 @@ public class DebugErrorReporter implements ErrorReporter
             {
             }
 
-            printErrorField("Category", category);
-            printErrorField("Class name", tClassName);
-            printErrorField("Class path", tFullClassName);
-            printErrorField("Generated at", tGeneratedAt);
-            System.err.println();
-            printErrorField("Error message", tMessage);
-            System.err.println();
+            printErrorField(errorOut, "Category", category);
+            printErrorField(errorOut, "Class name", tClassName);
+            printErrorField(errorOut, "Class path", tFullClassName);
+            printErrorField(errorOut, "Generated at", tGeneratedAt);
+            errorOut.println();
+            printErrorField(errorOut, "Error message", tMessage);
+            errorOut.println();
 
-            System.err.println("Call backtrace:\n---------------");
-            curErrorInfo.printStackTrace(System.err);
-            System.err.println();
+            errorOut.println("Call backtrace:\n---------------");
+            curErrorInfo.printStackTrace(errorOut);
+            errorOut.println();
 
             ++loopCtr;
         }
 
-        System.err.println("\nEND OF ERROR REPORT\n");
+        errorOut.println("\nEND OF ERROR REPORT\n");
     }
 
-    public static final void printErrorField(String fieldName, String fieldContent)
+    public static final void printErrorField(
+        PrintStream errorOut,
+        String fieldName,
+        String fieldContent
+    )
     {
-        System.err.printf("  %-32s: %s\n", fieldName, fieldContent);
+        errorOut.printf("  %-32s: %s\n", fieldName, fieldContent);
     }
 
     public static final String notNullOrIdFailed(String input)
