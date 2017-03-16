@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.netcom;
 
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 
 /**
  * Represents the peer of a connection
@@ -15,6 +16,14 @@ public interface Peer
      * @return AccessContext object representing the connected peer's security context
      */
     AccessContext getAccessContext();
+
+    /**
+     * Sets a new access context for the connected peer
+     *
+     * @return AccessContext object representing the connected peer's security context
+     */
+    void setAccessContext(AccessContext privilegedCtx, AccessContext newAccCtx)
+        throws AccessDeniedException;
 
     /**
      * Attaches the object to the peer

@@ -1,7 +1,7 @@
 package com.linbit.drbdmanage.netcom;
 
-import com.linbit.drbdmanage.Controller;
 import com.linbit.ImplementationError;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -139,15 +139,6 @@ public class TcpConnectorMessage implements Message
                             dataBytes = new byte[dataSize];
                             dataBuffer = ByteBuffer.wrap(dataBytes);
                             currentPhase = currentPhase.getNextPhase();
-
-                            // BEGIN DEBUG
-                            Controller.logInfo(
-                                String.format(
-                                    "Reading message: %10d bytes",
-                                    dataSize
-                                )
-                            );
-                            // END DEBUG
 
                             readCount = inChannel.read(dataBuffer);
                             if (readCount <= -1)

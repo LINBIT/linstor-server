@@ -1,38 +1,20 @@
 package com.linbit.drbdmanage.netcom;
 
-import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.ServiceName;
-import com.linbit.SystemService;
-import com.linbit.SystemServiceStartException;
-import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbdmanage.Controller;
+import com.linbit.*;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.TcpPortNumber;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage.ReadState;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage.WriteState;
 import com.linbit.drbdmanage.security.AccessContext;
+
 import java.io.IOException;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.net.*;
+import java.nio.channels.*;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
-import static java.nio.channels.SelectionKey.OP_ACCEPT;
-import static java.nio.channels.SelectionKey.OP_CONNECT;
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
+
+import static java.nio.channels.SelectionKey.*;
 
 /**
  * TCP/IP network communication service
@@ -67,6 +49,8 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     // Set to indicate that connections have been updated
     // outside of the selector loop
     private AtomicBoolean updateFlag;
+
+    private ConnectionObserver connObserver;
 
     static
     {
@@ -137,7 +121,8 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     public TcpConnectorService(
         CoreServices coreSvcsRef,
         MessageProcessor msgProcessorRef,
-        AccessContext defaultPeerAccCtxRef
+        AccessContext defaultPeerAccCtxRef,
+        ConnectionObserver connObserverRef
     ) throws IOException
     {
         ErrorCheck.ctorNotNull(TcpConnectorService.class, CoreServices.class, coreSvcsRef);
@@ -153,6 +138,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         // Prevent entering the run() method's selector loop
         // until initialize() has completed
         shutdownFlag    = new AtomicBoolean(true);
+        connObserver    = connObserverRef;
 
         defaultPeerAccCtx = defaultPeerAccCtxRef;
     }
@@ -161,10 +147,11 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         CoreServices coreSvcsRef,
         MessageProcessor msgProcessorRef,
         SocketAddress bindAddressRef,
-        AccessContext defaultPeerAccCtxRef
+        AccessContext defaultPeerAccCtxRef,
+        ConnectionObserver connObserverRef
     ) throws IOException
     {
-        this(coreSvcsRef, msgProcessorRef, defaultPeerAccCtxRef);
+        this(coreSvcsRef, msgProcessorRef, defaultPeerAccCtxRef, connObserverRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, SocketAddress.class, bindAddressRef);
         bindAddress = bindAddressRef;
     }
@@ -432,7 +419,6 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     private void acceptConnection(SelectionKey currentKey)
         throws IOException
     {
-        Controller.logInfo("Accepting new connections"); // DEBUG
         // Configure the socket for the accepted connection
         for (int loopCtr = 0; loopCtr < MAX_ACCEPT_LOOP; ++loopCtr)
         {
@@ -448,36 +434,13 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                 TcpConnectorPeer connPeer = new TcpConnectorPeer(this, connKey, defaultPeerAccCtx);
                 connKey.attach(connPeer);
 
-                // BEGIN DEBUG
-                String addrStr = "<unknown>";
-                try
+                if (connObserver != null)
                 {
-                    SocketChannel sChannel = (SocketChannel) connKey.channel();
-                    if (sChannel != null)
-                    {
-                        SocketAddress sAddr = sChannel.getRemoteAddress();
-                        if (sAddr != null)
-                        {
-                            addrStr = sAddr.toString();
-                        }
-                    }
-
+                    connObserver.inboundConnectionEstablished(connPeer);
                 }
-                catch (Exception exc)
-                {
-                    coreSvcs.getErrorReporter().reportError(exc);
-                }
-                Controller.logInfo(
-                    String.format(
-                        "Accepted connection to %s",
-                        addrStr
-                    )
-                );
-                // END DEBUG
             }
             else
             {
-                Controller.logInfo("No more connections to accept at this time"); // DEBUG
                 break;
             }
         }
@@ -496,43 +459,27 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
 
     private void closeConnection(SelectionKey currentKey)
     {
-        // BEGIN DEBUG
-        String addrStr = "<unknown>";
+        Peer client = (TcpConnectorPeer) currentKey.attachment();
+        if (connObserver != null)
+        {
+            connObserver.connectionClosed(client);
+        }
         try
         {
-            SelectableChannel selChannel = currentKey.channel();
-            if (selChannel instanceof SocketChannel)
+            SelectableChannel channel = currentKey.channel();
+            if (channel != null)
             {
-                SocketChannel sChannel = (SocketChannel) selChannel;
-                if (sChannel != null)
-                {
-                    SocketAddress sAddr = sChannel.getRemoteAddress();
-                    if (sAddr != null)
-                    {
-                        addrStr = sAddr.toString();
-                    }
-                }
+                currentKey.channel().close();
             }
-        }
-        catch (Exception exc)
-        {
-            coreSvcs.getErrorReporter().reportError(exc);
-        }
-        Controller.logInfo(
-            String.format(
-                "Closing connection to %s",
-                addrStr
-            )
-        );
-        // END DEBUG
-        try
-        {
-            currentKey.channel().close();
         }
         catch (IOException closeIoExc)
         {
             // FIXME
             coreSvcs.getErrorReporter().reportError(closeIoExc);
+        }
+        catch (IllegalStateException illState)
+        {
+            // No-op; may be thrown when the connection has been closed
         }
         currentKey.cancel();
     }

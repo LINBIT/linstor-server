@@ -1,11 +1,15 @@
 package com.linbit.drbdmanage.netcom;
 
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.Privilege;
+
 import java.nio.channels.SelectionKey;
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.Deque;
 import java.util.LinkedList;
+
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
  * Tracks the status of the communication with a peer
@@ -39,6 +43,7 @@ public class TcpConnectorPeer implements Peer
         msgIn = new TcpConnectorMessage(false);
         selKey = key;
         peerAccCtx = accCtx;
+        attachment = null;
     }
 
     @Override
@@ -74,9 +79,17 @@ public class TcpConnectorPeer implements Peer
                 msgOutQueue.add(tcpConMsg);
             }
 
-            // Outbound messages present, enable OP_WRITE
-            selKey.interestOps(OP_READ | OP_WRITE);
-            connector.wakeup();
+            try
+            {
+                // Outbound messages present, enable OP_WRITE
+                selKey.interestOps(OP_READ | OP_WRITE);
+                connector.wakeup();
+            }
+            catch (IllegalStateException illState)
+            {
+                // No-op; Subclasses of illState can be thrown
+                // when the connection has been closed
+            }
         }
     }
 
@@ -92,8 +105,16 @@ public class TcpConnectorPeer implements Peer
             msgOut = msgOutQueue.pollFirst();
             if (msgOut == null)
             {
-                // No more outbound messages present, disable OP_WRITE
-                selKey.interestOps(OP_READ);
+                try
+                {
+                    // No more outbound messages present, disable OP_WRITE
+                    selKey.interestOps(OP_READ);
+                }
+                catch (IllegalStateException illState)
+                {
+                    // No-op; Subclasses of illState can be thrown
+                    // when the connection has been closed
+                }
             }
         }
     }
@@ -102,6 +123,14 @@ public class TcpConnectorPeer implements Peer
     public AccessContext getAccessContext()
     {
         return peerAccCtx;
+    }
+
+    @Override
+    public void setAccessContext(AccessContext privilegedCtx, AccessContext newAccCtx)
+        throws AccessDeniedException
+    {
+        privilegedCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+        peerAccCtx = newAccCtx;
     }
 
     @Override
