@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.controllerapi;
 
 import com.linbit.ImplementationError;
+import com.linbit.drbdmanage.ApiCall;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
@@ -18,7 +19,7 @@ import java.io.InputStream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class Ping implements com.linbit.drbdmanage.ApiCall
+public class Ping extends BaseApiCall
 {
     private Controller      ctrl;
     private CoreServices    coreSvcs;
@@ -50,14 +51,10 @@ public class Ping implements com.linbit.drbdmanage.ApiCall
     {
         try
         {
-            MsgHeader.Builder headerBuilder = MsgHeader.newBuilder();
-            headerBuilder.setMsgId(msgId);
-            headerBuilder.setApiCall("Pong");
-            MsgHeader header = headerBuilder.build();
 
             Message pongMsg = client.createMessage();
             ByteArrayOutputStream dataOut = new ByteArrayOutputStream();
-            header.writeDelimitedTo(dataOut);
+            writeMsgHeader(dataOut, msgId, "Pong");
             pongMsg.setData(dataOut.toByteArray());
 
             client.sendMessage(pongMsg);
