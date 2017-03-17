@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.netcom;
 
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import java.net.InetSocketAddress;
 
 /**
  * Represents the peer of a connection
@@ -10,6 +11,13 @@ import com.linbit.drbdmanage.security.AccessDeniedException;
  */
 public interface Peer
 {
+    /**
+     * Returns a unique identifier for this peer object
+     *
+     * @return Unique peer identifier
+     */
+    String getId();
+
     /**
      * Returns the security context of the connected peer
      *
@@ -53,4 +61,39 @@ public interface Peer
      * @throws IllegalMessageStateException If the message object is not in a valid state for sending
      */
     void sendMessage(Message msg) throws IllegalMessageStateException;
+
+    /**
+     * Returns the capacity of the queue for outbound messages
+     *
+     * @return Capacity of the outbound messages queue
+     */
+    int outQueueCapacity();
+
+    /**
+     * Returns the number of currently queued outbound messages
+     *
+     * @return Number of currently queued outbound messages
+     */
+    int outQueueCount();
+
+    /**
+     * Returns the number of messages that were sent to the peer
+     *
+     * @return Number of messages that were sent
+     */
+    long msgSentCount();
+
+    /**
+     * Returns the number of messages that were received from the peer
+     *
+     * @return Number of messages that were received
+     */
+    long msgRecvCount();
+
+    /**
+     * Returns the destination internet address of the peer connection
+     *
+     * @return Internet address of the peer
+     */
+    InetSocketAddress peerAddress();
 }

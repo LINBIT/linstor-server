@@ -5,6 +5,7 @@ import com.linbit.drbdmanage.controllerapi.*;
 import com.linbit.drbdmanage.debug.*;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.*;
@@ -15,8 +16,11 @@ import com.linbit.timer.Timer;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -67,6 +71,9 @@ public class Controller implements Runnable, CoreServices
 
     // Map of controllable system services
     private final Map<ServiceName, SystemService> systemServicesMap;
+
+    // Map of connected peers
+    private final Map<String, Peer> peerMap;
 
     private WorkerPool workers = null;
     private ErrorReporter errorLog = null;
@@ -138,6 +145,8 @@ public class Controller implements Runnable, CoreServices
         systemServicesMap = new TreeMap<>();
         systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
         systemServicesMap.put(fsEventSvc.getInstanceName(), fsEventSvc);
+
+        peerMap = new TreeMap<>();
 
         cpuCount = Runtime.getRuntime().availableProcessors();
 
@@ -590,14 +599,21 @@ public class Controller implements Runnable, CoreServices
         @Override
         public void inboundConnectionEstablished(Peer connPeer)
         {
-            CtlPeerContext peerCtx = new CtlPeerContext();
-            connPeer.attach(peerCtx);
+            if (connPeer != null)
+            {
+                CtlPeerContext peerCtx = new CtlPeerContext();
+                connPeer.attach(peerCtx);
+                peerMap.put(connPeer.getId(), connPeer);
+            }
         }
 
         @Override
         public void connectionClosed(Peer connPeer)
         {
-            // TODO: Satellite or utility connection closed
+            if (connPeer != null)
+            {
+                peerMap.remove(connPeer.getId());
+            }
         }
     }
 
@@ -618,6 +634,7 @@ public class Controller implements Runnable, CoreServices
             "CmdDisplaySecLevel",
             "CmdStartService",
             "CmdEndService",
+            "CmdDisplayConnections",
             "CmdTestErrorLog",
             "CmdShutdown"
         };
@@ -715,6 +732,7 @@ public class Controller implements Runnable, CoreServices
     public interface DebugControl
     {
         Map<ServiceName, SystemService> getSystemServiceMap();
+        Map<String, Peer> getAllPeers();
         void shutdown(AccessContext accCtx);
     }
 
@@ -727,6 +745,7 @@ public class Controller implements Runnable, CoreServices
             controller = controllerRef;
         }
 
+        @Override
         public Map<ServiceName, SystemService> getSystemServiceMap()
         {
             Map<ServiceName, SystemService> svcCpy = new TreeMap<>();
@@ -734,6 +753,18 @@ public class Controller implements Runnable, CoreServices
             return svcCpy;
         }
 
+        @Override
+        public Map<String, Peer> getAllPeers()
+        {
+            TreeMap<String, Peer> peerMapCpy = new TreeMap<>();
+            synchronized (controller.peerMap)
+            {
+                peerMapCpy.putAll(controller.peerMap);
+            }
+            return peerMapCpy;
+        }
+
+        @Override
         public void shutdown(AccessContext accCtx)
         {
             try

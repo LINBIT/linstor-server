@@ -340,12 +340,26 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                     else
                     if ((ops & OP_ACCEPT) != 0)
                     {
-                        acceptConnection(currentKey);
+                        try
+                        {
+                            acceptConnection(currentKey);
+                        }
+                        catch (IOException ioExc)
+                        {
+                            coreSvcs.getErrorReporter().reportError(ioExc);
+                        }
                     }
                     else
                     if ((ops & OP_CONNECT) != 0)
                     {
-                        establishConnection(currentKey);
+                        try
+                        {
+                            establishConnection(currentKey);
+                        }
+                        catch (IOException ioExc)
+                        {
+                            coreSvcs.getErrorReporter().reportError(ioExc);
+                        }
                     }
                 }
             }
@@ -425,22 +439,70 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
             SocketChannel newSocket = serverSocket.accept();
             if (newSocket != null)
             {
-                newSocket.configureBlocking(false);
-
-                // Register the accepted connection with the selector loop
-                SelectionKey connKey = newSocket.register(serverSelector, SelectionKey.OP_READ);
-
-                // Prepare the peer object and message
-                TcpConnectorPeer connPeer = new TcpConnectorPeer(this, connKey, defaultPeerAccCtx);
-                connKey.attach(connPeer);
-
-                if (connObserver != null)
+                boolean accepted = false;
+                try
                 {
-                    connObserver.inboundConnectionEstablished(connPeer);
+                    newSocket.configureBlocking(false);
+
+                    // Generate the id for the peer object from the remote address of the connection
+                    SocketAddress sockAddr = newSocket.getRemoteAddress();
+                    try
+                    {
+                        InetSocketAddress inetSockAddr = (InetSocketAddress) sockAddr;
+                        InetAddress inetAddr = inetSockAddr.getAddress();
+                        if (inetAddr != null)
+                        {
+                            String peerId = inetAddr.getHostAddress() + ":" + inetSockAddr.getPort();
+
+                            // Register the accepted connection with the selector loop
+                            SelectionKey connKey = newSocket.register(serverSelector, SelectionKey.OP_READ);
+
+                            // Prepare the peer object and message
+                            TcpConnectorPeer connPeer = new TcpConnectorPeer(
+                                peerId, this, connKey, defaultPeerAccCtx
+                            );
+                            connKey.attach(connPeer);
+                            if (connObserver != null)
+                            {
+                                connObserver.inboundConnectionEstablished(connPeer);
+                            }
+                            accepted = true;
+                        }
+                        else
+                        {
+                            throw new IOException(
+                                "Cannot generate the peer id, because the socket's " +
+                                "internet address is uninitialized."
+                            );
+                        }
+                    }
+                    catch (ClassCastException ccExc)
+                    {
+                        throw new IOException(
+                            "Peer connection address is not of type InetSocketAddress. " +
+                            "Cannot generate the peer id."
+                        );
+                    }
+                }
+                finally
+                {
+                    if (!accepted)
+                    {
+                        // Close any rejected connections
+                        try
+                        {
+                            newSocket.close();
+                        }
+                        catch (IOException ioExc)
+                        {
+                            coreSvcs.getErrorReporter().reportError(ioExc);
+                        }
+                    }
                 }
             }
             else
             {
+                // No more connections to accept
                 break;
             }
         }
@@ -453,6 +515,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     }
 
     private void establishConnection(SelectionKey currentKey)
+        throws IOException
     {
         // TODO
     }
@@ -460,7 +523,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     private void closeConnection(SelectionKey currentKey)
     {
         Peer client = (TcpConnectorPeer) currentKey.attachment();
-        if (connObserver != null)
+        if (connObserver != null && client != null)
         {
             connObserver.connectionClosed(client);
         }

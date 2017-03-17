@@ -3,6 +3,10 @@ package com.linbit.drbdmanage.netcom;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.Privilege;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.channels.SelectableChannel;
 
 import java.nio.channels.SelectionKey;
 import java.util.Deque;
@@ -10,6 +14,7 @@ import java.util.LinkedList;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
+import java.nio.channels.SocketChannel;
 
 /**
  * Tracks the status of the communication with a peer
@@ -18,6 +23,8 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
  */
 public class TcpConnectorPeer implements Peer
 {
+    private String peerId;
+
     private TcpConnector connector;
 
     // Current inbound message
@@ -36,14 +43,34 @@ public class TcpConnectorPeer implements Peer
 
     private Object attachment;
 
-    TcpConnectorPeer(TcpConnector connectorRef, SelectionKey key, AccessContext accCtx)
+    // Volatile guarantees atomic read and write
+    //
+    // The counters are only incremented by only one thread
+    // at a time, but may be concurrently read by multiple threads,
+    // therefore requiring atomic read and write
+    private volatile long msgSentCtr = 0;
+    private volatile long msgRecvCtr = 0;
+
+    TcpConnectorPeer(
+        String peerIdRef,
+        TcpConnector connectorRef,
+        SelectionKey key,
+        AccessContext accCtx
+    )
     {
+        peerId = peerIdRef;
         connector = connectorRef;
         msgOutQueue = new LinkedList<>();
         msgIn = new TcpConnectorMessage(false);
         selKey = key;
         peerAccCtx = accCtx;
         attachment = null;
+    }
+
+    @Override
+    public String getId()
+    {
+        return peerId;
     }
 
     @Override
@@ -96,6 +123,7 @@ public class TcpConnectorPeer implements Peer
     void nextInMessage()
     {
         msgIn = new TcpConnectorMessage(false);
+        ++msgRecvCtr;
     }
 
     void nextOutMessage()
@@ -116,6 +144,7 @@ public class TcpConnectorPeer implements Peer
                     // when the connection has been closed
                 }
             }
+            ++msgSentCtr;
         }
     }
 
@@ -143,5 +172,54 @@ public class TcpConnectorPeer implements Peer
     public Object getAttachment()
     {
         return attachment;
+    }
+
+    @Override
+    public int outQueueCapacity()
+    {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public int outQueueCount()
+    {
+        return msgOutQueue.size();
+    }
+
+    @Override
+    public long msgSentCount()
+    {
+        return msgSentCtr;
+    }
+
+    @Override
+    public long msgRecvCount()
+    {
+        return msgRecvCtr;
+    }
+
+    @Override
+    public InetSocketAddress peerAddress()
+    {
+        InetSocketAddress peerAddr = null;
+        try
+        {
+            SelectableChannel channel = selKey.channel();
+            if (channel != null && channel instanceof SocketChannel)
+            {
+                SocketChannel sockChannel = (SocketChannel) channel;
+                SocketAddress sockAddr = sockChannel.getRemoteAddress();
+                if (sockAddr != null && sockAddr instanceof InetSocketAddress)
+                {
+                    peerAddr = (InetSocketAddress) sockAddr;
+                }
+            }
+        }
+        catch (IOException ignored)
+        {
+            // Undeterminable address (possibly closed or otherwise invalid)
+            // No-op; method returns null
+        }
+        return peerAddr;
     }
 }

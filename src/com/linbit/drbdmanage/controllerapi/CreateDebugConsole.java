@@ -68,6 +68,7 @@ public class CreateDebugConsole extends BaseApiCall
                     privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
                     ctrl.createDebugConsole(privCtx, client);
                 }
+                accCtx.getEffectivePrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
                 accCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_VIEW);
 
                 msgDbgReplyBld.addDebugOut("Debug console created");
