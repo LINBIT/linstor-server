@@ -25,20 +25,21 @@ public class AsyncOps
     {
         try
         {
+            syncPoint.await();
             if (syncPoint.getCount() > 0)
             {
-                throw new TimeoutException(
-                    "The thread waiting for the completion of asynchronously running " +
-                    "operations was interrupted before those operations were completed."
-                );
+                timeout();
             }
-            syncPoint.await();
         }
         catch (InterruptedException intrExc)
         {
+            if (syncPoint.getCount() > 0)
+            {
+                interrupted();
+            }
             // No-op
-            // Allow intentional interruption to continue the
-            // waiting thread immediately
+            // Thread was interrupted, but the async operations completed
+            // in the meantime
         }
     }
 
@@ -48,28 +49,36 @@ public class AsyncOps
         try
         {
             syncPoint.await(timeout, TimeUnit.MILLISECONDS);
+            if (syncPoint.getCount() > 0)
+            {
+                timeout();
+            }
         }
         catch (InterruptedException intrExc)
         {
             if (syncPoint.getCount() > 0)
             {
-                genIntrException();
+                interrupted();
             }
             // No-op
             // Thread was interrupted, but the async operations completed
             // in the meantime
         }
-        if (syncPoint.getCount() > 0)
-        {
-            genIntrException();
-        }
     }
 
-    private void genIntrException() throws TimeoutException
+    private void timeout() throws TimeoutException
     {
-       throw new TimeoutException(
+        throw new TimeoutException(
             "The timeout for the completion of asynchronously running operations " +
             "was exceeded before those operations were completed."
+        );
+    }
+
+    private void interrupted() throws TimeoutException
+    {
+       throw new TimeoutException(
+            "The thread waiting for the completion of asynchronously running " +
+            "operations was interrupted before those operations were completed."
         );
     }
 
