@@ -70,5 +70,11 @@ public class CmdDisplayServices extends BaseControllerDebugCmd
             debugOut.println(ruler);
             debugOut.printf("%d services, %d started\n", services.size(), startedCtr);
         }
+        else
+        {
+            debugOut.println(
+                "No services are registered at this time."
+            );
+        }
     }
 }
