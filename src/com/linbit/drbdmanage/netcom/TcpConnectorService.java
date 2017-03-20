@@ -294,7 +294,6 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                             // Protocol error:
                             // I/O error while reading a message
                             // Close channel / disconnect peer, invalidate SelectionKey
-                            coreSvcs.getErrorReporter().reportError(ioExc);
                             closeConnection(currentKey);
                         }
                     }
@@ -333,7 +332,6 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                             // Protocol error:
                             // I/O error while writing a message
                             // Close channel / disconnect peer, invalidate SelectionKey
-                            coreSvcs.getErrorReporter().reportError(ioExc);
                             closeConnection(currentKey);
                         }
                     }

@@ -84,7 +84,7 @@ public class TcpConnectorMessage implements Message
     @Override
     public byte[] getData() throws IllegalMessageStateException
     {
-        if (currentPhase != Phase.PROCESS)
+        if (dataBytes == null)
         {
             throw new IllegalMessageStateException(
                 "Attempt to fetch content data from a message that is not ready for processing"
