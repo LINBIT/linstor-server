@@ -5,7 +5,6 @@ import com.linbit.drbdmanage.controllerapi.*;
 import com.linbit.drbdmanage.debug.*;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.*;
@@ -16,11 +15,8 @@ import com.linbit.timer.Timer;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -567,7 +563,6 @@ public class Controller implements Runnable, CoreServices
                 defaultPeerAccCtx,
                 new ConnTracker(this)
             );
-            netComSvc.initialize();
             systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
         }
         catch (AccessDeniedException accessExc)
@@ -575,7 +570,7 @@ public class Controller implements Runnable, CoreServices
             errorLog.reportError(accessExc);
             logFailure("Cannot create security context for the network communications service");
         }
-        catch (IOException | SystemServiceStartException exc)
+        catch (IOException exc)
         {
             errorLog.reportError(exc);
         }

@@ -28,6 +28,8 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
 
     private ServiceName serviceInstanceName;
 
+    private static final long REINIT_THROTTLE_TIME = 3000L;
+
     public static final int DEFAULT_PORT_VALUE = 9977;
     public static final TcpPortNumber DEFAULT_PORT;
 
@@ -156,37 +158,38 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         bindAddress = bindAddressRef;
     }
 
-    public synchronized void initialize() throws SystemServiceStartException
-    {
-        try
-        {
-            if (shutdownFlag.get())
-            {
-                serverSocket = ServerSocketChannel.open();
-                serverSelector = Selector.open();
-                serverSocket.bind(bindAddress);
-                serverSocket.configureBlocking(false);
-                serverSocket.register(serverSelector, OP_ACCEPT);
-                // Enable entering the run() method's selector loop
-                shutdownFlag.set(false);
-            }
-        }
-        catch (IOException ioExc)
-        {
-            throw new SystemServiceStartException(
-                String.format(
-                    "Initialization of the %s service instance '%s' failed.",
-                    TcpConnectorService.class.getName(), serviceInstanceName
-                ),
-                ioExc
-            );
-        }
-    }
-
     @Override
     public Peer connect()
     {
         // TODO: Implement connect() method
+//        try
+//        {
+//              ...connect()
+//        }
+//        catch (AlreadyConnectdException connExc)
+//        {
+//            // FIXME: Handle exception
+//        }
+//        catch (ConnectionPendingException connExc)
+//        {
+//            // FIXME: Handle exception
+//        }
+//        catch (ClosedChannelException closedExc)
+//        {
+//            // FIXME: Handle exception
+//        }
+//        catch (UnresolvedAddressException addrExc)
+//        {
+//            // FIXME: Handle exception
+//        }
+//        catch (UnsupportedAddressTypeException addrTypeExc)
+//        {
+//            // FIXME: Handle exception
+//        }
+//        catch (IOException connExc)
+//        {
+//            // FIXME: Handle exception
+//        }
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -196,7 +199,20 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     {
         if (selectorLoopThread == null)
         {
-            initialize();
+            try
+            {
+                initialize();
+            }
+            catch (IOException ioExc)
+            {
+                throw new SystemServiceStartException(
+                    String.format(
+                        "Initialization of the %s service instance '%s' failed.",
+                        TcpConnectorService.class.getName(), serviceInstanceName
+                    ),
+                    ioExc
+                );
+            }
             selectorLoopThread = new Thread(this);
             selectorLoopThread.setName(serviceInstanceName.getDisplayName());
             selectorLoopThread.start();
@@ -283,17 +299,33 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                                     );
                             }
                         }
+                        catch (NotYetConnectedException connExc)
+                        {
+                            // This might possibly happen if an outbound connection is
+                            // marked as READ interested before establishing the connection
+                            // is finished; if the Selector would even report it as ready
+                            // in this case.
+                            // Anyway, the reason would be an implementation flaw of some
+                            // kind, therefore, log this error and then treat the connection's
+                            // state as a protocol error and close the connection.
+                            coreSvcs.getErrorReporter().reportError(connExc);
+                            closeConnection(currentKey);
+                        }
                         catch (IllegalMessageStateException msgStateExc)
                         {
-                            // FIXME: Implementation error
-                            coreSvcs.getErrorReporter().reportError(msgStateExc);
+                            coreSvcs.getErrorReporter().reportError(
+                                new ImplementationError(
+                                    "A message object with an illegal state was registered " +
+                                    "as the target of an I/O read operation",
+                                    msgStateExc
+                                )
+                            );
                             closeConnection(currentKey);
                         }
                         catch (IOException ioExc)
                         {
-                            // Protocol error:
-                            // I/O error while reading a message
-                            // Close channel / disconnect peer, invalidate SelectionKey
+                            // Protocol error - I/O error while reading a message
+                            // Close the connection
                             closeConnection(currentKey);
                         }
                     }
@@ -321,17 +353,33 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                                     );
                             }
                         }
+                        catch (NotYetConnectedException connExc)
+                        {
+                            // This might possibly happen if an outbound connection is
+                            // marked as WRITE interested before establishing the connection
+                            // is finished; if the Selector would even report it as ready
+                            // in this case.
+                            // Anyway, the reason would be an implementation flaw of some
+                            // kind, therefore, log this error and then treat the connection's
+                            // state as a protocol error and close the connection.
+                            coreSvcs.getErrorReporter().reportError(connExc);
+                            closeConnection(currentKey);
+                        }
                         catch (IllegalMessageStateException msgStateExc)
                         {
-                            // FIXME: Implementation error
-                            coreSvcs.getErrorReporter().reportError(msgStateExc);
+                            coreSvcs.getErrorReporter().reportError(
+                                new ImplementationError(
+                                    "A message object with an illegal state was registered " +
+                                    "as the target of an I/O write operation",
+                                    msgStateExc
+                                )
+                            );
                             closeConnection(currentKey);
                         }
                         catch (IOException ioExc)
                         {
-                            // Protocol error:
-                            // I/O error while writing a message
-                            // Close channel / disconnect peer, invalidate SelectionKey
+                            // Protocol error - I/O error while writing a message
+                            // Close the connection
                             closeConnection(currentKey);
                         }
                     }
@@ -341,6 +389,38 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                         try
                         {
                             acceptConnection(currentKey);
+                        }
+                        catch (ClosedChannelException closeExc)
+                        {
+                            // May be thrown by accept() if the server socket is closed
+                            // Attempt to reinitialize to recover
+                            reinitialize();
+                            // Break out of iterating over keys, because those are all
+                            // invalid after reinitialization, and the set of keys may have
+                            // been modified too
+                            break;
+                        }
+                        catch (NotYetBoundException unboundExc)
+                        {
+                            // Generated if accept() is invoked on an unbound server socket
+                            // This should not happen, unless there is an
+                            // implementation error somewhere.
+                            // Attempt to reinitialize to recover
+                            reinitialize();
+                            // Break out of iterating over keys, because those are all
+                            // invalid after reinitialization, and the set of keys may have
+                            // been modified too
+                            break;
+                        }
+                        catch (ClosedSelectorException closeExc)
+                        {
+                            // Throw by accept() if the selector is closed
+                            // Attempt to reinitialize to recover
+                            reinitialize();
+                            // Break out of iterating over keys, because those are all
+                            // invalid after reinitialization, and the set of keys may have
+                            // been modified too
+                            break;
                         }
                         catch (IOException ioExc)
                         {
@@ -363,65 +443,34 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
             }
             catch (ClosedSelectorException selectExc)
             {
-                // FIXME
-                // Selector became inoperative.
-                // A possible recovery would be to reinitialize the TcpConnectorService
+                // Selector became inoperative. Log error and attempt to reinitialize.
                 coreSvcs.getErrorReporter().reportError(selectExc);
+                reinitialize();
             }
             catch (IOException ioExc)
             {
-                // FIXME
-                // I/O error while selecting, or an uncaught I/O error while performing
-                // I/O on a single channel (this should not happen)
-                // A possible recovery would be to reinitialize the TcpConnectorService
+                // I/O error while selecting (likely), or an uncaught I/O error
+                // while performing I/O on a channel (should not happen)
+                // Log error and attempt to reinitialize.
                 coreSvcs.getErrorReporter().reportError(ioExc);
+                reinitialize();
             }
             catch (Exception exc)
             {
+                // Uncaught exception. Log error and shut down.
                 coreSvcs.getErrorReporter().reportError(exc);
+                break;
             }
             catch (ImplementationError implErr)
             {
+                // Uncaught exception. Log error and shut down.
                 coreSvcs.getErrorReporter().reportError(implErr);
+                break;
             }
         }
 
-        try
-        {
-            if (serverSelector != null)
-            {
-                for (SelectionKey currentKey : serverSelector.keys())
-                {
-                    closeConnection(currentKey);
-                }
-            }
-            serverSelector.close();
-        }
-        catch (ClosedSelectorException selectExc)
-        {
-            // FIXME
-            coreSvcs.getErrorReporter().reportError(selectExc);
-        }
-        catch (ClosedChannelException closedExc)
-        {
-            // FIXME
-            coreSvcs.getErrorReporter().reportError(closedExc);
-        }
-        catch (IOException ioExc)
-        {
-            // FIXME
-            coreSvcs.getErrorReporter().reportError(ioExc);
-        }
+        uninitialize();
 
-        try
-        {
-            serverSocket.close();
-        }
-        catch (IOException ioExc)
-        {
-            // FIXME
-            coreSvcs.getErrorReporter().reportError(ioExc);
-        }
         synchronized (this)
         {
             selectorLoopThread = null;
@@ -453,18 +502,47 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                             String peerId = inetAddr.getHostAddress() + ":" + inetSockAddr.getPort();
 
                             // Register the accepted connection with the selector loop
-                            SelectionKey connKey = newSocket.register(serverSelector, SelectionKey.OP_READ);
-
-                            // Prepare the peer object and message
-                            TcpConnectorPeer connPeer = new TcpConnectorPeer(
-                                peerId, this, connKey, defaultPeerAccCtx
-                            );
-                            connKey.attach(connPeer);
-                            if (connObserver != null)
+                            SelectionKey connKey = null;
+                            try
                             {
-                                connObserver.inboundConnectionEstablished(connPeer);
+                                connKey = newSocket.register(serverSelector, SelectionKey.OP_READ);
                             }
-                            accepted = true;
+                            catch (IllegalSelectorException illSelExc)
+                            {
+                                // Thrown by register() if the selector is from another I/O provider
+                                // than the channel that is being registered
+                                coreSvcs.getErrorReporter().reportError(
+                                    new ImplementationError(
+                                        "Registration of the channel with the selector failed, " +
+                                        "because the channel was created by another type of " +
+                                        "I/O provider",
+                                        illSelExc
+                                    )
+                                );
+                                // Connection was not accepted and will be closed in the finally block
+                            }
+                            catch (IllegalArgumentException illArg)
+                            {
+                                // Generated if a bit in the I/O operations specified
+                                // in register() does not correspond with a supported I/O operation
+                                // Should not happen; log the error.
+                                // Connection was not accepted and will be closed in the finally block
+                                coreSvcs.getErrorReporter().reportError(illArg);
+                            }
+
+                            if (connKey != null)
+                            {
+                                // Prepare the peer object and message
+                                TcpConnectorPeer connPeer = new TcpConnectorPeer(
+                                    peerId, this, connKey, defaultPeerAccCtx
+                                );
+                                connKey.attach(connPeer);
+                                if (connObserver != null)
+                                {
+                                    connObserver.inboundConnectionEstablished(connPeer);
+                                }
+                                accepted = true;
+                            }
                         }
                         else
                         {
@@ -481,6 +559,41 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                             "Cannot generate the peer id."
                         );
                     }
+                }
+                catch (ClosedChannelException closeExc)
+                {
+                    // May be thrown by getRemoteAddress()
+                    // Apparently, the peer closed the connection again before it could be accepted.
+                    // No-op; connection was not accepted and will be closed in the finally block
+                }
+                catch (IllegalBlockingModeException illModeExc)
+                {
+                    // Implementation error, configureBlocking() skipped
+                    coreSvcs.getErrorReporter().reportError(
+                        new ImplementationError(
+                            "The accept() operation failed because the new socket channel's " +
+                            "blocking mode was not configured correctly",
+                            illModeExc
+                        )
+                    );
+                    // Connection was not accepted and will be closed in the finally block
+                }
+                catch (CancelledKeyException cancelExc)
+                {
+                    // May be thrown by register() if the channel is already registered
+                    // with the selector, but has already been cancelled too (which should
+                    // be impossible, because the channel is first registered after being
+                    // accepted)
+                    coreSvcs.getErrorReporter().reportError(cancelExc);
+                    // Connection was not accepted and will be closed in the finally block
+                }
+                catch (IOException ioExc)
+                {
+                    // May be thrown by getRemoteAddress()
+                    // This will cause the connection to be rejected because its endpoint
+                    // address is undeterminable
+                    coreSvcs.getErrorReporter().reportError(ioExc);
+                    // Connection was not accepted and will be closed in the finally block
                 }
                 finally
                 {
@@ -515,7 +628,23 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     private void establishConnection(SelectionKey currentKey)
         throws IOException
     {
-        // TODO
+        // TODO: Implement finishing outbound connection attempt
+//        try
+//        {
+//            ...finishConnect()
+//        }
+//        catch (NoConnectionPendingException connExc)
+//        {
+//            // FIXME: Handle exception
+//        }
+//        catch (ClosedChannelException closedExc)
+//        {
+//            // FIXME: Handle exception
+//        }
+//        catch (IOException ioExc)
+//        {
+//            // FIXME: Handle exception
+//        }
     }
 
     private void closeConnection(SelectionKey currentKey)
@@ -530,19 +659,207 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
             SelectableChannel channel = currentKey.channel();
             if (channel != null)
             {
-                currentKey.channel().close();
+                channel.close();
             }
         }
         catch (IOException closeIoExc)
         {
-            // FIXME
+            // If close() fails with an I/O error, the reason may be interesting
+            // enough to file an error report
             coreSvcs.getErrorReporter().reportError(closeIoExc);
         }
-        catch (IllegalStateException illState)
-        {
-            // No-op; may be thrown when the connection has been closed
-        }
         currentKey.cancel();
+    }
+
+    private void closeAllConnections()
+    {
+        try
+        {
+            if (serverSelector != null)
+            {
+                for (SelectionKey currentKey : serverSelector.keys())
+                {
+                    closeConnection(currentKey);
+                }
+                serverSelector.close();
+            }
+        }
+        catch (ClosedSelectorException selectExc)
+        {
+            // Cannot close any connections, because the selector is inoperative
+            coreSvcs.getErrorReporter().reportError(selectExc);
+        }
+        catch (IOException ioExc)
+        {
+            // If close() fails with an I/O error, the reason may be interesting
+            // enough to file an error report
+            coreSvcs.getErrorReporter().reportError(ioExc);
+        }
+    }
+
+    private void closeServerSocket()
+    {
+        try
+        {
+            if (serverSocket != null)
+            {
+                serverSocket.close();
+            }
+        }
+        catch (IOException ioExc)
+        {
+            // If close() fails with an I/O error, the reason may be interesting
+            // enough to file an error report
+            coreSvcs.getErrorReporter().reportError(ioExc);
+        }
+    }
+
+    private void initialize() throws IOException
+    {
+        boolean initFlag = false;
+        try
+        {
+            serverSocket = ServerSocketChannel.open();
+            serverSelector = Selector.open();
+            try
+            {
+                serverSocket.bind(bindAddress);
+            }
+            catch (AlreadyBoundException boundExc)
+            {
+                // Thrown if this server socket is already bound.
+                // This is NOT the same error as if the TCP port is already in use,
+                // which will generate a java.net.BindException instead (subclass of IOException)
+                // This should not happen, unless there is a bug in the code that already
+                // bound the socket before trying to bind() again in this section of code
+                throw new ImplementationError(
+                    "A newly created server socket could not be bound, because it is bound already.",
+                    boundExc
+                );
+            }
+            catch (UnsupportedAddressTypeException addrExc)
+            {
+                // Thrown if the socket can not be bound, because the type of
+                // address to bind the socket to is unsupported
+                throw new IOException(
+                    "Server socket creation failed, the specified server address " +
+                    "is not of a supported type.",
+                    addrExc
+                );
+            }
+            catch (ClosedChannelException closeExc)
+            {
+                // Thrown if the socket is closed when bind() is called
+                throw new IOException(
+                    "Server socket creation failed. The server socket was closed " +
+                    "while its initialization was still in progress.",
+                    closeExc
+                );
+            }
+            serverSocket.configureBlocking(false);
+            try
+            {
+                serverSocket.register(serverSelector, OP_ACCEPT);
+            }
+            catch (IllegalBlockingModeException illModeExc)
+            {
+                // Implementation error, configureBlocking() skipped
+                throw new ImplementationError(
+                    "The server socket could not be initialized because its " +
+                    "blocking mode was not configured correctly",
+                    illModeExc
+                );
+            }
+            catch (ClosedSelectorException closeExc)
+            {
+                // Thrown if the selector is closed when register() is called
+                throw new IOException(
+                    "The server socket could not be initialized because the " +
+                    "selector for the channel was closed when trying to register " +
+                    "I/O operations for the server socket.",
+                    closeExc
+                );
+            }
+            catch (CancelledKeyException cancelExc)
+            {
+                // May be thrown by register() if the channel is already registered
+                // with the selector, but has already been cancelled too (which should
+                // be impossible, because the channel is first registered after being
+                // accepted)
+                throw new ImplementationError(
+                    "Initialization of the server socket failed, because the socket's " +
+                    "selection key was already registered and cancelled during initialization",
+                    cancelExc
+                );
+            }
+            catch (IllegalSelectorException illSelExc)
+            {
+                // Thrown by register() if the selector is from another I/O provider
+                // than the channel that is being registered
+                throw new ImplementationError(
+                    "Initialization of the server socket failed because the channel " +
+                    "was created by another type of I/O provider than the associated selector",
+                    illSelExc
+                );
+            }
+            catch (IllegalArgumentException illArg)
+            {
+                // Generated if a bit in the I/O operations specified
+                // in register() does not correspond with a supported I/O operation
+                // Should not happen; log the error.
+                // Server socket can not accept connections, treat this as an I/O error
+                throw new IOException(
+                    "Configuring the server socket to accept new connections failed",
+                    illArg
+                );
+            }
+
+            // Enable entering the run() method's selector loop
+            shutdownFlag.set(false);
+            initFlag = true;
+        }
+        finally
+        {
+            if (!initFlag)
+            {
+                // Initialization failed, clean up
+                uninitialize();
+            }
+        }
+    }
+
+    private void uninitialize()
+    {
+        closeAllConnections();
+        closeServerSocket();
+
+        serverSocket    = null;
+        serverSelector  = null;
+    }
+
+    private synchronized void reinitialize()
+    {
+        uninitialize();
+
+        // Throttle reinitialization to avoid busy-looping in case of a
+        // persistent error during initialization (e.g., all network drivers down, ...)
+        try
+        {
+            Thread.sleep(REINIT_THROTTLE_TIME);
+        }
+        catch (InterruptedException intrExc)
+        {
+            // No-op; thread may be interrupted to shorten the sleep()
+        }
+
+        try
+        {
+            initialize();
+        }
+        catch (IOException ioExc)
+        {
+            coreSvcs.getErrorReporter().reportError(ioExc);
+        }
     }
 
     @Override
