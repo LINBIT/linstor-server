@@ -22,7 +22,7 @@ public class NodeData implements Node
     private NodeName clNodeName;
 
     // List of resources assigned to this cluster node
-    private Map<ResourceName, Resource> resourceList;
+    private Map<ResourceName, Resource> resourceMap;
 
     // Access controls for this object
     private ObjectProtection objProt;
@@ -32,7 +32,7 @@ public class NodeData implements Node
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
         objId = UUID.randomUUID();
         clNodeName = nameRef;
-        resourceList = new TreeMap<>();
+        resourceMap = new TreeMap<>();
         objProt = new ObjectProtection(accCtx);
     }
 
@@ -53,7 +53,7 @@ public class NodeData implements Node
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return resourceList.get(resName);
+        return resourceMap.get(resName);
     }
 
     @Override
@@ -65,14 +65,16 @@ public class NodeData implements Node
     @Override
     public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
-        // TODO: Implement
-        throw new UnsupportedOperationException("Not supported yet.");
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        resourceMap.put(resRef.getDefinition().getName(), resRef);
     }
 
     @Override
     public void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
-        // TODO: Implement
-        throw new UnsupportedOperationException("Not supported yet.");
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        resourceMap.remove(resRef.getDefinition().getName());
     }
 }

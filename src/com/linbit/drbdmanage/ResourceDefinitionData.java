@@ -98,14 +98,16 @@ public class ResourceDefinitionData implements ResourceDefinition
     @Override
     public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
-        // TODO: Implement
-        throw new UnsupportedOperationException("Not supported yet.");
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        resourceMap.put(resRef.getAssignedNode().getName(), resRef);
     }
 
     @Override
     public void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
-        // TODO: Implement
-        throw new UnsupportedOperationException("Not supported yet.");
+        objProt.requireAccess(accCtx, AccessType.USE);
+
+        resourceMap.remove(resRef.getAssignedNode().getName());
     }
 }
