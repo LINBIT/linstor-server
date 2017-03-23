@@ -75,6 +75,7 @@ public class SerialPropsContainer extends PropsContainer
         {
             serialGen = sGen;
         }
+        serialGen.peekSerial();
     }
 
     public SerialGenerator getSerialGenerator()
@@ -159,6 +160,11 @@ public class SerialPropsContainer extends PropsContainer
         return new SerialPropsContainer(key, con, serialGen);
     }
 
+    public void closeGeneration()
+    {
+        serialGen.closeGeneration();
+    }
+
     private long getSerial()
     {
         long serial = 0;
@@ -175,12 +181,23 @@ public class SerialPropsContainer extends PropsContainer
                 {
                 }
             }
+            else
+            {
+                super.setProp(SerialGenerator.KEY_SERIAL, "0", "/");
+            }
         }
         catch (InvalidKeyException keyExc)
         {
             throw new ImplementationError(
                 String.format("KEY_SERIAL constant value of '%s' is an invalid key"),
                 keyExc
+            );
+        }
+        catch (InvalidValueException valueExc)
+        {
+            throw new ImplementationError(
+                "KEY_SERIAL assigned value of '0' is an invalid value",
+                valueExc
             );
         }
         return serial;
