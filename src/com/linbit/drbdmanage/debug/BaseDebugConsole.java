@@ -7,7 +7,9 @@ import com.linbit.drbdmanage.security.AccessContext;
 import java.io.*;
 import java.text.ParseException;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -25,6 +27,7 @@ public abstract class BaseDebugConsole implements DebugConsole
     protected CoreServices dbgCoreSvcs;
     protected Map<String, String> parameters;
     protected Map<String, CommonDebugCmd> commandMap;
+    protected Set<String> unknownParameters;
 
     enum ParamParserState
     {
@@ -42,6 +45,7 @@ public abstract class BaseDebugConsole implements DebugConsole
         dbgCoreSvcs = coreSvcsRef;
         parameters = new TreeMap<>();
         commandMap = new TreeMap<>();
+        unknownParameters = new TreeSet<>();
     }
 
     @Override
@@ -90,6 +94,8 @@ public abstract class BaseDebugConsole implements DebugConsole
                     break;
                 }
             }
+            debugOut.flush();
+            debugErr.flush();
         }
         catch (IOException ioExc)
         {
@@ -129,6 +135,7 @@ public abstract class BaseDebugConsole implements DebugConsole
                 try
                 {
                     parseCommandParameters(commandChars);
+
                     processCommand(debugOut, debugErr, command);
                 }
                 catch (ParseException parseExc)
@@ -138,6 +145,7 @@ public abstract class BaseDebugConsole implements DebugConsole
                 finally
                 {
                     parameters.clear();
+                    unknownParameters.clear();
                 }
             }
         }
@@ -160,23 +168,67 @@ public abstract class BaseDebugConsole implements DebugConsole
                 displayCmdName = "<unknown command>";
             }
 
-            String cmdInfo = debugCmd.getCmdInfo();
-            if (cmdInfo == null)
+            if (parameters.size() > 0 && !debugCmd.acceptsUndeclaredParameters())
             {
-                debugOut.printf("\u001b[1;37m%-20s\u001b[0m\n", displayCmdName);
+                Map<String, String> paramDescr = debugCmd.getParametersDescription();
+                if (paramDescr != null)
+                {
+                    for (String paramKey : parameters.keySet())
+                    {
+                        if (!paramDescr.containsKey(paramKey))
+                        {
+                            unknownParameters.add(paramKey);
+                        }
+                    }
+                }
+                else
+                {
+                    unknownParameters.addAll(parameters.keySet());
+                }
+            }
+
+            if (unknownParameters.size() == 0)
+            {
+                String cmdInfo = debugCmd.getCmdInfo();
+                if (cmdInfo == null)
+                {
+                    debugOut.printf("\u001b[1;37m%-20s\u001b[0m\n", displayCmdName);
+                }
+                else
+                {
+                    debugOut.printf("\u001b[1;37m%-20s\u001b[0m %s\n", displayCmdName, cmdInfo);
+                }
+
+                try
+                {
+                    debugCmd.execute(debugOut, debugErr, debugCtx, parameters);
+                }
+                catch (Exception exc)
+                {
+                    dbgCoreSvcs.getErrorReporter().reportError(exc);
+                }
             }
             else
             {
-                debugOut.printf("\u001b[1;37m%-20s\u001b[0m %s\n", displayCmdName, cmdInfo);
-            }
-
-            try
-            {
-                debugCmd.execute(debugOut, debugErr, debugCtx, parameters);
-            }
-            catch (Exception exc)
-            {
-                dbgCoreSvcs.getErrorReporter().reportError(exc);
+                StringBuilder errorMsg = new StringBuilder();
+                errorMsg.append(
+                    String.format(
+                        "Error:\n" +
+                        "    The '%s' command does not support the following parameters:\n",
+                        displayCmdName
+                    )
+                );
+                for (String paramKey : unknownParameters)
+                {
+                    errorMsg.append("        ");
+                    errorMsg.append(paramKey);
+                    errorMsg.append("\n");
+                }
+                errorMsg.append(
+                    "Correction:\n" +
+                    "    Remove all unsupported parameters from the command line\n"
+                );
+                debugErr.print(errorMsg.toString());
             }
         }
         else
