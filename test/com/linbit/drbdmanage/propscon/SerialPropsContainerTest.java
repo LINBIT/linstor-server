@@ -50,11 +50,15 @@ public class SerialPropsContainerTest
         root.setProp(key, value); // insert first entry
         assertSerial(1);
         root.setProp(otherKey, otherValue); // insert second entry
-        assertSerial(2);
+        assertSerial(1); // no closeGeneration called
+
+        root.closeGeneration();
         root.setProp(key, otherValue); // override first entry
-        assertSerial(3);
+        assertSerial(2);
+
+        root.closeGeneration();
         root.setProp(key, otherValue); // basically no change, but still write operation -> serial++
-        assertSerial(4);
+        assertSerial(3);
     }
 
     @Test
@@ -86,8 +90,12 @@ public class SerialPropsContainerTest
         root.setProp(key, "value");
         assertSerial(1);
 
+        root.closeGeneration();
+
         root.removeProp(key);
         assertSerial(2);
+
+        root.closeGeneration();
 
         root.removeProp("unknown key");
         assertSerial(2);
@@ -106,6 +114,8 @@ public class SerialPropsContainerTest
     {
         root.setProp("key", "value");
         assertSerial(1);
+
+        root.closeGeneration();
 
         root.clear();
         assertSerial(2);
@@ -136,6 +146,8 @@ public class SerialPropsContainerTest
         toRemove.add(key1);
         toRemove.add(key2);
 
+        root.closeGeneration();
+
         root.removeAllProps(toRemove, null);
 
         assertSerial(2);
@@ -160,9 +172,10 @@ public class SerialPropsContainerTest
         toRemove.add(key1);
         toRemove.add(key2);
 
+        root.closeGeneration();
         root.retainAllProps(toRemove, null);
 
-        assertSerial(2);
+        assertSerial(1);
     }
 
     private void assertSerial(int currentSerial) throws InvalidKeyException
