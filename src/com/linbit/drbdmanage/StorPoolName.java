@@ -1,5 +1,9 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.Checks;
+import com.linbit.GenericName;
+import com.linbit.InvalidNameException;
+
 /**
  * Name of a storage pool
  *
