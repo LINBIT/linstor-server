@@ -15,7 +15,7 @@ import java.util.TreeMap;
  */
 public class CmdEndService extends BaseControllerDebugCmd
 {
-    private static final String PRM_SVC_NAME = "SVC";
+    private static final String PRM_SVC_NAME = "SERVICE";
 
     private static final Map<String, String> PARAMETER_DESCRIPTIONS = new TreeMap<>();
 

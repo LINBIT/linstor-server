@@ -310,7 +310,16 @@ public abstract class BaseDebugConsole implements DebugConsole
             // Write results
             if (cmdNameList.length() > 0)
             {
-                debugOut.println("Matching commands:");
+                if (cmdPattern.isEmpty())
+                {
+                    debugOut.println("Available commands:");
+                }
+                else
+                {
+                    debugOut.println("Filter:");
+                    debugOut.printf("    %s\n", cmdPattern);
+                    debugOut.println("Matching commands:");
+                }
                 debugOut.print(cmdNameList.toString());
                 debugOut.flush();
             }
