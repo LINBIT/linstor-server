@@ -1,7 +1,6 @@
 package com.linbit.drbdmanage.propscon;
 
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
 
 /**
  * A sequential serial number generator implementation
@@ -49,6 +48,11 @@ public class SeqSerialGenerator implements SerialGenerator
         synchronized (serialMutex)
         {
             serial = accessor.getSerial();
+            if (serial < 0)
+            {
+                serial = 0;
+                accessor.setSerial(serial);
+            }
             if (!changeOpen)
             {
                 changeOpen = true;
