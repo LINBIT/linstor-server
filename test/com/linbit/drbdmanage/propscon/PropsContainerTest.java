@@ -97,7 +97,6 @@ public class PropsContainerTest
         assertEquals(value, root.getProp(key));
     }
 
-
     @Test
     public void testGetProbWithNamespace() throws InvalidKeyException, InvalidValueException
     {
@@ -122,7 +121,6 @@ public class PropsContainerTest
         assertNull(root.getProp(key));
     }
 
-
     @Test
     public void testSetWhitespaceEntry() throws InvalidKeyException, InvalidValueException
     {
@@ -136,7 +134,7 @@ public class PropsContainerTest
     @Test
     public void testSetReturnOldValue() throws InvalidKeyException, InvalidValueException
     {
-        final String key = FIRST_KEY+"0";
+        final String key = FIRST_KEY + "0";
         final String origValue = "value";
         root.setProp(key, origValue);
 
@@ -248,14 +246,32 @@ public class PropsContainerTest
 
         root.setAllProps(map, null);
 
-        final Set<Entry<String,String>> entrySet = root.entrySet();
+        final Set<Entry<String, String>> entrySet = root.entrySet();
 
         assertEquals(root.size(), map.size());
 
-        for(final Entry<String, String> entry : entrySet)
+        for (final Entry<String, String> entry : entrySet)
         {
             assertTrue("Missing expected entry", map.remove(entry.getKey(), entry.getValue()));
         }
+    }
+
+    @Test(expected = InvalidKeyException.class)
+    public void testSetAllPropsNullKey() throws InvalidKeyException
+    {
+        final Map<String, String> map = new HashMap<>();
+        map.put(null, "value");
+
+        root.setAllProps(map, null);
+    }
+
+    @Test(expected = InvalidValueException.class)
+    public void testSetAllPropsNullValue() throws InvalidKeyException
+    {
+        final Map<String, String> map = new HashMap<>();
+        map.put("key", null);
+
+        root.setAllProps(map, null);
     }
 
     @Test
@@ -271,11 +287,11 @@ public class PropsContainerTest
 
         root.setAllProps(map, namespace);
 
-        final Set<Entry<String,String>> entrySet = root.entrySet();
+        final Set<Entry<String, String>> entrySet = root.entrySet();
 
         assertEquals(root.size(), map.size());
 
-        for(final Entry<String, String> entry : entrySet)
+        for (final Entry<String, String> entry : entrySet)
         {
             String key = entry.getKey();
             assertTrue(key.startsWith(namespace));
@@ -284,7 +300,6 @@ public class PropsContainerTest
             assertTrue("Missing expected entry", map.remove(key, entry.getValue()));
         }
     }
-
 
     @Test
     public void testRemoveSimpleEntry() throws InvalidKeyException, InvalidValueException, AccessDeniedException
@@ -321,8 +336,8 @@ public class PropsContainerTest
     @Test
     public void testRemoveWithNamespace() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
-        final String removedContainer = FIRST_KEY+"0";
-        final String removedEntryKey = SECOND_KEY+"2";
+        final String removedContainer = FIRST_KEY + "0";
+        final String removedEntryKey = SECOND_KEY + "2";
         final String removedKey = glue(removedContainer, removedEntryKey);
 
         root.removeProp(removedEntryKey, removedContainer);
@@ -371,9 +386,12 @@ public class PropsContainerTest
 
         final Iterator<Entry<String, String>> iterator = root.iterator();
 
-        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY,
+            SECOND_AMOUNT);
 
-        generatedEntries.add(FIRST_AMOUNT + 1, createEntry(insertedKey, insertedValue)); // insert the "a/b" key after "first2" and before "first0/second0"
+        generatedEntries.add(FIRST_AMOUNT + 1, createEntry(insertedKey, insertedValue)); // insert the "a/b" key after
+        // "first2" and before
+        // "first0/second0"
 
         assertIteratorEqual(iterator, generatedEntries, true);
     }
@@ -396,7 +414,7 @@ public class PropsContainerTest
         // thus, we add a container which should be come before the "first" alpha-numerically entry
 
         final String insertedKey = "a/b";
-        root.setProp(insertedKey , "value");
+        root.setProp(insertedKey, "value");
 
         final Iterator<String> iterator = root.keysIterator();
 
@@ -407,7 +425,8 @@ public class PropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testKeyIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeyIteratorUnsupportedRemove()
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         final Iterator<String> iterator = root.keysIterator();
         iterator.next();
@@ -435,7 +454,8 @@ public class PropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testValuesIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesIteratorUnsupportedRemove()
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         final Iterator<String> iterator = root.valuesIterator();
         iterator.next();
@@ -486,16 +506,16 @@ public class PropsContainerTest
 
         root.removeAllProps(remove, null);
 
-        for(String removedKey : remove)
+        for (String removedKey : remove)
         {
             map.remove(removedKey);
         }
 
-        final Set<Entry<String,String>> entrySet = root.entrySet();
+        final Set<Entry<String, String>> entrySet = root.entrySet();
 
         assertEquals(root.size(), map.size());
 
-        for(final Entry<String, String> entry : entrySet)
+        for (final Entry<String, String> entry : entrySet)
         {
             assertTrue("Missing expected entry", map.remove(entry.getKey(), entry.getValue()));
         }
@@ -520,11 +540,11 @@ public class PropsContainerTest
 
         map.remove("a/a2");
 
-        final Set<Entry<String,String>> entrySet = root.entrySet();
+        final Set<Entry<String, String>> entrySet = root.entrySet();
 
         assertEquals(root.size(), map.size());
 
-        for(final Entry<String, String> entry : entrySet)
+        for (final Entry<String, String> entry : entrySet)
         {
             assertTrue("Missing expected entry", map.remove(entry.getKey(), entry.getValue()));
         }
@@ -550,16 +570,15 @@ public class PropsContainerTest
         map.remove("b");
         map.remove("a/a2");
 
-        final Set<Entry<String,String>> entrySet = root.entrySet();
+        final Set<Entry<String, String>> entrySet = root.entrySet();
 
         assertEquals(root.size(), map.size());
 
-        for(final Entry<String, String> entry : entrySet)
+        for (final Entry<String, String> entry : entrySet)
         {
             assertTrue("Missing expected entry", map.remove(entry.getKey(), entry.getValue()));
         }
     }
-
 
     // TODO maybe test ctor with a child as parent?
 
@@ -570,7 +589,8 @@ public class PropsContainerTest
     @Test
     public void testEntrySet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
-        final Set<Entry<String, String>> expectedEntries = new HashSet<>(generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final Set<Entry<String, String>> expectedEntries = new HashSet<>(
+            generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
 
         assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, entrySet.size());
         assertEquals(expectedEntries, entrySet);
@@ -654,7 +674,7 @@ public class PropsContainerTest
     public void testEntrySetContains()
     {
         final ArrayList<String> generatedKeys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String key : generatedKeys)
+        for (final String key : generatedKeys)
         {
             assertTrue(entrySet.contains(key));
         }
@@ -673,15 +693,19 @@ public class PropsContainerTest
 
         final Iterator<Entry<String, String>> iterator = root.entrySet().iterator();
 
-        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY,
+            SECOND_AMOUNT);
 
-        generatedEntries.add(FIRST_AMOUNT + 1, createEntry(insertedKey, insertedValue)); // insert the "a/b" key after "first2" and before "first0/second0"
+        generatedEntries.add(FIRST_AMOUNT + 1, createEntry(insertedKey, insertedValue)); // insert the "a/b" key after
+        // "first2" and before
+        // "first0/second0"
 
         assertIteratorEqual(iterator, generatedEntries, true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testEntrySetIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySetIteratorUnsupportedRemove()
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         final Iterator<Entry<String, String>> iterator = entrySet.iterator();
 
@@ -695,7 +719,8 @@ public class PropsContainerTest
     @Test
     public void testEntrySetToArray()
     {
-        final ArrayList<Entry<String, String>> generatedEntryList = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<Entry<String, String>> generatedEntryList = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY,
+            SECOND_AMOUNT);
         assertArrayEquals(generatedEntryList.toArray(), entrySet.toArray());
     }
 
@@ -703,7 +728,8 @@ public class PropsContainerTest
     @SuppressWarnings("unchecked")
     public void testEntrySetToArrayParam()
     {
-        final ArrayList<Entry<String, String>> generatedEntryList = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<Entry<String, String>> generatedEntryList = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY,
+            SECOND_AMOUNT);
         final Entry<String, String>[] expectedEntries = new Entry[generatedEntryList.size()];
         generatedEntryList.toArray(expectedEntries);
         final Entry<String, String>[] actualEntries = new Entry[entrySet.size()];
@@ -742,14 +768,44 @@ public class PropsContainerTest
     }
 
     @Test
+    public void testEntrySetAddNullKey() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    {
+        // create a new entry with defined key and empty string as value
+        final String insertedKey = "test";
+        final String insertedValue = "testValue";
+        final Entry<String, String> insertedEntry = createEntry(insertedKey, insertedValue);
+        entrySet.add(insertedEntry);
+        assertEquals(insertedValue, root.getProp(insertedKey));
+
+        final String insertedContainer = "container";
+        final String insertedEntryKey = "test";
+        final String insertedContainerKey = glue(insertedContainer, insertedEntryKey);
+        final String insertedContainerValue = "containerValue";
+        final Entry<String, String> insertedContainerEntry = createEntry(insertedContainerKey, insertedContainerValue);
+
+        entrySet.add(insertedContainerEntry);
+        assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
+        assertEquals(insertedContainerValue, root.getProp(insertedEntryKey, insertedContainer));
+        final Props containerNamespace = root.getNamespace(insertedContainer);
+        assertEquals(insertedContainerValue, containerNamespace.getProp(insertedEntryKey));
+
+        // do not override existing key
+        final String existingKey = FIRST_KEY + "0";
+        final String overriddenValue = "override";
+        entrySet.add(createEntry(existingKey, overriddenValue));
+        assertNotEquals(overriddenValue, root.getProp(existingKey));
+    }
+
+    @Test
     public void testEntrySetRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
-        final Set<Entry<String, String>> expectedEntries = new HashSet<>(generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final Set<Entry<String, String>> expectedEntries = new HashSet<>(
+            generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
 
         assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, entrySet.size());
         assertEquals(expectedEntries, entrySet);
 
-        final String keyToRemove = FIRST_KEY+"0";
+        final String keyToRemove = FIRST_KEY + "0";
         Entry<String, String> entryToRemove = createEntry(keyToRemove, "0");
         entrySet.remove(entryToRemove);
         expectedEntries.remove(entryToRemove);
@@ -762,14 +818,15 @@ public class PropsContainerTest
     @Test
     public void testEntrySetContainsAll()
     {
-        //        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        // final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT,
+        // SECOND_KEY, SECOND_AMOUNT);
         final ArrayList<String> generatedKeys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         assertTrue(entrySet.containsAll(generatedKeys));
 
         generatedKeys.remove(3); // randomly diced :)
         assertTrue(entrySet.containsAll(generatedKeys));
 
-        //        generatedEntries.add(createEntry("unknown key", "some value"));
+        // generatedEntries.add(createEntry("unknown key", "some value"));
         generatedKeys.add("unknown key");
         assertFalse(entrySet.containsAll(generatedKeys));
 
@@ -779,10 +836,11 @@ public class PropsContainerTest
     @Test
     public void testEntrySetAddAll()
     {
-        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY,
+            SECOND_AMOUNT);
         final ArrayList<Entry<String, String>> entriesToAdd = new ArrayList<>();
         entriesToAdd.add(createEntry("new key", "value"));
-        entriesToAdd.add(createEntry(FIRST_KEY+"0", "other value"));
+        entriesToAdd.add(createEntry(FIRST_KEY + "0", "other value"));
 
         entrySet.addAll(entriesToAdd);
         generatedEntries.addAll(entriesToAdd);
@@ -790,12 +848,30 @@ public class PropsContainerTest
         assertEquals(generatedEntries, entrySet);
     }
 
+    @Test(expected = InvalidKeyException.class)
+    public void testEntrySetAddAllNullKey()
+    {
+        final ArrayList<Entry<String, String>> entriesToAdd = new ArrayList<>();
+        entriesToAdd.add(createEntry(null, "value"));
+
+        entrySet.addAll(entriesToAdd);
+    }
+
+    @Test(expected = InvalidValueException.class)
+    public void testEntrySetAddAllNullValue()
+    {
+        final ArrayList<Entry<String, String>> entriesToAdd = new ArrayList<>();
+        entriesToAdd.add(createEntry("key", null));
+
+        entrySet.addAll(entriesToAdd);
+    }
+
     @Test
     public void testEntrySetRetainAll()
     {
         final HashSet<String> retainedKeys = new HashSet<>();
         retainedKeys.add(FIRST_KEY + "0");
-        retainedKeys.add(glue(FIRST_KEY + "1",SECOND_KEY + "2"));
+        retainedKeys.add(glue(FIRST_KEY + "1", SECOND_KEY + "2"));
 
         entrySet.retainAll(retainedKeys);
 
@@ -806,11 +882,12 @@ public class PropsContainerTest
     @Test
     public void testEntrySetRemoveAll()
     {
-        final HashSet<Entry<String, String>> generatedEntries = new HashSet<>(generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final HashSet<Entry<String, String>> generatedEntries = new HashSet<>(
+            generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
 
         final HashSet<Entry<String, String>> entriesToRemove = new HashSet<>();
         entriesToRemove.add(createEntry(FIRST_KEY + "0", "0"));
-        entriesToRemove.add(createEntry(glue(FIRST_KEY + "1",SECOND_KEY + "2"), "1_2"));
+        entriesToRemove.add(createEntry(glue(FIRST_KEY + "1", SECOND_KEY + "2"), "1_2"));
 
         generatedEntries.removeAll(entriesToRemove);
         entrySet.removeAll(entriesToRemove);
@@ -836,7 +913,7 @@ public class PropsContainerTest
         assertFalse(entrySet.equals(null));
         assertFalse(entrySet.equals(root));
 
-        clone.remove(createEntry(FIRST_KEY+"0","0"));
+        clone.remove(createEntry(FIRST_KEY + "0", "0"));
         assertFalse(entrySet.equals(clone));
     }
 
@@ -864,7 +941,8 @@ public class PropsContainerTest
     @Test
     public void testKeySet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
-        final Set<String> expectedKeys = new HashSet<>(generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final Set<String> expectedKeys = new HashSet<>(
+            generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
 
         assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, keySet.size());
         assertEquals(expectedKeys, keySet);
@@ -946,7 +1024,7 @@ public class PropsContainerTest
     public void testKeySetContains()
     {
         final Collection<String> generatedKeys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String key : generatedKeys)
+        for (final String key : generatedKeys)
         {
             assertTrue(keySet.contains(key));
         }
@@ -971,7 +1049,8 @@ public class PropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testKeySetIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySetIteratorUnsupportedRemove()
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         final Iterator<String> iterator = keySet.iterator();
 
@@ -1027,12 +1106,13 @@ public class PropsContainerTest
     @Test
     public void testKeySetRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
-        final Set<String> expectedKeys = new HashSet<>(generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final Set<String> expectedKeys = new HashSet<>(
+            generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
 
         assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, keySet.size());
         assertEquals(expectedKeys, keySet);
 
-        final String keyToRemove = FIRST_KEY+"0";
+        final String keyToRemove = FIRST_KEY + "0";
         keySet.remove(keyToRemove);
         expectedKeys.remove(keyToRemove);
         assertEquals(expectedKeys, keySet);
@@ -1059,10 +1139,11 @@ public class PropsContainerTest
     @Test
     public void testKeySetAddAll()
     {
-        final HashSet<String> generatedKeys = new HashSet<>(generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final HashSet<String> generatedKeys = new HashSet<>(
+            generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
         final ArrayList<String> keysToAdd = new ArrayList<>();
         keysToAdd.add("new key");
-        keysToAdd.add(FIRST_KEY+"0");
+        keysToAdd.add(FIRST_KEY + "0");
 
         keySet.addAll(keysToAdd);
         generatedKeys.addAll(keysToAdd);
@@ -1075,7 +1156,7 @@ public class PropsContainerTest
     {
         final HashSet<String> retainedKeys = new HashSet<>();
         retainedKeys.add(FIRST_KEY + "0");
-        retainedKeys.add(glue(FIRST_KEY + "1",SECOND_KEY + "2"));
+        retainedKeys.add(glue(FIRST_KEY + "1", SECOND_KEY + "2"));
 
         keySet.retainAll(retainedKeys);
 
@@ -1086,11 +1167,12 @@ public class PropsContainerTest
     @Test
     public void testKeySetRemoveAll()
     {
-        final HashSet<String> generatedKeys = new HashSet<>(generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final HashSet<String> generatedKeys = new HashSet<>(
+            generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
 
         final HashSet<String> keysToRemove = new HashSet<>();
         keysToRemove.add(FIRST_KEY + "0");
-        keysToRemove.add(glue(FIRST_KEY + "1",SECOND_KEY + "2"));
+        keysToRemove.add(glue(FIRST_KEY + "1", SECOND_KEY + "2"));
 
         generatedKeys.removeAll(keysToRemove);
         keySet.removeAll(keysToRemove);
@@ -1116,7 +1198,7 @@ public class PropsContainerTest
         assertFalse(keySet.equals(null));
         assertFalse(keySet.equals(root));
 
-        clone.remove(FIRST_KEY+"0");
+        clone.remove(FIRST_KEY + "0");
         assertFalse(keySet.equals(clone));
     }
 
@@ -1163,14 +1245,13 @@ public class PropsContainerTest
     @Test
     public void testMapRemoveFromProps() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
-        final String key = FIRST_KEY+"0";
+        final String key = FIRST_KEY + "0";
         assertEquals("0", map.get(key));
 
         root.removeProp(key);
 
         assertNull(map.get(key));
     }
-
 
     @Test
     public void testMapSize() throws InvalidKeyException, InvalidValueException, AccessDeniedException
@@ -1184,7 +1265,7 @@ public class PropsContainerTest
         root.setProp(key, "other value");
         assertEquals(root.size(), map.size());
 
-        root.removeProp(FIRST_KEY+"0");
+        root.removeProp(FIRST_KEY + "0");
         assertEquals(root.size(), map.size());
 
         root.removeProp("non existent");
@@ -1214,13 +1295,13 @@ public class PropsContainerTest
     public void testMapContainsKey()
     {
         final Collection<String> keys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String key : keys)
+        for (final String key : keys)
         {
             assertTrue(map.containsKey(key));
         }
         assertFalse(map.containsKey("non existent"));
 
-        final String removedKey = FIRST_KEY+"0";
+        final String removedKey = FIRST_KEY + "0";
         map.remove(removedKey);
         assertFalse(map.containsKey(removedKey));
     }
@@ -1229,7 +1310,7 @@ public class PropsContainerTest
     public void testMapContainsValue()
     {
         final Collection<String> values = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String value : values)
+        for (final String value : values)
         {
             assertTrue(map.containsValue(value));
         }
@@ -1243,7 +1324,7 @@ public class PropsContainerTest
     public void testMapGet() throws InvalidKeyException
     {
         final Collection<String> keys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String key : keys)
+        for (final String key : keys)
         {
             assertEquals(root.getProp(key), map.get(key));
         }
@@ -1273,10 +1354,9 @@ public class PropsContainerTest
     @Test
     public void testMapRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
-        final String removedEntryKey = FIRST_KEY+"0";
+        final String removedEntryKey = FIRST_KEY + "0";
         map.remove(removedEntryKey);
         assertNull(root.getProp(removedEntryKey));
-
 
         final String removedNamespace = FIRST_KEY + "0";
         final String removedContainerKey = glue(removedNamespace, SECOND_KEY + "2");
@@ -1292,26 +1372,47 @@ public class PropsContainerTest
     @Test
     public void testMapPutAll() throws InvalidKeyException
     {
-        final String[][] entriesToInsert = new String[][]{
-            {"new", "value"},
-            {glue(FIRST_KEY+"0", "other"), "value2"},
-            {glue(FIRST_KEY+"0", SECOND_KEY+"1"), "override"}
-        };
-
         final HashMap<String, String> mapToInsert = new HashMap<>();
 
-        for(final String[] entry : entriesToInsert)
-        {
-            mapToInsert.put(entry[0], entry[1]);
-        }
+        final String insertedKey = "new";
+        final String insertedValue = "value";
+        final String insertedContainerKey = glue(FIRST_KEY + "0", "other");
+        final String insertedContainerValue = "containerValue";
+        final String overriddenKey = glue(FIRST_KEY + "0", SECOND_KEY + "1");
+        final String overriddenValue = "override";
+
+        mapToInsert.put(insertedKey, insertedValue);
+        mapToInsert.put(insertedContainerKey, insertedContainerValue);
+        mapToInsert.put(overriddenKey, overriddenValue);
 
         map.putAll(mapToInsert);
 
-        for(final String[] entry : entriesToInsert)
-        {
-            assertEquals(entry[1], map.get(entry[0]));
-            assertEquals(entry[1], root.getProp(entry[0]));
-        }
+        assertEquals(insertedValue, map.get(insertedKey));
+        assertEquals(insertedValue, root.getProp(insertedKey));
+        assertEquals(insertedContainerValue, map.get(insertedContainerKey));
+        assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
+        assertEquals(overriddenValue, map.get(overriddenKey));
+        assertEquals(overriddenValue, root.getProp(overriddenKey));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMapPutAllNullKey()
+    {
+        final HashMap<String, String> mapToInsert = new HashMap<>();
+
+        mapToInsert.put(null, "value");
+
+        map.putAll(mapToInsert);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMapPutAllNullValue()
+    {
+        final HashMap<String, String> mapToInsert = new HashMap<>();
+
+        mapToInsert.put("key", null);
+
+        map.putAll(mapToInsert);
     }
 
     @Test
@@ -1336,7 +1437,7 @@ public class PropsContainerTest
         assertFalse(map.equals(null));
         assertFalse(map.equals(root));
 
-        clone.remove(FIRST_KEY+"0");
+        clone.remove(FIRST_KEY + "0");
         assertFalse(map.equals(clone));
 
         PropsContainer container = PropsContainer.createRootContainer();
@@ -1539,7 +1640,7 @@ public class PropsContainerTest
     public void testValuesContains()
     {
         final Collection<String> generatedValues = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String value : generatedValues)
+        for (final String value : generatedValues)
         {
             assertTrue(values.contains(value));
         }
@@ -1558,13 +1659,15 @@ public class PropsContainerTest
 
         final ArrayList<String> generatedValues = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 
-        generatedValues.add(FIRST_AMOUNT + 1, "value"); // insert the value of the "a/b" key after "first2" and before "first0/second0"
+        generatedValues.add(FIRST_AMOUNT + 1, "value"); // insert the value of the "a/b" key after "first2" and before
+        // "first0/second0"
 
         assertIteratorEqual(iterator, generatedValues, true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testValuesColIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesColIteratorUnsupportedRemove()
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         final Iterator<String> iterator = values.iterator();
 
@@ -1643,7 +1746,8 @@ public class PropsContainerTest
     @Test
     public void testValuesRemoveAll()
     {
-        final HashSet<String> generatedValues = new HashSet<>(generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final HashSet<String> generatedValues = new HashSet<>(
+            generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
 
         final HashSet<String> valuesToRemove = new HashSet<>();
         valuesToRemove.add("0");
