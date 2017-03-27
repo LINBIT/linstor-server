@@ -71,7 +71,7 @@ public class CmdEndService extends BaseControllerDebugCmd
                     printError(
                         debugErr,
                         String.format(
-                            "No service with an instance name of '%s' was found",
+                            "No service with an instance name of '%s' was found.",
                             svcName.getDisplayName()
                         ),
                         null,

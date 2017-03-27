@@ -75,14 +75,16 @@ public class CmdDisplayContextInfo extends BaseControllerDebugCmd
             }
             else
             {
-                debugErr.printf(
+                printError(
+                    debugErr,
                     String.format(
-                        "Error:\n" +
-                        "    The value '%s' is not valid for the parameter '%s'.\n" +
-                        "Correction:\n" +
-                        "    Enter a valid value for the parameter.\n" +
-                        "    Valid values are '%s' and '%s'.\n",
-                        prmDetail, PRM_DETAIL_NAME,
+                        "The value '%s' is not valid for the parameter '%s'.",
+                        prmDetail, PRM_DETAIL_NAME
+                    ),
+                    null,
+                    "Enter a valid value for the parameter.",
+                    String.format(
+                        "Valid values are '%s' and '%s'.",
                         PRM_DETAIL_DFLT, PRM_DETAIL_FULL
                     )
                 );
