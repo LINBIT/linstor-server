@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+import public "MsgCrtVlmDfn.proto";
+
+// drbdmanageNG - Create resource definition
+message MsgCrtRscDfn
+{
+    // Resource name
+    string              rsc_name    = 1;
+
+    // Resource properties map
+    map<string, string> rsc_props   = 2;
+
+    // Volume definitions map
+    repeated VlmDfn     vlm_dfn_map = 3;
+}
+

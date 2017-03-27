@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// drbdmanageNG - Create node
+message MsgCrtNode
+{
+    // Node name
+    string              node_name   = 1;
+
+    // Node properties map
+    map<string, string> node_props  = 2;
+}

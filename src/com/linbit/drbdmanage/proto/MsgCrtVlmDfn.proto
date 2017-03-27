@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// drbdmanageNG - Create volume definition
+message MsgCrtVlmDfn
+{
+    // Resource name
+    string          rsc_name    = 1;
+
+    // Volume definitions to add to the resource
+    repeated VlmDfn vlm_dfn_map = 2;
+}
+
+// Embedded volume definition
+message VlmDfn
+{
+    // Volume number
+    // -1 for automatic assignment
+    sint32              vlm_nr      = 1;
+
+    // Volume size (in kiB)
+    int64               vlm_size    = 2;
+
+    // Volume properties map
+    map<string, string> vlm_props   = 3;
+}
+

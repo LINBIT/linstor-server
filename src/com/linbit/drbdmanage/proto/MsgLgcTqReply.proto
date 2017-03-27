@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// Legacy drbdmanage-1 text query reply
+message MsgLgcTqReply
+{
+    // Text query output
+    repeated string output = 1;
+}
+
