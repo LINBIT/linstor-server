@@ -92,7 +92,7 @@ public class CmdDisplayConnections extends BaseControllerDebugCmd
                     "Enter a valid value for the parameter.",
                     String.format(
                         "Valid values are '%s' and '%s'.",
-                        prmDetail, PRM_DETAIL_NAME
+                        PRM_DETAIL_DFLT, PRM_DETAIL_FULL
                     )
                 );
                 detail = DetailLevel.INVALID;
