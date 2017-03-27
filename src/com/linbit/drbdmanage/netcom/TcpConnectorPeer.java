@@ -120,10 +120,24 @@ public class TcpConnectorPeer implements Peer
         }
     }
 
+    /**
+     * Closes the connection to the peer
+     */
+    @Override
+    public void closeConnection()
+    {
+        connector.closeConnection(this);
+    }
+
     void nextInMessage()
     {
         msgIn = new TcpConnectorMessage(false);
         ++msgRecvCtr;
+    }
+
+    SelectionKey getSelectionKey()
+    {
+        return selKey;
     }
 
     void nextOutMessage()

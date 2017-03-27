@@ -11,7 +11,9 @@ public interface TcpConnector extends SystemService
 {
     // TODO: Experimental; some means of adding a new connection that is to
     //       be created by the TcpConnector implementation
-    Peer connect();
+    TcpConnectorPeer connect();
+
+    void closeConnection(TcpConnectorPeer peerObj);
 
     /**
      * Wakes up the connector's selector

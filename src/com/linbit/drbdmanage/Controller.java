@@ -630,6 +630,7 @@ public class Controller implements Runnable, CoreServices
             "CmdStartService",
             "CmdEndService",
             "CmdDisplayConnections",
+            "CmdCloseConnection",
             "CmdTestErrorLog",
             "CmdShutdown"
         };
@@ -727,6 +728,7 @@ public class Controller implements Runnable, CoreServices
     public interface DebugControl
     {
         Map<ServiceName, SystemService> getSystemServiceMap();
+        Peer getPeer(String peerId);
         Map<String, Peer> getAllPeers();
         void shutdown(AccessContext accCtx);
     }
@@ -746,6 +748,17 @@ public class Controller implements Runnable, CoreServices
             Map<ServiceName, SystemService> svcCpy = new TreeMap<>();
             svcCpy.putAll(controller.systemServicesMap);
             return svcCpy;
+        }
+
+        @Override
+        public Peer getPeer(String peerId)
+        {
+            Peer peerObj = null;
+            synchronized (controller.peerMap)
+            {
+                peerObj = controller.peerMap.get(peerId);
+            }
+            return peerObj;
         }
 
         @Override

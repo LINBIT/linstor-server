@@ -63,6 +63,11 @@ public interface Peer
     void sendMessage(Message msg) throws IllegalMessageStateException;
 
     /**
+     * Closes the connection to the peer
+     */
+    void closeConnection();
+
+    /**
      * Returns the capacity of the queue for outbound messages
      *
      * @return Capacity of the outbound messages queue

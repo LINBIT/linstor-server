@@ -159,7 +159,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     }
 
     @Override
-    public Peer connect()
+    public TcpConnectorPeer connect()
     {
         // TODO: Implement connect() method
 //        try
@@ -645,6 +645,12 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
 //        {
 //            // FIXME: Handle exception
 //        }
+    }
+
+    @Override
+    public void closeConnection(TcpConnectorPeer peerObj)
+    {
+        closeConnection(peerObj.getSelectionKey());
     }
 
     private void closeConnection(SelectionKey currentKey)
