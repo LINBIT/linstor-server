@@ -26,9 +26,13 @@ public class CommonPropsTestUtils
         final String secondPrefix,
         final int firstAmount,
         final int secondAmount,
-        final Set<Entry<String, String>> entrySet)
+        final Set<Entry<String, String>> entrySet
+    )
     {
-        checkIfEntrySetIsValid(firstPrefix, secondPrefix, firstAmount, secondAmount, entrySet, new HashMap<String, String>());
+        checkIfEntrySetIsValid(
+            firstPrefix, secondPrefix, firstAmount, secondAmount,
+            entrySet, new HashMap<String, String>()
+        );
     }
 
     public static void checkIfEntrySetIsValid(
@@ -37,12 +41,14 @@ public class CommonPropsTestUtils
         final int firstAmount,
         final int secondAmount,
         final Set<Entry<String, String>> entrySet,
-        final Map<String, String> additionallyAccepted)
+        final Map<String, String> additionallyAccepted
+    )
     {
         assertEquals(firstAmount * (secondAmount + 1) + 1, entrySet.size());
 
         final Pattern keyPattern = Pattern.compile(
-            "(?:" + firstPrefix + "(\\d+))?/?(?:" + secondPrefix + "(\\d+))?");
+            "(?:" + firstPrefix + "(\\d+))?/?(?:" + secondPrefix + "(\\d+))?"
+        );
 
         for (final Entry<String, String> entry : entrySet)
         {
@@ -73,7 +79,7 @@ public class CommonPropsTestUtils
             else
             {
                 final String acceptedValue = additionallyAccepted.get(key);
-                if(null == acceptedValue)
+                if (null == acceptedValue)
                 {
                     fail("Unrecognized key");
                 }
@@ -109,8 +115,9 @@ public class CommonPropsTestUtils
         final String firstPrefix,
         final int firstAmount,
         final String secondPrefix,
-        final int secondAmount)
-            throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        final int secondAmount
+    )
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         root.setProp("/", "");
         for (int firstIdx = 0; firstIdx < firstAmount; firstIdx++)
@@ -122,7 +129,8 @@ public class CommonPropsTestUtils
                 final String secondNr = Integer.toString(secondIdx);
                 root.setProp(
                     glue(firstPrefix + firstNr, secondPrefix + secondNr),
-                    glueWithDelimiter("_", firstNr, secondNr));
+                    glueWithDelimiter("_", firstNr, secondNr)
+                );
             }
         }
     }
@@ -131,7 +139,8 @@ public class CommonPropsTestUtils
         final String firstPrefix,
         final int firstAmount,
         final String secondPrefix,
-        final int secondAmount)
+        final int secondAmount
+    )
     {
         final ArrayList<Entry<String,String>> entries = new ArrayList<>();
         entries.add(createEntry("", "")); // root.setProp("/", "");
@@ -149,7 +158,9 @@ public class CommonPropsTestUtils
                 entries.add(
                     createEntry(
                         glue(firstPrefix + firstNr, secondPrefix + secondNr),
-                        glueWithDelimiter("_", firstNr, secondNr)));
+                        glueWithDelimiter("_", firstNr, secondNr)
+                    )
+                );
             }
         }
         return entries;
@@ -162,7 +173,10 @@ public class CommonPropsTestUtils
         return map.entrySet().iterator().next();
     }
 
-    public static ArrayList<String> generateKeys(String firstPrefix, int firstAmount, String secondPrefix, int secondAmount)
+    public static ArrayList<String> generateKeys(
+        String firstPrefix, int firstAmount,
+        String secondPrefix, int secondAmount
+    )
     {
         ArrayList<String> keys = new ArrayList<>();
         keys.add(""); // root.setProp("/", "");
@@ -182,7 +196,10 @@ public class CommonPropsTestUtils
         return keys;
     }
 
-    public static ArrayList<String> generateValues(String firstPrefix, int firstAmount, String secondPrefix, int secondAmount)
+    public static ArrayList<String> generateValues(
+        String firstPrefix, int firstAmount,
+        String secondPrefix, int secondAmount
+    )
     {
         ArrayList<String> values = new ArrayList<>();
         values.add(""); // root.setProp("/", "");
@@ -206,7 +223,8 @@ public class CommonPropsTestUtils
     public static void assertNextEntryEqual(
         final Iterator<Entry<String, String>> iterator,
         final String expectedKey,
-        final String expectedValue)
+        final String expectedValue
+    )
     {
         assertTrue(iterator.hasNext());
 
@@ -222,14 +240,14 @@ public class CommonPropsTestUtils
         final Iterator<T> iterator,
         final List<T> list,
         final boolean iteratorEnds
-        )
+    )
     {
-        for(final T listElement : list)
+        for (final T listElement : list)
         {
             assertEquals(listElement, iterator.next());
         }
 
-        if(iteratorEnds)
+        if (iteratorEnds)
         {
             assertFalse(iterator.hasNext());
         }

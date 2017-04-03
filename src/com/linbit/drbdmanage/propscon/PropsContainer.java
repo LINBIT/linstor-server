@@ -62,7 +62,7 @@ public class PropsContainer implements Props
             throw new ImplementationError(
                 "Root container creation generated an exception",
                 keyExc
-                );
+            );
         }
         return con;
     }
@@ -463,7 +463,7 @@ public class PropsContainer implements Props
                 throw new ImplementationError(
                     "Container count indicates less than zero elements",
                     new ValueOutOfRangeException(ValueOutOfRangeException.ViolationType.TOO_LOW)
-                    );
+                );
             }
         }
         else
@@ -474,7 +474,7 @@ public class PropsContainer implements Props
                     throw new ImplementationError(
                         "Attempt to increase the container's count to more than Integer.MAX_VALUE elements",
                         new ValueOutOfRangeException(ValueOutOfRangeException.ViolationType.TOO_HIGH)
-                        );
+                    );
                 }
             }
         itemCount += diff;
@@ -802,14 +802,14 @@ public class PropsContainer implements Props
                 throw new ImplementationError(
                     "Key for map operation is of illegal object type",
                     castExc
-                    );
+                );
             }
             catch (InvalidKeyException keyExc)
             {
                 throw new IllegalArgumentException(
                     "Key for map operation violates validity constraints",
                     keyExc
-                    );
+                );
             }
             return result;
         }
@@ -841,7 +841,7 @@ public class PropsContainer implements Props
                 throw new ImplementationError(
                     "Key for map operation is of illegal object type",
                     castExc
-                    );
+                );
             }
             return result;
         }
@@ -859,14 +859,14 @@ public class PropsContainer implements Props
                 throw new ImplementationError(
                     "Key for map operation is of illegal object type",
                     castExc
-                    );
+                );
             }
             catch (InvalidKeyException keyExc)
             {
                 throw new IllegalArgumentException(
                     "Key for map operation violates validity constraints",
                     keyExc
-                    );
+                );
             }
             return value;
         }
@@ -884,7 +884,7 @@ public class PropsContainer implements Props
                 throw new IllegalArgumentException(
                     "Map values to insert violate validity constraints",
                     invData
-                    );
+                );
             }
             return oldValue;
         }
@@ -902,14 +902,14 @@ public class PropsContainer implements Props
                 throw new ImplementationError(
                     "Key for map operation is of illegal object type",
                     castExc
-                    );
+                );
             }
             catch (InvalidKeyException keyExc)
             {
                 throw new IllegalArgumentException(
                     "Key for map operation violates validity constraints",
                     keyExc
-                    );
+                );
             }
             return value;
         }
@@ -926,7 +926,7 @@ public class PropsContainer implements Props
                 throw new IllegalArgumentException(
                     "Key for map operation violates validity constraints",
                     keyExc
-                    );
+                );
             }
         }
 
@@ -1036,14 +1036,14 @@ public class PropsContainer implements Props
                 throw new IllegalArgumentException(
                     "Key for map operation violates validity constraints",
                     keyExc
-                    );
+                );
             }
             catch (InvalidValueException valueExc)
             {
                 throw new IllegalArgumentException(
                     "Value for map operation violates validity constraints",
                     valueExc
-                    );
+                );
             }
             return changed;
         }
@@ -1061,14 +1061,14 @@ public class PropsContainer implements Props
                 throw new ImplementationError(
                     "Key for map operation is of illegal object type",
                     castExc
-                    );
+                );
             }
             catch (InvalidKeyException keyExc)
             {
                 throw new IllegalArgumentException(
                     "Key for map operation violates validity constraints",
                     keyExc
-                    );
+                );
             }
             return changed;
         }
@@ -1106,7 +1106,7 @@ public class PropsContainer implements Props
                     throw new IllegalArgumentException(
                         "Key for set operation violates validity constraints",
                         keyExc
-                        );
+                    );
                 }
             }
             return changed;
@@ -1204,14 +1204,14 @@ public class PropsContainer implements Props
                 throw new IllegalArgumentException(
                     "Key for map operation violates validity constraints",
                     keyExc
-                    );
+                );
             }
             catch (InvalidValueException valueExc)
             {
                 throw new IllegalArgumentException(
                     "Value for map operation violates validity constraints",
                     valueExc
-                    );
+                );
             }
             return changed;
         }
@@ -1412,7 +1412,7 @@ public class PropsContainer implements Props
         public boolean equals(Object other)
         {
             boolean equals = other != null && other instanceof Collection;
-            if(equals)
+            if (equals)
             {
                 Collection<String> otherCollection = (Collection<String>) other;
                 equals &= this.containsAll(otherCollection);
@@ -1527,7 +1527,7 @@ public class PropsContainer implements Props
                     Map.Entry<String, String> localEntry = currentIter.next();
                     entry = new PropsConEntry(
                         container, prefix + localEntry.getKey(), localEntry.getValue()
-                        );
+                    );
                 }
                 catch (NoSuchElementException elemExc)
                 {
@@ -1671,14 +1671,14 @@ public class PropsContainer implements Props
                 throw new ImplementationError(
                     "Container reports invalid key for a key that the container returned",
                     keyExc
-                    );
+                );
             }
             catch (InvalidValueException valueExc)
             {
                 throw new IllegalArgumentException(
                     "Value for map operation violates validity constraints",
                     valueExc
-                    );
+                );
             }
             return oldValue;
         }
@@ -1693,7 +1693,7 @@ public class PropsContainer implements Props
         {
             BufferedReader stdin = new BufferedReader(
                 new InputStreamReader(System.in)
-                );
+            );
             String line = "";
             do
             {
@@ -1711,200 +1711,200 @@ public class PropsContainer implements Props
                         switch (command)
                         {
                             case "set":
-                            {
-                                String key = tokens.nextToken();
-                                String value = tokens.nextToken();
-                                System.out.printf("%s %s %s\n", command.toUpperCase(), key, value);
-                                rootCon.setProp(key, value);
-                            }
-                            break;
+                                {
+                                    String key = tokens.nextToken();
+                                    String value = tokens.nextToken();
+                                    System.out.printf("%s %s %s\n", command.toUpperCase(), key, value);
+                                    rootCon.setProp(key, value);
+                                }
+                                break;
                             case "get":
-                            {
-                                String key = tokens.nextToken();
-                                System.out.printf("%s %s\n", command.toUpperCase(), key);
-                                System.out.printf("  %s\n", rootCon.getProp(key));
-                            }
-                            break;
+                                {
+                                    String key = tokens.nextToken();
+                                    System.out.printf("%s %s\n", command.toUpperCase(), key);
+                                    System.out.printf("  %s\n", rootCon.getProp(key));
+                                }
+                                break;
                             case "del":
-                            {
-                                String key = tokens.nextToken();
-                                System.out.printf("%s %s\n", command.toUpperCase(), key);
-                                if (rootCon.removeProp(key) == null)
                                 {
-                                    System.out.println("  Nonexistent property");
+                                    String key = tokens.nextToken();
+                                    System.out.printf("%s %s\n", command.toUpperCase(), key);
+                                    if (rootCon.removeProp(key) == null)
+                                    {
+                                        System.out.println("  Nonexistent property");
+                                    }
+                                    else
+                                    {
+                                        System.out.println("  Property deleted");
+                                    }
                                 }
-                                else
-                                {
-                                    System.out.println("  Property deleted");
-                                }
-                            }
-                            break;
+                                break;
                             case "size":
-                            {
-                                String key = tokens.nextToken();
-                                System.out.printf("%s %s\n", command.toUpperCase(), key);
-                                Props subCon = rootCon.getNamespace(key);
-                                if (subCon != null)
                                 {
-                                    System.out.printf("  %s size = %d\n", subCon.getPath(), subCon.size());
+                                    String key = tokens.nextToken();
+                                    System.out.printf("%s %s\n", command.toUpperCase(), key);
+                                    Props subCon = rootCon.getNamespace(key);
+                                    if (subCon != null)
+                                    {
+                                        System.out.printf("  %s size = %d\n", subCon.getPath(), subCon.size());
+                                    }
+                                    else
+                                    {
+                                        System.out.println("Path is not a container");
+                                    }
                                 }
-                                else
-                                {
-                                    System.out.println("Path is not a container");
-                                }
-                            }
-                            break;
+                                break;
                             case "clear":
-                            {
-                                String key = tokens.nextToken();
-                                System.out.printf("%s %s\n", command.toUpperCase(), key);
-                                Props subCon = rootCon.getNamespace(key);
-                                if (subCon != null)
                                 {
-                                    subCon.clear();
+                                    String key = tokens.nextToken();
+                                    System.out.printf("%s %s\n", command.toUpperCase(), key);
+                                    Props subCon = rootCon.getNamespace(key);
+                                    if (subCon != null)
+                                    {
+                                        subCon.clear();
+                                    }
+                                    else
+                                    {
+                                        System.out.println("Path is not a container");
+                                    }
                                 }
-                                else
-                                {
-                                    System.out.println("Path is not a container");
-                                }
-                            }
-                            break;
+                                break;
                             case "debug":
-                            {
-                                String key = tokens.nextToken();
-                                System.out.printf("%s %s\n", command.toUpperCase(), key);
-                                Props con = rootCon.getNamespace(key);
-                                if (con != null)
                                 {
-                                    Iterator<Map.Entry<String, String>> pIter =
-                                        ((PropsContainer) con).iterateProps();
-                                    while (pIter.hasNext())
+                                    String key = tokens.nextToken();
+                                    System.out.printf("%s %s\n", command.toUpperCase(), key);
+                                    Props con = rootCon.getNamespace(key);
+                                    if (con != null)
                                     {
-                                        Map.Entry<String, String> entry = pIter.next();
-                                        System.out.printf("  @ENTRY     %-30s: %s\n", entry.getKey(), entry.getValue());
-                                    }
-                                    Iterator<PropsContainer> cIter =
-                                        ((PropsContainer) con).iterateContainers();
-                                    while (cIter.hasNext())
-                                    {
-                                        PropsContainer subCon = cIter.next();
-                                        System.out.printf(
-                                            "  @CONTAINER %-30s, size = %d\n",
-                                            subCon.getPath(),
-                                            subCon.size()
+                                        Iterator<Map.Entry<String, String>> pIter =
+                                            ((PropsContainer) con).iterateProps();
+                                        while (pIter.hasNext())
+                                        {
+                                            Map.Entry<String, String> entry = pIter.next();
+                                            System.out.printf("  @ENTRY     %-30s: %s\n", entry.getKey(), entry.getValue());
+                                        }
+                                        Iterator<PropsContainer> cIter =
+                                            ((PropsContainer) con).iterateContainers();
+                                        while (cIter.hasNext())
+                                        {
+                                            PropsContainer subCon = cIter.next();
+                                            System.out.printf(
+                                                "  @CONTAINER %-30s, size = %d\n",
+                                                subCon.getPath(),
+                                                subCon.size()
                                             );
-                                    }
-                                    System.out.printf(
-                                        "End of list: Container '%s' size = %d\n",
-                                        con.getPath(),
-                                        con.size()
+                                        }
+                                        System.out.printf(
+                                            "End of list: Container '%s' size = %d\n",
+                                            con.getPath(),
+                                            con.size()
                                         );
+                                    }
+                                    else
+                                    {
+                                        System.out.println("Path is not a container");
+                                    }
                                 }
-                                else
-                                {
-                                    System.out.println("Path is not a container");
-                                }
-                            }
-                            break;
+                                break;
                             case "list":
-                            {
-                                String key = tokens.nextToken();
-                                System.out.printf("%s %s\n", command.toUpperCase(), key);
-                                Props con = rootCon.getNamespace(key);
-                                if (con != null)
                                 {
-                                    Iterator<Map.Entry<String, String>> iter =
-                                        con.iterator();
-                                    while (iter.hasNext())
+                                    String key = tokens.nextToken();
+                                    System.out.printf("%s %s\n", command.toUpperCase(), key);
+                                    Props con = rootCon.getNamespace(key);
+                                    if (con != null)
                                     {
-                                        Map.Entry<String, String> entry = iter.next();
-                                        System.out.printf(
-                                            "  @ENTRY %-30s: %s\n",
-                                            entry.getKey(), entry.getValue()
+                                        Iterator<Map.Entry<String, String>> iter =
+                                            con.iterator();
+                                        while (iter.hasNext())
+                                        {
+                                            Map.Entry<String, String> entry = iter.next();
+                                            System.out.printf(
+                                                "  @ENTRY %-30s: %s\n",
+                                                entry.getKey(), entry.getValue()
                                             );
+                                        }
+                                        System.out.printf(
+                                            "End of list: Container '%s' size = %d\n",
+                                            con.getPath(),
+                                            con.size()
+                                        );
+                                        System.out.printf(
+                                            "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
+                                            serialGen.peekSerial(),
+                                            serialCon.getProp(SerialGenerator.KEY_SERIAL)
+                                        );
                                     }
-                                    System.out.printf(
-                                        "End of list: Container '%s' size = %d\n",
-                                        con.getPath(),
-                                        con.size()
-                                        );
-                                    System.out.printf(
-                                        "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
-                                        serialGen.peekSerial(),
-                                        serialCon.getProp(SerialGenerator.KEY_SERIAL)
-                                        );
+                                    else
+                                    {
+                                        System.out.println("Path is not a container");
+                                    }
                                 }
-                                else
-                                {
-                                    System.out.println("Path is not a container");
-                                }
-                            }
-                            break;
+                                break;
                             case "keys":
-                            {
-                                String key = tokens.nextToken();
-                                System.out.printf("%s %s\n", command.toUpperCase(), key);
-                                Props con = rootCon.getNamespace(key);
-                                if (con != null)
                                 {
-                                    Iterator<String> iter = con.keysIterator();
-                                    while (iter.hasNext())
+                                    String key = tokens.nextToken();
+                                    System.out.printf("%s %s\n", command.toUpperCase(), key);
+                                    Props con = rootCon.getNamespace(key);
+                                    if (con != null)
                                     {
-                                        String conkey = iter.next();
-                                        System.out.printf("  @KEY %-30s\n", conkey);
+                                        Iterator<String> iter = con.keysIterator();
+                                        while (iter.hasNext())
+                                        {
+                                            String conkey = iter.next();
+                                            System.out.printf("  @KEY %-30s\n", conkey);
+                                        }
+                                        System.out.printf(
+                                            "End of list: Container '%s' size = %d\n",
+                                            con.getPath(),
+                                            con.size()
+                                        );
+                                        System.out.printf(
+                                            "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
+                                            serialGen.peekSerial(),
+                                            serialCon.getProp(SerialGenerator.KEY_SERIAL)
+                                        );
                                     }
-                                    System.out.printf(
-                                        "End of list: Container '%s' size = %d\n",
-                                        con.getPath(),
-                                        con.size()
-                                        );
-                                    System.out.printf(
-                                        "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
-                                        serialGen.peekSerial(),
-                                        serialCon.getProp(SerialGenerator.KEY_SERIAL)
-                                        );
+                                    else
+                                    {
+                                        System.out.println("Path is not a container");
+                                    }
                                 }
-                                else
-                                {
-                                    System.out.println("Path is not a container");
-                                }
-                            }
-                            break;
+                                break;
                             case "values":
-                            {
-                                String key = tokens.nextToken();
-                                System.out.printf("%s %s\n", command.toUpperCase(), key);
-                                Props con = rootCon.getNamespace(key);
-                                if (con != null)
                                 {
-                                    Iterator<String> iter = con.valuesIterator();
-                                    while (iter.hasNext())
+                                    String key = tokens.nextToken();
+                                    System.out.printf("%s %s\n", command.toUpperCase(), key);
+                                    Props con = rootCon.getNamespace(key);
+                                    if (con != null)
                                     {
-                                        String value = iter.next();
-                                        System.out.printf("  @VALUE %s\n", value);
+                                        Iterator<String> iter = con.valuesIterator();
+                                        while (iter.hasNext())
+                                        {
+                                            String value = iter.next();
+                                            System.out.printf("  @VALUE %s\n", value);
+                                        }
+                                        System.out.printf(
+                                            "End of list: Container '%s' size = %d\n",
+                                            con.getPath(),
+                                            con.size()
+                                        );
+                                        System.out.printf(
+                                            "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
+                                            serialGen.peekSerial(),
+                                            serialCon.getProp(SerialGenerator.KEY_SERIAL)
+                                        );
                                     }
-                                    System.out.printf(
-                                        "End of list: Container '%s' size = %d\n",
-                                        con.getPath(),
-                                        con.size()
-                                        );
-                                    System.out.printf(
-                                        "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
-                                        serialGen.peekSerial(),
-                                        serialCon.getProp(SerialGenerator.KEY_SERIAL)
-                                        );
+                                    else
+                                    {
+                                        System.out.println("Path is not a container");
+                                    }
                                 }
-                                else
-                                {
-                                    System.out.println("Path is not a container");
-                                }
-                            }
-                            break;
+                                break;
                             case "close":
-                            {
-                                serialGen.closeGeneration();
-                            }
-                            break;
+                                {
+                                    serialGen.closeGeneration();
+                                }
+                                break;
                             case "exit":
                                 line = null;
                                 break;

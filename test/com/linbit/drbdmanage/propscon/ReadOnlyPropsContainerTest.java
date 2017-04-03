@@ -188,7 +188,9 @@ public class ReadOnlyPropsContainerTest
 
         final Iterator<Entry<String, String>> iterator = roProp.iterator();
 
-        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(
+            FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
+        );
 
         generatedEntries.add(FIRST_AMOUNT + 1, createEntry(insertedKey, insertedValue)); // insert the "a/b" key after "first2" and before "first0/second0"
 
@@ -224,7 +226,8 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testKeyIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeyIteratorUnsupportedRemove()
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         final Iterator<String> iterator = roProp.keysIterator();
         iterator.next();
@@ -252,7 +255,8 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testValuesIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesIteratorUnsupportedRemove()
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         final Iterator<String> iterator = roProp.valuesIterator();
         iterator.next();
@@ -296,7 +300,9 @@ public class ReadOnlyPropsContainerTest
     @Test
     public void testEntrySet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
-        final Set<Entry<String, String>> expectedEntries = new HashSet<>(generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final Set<Entry<String, String>> expectedEntries = new HashSet<>(
+            generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
+        );
 
         assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, roEntrySet.size());
         assertEquals(expectedEntries, roEntrySet);
@@ -372,7 +378,7 @@ public class ReadOnlyPropsContainerTest
     public void testEntrySetContains()
     {
         final ArrayList<String> generatedKeys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String key : generatedKeys)
+        for (final String key : generatedKeys)
         {
             assertTrue(roEntrySet.contains(key));
         }
@@ -391,15 +397,19 @@ public class ReadOnlyPropsContainerTest
 
         final Iterator<Entry<String, String>> iterator = roEntrySet.iterator();
 
-        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(
+            FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
+        );
 
-        generatedEntries.add(4, createEntry(insertedKey, insertedValue)); // insert the "a/b" key after "first2" and before "first0/second0"
+        generatedEntries.add(4, createEntry(insertedKey, insertedValue));
+        // insert the "a/b" key after "first2" and before "first0/second0"
 
         assertIteratorEqual(iterator, generatedEntries, true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testEntrySetIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySetIteratorUnsupportedRemove()
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         final Iterator<Entry<String, String>> iterator = roEntrySet.iterator();
 
@@ -411,7 +421,9 @@ public class ReadOnlyPropsContainerTest
     @Test
     public void testEntrySetToArray()
     {
-        final ArrayList<Entry<String, String>> generatedEntryList = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<Entry<String, String>> generatedEntryList = generateEntries(
+            FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
+        );
         assertArrayEquals(generatedEntryList.toArray(), roEntrySet.toArray());
     }
 
@@ -419,7 +431,9 @@ public class ReadOnlyPropsContainerTest
     @SuppressWarnings("unchecked")
     public void testEntrySetToArrayParam()
     {
-        final ArrayList<Entry<String, String>> generatedEntryList = generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<Entry<String, String>> generatedEntryList = generateEntries(
+            FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
+        );
         final Entry<String, String>[] expectedEntries = new Entry[generatedEntryList.size()];
         generatedEntryList.toArray(expectedEntries);
         final Entry<String, String>[] actualEntries = new Entry[roEntrySet.size()];
@@ -483,7 +497,9 @@ public class ReadOnlyPropsContainerTest
     @Test(expected = AccessDeniedException.class)
     public void testEntrySetRemoveAll()
     {
-        final HashSet<Entry<String, String>> generatedEntries = new HashSet<>(generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final HashSet<Entry<String, String>> generatedEntries = new HashSet<>(
+            generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
+        );
 
         final HashSet<Entry<String, String>> entriesToRemove = new HashSet<>();
         entriesToRemove.add(createEntry(FIRST_KEY + "0", "0"));
@@ -537,7 +553,9 @@ public class ReadOnlyPropsContainerTest
     @Test
     public void testKeySet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
-        final Set<String> expectedKeys = new HashSet<>(generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final Set<String> expectedKeys = new HashSet<>(
+            generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
+        );
 
         assertEquals(FIRST_AMOUNT * (SECOND_AMOUNT + 1) + 1, roKeySet.size());
         assertEquals(expectedKeys, roKeySet);
@@ -613,7 +631,7 @@ public class ReadOnlyPropsContainerTest
     public void testKeySetContains()
     {
         final Collection<String> generatedKeys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String key : generatedKeys)
+        for (final String key : generatedKeys)
         {
             assertTrue(roKeySet.contains(key));
         }
@@ -638,7 +656,8 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testKeySetIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySetIteratorUnsupportedRemove()
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         final Iterator<String> iterator = roKeySet.iterator();
 
@@ -838,7 +857,7 @@ public class ReadOnlyPropsContainerTest
     public void testMapContainsKey() throws InvalidKeyException
     {
         final Collection<String> keys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String key : keys)
+        for (final String key : keys)
         {
             assertTrue(roMap.containsKey(key));
         }
@@ -853,7 +872,7 @@ public class ReadOnlyPropsContainerTest
     public void testMapContainsValue() throws InvalidKeyException
     {
         final Collection<String> values = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String value : values)
+        for (final String value : values)
         {
             assertTrue(roMap.containsValue(value));
         }
@@ -867,7 +886,7 @@ public class ReadOnlyPropsContainerTest
     public void testMapGet() throws InvalidKeyException
     {
         final Collection<String> keys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String key : keys)
+        for (final String key : keys)
         {
             assertEquals(roProp.getProp(key), roMap.get(key));
         }
@@ -889,7 +908,8 @@ public class ReadOnlyPropsContainerTest
     @Test(expected = AccessDeniedException.class)
     public void testMapPutAll() throws InvalidKeyException
     {
-        final String[][] entriesToInsert = new String[][]{
+        final String[][] entriesToInsert = new String[][]
+        {
             {"new", "value"},
             {glue(FIRST_KEY+"0", "other"), "value2"},
             {glue(FIRST_KEY+"0", SECOND_KEY+"1"), "override"}
@@ -897,7 +917,7 @@ public class ReadOnlyPropsContainerTest
 
         final HashMap<String, String> mapToInsert = new HashMap<>();
 
-        for(final String[] entry : entriesToInsert)
+        for (final String[] entry : entriesToInsert)
         {
             mapToInsert.put(entry[0], entry[1]);
         }
@@ -1106,7 +1126,7 @@ public class ReadOnlyPropsContainerTest
     public void testValuesContains()
     {
         final Collection<String> generatedValues = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
-        for(final String value : generatedValues)
+        for (final String value : generatedValues)
         {
             assertTrue(roValues.contains(value));
         }
@@ -1125,13 +1145,15 @@ public class ReadOnlyPropsContainerTest
 
         final ArrayList<String> generatedValues = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 
-        generatedValues.add(4, "value"); // insert the value of the "a/b" key after "first2" and before "first0/second0"
+        generatedValues.add(4, "value");
+        // insert the value of the "a/b" key after "first2" and before "first0/second0"
 
         assertIteratorEqual(iterator, generatedValues, true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testValuesColIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesColIteratorUnsupportedRemove()
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         final Iterator<String> iterator = roValues.iterator();
 
@@ -1145,14 +1167,18 @@ public class ReadOnlyPropsContainerTest
     @Test
     public void testValuesToArray()
     {
-        final ArrayList<String> generatedValueList = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<String> generatedValueList = generateValues(
+            FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
+        );
         assertArrayEquals(generatedValueList.toArray(), roValues.toArray());
     }
 
     @Test
     public void testValuesToArrayParam()
     {
-        final ArrayList<String> generatedValueList = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
+        final ArrayList<String> generatedValueList = generateValues(
+            FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
+        );
         final String[] expectedValues = new String[generatedValueList.size()];
         generatedValueList.toArray(expectedValues);
         final String[] actualValues = new String[roValues.size()];
@@ -1207,7 +1233,9 @@ public class ReadOnlyPropsContainerTest
     @Test(expected = AccessDeniedException.class)
     public void testValuesRemoveAll()
     {
-        final HashSet<String> generatedValues = new HashSet<>(generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
+        final HashSet<String> generatedValues = new HashSet<>(
+            generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
+        );
 
         final HashSet<String> valuesToRemove = new HashSet<>();
         valuesToRemove.add("0");
