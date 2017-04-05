@@ -69,56 +69,52 @@ public class DrbdEventService implements SystemService, Runnable
     @Override
     public void run()
     {
-        while(startable)
+        while (startable)
         {
-            while(running)
+            while (running)
             {
                 Event event;
                 try
                 {
                     event = eventDeque.take();
-                    if(event instanceof StdOutEvent)
+                    if (event instanceof StdOutEvent)
                     {
                         eventsTracker.receiveEvent(new String(((StdOutEvent) event).data));
                     }
                     else
+                    if (event instanceof StdErrEvent)
                     {
-                        if(event instanceof StdErrEvent)
-                        {
-                            demonHandler.stop(true);
-                            demonHandler.start();
-                        }
-                        else
-                        {
-                            if(event instanceof ExceptionEvent)
-                            {
-                                // TODO report the exception to the controller
-                            }
-                            else
-                            {
-                                if(event instanceof PoisonEvent)
-                                {
-                                    break;
-                                }
-                            }
-                        }
+                        demonHandler.stop(true);
+                        demonHandler.start();
+                    }
+                    else
+                    if (event instanceof ExceptionEvent)
+                    {
+                        // FIXME: Report the exception to the controller
+                    }
+                    else
+                    if (event instanceof PoisonEvent)
+                    {
+                        break;
                     }
                 }
-                catch (InterruptedException | IOException e1)
+                catch (InterruptedException | IOException exc)
                 {
-                    if(running)
+                    if (running)
                     {
-                        e1.printStackTrace(); // TODO report me somewhere else
+                        // FIXME: Error reporting required
+                        exc.printStackTrace();
                     }
                 }
-                catch (EventsSourceException e)
+                catch (EventsSourceException exc)
                 {
-                    e.printStackTrace(); // TODO report me somewhere else
+                    // FIXME: Error reporting required
+                    exc.printStackTrace();
                 }
             }
             synchronized (this)
             {
-                if(startable && !running)
+                if (startable && !running)
                 {
                     try
                     {
@@ -127,15 +123,15 @@ public class DrbdEventService implements SystemService, Runnable
                         wait();
                         waitingForRestart = false;
                     }
-                    catch (InterruptedException e)
+                    catch (InterruptedException intrExc)
                     {
-                        e.printStackTrace(); // TODO report me somewhere else
+                        // FIXME: Error reporting required
+                        intrExc.printStackTrace();
                     }
                 }
             }
         }
     }
-
 
     @Override
     public ServiceName getServiceName()
@@ -170,7 +166,7 @@ public class DrbdEventService implements SystemService, Runnable
     @Override
     public void start()
     {
-        if(needsReinitialize)
+        if (needsReinitialize)
         {
             eventsTracker.reinitializing();
         }
@@ -183,7 +179,8 @@ public class DrbdEventService implements SystemService, Runnable
         }
         catch (IOException exc)
         {
-            exc.printStackTrace(); // TODO report me somewhere
+            // FIXME: Error reporting required
+            exc.printStackTrace();
         }
         synchronized (this)
         {
@@ -191,7 +188,6 @@ public class DrbdEventService implements SystemService, Runnable
         }
         started = true;
     }
-
 
     @Override
     public void shutdown()
@@ -208,13 +204,14 @@ public class DrbdEventService implements SystemService, Runnable
     {
         synchronized (this)
         {
-            if(!waitingForRestart)
+            if (!waitingForRestart)
             {
                 wait(timeout);
             }
         }
     }
 
-    private static class PoisonEvent implements Event{
+    private static class PoisonEvent implements Event
+    {
     }
 }

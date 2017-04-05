@@ -6,7 +6,7 @@ import java.util.concurrent.BlockingDeque;
 
 public class OutputProxy implements Runnable
 {
-    public static interface Event // marker interfaces
+    public static interface Event // marker interface
     {
     }
 
@@ -36,7 +36,8 @@ public class OutputProxy implements Runnable
         final InputStream in,
         final BlockingDeque<Event> deque,
         final byte delimiter,
-        final boolean useOut)
+        final boolean useOut
+    )
     {
         dataIn = in;
         this.deque = deque;
@@ -49,42 +50,45 @@ public class OutputProxy implements Runnable
         shutdown = false;
     }
 
-
     @Override
     public void run()
     {
         int read = 0;
-        while(read != EOF)
+        while (read != EOF)
         {
-            // first read from the inputStream
+            // First read from the InputStream
             try
             {
                 read = dataIn.read(data, dataPos, data.length - dataPos);
 
-                if(read != EOF)
+                if (read != EOF)
                 {
                     dataLimit += read;
-                    // search for the delimiter starting from dataPos
-                    for(; dataPos < dataLimit; dataPos++)
+                    // Search for the delimiter starting from dataPos
+                    while (dataPos < dataLimit)
                     {
-                        if(data[dataPos] == delimiter)
+                        if (data[dataPos] == delimiter)
                         {
-                            // put the found data into the deque
+                            // Put the found data into the deque
                             byte[] delimitedData = new byte[dataPos];
                             System.arraycopy(data, 0, delimitedData, 0, dataPos);
                             addToDeque(delimitedData);
 
-                            // skip the delimiter
-                            dataPos++;
+                            // Skip the delimiter
+                            dataPos += 2;
 
-                            // copy all remaining data to the start of our array
+                            // Copy all remaining data to the start of our array
                             System.arraycopy(data, dataPos, data, 0, dataLimit - dataPos);
                             dataLimit -= dataPos;
                             dataPos = 0;
                         }
+                        else
+                        {
+                            ++dataPos;
+                        }
                     }
 
-                    if(dataLimit == data.length)
+                    if (dataLimit == data.length)
                     {
                         if(dataLimit < MAX_DATA_SIZE)
                         {
@@ -101,23 +105,25 @@ public class OutputProxy implements Runnable
             }
             catch (IOException ioExc)
             {
-                if(!shutdown)
+                if (!shutdown)
                 {
                     try
                     {
                         addToDeque(ioExc);
                     }
-                    catch (InterruptedException e)
+                    catch (InterruptedException exc)
                     {
-                        e.printStackTrace(); // TODO report somewhere else
+                        // FIXME: Error reporting required
+                        exc.printStackTrace();
                     }
                 }
             }
             catch (InterruptedException interruptedExc)
             {
-                if(!shutdown)
+                if (!shutdown)
                 {
-                    interruptedExc.printStackTrace(); // TODO report somewhere else
+                    // FIXME: Error reporting required
+                    interruptedExc.printStackTrace();
                 }
             }
         }
@@ -126,7 +132,7 @@ public class OutputProxy implements Runnable
     private void addToDeque(byte[] delimitedData) throws InterruptedException
     {
         Event event;
-        if(useOut)
+        if (useOut)
         {
             event = new StdOutEvent(delimitedData);
         }
@@ -193,5 +199,4 @@ public class OutputProxy implements Runnable
     {
         private static final long serialVersionUID = 3479687941054839688L;
     }
-
 }

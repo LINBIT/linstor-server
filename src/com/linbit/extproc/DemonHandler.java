@@ -20,7 +20,7 @@ public class DemonHandler
 
     private final BlockingDeque<Event> deque;
 
-    public DemonHandler(final BlockingDeque<Event> deque, final String...command)
+    public DemonHandler(final BlockingDeque<Event> deque, final String... command)
     {
         this.deque = deque;
         processBuilder = new ProcessBuilder(command);
@@ -29,7 +29,7 @@ public class DemonHandler
 
     public void start() throws IOException
     {
-        if(process != null)
+        if (process != null)
         {
             stop(true);
         }
@@ -47,7 +47,7 @@ public class DemonHandler
     {
         outProxy.expectShutdown();
         errProxy.expectShutdown();
-        if(force)
+        if (force)
         {
             process.destroyForcibly();
         }
