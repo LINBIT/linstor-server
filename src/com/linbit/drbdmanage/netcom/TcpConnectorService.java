@@ -729,7 +729,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         }
     }
 
-    private void initialize() throws IOException
+    public void initialize() throws IOException
     {
         boolean initFlag = false;
         try
