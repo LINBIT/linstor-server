@@ -162,7 +162,7 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    private long ceilingDivide(long dividend, long divisor)
+    private static long ceilingDivide(long dividend, long divisor)
     {
         long quotient = dividend / divisor;
         if (dividend % divisor != 0)
@@ -173,7 +173,7 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    private long alignUp(long value, long alignment)
+    private static long alignUp(long value, long alignment)
     {
         if (value % alignment != 0)
         {
@@ -183,13 +183,13 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    private long alignDown(long value, long alignment)
+    private static long alignDown(long value, long alignment)
     {
         return (value / alignment) * alignment;
     }
 
 
-    private long getAlSize(
+    private static long getAlSize(
         int  alStripes,
         long alStripeSize
     )
@@ -222,7 +222,7 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    public void checkPeers(short peers) throws PeerCountException
+    public static void checkPeers(short peers) throws PeerCountException
     {
         if (peers < DRBD_MIN_PEERS || peers > DRBD_MAX_PEERS)
         {
@@ -231,7 +231,7 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    public void checkMinDrbdSizeNet(long netSize) throws MinSizeException
+    public static void checkMinDrbdSizeNet(long netSize) throws MinSizeException
     {
         if (netSize < DRBD_MIN_NET_kiB)
         {
@@ -240,7 +240,7 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    public void checkMinDrbdSizeGross(long grossSize) throws MinSizeException
+    public static void checkMinDrbdSizeGross(long grossSize) throws MinSizeException
     {
         if (grossSize < DRBD_MIN_GROSS_kiB)
         {
@@ -249,7 +249,7 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    public void checkMaxDrbdSize(long size) throws MaxSizeException
+    public static void checkMaxDrbdSize(long size) throws MaxSizeException
     {
         if (size > DRBD_MAX_kiB)
         {
@@ -258,7 +258,7 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    private long getBitmapExternalSize(long size, short peers)
+    private static long getBitmapExternalSize(long size, short peers)
         throws MinSizeException, MaxSizeException, PeerCountException
     {
         checkMinDrbdSizeNet(size);
@@ -276,7 +276,7 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    private long getBitmapInternalSizeNet(
+    private static long getBitmapInternalSizeNet(
         long  netSize,
         short peers,
         int   alStripes,
@@ -338,7 +338,7 @@ public class MetaData extends MdCommon implements MetaDataApi
     }
 
 
-    private long getBitmapInternalSizeGross(long  grossSize, short peers)
+    private static long getBitmapInternalSizeGross(long  grossSize, short peers)
         throws MinSizeException, MaxSizeException, PeerCountException
     {
         checkMinDrbdSizeGross(grossSize);
