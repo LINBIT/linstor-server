@@ -26,7 +26,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "TCP/IP network communications service";
 
-    private ServiceName serviceInstanceName;
+    protected ServiceName serviceInstanceName;
 
     private static final long REINIT_THROTTLE_TIME = 3000L;
 
@@ -115,7 +115,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     private ServerSocketChannel serverSocket;
 
     // Default access context for a newly connected peer
-    private AccessContext defaultPeerAccCtx;
+    protected AccessContext defaultPeerAccCtx;
 
     // Selector for all connections
     Selector serverSelector;
@@ -159,7 +159,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     }
 
     @Override
-    public TcpConnectorPeer connect()
+    public Peer connect(InetSocketAddress address)
     {
         // TODO: Implement connect() method
 //        try
@@ -330,6 +330,50 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                         }
                     }
                     else
+                    if ((ops & OP_ACCEPT) != 0)
+                    {
+                        try
+                        {
+                            acceptConnection(currentKey);
+                        }
+                        catch (ClosedChannelException closeExc)
+                        {
+                            // May be thrown by accept() if the server socket is closed
+                            // Attempt to reinitialize to recover
+                            reinitialize();
+                            // Break out of iterating over keys, because those are all
+                            // invalid after reinitialization, and the set of keys may have
+                            // been modified too
+                            break;
+                        }
+                        catch (NotYetBoundException unboundExc)
+                        {
+                            // Generated if accept() is invoked on an unbound server socket
+                            // This should not happen, unless there is an
+                            // implementation error somewhere.
+                            // Attempt to reinitialize to recover
+                            reinitialize();
+                            // Break out of iterating over keys, because those are all
+                            // invalid after reinitialization, and the set of keys may have
+                            // been modified too
+                            break;
+                        }
+                        catch (ClosedSelectorException closeExc)
+                        {
+                            // Throw by accept() if the selector is closed
+                            // Attempt to reinitialize to recover
+                            reinitialize();
+                            // Break out of iterating over keys, because those are all
+                            // invalid after reinitialization, and the set of keys may have
+                            // been modified too
+                            break;
+                        }
+                        catch (IOException ioExc)
+                        {
+                            coreSvcs.getErrorReporter().reportError(ioExc);
+                        }
+                    }
+                    else
                     if ((ops & OP_WRITE) != 0)
                     {
                         try
@@ -378,53 +422,11 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                         }
                         catch (IOException ioExc)
                         {
-                            // Protocol error - I/O error while writing a message
-                            // Close the connection
-                            closeConnection(currentKey);
-                        }
-                    }
-                    else
-                    if ((ops & OP_ACCEPT) != 0)
-                    {
-                        try
-                        {
-                            acceptConnection(currentKey);
-                        }
-                        catch (ClosedChannelException closeExc)
-                        {
-                            // May be thrown by accept() if the server socket is closed
-                            // Attempt to reinitialize to recover
-                            reinitialize();
-                            // Break out of iterating over keys, because those are all
-                            // invalid after reinitialization, and the set of keys may have
-                            // been modified too
-                            break;
-                        }
-                        catch (NotYetBoundException unboundExc)
-                        {
-                            // Generated if accept() is invoked on an unbound server socket
-                            // This should not happen, unless there is an
-                            // implementation error somewhere.
-                            // Attempt to reinitialize to recover
-                            reinitialize();
-                            // Break out of iterating over keys, because those are all
-                            // invalid after reinitialization, and the set of keys may have
-                            // been modified too
-                            break;
-                        }
-                        catch (ClosedSelectorException closeExc)
-                        {
-                            // Throw by accept() if the selector is closed
-                            // Attempt to reinitialize to recover
-                            reinitialize();
-                            // Break out of iterating over keys, because those are all
-                            // invalid after reinitialization, and the set of keys may have
-                            // been modified too
-                            break;
-                        }
-                        catch (IOException ioExc)
-                        {
+                            // Protocol error:
+                            // I/O error while writing a message
+                            // Close channel / disconnect peer, invalidate SelectionKey
                             coreSvcs.getErrorReporter().reportError(ioExc);
+                            closeConnection(currentKey);
                         }
                     }
                     else
@@ -619,13 +621,20 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         }
     }
 
+    protected TcpConnectorPeer createTcpConnectorPeer(String peerId, SelectionKey connKey)
+    {
+        return new TcpConnectorPeer(
+            peerId, this, connKey, defaultPeerAccCtx
+        );
+    }
+
     @Override
     public void wakeup()
     {
         serverSelector.wakeup();
     }
 
-    private void establishConnection(SelectionKey currentKey)
+    protected void establishConnection(SelectionKey currentKey)
         throws IOException
     {
         // TODO: Implement finishing outbound connection attempt

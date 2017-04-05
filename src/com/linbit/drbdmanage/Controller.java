@@ -6,6 +6,8 @@ import com.linbit.drbdmanage.debug.*;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
+import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
+import com.linbit.drbdmanage.netcom.ssl.SslTcpConstants;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.*;
 import com.linbit.fsevent.FileSystemWatch;
@@ -15,6 +17,11 @@ import com.linbit.timer.Timer;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -198,7 +205,7 @@ public class Controller implements Runnable, CoreServices
         }
     }
 
-    public void initialize(ErrorReporter errorLogRef)
+    public void initialize(ErrorReporter errorLogRef, SSLConfiguration sslConfig) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
     {
         shutdownFinished = false;
 
@@ -234,7 +241,7 @@ public class Controller implements Runnable, CoreServices
 
         // Initialize the network communications service
         logInit("Initializing network communications service");
-        initializeNetComService();
+        initializeNetComService(sslConfig);
 
         // Start service threads
         for (SystemService sysSvc : systemServicesMap.values())
@@ -385,7 +392,7 @@ public class Controller implements Runnable, CoreServices
     @Override
     public Timer<String, Action<String>> getTimer()
     {
-        return (Timer) timerEventSvc;
+        return timerEventSvc;
     }
 
     @Override
@@ -517,7 +524,20 @@ public class Controller implements Runnable, CoreServices
             Controller instance = sysInit.initController(args);
 
             logInit("Initializing controller services");
-            instance.initialize(errorLog);
+            SSLConfiguration sslConfig = new SSLConfiguration();
+            {
+                char[] passwd = new char[]
+                {
+                    'c','h','a','n','g','e','m','e'
+                };
+                sslConfig.sslProtocol = SslTcpConstants.SSL_CONTEXT_DEFAULT_TYPE;
+                sslConfig.keyStoreFile = "keys/ServerKeyStore.jks";
+                sslConfig.keyStorePasswd = passwd;
+                sslConfig.keyPasswd = passwd;
+                sslConfig.trustStoreFile = "keys/TrustStore.jks";
+                sslConfig.trustStorePasswd = passwd;
+            } // TODO change the ssl config
+            instance.initialize(errorLog, sslConfig);
 
             logInit("Initialization complete");
             System.out.println();
@@ -543,7 +563,7 @@ public class Controller implements Runnable, CoreServices
         System.out.println();
     }
 
-    private void initializeNetComService()
+    private void initializeNetComService(SSLConfiguration sslConfig) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
     {
         try
         {
@@ -557,12 +577,26 @@ public class Controller implements Runnable, CoreServices
                     publicType
                 );
             }
-            netComSvc = new TcpConnectorService(
-                this,
-                msgProc,
-                defaultPeerAccCtx,
-                new ConnTracker(this)
-            );
+            if (sslConfig == null)
+            {
+                netComSvc = new TcpConnectorService(this, msgProc, defaultPeerAccCtx, new ConnTracker(this));
+            }
+            else
+            {
+                netComSvc = new SslTcpConnectorService(
+                    this,
+                    msgProc,
+                    defaultPeerAccCtx,
+                    new ConnTracker(this),
+                    sslConfig.sslProtocol,
+                    sslConfig.keyStoreFile,
+                    sslConfig.keyStorePasswd,
+                    sslConfig.keyPasswd,
+                    sslConfig.trustStoreFile,
+                    sslConfig.trustStorePasswd
+                );
+            }
+            netComSvc.initialize();
             systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
         }
         catch (AccessDeniedException accessExc)
@@ -784,5 +818,15 @@ public class Controller implements Runnable, CoreServices
                 controller.errorLog.reportError(accExc);
             }
         }
+    }
+
+    public static class SSLConfiguration
+    {
+        public String sslProtocol;
+        public String keyStoreFile;
+        public char[] keyStorePasswd;
+        public char[] keyPasswd;
+        public String trustStoreFile;
+        public char[] trustStorePasswd;
     }
 }

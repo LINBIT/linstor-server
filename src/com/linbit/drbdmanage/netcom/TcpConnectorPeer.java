@@ -28,16 +28,16 @@ public class TcpConnectorPeer implements Peer
     private TcpConnector connector;
 
     // Current inbound message
-    TcpConnectorMessage msgIn;
+    protected TcpConnectorMessage msgIn;
 
     // Current outbound message; cached for quicker access
-    TcpConnectorMessage msgOut;
+    protected TcpConnectorMessage msgOut;
 
     // Queue of pending outbound messages
     // TODO: Put a capacity limit on the maximum number of queued outbound messages
-    private final Deque<TcpConnectorMessage> msgOutQueue;
+    protected final Deque<TcpConnectorMessage> msgOutQueue;
 
-    private SelectionKey selKey;
+    protected SelectionKey selKey;
 
     private AccessContext peerAccCtx;
 
@@ -51,7 +51,7 @@ public class TcpConnectorPeer implements Peer
     private volatile long msgSentCtr = 0;
     private volatile long msgRecvCtr = 0;
 
-    TcpConnectorPeer(
+    protected TcpConnectorPeer(
         String peerIdRef,
         TcpConnector connectorRef,
         SelectionKey key,
@@ -61,6 +61,11 @@ public class TcpConnectorPeer implements Peer
         peerId = peerIdRef;
         connector = connectorRef;
         msgOutQueue = new LinkedList<>();
+        // Do not use createMessage() here!
+        // The SslTcpConnectorPeer has no intialized SSLEngine instance yet,
+        // so a NullPointerException would be thrown in createMessage().
+        // After initialization of the sslEngine, msgIn will be overwritten with
+        // a reference to a valid instance.
         msgIn = new TcpConnectorMessage(false);
         selKey = key;
         peerAccCtx = accCtx;
@@ -76,7 +81,12 @@ public class TcpConnectorPeer implements Peer
     @Override
     public Message createMessage()
     {
-        return new TcpConnectorMessage(true);
+        return createMessage(true);
+    }
+
+    protected TcpConnectorMessage createMessage(boolean forSend)
+    {
+        return new TcpConnectorMessage(forSend);
     }
 
     @Override
@@ -90,7 +100,7 @@ public class TcpConnectorPeer implements Peer
         }
         catch (ClassCastException ccExc)
         {
-            tcpConMsg = new TcpConnectorMessage(true);
+            tcpConMsg = createMessage(true);
             tcpConMsg.setData(msg.getData());
         }
 
@@ -131,7 +141,7 @@ public class TcpConnectorPeer implements Peer
 
     void nextInMessage()
     {
-        msgIn = new TcpConnectorMessage(false);
+        msgIn = createMessage(false);
         ++msgRecvCtr;
     }
 

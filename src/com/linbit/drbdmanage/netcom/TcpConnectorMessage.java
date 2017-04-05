@@ -31,10 +31,11 @@ public class TcpConnectorMessage implements Message
     private final byte[] headerBytes;
     private byte[] dataBytes;
 
+    // TODO: Use ByteBuffer.allocateDirect(...) instead of ByteBuffer.wrap(...)
     private final ByteBuffer headerBuffer;
     private ByteBuffer dataBuffer;
 
-    enum Phase
+    protected enum Phase
     {
         PREPARE,
         HEADER,
@@ -59,22 +60,22 @@ public class TcpConnectorMessage implements Message
         }
     };
 
-    enum ReadState
+    protected enum ReadState
     {
         UNFINISHED,
         FINISHED,
         END_OF_STREAM
     };
 
-    enum WriteState
+    protected enum WriteState
     {
         UNFINISHED,
         FINISHED
     };
 
-    private Phase currentPhase;
+    protected Phase currentPhase;
 
-    TcpConnectorMessage(boolean forSend)
+    protected TcpConnectorMessage(boolean forSend)
     {
         headerBytes = new byte[HEADER_SIZE];
         headerBuffer = ByteBuffer.wrap(headerBytes);
@@ -108,7 +109,7 @@ public class TcpConnectorMessage implements Message
         currentPhase = Phase.HEADER;
     }
 
-    ReadState read(SocketChannel inChannel)
+    protected ReadState read(SocketChannel inChannel)
         throws IllegalMessageStateException, IOException
     {
         ReadState state = ReadState.UNFINISHED;
@@ -120,7 +121,7 @@ public class TcpConnectorMessage implements Message
                 );
             case HEADER:
                 {
-                    int readCount = inChannel.read(headerBuffer);
+                    int readCount = read(inChannel, headerBuffer);
                     if (readCount > -1)
                     {
                         if (!headerBuffer.hasRemaining())
@@ -140,7 +141,7 @@ public class TcpConnectorMessage implements Message
                             dataBuffer = ByteBuffer.wrap(dataBytes);
                             currentPhase = currentPhase.getNextPhase();
 
-                            readCount = inChannel.read(dataBuffer);
+                            readCount = read(inChannel, dataBuffer);
                             if (readCount <= -1)
                             {
                                 // Peer has closed the stream
@@ -163,7 +164,7 @@ public class TcpConnectorMessage implements Message
                 break;
             case DATA:
                 {
-                    int readCount = inChannel.read(dataBuffer);
+                    int readCount = read(inChannel, dataBuffer);
                     if (readCount <= -1)
                     {
                         // Peer has closed the stream
@@ -193,10 +194,11 @@ public class TcpConnectorMessage implements Message
         return state;
     }
 
-    WriteState write(SocketChannel outChannel)
+    protected WriteState write(SocketChannel outChannel)
         throws IllegalMessageStateException, IOException
     {
         WriteState state = WriteState.UNFINISHED;
+        boolean flushed;
         switch (currentPhase)
         {
             case PREPARE:
@@ -204,11 +206,11 @@ public class TcpConnectorMessage implements Message
                     "Attempt to write a message that is in prepare mode for sending"
                 );
             case HEADER:
-                outChannel.write(headerBuffer);
-                if (!headerBuffer.hasRemaining())
+                flushed = write(outChannel, headerBuffer);
+                if (flushed)
                 {
-                    outChannel.write(dataBuffer);
-                    if (dataBuffer.hasRemaining())
+                    flushed = write(outChannel, dataBuffer);
+                    if (!flushed)
                     {
                         // Continue the next invocation of read() with the DATA phase
                         currentPhase = currentPhase.getNextPhase();
@@ -221,8 +223,8 @@ public class TcpConnectorMessage implements Message
                 }
                 break;
             case DATA:
-                outChannel.write(dataBuffer);
-                if (!dataBuffer.hasRemaining())
+                flushed = write(outChannel, dataBuffer);
+                if (flushed)
                 {
                     // Finished sending the message
                     state = WriteState.FINISHED;
@@ -241,6 +243,32 @@ public class TcpConnectorMessage implements Message
                 );
         }
         return state;
+    }
+    /**
+     * Needed so that SSLConnectorMessage can override this method
+     *
+     * @param channel
+     * @param buffer
+     * @return the amount of bytes written into the buffer
+     * @throws IOException
+     */
+    protected int read(SocketChannel channel, ByteBuffer buffer) throws IOException
+    {
+        return channel.read(buffer);
+    }
+
+    /**
+     * Needed so that SSLConnectorMessage can override this method
+     *
+     * @param channel
+     * @param buffer
+     * @return true if the buffer was completely sent. false otherwise.
+     * @throws IOException
+     */
+    protected boolean write(final SocketChannel channel, final ByteBuffer buffer) throws IOException
+    {
+        channel.write(buffer);
+        return !buffer.hasRemaining();
     }
 
     final void reset(boolean forSend)
