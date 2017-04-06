@@ -1,10 +1,12 @@
 package com.linbit.extproc;
 
-import com.linbit.ChildProcessTimeoutException;
-import com.linbit.timer.GenericTimer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import com.linbit.ChildProcessTimeoutException;
+import com.linbit.timer.Action;
+import com.linbit.timer.Timer;
 
 /**
  * Runs an external command, logs and saves its output
@@ -16,7 +18,7 @@ public class ExtCmd extends ChildProcessHandler
     private OutputReceiver outReceiver;
     private OutputReceiver errReceiver;
 
-    public ExtCmd(GenericTimer timer)
+    public ExtCmd(Timer<String, Action<String>> timer)
     {
         super(timer);
         outReceiver = null;
@@ -80,7 +82,7 @@ public class ExtCmd extends ChildProcessHandler
         public byte[] stderrData;
         public int exitCode;
 
-        OutputData(byte[] out, byte[] err, int retCode)
+        protected OutputData(byte[] out, byte[] err, int retCode)
         {
             stdoutData = out;
             stderrData = err;
