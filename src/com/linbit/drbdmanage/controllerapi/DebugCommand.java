@@ -16,7 +16,6 @@ import com.linbit.drbdmanage.security.AccessContext;
 import java.io.*;
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.StringTokenizer;
 
 /**
  * Pipes a debug command from the peer to the server and the
@@ -77,8 +76,8 @@ public class DebugCommand extends BaseApiCall
                     false
                 );
 
-                String[] debugOutData = toLinesArray(debugOut.toString());
-                String[] debugErrData = toLinesArray(debugErr.toString());
+                String[] debugOutData = toLinesArray(debugOut.toByteArray());
+                String[] debugErrData = toLinesArray(debugErr.toByteArray());
 
                 for (String line : debugOutData)
                 {
@@ -120,13 +119,17 @@ public class DebugCommand extends BaseApiCall
         }
     }
 
-    private String[] toLinesArray(String text)
+    private String[] toLinesArray(byte[] text)
     {
         Deque<String> debugOutLines = new LinkedList<>();
-        StringTokenizer debugOutTokens = new StringTokenizer(text, "\n");
-        while (debugOutTokens.hasMoreTokens())
+        int offset = 0;
+        for (int idx = 0; idx < text.length; ++idx)
         {
-            debugOutLines.add(debugOutTokens.nextToken());
+            if (text[idx] == '\n')
+            {
+                debugOutLines.add(new String(text, offset, idx - offset));
+                offset = idx + 1;
+            }
         }
         String[] strArray = new String[debugOutLines.size()];
         return debugOutLines.toArray(strArray);

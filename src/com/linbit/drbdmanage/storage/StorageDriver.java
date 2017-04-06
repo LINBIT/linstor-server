@@ -81,12 +81,13 @@ public interface StorageDriver
      * provisioning, etc.
      *
      * @return Map of key/value strings describing the driver's characteristics
+     * @throws StorageException If determining the extent size of the volume group fails
      */
-    Map<String, String> getTraits();
+    Map<String, String> getTraits() throws StorageException;
 
     /**
      * Returns a set of this driver's configuration keys
-     * 
+     *
      * @return Set of key strings describing the configuration keys accepted by the
      *     setConfiguration() method
      */

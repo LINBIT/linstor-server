@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.debug;
 
+import com.linbit.AutoIndent;
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -21,6 +22,8 @@ import java.util.regex.PatternSyntaxException;
  */
 public abstract class BaseDebugConsole implements DebugConsole
 {
+    public static final String HELP_COMMAND = "Help";
+
     private boolean exitFlag = false;
 
     protected AccessContext debugCtx;
@@ -124,6 +127,16 @@ public abstract class BaseDebugConsole implements DebugConsole
                     debugOut,
                     debugErr,
                     inputLine.substring(1, inputLine.length()).trim()
+                );
+            }
+            else
+            if (isHelpCommand(inputLine))
+            {
+                helpCommand(
+                    commandMap,
+                    debugOut,
+                    debugErr,
+                    inputLine.substring(HELP_COMMAND.length(), inputLine.length()).trim()
                 );
             }
             else
@@ -245,6 +258,176 @@ public abstract class BaseDebugConsole implements DebugConsole
         }
     }
 
+    public void helpCommand(
+        Map<String, CommonDebugCmd> commandMap,
+        PrintStream debugOut,
+        PrintStream debugErr,
+        String cmdName
+    )
+    {
+        debugOut.printf("\u001b[1;37m%-20s\u001b[0m %s\n", "Help", "Help for command usage");
+        debugOut.println();
+
+        // TODO: Help for 'Find commands', '?' command
+        if (cmdName.isEmpty() || cmdName.equalsIgnoreCase(HELP_COMMAND))
+        {
+            helpForHelp(debugOut, debugErr);
+        }
+        else
+        {
+            String uCaseCmdName = cmdName.toUpperCase();
+            CommonDebugCmd debugCmd = commandMap.get(uCaseCmdName);
+            if (debugCmd != null)
+            {
+                helpForCommand(debugCmd, debugOut, debugErr, cmdName, uCaseCmdName);
+            }
+            else
+            {
+                // Check for an attempt to enter multiple command names at a time
+                if (cmdName.indexOf(" ") != -1 || cmdName.indexOf("\t") != -1)
+                {
+                    debugErr.print(
+                        "Error:\n" +
+                        "    No command that matches the command name specified in the command line was found.\n" +
+                        "Cause:\n" +
+                        "    The command line appears to contain multiple parameters.\n" +
+                        "Correction:\n" +
+                        "    Reenter the HELP command line in the correct format.\n" +
+                        "    The following format is expected:\n" +
+                        "        HELP commandname\n"
+                    );
+                }
+                else
+                {
+                    debugErr.print(
+                        "Error:\n" +
+                        "    No command that matches the command name specified in the command line was found.\n" +
+                        "Cause:\n" +
+                        "    Common causes for this error are:\n" +
+                        "        * The command name was mistyped\n" +
+                        "        * A command with the specified name does not exist\n" +
+                        "        * The command with the specified name in currently unavailable, because it\n" +
+                        "          was not loaded by the system\n" +
+                        "Correction:\n" +
+                        "    Check whether the command name specified on the command line is correct.\n"
+                    );
+                }
+            }
+        }
+    }
+
+    private void helpForHelp(
+        PrintStream debugOut,
+        PrintStream debugErr
+    )
+    {
+        debugOut.println(
+            "To request help for a debug console command, enter the HELP command in\n" +
+            "the following format:\n\n" +
+            "    HELP commandname\n\n" +
+            "Substitute the word 'commandname' with the name of the command for which\n" +
+            "help information should be displayed.\n\n" +
+            "Enter ? to display a list of all available commands.\n" +
+            "Enter ? followed by a regular expression to apply as a filter to display a\n" +
+            "list of those commands that have a name that matches the filter.\n\n"
+        );
+    }
+
+    private void helpForCommand(
+        CommonDebugCmd debugCmd,
+        PrintStream debugOut,
+        PrintStream debugErr,
+        String cmdName,
+        String uCaseCmdName
+    )
+    {
+        // Output the name of the command for which help was requested
+        debugOut.println("\u001b[1;37mHelp for command:\u001b[0m");
+        String cmdInfo = debugCmd.getCmdInfo();
+        if (cmdInfo == null)
+        {
+            debugOut.printf("    %-20s\n", debugCmd.getDisplayName(uCaseCmdName));
+        }
+        else
+        {
+            debugOut.printf("    %-20s %s\n", debugCmd.getDisplayName(uCaseCmdName), cmdInfo);
+        }
+        debugOut.println();
+
+        // Output any additional alias names that invoke the same command
+        {
+            Set<String> cmdNameList = debugCmd.getCmdNames();
+            StringBuilder aliases = new StringBuilder();
+            for (String name : cmdNameList)
+            {
+                if (!uCaseCmdName.equalsIgnoreCase(name))
+                {
+                    aliases.append(String.format("    %s\n", name));
+                }
+            }
+            if (aliases.length() > 0)
+            {
+                debugOut.println("\u001b[1;37mCommand alias names:\u001b[0m");
+                debugOut.print(aliases.toString());
+                debugOut.println();
+            }
+        }
+
+        // Output the command's description
+        String cmdDescr = debugCmd.getCmdDescription();
+        if (cmdDescr != null)
+        {
+            debugOut.println("\u001b[1;37mDescription:\u001b[0m");
+            AutoIndent.printWithIndent(debugOut, 4, cmdDescr);
+            debugOut.println();
+        }
+
+        // Output command parameter descriptions
+        {
+            Map<String, String> paramsDescr = debugCmd.getParametersDescription();
+            if (paramsDescr != null)
+            {
+                if (paramsDescr.size() > 0)
+                {
+                    debugOut.println("\u001b[1;37mSupported parameters:\u001b[0m");
+                    for (Map.Entry<String, String> paramEntry : paramsDescr.entrySet())
+                    {
+                        debugOut.printf("    %s\n", paramEntry.getKey());
+                        AutoIndent.printWithIndent(debugOut, 8, paramEntry.getValue());
+                    }
+                    debugOut.println();
+                }
+            }
+        }
+
+        // Output help for any additional, undeclared parameters
+        {
+            if (debugCmd.acceptsUndeclaredParameters())
+            {
+                String undeclParamsDescr = debugCmd.getUndeclaredParametersDescription();
+                if (undeclParamsDescr == null)
+                {
+                    debugOut.print(
+                        "This command accepts additional parameters that are not declared in the\n" +
+                        "list of supported parameters. The command does not provide additional\n" +
+                        "information about those parameters.\n"
+                    );
+                    debugOut.println();
+                }
+                else
+                {
+                    debugOut.print(
+                        "This command accepts additional parameters that are not declared in the\n" +
+                        "list of supported parameters. The following description is provided by\n" +
+                        "the command for the use of such additional parameters:\n"
+                    );
+                    AutoIndent.printWithIndent(debugOut, 4, undeclParamsDescr);
+                    debugOut.println();
+                }
+            }
+        }
+    }
+
     public void findCommands(
         Map<String, CommonDebugCmd> commandMap,
         PrintStream debugOut,
@@ -271,7 +454,7 @@ public abstract class BaseDebugConsole implements DebugConsole
                 {
                     String cmdName = cmdEntry.getKey();
                     Matcher cmdMatcher = cmdRegEx.matcher(cmdName);
-                    if (cmdMatcher.matches())
+                    if (cmdMatcher.find())
                     {
                         selectedCmds.put(cmdEntry.getKey(), cmdEntry.getValue());
                     }
@@ -469,12 +652,44 @@ public abstract class BaseDebugConsole implements DebugConsole
         }
     }
 
+    private boolean isHelpCommand(String inputLine)
+    {
+        boolean result = false;
+        int matchLength = HELP_COMMAND.length();
+        if (inputLine.length() >= matchLength)
+        {
+            String matchSection = inputLine.substring(0, matchLength).toUpperCase();
+            String matchCmd = HELP_COMMAND.toUpperCase();
+            if (matchCmd.equals(matchSection))
+            {
+                if (inputLine.length() > matchLength)
+                {
+                    char expectedSpace = inputLine.charAt(matchLength);
+                    if (expectedSpace == ' ' || expectedSpace == '\t')
+                    {
+                        result = true;
+                    }
+                }
+                else
+                {
+                    result = true;
+                }
+            }
+        }
+        return result;
+    }
+
     private void errorInvalidKey(int pos) throws ParseException
     {
         throw new ParseException(
             String.format(
-                "The command line is not valid. " +
-                    "An invalid parameter key was encountered at position %d.",
+                "Error:\n" +
+                "    The command line is not valid. An invalid parameter key was encountered at position %d.\n" +
+                "Correction:\n" +
+                "    Check whether the format of the command parameter key at the\n" +
+                "    specified position is correct.\n" +
+                "    The general format of a command parameter is:\n" +
+                "        PARAMETERKEY(parametervalue)\n",
                 pos
             ),
             pos
@@ -485,8 +700,13 @@ public abstract class BaseDebugConsole implements DebugConsole
     {
         throw new ParseException(
             String.format(
-                "The command line is not valid. " +
-                    "The parser encountered an error at position %d.",
+                "Error:\n" +
+                "    The command line is not valid. The parser encountered an error at position %d.\n" +
+                "Cause:\n" +
+                "    This error is commonly cause by entering an invalid character or unbalanced parenthesis.\n",
+                "Correction:\n" +
+                "    Make sure that values for command parameters are correctly enclosed in parenthesis\n" +
+                "    and that no invalid characters are present in the command line.",
                 pos
             ),
             pos
@@ -496,7 +716,16 @@ public abstract class BaseDebugConsole implements DebugConsole
     private void errorIncompleteLine(int pos) throws ParseException
     {
         throw new ParseException(
-            "The command line is not valid. The input line appears to have been truncated.",
+            "Error:\n" +
+            "    The command line is not valid. The input line appears to have been truncated.\n" +
+            "Cause:\n" +
+            "    This error is commonly caused by entering a command parameter without a value.\n" +
+            "Correction:\n" +
+            "    Reenter the command using the correct format for command parameters.\n" +
+            "    The general format of a command parameter is:\n" +
+            "        PARAMETERKEY(parametervalue)\n" +
+            "Error details:\n" +
+            "    The parameter key is not case sensitive.",
             pos
         );
     }

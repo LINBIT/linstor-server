@@ -2,6 +2,7 @@
 !src/
 !test/
 !build.xml
+!build.gradle
 !nbproject/
 nbproject/genfiles.properties
 nbproject/private/
