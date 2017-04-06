@@ -596,7 +596,6 @@ public class Controller implements Runnable, CoreServices
                     sslConfig.trustStorePasswd
                 );
             }
-            netComSvc.initialize();
             systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
         }
         catch (AccessDeniedException accessExc)

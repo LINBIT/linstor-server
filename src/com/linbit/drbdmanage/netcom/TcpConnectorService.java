@@ -535,9 +535,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                             if (connKey != null)
                             {
                                 // Prepare the peer object and message
-                                TcpConnectorPeer connPeer = new TcpConnectorPeer(
-                                    peerId, this, connKey, defaultPeerAccCtx
-                                );
+                                TcpConnectorPeer connPeer = createTcpConnectorPeer(peerId, connKey);
                                 connKey.attach(connPeer);
                                 if (connObserver != null)
                                 {

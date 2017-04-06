@@ -7,7 +7,7 @@ import java.nio.channels.SocketChannel;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
-
+import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage;
 
 public class SslTcpConnectorMessage extends TcpConnectorMessage
@@ -30,6 +30,20 @@ public class SslTcpConnectorMessage extends TcpConnectorMessage
         encryptedBuffer = ByteBuffer.allocateDirect(sslEngine.getSession().getPacketBufferSize());
         decryptedBuffer = ByteBuffer.allocateDirect(sslEngine.getSession().getApplicationBufferSize());
         decryptedBuffer.flip(); // pretend that we had a last read or write op, which has consumed all bytes
+        encryptedBuffer.flip(); // same as above
+    }
+
+    @Override
+    protected ReadState read(SocketChannel inChannel) throws IllegalMessageStateException, IOException
+    {
+        ReadState state;
+        int encryptedPos = 0;
+        do{
+            encryptedPos = encryptedBuffer.position();
+            state = super.read(inChannel);
+        }while(state != ReadState.FINISHED && encryptedPos != encryptedBuffer.position());
+
+        return state;
     }
 
     @Override
@@ -50,14 +64,17 @@ public class SslTcpConnectorMessage extends TcpConnectorMessage
                 do
                 {
                     decryptedBuffer.clear();
-                    encryptedBuffer.clear();
-                    encryptedRead = channel.read(encryptedBuffer);
-
-                    if (encryptedRead < 0)
+                    if(!encryptedBuffer.hasRemaining())
                     {
-                        break;
+                        encryptedBuffer.clear();
+                        encryptedRead = channel.read(encryptedBuffer);
+
+                        if (encryptedRead < 0)
+                        {
+                            break;
+                        }
+                        encryptedBuffer.flip();
                     }
-                    encryptedBuffer.flip();
                     result = sslEngine.unwrap(encryptedBuffer, decryptedBuffer);
                     if (result.getStatus() == SSLEngineResult.Status.BUFFER_OVERFLOW)
                     {
