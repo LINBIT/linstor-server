@@ -5,7 +5,7 @@ import com.linbit.NegativeTimeException;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ErrorCheck;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.timer.GenericTimer;
+import com.linbit.timer.Timer;
 import com.linbit.timer.Action;
 
 /**
@@ -27,7 +27,7 @@ public class ChildProcessHandler
     //          termination of the process
     public static final long DEFAULT_KILL_TIMEOUT =  5000;
 
-    static enum TimeoutType
+    public static enum TimeoutType
     {
         WAIT,
         TERM,
@@ -41,17 +41,17 @@ public class ChildProcessHandler
     private boolean autoTerm = true;
     private boolean autoKill = true;
 
-    private final GenericTimer<String, Action<String>> timeoutScheduler;
+    private final Timer<String, Action<String>> timeoutScheduler;
     private Process childProcess;
 
-    public ChildProcessHandler(GenericTimer<String, Action<String>> timer)
+    public ChildProcessHandler(Timer<String, Action<String>> timer)
     {
         childProcess = null;
-        ErrorCheck.ctorNotNull(ChildProcessHandler.class, GenericTimer.class, timer);
+        ErrorCheck.ctorNotNull(ChildProcessHandler.class, Timer.class, timer);
         timeoutScheduler = timer;
     }
 
-    public ChildProcessHandler(Process child, GenericTimer<String, Action<String>> timer)
+    public ChildProcessHandler(Process child, Timer<String, Action<String>> timer)
     {
         this(timer);
         ErrorCheck.ctorNotNull(ChildProcessHandler.class, Process.class, child);

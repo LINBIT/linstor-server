@@ -1,9 +1,7 @@
 package com.linbit.fsevent;
 
-import com.linbit.timer.Delay;
-import com.linbit.fsevent.FileSystemWatch.FileEntry;
-import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
-import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,10 +10,17 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.rules.TemporaryFolder;
+
+import com.linbit.fsevent.FileSystemWatch.FileEntry;
+import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
+import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import com.linbit.timer.Delay;
 
 /**
  * Tests the FileSystemWatch class
@@ -24,7 +29,8 @@ import static org.junit.Assert.*;
  */
 public class FileSystemWatchTest
 {
-    public static final String TEST_PATH = "test-data";
+    @Rule
+    public TemporaryFolder testFolder = new TemporaryFolder();
 
     // Test delays for racing threads in milliseconds
     public static final long TEST_DELAY = 1000L;
@@ -37,15 +43,21 @@ public class FileSystemWatchTest
 
     private void createFile(String fileName)
     {
-        String filePath = fileName;
+        String rootTestFolder = testFolder.getRoot().getAbsolutePath();
+
+
+        if (fileName.startsWith(rootTestFolder))
+        {
+            fileName = fileName.substring(rootTestFolder.length());
+        }
         try
         {
-            FileOutputStream fOut = new FileOutputStream(filePath);
-            fOut.close();
+            testFolder.newFile(fileName);
         }
         catch (IOException exc)
         {
-            fail(String.format("Test failed, failed to create file '%s'", filePath));
+            exc.printStackTrace();
+            fail(String.format("Test failed, failed to create file '%s'", fileName));
         }
     }
 
@@ -79,14 +91,7 @@ public class FileSystemWatchTest
 
     private String testFilePath(String fileName)
     {
-        StringBuilder filePath = new StringBuilder();
-        filePath.append(TEST_PATH);
-        if (!TEST_PATH.endsWith("/"))
-        {
-            filePath.append("/");
-        }
-        filePath.append(fileName);
-        return filePath.toString();
+        return testFolder.getRoot().toPath().resolve(fileName).toString();
     }
 
     private void fileEventCheck(FileEventReceiver rec)
@@ -731,5 +736,4 @@ public class FileSystemWatchTest
             return entryGroup == other;
         }
     }
-
 }
