@@ -24,6 +24,9 @@ public class NodeData implements Node
     // List of resources assigned to this cluster node
     private Map<ResourceName, Resource> resourceMap;
 
+    // List of network interfaces used for replication on this cluster node
+    private Map<NetInterfaceName, NetInterface> netInterfaceMap;
+
     // Access controls for this object
     private ObjectProtection objProt;
 
@@ -33,6 +36,7 @@ public class NodeData implements Node
         objId = UUID.randomUUID();
         clNodeName = nameRef;
         resourceMap = new TreeMap<>();
+        netInterfaceMap = new TreeMap<>();
         objProt = new ObjectProtection(accCtx);
     }
 
@@ -76,5 +80,29 @@ public class NodeData implements Node
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.remove(resRef.getDefinition().getName());
+    }
+
+    @Override
+    public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        return netInterfaceMap.get(niName);
+    }
+
+    @Override
+    public void addNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        netInterfaceMap.put(niRef.getName(), niRef);
+    }
+
+    @Override
+    public void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        netInterfaceMap.remove(niRef.getName());
     }
 }

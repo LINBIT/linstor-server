@@ -17,6 +17,15 @@ public interface Node
 
     public NodeName getName();
 
+    public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName)
+        throws AccessDeniedException;
+
+    public void addNetInterface(AccessContext accCtx, NetInterface niRef)
+        throws AccessDeniedException;
+
+    public void removeNetInterface(AccessContext accCtx, NetInterface niRef)
+        throws AccessDeniedException;
+
     public Resource getResource(AccessContext accCtx, ResourceName resName)
         throws AccessDeniedException;
 
