@@ -101,4 +101,15 @@ public interface Peer
      * @return Internet address of the peer
      */
     InetSocketAddress peerAddress();
+
+    /**
+     * Called when the connection is established
+     */
+    void connectionEstablished();
+
+    /**
+     * Waits until someone calls the {@link Peer#connectionEstablished()} method
+     * @throws InterruptedException
+     */
+    void waitUntilConnectionEstablished() throws InterruptedException;
 }

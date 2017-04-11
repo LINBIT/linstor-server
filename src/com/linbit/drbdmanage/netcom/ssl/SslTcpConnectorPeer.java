@@ -39,6 +39,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     private boolean needsHandshake = true;
     private HandshakeState state = HandshakeState.START;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private boolean clientMode;
 
     public SslTcpConnectorPeer(
         final String peerId,
@@ -51,13 +52,16 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     {
         super(peerId, sslConnectorService, connKey, peerAccCtx);
 
-        if (address != null)
+        int ops = selKey.interestOps(); // could be set to OP_CONNECT
+        clientMode = address != null;
+        if (clientMode)
         {
             // Client mode
             String host = address.getAddress().getHostAddress();
             int port = address.getPort();
             sslEngine = sslCtx.createSSLEngine(host, port);
             sslEngine.setUseClientMode(true);
+            ops |= SelectionKey.OP_WRITE; // client starts handshake
         }
         else
         {
@@ -65,14 +69,16 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             sslEngine = sslCtx.createSSLEngine();
             sslEngine.setNeedClientAuth(false);
             sslEngine.setUseClientMode(false);
-
-            SSLSession session = sslEngine.getSession();
-            myAppData = ByteBuffer.allocate(session.getApplicationBufferSize() * 2);
-            myNetData = ByteBuffer.allocate(session.getPacketBufferSize() * 2);
-            peerAppData = ByteBuffer.allocate(session.getApplicationBufferSize() * 2);
-            peerNetData = ByteBuffer.allocate(session.getPacketBufferSize() * 2);
-            session.invalidate();
+            ops |= SelectionKey.OP_READ;
         }
+
+        SSLSession session = sslEngine.getSession();
+        myAppData = ByteBuffer.allocate(session.getApplicationBufferSize() * 2);
+        myNetData = ByteBuffer.allocate(session.getPacketBufferSize() * 2);
+        peerAppData = ByteBuffer.allocate(session.getApplicationBufferSize() * 2);
+        peerNetData = ByteBuffer.allocate(session.getPacketBufferSize() * 2);
+        session.invalidate();
+
         sslEngine.beginHandshake();
 
         SslTcpConnectorHandshakeMessage handshakeMessage = new SslTcpConnectorHandshakeMessage(false, sslEngine, this);
@@ -82,6 +88,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         msgIn = handshakeMessage;
         // also set the msgOut, as we will need it for sending handshake messages
         msgOut = handshakeMessage;
+        selKey.interestOps(ops);
     }
 
     @Override
@@ -103,7 +110,8 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     {
         sslEngine.beginHandshake();
         needsHandshake = true;
-        doHandshake(channel, sslEngine);
+        selKey.interestOps(SelectionKey.OP_WRITE);
+//        doHandshake(channel, sslEngine);
     }
 
     /**
@@ -228,7 +236,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                                         myNetData.flip();
                                         state = HandshakeState.SENDING;
                                     }
-                                    socketChannel.write(myNetData);
+                                    int write = socketChannel.write(myNetData);
                                     if (!myNetData.hasRemaining())
                                     {
                                         state = HandshakeState.SENT;
@@ -291,9 +299,13 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             switch(handshakeStatus)
             {
                 case FINISHED:
-                    selKey.interestOps(SelectionKey.OP_READ);
+                    nextInMessage(); // prepare the next messages
+                    nextOutMessage();
+                    if(msgOut != null)
+                    {
+                        selKey.interestOps(SelectionKey.OP_WRITE);
+                    }
                     needsHandshake = false;
-                    msgIn = createMessage(false); // prepare the next message
                     break;
                 case NEED_TASK:
                     // should never happen - while loop before should cover this case

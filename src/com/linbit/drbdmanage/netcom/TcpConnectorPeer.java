@@ -43,6 +43,8 @@ public class TcpConnectorPeer implements Peer
 
     private Object attachment;
 
+    protected boolean connected = false;
+
     // Volatile guarantees atomic read and write
     //
     // The counters are only incremented by only one thread
@@ -76,6 +78,31 @@ public class TcpConnectorPeer implements Peer
     public String getId()
     {
         return peerId;
+    }
+
+    @Override
+    public void waitUntilConnectionEstablished() throws InterruptedException
+    {
+        while(!connected)
+        {
+            synchronized (this)
+            {
+                if(!connected)
+                {
+                    this.wait();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void connectionEstablished()
+    {
+        connected = true;
+        synchronized (this)
+        {
+            this.notifyAll();
+        }
     }
 
     @Override
@@ -139,7 +166,7 @@ public class TcpConnectorPeer implements Peer
         connector.closeConnection(this);
     }
 
-    void nextInMessage()
+    protected void nextInMessage()
     {
         msgIn = createMessage(false);
         ++msgRecvCtr;
@@ -150,7 +177,7 @@ public class TcpConnectorPeer implements Peer
         return selKey;
     }
 
-    void nextOutMessage()
+    protected void nextOutMessage()
     {
         synchronized (this)
         {

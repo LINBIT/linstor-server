@@ -537,7 +537,24 @@ public class Controller implements Runnable, CoreServices
                 sslConfig.trustStoreFile = "keys/TrustStore.jks";
                 sslConfig.trustStorePasswd = passwd;
             } // TODO change the ssl config
+
+
             instance.initialize(errorLog, sslConfig);
+
+//            {
+//                // FOR TESTING PURPOSSES ONLY
+//                instance.initialize(errorLog, sslConfig);
+//                InetSocketAddress address = new InetSocketAddress("localhost", 9504);
+//                Peer peer = instance.netComSvc.connect(address);
+//                Message msg = peer.createMessage();
+//                msg.setData("Hallo Welt\n".getBytes());
+//                peer.waitUntilConnectionEstablished();
+//                peer.sendMessage(msg);
+//                Thread.sleep(2000);
+//                peer.closeConnection();
+//            }
+
+
 
             logInit("Initialization complete");
             System.out.println();

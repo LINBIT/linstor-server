@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.netcom;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import com.linbit.SystemService;
@@ -13,7 +14,7 @@ public interface TcpConnector extends SystemService
 {
     // TODO: Experimental; some means of adding a new connection that is to
     //       be created by the TcpConnector implementation
-    Peer connect(InetSocketAddress address);
+    Peer connect(InetSocketAddress address) throws IOException;
 
     void closeConnection(TcpConnectorPeer peerObj);
 

@@ -12,6 +12,7 @@ import java.net.*;
 import java.nio.channels.*;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.nio.channels.SelectionKey.*;
@@ -117,8 +118,12 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     // Default access context for a newly connected peer
     protected AccessContext defaultPeerAccCtx;
 
+    // List of SocketChannels to register for OP_CONNECT
+    private final LinkedList<SocketChannel> registerToConnect = new LinkedList<>();
+
     // Selector for all connections
     Selector serverSelector;
+
 
     public TcpConnectorService(
         CoreServices coreSvcsRef,
@@ -158,39 +163,43 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         bindAddress = bindAddressRef;
     }
 
+    Object syncObj = new Object();
+
     @Override
-    public Peer connect(InetSocketAddress address)
+    public Peer connect(InetSocketAddress address) throws IOException
     {
-        // TODO: Implement connect() method
-//        try
-//        {
-//              ...connect()
-//        }
-//        catch (AlreadyConnectdException connExc)
-//        {
-//            // FIXME: Handle exception
-//        }
-//        catch (ConnectionPendingException connExc)
-//        {
-//            // FIXME: Handle exception
-//        }
-//        catch (ClosedChannelException closedExc)
-//        {
-//            // FIXME: Handle exception
-//        }
-//        catch (UnresolvedAddressException addrExc)
-//        {
-//            // FIXME: Handle exception
-//        }
-//        catch (UnsupportedAddressTypeException addrTypeExc)
-//        {
-//            // FIXME: Handle exception
-//        }
-//        catch (IOException connExc)
-//        {
-//            // FIXME: Handle exception
-//        }
-        throw new UnsupportedOperationException("Not supported yet.");
+        SocketChannel socketChannel = SocketChannel.open();
+        socketChannel.configureBlocking(false);
+        String peerId = address.getAddress().getHostAddress() + ":" + address.getPort();
+        SelectionKey connKey;
+        Peer peer;
+        synchronized (syncObj)
+        {
+            serverSelector.wakeup();
+            boolean connected = socketChannel.connect(address);
+            if(connected)
+            {
+                // if connect is true, we will never receive an OP_CONNECT
+                // even if we register for it.
+                // as the controller does not know about this peer (we didnt return yet)
+                // we will register for no operation.
+                // As soon as the controller tries to send a message, that will trigger the OP_WRITE anyways
+                connKey = socketChannel.register(serverSelector, 0);
+            }
+            else
+            {
+                // if connect returns false we will receive OP_CONNECT
+                // and we will need to call the finishConnection()
+                connKey = socketChannel.register(serverSelector, OP_CONNECT);
+            }
+            peer = createTcpConnectorPeer(peerId, connKey, true);
+            if(connected)
+            {
+                peer.connectionEstablished();
+            }
+            connKey.attach(peer);
+        }
+        return peer;
     }
 
     @Override
@@ -252,10 +261,16 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         {
             try
             {
+
                 // Block until I/O operations are ready to be performed
                 // on at least one of the channels, or until the selection
                 // operation is interrupted (e.g., using wakeup())
                 int selectCount = serverSelector.select();
+
+                synchronized (syncObj)
+                {
+                    // wait for the syncObj to get released
+                }
 
                 // Ensure making some progress in the case that
                 // the blocking select() call is repeatedly interrupted
@@ -537,6 +552,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                                 // Prepare the peer object and message
                                 TcpConnectorPeer connPeer = createTcpConnectorPeer(peerId, connKey);
                                 connKey.attach(connPeer);
+                                connPeer.connectionEstablished();
                                 if (connObserver != null)
                                 {
                                     connObserver.inboundConnectionEstablished(connPeer);
@@ -621,6 +637,11 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
 
     protected TcpConnectorPeer createTcpConnectorPeer(String peerId, SelectionKey connKey)
     {
+        return createTcpConnectorPeer(peerId, connKey, false);
+    }
+
+    protected TcpConnectorPeer createTcpConnectorPeer(String peerId, SelectionKey connKey, boolean outgoing)
+    {
         return new TcpConnectorPeer(
             peerId, this, connKey, defaultPeerAccCtx
         );
@@ -635,23 +656,12 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     protected void establishConnection(SelectionKey currentKey)
         throws IOException
     {
-        // TODO: Implement finishing outbound connection attempt
-//        try
-//        {
-//            ...finishConnect()
-//        }
-//        catch (NoConnectionPendingException connExc)
-//        {
-//            // FIXME: Handle exception
-//        }
-//        catch (ClosedChannelException closedExc)
-//        {
-//            // FIXME: Handle exception
-//        }
-//        catch (IOException ioExc)
-//        {
-//            // FIXME: Handle exception
-//        }
+        SocketChannel channel = (SocketChannel) currentKey.channel();
+        channel.finishConnect();
+        currentKey.interestOps(0); // when controller wants to send a message, this will be changed to
+        // OP_WRITE automatically
+        Peer peer = (Peer) currentKey.attachment();
+        peer.connectionEstablished();
     }
 
     @Override

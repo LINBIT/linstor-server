@@ -33,32 +33,15 @@ public class SslTcpConnectorHandshakeMessage extends TcpConnectorMessage
     @Override
     protected ReadState read(SocketChannel inChannel) throws IllegalMessageStateException, IOException
     {
-        ReadState state;
-        if (needsHandshaking(inChannel))
-        {
-            state = ReadState.UNFINISHED;
-        }
-        else
-        {
-            state = ReadState.FINISHED;
-        }
-        return state;
+        peer.doHandshake(inChannel, sslEngine);
+        return ReadState.UNFINISHED;
     }
 
     @Override
     protected WriteState write(SocketChannel outChannel) throws IllegalMessageStateException, IOException
     {
-        WriteState state;
-        if (needsHandshaking(outChannel))
-        {
-            state = WriteState.UNFINISHED;
-        }
-        else
-        {
-            state = WriteState.FINISHED;
-        }
-        return state;
-
+        peer.doHandshake(outChannel, sslEngine);
+        return WriteState.UNFINISHED;
     }
 
     @Override

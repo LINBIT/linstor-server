@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.netcom.ssl;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.KeyManagementException;
@@ -20,7 +21,6 @@ import com.linbit.ServiceName;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.MessageProcessor;
-import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.security.AccessContext;
 
@@ -68,29 +68,43 @@ public class SslTcpConnectorService extends TcpConnectorService
     }
 
     @Override
-    public Peer connect(final InetSocketAddress address)
-    {
-        // TODO: Implement SSLConnectorService.connect()
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
     protected void establishConnection(final SelectionKey key) throws IOException
     {
-        SocketChannel channel = (SocketChannel) key.channel();
-        SslTcpConnectorPeer peer = (SslTcpConnectorPeer) key.attachment();
-        peer.encryptConnection(channel);
+        super.establishConnection(key);
+        // this method should only be called for outgoing connections
+        // thus, we have to be currently in client mode
+        key.interestOps(SelectionKey.OP_WRITE);
+//        SocketChannel channel = (SocketChannel) key.channel();
+//        SslTcpConnectorPeer peer = (SslTcpConnectorPeer) key.attachment();
+//        peer.encryptConnection(channel);
     }
 
     @Override
     protected SslTcpConnectorPeer createTcpConnectorPeer(
         final String peerId,
-        final SelectionKey connKey
+        final SelectionKey connKey,
+        final boolean outgoing
     )
     {
         try
         {
-            return new SslTcpConnectorPeer(peerId, this, connKey, defaultPeerAccCtx, sslCtx, null);
+            InetSocketAddress address = null;
+            if(outgoing)
+            {
+                SocketChannel channel = (SocketChannel) connKey.channel();
+                Socket socket = channel.socket();
+                String host = socket.getInetAddress().getHostAddress();
+                int port = socket.getPort();
+                address = new InetSocketAddress(host, port);
+            }
+
+            return new SslTcpConnectorPeer(
+                peerId,
+                this,
+                connKey,
+                defaultPeerAccCtx,
+                sslCtx,
+                address);
         }
         catch (SSLException sslExc)
         {
