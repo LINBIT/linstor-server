@@ -27,6 +27,9 @@ public class NodeData implements Node
     // List of network interfaces used for replication on this cluster node
     private Map<NetInterfaceName, NetInterface> netInterfaceMap;
 
+    // List of storage pools
+    private Map<StorPoolName, StorPool> storPoolMap;
+
     // Access controls for this object
     private ObjectProtection objProt;
 
@@ -37,6 +40,7 @@ public class NodeData implements Node
         clNodeName = nameRef;
         resourceMap = new TreeMap<>();
         netInterfaceMap = new TreeMap<>();
+        storPoolMap = new TreeMap<>();
         objProt = new ObjectProtection(accCtx);
     }
 
@@ -85,7 +89,7 @@ public class NodeData implements Node
     @Override
     public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return netInterfaceMap.get(niName);
     }
@@ -104,5 +108,32 @@ public class NodeData implements Node
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         netInterfaceMap.remove(niRef.getName());
+    }
+
+    @Override
+    public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return storPoolMap.get(poolName);
+    }
+
+    @Override
+    public void addStorPool(AccessContext accCtx, StorPool pool)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        storPoolMap.put(pool.getName(), pool);
+    }
+
+    @Override
+    public void removeStorPool(AccessContext accCtx, StorPool pool)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        storPoolMap.remove(pool.getName());
     }
 }
