@@ -662,6 +662,10 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         // OP_WRITE automatically
         Peer peer = (Peer) currentKey.attachment();
         peer.connectionEstablished();
+        if(connObserver != null)
+        {
+            connObserver.outboundConnectionEstablished(peer);
+        }
     }
 
     @Override
