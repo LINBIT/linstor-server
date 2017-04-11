@@ -34,4 +34,13 @@ public interface Node
 
     public void removeResource(AccessContext accCtx, Resource resRef)
         throws AccessDeniedException;
+
+    public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
+        throws AccessDeniedException;
+
+    public void addStorPool(AccessContext accCtx, StorPool pool)
+        throws AccessDeniedException;
+
+    public void removeStorPool(AccessContext accCtx, StorPool pool)
+        throws AccessDeniedException;
 }
