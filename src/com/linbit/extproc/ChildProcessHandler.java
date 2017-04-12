@@ -214,7 +214,8 @@ public class ChildProcessHandler
             );
         }
         boolean killed = false;
-        childProcess.destroyForcibly();
+        childProcess.destroy(); // XXX destroyForcibly is java 1.8
+        // does this method makes any sense now?
         try
         {
             waitFor(killTimeout);

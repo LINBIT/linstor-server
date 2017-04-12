@@ -2,6 +2,8 @@ package com.linbit;
 
 import java.math.BigInteger;
 
+import com.linbit.utils.BigIntegerUtils;
+
 /**
  * Methods for converting decimal and binary sizes of different magnitudes
  *
@@ -171,12 +173,14 @@ public class SizeConv
 
     public static long convert(long size, SizeUnit unitIn, SizeUnit unitOut)
     {
-        return convert(BigInteger.valueOf(size), unitIn, unitOut).longValueExact();
+        BigInteger convert = convert(BigInteger.valueOf(size), unitIn, unitOut);
+        return BigIntegerUtils.longValueExact(convert);
     }
 
     public static long convertRoundUp(long size, SizeUnit unitIn, SizeUnit unitOut)
     {
-        return convertRoundUp(BigInteger.valueOf(size), unitIn, unitOut).longValueExact();
+        BigInteger convert= convertRoundUp(BigInteger.valueOf(size), unitIn, unitOut);
+        return BigIntegerUtils.longValueExact(convert);
     }
 
     public static BigInteger convert(BigInteger size, SizeUnit unitIn, SizeUnit unitOut)
