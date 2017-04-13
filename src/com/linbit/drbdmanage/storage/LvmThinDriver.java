@@ -1,10 +1,6 @@
 package com.linbit.drbdmanage.storage;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -13,19 +9,9 @@ import java.util.Set;
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.InvalidNameException;
-import com.linbit.NegativeTimeException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbd.md.MaxSizeException;
-import com.linbit.drbd.md.MetaData;
-import com.linbit.drbd.md.MinSizeException;
-import com.linbit.drbdmanage.CoreServices;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.fsevent.FileSystemWatch.Event;
-import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
-import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
-import com.linbit.fsevent.FsWatchTimeoutException;
 
 /**
  * Logical Volume Manager - Storage driver for drbdmanageNG
@@ -33,33 +19,11 @@ import com.linbit.fsevent.FsWatchTimeoutException;
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public class LvmThinDriver implements StorageDriver
+public class LvmThinDriver extends LvmDriver
 {
-    public static final String LVM_ALIGN_TOLERANCE_DEFAULT = "2";
-    public static final String LVM_VOLUME_GROUP_DEFAULT = "drbdpool";
-    public static final String LVM_CREATE_DEFAULT = "lvcreate";
-    public static final String LVM_REMOVE_DEFAULT = "lvremove";
-    public static final String LVM_CHANGE_DEFAULT = "lvchange";
-    public static final String LVM_LVS_DEFAULT = "lvs";
-    public static final String LVM_VGS_DEFAULT = "vgs";
-    public static final String LVM_FILEEVENT_TIMEOUT_DEFAULT = "15000";
+    public static final String LVM_THIN_POOL_DEFAULT = "drbdthinpool";
 
-    public static final byte[] VALID_CHARS = { '_' };
-    public static final byte[] VALID_INNER_CHARS = { '-' };
-
-    private String lvmCreateCommand = LVM_CREATE_DEFAULT;
-    private String lvmRemoveCommand = LVM_REMOVE_DEFAULT;
-    private String lvmChangeCommand = LVM_CHANGE_DEFAULT;
-    private String lvmLvsCommand = LVM_LVS_DEFAULT;
-    private String lvmVgsCommand = LVM_VGS_DEFAULT;
-
-    private int sizeAlignmentToleranceFactor = Integer.parseInt(LVM_ALIGN_TOLERANCE_DEFAULT);
-
-    private String volumeGroup = LVM_VOLUME_GROUP_DEFAULT;
-
-    private ExtCmd extCommand;
-    private FileSystemWatch fileSystemWatch;
-    private long fileEventTimeout = Long.parseLong(LVM_FILEEVENT_TIMEOUT_DEFAULT);
+    private String thinPoolName = LVM_THIN_POOL_DEFAULT;
 
     public LvmThinDriver()
     {
@@ -68,12 +32,6 @@ public class LvmThinDriver implements StorageDriver
     LvmThinDriver(final ExtCmd ec) throws StorageException
     {
         this.extCommand = ec;
-    }
-
-    public void initialize(final CoreServices coreSvc) throws StorageException
-    {
-        extCommand = new ExtCmd(coreSvc.getTimer());
-        fileSystemWatch = coreSvc.getFsWatch();
     }
 
     @Override
@@ -127,143 +85,6 @@ public class LvmThinDriver implements StorageDriver
     }
 
     @Override
-    public String createVolume(final String identifier, final long size)
-        throws StorageException, MaxSizeException, MinSizeException
-    {
-        MetaData.checkMinDrbdSizeNet(size);
-        MetaData.checkMaxDrbdSize(size);
-
-        String lvPath = null;
-
-        try
-        {
-            final String[] command = new String[]
-            {
-                lvmCreateCommand,
-                "--size", size + "k",
-                "-n", identifier,
-                volumeGroup
-            };
-
-            final OutputData output = extCommand.exec(command);
-
-            checkExitCode(output, command);
-
-            FileEntryGroupBuilder groupBuilder = new FileSystemWatch.FileEntryGroupBuilder();
-            groupBuilder.newEntry("/dev/"+volumeGroup+"/"+identifier, Event.CREATE);
-            FileEntryGroup entryGroup = groupBuilder.create(fileSystemWatch, null);
-            entryGroup.waitGroup(fileEventTimeout);
-
-            final LvsInfo info = getLvsInfoByIdentifier(identifier);
-            lvPath = info.path;
-        }
-        catch (ChildProcessTimeoutException | IOException | FsWatchTimeoutException |
-            NegativeTimeException | ValueOutOfRangeException | InterruptedException exc)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format("Could not create volume [%s] with size %d (kiB)",
-                    identifier,
-                    size
-                ),
-                exc
-            );
-        }
-
-        return lvPath;
-    }
-
-    @Override
-    public void deleteVolume(final String identifier) throws StorageException
-    {
-        try
-        {
-            final String[] command = new String[]
-            {
-                lvmRemoveCommand,
-                "-f", // skip the "are you sure?" thing...
-                volumeGroup + File.separator + identifier
-            };
-
-            final OutputData output = extCommand.exec(command);
-
-            checkExitCode(output, command);
-
-            FileEntryGroupBuilder groupBuilder = new FileSystemWatch.FileEntryGroupBuilder();
-            groupBuilder.newEntry("/dev/"+volumeGroup+"/"+identifier, Event.DELETE);
-            FileEntryGroup entryGroup = groupBuilder.create(fileSystemWatch, null);
-            entryGroup.waitGroup(fileEventTimeout);
-        }
-        catch (ChildProcessTimeoutException | IOException | FsWatchTimeoutException | NegativeTimeException | ValueOutOfRangeException | InterruptedException exc)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format("Could not remove volume [%s]", identifier), exc
-            );
-        }
-    }
-
-    @Override
-    public void checkVolume(final String identifier, final long size)
-        throws StorageException
-    {
-        try
-        {
-            MetaData.checkMaxDrbdSize(size);
-        }
-        catch (MaxSizeException exc)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format("Range to check [%d] is invalid", size), exc
-            );
-        }
-
-        final LvsInfo info = getLvsInfoByIdentifier(identifier);
-
-        if (info.size < size)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format(
-                    "Volume [%s] has less [%d] than specified [%d] size",
-                    identifier, info.size, size
-                )
-            );
-        }
-
-        final long extentSize = getExtentSize();
-        final long floorSize = (size / extentSize) * extentSize;
-
-        final long toleratedSize = floorSize + extentSize * sizeAlignmentToleranceFactor;
-        if (info.size > toleratedSize)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format("Volume [%s] is larger [%d] than tolerated [%d]",
-                    identifier,
-                    info.size,
-                    toleratedSize
-                )
-            );
-        }
-    }
-
-    @Override
-    public String getVolumePath(final String identifier) throws StorageException
-    {
-        final LvsInfo info = getLvsInfoByIdentifier(identifier);
-        return info.path;
-    }
-
-    @Override
-    public long getSize(final String identifier) throws StorageException
-    {
-        final LvsInfo info = getLvsInfoByIdentifier(identifier);
-        return info.size;
-    }
-
-    @Override
     public Map<String, String> getTraits() throws StorageException
     {
         long extentSize = getExtentSize();
@@ -277,46 +98,6 @@ public class LvmThinDriver implements StorageDriver
         return traits;
     }
 
-    /**
-     * performs a <code>vgs</code> command and returns the extent size of the
-     * current volume group.
-     *
-     * @return
-     * @throws StorageException
-     */
-    private long getExtentSize() throws StorageException
-    {
-        long extentSize = 0;
-        try
-        {
-            final String[] command = new String[]
-            {
-                lvmVgsCommand,
-                volumeGroup,
-                "-o", "vg_extent_size",
-                "--units", "k",
-                "--noheadings"
-            };
-
-            final OutputData output = extCommand.exec(command);
-
-            checkExitCode(output, command);
-
-            String rawOut = new String(output.stdoutData);
-            // cut everything after the decimal dot
-            rawOut = rawOut.substring(0, rawOut.indexOf("."));
-            extentSize = Long.parseLong(rawOut);
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format("Could not call [%s]", lvmVgsCommand), exc
-            );
-        }
-        return extentSize;
-    }
-
     @Override
     public void setConfiguration(final Map<String, String> config) throws StorageException
     {
@@ -327,7 +108,8 @@ public class LvmThinDriver implements StorageDriver
         final String configLvmChangeCommand = checkedCommandAndGet(config, LvmConstants.CONFIG_LVM_CHANGE_COMMAND_KEY, lvmChangeCommand);
         final String configLvmLvsCommand = checkedCommandAndGet(config, LvmConstants.CONFIG_LVM_LVS_COMMAND_KEY, lvmLvsCommand);
         final String configLvmVgsCommand = checkedCommandAndGet(config, LvmConstants.CONFIG_LVM_VGS_COMMAND_KEY, lvmVgsCommand);
-        final String configvolumeGroup = checkVolumeGroupEntry(config, volumeGroup);
+        final String configVolumeGroup = checkVolumeGroupEntry(config, volumeGroup);
+        final String configThinPool = checkThinPoolEntry(config, thinPoolName);
         final int configToleranceFactor = checkedGetAsInt(config, LvmConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY,sizeAlignmentToleranceFactor);
         try
         {
@@ -354,31 +136,24 @@ public class LvmThinDriver implements StorageDriver
         lvmLvsCommand = configLvmLvsCommand;
         lvmVgsCommand = configLvmVgsCommand;
 
-        volumeGroup = configvolumeGroup;
+        volumeGroup = configVolumeGroup;
+        thinPoolName = configThinPool;
         sizeAlignmentToleranceFactor = configToleranceFactor;
     }
 
-    /**
-     * Checks if the given map contains the key for volume group
-     * ({@link LvmConstants#CONFIG_VOLUME_GROUP_KEY}) and
-     * verifies if the volume group exists (with <code>vgs</code> command) and
-     * performs a {@link Checks#nameCheck}.
-     *
-     * @param config
-     * @throws StorageException
-     */
-    private String checkVolumeGroupEntry(final Map<String, String> config, final String defaultReturn) throws StorageException
+
+    private String checkThinPoolEntry(Map<String, String> config, String defaultReturn) throws StorageException
     {
-        final String value = config.get(LvmConstants.CONFIG_VOLUME_GROUP_KEY);
+        final String value = config.get(LvmConstants.CONFIG_THIN_POOL_KEY);
         final String ret;
         if (value != null)
         {
-            final String volumeGroup = value.trim();
+            final String thinPoolName = value.trim();
 
             try
             {
                 Checks.nameCheck(
-                    volumeGroup,
+                    thinPoolName,
                     1,
                     Integer.MAX_VALUE,
                     VALID_CHARS,
@@ -389,7 +164,7 @@ public class LvmThinDriver implements StorageDriver
             {
                 // TODO: Detailed error reporting
                 throw new StorageException(
-                    String.format("Invalid volumeName [%s]", volumeGroup),
+                    String.format("Invalid thin pool name [%s]", thinPoolName),
                     ine
                 );
             }
@@ -408,7 +183,7 @@ public class LvmThinDriver implements StorageDriver
                 boolean found = false;
                 for (String line : lines)
                 {
-                    if (line.trim().equals(volumeGroup))
+                    if (line.trim().equals(thinPoolName))
                     {
                         found = true;
                         break;
@@ -418,7 +193,7 @@ public class LvmThinDriver implements StorageDriver
                 {
                     // TODO: Detailed error reporting
                     throw new StorageException(
-                        String.format("Volume group [%s] not found.", volumeGroup)
+                        String.format("Volume group [%s] not found.", thinPoolName)
                     );
                 }
                 ret = value;
@@ -439,115 +214,6 @@ public class LvmThinDriver implements StorageDriver
         return ret;
     }
 
-    /**
-     * Performs a {@link Map#get} and throws a StorageException if the value is
-     * null.
-     *
-     * @param map
-     * @param key
-     * @param exFormat
-     * @return
-     * @throws StorageException
-     */
-    private String checkedCommandAndGet(
-        final Map<String, String> map,
-        final String key,
-        final String defaultValue
-    ) throws StorageException
-    {
-        String command = map.get(key);
-        if (command == null)
-        {
-            command = defaultValue;
-        }
-        else
-        {
-            Path[] pathFolders = getPathFolders();
-
-            boolean commandFound = false;
-            for (Path folder : pathFolders)
-            {
-                Path commandPath = folder.resolve(command);
-                if (Files.exists(commandPath) && Files.isExecutable(commandPath))
-                {
-                    commandFound = true;
-                    break;
-                }
-            }
-            if (!commandFound)
-            {
-                // TODO: Detailed error reporting
-                throw new StorageException(String.format("Executable for [%s] not found: %s", key, command));
-            }
-        }
-        return command;
-    }
-
-
-    private Path[] getPathFolders() throws StorageException
-    {
-        String path = System.getenv("PATH");
-        if (path == null)
-        {
-            path = System.getenv("path");
-        }
-        if (path == null)
-        {
-            path = System.getenv("Path");
-        }
-        if (path == null)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException("Could not load PATH environment (needed to validate configured commands)");
-        }
-
-        String[] split = path.split(File.pathSeparator);
-
-        Path[] folders = new Path[split.length];
-        for (int i = 0; i < split.length; i++)
-        {
-            folders[i] = Paths.get(split[i]);
-        }
-        return folders;
-    }
-
-    /**
-     *
-     * Checks if the given key exists and is parsable as int.
-     *
-     * @param map
-     * @param key
-     * @param defaultValue
-     * @return
-     * @throws StorageException
-     */
-    private int checkedGetAsInt(final Map<String, String> map, final String key, int defaultValue) throws StorageException
-    {
-        String value = map.get(key);
-        int iValue;
-        if (value == null)
-        {
-            iValue = defaultValue;
-        }
-        else
-        {
-            try
-            {
-                iValue = Integer.parseInt(value);
-            }
-            catch (NumberFormatException numberExc)
-            {
-                // TODO: Detailed error reporting
-                throw new StorageException(
-                    String.format("[%s] not a number", value),
-                    numberExc
-                );
-            }
-        }
-        return iValue;
-    }
-
-
     @Override
     public Set<String> getConfigurationKeys()
     {
@@ -560,94 +226,21 @@ public class LvmThinDriver implements StorageDriver
         keySet.add(LvmConstants.CONFIG_LVM_VGS_COMMAND_KEY);
         keySet.add(LvmConstants.CONFIG_VOLUME_GROUP_KEY);
         keySet.add(LvmConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY);
+        keySet.add(LvmConstants.CONFIG_THIN_POOL_KEY);
 
         return keySet;
     }
 
-    /**
-     * Runs an <code>lvs</code> command, fetches the results and returns
-     * the {@link LvsInfo} of the specified identifier.
-     *
-     * If the identifier could not be found in the list, a
-     * {@link StorageException}
-     * is thrown
-     *
-     * @param identifier
-     * @return non-null {@link LvsInfo} of the requested identifier
-     * @throws StorageException
-     */
-    private LvsInfo getLvsInfoByIdentifier(String identifier)
-        throws StorageException
+    @Override
+    protected String[] getLvcreateCommand(String identifier, long size)
     {
-        LvsInfo info = null;
-
-        HashMap<String, LvsInfo> infoMap;
-        try
+        return new String[]
         {
-            infoMap = LvsInfo.getAllInfo(extCommand, lvmLvsCommand, volumeGroup);
-            info = infoMap.get(identifier);
-
-            if (info == null)
-            {
-                // TODO: Detailed error reporting
-                throw new StorageException(
-                    String.format("Volume [%s] not found", identifier)
-                );
-            }
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format("Could not run [%s] for volume group [%s]",
-                    lvmLvsCommand,
-                    volumeGroup
-                ),
-                exc
-            );
-        }
-        return info;
-    }
-
-    /**
-     * Simple check that throws a {@link StorageException} if the exit code is
-     * not 0.
-     *
-     * @param output
-     *            The {@link OutputData} which contains the exit code
-     * @param command
-     *            The <code>String[]</code> that was called (used in the
-     *            exception message)
-     * @throws StorageException
-     */
-    private void checkExitCode(OutputData output, String[] command)
-        throws StorageException
-    {
-        if (output.exitCode != 0)
-        {
-            String gluedCommand = glue(command, " ");
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format("%s returned with exitcode %d", gluedCommand, output.exitCode)
-            );
-        }
-    }
-
-    /**
-     * Glues the given <code>String[]</code> with a specified delimiter
-     *
-     * @param array
-     * @param delimiter
-     * @return
-     */
-    private String glue(String[] array, String delimiter)
-    {
-        StringBuilder sb = new StringBuilder();
-        for (String element : array)
-        {
-            sb.append(element).append(delimiter);
-        }
-        sb.setLength(sb.length() - delimiter.length());
-        return sb.toString();
+            lvmCreateCommand,
+            "--virtualsize", size + "k",
+            "--thinpool", thinPoolName,
+            "-n", identifier,
+            volumeGroup
+        };
     }
 }

@@ -10,6 +10,7 @@ import java.util.Map;
 public class LvmConstants
 {
     public static final String CONFIG_VOLUME_GROUP_KEY = "volumeGroup";
+    public static final String CONFIG_THIN_POOL_KEY = "thinPool";
 
     public static final String CONFIG_LVM_CREATE_COMMAND_KEY = "lvmCreate";
     public static final String CONFIG_LVM_REMOVE_COMMAND_KEY = "lvmRemove";
@@ -21,6 +22,7 @@ public class LvmConstants
 
 
     public static final Map<String, String> KEY_DESCRIPTION = new HashMap<>();
+
 
     static
     {
