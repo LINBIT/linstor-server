@@ -29,10 +29,7 @@ public class AutoIndent
                     output.write(spacer, 0, spacer.length);
                     output.write(data, offset, index - offset);
                 }
-                else
-                {
-                    output.println();
-                }
+                output.println();
                 offset = index + 1;
             }
         }
