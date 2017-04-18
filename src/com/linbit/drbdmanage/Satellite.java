@@ -5,10 +5,9 @@ package com.linbit.drbdmanage;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class Satellite
+public class Satellite extends DrbdManage
 {
-    public static final String PROGRAM = "drbdmanageNG";
-    public static final String MODULE = "Satellite";
-    public static final String VERSION = "experimental 2017-02-23_001";
-
+    public static interface DebugControl extends CommonDebugControl
+    {
+    }
 }

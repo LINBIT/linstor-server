@@ -24,7 +24,7 @@ import java.util.TreeMap;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class Controller implements Runnable, CoreServices
+public class Controller extends DrbdManage implements Runnable, CoreServices
 {
     public static final String PROGRAM = "drbdmanageNG";
     public static final String MODULE = "Controller";
@@ -725,12 +725,8 @@ public class Controller implements Runnable, CoreServices
         }
     }
 
-    public interface DebugControl
+    public interface DebugControl extends CommonDebugControl
     {
-        Map<ServiceName, SystemService> getSystemServiceMap();
-        Peer getPeer(String peerId);
-        Map<String, Peer> getAllPeers();
-        void shutdown(AccessContext accCtx);
     }
 
     private static class DebugControlImpl implements DebugControl

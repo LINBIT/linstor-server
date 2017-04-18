@@ -1,22 +1,21 @@
 package com.linbit.drbdmanage.debug;
 
-import com.linbit.drbdmanage.Controller;
-import com.linbit.drbdmanage.Controller.DebugControl;
 import com.linbit.drbdmanage.CoreServices;
-
-import java.util.*;
+import com.linbit.drbdmanage.Satellite;
+import com.linbit.drbdmanage.Satellite.DebugControl;
+import java.util.Map;
 
 /**
  * Base class for debug console commands
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public abstract class BaseControllerDebugCmd extends BaseDebugCmd implements ControllerDebugCmd
+public abstract class BaseSatelliteDebugCmd extends BaseDebugCmd implements SatelliteDebugCmd
 {
-    Controller      controller;
-    DebugControl    debugCtl;
+    Satellite satellite;
+    DebugControl debugCtl;
 
-    public BaseControllerDebugCmd(
+    public BaseSatelliteDebugCmd(
         String[]            cmdNamesRef,
         String              cmdInfoRef,
         String              cmdDescrRef,
@@ -26,20 +25,20 @@ public abstract class BaseControllerDebugCmd extends BaseDebugCmd implements Con
     )
     {
         super(cmdNamesRef, cmdInfoRef, cmdDescrRef, paramDescrRef, undeclDescrRef, acceptsUndeclaredFlag);
-        controller  = null;
+        satellite   = null;
         debugCtl    = null;
     }
 
     @Override
     public void initialize(
-        Controller      controllerRef,
+        Satellite       controllerRef,
         CoreServices    coreSvcsRef,
         DebugControl    debugCtlRef,
         DebugConsole    debugConRef
     )
     {
         super.initialize(controllerRef, coreSvcsRef, debugCtlRef, debugConRef);
-        controller  = controllerRef;
+        satellite   = controllerRef;
         debugCtl    = debugCtlRef;
     }
 }
