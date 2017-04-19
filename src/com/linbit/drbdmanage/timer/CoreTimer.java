@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.timer;
 
 import com.linbit.NegativeTimeException;
+import com.linbit.SystemService;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
@@ -10,7 +11,7 @@ import com.linbit.timer.Timer;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface CoreTimer extends Timer<String, Action<String>>
+public interface CoreTimer extends Timer<String, Action<String>>, SystemService
 {
     @Override
     public void addDelayedAction(Long delay, Action<String> actionObj)
