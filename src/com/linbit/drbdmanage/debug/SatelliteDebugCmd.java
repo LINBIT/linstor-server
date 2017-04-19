@@ -9,7 +9,7 @@ import com.linbit.drbdmanage.Satellite.DebugControl;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface SatelliteDebugCmd
+public interface SatelliteDebugCmd extends CommonDebugCmd
 {
     void initialize(
         Satellite       satelliteRef,
