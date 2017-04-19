@@ -1,5 +1,8 @@
 package com.linbit.drbdmanage.debug;
 
+import com.linbit.drbdmanage.CommonDebugControl;
+import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.DrbdManage;
 import com.linbit.drbdmanage.security.AccessContext;
 
 import java.io.PrintStream;
@@ -24,6 +27,13 @@ public interface CommonDebugCmd
     String getUndeclaredParametersDescription();
 
     boolean acceptsUndeclaredParameters();
+
+    void commonInitialize(
+        DrbdManage          dmRef,
+        CoreServices        coreSvcsRef,
+        CommonDebugControl  debugCtlRef,
+        DebugConsole        debugConRef
+    );
 
     void execute(
         PrintStream debugOut,

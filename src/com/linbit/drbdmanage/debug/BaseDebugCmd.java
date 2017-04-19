@@ -66,7 +66,8 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         coreSvcs    = null;
     }
 
-    public void initialize(
+    @Override
+    public void commonInitialize(
         DrbdManage          dmRef,
         CoreServices        coreSvcsRef,
         CommonDebugControl  cmnDebugCtlRef,

@@ -37,7 +37,7 @@ public abstract class BaseSatelliteDebugCmd extends BaseDebugCmd implements Sate
         DebugConsole    debugConRef
     )
     {
-        super.initialize(controllerRef, coreSvcsRef, debugCtlRef, debugConRef);
+        commonInitialize(controllerRef, coreSvcsRef, debugCtlRef, debugConRef);
         satellite   = controllerRef;
         debugCtl    = debugCtlRef;
     }

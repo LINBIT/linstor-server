@@ -38,7 +38,7 @@ public abstract class BaseControllerDebugCmd extends BaseDebugCmd implements Con
         DebugConsole    debugConRef
     )
     {
-        super.initialize(controllerRef, coreSvcsRef, debugCtlRef, debugConRef);
+        commonInitialize(controllerRef, coreSvcsRef, debugCtlRef, debugConRef);
         controller  = controllerRef;
         debugCtl    = debugCtlRef;
     }
