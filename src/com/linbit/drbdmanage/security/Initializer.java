@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.Controller;
+import com.linbit.drbdmanage.Satellite;
 import java.io.IOException;
 
 /**
@@ -60,5 +61,11 @@ public final class Initializer
         throws IOException
     {
         return new Controller(SYSTEM_CTX, PUBLIC_CTX, args);
+    }
+
+    public final Satellite initSatellite(String[] args)
+        throws IOException
+    {
+        return new Satellite(SYSTEM_CTX, PUBLIC_CTX, args);
     }
 }
