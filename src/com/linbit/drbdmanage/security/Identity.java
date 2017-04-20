@@ -14,17 +14,19 @@ public final class Identity
     public final IdentityName name;
 
     static final Identity SYSTEM_ID;
+    static final Identity PUBLIC_ID;
 
     static
     {
         try
         {
             SYSTEM_ID = new Identity(new IdentityName("SYSTEM"));
+            PUBLIC_ID = new Identity(new IdentityName("PUBLIC"));
         }
         catch (InvalidNameException nameExc)
         {
             throw new ImplementationError(
-                "The name constant of the system identity is invalid",
+                "The name constant of a builtin identity is invalid",
                 nameExc
             );
         }

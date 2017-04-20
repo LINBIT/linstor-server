@@ -20,17 +20,19 @@ public final class SecurityType
     private final Map<SecTypeName, AccessType> rules;
 
     static final SecurityType SYSTEM_TYPE;
+    static final SecurityType PUBLIC_TYPE;
 
     static
     {
         try
         {
             SYSTEM_TYPE = new SecurityType(new SecTypeName("SYSTEM"));
+            PUBLIC_TYPE = new SecurityType(new SecTypeName("PUBLIC"));
         }
         catch (InvalidNameException nameExc)
         {
             throw new ImplementationError(
-                "The name constant of the system security type/domain is invalid",
+                "The name constant of a builtin security type/domain is invalid",
                 nameExc
             );
         }

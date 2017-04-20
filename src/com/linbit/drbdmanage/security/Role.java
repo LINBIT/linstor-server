@@ -17,17 +17,19 @@ public final class Role
     public final PrivilegeSet privileges;
 
     static final Role SYSTEM_ROLE;
+    static final Role PUBLIC_ROLE;
 
     static
     {
         try
         {
             SYSTEM_ROLE = new Role(new RoleName("SYSTEM"));
+            PUBLIC_ROLE = new Role(new RoleName("PUBLIC"));
         }
         catch (InvalidNameException nameExc)
         {
             throw new ImplementationError(
-                "The name constant of the system role is invalid",
+                "The name constant of a builtin role is invalid",
                 nameExc
             );
         }
