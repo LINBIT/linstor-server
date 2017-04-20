@@ -117,7 +117,7 @@ public final class AccessControlList
 
     private boolean hasAccessPrivilege(AccessContext context, AccessType requested)
     {
-        PrivilegeSet privileges = context.subjectRole.privileges;
+        PrivilegeSet privileges = context.privEffective;
 
         boolean allowFlag = false;
         // Higher-level access privileges include the lower-level access privileges,
