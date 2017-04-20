@@ -90,19 +90,32 @@ public abstract class DrbdManage
                     sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
                 )
             );
+            boolean successFlag = false;
             try
             {
                 sysSvc.start();
+                successFlag = true;
             }
             catch (SystemServiceStartException startExc)
             {
-                getErrorReporter().reportError(startExc);
-                logFailure(
-                    String.format(
-                        "Start of the service instance '%s' of type %s failed",
-                        sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
-                    )
-                );
+                errLog.reportError(startExc);
+
+            }
+            catch (Exception unhandledExc)
+            {
+                errLog.reportError(unhandledExc);
+            }
+            finally
+            {
+                if (!successFlag)
+                {
+                    logFailure(
+                        String.format(
+                            "Start of the service instance '%s' of type %s failed",
+                            sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
+                        )
+                    );
+                }
             }
         }
     }
@@ -118,21 +131,34 @@ public abstract class DrbdManage
                     sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
                 )
             );
-            sysSvc.shutdown();
-
-            logInfo(
-                String.format(
-                    "Waiting for service instance '%s' to complete shutdown",
-                    sysSvc.getInstanceName().displayValue
-                )
-            );
+            boolean successFlag = true;
             try
             {
+                sysSvc.shutdown();
+
+                logInfo(
+                    String.format(
+                        "Waiting for service instance '%s' to complete shutdown",
+                        sysSvc.getInstanceName().displayValue
+                    )
+                );
                 sysSvc.awaitShutdown(SHUTDOWN_THR_JOIN_WAIT);
             }
-            catch (InterruptedException intrExc)
+            catch (Exception unhandledExc)
             {
-                errorLog.reportError(intrExc);
+                errorLog.reportError(unhandledExc);
+            }
+            finally
+            {
+                if (!successFlag)
+                {
+                    logFailure(
+                        String.format(
+                            "Shutdown of the service instance '%s' of type %s failed",
+                            sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
+                        )
+                    );
+                }
             }
         }
     }
