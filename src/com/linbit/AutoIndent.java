@@ -10,14 +10,30 @@ import java.util.Arrays;
  */
 public class AutoIndent
 {
+    private static final int CACHED_SPACER_SIZE = 40;
+
+    private static final byte[] CACHED_SPACER = new byte[CACHED_SPACER_SIZE];
+    static
+    {
+        Arrays.fill(CACHED_SPACER, (byte) ' ');
+    }
+
     public static void printWithIndent(
         PrintStream output,
         int indent,
         String text
     )
     {
-        byte[] spacer = new byte[indent];
-        Arrays.fill(spacer, (byte) ' ');
+        byte[] spacer;
+        if (indent <= CACHED_SPACER_SIZE)
+        {
+            spacer = CACHED_SPACER;
+        }
+        else
+        {
+            spacer = new byte[indent];
+            Arrays.fill(spacer, (byte) ' ');
+        }
         byte[] data = text.getBytes();
         int offset = 0;
         for (int index = 0; index < data.length; ++index)
@@ -26,7 +42,7 @@ public class AutoIndent
             {
                 if (index > offset)
                 {
-                    output.write(spacer, 0, spacer.length);
+                    output.write(spacer, 0, indent);
                     output.write(data, offset, index - offset);
                 }
                 output.println();
@@ -35,7 +51,7 @@ public class AutoIndent
         }
         if (offset < data.length)
         {
-            output.write(spacer, 0, spacer.length);
+            output.write(spacer, 0, indent);
             output.write(data, offset, data.length - offset);
             output.println();
         }
