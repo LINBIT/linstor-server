@@ -1,9 +1,12 @@
 package com.linbit.drbdmanage.security;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.drbdmanage.Controller;
+import com.linbit.drbdmanage.ControllerDatabase;
 import com.linbit.drbdmanage.Satellite;
 import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  * Initializes Controller and Satellite instances with the system's security context
@@ -67,5 +70,15 @@ public final class Initializer
         throws IOException
     {
         return new Satellite(SYSTEM_CTX, PUBLIC_CTX, args);
+    }
+
+    public static final void load(AccessContext accCtx, ControllerDatabase ctrlDb, DbAccessor driver)
+        throws SQLException, AccessDeniedException, InvalidNameException
+    {
+        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+
+        Identity.load(ctrlDb, driver);
+        SecurityType.load(ctrlDb, driver);
+        Role.load(ctrlDb, driver);
     }
 }

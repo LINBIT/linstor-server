@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
 import com.linbit.drbdmanage.controllerapi.CreateDebugConsole;
 import com.linbit.drbdmanage.controllerapi.DebugCommand;
@@ -16,6 +17,9 @@ import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
+import com.linbit.drbdmanage.dbcp.DerbyDatabaseService;
+import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
@@ -24,19 +28,26 @@ import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
+import com.linbit.drbdmanage.security.DbAccessor;
+import com.linbit.drbdmanage.security.DbDerbyPersistence;
 import com.linbit.drbdmanage.security.Identity;
 import com.linbit.drbdmanage.security.IdentityName;
 import com.linbit.drbdmanage.security.Initializer;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.Privilege;
 import com.linbit.drbdmanage.timer.CoreTimer;
+import java.io.FileInputStream;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
+import java.sql.SQLException;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 
 /**
  * drbdmanageNG controller prototype
@@ -47,6 +58,12 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 {
     // System module information
     public static final String MODULE = "Controller";
+
+    // Database configuration file path
+    public static final String DB_CONF_FILE = "database.cfg";
+
+    // Database connection URL configuration key
+    public static final String DB_CONN_URL = "connection-url";
 
     // System security context
     private AccessContext sysCtx;
@@ -69,11 +86,18 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // Map of controllable system services
     private final Map<ServiceName, SystemService> systemServicesMap;
 
+    // Database connection pool service
+    private final DerbyDatabaseService derbyDatabaseSvc;
+
     // Map of connected peers
     private final Map<String, Peer> peerMap;
 
     // Map of network communications connectors
     private final Map<ServiceName, TcpConnector> netComConnectors;
+
+    // Database drivers
+    private DbAccessor securityDbDriver;
+    private DatabaseDriver persistenceDbDriver;
 
     // Shutdown controls
     private boolean shutdownFinished;
@@ -101,6 +125,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             CoreTimer timer = super.getTimer();
             systemServicesMap.put(timer.getInstanceName(), timer);
         }
+        derbyDatabaseSvc = new DerbyDatabaseService();
+        securityDbDriver = new DbDerbyPersistence();
+        persistenceDbDriver = new DerbyDriver();
+        systemServicesMap.put(derbyDatabaseSvc.getInstanceName(), derbyDatabaseSvc);
 
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
@@ -127,6 +155,51 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
                 // Initialize the error & exception reporting facility
                 setErrorLog(initCtx, errorLogRef);
+
+                // Set CONTROL access for the SYSTEM role on shutdown
+                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+
+                // Initialize the database connections
+                logInit("Initializing the database connection pool");
+                Properties dbProps = new Properties();
+                try (InputStream dbPropsIn = new FileInputStream(DB_CONF_FILE))
+                {
+                    // Load database configuration
+                    dbProps.loadFromXML(dbPropsIn);
+                }
+                catch (IOException ioExc)
+                {
+                    errorLogRef.reportError(ioExc);
+                }
+                try
+                {
+                    String connectionUrl = dbProps.getProperty(
+                        DB_CONN_URL,
+                        persistenceDbDriver.getDefaultConnectionUrl()
+                    );
+
+                    // Connect the database connection pool to the database
+                    derbyDatabaseSvc.initializeDataSource(
+                        connectionUrl,
+                        dbProps
+                    );
+                }
+                catch (SQLException sqlExc)
+                {
+                    errorLogRef.reportError(sqlExc);
+                }
+
+                // Load security identities, roles, domains/types, etc.
+                logInit("Loading security objects");
+                try
+                {
+
+                    Initializer.load(initCtx, derbyDatabaseSvc, securityDbDriver);
+                }
+                catch (SQLException | InvalidNameException | AccessDeniedException exc)
+                {
+                    errorLogRef.reportError(exc);
+                }
 
                 // Initialize the worker thread pool
                 logInit("Starting worker thread pool");
@@ -193,6 +266,8 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             DebugConsole dbgConsole = createDebugConsole(privCtx, debugCtx, null);
             dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
+
+            logInfo("Debug console exited");
         }
         catch (Throwable error)
         {
@@ -420,6 +495,14 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             );
             netComConnectors.put(netComSvc.getInstanceName(), netComSvc);
             systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
+            try
+            {
+                netComSvc.start();
+            }
+            catch (SystemServiceStartException strExc)
+            {
+                getErrorReporter().reportError(strExc);
+            }
         }
         catch (IOException exc)
         {

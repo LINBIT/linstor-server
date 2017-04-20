@@ -123,6 +123,9 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 // Initialize the error & exception reporting facility
                 setErrorLog(initCtx, errorLogRef);
 
+                // Set CONTROL access for the SYSTEM role on shutdown
+                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+
                 // Initialize the worker thread pool
                 logInit("Starting worker thread pool");
                 {
