@@ -110,6 +110,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     }
 
     public void initialize(ErrorReporter errorLogRef)
+        throws InitializationException
     {
         try
         {
@@ -360,6 +361,11 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             Satellite instance = sysInit.initSatellite(args);
             instance.initialize(errorLog);
             instance.run();
+        }
+        catch (InitializationException initExc)
+        {
+            errorLog.reportError(initExc);
+            System.err.println("Initialization of the Satellite module failed.");
         }
         catch (ImplementationError implError)
         {

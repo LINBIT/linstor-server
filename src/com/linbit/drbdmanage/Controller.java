@@ -28,6 +28,7 @@ import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
+import com.linbit.drbdmanage.security.Authentication;
 import com.linbit.drbdmanage.security.DbAccessor;
 import com.linbit.drbdmanage.security.DbDerbyPersistence;
 import com.linbit.drbdmanage.security.Identity;
@@ -41,6 +42,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
@@ -78,6 +80,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     //
     private WorkerPool workerThrPool = null;
     private CommonMessageProcessor msgProc = null;
+
+    // Authentication subsystem
+    private Authentication auth = null;
 
     // ============================================================
     // Core system services
@@ -141,6 +146,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     }
 
     public void initialize(ErrorReporter errorLogRef)
+        throws InitializationException
     {
         try
         {
@@ -192,12 +198,33 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 logInit("Loading security objects");
                 try
                 {
-
                     Initializer.load(initCtx, derbyDatabaseSvc, securityDbDriver);
                 }
                 catch (SQLException | InvalidNameException | AccessDeniedException exc)
                 {
                     errorLogRef.reportError(exc);
+                }
+
+                logInit("Initializing authentication subsystem");
+                try
+                {
+                    auth = new Authentication(initCtx, derbyDatabaseSvc, securityDbDriver);
+                }
+                catch (AccessDeniedException accExc)
+                {
+                    throw new ImplementationError(
+                        "The initialization security context does not have the necessary " +
+                        "privileges to create the authentication subsystem",
+                        accExc
+                    );
+                }
+                catch (NoSuchAlgorithmException algoExc)
+                {
+                    throw new InitializationException(
+                        "Initialization of the authentication subsystem failed because the " +
+                        "required hashing algorithm is not supported on this platform",
+                        algoExc
+                    );
                 }
 
                 // Initialize the worker thread pool
@@ -465,6 +492,11 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             Controller instance = sysInit.initController(args);
             instance.initialize(errorLog);
             instance.run();
+        }
+        catch (InitializationException initExc)
+        {
+            errorLog.reportError(initExc);
+            System.err.println("Initialization of the Controller module failed.");
         }
         catch (ImplementationError implError)
         {

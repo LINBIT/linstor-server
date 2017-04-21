@@ -15,7 +15,7 @@ import java.util.Arrays;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-class Authentication
+public class Authentication
 {
     public final static String HASH_ALGORITHM = "SHA-512";
     public final static int HASH_SIZE = 64;
@@ -26,7 +26,7 @@ class Authentication
     private ControllerDatabase ctrlDb;
     private DbAccessor dbDriver;
 
-    Authentication(AccessContext accCtx, ControllerDatabase ctrlDbRef, DbAccessor dbDriverRef)
+    public Authentication(AccessContext accCtx, ControllerDatabase ctrlDbRef, DbAccessor dbDriverRef)
         throws AccessDeniedException, NoSuchAlgorithmException
     {
         ErrorCheck.ctorNotNull(Authentication.class, AccessContext.class, accCtx);
