@@ -13,12 +13,12 @@ public class SignInException extends Exception
         super(message);
     }
 
-    public SignInException(String message, Exception cause)
+    public SignInException(String message, Throwable cause)
     {
         super(message, cause);
     }
 
-    public SignInException(Exception cause)
+    public SignInException(Throwable cause)
     {
         super(cause);
     }

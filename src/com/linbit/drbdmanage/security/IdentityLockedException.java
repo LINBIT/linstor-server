@@ -13,12 +13,12 @@ public class IdentityLockedException extends SignInException
         super(message);
     }
 
-    public IdentityLockedException(String message, Exception cause)
+    public IdentityLockedException(String message, Throwable cause)
     {
         super(message, cause);
     }
 
-    public IdentityLockedException(Exception cause)
+    public IdentityLockedException(Throwable cause)
     {
         super(cause);
     }

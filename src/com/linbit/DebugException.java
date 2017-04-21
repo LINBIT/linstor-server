@@ -6,7 +6,7 @@ public class DebugException extends Exception
     {
     }
 
-    public DebugException(Exception cause)
+    public DebugException(Throwable cause)
     {
         super(cause);
     }
@@ -16,7 +16,7 @@ public class DebugException extends Exception
         super(message);
     }
 
-    public DebugException(String message, Exception cause)
+    public DebugException(String message, Throwable cause)
     {
         super(message, cause);
     }
