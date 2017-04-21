@@ -48,7 +48,6 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-
 /**
  * drbdmanageNG controller prototype
  *
@@ -565,6 +564,8 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             "CmdDisplayContextInfo",
             "CmdDisplayServices",
             "CmdDisplaySecLevel",
+            "CmdDisplayModuleInfo",
+            "CmdDisplayVersion",
             "CmdStartService",
             "CmdEndService",
             "CmdDisplayConnections",
@@ -671,6 +672,24 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         DebugControlImpl(Controller controllerRef)
         {
             controller = controllerRef;
+        }
+
+        @Override
+        public String getProgramName()
+        {
+            return PROGRAM;
+        }
+
+        @Override
+        public String getModuleType()
+        {
+            return MODULE;
+        }
+
+        @Override
+        public String getVersion()
+        {
+            return VERSION;
         }
 
         @Override

@@ -13,6 +13,9 @@ import java.util.Map;
  */
 public interface CommonDebugControl
 {
+    String getProgramName();
+    String getModuleType();
+    String getVersion();
     Map<ServiceName, SystemService> getSystemServiceMap();
     Peer getPeer(String peerId);
     Map<String, Peer> getAllPeers();

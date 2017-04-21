@@ -395,6 +395,8 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             "CmdDisplayContextInfo",
             "CmdDisplayServices",
             "CmdDisplaySecLevel",
+            "CmdDisplayModuleInfo",
+            "CmdDisplayVersion",
             "CmdStartService",
             "CmdEndService",
             "CmdDisplayConnections",
@@ -501,6 +503,24 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         DebugControlImpl(Satellite satelliteRef)
         {
             satellite = satelliteRef;
+        }
+
+        @Override
+        public String getProgramName()
+        {
+            return PROGRAM;
+        }
+
+        @Override
+        public String getModuleType()
+        {
+            return MODULE;
+        }
+
+        @Override
+        public String getVersion()
+        {
+            return VERSION;
         }
 
         @Override
