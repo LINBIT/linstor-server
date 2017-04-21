@@ -10,6 +10,7 @@ import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
 import com.linbit.drbdmanage.debug.SatelliteDebugCmd;
+import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
@@ -374,6 +375,53 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         }
 
         System.out.println();
+    }
+
+    private class ConnTracker implements ConnectionObserver
+    {
+        private Satellite satellite;
+
+        ConnTracker(Satellite satelliteRef)
+        {
+            satellite = satelliteRef;
+        }
+
+        @Override
+        public void outboundConnectionEstablished(Peer connPeer)
+        {
+            // FIXME: Something should done here for completeness, although the Satellite
+            //        does not normally connect outbound
+            if (connPeer != null)
+            {
+                SatellitePeerCtx peerCtx = (SatellitePeerCtx) connPeer.getAttachment();
+                if (peerCtx == null)
+                {
+                    peerCtx = new SatellitePeerCtx();
+                    connPeer.attach(peerCtx);
+                }
+                peerMap.put(connPeer.getId(), connPeer);
+            }
+        }
+
+        @Override
+        public void inboundConnectionEstablished(Peer connPeer)
+        {
+            if (connPeer != null)
+            {
+                SatellitePeerCtx peerCtx = new SatellitePeerCtx();
+                connPeer.attach(peerCtx);
+                peerMap.put(connPeer.getId(), connPeer);
+            }
+        }
+
+        @Override
+        public void connectionClosed(Peer connPeer)
+        {
+            if (connPeer != null)
+            {
+                peerMap.remove(connPeer.getId());
+            }
+        }
     }
 
     private static class DebugConsoleImpl extends BaseDebugConsole
