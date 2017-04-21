@@ -11,7 +11,7 @@ import java.util.TreeMap;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdDisplayContextInfo extends BaseControllerDebugCmd
+public class CmdDisplayContextInfo extends BaseDebugCmd
 {
     private static final String PRM_DETAIL_NAME = "DETAIL";
     private static final String PRM_DETAIL_DFLT = "DEFAULT";

@@ -9,7 +9,7 @@ import java.util.Map;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdShutdown extends BaseControllerDebugCmd
+public class CmdShutdown extends BaseDebugCmd
 {
     public CmdShutdown()
     {
@@ -35,7 +35,7 @@ public class CmdShutdown extends BaseControllerDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        debugCtl.shutdown(accCtx);
+        cmnDebugCtl.shutdown(accCtx);
         debugCon.exitConsole();
     }
 }

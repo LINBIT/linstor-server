@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdDisplaySecLevel extends BaseControllerDebugCmd
+public class CmdDisplaySecLevel extends BaseDebugCmd
 {
     public CmdDisplaySecLevel()
     {

@@ -13,7 +13,7 @@ import java.util.TreeMap;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdStartService extends BaseControllerDebugCmd
+public class CmdStartService extends BaseDebugCmd
 {
     private static final String PRM_SVC_NAME = "SERVICE";
 
@@ -50,7 +50,7 @@ public class CmdStartService extends BaseControllerDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        Map<ServiceName, SystemService> services = debugCtl.getSystemServiceMap();
+        Map<ServiceName, SystemService> services = cmnDebugCtl.getSystemServiceMap();
         String serviceNamePrm = parameters.get(PRM_SVC_NAME);
         if (serviceNamePrm != null)
         {

@@ -12,7 +12,7 @@ import java.util.Map;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdDisplayServices extends BaseControllerDebugCmd
+public class CmdDisplayServices extends BaseDebugCmd
 {
     public CmdDisplayServices()
     {
@@ -37,7 +37,7 @@ public class CmdDisplayServices extends BaseControllerDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        Map<ServiceName, SystemService> services = debugCtl.getSystemServiceMap();
+        Map<ServiceName, SystemService> services = cmnDebugCtl.getSystemServiceMap();
 
         if (services.size() > 0)
         {

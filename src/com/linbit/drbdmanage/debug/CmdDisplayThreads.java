@@ -10,7 +10,7 @@ import java.util.Map;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdDisplayThreads extends BaseControllerDebugCmd
+public class CmdDisplayThreads extends BaseDebugCmd
 {
     private static final int OVERFLOW_SPACE = 20;
 
