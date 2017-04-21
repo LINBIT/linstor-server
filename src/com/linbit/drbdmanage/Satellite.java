@@ -187,6 +187,8 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             DebugConsole dbgConsole = createDebugConsole(privCtx, debugCtx, null);
             dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
+
+            logInfo("Debug console exited");
         }
         catch (Throwable error)
         {
