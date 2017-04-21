@@ -521,7 +521,17 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         @Override
         public void outboundConnectionEstablished(Peer connPeer)
         {
-            // TODO: Satellite or utility connection connected
+            if (connPeer != null)
+            {
+                ControllerPeerCtx peerCtx = (ControllerPeerCtx) connPeer.getAttachment();
+                if (peerCtx == null)
+                {
+                    peerCtx = new ControllerPeerCtx();
+                    connPeer.attach(peerCtx);
+                }
+                peerMap.put(connPeer.getId(), connPeer);
+            }
+            // TODO: If a satellite has been connected, schedule any necessary actions
         }
 
         @Override
