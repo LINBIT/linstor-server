@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Ends execution of a Controller service
+ * Ends execution of a Controller or Satellite service
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
@@ -35,7 +35,7 @@ public class CmdEndService extends BaseDebugCmd
                 "EndSvc"
             },
             "End service",
-            "Ends execution of a service",
+            "Ends execution of a service instance",
             PARAMETER_DESCRIPTIONS,
             null,
             false

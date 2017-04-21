@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Displays information about the Controller's threads
+ * Displays information about the current security context
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */

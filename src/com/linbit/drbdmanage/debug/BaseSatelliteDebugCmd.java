@@ -31,14 +31,14 @@ public abstract class BaseSatelliteDebugCmd extends BaseDebugCmd implements Sate
 
     @Override
     public void initialize(
-        Satellite       controllerRef,
+        Satellite       satelliteRef,
         CoreServices    coreSvcsRef,
         DebugControl    debugCtlRef,
         DebugConsole    debugConRef
     )
     {
-        commonInitialize(controllerRef, coreSvcsRef, debugCtlRef, debugConRef);
-        satellite   = controllerRef;
+        commonInitialize(satelliteRef, coreSvcsRef, debugCtlRef, debugConRef);
+        satellite   = satelliteRef;
         debugCtl    = debugCtlRef;
     }
 }

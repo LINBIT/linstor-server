@@ -355,7 +355,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         {
             Thread.currentThread().setName("Main");
 
-            // Initialize the Controller module with the SYSTEM security context
+            // Initialize the Satellite module with the SYSTEM security context
             Initializer sysInit = new Initializer();
             Satellite instance = sysInit.initSatellite(args);
             instance.initialize(errorLog);

@@ -5,7 +5,7 @@ import java.io.PrintStream;
 import java.util.Map;
 
 /**
- * Displays information about the Controller's threads
+ * Shuts down the Controller or Satellite
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
@@ -20,7 +20,7 @@ public class CmdShutdown extends BaseDebugCmd
                 "Shutdown"
             },
             "Shutdown",
-            "Shuts down the local drbdmanage controller instance",
+            "Shuts down the module instance",
             null,
             null,
             false

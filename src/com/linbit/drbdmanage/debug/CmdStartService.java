@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Starts execution of a Controller service
+ * Starts execution of a Controller or Satellite service
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
@@ -35,7 +35,7 @@ public class CmdStartService extends BaseDebugCmd
                 "StrSvc"
             },
             "Start service",
-            "Starts execution of a service",
+            "Starts execution of a service instance",
             PARAMETER_DESCRIPTIONS,
             null,
             false

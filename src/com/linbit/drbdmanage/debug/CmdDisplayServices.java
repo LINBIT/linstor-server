@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * Displays information about the Controller's system services
+ * Displays information about the module's system services (Controller or Satellite)
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
@@ -22,7 +22,7 @@ public class CmdDisplayServices extends BaseDebugCmd
                 "DspSvc"
             },
             "Display services",
-            "Displays a table with information about the Controller's system services",
+            "Displays information about the state of currently configured service instances",
             null,
             null,
             false

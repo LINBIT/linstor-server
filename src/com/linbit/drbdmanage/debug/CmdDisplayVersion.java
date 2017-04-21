@@ -5,7 +5,7 @@ import java.io.PrintStream;
 import java.util.Map;
 
 /**
- * Displays information about the Controller's threads
+ * Displays the version of the Controller or Satellite
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */

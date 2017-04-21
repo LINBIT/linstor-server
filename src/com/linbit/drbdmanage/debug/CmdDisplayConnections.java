@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Displays information about the Controller's system services
+ * Displays information about network connections
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
