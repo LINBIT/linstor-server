@@ -8,23 +8,15 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 
 /**
- *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public class LvsInfo
+public class LvsInfo extends VolumeInfo
 {
-    public long size;
-    public String identifier;
-    public String path;
-
     private static final String DELIMITER = ",";
 
     public LvsInfo(final long size, final String identifier, final String path)
     {
-        super();
-        this.size = size;
-        this.identifier = identifier;
-        this.path = path;
+        super(size, identifier, path);
     }
 
     public static String[] getCommand(
@@ -34,7 +26,7 @@ public class LvsInfo
     {
         return new String[]
         {
-            LvmThinDriver.LVM_LVS_DEFAULT,
+            lvmLvsCommand,
             "-o", "lv_name,lv_path,lv_size",
             "--separator", DELIMITER,
             "--noheadings",
@@ -57,10 +49,10 @@ public class LvsInfo
 
         final HashMap<String, LvsInfo> infoByIdentifier = new HashMap<>();
 
-        final String[] lines = stdOut.trim().split("\n");
+        final String[] lines = stdOut.split("\n");
         for (final String line : lines)
         {
-            final String[] data = line.split(DELIMITER);
+            final String[] data = line.trim().split(DELIMITER);
 
             final String identifier = data[0];
             final String path = data[1];

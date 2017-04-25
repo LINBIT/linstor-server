@@ -2,6 +2,8 @@ package com.linbit.drbdmanage.storage;
 
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.drbdmanage.CoreServices;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -12,6 +14,14 @@ import java.util.Set;
  */
 public interface StorageDriver
 {
+    /**
+     * Initializes the driver
+     *
+     * @param coreSvc
+     * @throws StorageException
+     */
+    void initialize(CoreServices coreSvc) throws StorageException;
+
     /**
      * Makes a volume ready for access
      *
@@ -101,4 +111,5 @@ public interface StorageDriver
      *     that are not valid for the driver
      */
     void setConfiguration(Map<String, String> config) throws StorageException;
+
 }

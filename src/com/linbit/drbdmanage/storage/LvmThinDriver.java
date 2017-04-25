@@ -9,7 +9,6 @@ import java.util.Set;
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.InvalidNameException;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 
@@ -23,7 +22,8 @@ public class LvmThinDriver extends LvmDriver
 {
     public static final String LVM_THIN_POOL_DEFAULT = "drbdthinpool";
 
-    private String thinPoolName = LVM_THIN_POOL_DEFAULT;
+    protected String baseVolumeGroup = LVM_VOLUME_GROUP_DEFAULT;
+    protected String thinPoolName = LVM_THIN_POOL_DEFAULT;
 
     public LvmThinDriver()
     {
@@ -99,53 +99,55 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    public void setConfiguration(final Map<String, String> config) throws StorageException
+    public Set<String> getConfigurationKeys()
     {
-        // first parse the commands as those may get called when parsing other configurations like volumeGroup
+        final HashSet<String> keySet = new HashSet<>();
 
-        final String configLvmCreateCommand = checkedCommandAndGet(config, LvmConstants.CONFIG_LVM_CREATE_COMMAND_KEY, lvmCreateCommand);
-        final String configLvmRemoveCommand = checkedCommandAndGet(config, LvmConstants.CONFIG_LVM_REMOVE_COMMAND_KEY, lvmRemoveCommand);
-        final String configLvmChangeCommand = checkedCommandAndGet(config, LvmConstants.CONFIG_LVM_CHANGE_COMMAND_KEY, lvmChangeCommand);
-        final String configLvmLvsCommand = checkedCommandAndGet(config, LvmConstants.CONFIG_LVM_LVS_COMMAND_KEY, lvmLvsCommand);
-        final String configLvmVgsCommand = checkedCommandAndGet(config, LvmConstants.CONFIG_LVM_VGS_COMMAND_KEY, lvmVgsCommand);
-        final String configVolumeGroup = checkVolumeGroupEntry(config, volumeGroup);
-        final String configThinPool = checkThinPoolEntry(config, thinPoolName);
-        final int configToleranceFactor = checkedGetAsInt(config, LvmConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY,sizeAlignmentToleranceFactor);
-        try
-        {
-            Checks.rangeCheck(configToleranceFactor, 1, Integer.MAX_VALUE);
-        }
-        catch (ValueOutOfRangeException valueOORangeExc)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format(
-                    "Tolerance factor has to be in range of 1 - %d, but was %d",
-                    Integer.MAX_VALUE, configToleranceFactor
-                ),
-                valueOORangeExc
-            );
-        }
+        keySet.add(StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY);
+        keySet.add(StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY);
+        keySet.add(StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY);
+        keySet.add(StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY);
+        keySet.add(StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY);
+        keySet.add(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
+        keySet.add(StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY);
+        keySet.add(StorageConstants.CONFIG_LVM_THIN_POOL_KEY);
 
-        // if no exception was thrown until now, apply all config.
-        // this way we do not have to rollback partial config entries
-
-        lvmCreateCommand = configLvmCreateCommand;
-        lvmRemoveCommand = configLvmRemoveCommand;
-        lvmChangeCommand = configLvmChangeCommand;
-        lvmLvsCommand = configLvmLvsCommand;
-        lvmVgsCommand = configLvmVgsCommand;
-
-        volumeGroup = configVolumeGroup;
-        thinPoolName = configThinPool;
-        sizeAlignmentToleranceFactor = configToleranceFactor;
+        return keySet;
     }
 
-
-    private String checkThinPoolEntry(Map<String, String> config, String defaultReturn) throws StorageException
+    @Override
+    protected String[] getCreateCommand(String identifier, long size)
     {
-        final String value = config.get(LvmConstants.CONFIG_THIN_POOL_KEY);
-        final String ret;
+        return new String[]
+        {
+            lvmCreateCommand,
+            "--virtualsize", size + "k",
+            "--thinpool", thinPoolName,
+            "-n", identifier,
+            volumeGroup
+        };
+    }
+
+    @Override
+    protected void checkConfiguration(Map<String, String> config) throws StorageException
+    {
+        super.checkConfiguration(config);
+        checkThinPoolEntry(config);
+    }
+
+    @Override
+    protected void applyConfiguration(Map<String, String> config)
+    {
+        super.applyConfiguration(config);
+        thinPoolName = getAsString(config, StorageConstants.CONFIG_LVM_THIN_POOL_KEY, thinPoolName);
+        baseVolumeGroup = getAsString(config, StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY, baseVolumeGroup);
+
+        volumeGroup = baseVolumeGroup + "/" + thinPoolName;
+    }
+
+    private void checkThinPoolEntry(Map<String, String> config) throws StorageException
+    {
+        final String value = config.get(StorageConstants.CONFIG_LVM_THIN_POOL_KEY);
         if (value != null)
         {
             final String thinPoolName = value.trim();
@@ -196,7 +198,6 @@ public class LvmThinDriver extends LvmDriver
                         String.format("Volume group [%s] not found.", thinPoolName)
                     );
                 }
-                ret = value;
             }
             catch (ChildProcessTimeoutException | IOException exc)
             {
@@ -207,40 +208,5 @@ public class LvmThinDriver extends LvmDriver
                 );
             }
         }
-        else
-        {
-            ret = defaultReturn;
-        }
-        return ret;
-    }
-
-    @Override
-    public Set<String> getConfigurationKeys()
-    {
-        final HashSet<String> keySet = new HashSet<>();
-
-        keySet.add(LvmConstants.CONFIG_LVM_CREATE_COMMAND_KEY);
-        keySet.add(LvmConstants.CONFIG_LVM_REMOVE_COMMAND_KEY);
-        keySet.add(LvmConstants.CONFIG_LVM_CHANGE_COMMAND_KEY);
-        keySet.add(LvmConstants.CONFIG_LVM_LVS_COMMAND_KEY);
-        keySet.add(LvmConstants.CONFIG_LVM_VGS_COMMAND_KEY);
-        keySet.add(LvmConstants.CONFIG_VOLUME_GROUP_KEY);
-        keySet.add(LvmConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY);
-        keySet.add(LvmConstants.CONFIG_THIN_POOL_KEY);
-
-        return keySet;
-    }
-
-    @Override
-    protected String[] getLvcreateCommand(String identifier, long size)
-    {
-        return new String[]
-        {
-            lvmCreateCommand,
-            "--virtualsize", size + "k",
-            "--thinpool", thinPoolName,
-            "-n", identifier,
-            volumeGroup
-        };
     }
 }

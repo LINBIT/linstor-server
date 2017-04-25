@@ -12,6 +12,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.utils.TestExtCmd;
 import com.linbit.extproc.utils.TestExtCmd.Command;
@@ -19,6 +20,23 @@ import com.linbit.extproc.utils.TestExtCmd.TestOutputData;
 
 public class LvmThinDriverTest extends LvmDriverTest
 {
+    public LvmThinDriverTest()
+    {
+        super(new StorageTestUtils.DriverFactory()
+        {
+            @Override
+            public StorageDriver createDriver(ExtCmd ec) throws StorageException
+            {
+                return new LvmThinDriver(ec);
+            }
+        });
+    }
+
+    public LvmThinDriverTest(DriverFactory driverFactory)
+    {
+        super(driverFactory);
+    }
+
 
     @Override
     @Before
@@ -71,14 +89,14 @@ public class LvmThinDriverTest extends LvmDriverTest
     {
         final HashSet<String> keys = new HashSet<>(driver.getConfigurationKeys());
 
-        assertTrue(keys.remove(LvmConstants.CONFIG_LVM_CREATE_COMMAND_KEY));
-        assertTrue(keys.remove(LvmConstants.CONFIG_LVM_REMOVE_COMMAND_KEY));
-        assertTrue(keys.remove(LvmConstants.CONFIG_LVM_CHANGE_COMMAND_KEY));
-        assertTrue(keys.remove(LvmConstants.CONFIG_LVM_LVS_COMMAND_KEY));
-        assertTrue(keys.remove(LvmConstants.CONFIG_LVM_VGS_COMMAND_KEY));
-        assertTrue(keys.remove(LvmConstants.CONFIG_VOLUME_GROUP_KEY));
-        assertTrue(keys.remove(LvmConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY));
-        assertTrue(keys.remove(LvmConstants.CONFIG_THIN_POOL_KEY));
+        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY));
+        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY));
+        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY));
+        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY));
+        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY));
+        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY));
+        assertTrue(keys.remove(StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY));
+        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_THIN_POOL_KEY));
 
         assertTrue(keys.isEmpty());
     }
@@ -103,9 +121,27 @@ public class LvmThinDriverTest extends LvmDriverTest
         final String lvmCreateCommand,
         final long volumeSize,
         final String identifier,
-        final String thinPool,
         final String volumeGroup,
         final boolean volumeExists)
+    {
+        expectLvmCreateVolumeBehavior(
+            lvmCreateCommand,
+            volumeSize,
+            identifier,
+            LvmThinDriver.LVM_THIN_POOL_DEFAULT,
+            volumeGroup,
+            volumeExists);
+    }
+
+
+    protected void expectLvmCreateVolumeBehavior(
+        final String lvmCreateCommand,
+        final long volumeSize,
+        final String identifier,
+        final String thinPool,
+        final String volumeGroup,
+        final boolean volumeExists
+    )
     {
         final Command cmd = new Command(
             lvmCreateCommand,
