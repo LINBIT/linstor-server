@@ -37,7 +37,6 @@ public class LvmThinDriverTest extends LvmDriverTest
         super(driverFactory);
     }
 
-
     @Override
     @Before
     public void setUp() throws Exception
