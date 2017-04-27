@@ -131,11 +131,6 @@ public class LvmDriver extends AbsStorageDriver
 
             if (info == null)
             {
-                Set<String> keySet = infoMap.keySet();
-                for (String key : keySet)
-                {
-                    System.out.println(key);
-                }
                 // TODO: Detailed error reporting
                 throw new StorageException(
                     String.format("Volume [%s] not found", identifier)
