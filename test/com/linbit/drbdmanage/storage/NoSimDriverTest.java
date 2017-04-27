@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.storage;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.drbd.md.MaxSizeException;
@@ -35,7 +36,7 @@ public abstract class NoSimDriverTest
     protected StorageDriver driver;
     protected ExtCmd extCommand;
 
-    protected String testIdentifier = null;
+    protected ArrayList<String> testIdentifiers = new ArrayList<>();
 
     protected boolean inCleanup = false;
 
@@ -49,100 +50,75 @@ public abstract class NoSimDriverTest
 
     protected void runTest() throws StorageException, MaxSizeException, MinSizeException, ChildProcessTimeoutException, IOException
     {
-        log("initializing... %n");
         initialize();
 
-
-        log("requesting unused identifier... ");
         String identifier = getUnusedIdentifier();
-        this.testIdentifier = identifier; // used for cleanup
-        log("using identifier: [%s] %n", identifier);
 
-        int size = 100*1024;
-        log("creating volume [%s] with size [%d]... ", identifier, size);
-        driver.createVolume(identifier, size);
-        failIf(!volumeExists(identifier), "Failed to create volume [%s]", identifier);
-        log(" done %n");
+        long size = 100*1024;
+        createVolume(identifier, size, "creating volume [%s] with size [%d]... ");
 
         try
         {
-            log("checking is volume exists...");
-            driver.createVolume(identifier, size);
-            fail("Creating an existing volume [%s] should have thrown an exception", identifier);
+            createVolume(identifier, size, "trying to create existing volume [%s]");
+            fail("Creating an existing volume [%s] should have thrown an exception");
         }
         catch (StorageException expected)
         {
-            log(" done %n");
+            // expected
+            log(" done%n");
         }
 
-        log("checking volume [%s], with size [%d]...", identifier, size);
-        driver.checkVolume(identifier, size);
-        log(" done %n");
-        log("checking volume [%s], with size [%d]...", identifier, size - 1);
-        driver.checkVolume(identifier, size - 1); // should be in tolerance range
-        log(" done %n");
+        checkVolume(identifier, size, "checking volume [%s], with size [%d]...");
+        checkVolume(identifier, size - 1, "checking volume [%s], with size [%d] (should be tolerated)...");
         try
         {
-            log("test checking volume [%s], with size [%d] (too low)...", identifier, size / 2);
-            driver.checkVolume(identifier, size / 2);
+            checkVolume(identifier, size / 2, "test checking volume [%s], with size [%d] (too low)...");
             fail("checkVolume should have thrown StorageException");
         }
         catch (StorageException expected)
         {
-            log(" done %n");
+            // expected
+            log(" done%n");
         }
         try
         {
-            log("test checking volume [%s], with size [%d] (too high)...", identifier, size + 1);
-            driver.checkVolume(identifier, size + 1);
+            checkVolume(identifier, size + 1, "test checking volume [%s], with size [%d] (too high)...");
             fail("checkVolume should have thrown StorageException");
         }
         catch (StorageException expected)
         {
-            log(" done %n");
+            // expected
+            log(" done%n");
         }
 
+        String identifier2 = getUnusedIdentifier();
+        long unalignedSize = 99*1024 + 1;// should be aligned up to 100 * 1024, aka [size]
+        createVolume(identifier2, unalignedSize, "creating volume [%s] with unaligned size [%d]");
+        checkVolume(identifier2, unalignedSize, "checking volume [%s], with unaligned size [%d]...");
+        checkVolume(identifier2, size, "checking volume [%s], with aligned size [%d]...");
 
-        log("getting size of volume [%s]... ", identifier);
-        long driverSize = driver.getSize(identifier);
-        failIf(driverSize != size, "Expected size [%d] but was [%d]", size, driverSize);
-        log(" done %n");
+        checkSize(identifier, size, "getting size of volume [%s]");
 
-        log("getting path of volume [%s]...", identifier);
-        String volumePath = driver.getVolumePath(identifier);
-        String expectedVolumePath = getVolumePath(identifier);
-        failIf(!expectedVolumePath.equals(volumePath), "Unexpected volume path: [%s], expected: [%s]", volumePath, expectedVolumePath);
-        log(" done %n");
+        checkPath(identifier, "getting path of volume [%s]...");
 
-        if (isVolumeStartStopSupported())
+        if (isVolumeStartStopSupportedImpl())
         {
-            log("stopping volume [%s]...", identifier);
-            driver.stopVolume(identifier);
-            failIf(isVolumeStarted(identifier), "Volume [%s] failed to stop", identifier);
-            log(" done %n");
-
-            log("starting volume [%s]...", identifier);
-            driver.startVolume(identifier);
-            failIf(!isVolumeStarted(identifier), "Volume [%s] failed to start", identifier);
-            log(" done %n");
+            stopVolume(identifier, "stopping volume [%s]...");
+            startVolume(identifier, "starting volume [%s]...");
         }
 
-        log("deleting volume [%s]...", identifier);
-        driver.deleteVolume(identifier);
-        failIf(volumeExists(identifier), "Failed to delete volume [%s]", identifier);
-        log(" done %n");
+        deleteVolume(identifier, "deleting volume [%s]...");
 
         try
         {
-            log("test deleting already deleted volume [%s]...", identifier);
-            driver.deleteVolume(identifier);
-            fail("Deleting non existent volume [%s] should have failed", identifier);
+            deleteVolume(identifier, "test deleting already deleted volume [%s]...");
         }
         catch(StorageException expected)
         {
-            log(" done %n");
+            // expected
+            log(" done%n");
         }
-        log("all tests done - no errors found %n%n%n");
+        log("%n%nall tests done - no errors found %n%n%n");
     }
 
     protected final void failIf(boolean condition, String format, Object...args) throws ChildProcessTimeoutException, IOException
@@ -157,7 +133,7 @@ public abstract class NoSimDriverTest
     {
         if (!inCleanup) // prevent endless recursion
         {
-            cleanUp();
+            cleanUpImpl();
         }
         throw new TestFailedException(String.format(format, args));
     }
@@ -187,19 +163,91 @@ public abstract class NoSimDriverTest
         }
     }
 
-    protected abstract void initialize() throws ChildProcessTimeoutException, IOException;
+    private void initialize() throws ChildProcessTimeoutException, IOException
+    {
+        log("initializing... %n");
+        initializeImpl();
+        log("initialized %n");
+    }
 
-    protected abstract String getUnusedIdentifier() throws ChildProcessTimeoutException, IOException;
+    private String getUnusedIdentifier() throws ChildProcessTimeoutException, IOException
+    {
+        log("requesting unused identifier... ");
+        String identifier = getUnusedIdentifierImpl();
+        this.testIdentifiers.add(identifier); // used for cleanup
+        log("using identifier: [%s] %n", identifier);
+        return identifier;
+    }
 
-    protected abstract boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException;
+    private void createVolume(String identifier, long size, String format) throws MaxSizeException, MinSizeException, StorageException, ChildProcessTimeoutException, IOException
+    {
+        log(format, identifier, size);
+        driver.createVolume(identifier, size);
+        failIf(!volumeExistsImpl(identifier), "Failed to create volume [%s]", identifier);
+        log(" done %n");
+    }
 
-    protected abstract String getVolumePath(String identifier) throws ChildProcessTimeoutException, IOException;
+    private void checkVolume(String identifier, long size, String format) throws StorageException
+    {
+        log(format, identifier, size);
+        driver.checkVolume(identifier, size);
+        log(" done %n");
+    }
 
-    protected abstract boolean isVolumeStartStopSupported();
+    private void checkSize(String identifier, long expectedSize, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    {
+        log(format, identifier);
+        long driverSize = driver.getSize(identifier);
+        failIf(driverSize != expectedSize, "expected size [%d] but was [%d]", expectedSize, driverSize);
+        log(" done %n");
+    }
 
-    protected abstract boolean isVolumeStarted(String identifier);
+    private void checkPath(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    {
+        log(format, identifier);
+        String volumePath = driver.getVolumePath(identifier);
+        String expectedVolumePath = getVolumePathImpl(identifier);
+        failIf(!expectedVolumePath.equals(volumePath), "unexpected volume path: [%s], expected: [%s]", volumePath, expectedVolumePath);
+        log(" done %n");
+    }
 
-    protected abstract void cleanUp() throws ChildProcessTimeoutException, IOException;
+    private void stopVolume(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    {
+        log(format, identifier);
+        driver.stopVolume(identifier);
+        failIf(isVolumeStartedImpl(identifier), "volume [%s] failed to stop", identifier);
+        log(" done %n");
+    }
+
+    private void startVolume(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    {
+        log(format, identifier);
+        driver.startVolume(identifier);
+        failIf(!isVolumeStartedImpl(identifier), "volume [%s] failed to start", identifier);
+        log(" done %n");
+    }
+
+    private void deleteVolume(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    {
+        log(format, identifier);
+        driver.deleteVolume(identifier);
+        failIf(volumeExistsImpl(identifier), "Failed to delete volume [%s]", identifier);
+        log(" done %n");
+    }
+
+    protected abstract void initializeImpl() throws ChildProcessTimeoutException, IOException;
+
+    protected abstract String getUnusedIdentifierImpl() throws ChildProcessTimeoutException, IOException;
+
+    protected abstract boolean volumeExistsImpl(String identifier) throws ChildProcessTimeoutException, IOException;
+
+    protected abstract String getVolumePathImpl(String identifier) throws ChildProcessTimeoutException, IOException;
+
+    protected abstract boolean isVolumeStartStopSupportedImpl();
+
+    protected abstract boolean isVolumeStartedImpl(String identifier);
+
+    protected abstract void cleanUpImpl() throws ChildProcessTimeoutException, IOException;
 
     private static class TestCoreServices implements CoreServices
     {

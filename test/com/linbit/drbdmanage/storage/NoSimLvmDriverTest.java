@@ -44,11 +44,11 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
         {
             exc.printStackTrace();
         }
-        driverTest.cleanUp();
+        driverTest.cleanUpImpl();
     }
 
     @Override
-    protected void initialize() throws ChildProcessTimeoutException, IOException
+    protected void initializeImpl() throws ChildProcessTimeoutException, IOException
     {
         // ensure that the default pool exists
         log("\tchecking if pool [%s] exists...", poolName);
@@ -75,7 +75,7 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
     }
 
     @Override
-    protected String getUnusedIdentifier() throws ChildProcessTimeoutException, IOException
+    protected String getUnusedIdentifierImpl() throws ChildProcessTimeoutException, IOException
     {
         String identifier = null;
         String baseIdentifier = "identifier";
@@ -84,7 +84,7 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
         {
             identifier = baseIdentifier + i;
             i++;
-            if (volumeExists(identifier))
+            if (volumeExistsImpl(identifier))
             {
                 identifier = null;
             }
@@ -93,7 +93,7 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
     }
 
     @Override
-    protected boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException
+    protected boolean volumeExistsImpl(String identifier) throws ChildProcessTimeoutException, IOException
     {
         boolean exists = false;
         OutputData lvs = callChecked("lvs", "-o", "lv_name", "--noheading");
@@ -110,7 +110,7 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
     }
 
     @Override
-    protected String getVolumePath(String identifier) throws ChildProcessTimeoutException, IOException
+    protected String getVolumePathImpl(String identifier) throws ChildProcessTimeoutException, IOException
     {
         OutputData lvs = callChecked("lvs", "-o", "lv_name,lv_path", "--separator", ",", "--noheading");
         String[] lines = new String(lvs.stdoutData).split("\n");
@@ -128,53 +128,59 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
     }
 
     @Override
-    protected boolean isVolumeStartStopSupported()
+    protected boolean isVolumeStartStopSupportedImpl()
     {
         return false;
     }
 
     @Override
-    protected boolean isVolumeStarted(String identifier)
+    protected boolean isVolumeStartedImpl(String identifier)
     {
         return true; // LvmDriver cannot stop or start
     }
 
     @Override
-    protected void cleanUp() throws ChildProcessTimeoutException, IOException
+    protected void cleanUpImpl() throws ChildProcessTimeoutException, IOException
     {
         inCleanup = true;
 
         log("cleaning up...%n");
-        String identifier = testIdentifier;
+        log("\tchecking test volume(s)... %n");
         String[] lvsCommand = new String[]{ "lvs", "-o", "lv_name,lv_path", "--separator", ",", "--noheading" };
         OutputData lvs = callChecked(lvsCommand);
         String[] lines = new String(lvs.stdoutData).split("\n");
-        String matchingLine = null;
-        log("\tchecking test volume... ");
-        for (String line : lines)
+        if (testIdentifiers.size() > 0)
         {
-            String[] colums = line.trim().split(",");
-            if (identifier.equals(colums[0]))
+            for (String line : lines)
             {
-                log("found volume, trying to remove...");
-                matchingLine = line;
-                callChecked("lvremove", "-f", poolName+"/"+identifier);
-                log(" done %n");
-
-                log("\t\tverifying remove...");
-                lvs = callChecked(lvsCommand);
-                lines = new String(lvs.stdoutData).split("\n");
-                for (String line2 : lines)
+                String[] colums = line.trim().split(",");
+                String identifier = colums[0];
+                if (testIdentifiers.contains(identifier))
                 {
-                    if (line2.equals(matchingLine))
+                    log("\tfound volume [%s], trying to remove...", identifier);
+                    callChecked("lvremove", "-f", poolName+"/"+identifier);
+                    log(" done %n");
+
+                    log("\t\tverifying remove...");
+                    lvs = callChecked(lvsCommand);
+                    lines = new String(lvs.stdoutData).split("\n");
+                    for (String line2 : lines)
                     {
-                        fail("Failed to remove test volume [%s] in cleanup", identifier);
+                        if (line2.equals(line))
+                        {
+                            fail("Failed to remove test volume [%s] in cleanup", identifier);
+                        }
                     }
+                    testIdentifiers.remove(identifier);
+                    log(" done%n");
+                    break;
                 }
-                break;
             }
         }
-        log(" done%n");
+        else
+        {
+            log("\t\tno test volues used");
+        }
 
         if (!poolExisted)
         {
@@ -189,7 +195,7 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
             {
                 if (poolName.equals(line.trim()))
                 {
-                    fail("Failed to remove test volume group [%s] in cleanup", identifier);
+                    fail("Failed to remove test volume group(s) [%s] in cleanup", poolName);
                 }
             }
         }

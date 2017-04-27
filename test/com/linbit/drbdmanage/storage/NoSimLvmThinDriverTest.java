@@ -47,15 +47,15 @@ public class NoSimLvmThinDriverTest extends NoSimLvmDriverTest
             System.err.println();
             exc.printStackTrace();
         }
-        driverTest.cleanUp();
+        driverTest.cleanUpImpl();
     }
 
     @Override
-    protected void initialize() throws ChildProcessTimeoutException, IOException
+    protected void initializeImpl() throws ChildProcessTimeoutException, IOException
     {
-        super.initialize();
+        super.initializeImpl();
         log("\tchecking if thinpool [%s] exists...", thinPool);
-        if (volumeExists(poolName + "/" + thinPool))
+        if (volumeExistsImpl(poolName + "/" + thinPool))
         {
             thinPoolExisted = true;
             log(" yes %n");
@@ -72,53 +72,59 @@ public class NoSimLvmThinDriverTest extends NoSimLvmDriverTest
 
 
     @Override
-    protected boolean isVolumeStartStopSupported()
+    protected boolean isVolumeStartStopSupportedImpl()
     {
         return true;
     }
 
     @Override
-    protected boolean isVolumeStarted(String identifier)
+    protected boolean isVolumeStartedImpl(String identifier)
     {
         return Files.exists(Paths.get("/","dev", poolName, identifier));
     }
 
     @Override
-    protected void cleanUp() throws ChildProcessTimeoutException, IOException
+    protected void cleanUpImpl() throws ChildProcessTimeoutException, IOException
     {
-        log("cleaning up...%n");
         inCleanup = true;
 
-        String identifier = testIdentifier;
+        log("cleaning up...%n");
+        log("\tchecking test volume(s)... ");
         String[] lvsCommand = new String[]{ "lvs", "-o", "lv_name,lv_path", "--separator", ",", "--noheading" };
         OutputData lvs = callChecked(lvsCommand);
         String[] lines = new String(lvs.stdoutData).split("\n");
-        String matchingLine = null;
-        log("\tchecking test volume... ");
-        for (String line : lines)
+        if (testIdentifiers.size() > 0)
         {
-            String[] colums = line.trim().split(",");
-            if (identifier.equals(colums[0]))
+            for (String line : lines)
             {
-                log("found volume, trying to remove...");
-                matchingLine = line;
-                callChecked("lvremove", "-f", poolName+"/"+identifier);
-                log(" done %n");
-
-                log("\t\tverifying remove...");
-                lvs = callChecked(lvsCommand);
-                lines = new String(lvs.stdoutData).split("\n");
-                for (String line2 : lines)
+                String[] colums = line.trim().split(",");
+                if (testIdentifiers.contains(colums[0]))
                 {
-                    if (line2.equals(matchingLine))
+                    String identifier = colums[0];
+                    log("found volume [%s], trying to remove...", identifier);
+                    callChecked("lvremove", "-f", poolName+"/"+identifier);
+                    log(" done %n");
+
+                    log("\t\tverifying remove...");
+                    lvs = callChecked(lvsCommand);
+                    lines = new String(lvs.stdoutData).split("\n");
+                    for (String line2 : lines)
                     {
-                        fail("Failed to remove test volume [%s] in cleanup", identifier);
+                        if (line2.equals(line))
+                        {
+                            fail("Failed to remove test volume [%s] in cleanup", identifier);
+                        }
                     }
+                    testIdentifiers.remove(identifier);
+                    log(" done%n");
+                    break;
                 }
-                break;
             }
         }
-        log(" done%n");
+        else
+        {
+            log("\t\tno test volues used");
+        }
 
         if (!thinPoolExisted)
         {
@@ -133,7 +139,7 @@ public class NoSimLvmThinDriverTest extends NoSimLvmDriverTest
             {
                 if (poolId.equals(line.trim()))
                 {
-                    fail("Failed to remove test thin pool [%s] in cleanup", identifier);
+                    fail("Failed to remove test thin pool [%s] in cleanup", thinPool);
                 }
             }
         }
@@ -151,7 +157,7 @@ public class NoSimLvmThinDriverTest extends NoSimLvmDriverTest
             {
                 if (poolName.equals(line.trim()))
                 {
-                    fail("Failed to remove test volume group [%s] in cleanup", identifier);
+                    fail("Failed to remove test volume group [%s] in cleanup", poolName);
                 }
             }
         }

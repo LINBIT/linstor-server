@@ -38,6 +38,7 @@ public class ZfsDriver extends AbsStorageDriver
         final long extent = getExtentSize();
         if (size % extent != 0)
         {
+            // TODO: log that we are aligning the size
             size = ((size / extent) + 1) * extent; // rounding up needed for zfs
         }
         return super.createVolume(identifier, size);
