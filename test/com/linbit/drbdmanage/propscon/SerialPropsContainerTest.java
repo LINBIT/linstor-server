@@ -70,7 +70,7 @@ public class SerialPropsContainerTest
     }
 
     @Test
-    public void testSetAll() throws InvalidKeyException
+    public void testSetAll() throws InvalidKeyException, InvalidValueException
     {
         final Map<String, String> map = new HashMap<>();
         map.put("a", "a");
@@ -128,7 +128,7 @@ public class SerialPropsContainerTest
 
 
     @Test
-    public void testRemoveAll() throws InvalidKeyException
+    public void testRemoveAll() throws InvalidKeyException, InvalidValueException
     {
         final Map<String, String> map = new HashMap<>();
         final String key1 = "a";
@@ -154,7 +154,7 @@ public class SerialPropsContainerTest
     }
 
     @Test
-    public void testRetainAll() throws InvalidKeyException
+    public void testRetainAll() throws InvalidKeyException, InvalidValueException
     {
         final Map<String, String> map = new HashMap<>();
         final String key1 = "a";

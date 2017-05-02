@@ -42,6 +42,8 @@ public class PropsContainerTest
     @Test
     public void testSize() throws InvalidKeyException, InvalidValueException
     {
+        root.clear();
+
         final String firstKey = FIRST_KEY;
         final String firstValue = "value";
 
@@ -69,6 +71,7 @@ public class PropsContainerTest
     @Test
     public void testIsEmpty() throws InvalidKeyException, InvalidValueException
     {
+        root.clear();
         assertTrue(root.isEmpty());
 
         final String key = "key";
@@ -236,8 +239,10 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetAllProps() throws InvalidKeyException
+    public void testSetAllProps() throws InvalidKeyException, InvalidValueException
     {
+        root.clear();
+
         final Map<String, String> map = new HashMap<>();
         map.put("a", "a");
         map.put("b", "b");
@@ -265,7 +270,7 @@ public class PropsContainerTest
     }
 
     @Test(expected = InvalidKeyException.class)
-    public void testSetAllPropsNullKey() throws InvalidKeyException
+    public void testSetAllPropsNullKey() throws InvalidKeyException, InvalidValueException
     {
         final Map<String, String> map = new HashMap<>();
         map.put(null, "value");
@@ -274,7 +279,7 @@ public class PropsContainerTest
     }
 
     @Test(expected = InvalidValueException.class)
-    public void testSetAllPropsNullValue() throws InvalidKeyException
+    public void testSetAllPropsNullValue() throws InvalidKeyException, InvalidValueException
     {
         final Map<String, String> map = new HashMap<>();
         map.put("key", null);
@@ -283,8 +288,9 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetAllPropsWithNamespace() throws InvalidKeyException
+    public void testSetAllPropsWithNamespace() throws InvalidKeyException, InvalidValueException
     {
+        root.clear();
         final String namespace = "namespace";
 
         final Map<String, String> map = new HashMap<>();
@@ -299,13 +305,15 @@ public class PropsContainerTest
 
         assertEquals(root.size(), map.size());
 
+        final Map<String, String> namespacedMap = new HashMap<>();
+        for (Entry<String, String> entry : map.entrySet())
+        {
+            namespacedMap.put(namespace + "/" + entry.getKey(), entry.getValue());
+        }
+
         for (final Entry<String, String> entry : entrySet)
         {
-            String key = entry.getKey();
-            assertTrue(key.startsWith(namespace));
-            key = key.substring(namespace.length() + 1); // cut the namepsace and the first /
-
-            String value = map.remove(entry.getKey());
+            String value = namespacedMap.remove(entry.getKey());
             if (value == null)
             {
                 fail("Missing expected entry");
@@ -511,8 +519,10 @@ public class PropsContainerTest
      */
 
     @Test
-    public void testRemoveAllProps() throws InvalidKeyException
+    public void testRemoveAllProps() throws InvalidKeyException, InvalidValueException
     {
+        root.clear();
+
         final Map<String, String> map = new HashMap<>();
         map.put("a", "a");
         map.put("b", "b");
@@ -551,8 +561,10 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testRemoveAllPropsWithNamespace() throws InvalidKeyException
+    public void testRemoveAllPropsWithNamespace() throws InvalidKeyException, InvalidValueException
     {
+        root.clear();
+
         final Map<String, String> map = new HashMap<>();
         map.put("a", "a");
         map.put("b", "b");
@@ -588,7 +600,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testRetainAllProps() throws InvalidKeyException
+    public void testRetainAllProps() throws InvalidKeyException, InvalidValueException
     {
         final Map<String, String> map = new HashMap<>();
         map.put("a", "a");
@@ -934,7 +946,12 @@ public class PropsContainerTest
         entrySet.retainAll(retainedKeys);
 
         assertTrue(entrySet.containsAll(retainedKeys));
-        assertTrue(retainedKeys.containsAll(entrySet));
+        final HashSet<String> remainingKeys = new HashSet<>();
+        for (Entry<String, String> entry : entrySet)
+        {
+            remainingKeys.add(entry.getKey());
+        }
+        assertTrue(retainedKeys.containsAll(remainingKeys));
     }
 
     @Test
@@ -949,8 +966,9 @@ public class PropsContainerTest
         entriesToRemove.add(createEntry(glue(FIRST_KEY + "1", SECOND_KEY + "2"), "1_2"));
 
         generatedEntries.removeAll(entriesToRemove);
-        entrySet.removeAll(entriesToRemove);
+        assertTrue(entrySet.removeAll(entriesToRemove));
 
+        assertEquals(generatedEntries.size(), entrySet.size());
         assertEquals(generatedEntries, entrySet);
     }
 
@@ -984,9 +1002,7 @@ public class PropsContainerTest
         final Entry<String, String> entry = createEntry("key", "value");
         entrySet.add(entry);
 
-        final int changedHashCode = entrySet.hashCode();
-
-        assertNotEquals(origHashCode, changedHashCode);
+        assertNotEquals(origHashCode, entrySet.hashCode());
 
         entrySet.remove(entry);
 
@@ -1419,6 +1435,22 @@ public class PropsContainerTest
         assertEquals(insertedContainerValue, containerNamespace.getProp(containerKey));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testMapPutNullKey() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    {
+        final String insertedKey = null;
+        final String insertedValue = "new value";
+        map.put(insertedKey, insertedValue);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMapPutNullValue() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    {
+        final String insertedKey = "new key";
+        final String insertedValue = null;
+        map.put(insertedKey, insertedValue);
+    }
+
     @Test
     public void testMapRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
@@ -1522,9 +1554,7 @@ public class PropsContainerTest
         final String value = "value";
         map.put(key, value);
 
-        final int changedHashCode = map.hashCode();
-
-        assertNotEquals(origHashCode, changedHashCode);
+        assertNotEquals(origHashCode, map.hashCode());
 
         map.remove(key);
 
@@ -1610,18 +1640,17 @@ public class PropsContainerTest
     public void testMapEntryHashCode()
     {
         final Entry<String, String> entry = map.entrySet().iterator().next();
-        final int origHashCode = entry.hashCode();
+        final int origEntryHashCode = entry.hashCode();
+        final int origMapHashCode = map.hashCode();
 
         final String originalValue = entry.getValue();
         entry.setValue("otherValue");
 
-        final int changedHashCode = entry.hashCode();
-
-        assertNotEquals(origHashCode, changedHashCode);
+        assertNotEquals(origEntryHashCode, entry.hashCode());
 
         entry.setValue(originalValue);
 
-        assertEquals(origHashCode, map.hashCode());
+        assertEquals(origMapHashCode, map.hashCode());
     }
 
     /*
@@ -1830,7 +1859,14 @@ public class PropsContainerTest
         generatedValues.removeAll(valuesToRemove);
         values.removeAll(valuesToRemove);
 
-        assertEquals(generatedValues, values);
+        assertEquals(values.size(), generatedValues.size());
+
+        Iterator<String> iterator = values.iterator();
+        while (iterator.hasNext())
+        {
+            generatedValues.remove(iterator.next());
+        }
+        assertTrue(generatedValues.isEmpty());
     }
 
     @Test
@@ -1863,9 +1899,7 @@ public class PropsContainerTest
         final String key = "key";
         root.setProp(key, "value");
 
-        final int changedHashCode = values.hashCode();
-
-        assertNotEquals(origHashCode, changedHashCode);
+        assertNotEquals(origHashCode, values.hashCode());
 
         root.removeProp(key);
 

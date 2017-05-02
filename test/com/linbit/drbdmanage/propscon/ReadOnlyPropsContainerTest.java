@@ -44,6 +44,8 @@ public class ReadOnlyPropsContainerTest
     @Test
     public void testSize() throws InvalidKeyException, InvalidValueException
     {
+        writableProp.clear();
+
         final String firstKey = FIRST_KEY;
         final String firstValue = "value";
 
@@ -71,6 +73,7 @@ public class ReadOnlyPropsContainerTest
     @Test
     public void testIsEmpty() throws InvalidKeyException, InvalidValueException
     {
+        writableProp.clear();
         assertTrue(roProp.isEmpty());
 
         final String key = "key";
@@ -442,7 +445,7 @@ public class ReadOnlyPropsContainerTest
         assertArrayEquals(expectedEntries, actualEntries);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetAdd() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         // create a new entry with defined key and empty string as value
@@ -452,7 +455,7 @@ public class ReadOnlyPropsContainerTest
         roEntrySet.add(insertedEntry);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         Entry<String, String> entryToRemove = createEntry(FIRST_KEY+"0", "0");
@@ -474,7 +477,7 @@ public class ReadOnlyPropsContainerTest
         assertTrue(roEntrySet.containsAll(new ArrayList<>())); // empty list
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetAddAll()
     {
         final ArrayList<Entry<String, String>> entriesToAdd = new ArrayList<>();
@@ -484,7 +487,7 @@ public class ReadOnlyPropsContainerTest
         roEntrySet.addAll(entriesToAdd);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetRetainAll()
     {
         final HashSet<String> retainedKeys = new HashSet<>();
@@ -494,7 +497,7 @@ public class ReadOnlyPropsContainerTest
         roEntrySet.retainAll(retainedKeys);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetRemoveAll()
     {
         final HashSet<Entry<String, String>> generatedEntries = new HashSet<>(
@@ -509,7 +512,7 @@ public class ReadOnlyPropsContainerTest
         roEntrySet.removeAll(entriesToRemove);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetClear()
     {
         roEntrySet.clear();
@@ -685,13 +688,13 @@ public class ReadOnlyPropsContainerTest
         assertArrayEquals(expectedKeys, actualKeys);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testKeySetAdd() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         roKeySet.add("test");
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testKeySetRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         roKeySet.remove(FIRST_KEY+"0");
@@ -712,7 +715,7 @@ public class ReadOnlyPropsContainerTest
         assertTrue(roKeySet.containsAll(new ArrayList<>())); // empty list
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testKeySetAddAll()
     {
         final ArrayList<String> keysToAdd = new ArrayList<>();
@@ -722,7 +725,7 @@ public class ReadOnlyPropsContainerTest
         roKeySet.addAll(keysToAdd);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testKeySetRetainAll()
     {
         final HashSet<String> retainedKeys = new HashSet<>();
@@ -732,7 +735,7 @@ public class ReadOnlyPropsContainerTest
         roKeySet.retainAll(retainedKeys);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testKeySetRemoveAll()
     {
         final HashSet<String> keysToRemove = new HashSet<>();
@@ -742,7 +745,7 @@ public class ReadOnlyPropsContainerTest
         roKeySet.removeAll(keysToRemove);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testKeySetClear()
     {
         roKeySet.clear();
@@ -893,19 +896,19 @@ public class ReadOnlyPropsContainerTest
         assertNull(roMap.get("non existant"));
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testMapPut() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         roMap.put("new key", "new value");
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testMapRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
     {
         roMap.remove(FIRST_KEY+"0");
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testMapPutAll() throws InvalidKeyException
     {
         final String[][] entriesToInsert = new String[][]
@@ -925,7 +928,7 @@ public class ReadOnlyPropsContainerTest
         roMap.putAll(mapToInsert);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testMapClear()
     {
         roMap.clear();
@@ -1000,7 +1003,7 @@ public class ReadOnlyPropsContainerTest
         assertEquals(value, entry.getValue());
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testMapEntrySetValue() throws InvalidKeyException, InvalidValueException
     {
         writableProp.clear();
@@ -1220,7 +1223,7 @@ public class ReadOnlyPropsContainerTest
         roValues.addAll(new ArrayList<String>());
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testValuesRetainAll()
     {
         final HashSet<String> retainedValues = new HashSet<>();
@@ -1230,7 +1233,7 @@ public class ReadOnlyPropsContainerTest
         roValues.retainAll(retainedValues);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testValuesRemoveAll()
     {
         final HashSet<String> generatedValues = new HashSet<>(
@@ -1245,7 +1248,7 @@ public class ReadOnlyPropsContainerTest
         roValues.removeAll(valuesToRemove);
     }
 
-    @Test(expected = AccessDeniedException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testValuesClear()
     {
         roValues.clear();
@@ -1257,6 +1260,9 @@ public class ReadOnlyPropsContainerTest
         final HashSet<String> clone = new HashSet<>(roValues);
 
         assertTrue(roValues.equals(roValues));
+        // roValues is currently based on Collections.unmodifiableCollection,
+        // which does not implement equals (thus, default Object.equals is used)
+        // however, Object.equals does not compare the data of the object
         assertTrue(roValues.equals(clone));
         assertFalse(roValues.equals(null));
         assertFalse(roValues.equals(roProp));
@@ -1273,9 +1279,11 @@ public class ReadOnlyPropsContainerTest
         final String key = "key";
         writableProp.setProp(key, "value");
 
-        final int changedHashCode = roValues.hashCode();
-
-        assertNotEquals(origHashCode, changedHashCode);
+        // roValues is currently based on Collections.unmodifiableCollection,
+        // which does not implement hashCode (thus, default Object.hashCode is used)
+        // however, Object.hashCode gets calculated exactly once, regardless if the data
+        // of the object changes.
+        assertNotEquals(origHashCode, roValues.hashCode());
 
         writableProp.removeProp(key);
 

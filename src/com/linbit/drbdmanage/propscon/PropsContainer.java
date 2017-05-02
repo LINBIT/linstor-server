@@ -4,11 +4,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -252,9 +255,10 @@ public class PropsContainer implements Props
      * @param entryMap
      * @param namespace
      * @throws InvalidKeyException
+     * @throws InvalidValueException
      */
     public boolean setAllProps(Map<? extends String, ? extends String> entryMap, String namespace)
-        throws InvalidKeyException
+        throws InvalidKeyException, InvalidValueException
     {
         int itemCounter = 0;
         try
@@ -263,6 +267,11 @@ public class PropsContainer implements Props
             {
                 String key = entry.getKey();
                 String value = entry.getValue();
+
+                if (value == null)
+                {
+                    throw new InvalidValueException("Value must not be null");
+                }
 
                 String[] pathElements = splitPath(namespace, key);
                 checkKey(pathElements[PATH_KEY]);
@@ -893,22 +902,42 @@ public class PropsContainer implements Props
         public String remove(Object key)
         {
             String value = null;
+            boolean unknownType = false;
+            Exception unknownTypeCause = null;
             try
             {
-                value = container.removeProp((String) key, null);
+                if (key instanceof Map.Entry)
+                {
+                    Map.Entry<?, ?> entry = (Map.Entry<?, ?>) key;
+                    key = entry.getKey();
+                }
+
+                if (key instanceof String)
+                {
+                    value = container.removeProp((String) key, null);
+                }
+                else
+                {
+                    unknownType = true;
+                }
             }
             catch (ClassCastException castExc)
             {
-                throw new ImplementationError(
-                    "Key for map operation is of illegal object type",
-                    castExc
-                );
+                unknownType = true;
+                unknownTypeCause = castExc;
             }
             catch (InvalidKeyException keyExc)
             {
                 throw new IllegalArgumentException(
                     "Key for map operation violates validity constraints",
                     keyExc
+                );
+            }
+            if (unknownType)
+            {
+                throw new ImplementationError(
+                    "Key for map operation is of illegal object type",
+                    unknownTypeCause
                 );
             }
             return value;
@@ -927,6 +956,12 @@ public class PropsContainer implements Props
                     "Key for map operation violates validity constraints",
                     keyExc
                 );
+            }
+            catch (InvalidValueException valueExc)
+            {
+                throw new IllegalArgumentException(
+                    "Value for map operation violates validity contraints",
+                    valueExc);
             }
         }
 
@@ -952,6 +987,24 @@ public class PropsContainer implements Props
         public Set<Entry<String, String>> entrySet()
         {
             return new PropsContainer.EntrySet(container);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return entrySet().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            boolean equals = this == obj;
+            if (!equals && obj != null && obj instanceof Map)
+            {
+                Map<?, ?> map = (Map<?, ?>) obj;
+                equals = Objects.equals(map.entrySet(), this.entrySet());
+            }
+            return equals;
         }
     }
 
@@ -981,6 +1034,35 @@ public class PropsContainer implements Props
         {
             container.clear();
         }
+
+        @Override
+        public int hashCode()
+        {
+            int hashCode = 0;
+            for (Object value : this)
+            {
+                hashCode += value.hashCode();
+            }
+            return hashCode;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            boolean equals = this == obj;
+            if (!equals && obj != null && obj instanceof Set)
+            {
+                Set<?> set = (Set<?>) obj;
+                equals = this.size() == set.size();
+                Iterator<?> iterator = set.iterator();
+                while (equals && iterator.hasNext())
+                {
+                    Object value = iterator.next();
+                    equals = contains(value);
+                }
+            }
+            return equals;
+        }
     }
 
     static class KeySet extends BaseSet<String>
@@ -1005,7 +1087,7 @@ public class PropsContainer implements Props
         @Override
         public Object[] toArray()
         {
-            Set<String> pathList = new TreeSet<>();
+            Set<String> pathList = new TreeSet<>(new PropsKeyComparator());
             container.collectAllKeys(container.getPath(), pathList, true);
             return pathList.toArray();
         }
@@ -1013,7 +1095,7 @@ public class PropsContainer implements Props
         @Override
         public <T> T[] toArray(T[] keysArray)
         {
-            Set<String> pathList = new TreeSet<>();
+            Set<String> pathList = new TreeSet<>(new PropsKeyComparator());
             container.collectAllKeys(container.getPath(), pathList, true);
             return pathList.toArray(keysArray);
         }
@@ -1093,7 +1175,7 @@ public class PropsContainer implements Props
         public boolean addAll(Collection<? extends String> keyList)
         {
             boolean changed = false;
-            Map<String, String> entryMap = new TreeMap();
+            Map<String, String> entryMap = new TreeMap<>();
             for (String key : keyList)
             {
                 entryMap.put(key, "");
@@ -1106,6 +1188,13 @@ public class PropsContainer implements Props
                     throw new IllegalArgumentException(
                         "Key for set operation violates validity constraints",
                         keyExc
+                    );
+                }
+                catch (InvalidValueException valExc)
+                {
+                    throw new IllegalArgumentException(
+                        "Value for set operation violates validity constraints",
+                        valExc
                     );
                 }
             }
@@ -1157,8 +1246,22 @@ public class PropsContainer implements Props
         }
 
         @Override
-        public boolean contains(Object key)
+        public boolean contains(Object obj)
         {
+            Object key;
+            if (obj instanceof String)
+            {
+                key = obj;
+            }
+            else
+            if (obj instanceof Map.Entry)
+            {
+                key = ((Map.Entry<?, ?>) obj).getKey();
+            }
+            else
+            {
+                throw new IllegalArgumentException("Key must be either a String or an instance of Map.Entry<String, ?>");
+            }
             return container.map().containsKey(key);
         }
 
@@ -1171,17 +1274,17 @@ public class PropsContainer implements Props
         @Override
         public Object[] toArray()
         {
-            Map<String, String> collector = new TreeMap<>();
+            Map<String, String> collector = new TreeMap<>(new PropsKeyComparator());
             container.collectAllEntries(container.getPath(), collector, true);
             return collector.entrySet().toArray();
         }
 
         @Override
-        public <T> T[] toArray(T[] keysArray)
+        public <T> T[] toArray(T[] entryArray)
         {
-            Map<String, String> collector = new TreeMap<>();
+            Map<String, String> collector = new TreeMap<>(new PropsKeyComparator());
             container.collectAllEntries(container.getPath(), collector, true);
-            return collector.entrySet().toArray(keysArray);
+            return collector.entrySet().toArray(entryArray);
         }
 
         @Override
@@ -1274,7 +1377,7 @@ public class PropsContainer implements Props
             for (Map.Entry<String, String> entry : this)
             {
                 String key = entry.getKey();
-                if (keyList.contains(key))
+                if (keyList.contains(key) || keyList.contains(entry))
                 {
                     selection.add(key);
                 }
@@ -1282,6 +1385,21 @@ public class PropsContainer implements Props
             // Remove all entries with a matching key
             changed = container.removeAllProps(selection, null);
             return changed;
+        }
+    }
+
+    static class PropsKeyComparator implements Comparator<String>
+    {
+        @Override
+        public int compare(String key1, String key2)
+        {
+            int depth1 = key1.replaceAll("[^/]+", "").length();
+            int depth2 = key2.replaceAll("[^/]+", "").length();
+            if (depth1 != depth2)
+            {
+                return Integer.compare(depth1, depth2);
+            }
+            return key1.compareTo(key2);
         }
     }
 
@@ -1350,9 +1468,9 @@ public class PropsContainer implements Props
         public boolean containsAll(Collection<?> valuesList)
         {
             boolean result = true;
-            for (Map.Entry<String, String> entry : container.entrySet())
+            for (Object value : valuesList)
             {
-                if (!valuesList.contains(entry.getValue()))
+                if (!contains(value))
                 {
                     result = false;
                 }
@@ -1414,7 +1532,7 @@ public class PropsContainer implements Props
             boolean equals = other != null && other instanceof Collection;
             if (equals)
             {
-                Collection<String> otherCollection = (Collection<String>) other;
+                Collection<?> otherCollection = (Collection<?>) other;
                 equals &= this.containsAll(otherCollection);
                 equals &= otherCollection.containsAll(this);
             }
@@ -1424,7 +1542,12 @@ public class PropsContainer implements Props
         @Override
         public int hashCode()
         {
-            return container.hashCode();
+            int hashCode = 0;
+            for (Object value : this)
+            {
+                hashCode += value.hashCode();
+            }
+            return hashCode;
         }
     }
 
@@ -1522,14 +1645,14 @@ public class PropsContainer implements Props
             Map.Entry<String, String> entry = null;
             while (entry == null)
             {
-                try
+                if (currentIter.hasNext())
                 {
                     Map.Entry<String, String> localEntry = currentIter.next();
                     entry = new PropsConEntry(
                         container, prefix + localEntry.getKey(), localEntry.getValue()
                     );
                 }
-                catch (NoSuchElementException elemExc)
+                else
                 {
                     // Try the next container
                     PropsContainer subCon = recurseSubContainers();
@@ -1681,6 +1804,27 @@ public class PropsContainer implements Props
                 );
             }
             return oldValue;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            // copied from JavaDoc of Map.Entry#hashCode()
+            return (entryKey == null ? 0 : entryKey.hashCode()) ^
+                (entryValue == null ? 0 : entryValue.hashCode());
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            boolean equals = this == obj;
+            if (!equals && obj != null && obj instanceof Map.Entry)
+            {
+                Entry<?, ?> entry = (Entry<?, ?>) obj;
+                equals = Objects.equals(entry.getKey(), entryKey);
+                equals &= Objects.equals(entry.getValue(), entryValue);
+            }
+            return equals;
         }
     }
 

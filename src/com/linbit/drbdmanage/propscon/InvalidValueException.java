@@ -7,4 +7,13 @@ package com.linbit.drbdmanage.propscon;
  */
 public class InvalidValueException extends Exception
 {
+
+    public InvalidValueException()
+    {
+    }
+
+    public InvalidValueException(String string)
+    {
+        super(string);
+    }
 }

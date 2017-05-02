@@ -94,7 +94,7 @@ public class SerialPropsContainer extends PropsContainer
 
     @Override
     public boolean setAllProps(Map<? extends String, ? extends String> entryMap, String namespace)
-        throws InvalidKeyException
+        throws InvalidKeyException, InvalidValueException
     {
         boolean changed = false;
         if (!entryMap.isEmpty())
