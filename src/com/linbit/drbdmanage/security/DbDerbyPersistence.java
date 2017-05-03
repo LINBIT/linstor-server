@@ -1,7 +1,5 @@
 package com.linbit.drbdmanage.security;
 
-import com.linbit.drbdmanage.ControllerDatabase;
-import com.linbit.drbdmanage.dbcp.DerbyDatabaseService;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -99,11 +97,11 @@ public class DbDerbyPersistence implements DbAccessor
     @Override
     public ResultSet getSignInEntry(Connection dbConn, IdentityName idName) throws SQLException
     {
-        PreparedStatement stmt = dbConn.prepareStatement(
+        return dbQuery(
+            dbConn,
             SLCT_SIGNIN_ENTRY,
             new String[] { idName.value }
         );
-        return stmt.executeQuery();
     }
 
     @Override
@@ -173,7 +171,11 @@ public class DbDerbyPersistence implements DbAccessor
 
     private ResultSet dbQuery(Connection dbConn, String sqlQuery, String[] arguments) throws SQLException
     {
-        PreparedStatement stmt = dbConn.prepareStatement(sqlQuery, arguments);
+        PreparedStatement stmt = dbConn.prepareStatement(sqlQuery);
+        for (int idx = 0; idx < arguments.length; ++idx)
+        {
+            stmt.setString(idx, arguments[idx]);
+        }
         return stmt.executeQuery();
     }
 }
