@@ -18,14 +18,14 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 /**
- * Derby database connection pool
+ * JDBC pool
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class DerbyDatabaseService implements ControllerDatabase
+public class DbConnectionPool implements ControllerDatabase
 {
     private static final ServiceName SERVICE_NAME;
-    private static final String SERVICE_INFO = "Derby database service";
+    private static final String SERVICE_INFO = "SQL database connection pool service";
 
     private int dbTimeout = ControllerDatabase.DEFAULT_TIMEOUT;
     private int dbMaxOpen = ControllerDatabase.DEFAULT_MAX_OPEN_STMT;
@@ -47,7 +47,7 @@ public class DerbyDatabaseService implements ControllerDatabase
     {
         try
         {
-            SERVICE_NAME = new ServiceName("DerbyDbService");
+            SERVICE_NAME = new ServiceName("DatabaseService");
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -55,7 +55,7 @@ public class DerbyDatabaseService implements ControllerDatabase
         }
     }
 
-    public DerbyDatabaseService()
+    public DbConnectionPool()
     {
         serviceNameInstance = SERVICE_NAME;
     }
@@ -90,8 +90,8 @@ public class DerbyDatabaseService implements ControllerDatabase
     public void initializeDataSource(String dbConnectionUrl, Properties props)
         throws SQLException
     {
-        ErrorCheck.ctorNotNull(DerbyDatabaseService.class, String.class, dbConnectionUrl);
-        ErrorCheck.ctorNotNull(DerbyDatabaseService.class, Properties.class, props);
+        ErrorCheck.ctorNotNull(DbConnectionPool.class, String.class, dbConnectionUrl);
+        ErrorCheck.ctorNotNull(DbConnectionPool.class, Properties.class, props);
         this.dbConnectionUrl = dbConnectionUrl;
         this.props = props;
 
