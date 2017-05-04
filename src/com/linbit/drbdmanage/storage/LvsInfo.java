@@ -12,7 +12,8 @@ import com.linbit.extproc.ExtCmd.OutputData;
  */
 public class LvsInfo extends VolumeInfo
 {
-    private static final String DELIMITER = ",";
+    // DO NOT USE "," or "." AS DELIMITER due to localization issues
+    private static final String DELIMITER = ";";
 
     public LvsInfo(final long size, final String identifier, final String path)
     {
@@ -58,7 +59,12 @@ public class LvsInfo extends VolumeInfo
             final String path = data[1];
             final String rawSize = data[2];
 
-            final String rawSizeLong = rawSize.substring(0, rawSize.indexOf("."));
+            int indexOf = rawSize.indexOf(".");
+            if (indexOf == -1)
+            {
+                indexOf = rawSize.indexOf(","); // localization
+            }
+            final String rawSizeLong = rawSize.substring(0, indexOf);
             final long size = Long.parseLong(rawSizeLong);
 
             final LvsInfo info = new LvsInfo(size, identifier, path);

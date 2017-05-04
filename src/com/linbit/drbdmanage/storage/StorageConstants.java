@@ -18,6 +18,7 @@ public class StorageConstants
     public static final String CONFIG_LVM_CREATE_COMMAND_KEY = "lvmCreate";
     public static final String CONFIG_LVM_REMOVE_COMMAND_KEY = "lvmRemove";
     public static final String CONFIG_LVM_CHANGE_COMMAND_KEY = "lvmChange";
+    public static final String CONFIG_LVM_CONVERT_COMMAND_KEY = "lvmConvert";
     public static final String CONFIG_LVM_LVS_COMMAND_KEY = "lvmLvs";
     public static final String CONFIG_LVM_VGS_COMMAND_KEY = "lvmVgs";
 

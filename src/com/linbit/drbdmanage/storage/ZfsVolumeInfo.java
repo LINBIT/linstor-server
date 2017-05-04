@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.storage;
 
+import java.io.File;
 import java.io.IOException;
 
 import com.linbit.ChildProcessTimeoutException;
@@ -48,7 +49,10 @@ public class ZfsVolumeInfo extends VolumeInfo
         }
         long size = Long.parseLong(stringSize);
         size >>= 10; // driver wants the count in KiB...
-        final String path = "/dev/zvol/"+pool+"/"+identifier;
+        final String path = File.separator + "dev" +
+            File.separator + "zvol" +
+            File.separator + pool +
+            File.separator + identifier;
         return new ZfsVolumeInfo(size, identifier, path);
     }
 
@@ -60,7 +64,7 @@ public class ZfsVolumeInfo extends VolumeInfo
             "-H", // no headers
             "-p", // parsable version, tab spaced, in bytes
             "-o", "volsize", // print specified columns only
-            pool+"/"+identifier // the specified volume
+            pool + File.separator + identifier // the specified volume
         };
     }
 

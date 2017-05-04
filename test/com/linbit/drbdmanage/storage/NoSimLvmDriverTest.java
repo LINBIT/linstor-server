@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.storage;
 
+import java.io.File;
 import java.io.IOException;
 
 import com.linbit.ChildProcessTimeoutException;
@@ -20,80 +21,47 @@ import com.linbit.extproc.ExtCmd.OutputData;
  */
 public class NoSimLvmDriverTest extends NoSimDriverTest
 {
-    protected boolean poolExisted = false;
-    protected String poolName = LvmDriver.LVM_VOLUME_GROUP_DEFAULT;
-
     public NoSimLvmDriverTest() throws IOException, StorageException
     {
-        super(new LvmDriver());
+        this(new LvmDriver());
     }
 
     public NoSimLvmDriverTest(StorageDriver driver) throws IOException, StorageException
     {
         super(driver);
+        poolExisted = false;
+        poolName = "drbdManageLvmDriverTestPool-REMOVE-ME";
     }
+
 
     public static void main(String[] args) throws IOException, StorageException, ChildProcessTimeoutException
     {
         NoSimLvmDriverTest driverTest = new NoSimLvmDriverTest();
-        try
-        {
-            driverTest.runTest();
-        }
-        catch (Exception exc)
-        {
-            exc.printStackTrace();
-        }
-        driverTest.cleanUpImpl();
+        driverTest.main0(args);
     }
 
     @Override
     protected void initializeImpl() throws ChildProcessTimeoutException, IOException
     {
         // ensure that the default pool exists
-        log("\tchecking if pool [%s] exists...", poolName);
-        OutputData outputData = callChecked("vgs", "-o", "vg_name", "--noheading");
-
-        String[] lines = new String(outputData.stdoutData).split("\n");
-        for (String line : lines)
+        log("   checking if pool [%s] exists...", poolName);
+        poolExisted = poolExists();
+        if (poolExisted)
         {
-            if(line.trim().equals(poolName))
-            {
-                log(" yes %n");
-                poolExisted = true;
-                break;
-            }
+            log(" yes %n");
         }
-        if (!poolExisted)
+        else
         {
             log(" no %n");
             String blockDevice = "/dev/loop1";
-            log("\tcreating pool [%s] on [%s]...", poolName, blockDevice);
+            log("      creating pool [%s] on [%s]...", poolName, blockDevice);
             callChecked("vgcreate", poolName, blockDevice);
             log(" done %n");
         }
     }
 
     @Override
-    protected String getUnusedIdentifierImpl() throws ChildProcessTimeoutException, IOException
-    {
-        String identifier = null;
-        String baseIdentifier = "identifier";
-        int i = 0;
-        while (identifier == null)
-        {
-            identifier = baseIdentifier + i;
-            i++;
-            if (volumeExistsImpl(identifier))
-            {
-                identifier = null;
-            }
-        }
-        return identifier;
-    }
-
-    @Override
-    protected boolean volumeExistsImpl(String identifier) throws ChildProcessTimeoutException, IOException
+    protected boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException
     {
         boolean exists = false;
         OutputData lvs = callChecked("lvs", "-o", "lv_name", "--noheading");
@@ -140,65 +108,44 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
     }
 
     @Override
-    protected void cleanUpImpl() throws ChildProcessTimeoutException, IOException
+    protected String[] getListVolumeNamesCommand()
     {
-        inCleanup = true;
+        return new String[]{ "lvs", "-o", "lv_name", "--noheading" };
+    }
 
-        log("cleaning up...%n");
-        log("\tchecking test volume(s)... %n");
-        String[] lvsCommand = new String[]{ "lvs", "-o", "lv_name,lv_path", "--separator", ",", "--noheading" };
-        OutputData lvs = callChecked(lvsCommand);
-        String[] lines = new String(lvs.stdoutData).split("\n");
-        if (testIdentifiers.size() > 0)
+    @Override
+    protected void removeVolume(String identifier) throws ChildProcessTimeoutException, IOException
+    {
+        callChecked("lvremove", "-f", poolName + File.separator + identifier);
+    }
+
+    @Override
+    protected boolean poolExists() throws ChildProcessTimeoutException, IOException
+    {
+        boolean ret = false;
+        OutputData outputData = callChecked("vgs", "-o", "vg_name", "--noheading");
+
+        String[] lines = new String(outputData.stdoutData).split("\n");
+        for (String line : lines)
         {
-            for (String line : lines)
+            if(line.trim().equals(poolName))
             {
-                String[] colums = line.trim().split(",");
-                String identifier = colums[0];
-                if (testIdentifiers.contains(identifier))
-                {
-                    log("\tfound volume [%s], trying to remove...", identifier);
-                    callChecked("lvremove", "-f", poolName+"/"+identifier);
-                    log(" done %n");
-
-                    log("\t\tverifying remove...");
-                    lvs = callChecked(lvsCommand);
-                    lines = new String(lvs.stdoutData).split("\n");
-                    for (String line2 : lines)
-                    {
-                        if (line2.equals(line))
-                        {
-                            fail("Failed to remove test volume [%s] in cleanup", identifier);
-                        }
-                    }
-                    testIdentifiers.remove(identifier);
-                    log(" done%n");
-                    break;
-                }
+                ret = true;
+                break;
             }
         }
-        else
-        {
-            log("\t\tno test volues used");
-        }
+        return ret;
+    }
 
-        if (!poolExisted)
-        {
-            log("\tpool did not exist before tests - trying to remove...");
-            callChecked("vgremove", poolName);
-            log(" done %n");
+    @Override
+    protected void removePool() throws ChildProcessTimeoutException, IOException
+    {
+        callChecked("vgremove", poolName);
+    }
 
-            log("\t\tverifying remove...");
-            lvs = callChecked("vgs", "-o", "vg_name", "--noheading");
-            lines = new String(lvs.stdoutData).split("\n");
-            for (String line : lines)
-            {
-                if (poolName.equals(line.trim()))
-                {
-                    fail("Failed to remove test volume group(s) [%s] in cleanup", poolName);
-                }
-            }
-        }
-        log("\tall should be cleared now %n%n%n");
+    @Override
+    protected String[] getListPoolNamesCommand()
+    {
+        return new String[] { "vgs", "-o", "vg_name", "--noheading" };
     }
 }

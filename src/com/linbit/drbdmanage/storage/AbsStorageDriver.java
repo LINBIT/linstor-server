@@ -204,6 +204,84 @@ public abstract class AbsStorageDriver implements StorageDriver
         applyConfiguration(config);
     }
 
+    @Override
+    public void createSnapshot(String identifier, String snapshotName) throws StorageException
+    {
+        if (!isSnapshotSupported())
+        {
+            throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
+        }
+
+        final String[] command = getCreateSnapshotCommand(identifier, snapshotName);
+        try
+        {
+            final OutputData outputData = extCommand.exec(command);
+            checkExitCode(outputData, command, "Failed to create snapshot [%s] for volume [%s]. ", snapshotName, identifier);
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            // TODO: Detailed error reporting
+            throw new StorageException(
+                String.format("Failed to create snapshot [%s] for volume [%s]. ", snapshotName, identifier),
+                exc
+            );
+        }
+    }
+    @Override
+    public void cloneSnapshot(String snapshotName1, String snapshotName2) throws StorageException
+    {
+        if (!isSnapshotSupported())
+        {
+            throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
+        }
+
+        final String[] command = getCloneSnapshotCommand(snapshotName1, snapshotName2);
+        try
+        {
+            final OutputData outputData = extCommand.exec(command);
+            checkExitCode(outputData, command, "Failed to clone snapshot [%s] into [%s]. ", snapshotName1, snapshotName2);
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            // TODO: Detailed error reporting
+            throw new StorageException(
+                String.format("Failed to clone snapshot [%s] into [%s]. ", snapshotName1, snapshotName2),
+                exc
+            );
+        }
+    }
+
+    // TODO add JavaDoc
+    // TODO extract to interface
+    public void restoreSnapshot(String snapshotName) throws StorageException
+    {
+        throw new UnsupportedOperationException("Snapshots are not supported by "+ getClass());
+    }
+
+    @Override
+    public void deleteSnapshot(String snapshotName) throws StorageException
+    {
+        if (!isSnapshotSupported())
+        {
+            throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
+        }
+
+        final String[] command = getDeleteSnapshotCommand(snapshotName);
+        try
+        {
+            final OutputData outputData = extCommand.exec(command);
+            checkExitCode(outputData, command, "Failed to delete snapshot [%s]. ", snapshotName);
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            // TODO: Detailed error reporting
+            throw new StorageException(
+                String.format("Failed to delete snapshot [%s]. ", snapshotName),
+                exc
+            );
+        }
+    }
+
     /**
      * Simple check that throws a {@link StorageException} if the exit code is
      * not 0.
@@ -218,13 +296,44 @@ public abstract class AbsStorageDriver implements StorageDriver
     protected void checkExitCode(OutputData output, String[] command)
         throws StorageException
     {
+        checkExitCode(output, command, null, (Object[]) null);
+    }
+
+    /**
+     * Simple check that throws a {@link StorageException} if the exit code is
+     * not 0.
+     *
+     * @param output
+     *            The {@link OutputData} which contains the exit code
+     * @param command
+     *            The <code>String[]</code> that was called (used in the
+     *            exception message)
+     * @param format
+     *            An optional additional message which is printed before the default
+     *            "command '%s' returned with exitcode %d. Error message: %s" message
+     * @param args
+     *            The arguments for the format parameter
+     * @throws StorageException
+     *            If the exitCode of output is not 0, a {@link StorageException} is thrown.
+     */
+    protected void checkExitCode(OutputData output, String[] command, String format, Object... args)
+        throws StorageException
+    {
         if (output.exitCode != 0)
         {
             String gluedCommand = glue(command, " ");
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format("%s returned with exitcode %d", gluedCommand, output.exitCode)
+            StringBuilder sb = new StringBuilder();
+            if (format != null && format.length() > 0)
+            {
+                sb.append(String.format(format, args));
+            }
+            sb.append(String.format("Command '%s' returned with exitcode %d. Error message: %s",
+                    gluedCommand,
+                    output.exitCode,
+                    new String(output.stderrData)
+                )
             );
+            throw new StorageException(sb.toString());
         }
     }
 
@@ -264,7 +373,6 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
         return value;
     }
-
 
     /**
      *
@@ -459,4 +567,10 @@ public abstract class AbsStorageDriver implements StorageDriver
     protected abstract String[] getCreateCommand(String identifier, long size);
 
     protected abstract String[] getDeleteCommand(String identifier);
+
+    protected abstract String[] getCreateSnapshotCommand(String identifier, String snapshotName);
+
+    protected abstract String[] getCloneSnapshotCommand(String snapshotName1, String snapshotName2) throws StorageException;
+
+    protected abstract String[] getDeleteSnapshotCommand(String snapshotName);
 }

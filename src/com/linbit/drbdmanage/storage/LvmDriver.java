@@ -101,7 +101,7 @@ public class LvmDriver extends AbsStorageDriver
         return new String[]
         {
             lvmRemoveCommand,
-            "-f", // skip "are you sure?"
+            "-f", // skip the "are you sure?"
             volumeGroup + File.separator + identifier
         };
     }
@@ -178,7 +178,12 @@ public class LvmDriver extends AbsStorageDriver
 
             String rawOut = new String(output.stdoutData);
             // cut everything after the decimal dot
-            rawOut = rawOut.substring(0, rawOut.indexOf("."));
+            int indexOf = rawOut.indexOf(".");
+            if (indexOf == -1)
+            {
+                indexOf = rawOut.indexOf(",");
+            }
+            rawOut = rawOut.substring(0, indexOf);
             extentSize = Long.parseLong(rawOut.trim());
         }
         catch (ChildProcessTimeoutException | IOException exc)
@@ -196,7 +201,9 @@ public class LvmDriver extends AbsStorageDriver
     @Override
     protected String getExpectedVolumePath(String identifier)
     {
-        return "/dev/"+volumeGroup+"/"+identifier;
+        return File.separator + "dev" +
+            File.separator + volumeGroup +
+            File.separator +identifier;
     }
 
     @Override
@@ -228,6 +235,30 @@ public class LvmDriver extends AbsStorageDriver
 
         volumeGroup = getAsString(config, StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY, volumeGroup);
         sizeAlignmentToleranceFactor = uncheckedGetAsInt(config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY, sizeAlignmentToleranceFactor);
+    }
+
+    @Override
+    public boolean isSnapshotSupported()
+    {
+        return false;
+    }
+
+    @Override
+    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
+    {
+        throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
+    }
+
+    @Override
+    protected String[] getCloneSnapshotCommand(String snapshotName1, String snapshotName2)
+    {
+        throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
+    }
+
+    @Override
+    protected String[] getDeleteSnapshotCommand(String snapshotName)
+    {
+        throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }
 
     /**

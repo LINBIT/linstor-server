@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.storage;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,7 +71,10 @@ public class ZfsDriver extends AbsStorageDriver
     @Override
     protected String getExpectedVolumePath(String identifier)
     {
-        return "/dev/zvol/"+pool+"/"+identifier;
+        return File.separator + "dev" +
+            File.separator + "zvol" +
+            File.separator + pool +
+            File.separator + identifier;
     }
 
     @Override
@@ -147,8 +151,8 @@ public class ZfsDriver extends AbsStorageDriver
         return new String[] {
             zfsCommand,
             "create",
-            "-V", size+"KB",
-            pool+"/"+identifier
+            "-V", size + "KB",
+            pool + File.separator + identifier
         };
     }
 
@@ -157,8 +161,96 @@ public class ZfsDriver extends AbsStorageDriver
     {
         return new String[]{
             zfsCommand,
-            "destroy", "-f",
-            pool+"/"+identifier
+            "destroy",
+            "-f",  // force
+            "-r",  // also delete snapshots of this volume
+            pool + File.separator + identifier
+        };
+    }
+
+    @Override
+    public boolean isSnapshotSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public void createSnapshot(String identifier, String snapshotName) throws StorageException
+    {
+        super.createSnapshot(identifier, snapshotName);
+        super.cloneSnapshot(identifier + "@" + snapshotName, snapshotName);
+    }
+
+    @Override
+    protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
+    {
+        final String zfsSnapName = pool + File.separator + identifier + "@" + snapshotName;
+        final String[] command = new String[]
+        {
+            zfsCommand,
+            "snapshot", zfsSnapName
+        };
+        return command;
+    }
+
+    @Override
+    protected String[] getCloneSnapshotCommand(String snapshotSource, String snapshotTarget) throws StorageException
+    {
+        String origin;
+        if (snapshotSource.contains("@"))
+        {
+            origin = pool + File.separator + snapshotSource;
+        }
+        else
+        {
+            final String[] getSnapshotsOriginCommand = new String[]
+            {
+                zfsCommand,
+                "get", "origin",
+                pool + File.separator + snapshotSource,
+                "-o", "value",
+                "-H"
+            };
+
+            try
+            {
+                OutputData originData = extCommand.exec(getSnapshotsOriginCommand);
+                checkExitCode(originData, getSnapshotsOriginCommand);
+                String[] lines = new String(originData.stdoutData).split("\n");
+                if (lines.length > 1)
+                {
+                    throw new StorageException(String.format("Zfs snapshot [%s] has unexpectedly multiple origins...", snapshotSource));
+                }
+                origin = lines[0];
+            }
+            catch (ChildProcessTimeoutException | IOException exc)
+            {
+                throw new StorageException(
+                    String.format("Could not determine snapshots origin. Command: %s",
+                        glue(getSnapshotsOriginCommand, " ")
+                    ),
+                    exc
+                );
+            }
+        }
+
+        return new String[]
+        {
+            zfsCommand,
+            "clone",
+            origin,
+            pool + File.separator + snapshotTarget
+        };
+    }
+
+    @Override
+    protected String[] getDeleteSnapshotCommand(String snapshotName)
+    {
+        return new String[]
+        {
+            zfsCommand,
+            "destroy",
+            pool + File.separator + snapshotName
         };
     }
 
