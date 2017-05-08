@@ -10,8 +10,6 @@ import java.util.Set;
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.InvalidNameException;
-import com.linbit.drbd.md.MaxSizeException;
-import com.linbit.drbd.md.MinSizeException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 
@@ -28,21 +26,9 @@ public class ZfsDriver extends AbsStorageDriver
     {
     }
 
-    /* default */ ZfsDriver(ExtCmd ec)
+    ZfsDriver(ExtCmd ec)
     {
         extCommand = ec;
-    }
-
-    @Override
-    public String createVolume(String identifier, long size) throws StorageException, MaxSizeException, MinSizeException
-    {
-        final long extent = getExtentSize();
-        if (size % extent != 0)
-        {
-            // TODO: log that we are aligning the size
-            size = ((size / extent) + 1) * extent; // rounding up needed for zfs
-        }
-        return super.createVolume(identifier, size);
     }
 
     @Override

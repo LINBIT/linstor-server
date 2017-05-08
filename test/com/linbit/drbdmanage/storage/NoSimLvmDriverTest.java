@@ -61,6 +61,20 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
     }
 
     @Override
+    protected boolean isThinDriver()
+    {
+        return false;
+    }
+
+    @Override
+    protected long getPoolSizeInKiB() throws ChildProcessTimeoutException, IOException
+    {
+        OutputData vgsOut = callChecked("vgs", "-o", "vg_size", "--noheading", "--units", "k");
+        String stringSize = new String(vgsOut.stdoutData).trim();
+        return Long.parseLong(stringSize.split("[,.]")[0]);
+    }
+
+    @Override
     protected boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException
     {
         boolean exists = false;

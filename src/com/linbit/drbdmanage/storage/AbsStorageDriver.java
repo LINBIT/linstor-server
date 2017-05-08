@@ -63,6 +63,13 @@ public abstract class AbsStorageDriver implements StorageDriver
     public String createVolume(final String identifier, long size)
         throws StorageException, MaxSizeException, MinSizeException
     {
+        final long extent = getExtentSize();
+        if (size % extent != 0)
+        {
+            // TODO: log that we are aligning the size
+            size = ((size / extent) + 1) * extent; // rounding up needed for zfs
+        }
+
         MetaData.checkMinDrbdSizeNet(size);
         MetaData.checkMaxDrbdSize(size);
 

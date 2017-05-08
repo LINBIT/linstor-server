@@ -62,6 +62,11 @@ public class NoSimLvmThinDriverTest extends NoSimLvmDriverTest
         }
     }
 
+    @Override
+    protected boolean isThinDriver()
+    {
+        return true;
+    }
 
     @Override
     protected boolean isVolumeStartStopSupportedImpl()

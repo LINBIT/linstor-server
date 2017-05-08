@@ -10,6 +10,7 @@ import java.util.Map;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.drbd.md.MaxSizeException;
+import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.ErrorReporter;
@@ -69,7 +70,7 @@ public abstract class NoSimDriverTest
 
         log("testing createVolume   %n");
 
-        long size = 100*1024;
+        long size = 100 * 1024;
         createVolume(identifier, size, "   creating volume [%s] with size [%d]... ");
 
         try
@@ -79,9 +80,47 @@ public abstract class NoSimDriverTest
         }
         catch (StorageException expected)
         {
-            // expected
             log(" done%n");
         }
+
+        String identifier2 = getUnusedIdentifier();
+        try
+        {
+            createVolume(identifier2, 10 * getPoolSizeInKiB(), "   trying to create too large volume [%s] with size [%d]...");
+            if (!isThinDriver())
+            {
+                fail("      Creating too large volume should have failed");
+            }
+        }
+        catch (StorageException storExc)
+        {
+            if (isThinDriver())
+            {
+                fail("      Unexpected execption (thin driver should be able to create this volume)");
+            }
+            else
+            {
+                log(" done%n");
+            }
+        }
+
+        // if the size is too close to zero (e.g. -1) it might get aligned to a positive value...
+        // -4096 is (currently) safe for both, lvm and zfs (safe by the means of this test)
+        String invalidIdentifier = getUnusedIdentifier();
+        try
+        {
+            int negativeSize = -4096;
+            createVolume(invalidIdentifier, negativeSize, "   trying to create volume [%s] with negative size [%d]...");
+            fail("      Creating volume with negative size should have thrown an exception");
+        }
+        catch (StorageException | MinSizeException expected)
+        {
+            log(" done%n");
+        }
+
+        String identifier3 = getUnusedIdentifier();
+        createVolume(identifier3, MetaData.DRBD_MIN_NET_kiB - 1, "   trying to create volume [%s] with too small size [%d] (should be aligned up)...");
+
 
         log("testing checkVolume   %n");
 
@@ -107,12 +146,22 @@ public abstract class NoSimDriverTest
             // expected
             log(" done%n");
         }
+        try
+        {
+            checkVolume(identifier, -size, "   test checking volume [%s], with negative size [%d]...");
+            fail("      checkVolume should have thrown StorageException");
+        }
+        catch (StorageException expected)
+        {
+            // expected
+            log(" done%n");
+        }
 
-        String identifier2 = getUnusedIdentifier();
-        long unalignedSize = 100*1024 - 1;// should be aligned up to 100 * 1024, aka [size]
-        createVolume(identifier2, unalignedSize, "   creating volume [%s] with unaligned size [%d]...");
-        checkVolume(identifier2, unalignedSize, "   checking volume [%s], with unaligned size [%d]...");
-        checkVolume(identifier2, size, "   checking volume [%s], with aligned size [%d]...");
+        String identifier4 = getUnusedIdentifier();
+        long unalignedSize = 100 * 1024 - 1; // should be aligned up to 100 * 1024, aka [size]
+        createVolume(identifier4, unalignedSize, "   creating volume [%s] with unaligned size [%d]...");
+        checkVolume(identifier4, unalignedSize, "   checking volume [%s], with unaligned size [%d]...");
+        checkVolume(identifier4, size, "   checking volume [%s], with aligned size [%d]...");
 
         log("testing getSize   %n");
         checkSize(identifier, size, "   getting size of volume [%s]...");
@@ -318,7 +367,23 @@ public abstract class NoSimDriverTest
             log(" done%n");
         }
 
-        deleteVolume(identifier2, "   deleting volume [%s]...");
+        try
+        {
+            deleteVolume("unknownVolume", "   test deleting unknown volume [%s]...");
+            fail("      deleteVolume should have thrown StorageException");
+        }
+        catch(StorageException expected)
+        {
+            // expected
+            log(" done%n");
+        }
+
+        if (isThinDriver())
+        {
+            deleteVolume(identifier2, "   deleting volume [%s]...");
+        }
+        deleteVolume(identifier3, "   deleting volume [%s]...");
+        deleteVolume(identifier4, "   deleting volume [%s]...");
 
         log("%n%nAll tests done - no errors found%n");
         log("Running cleanup%n");
@@ -770,6 +835,10 @@ public abstract class NoSimDriverTest
 
     protected abstract void initializeImpl() throws ChildProcessTimeoutException, IOException;
 
+    protected abstract boolean isThinDriver();
+
+    protected abstract long getPoolSizeInKiB() throws ChildProcessTimeoutException, IOException;
+
     protected abstract boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException;
 
     protected abstract String getVolumePathImpl(String identifier) throws ChildProcessTimeoutException, IOException;
@@ -831,12 +900,12 @@ public abstract class NoSimDriverTest
 
         public TestFailedException(String message, Throwable cause)
         {
-            super(message, cause);
+            super(message.trim(), cause);
         }
 
         public TestFailedException(String message)
         {
-            super(message);
+            super(message.trim());
         }
 
         public TestFailedException(Throwable cause)

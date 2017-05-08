@@ -59,6 +59,29 @@ public class NoSimZfsDriverTest extends NoSimDriverTest
     }
 
     @Override
+    protected long getPoolSizeInKiB() throws ChildProcessTimeoutException, IOException
+    {
+        OutputData vgsOut = callChecked("zpool", "get", "size", "-Hp", poolName);
+        String stringSize = new String(vgsOut.stdoutData).trim();
+        String[] lines = stringSize.split("\n");
+        for (String line : lines)
+        {
+            String[] columns = line.split("\t"); // forced by -p (parsable) option
+            if (columns[0].equals(poolName))
+            {
+                return  Long.parseLong(columns[2]) >> 10; // convert to kiB
+            }
+        }
+        throw new RuntimeException("Could not find zpool: " + poolName);
+    }
+
+    @Override
+    protected boolean isThinDriver()
+    {
+        return false;
+    }
+
+    @Override
     protected boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException
     {
         OutputData zfsList = callChecked("zfs", "list", "-o", "name", "-H");
