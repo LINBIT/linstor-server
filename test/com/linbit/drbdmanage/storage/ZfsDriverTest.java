@@ -557,7 +557,7 @@ public class ZfsDriverTest extends StorageTestUtils
         Command command = new Command(
             zfsCommand,
             "get", "recordsize",
-            ".o", "value",
+            "-o", "value",
             "-Hp",
             pool);
         OutputData outData;
@@ -638,7 +638,7 @@ public class ZfsDriverTest extends StorageTestUtils
     {
         Command command = new Command(
             zfsCommand,
-            "destroy", "-f",
+            "destroy", "-f", "-r",
             pool+"/"+identifier
         );
         OutputData outData;

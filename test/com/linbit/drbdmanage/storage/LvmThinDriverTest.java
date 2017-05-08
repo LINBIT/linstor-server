@@ -91,6 +91,7 @@ public class LvmThinDriverTest extends LvmDriverTest
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY));
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY));
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY));
+        assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY));
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY));
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY));
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY));
@@ -146,7 +147,7 @@ public class LvmThinDriverTest extends LvmDriverTest
             lvmCreateCommand,
             "--virtualsize", volumeSize + "k",
             "--thinpool", thinPool,
-            "-n", identifier,
+            "--name", identifier,
             volumeGroup
             );
 

@@ -35,7 +35,8 @@ import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
 @PrepareForTest(LvmDriver.class)
 public class LvmDriverTest extends StorageTestUtils
 {
-    protected static final String EXT_COMMAND_SEPARATOR = ",";
+    protected static final String EXT_COMMAND_SEPARATOR = ";";
+    protected static final long DEFAULT_EXTENT_SIZE = 4_096;
 
     public LvmDriverTest()
     {
@@ -182,6 +183,7 @@ public class LvmDriverTest extends StorageTestUtils
         final String identifier = "testVolume";
         expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, Long.toString(volumeSize)+".00k");
         expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, identifier, LVM_VOLUME_GROUP_DEFAULT, false);
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, DEFAULT_EXTENT_SIZE);
 
         final String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
         final FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
@@ -224,6 +226,7 @@ public class LvmDriverTest extends StorageTestUtils
 
         expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, identifier, LVM_VOLUME_GROUP_DEFAULT, false);
         expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, volumeSize);
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, DEFAULT_EXTENT_SIZE);
 
         final String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
         final FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
@@ -247,6 +250,7 @@ public class LvmDriverTest extends StorageTestUtils
         final String identifier = "testVolume";
 
         expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, identifier, LVM_VOLUME_GROUP_DEFAULT, false);
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, DEFAULT_EXTENT_SIZE);
 
         final String expectedFilePath = ((AbsStorageDriver) driver).getExpectedVolumePath(identifier);
         final FileEntryGroup testFileEntryGroup = getInstance(FileEntryGroup.class);
@@ -266,6 +270,8 @@ public class LvmDriverTest extends StorageTestUtils
         final String volumeName = "testVolume";
 
         expectLvmCreateVolumeBehavior(LVM_CREATE_DEFAULT, volumeSize, volumeName, LVM_VOLUME_GROUP_DEFAULT, true);
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, DEFAULT_EXTENT_SIZE);
+
         driver.createVolume(volumeName, volumeSize);
     }
 
@@ -325,10 +331,9 @@ public class LvmDriverTest extends StorageTestUtils
     {
         final String identifier = "testVolume";
         final long size = 102_400;
-        final long extentSize = 4_096;
 
         expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, size);
-        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, extentSize);
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, DEFAULT_EXTENT_SIZE);
 
         driver.checkVolume(identifier, size);
     }
@@ -410,7 +415,7 @@ public class LvmDriverTest extends StorageTestUtils
     @Test
     public void testTraits() throws StorageException
     {
-        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, 4096);
+        expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, DEFAULT_EXTENT_SIZE);
         Map<String, String> traits = driver.getTraits();
 
         final String traitProv = traits.get(DriverTraits.KEY_PROV);
@@ -445,6 +450,7 @@ public class LvmDriverTest extends StorageTestUtils
         final Command command = new Command(
             LVM_CHANGE_DEFAULT,
             "-ay",
+            "-kn", "-K",
             LVM_VOLUME_GROUP_DEFAULT + "/" + identifier);
 
         final OutputData outData;
