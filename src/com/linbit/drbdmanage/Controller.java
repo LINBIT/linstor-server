@@ -17,7 +17,7 @@ import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
-import com.linbit.drbdmanage.dbcp.DerbyDatabaseService;
+import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
@@ -91,7 +91,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private final Map<ServiceName, SystemService> systemServicesMap;
 
     // Database connection pool service
-    private final DerbyDatabaseService derbyDatabaseSvc;
+    private final DbConnectionPool dbConnPool;
 
     // Map of connected peers
     private final Map<String, Peer> peerMap;
@@ -129,10 +129,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             CoreTimer timer = super.getTimer();
             systemServicesMap.put(timer.getInstanceName(), timer);
         }
-        derbyDatabaseSvc = new DerbyDatabaseService();
+        dbConnPool = new DbConnectionPool();
         securityDbDriver = new DbDerbyPersistence();
         persistenceDbDriver = new DerbyDriver();
-        systemServicesMap.put(derbyDatabaseSvc.getInstanceName(), derbyDatabaseSvc);
+        systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
 
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
@@ -184,7 +184,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     );
 
                     // Connect the database connection pool to the database
-                    derbyDatabaseSvc.initializeDataSource(
+                    dbConnPool.setServiceInstanceName(
+                        persistenceDbDriver.getDefaultServiceInstanceName()
+                    );
+                    dbConnPool.initializeDataSource(
                         connectionUrl,
                         dbProps
                     );
@@ -198,7 +201,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 logInit("Loading security objects");
                 try
                 {
-                    Initializer.load(initCtx, derbyDatabaseSvc, securityDbDriver);
+                    Initializer.load(initCtx, dbConnPool, securityDbDriver);
                 }
                 catch (SQLException | InvalidNameException | AccessDeniedException exc)
                 {
@@ -208,7 +211,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 logInit("Initializing authentication subsystem");
                 try
                 {
-                    auth = new Authentication(initCtx, derbyDatabaseSvc, securityDbDriver);
+                    auth = new Authentication(initCtx, dbConnPool, securityDbDriver);
                 }
                 catch (AccessDeniedException accExc)
                 {
