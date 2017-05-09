@@ -924,6 +924,9 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         {
             serviceInstanceName = instanceName;
         }
-        selectorLoopThread.setName(serviceInstanceName.getDisplayName());
+        if (selectorLoopThread != null)
+        {
+            selectorLoopThread.setName(serviceInstanceName.getDisplayName());
+        }
     }
 }

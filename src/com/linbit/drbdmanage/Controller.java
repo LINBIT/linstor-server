@@ -548,19 +548,29 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     {
         try
         {
-            TcpConnector netComSvc;
-            if (sslConfig == null)
             {
-                netComSvc = new TcpConnectorService(
+                TcpConnector netComPlainSvc = new TcpConnectorService(
                     this,
                     msgProc,
                     publicCtx,
                     new ConnTracker(this)
                 );
+                try
+                {
+                    netComPlainSvc.setServiceInstanceName(new ServiceName("NetComService"));
+                    netComConnectors.put(netComPlainSvc.getInstanceName(), netComPlainSvc);
+                    systemServicesMap.put(netComPlainSvc.getInstanceName(), netComPlainSvc);
+                    netComPlainSvc.start();
+                }
+                catch (SystemServiceStartException | InvalidNameException exc)
+                {
+                    getErrorReporter().reportError(exc);
+                }
             }
-            else
+
+            if (sslConfig != null)
             {
-                netComSvc = new SslTcpConnectorService(
+                TcpConnector netComSslSvc = new SslTcpConnectorService(
                     this,
                     msgProc,
                     publicCtx,
@@ -572,16 +582,17 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     sslConfig.trustStoreFile,
                     sslConfig.trustStorePasswd
                 );
-            }
-            netComConnectors.put(netComSvc.getInstanceName(), netComSvc);
-            systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
-            try
-            {
-                netComSvc.start();
-            }
-            catch (SystemServiceStartException strExc)
-            {
-                getErrorReporter().reportError(strExc);
+                try
+                {
+                    netComSslSvc.setServiceInstanceName(new ServiceName("NetComSslService"));
+                    netComConnectors.put(netComSslSvc.getInstanceName(), netComSslSvc);
+                    systemServicesMap.put(netComSslSvc.getInstanceName(), netComSslSvc);
+                    netComSslSvc.start();
+                }
+                catch (SystemServiceStartException | InvalidNameException exc)
+                {
+                    getErrorReporter().reportError(exc);
+                }
             }
         }
         catch (IOException exc)
