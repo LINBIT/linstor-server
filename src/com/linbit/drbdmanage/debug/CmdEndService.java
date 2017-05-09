@@ -9,11 +9,11 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Ends execution of a Controller service
+ * Ends execution of a Controller or Satellite service
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdEndService extends BaseControllerDebugCmd
+public class CmdEndService extends BaseDebugCmd
 {
     private static final String PRM_SVC_NAME = "SERVICE";
 
@@ -35,7 +35,7 @@ public class CmdEndService extends BaseControllerDebugCmd
                 "EndSvc"
             },
             "End service",
-            "Ends execution of a service",
+            "Ends execution of a service instance",
             PARAMETER_DESCRIPTIONS,
             null,
             false
@@ -50,7 +50,7 @@ public class CmdEndService extends BaseControllerDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        Map<ServiceName, SystemService> services = debugCtl.getSystemServiceMap();
+        Map<ServiceName, SystemService> services = cmnDebugCtl.getSystemServiceMap();
         String serviceNamePrm = parameters.get(PRM_SVC_NAME);
         if (serviceNamePrm != null)
         {

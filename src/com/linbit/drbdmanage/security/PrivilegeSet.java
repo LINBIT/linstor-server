@@ -3,6 +3,8 @@ package com.linbit.drbdmanage.security;
 import com.linbit.ImplementationError;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Set of privileges
@@ -31,6 +33,12 @@ public final class PrivilegeSet implements Cloneable
     {
         limitPrivs = limitPrivsRef;
         privileges = 0L;
+    }
+
+    PrivilegeSet(long enabledPrivs)
+    {
+        limitPrivs = null;
+        privileges = enabledPrivs;
     }
 
     /**
@@ -213,5 +221,18 @@ public final class PrivilegeSet implements Cloneable
         clonedPrivSet.limitPrivs = limit;
         clonedPrivSet.privileges &= clonedPrivSet.limitPrivs.privileges;
         return clonedPrivSet;
+    }
+
+    static Set<Privilege> privMaskToPrivSet(long privMask)
+    {
+        Set<Privilege> privSet = new TreeSet<>();
+        for (Privilege priv : Privilege.PRIVILEGE_LIST)
+        {
+            if ((privMask & priv.id) == priv.id)
+            {
+                privSet.add(priv);
+            }
+        }
+        return privSet;
     }
 }

@@ -252,7 +252,15 @@ public class PropsContainerTest
 
         for (final Entry<String, String> entry : entrySet)
         {
-            assertTrue("Missing expected entry", map.remove(entry.getKey(), entry.getValue()));
+            String value = map.remove(entry.getKey());
+            if (value == null)
+            {
+                fail("Missing expected entry");
+            }
+            if (value != entry.getValue())
+            {
+                fail("Removed key had unexpected value");
+            }
         }
     }
 
@@ -297,7 +305,15 @@ public class PropsContainerTest
             assertTrue(key.startsWith(namespace));
             key = key.substring(namespace.length() + 1); // cut the namepsace and the first /
 
-            assertTrue("Missing expected entry", map.remove(key, entry.getValue()));
+            String value = map.remove(entry.getKey());
+            if (value == null)
+            {
+                fail("Missing expected entry");
+            }
+            if (value != entry.getValue())
+            {
+                fail("Removed key had unexpected value");
+            }
         }
     }
 
@@ -522,7 +538,15 @@ public class PropsContainerTest
 
         for (final Entry<String, String> entry : entrySet)
         {
-            assertTrue("Missing expected entry", map.remove(entry.getKey(), entry.getValue()));
+            String value = map.remove(entry.getKey());
+            if (value == null)
+            {
+                fail("Missing expected entry");
+            }
+            if (value != entry.getValue())
+            {
+                fail("Removed key had unexpected value");
+            }
         }
     }
 
@@ -551,7 +575,15 @@ public class PropsContainerTest
 
         for (final Entry<String, String> entry : entrySet)
         {
-            assertTrue("Missing expected entry", map.remove(entry.getKey(), entry.getValue()));
+            String value = map.remove(entry.getKey());
+            if (value == null)
+            {
+                fail("Missing expected entry");
+            }
+            if (value != entry.getValue())
+            {
+                fail("Removed key had unexpected value");
+            }
         }
     }
 
@@ -581,7 +613,15 @@ public class PropsContainerTest
 
         for (final Entry<String, String> entry : entrySet)
         {
-            assertTrue("Missing expected entry", map.remove(entry.getKey(), entry.getValue()));
+            String value = map.remove(entry.getKey());
+            if (value == null)
+            {
+                fail("Missing expected entry");
+            }
+            if (value != entry.getValue())
+            {
+                fail("Removed key had unexpected value");
+            }
         }
     }
 

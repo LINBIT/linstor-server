@@ -5,11 +5,11 @@ import java.io.PrintStream;
 import java.util.Map;
 
 /**
- * Displays information about the Controller's threads
+ * Shuts down the Controller or Satellite
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdShutdown extends BaseControllerDebugCmd
+public class CmdShutdown extends BaseDebugCmd
 {
     public CmdShutdown()
     {
@@ -20,7 +20,7 @@ public class CmdShutdown extends BaseControllerDebugCmd
                 "Shutdown"
             },
             "Shutdown",
-            "Shuts down the local drbdmanage controller instance",
+            "Shuts down the module instance",
             null,
             null,
             false
@@ -35,7 +35,7 @@ public class CmdShutdown extends BaseControllerDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        debugCtl.shutdown(accCtx);
+        cmnDebugCtl.shutdown(accCtx);
         debugCon.exitConsole();
     }
 }

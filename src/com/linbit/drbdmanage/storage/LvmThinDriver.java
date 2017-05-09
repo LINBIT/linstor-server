@@ -18,7 +18,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
-import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.SatelliteCoreServices;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
@@ -70,7 +70,7 @@ public class LvmThinDriver implements StorageDriver
         this.extCommand = ec;
     }
 
-    public void initialize(final CoreServices coreSvc) throws StorageException
+    public void initialize(final SatelliteCoreServices coreSvc) throws StorageException
     {
         extCommand = new ExtCmd(coreSvc.getTimer());
         fileSystemWatch = coreSvc.getFsWatch();

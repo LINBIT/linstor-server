@@ -5,7 +5,7 @@ import java.io.PrintStream;
 import java.util.Map;
 
 /**
- * Displays information about the Controller's threads
+ * Throws a test exception to test exception handling and reporting
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */

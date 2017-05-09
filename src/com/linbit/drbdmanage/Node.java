@@ -17,6 +17,15 @@ public interface Node
 
     public NodeName getName();
 
+    public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName)
+        throws AccessDeniedException;
+
+    public void addNetInterface(AccessContext accCtx, NetInterface niRef)
+        throws AccessDeniedException;
+
+    public void removeNetInterface(AccessContext accCtx, NetInterface niRef)
+        throws AccessDeniedException;
+
     public Resource getResource(AccessContext accCtx, ResourceName resName)
         throws AccessDeniedException;
 
@@ -24,5 +33,14 @@ public interface Node
         throws AccessDeniedException;
 
     public void removeResource(AccessContext accCtx, Resource resRef)
+        throws AccessDeniedException;
+
+    public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
+        throws AccessDeniedException;
+
+    public void addStorPool(AccessContext accCtx, StorPool pool)
+        throws AccessDeniedException;
+
+    public void removeStorPool(AccessContext accCtx, StorPool pool)
         throws AccessDeniedException;
 }

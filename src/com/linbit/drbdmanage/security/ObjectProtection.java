@@ -2,7 +2,6 @@ package com.linbit.drbdmanage.security;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 
 /**
  * Security protection for drbdmanageNG object
@@ -28,25 +27,6 @@ public final class ObjectProtection
 
     // Security type for the object
     private SecurityType objectType;
-
-    // FIXME: Test constructor; probably unnecessary
-    private ObjectProtection(Identity creator, Role owner)
-    {
-        objectCreator = creator;
-        objectOwner = owner;
-        objectAcl = new AccessControlList();
-        try
-        {
-            objectType = new SecurityType(new SecTypeName(DEFAULT_SECTYPE_NAME));
-        }
-        catch (InvalidNameException invNameExc)
-        {
-            throw new ImplementationError(
-                "Default security type name is invalid",
-                null
-            );
-        }
-    }
 
     /**
      * Creates an ObjectProtection instance for a newly created object

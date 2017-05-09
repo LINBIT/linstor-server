@@ -7,9 +7,11 @@ import java.io.PrintStream;
 import java.util.Map;
 
 /**
+ * Displays the currently active security level
+ *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdDisplaySecLevel extends BaseControllerDebugCmd
+public class CmdDisplaySecLevel extends BaseDebugCmd
 {
     public CmdDisplaySecLevel()
     {

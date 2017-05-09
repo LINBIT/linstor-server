@@ -3,7 +3,7 @@ package com.linbit.drbdmanage.controllerapi;
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.CoreServices;
-import com.linbit.drbdmanage.CtlPeerContext;
+import com.linbit.drbdmanage.ControllerPeerCtx;
 import com.linbit.drbdmanage.debug.DebugConsole;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
@@ -60,7 +60,7 @@ public class DebugCommand extends BaseApiCall
             ByteArrayOutputStream debugErr = new ByteArrayOutputStream();
             MsgDebugReply.Builder msgDbgReplyBld = MsgDebugReply.newBuilder();
 
-            CtlPeerContext peerContext = (CtlPeerContext) client.getAttachment();
+            ControllerPeerCtx peerContext = (ControllerPeerCtx) client.getAttachment();
             DebugConsole dbgConsole = peerContext.getDebugConsole();
             if (dbgConsole != null)
             {

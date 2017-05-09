@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.security;
 
+import com.linbit.InvalidNameException;
+
 /**
  * Access types
  *
@@ -24,5 +26,36 @@ public enum AccessType
     public final boolean hasAccess(AccessType requested)
     {
         return ((requested.accessMask & this.accessMask) == requested.accessMask);
+    }
+
+    public static final AccessType get(String name)
+        throws InvalidNameException
+    {
+        AccessType accType;
+        String upperName = name.toUpperCase();
+        switch (upperName)
+        {
+            case "VIEW":
+                accType = VIEW;
+                break;
+            case "USE":
+                accType = USE;
+                break;
+            case "CHANGE":
+                accType = CHANGE;
+                break;
+            case "CONTROL":
+                accType = CONTROL;
+                break;
+            default:
+                throw new InvalidNameException(
+                    String.format(
+                        "The name '%s' requested in an AccessType lookup does not match any " +
+                        "known access type names",
+                        upperName
+                    )
+                );
+        }
+        return accType;
     }
 }

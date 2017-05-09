@@ -1,160 +1,295 @@
 package com.linbit.drbdmanage;
 
-import com.linbit.*;
-import com.linbit.drbdmanage.controllerapi.*;
-import com.linbit.drbdmanage.debug.*;
+import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ServiceName;
+import com.linbit.SystemService;
+import com.linbit.SystemServiceStartException;
+import com.linbit.WorkerPool;
+import com.linbit.drbdmanage.controllerapi.CreateDebugConsole;
+import com.linbit.drbdmanage.controllerapi.DebugCommand;
+import com.linbit.drbdmanage.controllerapi.DebugMakeSuperuser;
+import com.linbit.drbdmanage.controllerapi.DestroyDebugConsole;
+import com.linbit.drbdmanage.controllerapi.Ping;
+import com.linbit.drbdmanage.debug.BaseDebugConsole;
+import com.linbit.drbdmanage.debug.CommonDebugCmd;
+import com.linbit.drbdmanage.debug.ControllerDebugCmd;
+import com.linbit.drbdmanage.debug.DebugConsole;
+import com.linbit.drbdmanage.debug.DebugErrorReporter;
+import com.linbit.drbdmanage.dbcp.DbConnectionPool;
+import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConstants;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
-import com.linbit.drbdmanage.security.*;
-import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.timer.Action;
-import com.linbit.timer.GenericTimer;
-import com.linbit.timer.Timer;
+import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.AccessType;
+import com.linbit.drbdmanage.security.Authentication;
+import com.linbit.drbdmanage.security.DbAccessor;
+import com.linbit.drbdmanage.security.DbDerbyPersistence;
+import com.linbit.drbdmanage.security.Identity;
+import com.linbit.drbdmanage.security.IdentityName;
+import com.linbit.drbdmanage.security.Initializer;
+import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.security.Privilege;
+import com.linbit.drbdmanage.timer.CoreTimer;
+import java.io.FileInputStream;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * drbdmanageNG controller prototype
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class Controller implements Runnable, CoreServices
+public final class Controller extends DrbdManage implements Runnable, CoreServices
 {
-    public static final String PROGRAM = "drbdmanageNG";
+    // System module information
     public static final String MODULE = "Controller";
-    public static final String VERSION = "experimental 2017-03-14_001";
 
-    public static final int MIN_WORKER_QUEUE_SIZE = 32;
-    public static final int MAX_CPU_COUNT = 1024;
+    // Database configuration file path
+    public static final String DB_CONF_FILE = "database.cfg";
 
-    // At shutdown, wait at most SHUTDOWN_THR_JOIN_WAIT milliseconds for
-    // a service thread to end
-    public static final long SHUTDOWN_THR_JOIN_WAIT = 3000L;
-
-    public static final IdentityName ID_ANON_CLIENT_NAME;
-    public static final RoleName ROLE_PUBLIC_NAME;
-    public static final SecTypeName TYPE_PUBLIC_NAME;
-
-    // Defaults
-    private int cpuCount = 8;
-    private int workerThreadCount = 8;
-    // Queue slots per worker thread
-    private int workerQueueFactor = 4;
-    private int workerQueueSize = MIN_WORKER_QUEUE_SIZE;
-
-    public static final String SCREEN_DIV =
-        "------------------------------------------------------------------------------";
+    // Database connection URL configuration key
+    public static final String DB_CONN_URL = "connection-url";
 
     // System security context
-    private final AccessContext sysCtx;
-    // Default security identity for unauthenticated clients
-    private final Identity      anonClientId;
-    // Public access security role
-    private final Role          publicRole;
-    // Public access security type
-    private final SecurityType  publicType;
+    private AccessContext sysCtx;
 
+    // Public security context
+    private AccessContext publicCtx;
+
+    // Command line arguments
     private String[] args;
 
-    private final GenericTimer<String, Action<String>> timerEventSvc;
-    private final FileSystemWatch fsEventSvc;
+    // ============================================================
+    // Worker thread pool & message processing dispatcher
+    //
+    private WorkerPool workerThrPool = null;
+    private CommonMessageProcessor msgProc = null;
 
+    // Authentication subsystem
+    private Authentication auth = null;
+
+    // ============================================================
+    // Core system services
+    //
     // Map of controllable system services
     private final Map<ServiceName, SystemService> systemServicesMap;
+
+    // Database connection pool service
+    private final DbConnectionPool dbConnPool;
 
     // Map of connected peers
     private final Map<String, Peer> peerMap;
 
-    private WorkerPool workers = null;
-    private ErrorReporter errorLog = null;
+    // Map of network communications connectors
+    private final Map<ServiceName, TcpConnector> netComConnectors;
 
-    private TcpConnectorService netComSvc = null;
-    private CommonMessageProcessor msgProc = null;
+    // Database drivers
+    private DbAccessor securityDbDriver;
+    private DatabaseDriver persistenceDbDriver;
 
+    // Shutdown controls
     private boolean shutdownFinished;
     private ObjectProtection shutdownProt;
 
-    static
+    // Lock for major global changes
+    private final ReadWriteLock reconfigurationLock;
+
+    public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
+        throws IOException
+    {
+        // Initialize synchronization
+        reconfigurationLock = new ReentrantReadWriteLock(true);
+
+        // Initialize security contexts
+        sysCtx = sysCtxRef;
+        publicCtx = publicCtxRef;
+
+        // Initialize command line arguments
+        args = argsRef;
+
+        // Initialize and collect system services
+        systemServicesMap = new TreeMap<>();
+        {
+            CoreTimer timer = super.getTimer();
+            systemServicesMap.put(timer.getInstanceName(), timer);
+        }
+        dbConnPool = new DbConnectionPool();
+        securityDbDriver = new DbDerbyPersistence();
+        persistenceDbDriver = new DerbyDriver();
+        systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
+
+        // Initialize network communications connectors map
+        netComConnectors = new TreeMap<>();
+
+        // Initialize connected peers map
+        peerMap = new TreeMap<>();
+
+        // Initialize shutdown controls
+        shutdownFinished = false;
+        shutdownProt = new ObjectProtection(sysCtx);
+    }
+
+    public void initialize(ErrorReporter errorLogRef, SSLConfiguration sslConfig)
+        throws InitializationException
     {
         try
         {
-            ID_ANON_CLIENT_NAME = new IdentityName("AnonymousClient");
-            ROLE_PUBLIC_NAME    = new RoleName("Public");
-            TYPE_PUBLIC_NAME    = new SecTypeName("Public");
-        }
-        catch (InvalidNameException nameExc)
-        {
-            throw new ImplementationError(
-                "The " + Controller.class.getName() + " class contains invalid " +
-                "security object name constants",
-                nameExc
-            );
-        }
-    }
+            reconfigurationLock.writeLock().lock();
 
-    public Controller(AccessContext sysCtxRef, String[] argsRef)
-        throws IOException
-    {
-        sysCtx = sysCtxRef;
-        args = argsRef;
-
-        // Initialize security objects
-        {
-            AccessContext initCtx = sysCtx.clone();
+            shutdownFinished = false;
             try
             {
+                AccessContext initCtx = sysCtx.clone();
                 initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                anonClientId = new Identity(initCtx, ID_ANON_CLIENT_NAME);
-                publicRole = new Role(initCtx, ROLE_PUBLIC_NAME);
-                publicType = new SecurityType(initCtx, TYPE_PUBLIC_NAME);
+
+                // Initialize the error & exception reporting facility
+                setErrorLog(initCtx, errorLogRef);
+
+                // Set CONTROL access for the SYSTEM role on shutdown
+                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+
+                // Initialize the database connections
+                logInit("Initializing the database connection pool");
+                Properties dbProps = new Properties();
+                try (InputStream dbPropsIn = new FileInputStream(DB_CONF_FILE))
+                {
+                    // Load database configuration
+                    dbProps.loadFromXML(dbPropsIn);
+                }
+                catch (IOException ioExc)
+                {
+                    errorLogRef.reportError(ioExc);
+                }
+                try
+                {
+                    String connectionUrl = dbProps.getProperty(
+                        DB_CONN_URL,
+                        persistenceDbDriver.getDefaultConnectionUrl()
+                    );
+
+                    // Connect the database connection pool to the database
+                    dbConnPool.setServiceInstanceName(
+                        persistenceDbDriver.getDefaultServiceInstanceName()
+                    );
+                    dbConnPool.initializeDataSource(
+                        connectionUrl,
+                        dbProps
+                    );
+                }
+                catch (SQLException sqlExc)
+                {
+                    errorLogRef.reportError(sqlExc);
+                }
+
+                // Load security identities, roles, domains/types, etc.
+                logInit("Loading security objects");
+                try
+                {
+                    Initializer.load(initCtx, dbConnPool, securityDbDriver);
+                }
+                catch (SQLException | InvalidNameException | AccessDeniedException exc)
+                {
+                    errorLogRef.reportError(exc);
+                }
+
+                logInit("Initializing authentication subsystem");
+                try
+                {
+                    auth = new Authentication(initCtx, dbConnPool, securityDbDriver);
+                }
+                catch (AccessDeniedException accExc)
+                {
+                    throw new ImplementationError(
+                        "The initialization security context does not have the necessary " +
+                        "privileges to create the authentication subsystem",
+                        accExc
+                    );
+                }
+                catch (NoSuchAlgorithmException algoExc)
+                {
+                    throw new InitializationException(
+                        "Initialization of the authentication subsystem failed because the " +
+                        "required hashing algorithm is not supported on this platform",
+                        algoExc
+                    );
+                }
+
+                // Initialize the worker thread pool
+                logInit("Starting worker thread pool");
+                {
+                    int cpuCount = getCpuCount();
+                    int thrCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
+                    int qSize = thrCount * getWorkerQueueFactor();
+                    qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
+                    setWorkerThreadCount(initCtx, thrCount);
+                    setWorkerQueueSize(initCtx, qSize);
+                    workerThrPool = WorkerPool.initialize(
+                        thrCount, qSize, true, "MainWorkerPool", getErrorReporter()
+                    );
+                }
+
+                // Initialize the message processor
+                logInit("Initializing API call dispatcher");
+                msgProc = new CommonMessageProcessor(this, workerThrPool);
+
+                logInit("Initializing test APIs");
+                {
+                    msgProc.addApiCall(new Ping(this, this));
+                    msgProc.addApiCall(new CreateDebugConsole(this, this));
+                    msgProc.addApiCall(new DestroyDebugConsole(this, this));
+                    msgProc.addApiCall(new DebugCommand(this, this));
+                    msgProc.addApiCall(new DebugMakeSuperuser(this, this));
+                }
+
+                // Initialize system services
+                startSystemServices(systemServicesMap.values(), getErrorReporter());
+
+                // Initialize the network communications service
+                logInit("Initializing network communications services");
+                initNetComServices(sslConfig);
             }
             catch (AccessDeniedException accessExc)
             {
-                throw new ImplementationError(
-                    "Controller initialization failed: Initialization of security contexts failed",
-                    accessExc
+                errorLogRef.reportError(
+                    new ImplementationError(
+                        "The initialization security context does not have all privileges. " +
+                        "Initialization failed.",
+                        accessExc
+                    )
                 );
             }
+            catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException |
+                KeyStoreException | CertificateException e)
+            {
+                errorLogRef.reportError(e);
+            }
         }
-
-        // Create the timer event service
-        timerEventSvc = new GenericTimer<>();
-
-        // Create the filesystem event service
-        try
+        finally
         {
-            fsEventSvc = new FileSystemWatch();
+            reconfigurationLock.writeLock().unlock();
         }
-        catch (IOException ioExc)
-        {
-            logFailure("Initialization of the FileSystemWatch service failed");
-            // FIXME: Generate a startup exception
-            throw ioExc;
-        }
-
-        systemServicesMap = new TreeMap<>();
-        systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
-        systemServicesMap.put(fsEventSvc.getInstanceName(), fsEventSvc);
-
-        peerMap = new TreeMap<>();
-
-        cpuCount = Runtime.getRuntime().availableProcessors();
-
-        shutdownFinished = false;
-        shutdownProt = new ObjectProtection(sysCtx);
     }
 
     @Override
@@ -163,27 +298,20 @@ public class Controller implements Runnable, CoreServices
         try
         {
             logInfo("Entering debug console");
-            AccessContext debugCtx;
-            {
-                AccessContext impCtx = sysCtx.clone();
-                impCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                debugCtx = impCtx.impersonate(
-                    new Identity(impCtx, new IdentityName("LocalDebugConsole")),
-                    sysCtx.subjectRole,
-                    sysCtx.subjectDomain,
-                    sysCtx.getLimitPrivs().toArray()
-                );
-            }
-            debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_VIEW);
-            DebugConsoleImpl dbgConsoleInstance = new DebugConsoleImpl(this, debugCtx);
-            dbgConsoleInstance.loadDefaultCommands(System.out, System.err);
-            DebugConsoleImpl dbgConsole = dbgConsoleInstance;
-            dbgConsole.stdStreamsConsole();
+
+            AccessContext privCtx = sysCtx.clone();
+            AccessContext debugCtx = sysCtx.clone();
+            privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+            DebugConsole dbgConsole = createDebugConsole(privCtx, debugCtx, null);
+            dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
+
+            logInfo("Debug console exited");
         }
         catch (Throwable error)
         {
-            errorLog.reportError(error);
+            getErrorReporter().reportError(error);
         }
 
         try
@@ -200,153 +328,82 @@ public class Controller implements Runnable, CoreServices
             throw new ImplementationError(
                 "Cannot shutdown() using the system's security context. " +
                 "Suspected removal of privileges from the system context.",
-                null
+                accExc
             );
         }
-    }
-
-    public void initialize(ErrorReporter errorLogRef, SSLConfiguration sslConfig) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
-    {
-        shutdownFinished = false;
-
-        errorLog = errorLogRef;
-
-        System.out.printf("\n%s\n\n", SCREEN_DIV);
-        programInfo();
-        System.out.printf("\n%s\n\n", SCREEN_DIV);
-
-        logInit("Applying base security policy to system objects");
-        applyBaseSecurityPolicy();
-
-        logInit("Starting worker thread pool");
-        workerThreadCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
-        {
-            int qSize = workerThreadCount * workerQueueFactor;
-            workerQueueSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
-        }
-        workers = WorkerPool.initialize(workerThreadCount, workerQueueSize, true, "MainWorkerPool", errorLog);
-
-        // Initialize the message processor
-        logInit("Initializing API call dispatcher");
-        msgProc = new CommonMessageProcessor(this, workers);
-
-        logInit("Initializing test APIs");
-        {
-            msgProc.addApiCall(new Ping(this, this));
-            msgProc.addApiCall(new CreateDebugConsole(this, this));
-            msgProc.addApiCall(new DestroyDebugConsole(this, this));
-            msgProc.addApiCall(new DebugCommand(this, this));
-            msgProc.addApiCall(new DebugMakeSuperuser(this, this));
-        }
-
-        // Initialize the network communications service
-        logInit("Initializing network communications service");
-        initializeNetComService(sslConfig);
-
-        // Start service threads
-        for (SystemService sysSvc : systemServicesMap.values())
-        {
-            logInfo(
-                String.format(
-                    "Starting service instance '%s' of type %s",
-                    sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
-                )
-            );
-            try
-            {
-                sysSvc.start();
-            }
-            catch (SystemServiceStartException startExc)
-            {
-                errorLog.reportError(startExc);
-                logFailure(
-                    String.format(
-                        "Start of the service instance '%s' of type %s failed",
-                        sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
-                    )
-                );
-            }
-        }
-
-
-        System.out.printf("\n%s\n\n", SCREEN_DIV);
-        runTimeInfo();
-        System.out.printf("\n%s\n\n", SCREEN_DIV);
     }
 
     public void shutdown(AccessContext accCtx) throws AccessDeniedException
     {
         shutdownProt.requireAccess(accCtx, AccessType.USE);
-        if (!shutdownFinished)
+
+        try
         {
-            logInfo(
-                String.format(
-                    "Shutdown initiated by subject '%s' using role '%s'\n",
-                    accCtx.getIdentity(), accCtx.getRole()
-                )
-            );
-
-            logInfo("Shutdown in progress");
-
-            // Shutdown service threads
-            for (SystemService sysSvc : systemServicesMap.values())
+            reconfigurationLock.writeLock().lock();
+            if (!shutdownFinished)
             {
                 logInfo(
                     String.format(
-                        "Shutting down service instance '%s' of type %s",
-                        sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
+                        "Shutdown initiated by subject '%s' using role '%s'\n",
+                        accCtx.getIdentity(), accCtx.getRole()
                     )
                 );
-                sysSvc.shutdown();
 
-                logInfo(
-                    String.format(
-                        "Waiting for service instance '%s' to complete shutdown",
-                        sysSvc.getInstanceName().displayValue
-                    )
-                );
-                try
+                logInfo("Shutdown in progress");
+
+                // Shutdown service threads
+                stopSystemServices(systemServicesMap.values(), getErrorReporter());
+
+                if (workerThrPool != null)
                 {
-                    sysSvc.awaitShutdown(SHUTDOWN_THR_JOIN_WAIT);
+                    logInfo("Shutting down worker thread pool");
+                    workerThrPool.shutdown();
+                    workerThrPool = null;
                 }
-                catch (InterruptedException intrExc)
-                {
-                    errorLog.reportError(intrExc);
-                }
-            }
 
-            if (workers != null)
-            {
-                logInfo("Shutting down worker thread pool");
-                workers.shutdown();
-                workers = null;
+                logInfo("Shutdown complete");
             }
-
-            logInfo("Shutdown complete");
+            shutdownFinished = true;
         }
-        shutdownFinished = true;
+        finally
+        {
+            reconfigurationLock.writeLock().unlock();
+        }
     }
 
-    public DebugConsole createDebugConsole(AccessContext accCtx, Peer client)
+    /**
+     * Creates a debug console instance for remote use by a connected peer
+     *
+     * @param accCtx The access context to authorize this API call
+     * @param client Connected peer
+     * @return New DebugConsole instance
+     * @throws AccessDeniedException If the API call is not authorized
+     */
+    public DebugConsole createDebugConsole(
+        AccessContext accCtx,
+        AccessContext debugCtx,
+        Peer client
+    )
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+        Controller.DebugConsoleImpl peerDbgConsole = new Controller.DebugConsoleImpl(this, debugCtx);
+        if (client != null)
+        {
+            ControllerPeerCtx peerContext = (ControllerPeerCtx) client.getAttachment();
+            // Initialize remote debug console
+            // FIXME: loadDefaultCommands() should not use System.out and System.err
+            //        if the debug console is created for a peer / client
+            peerDbgConsole.loadDefaultCommands(System.out, System.err);
+            peerContext.setDebugConsole(peerDbgConsole);
+        }
+        else
+        {
+            // Initialize local debug console
+            peerDbgConsole.loadDefaultCommands(System.out, System.err);
+        }
 
-        CtlPeerContext peerContext = (CtlPeerContext) client.getAttachment();
-        DebugConsoleImpl peerDbgConsole = new DebugConsoleImpl(this, accCtx);
-        peerDbgConsole.loadDefaultCommands(System.out, System.err);
-        peerContext.setDebugConsole(peerDbgConsole);
-
-        return new DebugConsoleImpl(this, accCtx);
-    }
-
-    public void destroyDebugConsole(AccessContext accCtx, Peer client)
-        throws AccessDeniedException
-    {
-        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-
-        CtlPeerContext peerContext = (CtlPeerContext) client.getAttachment();
-        peerContext.setDebugConsole(null);
+        return peerDbgConsole;
     }
 
     /**
@@ -374,56 +431,55 @@ public class Controller implements Runnable, CoreServices
         }
         catch (InvalidNameException nameExc)
         {
-            errorLog.reportError(nameExc);
+            getErrorReporter().reportError(nameExc);
         }
         catch (AccessDeniedException accessExc)
         {
-            errorLog.reportError(accessExc);
+            getErrorReporter().reportError(accessExc);
         }
         return successFlag;
     }
 
     @Override
-    public ErrorReporter getErrorReporter()
+    public final void logInit(String message)
     {
-        return errorLog;
+        // TODO: Log at the INFO level
+        System.out.println("INIT      " + message);
     }
 
     @Override
-    public Timer<String, Action<String>> getTimer()
+    public final void logInfo(String message)
     {
-        return timerEventSvc;
+        // TODO: Log at the INFO level
+        System.out.println("INFO      " + message);
     }
 
     @Override
-    public FileSystemWatch getFsWatch()
+    public final void logWarning(String message)
     {
-        return fsEventSvc;
+        // TODO: Log at the WARNING level
+        System.out.println("WARNING   " + message);
     }
 
-    public static final void logInit(String what)
+    @Override
+    public final void logError(String message)
     {
-        System.out.println("INIT      " + what);
+        // TODO: Log at the ERROR level
+        System.out.println("ERROR     " + message);
     }
 
-    public static final void logInfo(String what)
+    @Override
+    public final void logFailure(String message)
     {
-        System.out.println("INFO      " + what);
+        // TODO: Log at the ERROR level
+        System.err.println("FAILED    " + message);
     }
 
-    public static final void logBegin(String what)
+    @Override
+    public final void logDebug(String message)
     {
-        System.out.println("BEGIN     " + what);
-    }
-
-    public static final void logEnd(String what)
-    {
-        System.out.println("END       " + what);
-    }
-
-    public static final void logFailure(String what)
-    {
-        System.err.println("FAILED    " + what);
+        // TODO: Log at the DEBUG level
+        System.err.println("DEBUG     " + message);
     }
 
     public static final void printField(String fieldName, String fieldContent)
@@ -431,99 +487,25 @@ public class Controller implements Runnable, CoreServices
         System.out.printf("  %-32s: %s\n", fieldName, fieldContent);
     }
 
-    public final void programInfo()
-    {
-        System.out.println(
-            "Software information\n" +
-            "--------------------\n"
-        );
-
-        printField("PROGRAM", PROGRAM);
-        printField("MODULE", MODULE);
-        printField("VERSION", VERSION);
-    }
-
-    public final void runTimeInfo()
-    {
-        Properties sysProps = System.getProperties();
-        String jvmSpecVersion = sysProps.getProperty("java.vm.specification.version");
-        String jvmVendor = sysProps.getProperty("java.vm.vendor");
-        String jvmVersion = sysProps.getProperty("java.vm.version");
-        String osName = sysProps.getProperty("os.name");
-        String osVersion = sysProps.getProperty("os.version");
-        String sysArch = sysProps.getProperty("os.arch");
-
-        System.out.println(
-            "Execution environment information\n" +
-            "--------------------------------\n"
-        );
-
-        Runtime rt = Runtime.getRuntime();
-        long freeMem = rt.freeMemory() / 1048576;
-        long availMem = rt.maxMemory() / 1048576;
-
-        printField("JAVA PLATFORM", jvmSpecVersion);
-        printField("RUNTIME IMPLEMENTATION", jvmVendor + ", Version " + jvmVersion);
-        System.out.println();
-        printField("SYSTEM ARCHITECTURE", sysArch);
-        printField("OPERATING SYSTEM", osName + " " + osVersion);
-        printField("AVAILABLE PROCESSORS", Integer.toString(cpuCount));
-        if (availMem == Long.MAX_VALUE)
-        {
-            printField("AVAILABLE MEMORY", "OS ALLOCATION LIMIT");
-        }
-        else
-        {
-            printField("AVAILABLE MEMORY", String.format("%10d MiB", availMem));
-        }
-        printField("FREE MEMORY", String.format("%10d MiB", freeMem));
-        System.out.println();
-        printField("WORKER THREADS", Integer.toString(workers.getThreadCount()));
-        printField("WORKER QUEUE SIZE", Integer.toString(workers.getQueueSize()));
-        printField("WORKER SCHEDULING", workers.isFairQueue() ? "FIFO" : "Random");
-    }
-
-    private void applyBaseSecurityPolicy()
-    {
-        PrivilegeSet effPriv = sysCtx.getEffectivePrivs();
-        try
-        {
-            // Enable all privileges
-            effPriv.enablePrivileges(Privilege.PRIV_SYS_ALL);
-
-            // Allow CONTROL access by domain SYSTEM to type SYSTEM
-            SecurityType sysType = sysCtx.getDomain();
-            sysType.addEntry(sysCtx, sysType, AccessType.CONTROL);
-
-            // Allow USE access by role SYSTEM to shutdownProt
-            shutdownProt.addAclEntry(sysCtx, sysCtx.getRole(), AccessType.USE);
-        }
-        catch (AccessDeniedException accExc)
-        {
-            logFailure("Applying the base security policy failed");
-            errorLog.reportError(accExc);
-        }
-        finally
-        {
-            effPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
-        }
-    }
-
     public static void main(String[] args)
     {
-        logInit("System components initialization in progress");
+        System.out.printf(
+            "%s, Module %s, Release %s\n",
+            Controller.PROGRAM, Controller.MODULE, Controller.VERSION
+        );
+        printStartupInfo();
 
-        logInit("Constructing error reporter instance");
         ErrorReporter errorLog = new DebugErrorReporter(System.err);
 
         try
         {
-            logInit("Initializing system security context");
+            Thread.currentThread().setName("Main");
+
+            // Initialize the Controller module with the SYSTEM security context
             Initializer sysInit = new Initializer();
-            logInit("Constructing controller instance");
             Controller instance = sysInit.initController(args);
 
-            logInit("Initializing controller services");
+            // TODO: read and build the ssl settings from a configuration file
             SSLConfiguration sslConfig = new SSLConfiguration();
             {
                 char[] passwd = new char[]
@@ -536,33 +518,15 @@ public class Controller implements Runnable, CoreServices
                 sslConfig.keyPasswd = passwd;
                 sslConfig.trustStoreFile = "keys/TrustStore.jks";
                 sslConfig.trustStorePasswd = passwd;
-            } // TODO change the ssl config
-
+            }
 
             instance.initialize(errorLog, sslConfig);
-
-//            {
-//                // FOR TESTING PURPOSSES ONLY
-//                instance.initialize(errorLog, sslConfig);
-//                InetSocketAddress address = new InetSocketAddress("localhost", 9504);
-//                Peer peer = instance.netComSvc.connect(address);
-//                Message msg = peer.createMessage();
-//                msg.setData("Hallo Welt\n".getBytes());
-//                peer.waitUntilConnectionEstablished();
-//                peer.sendMessage(msg);
-//                Thread.sleep(2000);
-//                peer.closeConnection();
-//            }
-
-
-
-            logInit("Initialization complete");
-            System.out.println();
-
-            Thread.currentThread().setName("MainLoop");
-
-            logInfo("Starting controller module");
             instance.run();
+        }
+        catch (InitializationException initExc)
+        {
+            errorLog.reportError(initExc);
+            System.err.println("Initialization of the Controller module failed.");
         }
         catch (ImplementationError implError)
         {
@@ -580,30 +544,26 @@ public class Controller implements Runnable, CoreServices
         System.out.println();
     }
 
-    private void initializeNetComService(SSLConfiguration sslConfig) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+    private void initNetComServices(SSLConfiguration sslConfig) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
     {
         try
         {
-            AccessContext defaultPeerAccCtx;
-            {
-                AccessContext impCtx = sysCtx.clone();
-                impCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                defaultPeerAccCtx = impCtx.impersonate(
-                    anonClientId,
-                    publicRole,
-                    publicType
-                );
-            }
+            TcpConnector netComSvc;
             if (sslConfig == null)
             {
-                netComSvc = new TcpConnectorService(this, msgProc, defaultPeerAccCtx, new ConnTracker(this));
+                netComSvc = new TcpConnectorService(
+                    this,
+                    msgProc,
+                    publicCtx,
+                    new ConnTracker(this)
+                );
             }
             else
             {
                 netComSvc = new SslTcpConnectorService(
                     this,
                     msgProc,
-                    defaultPeerAccCtx,
+                    publicCtx,
                     new ConnTracker(this),
                     sslConfig.sslProtocol,
                     sslConfig.keyStoreFile,
@@ -613,16 +573,20 @@ public class Controller implements Runnable, CoreServices
                     sslConfig.trustStorePasswd
                 );
             }
+            netComConnectors.put(netComSvc.getInstanceName(), netComSvc);
             systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
-        }
-        catch (AccessDeniedException accessExc)
-        {
-            errorLog.reportError(accessExc);
-            logFailure("Cannot create security context for the network communications service");
+            try
+            {
+                netComSvc.start();
+            }
+            catch (SystemServiceStartException strExc)
+            {
+                getErrorReporter().reportError(strExc);
+            }
         }
         catch (IOException exc)
         {
-            errorLog.reportError(exc);
+            getErrorReporter().reportError(exc);
         }
     }
 
@@ -638,7 +602,17 @@ public class Controller implements Runnable, CoreServices
         @Override
         public void outboundConnectionEstablished(Peer connPeer)
         {
-            // TODO: Satellite or utility connection connected
+            if (connPeer != null)
+            {
+                ControllerPeerCtx peerCtx = (ControllerPeerCtx) connPeer.getAttachment();
+                if (peerCtx == null)
+                {
+                    peerCtx = new ControllerPeerCtx();
+                    connPeer.attach(peerCtx);
+                }
+                peerMap.put(connPeer.getId(), connPeer);
+            }
+            // TODO: If a satellite has been connected, schedule any necessary actions
         }
 
         @Override
@@ -646,7 +620,7 @@ public class Controller implements Runnable, CoreServices
         {
             if (connPeer != null)
             {
-                CtlPeerContext peerCtx = new CtlPeerContext();
+                ControllerPeerCtx peerCtx = new ControllerPeerCtx();
                 connPeer.attach(peerCtx);
                 peerMap.put(connPeer.getId(), connPeer);
             }
@@ -671,12 +645,18 @@ public class Controller implements Runnable, CoreServices
         private boolean loadedCmds  = false;
         private boolean exitFlag    = false;
 
-        public static final String[] COMMAND_CLASS_LIST =
+        public static final String[] GNRC_COMMAND_CLASS_LIST =
+        {
+        };
+        public static final String GNRC_COMMAND_CLASS_PKG = "com.linbit.drbdmanage.debug";
+        public static final String[] CTRL_COMMAND_CLASS_LIST =
         {
             "CmdDisplayThreads",
             "CmdDisplayContextInfo",
             "CmdDisplayServices",
             "CmdDisplaySecLevel",
+            "CmdDisplayModuleInfo",
+            "CmdDisplayVersion",
             "CmdStartService",
             "CmdEndService",
             "CmdDisplayConnections",
@@ -684,7 +664,7 @@ public class Controller implements Runnable, CoreServices
             "CmdTestErrorLog",
             "CmdShutdown"
         };
-        public static final String COMMAND_CLASS_PKG = "com.linbit.drbdmanage.debug";
+        public static final String CTRL_COMMAND_CLASS_PKG = "com.linbit.drbdmanage.debug";
 
         private DebugControl debugCtl;
 
@@ -698,8 +678,6 @@ public class Controller implements Runnable, CoreServices
             ErrorCheck.ctorNotNull(DebugConsoleImpl.class, AccessContext.class, accCtx);
 
             controller = controllerRef;
-            parameters = new TreeMap<>();
-            commandMap = new TreeMap<>();
             loadedCmds = false;
             debugCtl = new DebugControlImpl(controller);
         }
@@ -709,12 +687,6 @@ public class Controller implements Runnable, CoreServices
             stdStreamsConsole(CONSOLE_PROMPT);
         }
 
-        @Override
-        public Map<String, CommonDebugCmd> getCommandMap()
-        {
-            return commandMap;
-        }
-
         public void loadDefaultCommands(
             PrintStream debugOut,
             PrintStream debugErr
@@ -722,7 +694,7 @@ public class Controller implements Runnable, CoreServices
         {
             if (!loadedCmds)
             {
-                for (String cmdClassName : COMMAND_CLASS_LIST)
+                for (String cmdClassName : CTRL_COMMAND_CLASS_LIST)
                 {
                     loadCommand(debugOut, debugErr, cmdClassName);
                 }
@@ -740,27 +712,32 @@ public class Controller implements Runnable, CoreServices
             try
             {
                 Class<? extends Object> cmdClass = Class.forName(
-                    COMMAND_CLASS_PKG + "." + cmdClassName
+                    CTRL_COMMAND_CLASS_PKG + "." + cmdClassName
                 );
                 try
                 {
-                    ControllerDebugCmd debugCmd = (ControllerDebugCmd) cmdClass.newInstance();
-                    debugCmd.initialize(controller, controller, debugCtl, this);
+                    CommonDebugCmd cmnDebugCmd = (CommonDebugCmd) cmdClass.newInstance();
+                    cmnDebugCmd.commonInitialize(controller, controller, debugCtl, this);
+                    if (cmnDebugCmd instanceof ControllerDebugCmd)
+                    {
+                        ControllerDebugCmd debugCmd = (ControllerDebugCmd) cmnDebugCmd;
+                        debugCmd.initialize(controller, controller, debugCtl, this);
+                    }
 
                     // FIXME: Detect and report name collisions
-                    for (String cmdName : debugCmd.getCmdNames())
+                    for (String cmdName : cmnDebugCmd.getCmdNames())
                     {
-                        commandMap.put(cmdName.toUpperCase(), debugCmd);
+                        commandMap.put(cmdName.toUpperCase(), cmnDebugCmd);
                     }
                 }
                 catch (IllegalAccessException | InstantiationException instantiateExc)
                 {
-                    controller.errorLog.reportError(instantiateExc);
+                    controller.getErrorReporter().reportError(instantiateExc);
                 }
             }
             catch (ClassNotFoundException cnfExc)
             {
-                controller.errorLog.reportError(cnfExc);
+                controller.getErrorReporter().reportError(cnfExc);
             }
         }
 
@@ -775,12 +752,8 @@ public class Controller implements Runnable, CoreServices
         }
     }
 
-    public interface DebugControl
+    public interface DebugControl extends CommonDebugControl
     {
-        Map<ServiceName, SystemService> getSystemServiceMap();
-        Peer getPeer(String peerId);
-        Map<String, Peer> getAllPeers();
-        void shutdown(AccessContext accCtx);
     }
 
     private static class DebugControlImpl implements DebugControl
@@ -790,6 +763,24 @@ public class Controller implements Runnable, CoreServices
         DebugControlImpl(Controller controllerRef)
         {
             controller = controllerRef;
+        }
+
+        @Override
+        public String getProgramName()
+        {
+            return PROGRAM;
+        }
+
+        @Override
+        public String getModuleType()
+        {
+            return MODULE;
+        }
+
+        @Override
+        public String getVersion()
+        {
+            return VERSION;
         }
 
         @Override
@@ -831,7 +822,7 @@ public class Controller implements Runnable, CoreServices
             }
             catch (AccessDeniedException accExc)
             {
-                controller.errorLog.reportError(accExc);
+                controller.getErrorReporter().reportError(accExc);
             }
         }
     }

@@ -51,6 +51,13 @@ public abstract class BaseDebugConsole implements DebugConsole
         unknownParameters = new TreeSet<>();
     }
 
+
+    @Override
+    public Map<String, CommonDebugCmd> getCommandMap()
+    {
+        return commandMap;
+    }
+
     @Override
     public void stdStreamsConsole(
         String consolePrompt

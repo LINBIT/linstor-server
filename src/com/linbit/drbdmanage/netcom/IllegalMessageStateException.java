@@ -15,12 +15,12 @@ public class IllegalMessageStateException extends Exception
         super(message);
     }
 
-    public IllegalMessageStateException(Exception cause)
+    public IllegalMessageStateException(Throwable cause)
     {
         super(cause);
     }
 
-    public IllegalMessageStateException(String message, Exception cause)
+    public IllegalMessageStateException(String message, Throwable cause)
     {
         super(message, cause);
     }

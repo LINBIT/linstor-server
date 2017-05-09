@@ -66,7 +66,7 @@ public class CreateDebugConsole extends BaseApiCall
                 {
                     AccessContext privCtx = accCtx.clone();
                     privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                    ctrl.createDebugConsole(privCtx, client);
+                    ctrl.createDebugConsole(privCtx, privCtx, client);
                 }
                 accCtx.getEffectivePrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
                 accCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_VIEW);

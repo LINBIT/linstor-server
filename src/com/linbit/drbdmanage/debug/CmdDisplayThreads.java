@@ -6,11 +6,11 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * Displays information about the Controller's threads
+ * Displays information about the module's threads (Controller or Satellite)
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdDisplayThreads extends BaseControllerDebugCmd
+public class CmdDisplayThreads extends BaseDebugCmd
 {
     private static final int OVERFLOW_SPACE = 20;
 
@@ -22,7 +22,7 @@ public class CmdDisplayThreads extends BaseControllerDebugCmd
                 "DspThr"
             },
             "Display threads",
-            "Displays a table with information about the Controller's threads",
+            "Displays a table with information about the module's threads",
             null,
             null,
             false

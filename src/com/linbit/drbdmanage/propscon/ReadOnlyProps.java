@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.propscon;
 
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -103,45 +104,25 @@ public class ReadOnlyProps implements Props
     @Override
     public Map<String, String> map()
     {
-        // TODO: Provide a read-only view of a map
-        // throws UnsupportedOperationException
-        unsupported();
-
-        // Never reached
-        return null;
+        return Collections.unmodifiableMap(propsMap.map());
     }
 
     @Override
     public Set<Map.Entry<String, String>> entrySet()
     {
-        // TODO: Provide a read-only view of a map
-        // throws UnsupportedOperationException
-        unsupported();
-
-        // Never reached
-        return null;
+        return Collections.unmodifiableSet(propsMap.entrySet());
     }
 
     @Override
     public Set<String> keySet()
     {
-        // TODO: Provide a read-only view of a map
-        // throws UnsupportedOperationException
-        unsupported();
-
-        // Never reached
-        return null;
+        return Collections.unmodifiableSet(propsMap.keySet());
     }
 
     @Override
     public Collection<String> values()
     {
-        // TODO: Provide a read-only view of a map
-        // throws UnsupportedOperationException
-        unsupported();
-
-        // Never reached
-        return null;
+        return Collections.unmodifiableCollection(propsMap.values());
     }
 
     @Override

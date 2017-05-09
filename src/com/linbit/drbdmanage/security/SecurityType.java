@@ -2,8 +2,14 @@ package com.linbit.drbdmanage.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.drbdmanage.ControllerDatabase;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Represents the type of an object protected by access controls
@@ -11,8 +17,10 @@ import java.util.TreeMap;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class SecurityType
+public final class SecurityType implements Comparable<SecurityType>
 {
+    private static final Map<SecTypeName, SecurityType> GLOBAL_TYPE_MAP = new TreeMap<>();
+
     // Name of this security type
     public final SecTypeName name;
 
@@ -20,22 +28,25 @@ public final class SecurityType
     private final Map<SecTypeName, AccessType> rules;
 
     static final SecurityType SYSTEM_TYPE;
+    static final SecurityType PUBLIC_TYPE;
 
     static
     {
         try
         {
             SYSTEM_TYPE = new SecurityType(new SecTypeName("SYSTEM"));
+            PUBLIC_TYPE = new SecurityType(new SecTypeName("PUBLIC"));
         }
         catch (InvalidNameException nameExc)
         {
             throw new ImplementationError(
-                "The name constant of the system security type/domain is invalid",
+                "The name constant of a builtin security type/domain is invalid",
                 nameExc
             );
         }
     }
 
+    // FIXME: Replace constructor with static create() method
     public SecurityType(AccessContext accCtx, SecTypeName typeName)
         throws AccessDeniedException
     {
@@ -47,6 +58,92 @@ public final class SecurityType
     {
         name = typeName;
         rules = new TreeMap<>();
+    }
+
+    @Override
+    public int compareTo(SecurityType other)
+    {
+        return this.name.compareTo(other.name);
+    }
+
+    @Override
+    public int hashCode()
+    {
+       return this.name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other)
+    {
+        return this.name.equals(other);
+    }
+
+    static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
+        throws SQLException, InvalidNameException
+    {
+        Connection dbConn = ctrlDb.getConnection();
+        if (dbConn == null)
+        {
+            throw new SQLException(
+                "The controller database connection pool failed to provide a database connection"
+            );
+        }
+        try
+        {
+            GLOBAL_TYPE_MAP.clear();
+
+            GLOBAL_TYPE_MAP.put(SYSTEM_TYPE.name, SYSTEM_TYPE);
+            GLOBAL_TYPE_MAP.put(PUBLIC_TYPE.name, PUBLIC_TYPE);
+
+            // Load all security types
+            {
+                ResultSet loadData = secDb.loadSecurityTypes(dbConn);
+                while (loadData.next())
+                {
+                    String dspName = loadData.getString(SecurityDbFields.TYPE_DSP_NAME);
+                    SecTypeName typeName = new SecTypeName(dspName);
+                    if (!typeName.equals(SYSTEM_TYPE.name) &&
+                        !typeName.equals(PUBLIC_TYPE.name))
+                    {
+                        SecurityType secType = new SecurityType(typeName);
+                        GLOBAL_TYPE_MAP.put(typeName, secType);
+                    }
+                }
+            }
+
+            // Load type enforcement rules
+            {
+                ResultSet loadData = secDb.loadTeRules(dbConn);
+                while (loadData.next())
+                {
+                    String domainNameStr = loadData.getString(SecurityDbFields.DOMAIN_NAME);
+                    String typeNameStr = loadData.getString(SecurityDbFields.TYPE_NAME);
+                    String accTypeStr = loadData.getString(SecurityDbFields.ACCESS_TYPE);
+
+                    SecurityType secDomain = get(new SecTypeName(domainNameStr));
+                    SecurityType secType = get(new SecTypeName(typeNameStr));
+                    AccessType accType = AccessType.get(accTypeStr);
+
+                    secType.rules.put(secDomain.name, accType);
+                }
+            }
+        }
+        finally
+        {
+            ctrlDb.returnConnection(dbConn);
+        }
+    }
+
+    public static SecurityType get(SecTypeName typeName)
+    {
+        return GLOBAL_TYPE_MAP.get(typeName);
+    }
+
+    public static Set<SecurityType> getAll()
+    {
+        Set<SecurityType> result = new TreeSet<>();
+        result.addAll(GLOBAL_TYPE_MAP.values());
+        return result;
     }
 
     /**
@@ -148,6 +245,16 @@ public final class SecurityType
         PrivilegeSet privs = context.getEffectivePrivs();
         privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
         rules.remove(domain.name);
+    }
+
+    public Map<SecTypeName, AccessType> getAllRules(AccessContext context)
+        throws AccessDeniedException
+    {
+        context.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+
+        Map<SecTypeName, AccessType> result = new TreeMap<>();
+        result.putAll(rules);
+        return result;
     }
 
     @Override

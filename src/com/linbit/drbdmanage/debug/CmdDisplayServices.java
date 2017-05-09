@@ -8,11 +8,11 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * Displays information about the Controller's system services
+ * Displays information about the module's system services (Controller or Satellite)
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdDisplayServices extends BaseControllerDebugCmd
+public class CmdDisplayServices extends BaseDebugCmd
 {
     public CmdDisplayServices()
     {
@@ -22,7 +22,7 @@ public class CmdDisplayServices extends BaseControllerDebugCmd
                 "DspSvc"
             },
             "Display services",
-            "Displays a table with information about the Controller's system services",
+            "Displays information about the state of currently configured service instances",
             null,
             null,
             false
@@ -37,7 +37,7 @@ public class CmdDisplayServices extends BaseControllerDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        Map<ServiceName, SystemService> services = debugCtl.getSystemServiceMap();
+        Map<ServiceName, SystemService> services = cmnDebugCtl.getSystemServiceMap();
 
         if (services.size() > 0)
         {

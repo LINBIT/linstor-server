@@ -13,8 +13,8 @@ public final class AccessContext implements Cloneable
     public final Role subjectRole;
     public final SecurityType subjectDomain;
 
-    private PrivilegeSet privLimit;
-    private PrivilegeSet privEffective;
+    PrivilegeSet privLimit;
+    PrivilegeSet privEffective;
 
     AccessContext(Identity subjId, Role subjRole, SecurityType secDomain, PrivilegeSet privLimitRef)
     {

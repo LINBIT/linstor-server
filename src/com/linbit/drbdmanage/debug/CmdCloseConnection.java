@@ -11,7 +11,7 @@ import java.util.TreeMap;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdCloseConnection extends BaseControllerDebugCmd
+public class CmdCloseConnection extends BaseDebugCmd
 {
     private static final String PRM_CONN_ID = "CONNID";
 
@@ -51,7 +51,7 @@ public class CmdCloseConnection extends BaseControllerDebugCmd
         String connId = parameters.get(PRM_CONN_ID);
         if (connId != null)
         {
-            Peer peerObj = debugCtl.getPeer(connId);
+            Peer peerObj = cmnDebugCtl.getPeer(connId);
             if (peerObj != null)
             {
                 peerObj.closeConnection();

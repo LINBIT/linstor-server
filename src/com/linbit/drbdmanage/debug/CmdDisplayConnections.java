@@ -14,11 +14,11 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Displays information about the Controller's system services
+ * Displays information about network connections
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdDisplayConnections extends BaseControllerDebugCmd
+public class CmdDisplayConnections extends BaseDebugCmd
 {
     private static final String PRM_DETAIL_NAME = "DETAIL";
     private static final String PRM_DETAIL_DFLT = "DEFAULT";
@@ -101,7 +101,7 @@ public class CmdDisplayConnections extends BaseControllerDebugCmd
 
         if (detail != DetailLevel.INVALID)
         {
-            Map<String, Peer> peerList = debugCtl.getAllPeers();
+            Map<String, Peer> peerList = cmnDebugCtl.getAllPeers();
 
             if (peerList.size() > 0)
             {
@@ -147,7 +147,8 @@ public class CmdDisplayConnections extends BaseControllerDebugCmd
                             SecurityType peerDomain = peerAccCtx.getDomain();
                             debugOut.printf(
                                 "  Id: %-64s\n  QCap: %4d\n" +
-                                "  Identity: %-24s Role: %-24s Domain: %-24s\n",
+                                "  Identity: %-24s Role: %-24s\n" +
+                                "  Security domain: %-24s\n",
                                 curPeer.getId(), curPeer.outQueueCapacity(),
                                 peerIdentity, peerRole, peerDomain
                             );

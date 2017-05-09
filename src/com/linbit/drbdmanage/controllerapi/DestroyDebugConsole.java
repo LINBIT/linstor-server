@@ -12,6 +12,7 @@ import com.linbit.drbdmanage.proto.MsgDebugReplyOuterClass.MsgDebugReply;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.Privilege;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -61,10 +62,11 @@ public class DestroyDebugConsole extends BaseApiCall
             MsgDebugReply.Builder msgDbgReplyBld = MsgDebugReply.newBuilder();
             try
             {
-                ctrl.createDebugConsole(accCtx, client);
+                ctrl.destroyDebugConsole(accCtx, client);
 
                 msgDbgReplyBld.addDebugOut("Debug console destroyed");
-            } catch (AccessDeniedException accessExc)
+            }
+            catch (AccessDeniedException accessExc)
             {
                 coreSvcs.getErrorReporter().reportError(accessExc);
                 msgDbgReplyBld.addDebugErr(

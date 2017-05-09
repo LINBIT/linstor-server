@@ -9,11 +9,11 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Starts execution of a Controller service
+ * Starts execution of a Controller or Satellite service
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class CmdStartService extends BaseControllerDebugCmd
+public class CmdStartService extends BaseDebugCmd
 {
     private static final String PRM_SVC_NAME = "SERVICE";
 
@@ -35,7 +35,7 @@ public class CmdStartService extends BaseControllerDebugCmd
                 "StrSvc"
             },
             "Start service",
-            "Starts execution of a service",
+            "Starts execution of a service instance",
             PARAMETER_DESCRIPTIONS,
             null,
             false
@@ -50,7 +50,7 @@ public class CmdStartService extends BaseControllerDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        Map<ServiceName, SystemService> services = debugCtl.getSystemServiceMap();
+        Map<ServiceName, SystemService> services = cmnDebugCtl.getSystemServiceMap();
         String serviceNamePrm = parameters.get(PRM_SVC_NAME);
         if (serviceNamePrm != null)
         {
