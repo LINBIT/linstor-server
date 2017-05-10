@@ -10,7 +10,7 @@ import java.util.UUID;
  */
 public interface Resource
 {
-    public Resource create(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef)
+    public Resource create(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef, NodeId nodeId)
         throws AccessDeniedException;
 
     public UUID getUuid();
@@ -20,4 +20,6 @@ public interface Resource
     public Volume getVolume(VolumeNumber volNr);
 
     public Node getAssignedNode();
+
+    public NodeId getNodeId();
 }

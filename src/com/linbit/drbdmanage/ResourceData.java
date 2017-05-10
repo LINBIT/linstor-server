@@ -30,8 +30,12 @@ public class ResourceData implements Resource
     // Access control for this resource
     private ObjectProtection objProt;
 
-    private ResourceData(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef)
+    // DRBD node id for this resource
+    private NodeId resNodeId;
+
+    private ResourceData(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef, NodeId nodeIdRef)
     {
+        resNodeId = nodeIdRef;
         ErrorCheck.ctorNotNull(ResourceData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(ResourceData.class, Node.class, nodeRef);
         resourceDfn = resDfnRef;
@@ -67,13 +71,19 @@ public class ResourceData implements Resource
     }
 
     @Override
-    public Resource create(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef)
+    public NodeId getNodeId()
+    {
+        return resNodeId;
+    }
+
+    @Override
+    public Resource create(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef, NodeId nodeId)
         throws AccessDeniedException
     {
         ErrorCheck.ctorNotNull(Resource.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(Resource.class, Node.class, nodeRef);
 
-        Resource newRes = new ResourceData(accCtx, resDfnRef, nodeRef);
+        Resource newRes = new ResourceData(accCtx, resDfnRef, nodeRef, nodeId);
 
         // Access controls on the node and resource must not change
         // while the transaction is in progress
