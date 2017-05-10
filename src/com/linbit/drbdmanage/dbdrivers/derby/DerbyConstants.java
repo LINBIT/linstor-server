@@ -98,6 +98,7 @@ public class DerbyConstants
 
     // VOLUMES column names
     public static final String BLOCK_DEVICE_PATH = "BLOCK_DEVICE_PATH";
+    public static final String META_DISK_PATH    = "META_DISK_PATH";
 
     // STOR_POOL_DEFINITIONS column names
     public static final String POOL_NAME     = "POOL_NAME";

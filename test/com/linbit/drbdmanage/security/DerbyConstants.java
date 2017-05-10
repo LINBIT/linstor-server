@@ -98,6 +98,7 @@ public interface DerbyConstants
 
     // VOLUMES column names
     public static final String BLOCK_DEVICE_PATH = "BLOCK_DEVICE_PATH";
+    public static final String META_DISK_PATH    = "META_DISK_PATH";
 
     // STOR_POOL_DEFINITIONS column names
     public static final String POOL_NAME     = "POOL_NAME";
@@ -133,7 +134,7 @@ public interface DerbyConstants
     public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS   = 4;
     public static final int TBL_COL_COUNT_NODE_RESOURCE          = 5;
     public static final int TBL_COL_COUNT_VOLUME_DEFINITIONS     = 6;
-    public static final int TBL_COL_COUNT_VOLUMES                = 6;
+    public static final int TBL_COL_COUNT_VOLUMES                = 7;
     public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS  = 3;
     public static final int TBL_COL_COUNT_NODE_STOR_POOL         = 4;
     public static final int TBL_COL_COUNT_CONNECTION_DEFINITIONS = 5;
@@ -314,7 +315,8 @@ public interface DerbyConstants
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" + 
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" + 
         "    VLM_NR INT NOT NULL, \n" + 
-        "    BLOCK_DEVICE_PATH VARCHAR(255) NOT NULL, \n" + 
+        "    BLOCK_DEVICE_PATH VARCHAR(255), -- null == diskless \n" + 
+        "    META_DISK_PATH VARCHAR(255),  -- null == internal \n" + 
         "    VLM_FLAGS BIGINT NOT NULL, \n" + 
         "    PRIMARY KEY (NODE_NAME, RESOURCE_NAME, VLM_NR), \n" + 
         "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" + 
@@ -552,7 +554,7 @@ public interface DerbyConstants
         " VALUES (?, ?, ?, ?, ?, ?)";
     public static final String INSERT_VOLUMES = 
         " INSERT INTO " + TBL_VOLUMES + 
-        " VALUES (?, ?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?, ?)";
     public static final String INSERT_STOR_POOL_DEFINITIONS = 
         " INSERT INTO " + TBL_STOR_POOL_DEFINITIONS + 
         " VALUES (?, ?, ?)";

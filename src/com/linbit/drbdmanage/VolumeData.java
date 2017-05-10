@@ -45,6 +45,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final String blockDevicePath;
 
+    private final String metaDiskPath;
+
     private final VolumeDataDatabaseDriver dbDriver;
 
     private boolean deleted = false;
@@ -56,6 +58,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         Resource resRef,
         VolumeDefinition volDfn,
         String blockDevicePathRef,
+        String metaDiskPathRef,
         long initFlags,
         SerialGenerator srlGen,
         TransactionMgr transMgr
@@ -67,6 +70,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             resRef,
             volDfn,
             blockDevicePathRef,
+            metaDiskPathRef,
             initFlags,
             srlGen,
             transMgr
@@ -81,6 +85,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         Resource resRef,
         VolumeDefinition volDfnRef,
         String blockDevicePathRef,
+        String metaDiskPathRef,
         long initFlags,
         SerialGenerator srlGen,
         TransactionMgr transMgr
@@ -92,6 +97,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         resourceDfn = resRef.getDefinition();
         volumeDfn = volDfnRef;
         blockDevicePath = blockDevicePathRef;
+        metaDiskPath = metaDiskPathRef;
 
         dbDriver = DrbdManage.getVolumeDataDatabaseDriver(resRef, volDfnRef);
 
@@ -116,6 +122,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         Resource resRef,
         VolumeDefinition volDfn,
         String blockDevicePathRef,
+        String metaDiskPathRef,
         VlmFlags[] flags,
         SerialGenerator serialGen,
         TransactionMgr transMgr,
@@ -135,7 +142,15 @@ public class VolumeData extends BaseTransactionObject implements Volume
         {
             long initFlags = StateFlagsBits.getMask(flags);
 
-            vol = new VolumeData(resRef, volDfn, blockDevicePathRef, initFlags, serialGen, transMgr);
+            vol = new VolumeData(
+                resRef,
+                volDfn,
+                blockDevicePathRef,
+                metaDiskPathRef,
+                initFlags,
+                serialGen,
+                transMgr
+            );
             if (transMgr != null)
             {
                 driver.create(transMgr.dbCon, vol);
@@ -195,11 +210,20 @@ public class VolumeData extends BaseTransactionObject implements Volume
         return flags;
     }
 
+    @Override
     public String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return blockDevicePath;
+    }
+
+    @Override
+    public String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return metaDiskPath;
     }
 
     @Override

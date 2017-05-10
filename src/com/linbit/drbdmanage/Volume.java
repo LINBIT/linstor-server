@@ -29,6 +29,10 @@ public interface Volume extends TransactionObject
 
     public StateFlags<VlmFlags> getFlags();
 
+    public String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException;
+
+    public String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException;
+
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
@@ -49,4 +53,5 @@ public interface Volume extends TransactionObject
             return flagValue;
         }
     }
+
 }

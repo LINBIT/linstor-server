@@ -34,11 +34,13 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     private static final String VOL_NODE_NAME = DerbyConstants.NODE_NAME;
     private static final String VOL_RES_NAME = DerbyConstants.RESOURCE_NAME;
     private static final String VOL_ID = DerbyConstants.VLM_NR;
-    private static final String VOL_PATH = DerbyConstants.BLOCK_DEVICE_PATH;
+    private static final String VOL_BLOCK_DEVICE = DerbyConstants.BLOCK_DEVICE_PATH;
+    private static final String VOL_META_DISK = DerbyConstants.META_DISK_PATH;
     private static final String VOL_FLAGS = DerbyConstants.VLM_FLAGS;
 
     private static final String VOL_SELECT_BY_RES =
-        " SELECT " +  VOL_UUID + ", " + VOL_ID + ", " + VOL_PATH + ", " + VOL_FLAGS +
+        " SELECT " +  VOL_UUID + ", " + VOL_ID + ", " + VOL_BLOCK_DEVICE + ", " +
+                    VOL_META_DISK + ", " + VOL_FLAGS +
         " FROM " + TBL_VOL +
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
                     VOL_RES_NAME  + " = ?";
@@ -46,7 +48,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         " AND " +   VOL_ID +        " = ?";
     private static final String VOL_INSERT =
         " INSERT INTO " + TBL_VOL +
-        " VALUES (?, ?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?, ?)";
     private static final String VOL_UPDATE_FLAGS =
         " UPDATE " + TBL_VOL +
         " SET " + VOL_FLAGS + " = ? " +
@@ -201,7 +203,8 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     UuidUtils.asUuid(resultSet.getBytes(VOL_UUID)),
                     resRef,
                     volDfn,
-                    resultSet.getString(VOL_PATH),
+                    resultSet.getString(VOL_BLOCK_DEVICE),
+                    resultSet.getString(VOL_META_DISK),
                     resultSet.getLong(VOL_FLAGS),
                     serialGen,
                     transMgr
@@ -250,7 +253,8 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setString(3, vol.getResourceDfn().getName().value);
             stmt.setInt(4, vol.getVolumeDfn().getVolumeNumber(dbCtx).value);
             stmt.setString(5, vol.getBlockDevicePath(dbCtx));
-            stmt.setLong(6, vol.getFlags().getFlagsBits(dbCtx));
+            stmt.setString(6, vol.getMetaDiskPath(dbCtx));
+            stmt.setLong(7, vol.getFlags().getFlagsBits(dbCtx));
             stmt.executeUpdate();
             cache(vol, dbCtx);
         }
