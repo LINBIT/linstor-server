@@ -1,8 +1,12 @@
 package com.linbit.utils;
 
+import java.util.Arrays;
+
 public class Base64
 {
-    private static final char[] ALPHABET = {
+    // Base64 encode table
+    private static final byte[] ALPHABET =
+    {
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
         'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -10,171 +14,115 @@ public class Base64
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/', '='
     };
 
-    // based on https://en.wikipedia.org/wiki/Base64
-    public static String encode(byte[] input)
+    // Base64 decode table
+    private static final byte[] REVERSE_ALPHABET = new byte[256];
+    static
     {
-        StringBuilder out = new StringBuilder((input.length * 4) / 3);
-        int b;
-        for (int i = 0; i < input.length; i += 3)
+        Arrays.fill(REVERSE_ALPHABET, (byte) -1);
+        for (int idx = 0; idx < ALPHABET.length; ++idx)
         {
-            b = (input[i] & 0xFC) >> 2;
-            out.append(ALPHABET[b]);
-            b = (input[i] & 0x03) << 4;
-            if (i + 1 < input.length)
+            int revIdx = ALPHABET[idx] >= 0 ? ALPHABET[idx] : 256 + ALPHABET[idx];
+            REVERSE_ALPHABET[revIdx] = (byte) idx;
+        }
+    }
+
+    private static final String INVALID_INPUT_MSG = "Base64 decode encountered an invalid input value";
+
+    // Based on https://en.wikipedia.org/wiki/Base64
+    public static String encode(byte[] inData)
+    {
+        byte[] outData = new byte[((inData.length + 2) / 3) * 4];
+        int outIdx = 0;
+        for (int inIdx = 0; inIdx < inData.length; inIdx += 3)
+        {
+            int b = (inData[inIdx] & 0xFC) >>> 2;
+            outData[outIdx] = ALPHABET[b];
+            b = (inData[inIdx] & 0x03) << 4;
+            if (inIdx + 1 < inData.length)
             {
-                b |= (input[i + 1] & 0xF0) >> 4;
-                out.append(ALPHABET[b]);
-                b = (input[i + 1] & 0x0F) << 2;
-                if (i + 2 < input.length)
+                b |= (inData[inIdx + 1] & 0xF0) >>> 4;
+                outData[outIdx + 1] = ALPHABET[b];
+                b = (inData[inIdx + 1] & 0x0F) << 2;
+                if (inIdx + 2 < inData.length)
                 {
-                    b |= (input[i + 2] & 0xC0) >> 6;
-                    out.append(ALPHABET[b]);
-                    b = input[i + 2] & 0x3F;
-                    out.append(ALPHABET[b]);
+                    b |= (inData[inIdx + 2] & 0xC0) >>> 6;
+                    outData[outIdx + 2] = ALPHABET[b];
+                    b = inData[inIdx + 2] & 0x3F;
+                    outData[outIdx + 3] = ALPHABET[b];
                 }
                 else
                 {
-                    out.append(ALPHABET[b]);
-                    out.append('=');
+                    outData[outIdx + 2] = ALPHABET[b];
+                    outData[outIdx + 3] = '=';
                 }
             }
             else
             {
-                out.append(ALPHABET[b]);
-                out.append("==");
+                outData[outIdx + 1] = ALPHABET[b];
+                outData[outIdx + 2] = '=';
+                outData[outIdx + 3] = '=';
             }
+            outIdx += 4;
         }
-        return out.toString();
+        return new String(outData);
     }
 
     public static byte[] decode(String input)
+        throws IllegalArgumentException
     {
         final int inputLength = input.length();
         if (inputLength % 4 != 0)
         {
             throw new IllegalArgumentException("Only base64 with padding input is allowed");
         }
-        int decodedLen = (inputLength * 3) / 4;
+        int decodedLength = (inputLength * 3) / 4;
         final int paddingIndex = input.indexOf('=');
         if (paddingIndex != -1)
         {
-            decodedLen -= inputLength - paddingIndex;
+            decodedLength -= inputLength - paddingIndex;
         }
 
-        final byte[] decoded = new byte[decodedLen];
-        final char[] in = input.toCharArray();
-        int j = 0;
+        final byte[] outData = new byte[decodedLength];
+        final byte[] inData = input.getBytes();
+        int outIdx = 0;
         int b[] = new int[4];
-        for (int i = 0; i < in.length; i += 4)
+        for (int inIdx = 0; inIdx < inData.length; inIdx += 4)
         {
-            b[0] = getAlphabetIndex(in[i]);
-            b[1] = getAlphabetIndex(in[i + 1]);
-            b[2] = getAlphabetIndex(in[i + 2]);
-            b[3] = getAlphabetIndex(in[i + 3]);
-            decoded[j++] = (byte) ((b[0] << 2) | (b[1] >> 4));
+            b[0] = getAlphabetIndex(inData[inIdx]);
+            b[1] = getAlphabetIndex(inData[inIdx + 1]);
+            b[2] = getAlphabetIndex(inData[inIdx + 2]);
+            b[3] = getAlphabetIndex(inData[inIdx + 3]);
+            outData[outIdx] = (byte) ((b[0] << 2) | (b[1] >> 4));
             if (b[2] < 64)
             {
-                decoded[j++] = (byte) ((b[1] << 4) | (b[2] >> 2));
+                outData[outIdx + 1] = (byte) ((b[1] << 4) | (b[2] >> 2));
                 if (b[3] < 64)
                 {
-                    decoded[j++] = (byte) ((b[2] << 6) | (b[3]));
+                    outData[outIdx + 2] = (byte) ((b[2] << 6) | (b[3]));
                 }
             }
+            outIdx += 3;
         }
-        return decoded;
+        return outData;
     }
 
-    private static int getAlphabetIndex(char c)
+    private static int getAlphabetIndex(byte inByte)
+        throws IllegalArgumentException
     {
-        int idx = -1;
-        switch(c)
+        int revIdx = inByte >= 0 ? inByte : 256 + inByte;
+        int idx;
+        try
         {
-            case 'A': idx = 0; break;
-            case 'B': idx = 1; break;
-            case 'C': idx = 2; break;
-            case 'D': idx = 3; break;
-            case 'E': idx = 4; break;
-            case 'F': idx = 5; break;
-            case 'G': idx = 6; break;
-            case 'H': idx = 7; break;
-            case 'I': idx = 8; break;
-            case 'J': idx = 9; break;
-            case 'K': idx = 10; break;
-            case 'L': idx = 11; break;
-            case 'M': idx = 12; break;
-            case 'N': idx = 13; break;
-            case 'O': idx = 14; break;
-            case 'P': idx = 15; break;
-            case 'Q': idx = 16; break;
-            case 'R': idx = 17; break;
-            case 'S': idx = 18; break;
-            case 'T': idx = 19; break;
-            case 'U': idx = 20; break;
-            case 'V': idx = 21; break;
-            case 'W': idx = 22; break;
-            case 'X': idx = 23; break;
-            case 'Y': idx = 24; break;
-            case 'Z': idx = 25; break;
-            case 'a': idx = 26; break;
-            case 'b': idx = 27; break;
-            case 'c': idx = 28; break;
-            case 'd': idx = 29; break;
-            case 'e': idx = 30; break;
-            case 'f': idx = 31; break;
-            case 'g': idx = 32; break;
-            case 'h': idx = 33; break;
-            case 'i': idx = 34; break;
-            case 'j': idx = 35; break;
-            case 'k': idx = 36; break;
-            case 'l': idx = 37; break;
-            case 'm': idx = 38; break;
-            case 'n': idx = 39; break;
-            case 'o': idx = 40; break;
-            case 'p': idx = 41; break;
-            case 'q': idx = 42; break;
-            case 'r': idx = 43; break;
-            case 's': idx = 44; break;
-            case 't': idx = 45; break;
-            case 'u': idx = 46; break;
-            case 'v': idx = 47; break;
-            case 'w': idx = 48; break;
-            case 'x': idx = 49; break;
-            case 'y': idx = 50; break;
-            case 'z': idx = 51; break;
-            case '0': idx = 52; break;
-            case '1': idx = 53; break;
-            case '2': idx = 54; break;
-            case '3': idx = 55; break;
-            case '4': idx = 56; break;
-            case '5': idx = 57; break;
-            case '6': idx = 58; break;
-            case '7': idx = 59; break;
-            case '8': idx = 60; break;
-            case '9': idx = 61; break;
-            case '+': idx = 62; break;
-            case '/': idx = 63; break;
-            case '=': idx = 64; break;
+            idx = REVERSE_ALPHABET[revIdx];
+        }
+        catch (ArrayIndexOutOfBoundsException boundsExc)
+        {
+            throw new IllegalArgumentException(INVALID_INPUT_MSG);
+        }
+        if (idx < 0)
+        {
+            throw new IllegalArgumentException(INVALID_INPUT_MSG);
         }
         return idx;
-    }
-
-
-    public static void main(String[] args)
-    {
-        System.out.println("    private static int getAlphabetIndex(char c)");
-        System.out.println("    {");
-        System.out.println("        int idx = -1;");
-        System.out.println("        switch(c)");
-        System.out.println("        {");
-        int idx = 0;
-        for (char c : ALPHABET)
-        {
-            System.out.println("            case '"+c+"': idx = " + idx + "; break;");
-            idx++;
-        }
-        System.out.println("        }");
-        System.out.println("        return idx;");
-        System.out.println("    }");
-
     }
 }
