@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.storage;
 
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.drbdmanage.SatelliteCoreServices;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,6 +13,14 @@ import java.util.Set;
  */
 public interface StorageDriver
 {
+    /**
+     * Initializes the driver
+     *
+     * @param coreSvc
+     * @throws StorageException
+     */
+    void initialize(SatelliteCoreServices coreSvc) throws StorageException;
+
     /**
      * Makes a volume ready for access
      *
@@ -101,4 +110,41 @@ public interface StorageDriver
      *     that are not valid for the driver
      */
     void setConfiguration(Map<String, String> config) throws StorageException;
+
+    /**
+     * If this method returns false, every snapshot method is expected to throw an
+     * {@link UnsupportedOperationException}
+     *
+     * @returns true if and only if snapshots are supported by the driver
+     */
+    boolean isSnapshotSupported();
+
+    /**
+     * Creates a snapshot with the name of the {@code snapshotName} argument for the volume
+     * {@code identifier} specifies.
+     *
+     * @param identifier
+     * @param snapshotName
+     * @throws StorageException
+     * @throws UnsupportedOperationException if snapshots are not supported
+     */
+    void createSnapshot(String identifier, String snapshotName) throws StorageException;
+
+    /**
+     * Clones a given snapshot ({@code snapshotName1}) into a new snapshot ({@code snapshotName2})
+     *
+     * @param snapshotName1
+     * @param snapshotName2
+     * @throws StorageException
+     * @throws UnsupportedOperationException if snapshots are not supported
+     */
+    void cloneSnapshot(String snapshotName1, String snapshotName2) throws StorageException;
+
+    /**
+     * Deletes the given snapshot
+     * @param snapshotName
+     * @throws StorageException
+     * @throws UnsupportedOperationException if snapshots are not supported
+     */
+    void deleteSnapshot(String snapshotName) throws StorageException;
 }
