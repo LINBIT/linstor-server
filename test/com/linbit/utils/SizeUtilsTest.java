@@ -6,7 +6,7 @@ import java.math.BigInteger;
 
 import org.junit.Test;
 
-public class SizeUtilsTests
+public class SizeUtilsTest
 {
     @Test
     public void testApproxSizeAllSupportedMagnitutes()

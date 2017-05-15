@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-public class Base64Tests
+public class Base64Test
 {
     @Test
     public void testStdEncode()
