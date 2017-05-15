@@ -39,6 +39,8 @@ import com.linbit.drbdmanage.security.Initializer;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.Privilege;
 import com.linbit.drbdmanage.timer.CoreTimer;
+import com.linbit.utils.Base64;
+
 import java.io.FileInputStream;
 
 import java.io.IOException;
@@ -47,6 +49,7 @@ import java.io.PrintStream;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.sql.SQLException;
@@ -71,6 +74,11 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
     // Database connection URL configuration key
     public static final String DB_CONN_URL = "connection-url";
+
+    // Random data size for automatic DRBD shared secret generation
+    // The random data will be Base64 encoded, so the length of the
+    // shared secret string will be (SECRET_LEN + 2) / 3 * 4
+    private static final int DRBD_SHARED_SECRET_SIZE = 15;
 
     // System security context
     private AccessContext sysCtx;
@@ -599,6 +607,19 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         {
             getErrorReporter().reportError(exc);
         }
+    }
+
+    /**
+     * Generates a random value for a DRBD resource's shared secret
+     *
+     * @return
+     */
+    private String generateSharedSecret()
+    {
+        byte[] randomBytes = new byte[DRBD_SHARED_SECRET_SIZE];
+        new SecureRandom().nextBytes(randomBytes);
+        String secret = Base64.encode(randomBytes);
+        return secret;
     }
 
     private class ConnTracker implements ConnectionObserver
