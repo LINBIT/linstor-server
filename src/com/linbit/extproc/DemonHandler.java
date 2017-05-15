@@ -47,14 +47,8 @@ public class DemonHandler
     {
         outProxy.expectShutdown();
         errProxy.expectShutdown();
-        if (force)
-        {
-            process.destroyForcibly();
-        }
-        else
-        {
-            process.destroy();
-        }
+        // if force is set, and migrated to java 8, call process.destroyForcibly()
+        process.destroy();
         outThread.interrupt();
         errThread.interrupt();
         process = null;

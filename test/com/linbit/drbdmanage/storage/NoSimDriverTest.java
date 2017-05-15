@@ -12,8 +12,8 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
-import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.ErrorReporter;
+import com.linbit.drbdmanage.SatelliteCoreServices;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
@@ -57,7 +57,7 @@ public abstract class NoSimDriverTest
     public NoSimDriverTest(StorageDriver driver) throws IOException, StorageException
     {
         this.driver = driver;
-        CoreServices coreSvc = new TestCoreServices();
+        SatelliteCoreServices coreSvc = new TestCoreServices();
         extCommand = new ExtCmd(coreSvc.getTimer());
         driver.initialize(coreSvc);
     }
@@ -857,7 +857,7 @@ public abstract class NoSimDriverTest
 
     protected abstract String[] getListPoolNamesCommand();
 
-    private static class TestCoreServices implements CoreServices
+    private static class TestCoreServices implements SatelliteCoreServices
     {
         private final GenericTimer<String, Action<String>> timerEventSvc ;
         private final FileSystemWatch fsEventSvc;
