@@ -18,33 +18,25 @@ public class SizeUtils
 
     public static String approximateSizeString(BigInteger kib)
     {
-        int index = 0;
-        int counter = 1;
-        BigInteger magnitute = BigInteger.valueOf(1 << 10);
-        while (counter < units.length)
+        final BigInteger maxRemainder = BigInteger.valueOf(1 << 10);
+        BigInteger magnitude = BigInteger.valueOf(1);
+        int unitIdx = 0;
+        while (unitIdx < units.length)
         {
-            if (kib.compareTo(magnitute) >= 0)
-            {
-                index = counter;
-            }
-            else
+            // If the size value in the current unit is less than 1024, then
+            // use the current unit
+            if (kib.divide(magnitude).compareTo(maxRemainder) < 0)
             {
                 break;
             }
-            magnitute = magnitute.shiftLeft(10);
-            counter++;
+            magnitude = magnitude.shiftLeft(10);
+            ++unitIdx;
         }
-        magnitute = magnitute.shiftRight(10);
 
-        String sizeStr;
-        // if (kib.mod(magnitute).compareTo(BigInteger.ZERO) != 0) // kib % magnitute != 0
-        // {
         BigDecimal kibDec = new BigDecimal(kib);
-        float sizeUnit = kibDec.divide(new BigDecimal(magnitute), 2, RoundingMode.CEILING).floatValue();
-        sizeStr = String.format("%3.2f %s", sizeUnit, units[index]);
-        // }
+        float sizeUnit = kibDec.divide(new BigDecimal(magnitude), 2, RoundingMode.CEILING).floatValue();
+        String sizeStr = String.format("%3.2f %s", sizeUnit, units[unitIdx]);
 
         return sizeStr;
     }
-
 }
