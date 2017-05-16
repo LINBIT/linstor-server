@@ -1,6 +1,10 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ErrorCheck;
+import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.SerialGenerator;
+import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -33,9 +37,13 @@ public class ResourceDefinitionData implements ResourceDefinition
     // Object access controls
     private ObjectProtection objProt;
 
+    // Properties container for this resource definition
+    private Props rscDfnProps;
+
     ResourceDefinitionData(
         AccessContext accCtx,
-        ResourceName resName
+        ResourceName resName,
+        SerialGenerator srlGen
     )
     {
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceName.class, resName);
@@ -44,6 +52,7 @@ public class ResourceDefinitionData implements ResourceDefinition
         connectionMap = new TreeMap<>();
         volumeMap = new TreeMap<>();
         resourceMap = new TreeMap<>();
+        rscDfnProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = new ObjectProtection(accCtx);
     }
 
@@ -57,6 +66,13 @@ public class ResourceDefinitionData implements ResourceDefinition
     public ResourceName getName()
     {
         return resourceName;
+    }
+
+    @Override
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return PropsAccess.secureGetProps(accCtx, objProt, rscDfnProps);
     }
 
     @Override
