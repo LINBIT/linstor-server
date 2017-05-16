@@ -146,7 +146,7 @@ public class ReadOnlyProps implements Props
     @Override
     public Props getNamespace(String namespace) throws InvalidKeyException
     {
-        return propsMap.getNamespace(namespace);
+        return new ReadOnlyProps(propsMap.getNamespace(namespace));
     }
 
     private void denyAccess()

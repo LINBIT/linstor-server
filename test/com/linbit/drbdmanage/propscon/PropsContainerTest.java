@@ -269,6 +269,43 @@ public class PropsContainerTest
         }
     }
 
+    @Test
+    public void testSetAllRollback() throws InvalidKeyException, InvalidValueException
+    {
+        root.clear();
+        final Map<String, String> map = new HashMap<>();
+        map.put("a", "a");
+        map.put("b", "b");
+        map.put("a/a2", "aa2");
+        map.put("", "root");
+        root.setAllProps(map, null);
+
+        final Map<String, String> overrideMap = new HashMap<>();
+        overrideMap.put("a", "overriddenA");
+        overrideMap.put("b", null); // should cause an invalidValueException and a rollback
+        overrideMap.put("", "not root");
+
+        try
+        {
+            root.setAllProps(overrideMap, null);
+            fail("InvalidValueException expected");
+        }
+        catch (InvalidValueException InvValueExc)
+        {
+            // expected
+        }
+        Iterator<Entry<String, String>> iterateProps = root.iterator();
+        while (iterateProps.hasNext())
+        {
+            Entry<String, String> entry = iterateProps.next();
+            String key = entry.getKey();
+            String expectedValue = map.remove(key);
+            assertNotNull("Unexpected key found in props: " + key, expectedValue);
+            assertEquals("Unexpected value found for key: " + key, expectedValue, entry.getValue());
+        }
+        assertTrue("Missing expected entries", map.isEmpty());
+    }
+
     @Test(expected = InvalidKeyException.class)
     public void testSetAllPropsNullKey() throws InvalidKeyException, InvalidValueException
     {
@@ -905,9 +942,9 @@ public class PropsContainerTest
     @Test
     public void testEntrySetAddAll()
     {
-        final ArrayList<Entry<String, String>> generatedEntries = generateEntries(
+        final Set<Entry<String, String>> generatedEntries = new HashSet<>(generateEntries(
             FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT
-        );
+        ));
         final ArrayList<Entry<String, String>> entriesToAdd = new ArrayList<>();
         entriesToAdd.add(createEntry("new key", "value"));
         entriesToAdd.add(createEntry(FIRST_KEY + "0", "other value"));
@@ -915,25 +952,76 @@ public class PropsContainerTest
         entrySet.addAll(entriesToAdd);
         generatedEntries.addAll(entriesToAdd);
 
-        assertEquals(generatedEntries, entrySet);
+        Iterator<Entry<String, String>> tmpIt = generatedEntries.iterator();
+        while (tmpIt.hasNext())
+        {
+            Entry<String, String> next = tmpIt.next();
+            if (next.toString().equals(FIRST_KEY + "0=0"))
+            {
+                // that value was overridden in the propsContainer
+                // but as generatedEntries is a Set<Entry<...>> we have to remove that entry manually
+                tmpIt.remove();
+                break;
+            }
+        }
+
+        Iterator<Entry<String, String>> entrySetIterator = entrySet.iterator();
+        while (entrySetIterator.hasNext())
+        {
+            Entry<String, String> entrySetEntry = entrySetIterator.next();
+            String entrySetKey = entrySetEntry.getKey();
+            String entrySetValue = entrySetEntry.getValue();
+
+            Iterator<Entry<String, String>> generatedIterator = generatedEntries.iterator();
+            while (generatedIterator.hasNext())
+            {
+                Entry<String, String> generatedEntry = generatedIterator.next();
+                String generatedKey = generatedEntry.getKey();
+                String generatedValue = generatedEntry.getValue();
+
+                if (generatedKey.equals(entrySetKey))
+                {
+                    assertEquals(generatedValue, entrySetValue);
+                    generatedIterator.remove();
+                    break;
+                }
+            }
+        }
+        assertTrue(generatedEntries.isEmpty());
     }
 
-    @Test(expected = InvalidKeyException.class)
+    @Test
     public void testEntrySetAddAllNullKey()
     {
         final ArrayList<Entry<String, String>> entriesToAdd = new ArrayList<>();
         entriesToAdd.add(createEntry(null, "value"));
 
-        entrySet.addAll(entriesToAdd);
+        try
+        {
+            entrySet.addAll(entriesToAdd);
+            fail("addAll should have thrownd an IllegalArgumentException caused by a InvalidKeyException");
+        }
+        catch (IllegalArgumentException illegalArgExc)
+        {
+            assertTrue(illegalArgExc.getCause() instanceof InvalidKeyException);
+        }
     }
 
-    @Test(expected = InvalidValueException.class)
+    @Test
     public void testEntrySetAddAllNullValue()
     {
         final ArrayList<Entry<String, String>> entriesToAdd = new ArrayList<>();
         entriesToAdd.add(createEntry("key", null));
 
-        entrySet.addAll(entriesToAdd);
+        try
+        {
+            entrySet.addAll(entriesToAdd);
+            fail("addAll should have thrownd an IllegalArgumentException caused by a InvalidValueException");
+        }
+        catch (IllegalArgumentException illegalArgExc)
+        {
+            assertTrue(illegalArgExc.getCause() instanceof InvalidValueException);
+        }
     }
 
     @Test
