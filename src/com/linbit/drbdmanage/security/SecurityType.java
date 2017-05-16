@@ -184,11 +184,10 @@ public final class SecurityType implements Comparable<SecurityType>
                         allowFlag = accType.hasAccess(requested);
                     }
 
-                    // Allow access if the current role has MAC_OVRD privileges
+                    // Allow access if the current context has MAC_OVRD privileges
                     if (!allowFlag)
                     {
-                        PrivilegeSet privileges = context.subjectRole.privileges;
-                        allowFlag = privileges.hasPrivileges(Privilege.PRIV_MAC_OVRD);
+                        allowFlag = context.privEffective.hasPrivileges(Privilege.PRIV_MAC_OVRD);
                     }
 
                     if (!allowFlag)
