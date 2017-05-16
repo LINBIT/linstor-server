@@ -14,3 +14,4 @@ nbproject/project.xml
 test-data/*
 test-support/TestProcess
 test-support/TestOutput
+test-support/*.o
