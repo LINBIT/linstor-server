@@ -209,15 +209,54 @@ public final class SecurityType implements Comparable<SecurityType>
     }
 
     /**
+     * Returns the level of access to an object with the security type of this instance
+     * that is granted to the specified security context
+     *
+     * @param context The security context of the subject requesting access
+     * @return Allowed AccessType, or null if access is denied
+     */
+    public final AccessType queryAccess(AccessContext context)
+    {
+        AccessType result = null;
+        SecurityLevel globalSecLevel = SecurityLevel.get();
+        switch (globalSecLevel)
+        {
+            case NO_SECURITY:
+                // fall-through
+            case RBAC:
+                result = AccessType.CONTROL;
+                break;
+            case MAC:
+                // Query the level of access allowed by privileges
+                AccessType privAccess = context.privEffective.toMacAccess();
+
+                // Get the name of the subject's security domain
+                SecTypeName typeName = context.subjectDomain.name;
+
+                // Look for a rule allowing a certain type of access
+                // between from the subject's security domain to this
+                // security type
+                AccessType ruleAccess = rules.get(typeName);
+
+                // Combine access permissions
+                result = AccessType.union(privAccess, ruleAccess);
+                break;
+            default:
+                throw new AssertionError(globalSecLevel.name());
+        }
+        return result;
+    }
+
+    /**
      * Returns the level of access granted to an object of the security type of
      * this instance by an access control rule
      * @param context Security context specifying the subject domain
      * @return Allowed level of access, or null if access is denied
      */
-    public final AccessType queryAccess(AccessContext context)
+    public final AccessType getEntry(AccessContext context)
     {
         SecurityType domain = context.subjectDomain;
-        return queryAccess(domain);
+        return SecurityType.this.getEntry(domain);
     }
 
     /**
@@ -226,7 +265,7 @@ public final class SecurityType implements Comparable<SecurityType>
      * @param domain The security domain to find an access control rule for
      * @return Allowed level of access, or null if access is denied
      */
-    public final AccessType queryAccess(SecurityType domain)
+    public final AccessType getEntry(SecurityType domain)
     {
         return rules.get(domain.name);
     }

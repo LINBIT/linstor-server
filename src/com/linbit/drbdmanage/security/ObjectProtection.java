@@ -58,6 +58,26 @@ public final class ObjectProtection
         objectAcl.requireAccess(context, requested);
     }
 
+    /**
+     * Returns the level of access to the object protected by this instance
+     * that is granted to the specified security context
+     *
+     * @param context The security context of the subject requesting access
+     * @return Allowed AccessType, or null if access is denied
+     */
+    public final AccessType queryAccess(AccessContext context)
+    {
+        AccessType result = null;
+        {
+            AccessType macAccess = objectType.queryAccess(context);
+            AccessType rbacAccess = objectAcl.queryAccess(context);
+
+            // Determine the level of access that is allowed by both security components
+            result = AccessType.intersect(macAccess, rbacAccess);
+        }
+        return result;
+    }
+
     public Identity getCreator()
     {
         return objectCreator;

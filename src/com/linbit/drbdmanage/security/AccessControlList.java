@@ -72,16 +72,57 @@ public final class AccessControlList
     }
 
     /**
+     * Returns the level of access to the object protected by this access control list instance
+     * that is granted to the specified security context
+     *
+     * @param context The security context of the subject requesting access
+     * @return Allowed AccessType, or null if access is denied
+     */
+    public final AccessType queryAccess(AccessContext context)
+    {
+        AccessType result = null;
+        SecurityLevel globalSecLevel = SecurityLevel.get();
+        switch (globalSecLevel)
+        {
+            case NO_SECURITY:
+                result = AccessType.CONTROL;
+                break;
+            case RBAC:
+                // fall-through
+            case MAC:
+                // Query the level of access allowed by privileges
+                AccessType privAccess = context.privEffective.toRbacAccess();
+
+                // Look for an entry for the subject's role in this access control list
+                AccessType aclAccess = null;
+                {
+                    AccessControlEntry entry = acl.get(context.subjectRole.name);
+                    if (entry != null)
+                    {
+                        aclAccess = entry.access;
+                    }
+                }
+
+                // Combine access permissions
+                result = AccessType.union(privAccess, aclAccess);
+                break;
+            default:
+                throw new AssertionError(globalSecLevel.name());
+        }
+        return result;
+    }
+
+    /**
      * Returns the level of access that is granted by the access control list
      * to the role referenced by the specified security context
      *
      * @param context Security context for access controls
      * @return Allowed level of access, or null if access is denied
      */
-    public final AccessType queryAccess(AccessContext context)
+    public final AccessType getEntry(AccessContext context)
     {
         Role subjRole = context.subjectRole;
-        return queryAccess(subjRole);
+        return getEntry(subjRole);
     }
 
     /**
@@ -91,7 +132,7 @@ public final class AccessControlList
      * @param subjRole The role to find access control entries for
      * @return Allowed level of access, or null if access is denied
      */
-    public final AccessType queryAccess(Role subjRole)
+    public final AccessType getEntry(Role subjRole)
     {
         AccessType access = null;
         AccessControlEntry entry = acl.get(subjRole.name);
