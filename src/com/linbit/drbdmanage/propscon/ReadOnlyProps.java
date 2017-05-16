@@ -146,7 +146,49 @@ public class ReadOnlyProps implements Props
     @Override
     public Props getNamespace(String namespace) throws InvalidKeyException
     {
-        return propsMap.getNamespace(namespace);
+        Props ret = propsMap.getNamespace(namespace);
+        if (ret != null)
+        {
+            ret = new ReadOnlyProps(ret);
+        }
+        return ret;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((propsMap == null) ? 0 : propsMap.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        boolean result = false;
+        if (this == obj)
+        {
+            result = true;
+        }
+        else
+        if (obj != null && getClass() == obj.getClass())
+        {
+            ReadOnlyProps other = (ReadOnlyProps) obj;
+            if (propsMap == null)
+            {
+                if (other.propsMap == null)
+                {
+                    result = true;
+                }
+            }
+            else
+            if (propsMap.equals(other.propsMap))
+            {
+                result = true;
+            }
+        }
+        return result;
     }
 
     private void denyAccess()

@@ -260,7 +260,8 @@ public class PropsContainer implements Props
     public boolean setAllProps(Map<? extends String, ? extends String> entryMap, String namespace)
         throws InvalidKeyException, InvalidValueException
     {
-        int itemCounter = 0;
+        boolean modified = false;
+        Map<String, String> rollback = new TreeMap<>();
         try
         {
             for (Map.Entry<? extends String, ? extends String> entry : entryMap.entrySet())
@@ -274,48 +275,46 @@ public class PropsContainer implements Props
                 }
 
                 String[] pathElements = splitPath(namespace, key);
-                checkKey(pathElements[PATH_KEY]);
+                String actualKey = pathElements[PATH_KEY];
+                checkKey(actualKey);
 
                 PropsContainer con = ensureNamespaceExists(pathElements[PATH_NAMESPACE]);
-                if (con.propMap.put(pathElements[PATH_KEY], value) == null)
+                String oldValue = con.propMap.put(actualKey, value);
+                rollback.put(actualKey, oldValue);
+                if (oldValue == null)
                 {
                     con.modifySize(1);
+                    modified = true;
                 }
-                ++itemCounter;
             }
         }
-        catch (InvalidKeyException keyExc)
+        catch (InvalidKeyException | InvalidValueException invalidKeyOrValueExc)
         {
-            int rollbackCounter = 0;
-            for (Map.Entry<? extends String, ? extends String> entry : entryMap.entrySet())
+            for (Map.Entry<String, String> entry : rollback.entrySet())
             {
-                if (rollbackCounter >= itemCounter)
-                {
-                    break;
-                }
                 String key = entry.getKey();
+                String value = entry.getValue();
 
                 String[] pathElements = splitPath(namespace, key);
                 checkKey(pathElements[PATH_KEY]);
 
                 PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]);
-                if (con != null)
+
+                if (value == null) // entry did not exist before this setAll
                 {
-                    // FIXME: this removes entries that already existed and were overwritten
-                    //        by an entry in entryMap.
-                    //        Instead, it should roll back to the value that the entry had
-                    //        before it was changed.
-                    if (con.propMap.remove(pathElements[PATH_KEY]) != null)
-                    {
-                        con.modifySize(-1);
-                        con.removeCleanup();
-                    }
+                    con.propMap.remove(key);
+                    con.modifySize(-1);
+                    con.removeCleanup();
                 }
-                ++rollbackCounter;
+                else
+                {
+                    con.propMap.put(key, value);
+                }
             }
-            throw keyExc;
+
+            throw invalidKeyOrValueExc;
         }
-        return itemCounter != 0;
+        return modified;
     }
 
     /**
@@ -1340,13 +1339,24 @@ public class PropsContainer implements Props
             return result;
         }
 
-        // FIXME: this must call an outer class' method that can be overridden
-        //        to enable serial number update in a subclass
         @Override
-        public boolean addAll(Collection<? extends Map.Entry<String, String>> c)
+        public boolean addAll(Collection<? extends Map.Entry<String, String>> collection)
         {
-            // TODO: implement
-            throw new UnsupportedOperationException("Not supported yet.");
+            boolean changed = false;
+            Map<String, String> map = new TreeMap<String, String>();
+            for (Map.Entry<String, String> entry : collection)
+            {
+                map.put(entry.getKey(), entry.getValue());
+            }
+            try
+            {
+                changed = container.setAllProps(map, null);
+            }
+            catch (InvalidKeyException | InvalidValueException e)
+            {
+                throw new IllegalArgumentException(e);
+            }
+            return changed;
         }
 
         @Override

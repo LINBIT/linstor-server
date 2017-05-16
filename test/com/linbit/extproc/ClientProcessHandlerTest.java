@@ -152,6 +152,9 @@ public class ClientProcessHandlerTest
         cph.waitForDestroy();
     }
 
+    // The following test works only in Java 8 ( process.destroyForcibly() )
+
+    /*
     @Test
     public void testWaitForDestroyForcibly() throws IOException
     {
@@ -192,6 +195,7 @@ public class ClientProcessHandlerTest
             fail("Child process not killed as expected");
         }
     }
+    */
 
     @Test
     public void testAutoTerm() throws IOException
@@ -226,6 +230,9 @@ public class ClientProcessHandlerTest
         }
     }
 
+    // The following test works only in Java 8 ( process.destroyForcibly() )
+
+    /*
     @Test
     public void testAutoKill() throws IOException
     {
@@ -257,4 +264,5 @@ public class ClientProcessHandlerTest
             }
         }
     }
+    */
 }

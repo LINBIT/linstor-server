@@ -1,14 +1,12 @@
 package com.linbit.drbdmanage.controllerapi;
 
 import com.linbit.ImplementationError;
-import com.linbit.drbdmanage.ApiCall;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
-import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.drbdmanage.security.AccessContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

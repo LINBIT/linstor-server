@@ -19,6 +19,7 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -105,7 +106,6 @@ public class FileSystemWatch implements Runnable, SystemService
 
         fileSys = FileSystems.getDefault();
         wSvc = fileSys.newWatchService();
-
         stopFlag = new AtomicBoolean();
         watchThread = null;
 
@@ -252,6 +252,26 @@ public class FileSystemWatch implements Runnable, SystemService
         if (watchThread != null)
         {
             watchThread.interrupt();
+        }
+    }
+
+    /**
+     * @throws IOException
+     *
+     */
+    void cancelAllWatchKeys() throws IOException
+    {
+        synchronized (mapLock)
+        {
+            Collection<WatchMapEntry> entries = watchMap.values();
+            for (WatchMapEntry entry : entries)
+            {
+                if (entry != null)
+                {
+                    entry.key.cancel();
+                }
+            }
+            wSvc.close();
         }
     }
 

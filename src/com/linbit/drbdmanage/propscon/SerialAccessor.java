@@ -1,7 +1,5 @@
 package com.linbit.drbdmanage.propscon;
 
-import java.util.concurrent.locks.Lock;
-
 /**
  * Access interface for serial numbers
  *
