@@ -9,7 +9,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
-import com.linbit.extproc.DemonHandler;
+import com.linbit.extproc.DaemonHandler;
 import com.linbit.extproc.OutputProxy.Event;
 import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
@@ -34,7 +34,7 @@ public class DrbdEventService implements SystemService, Runnable
     private final EventsTracker eventsTracker;
     private boolean needsReinitialize = false;
 
-    private DemonHandler demonHandler;
+    private DaemonHandler demonHandler;
 
     static
     {
@@ -55,7 +55,7 @@ public class DrbdEventService implements SystemService, Runnable
             instanceName = new ServiceName(INSTANCE_PREFIX + INSTANCE_COUNT.incrementAndGet());
             eventDeque = new LinkedBlockingDeque<>();
             thread = new Thread(this, "DrbdEventService");
-            demonHandler = new DemonHandler(eventDeque, "drbdsetup", "events2", "all");
+            demonHandler = new DaemonHandler(eventDeque, "drbdsetup", "events2", "all");
             startable = true;
             running = false;
             eventsTracker = new EventsTracker(trackerRef);

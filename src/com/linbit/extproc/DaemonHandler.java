@@ -6,7 +6,7 @@ import java.util.concurrent.BlockingDeque;
 
 import com.linbit.extproc.OutputProxy.Event;
 
-public class DemonHandler
+public class DaemonHandler
 {
     private final static byte DELIMITER = '\n';
 
@@ -20,7 +20,7 @@ public class DemonHandler
 
     private final BlockingDeque<Event> deque;
 
-    public DemonHandler(final BlockingDeque<Event> deque, final String... command)
+    public DaemonHandler(final BlockingDeque<Event> deque, final String... command)
     {
         this.deque = deque;
         processBuilder = new ProcessBuilder(command);
