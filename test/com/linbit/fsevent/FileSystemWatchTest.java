@@ -138,6 +138,14 @@ public class FileSystemWatchTest
     public void tearDown()
     {
         fsw.shutdown();
+        try
+        {
+            fsw.cancelAllWatchKeys();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -491,6 +499,7 @@ public class FileSystemWatchTest
         new Thread(
             new Runnable()
             {
+                @Override
                 public void run()
                 {
                     try
@@ -555,6 +564,7 @@ public class FileSystemWatchTest
         new Thread(
             new Runnable()
             {
+                @Override
                 public void run()
                 {
                     try
