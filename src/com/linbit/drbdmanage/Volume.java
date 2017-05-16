@@ -1,5 +1,8 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 import java.util.UUID;
 
 /**
@@ -15,4 +18,7 @@ public interface Volume
     public ResourceDefinition getResourceDfn();
 
     public VolumeDefinition getVolumeDfn();
+
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException;
 }

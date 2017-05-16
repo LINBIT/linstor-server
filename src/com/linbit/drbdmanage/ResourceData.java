@@ -1,6 +1,10 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ErrorCheck;
+import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.SerialGenerator;
+import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -33,7 +37,16 @@ public class ResourceData implements Resource
     // DRBD node id for this resource
     private NodeId resNodeId;
 
-    private ResourceData(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef, NodeId nodeIdRef)
+    // Properties container for this resource
+    private Props resourceProps;
+
+    private ResourceData(
+        AccessContext accCtx,
+        ResourceDefinition resDfnRef,
+        Node nodeRef,
+        NodeId nodeIdRef,
+        SerialGenerator srlGen
+    )
     {
         resNodeId = nodeIdRef;
         ErrorCheck.ctorNotNull(ResourceData.class, ResourceDefinition.class, resDfnRef);
@@ -43,6 +56,7 @@ public class ResourceData implements Resource
 
         objId = UUID.randomUUID();
         volumeList = new TreeMap<>();
+        resourceProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = new ObjectProtection(accCtx);
     }
 
@@ -50,6 +64,19 @@ public class ResourceData implements Resource
     public UUID getUuid()
     {
         return objId;
+    }
+
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        return objProt;
+    }
+
+    @Override
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return PropsAccess.secureGetProps(accCtx, objProt, resourceProps);
     }
 
     @Override
@@ -77,13 +104,19 @@ public class ResourceData implements Resource
     }
 
     @Override
-    public Resource create(AccessContext accCtx, ResourceDefinition resDfnRef, Node nodeRef, NodeId nodeId)
+    public Resource create(
+        AccessContext accCtx,
+        ResourceDefinition resDfnRef,
+        Node nodeRef,
+        NodeId nodeId,
+        SerialGenerator srlGen
+    )
         throws AccessDeniedException
     {
         ErrorCheck.ctorNotNull(Resource.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(Resource.class, Node.class, nodeRef);
 
-        Resource newRes = new ResourceData(accCtx, resDfnRef, nodeRef, nodeId);
+        Resource newRes = new ResourceData(accCtx, resDfnRef, nodeRef, nodeId, srlGen);
 
         // Access controls on the node and resource must not change
         // while the transaction is in progress

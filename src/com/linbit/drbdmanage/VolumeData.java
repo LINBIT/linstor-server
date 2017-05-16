@@ -1,5 +1,9 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 import java.util.UUID;
 
 /**
@@ -20,10 +24,20 @@ public class VolumeData implements Volume
     // Reference to the volume definition that defines this volume
     private VolumeDefinition volumeDfn;
 
+    // Properties container for this volume
+    private Props volumeProps;
+
     @Override
     public UUID getUuid()
     {
         return objId;
+    }
+
+    @Override
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return PropsAccess.secureGetProps(accCtx, resourceRef.getObjProt(), volumeProps);
     }
 
     @Override

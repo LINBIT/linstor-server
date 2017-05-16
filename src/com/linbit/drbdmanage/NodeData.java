@@ -1,6 +1,10 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ErrorCheck;
+import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.SerialGenerator;
+import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -33,7 +37,10 @@ public class NodeData implements Node
     // Access controls for this object
     private ObjectProtection objProt;
 
-    NodeData(AccessContext accCtx, NodeName nameRef)
+    // Properties container for this node
+    private Props nodeProps;
+
+    NodeData(AccessContext accCtx, NodeName nameRef, SerialGenerator srlGen)
     {
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
         objId = UUID.randomUUID();
@@ -41,6 +48,7 @@ public class NodeData implements Node
         resourceMap = new TreeMap<>();
         netInterfaceMap = new TreeMap<>();
         storPoolMap = new TreeMap<>();
+        nodeProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = new ObjectProtection(accCtx);
     }
 
@@ -68,6 +76,13 @@ public class NodeData implements Node
     public ObjectProtection getObjProt()
     {
         return objProt;
+    }
+
+    @Override
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return PropsAccess.secureGetProps(accCtx, objProt, nodeProps);
     }
 
     @Override

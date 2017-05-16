@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -7,11 +8,13 @@ import java.util.UUID;
 
 /**
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public interface ResourceDefinition
 {
     public UUID getUuid();
+
+    public ObjectProtection getObjProt();
 
     public ResourceName getName();
 
@@ -30,5 +33,6 @@ public interface ResourceDefinition
     public void removeResource(AccessContext accCtx, Resource resRef)
         throws AccessDeniedException;
 
-    public ObjectProtection getObjProt();
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException;
 }

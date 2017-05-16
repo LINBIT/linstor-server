@@ -7,6 +7,10 @@ import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.SerialGenerator;
+import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -33,12 +37,16 @@ public class VolumeDefinitionData implements VolumeDefinition
     // Net volume size in kiB
     private long volumeSize;
 
+    // Properties container for this volume definition
+    private Props vlmDfnProps;
+
     VolumeDefinitionData(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
         VolumeNumber volNr,
         MinorNumber minor,
-        long volSize
+        long volSize,
+        SerialGenerator srlGen
     )
         throws MdException, AccessDeniedException
     {
@@ -77,12 +85,20 @@ public class VolumeDefinitionData implements VolumeDefinition
         volumeNr = volNr;
         minorNr = minor;
         volumeSize = volSize;
+        vlmDfnProps = SerialPropsContainer.createRootContainer(srlGen);
     }
 
     @Override
     public UUID getUuid()
     {
         return objId;
+    }
+
+    @Override
+    public Props getProps(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return PropsAccess.secureGetProps(accCtx, resourceDfn.getObjProt(), vlmDfnProps);
     }
 
     @Override

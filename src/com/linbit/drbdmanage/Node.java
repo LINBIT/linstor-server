@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -42,5 +43,8 @@ public interface Node
         throws AccessDeniedException;
 
     public void removeStorPool(AccessContext accCtx, StorPool pool)
+        throws AccessDeniedException;
+
+    public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 }
