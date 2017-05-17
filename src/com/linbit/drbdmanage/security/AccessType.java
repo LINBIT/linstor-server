@@ -28,6 +28,53 @@ public enum AccessType
         return ((requested.accessMask & this.accessMask) == requested.accessMask);
     }
 
+    /**
+     * Returns an AccessType that represents the level of access that is a subset of the
+     * level of access granted by both AccessType arguments
+     *
+     * @param first First AccessType, or null to indicate no access
+     * @param second Second AccessType, or null to indicate no access
+     * @return AccessType resulting from intersecting the level of access of both arguments to the method
+     */
+    public static final AccessType intersect(AccessType first, AccessType second)
+    {
+        AccessType result = null;
+        if (first != null && second != null)
+        {
+            long mask = first.accessMask & second.accessMask;
+            result = getAccessByMask(mask);
+        }
+        return result;
+    }
+
+    /**
+     * Returns an AccessType that represents the level of access that is a combination
+     * of the level of access granted by each of the AccessType arguments
+     *
+     * @param first First AccessType, or null to indicate no access
+     * @param second Second AccessType, or null to indicate no access
+     * @return AccessType resulting from combining the level of access of both arguments to the method
+     */
+    public static final AccessType union(AccessType first, AccessType second)
+    {
+        AccessType result = null;
+        if (first == null)
+        {
+            result = second;
+        }
+        else
+        if (second == null)
+        {
+            result = first;
+        }
+        else
+        {
+            long mask = first.accessMask | second.accessMask;
+            result = getAccessByMask(mask);
+        }
+        return result;
+    }
+
     public static final AccessType get(String name)
         throws InvalidNameException
     {
@@ -57,5 +104,36 @@ public enum AccessType
                 );
         }
         return accType;
+    }
+
+    /**
+     * Returns the AccessType for the specified access mask value
+     *
+     * @param mask Access mask value
+     * @return AccessType associated with the specified access mask value
+     */
+    private static final AccessType getAccessByMask(long mask)
+    {
+        AccessType result = null;
+        if ((mask & CONTROL.accessMask) == CONTROL.accessMask)
+        {
+            result = CONTROL;
+        }
+        else
+        if ((mask & CHANGE.accessMask) == CHANGE.accessMask)
+        {
+            result = CHANGE;
+        }
+        else
+        if ((mask & USE.accessMask) == USE.accessMask)
+        {
+            result = USE;
+        }
+        else
+        if ((mask & VIEW.accessMask) == VIEW.accessMask)
+        {
+            result = VIEW;
+        }
+        return result;
     }
 }
