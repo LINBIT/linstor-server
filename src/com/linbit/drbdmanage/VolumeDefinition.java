@@ -5,6 +5,7 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -58,5 +59,13 @@ public interface VolumeDefinition
         {
             return flagValue;
         }
+    }
+
+    public static interface CreationData
+    {
+        int getId();
+        int getMinorNr();
+        long getSize();
+        Map<String, String> getProps();
     }
 }

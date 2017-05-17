@@ -7,7 +7,9 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.WorkerPool;
+import com.linbit.drbd.md.MdException;
 import com.linbit.drbdmanage.debug.BaseDebugConsole;
 import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
@@ -56,11 +58,13 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.sql.SQLException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.slf4j.event.Level;
 
 import org.slf4j.event.Level;
 
@@ -148,6 +152,21 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private Props ctrlConf;
     private ObjectProtection ctrlConfProt;
 
+    // ============================================================
+    // DrbdManage objects
+    //
+    // Map of all managed nodes
+    private Map<NodeName, Node> nodesMap;
+    private ObjectProtection nodesMapProt;
+
+    // Map of all resource definitions
+    private Map<ResourceName, ResourceDefinition> rscDfnMap;
+    private ObjectProtection rscDfnMapProt;
+
+    // Map of all storage pools
+    private Map<StorPoolName, StorPoolDefinition> storPoolMap;
+    private ObjectProtection storPoolMapProt;
+
     public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
     {
         // Initialize synchronization
@@ -174,6 +193,14 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
         // Initialize connected peers map
         peerMap = new TreeMap<>();
+
+        // Initialize DrbdManage objects maps
+        nodesMap = new TreeMap<>();
+        nodesMapProt = new ObjectProtection(sysCtx);
+        rscDfnMap = new TreeMap<>();
+        rscDfnMapProt = new ObjectProtection(sysCtx);
+        storPoolMap = new TreeMap<>();
+        storPoolMapProt = new ObjectProtection(sysCtx);
 
         // Initialize shutdown controls
         shutdownFinished = false;
@@ -432,6 +459,135 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         {
             reconfigurationLock.writeLock().unlock();
         }
+    }
+
+    public ApiCallRc createNode(
+        AccessContext accCtx,
+        String nodeName,
+        Map<String, String> props
+    )
+    {
+        return null; // FIXME: return an ApiCallRc subclass object
+    }
+
+    public ApiCallRc createResourceDefinition(
+        AccessContext accCtx,
+        Peer client,
+        String resourceName,
+        Map<String, String> props,
+        List<VolumeDefinition.CreationData> volDescrMap
+    )
+    {
+        try
+        {
+            rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE);
+            ResourceDefinition rscDfn = new ResourceDefinitionData(
+                accCtx,
+                new ResourceName(resourceName),
+                null // FIXME: SerialGenerator from root properties container
+            );
+            // TODO: Read optional ConnectionDefinitions from the properties map
+            // TODO: Read optional TcpPortNumbers for ConnectionDefinitions
+            //       from the properties map, or allocate a free TcpPortNumber
+            for (VolumeDefinition.CreationData volCrtData : volDescrMap)
+            {
+                VolumeNumber volNr = null;
+                try
+                {
+                    volNr = new VolumeNumber(volCrtData.getId());
+                }
+                catch (ValueOutOfRangeException volNrExc)
+                {
+                    // TODO: Generate a problem report with less debug information
+                    // TODO: Add a return code describing the problem
+                    getErrorReporter().reportError(volNrExc);
+                }
+
+                MinorNumber minorNr = null;
+                try
+                {
+                    minorNr = new MinorNumber(volCrtData.getMinorNr());
+                }
+                catch (ValueOutOfRangeException minorNrExc)
+                {
+                    // TODO: Generate a problem report with less debug information
+                    // TODO: Add a return code describing the problem
+                    getErrorReporter().reportError(minorNrExc);
+                }
+
+                long size = volCrtData.getSize();
+                // TODO: Calculate gross size using meta data calculation and check
+                //       whether that size is valid or not
+
+                if (volNr != null && minorNr != null)
+                {
+                    try
+                    {
+                        VolumeDefinition volDfn = new VolumeDefinitionData(
+                            accCtx,
+                            rscDfn,
+                            volNr,
+                            minorNr,
+                            size,
+                            null // FIXME: SerialGenerator from root properties container
+                        );
+                    }
+                    catch (MdException metaDataExc)
+                    {
+                        // TODO: Generate a problem report with less debug information
+                        // TODO: Add a return code describing the problem
+                        getErrorReporter().reportError(metaDataExc);
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accExc)
+        {
+            // TODO: Generate a problem report with less debug information
+            // TODO: Add a return code describing the problem
+            getErrorReporter().reportProblem(
+                Level.ERROR, accExc, accCtx, client,
+                "createResourceDefinition" // TOOD: Provide useful context information
+            );
+        }
+        catch (InvalidNameException nameExc)
+        {
+            // TODO: Generate a problem report with less debug information
+            // TODO: Add a return code describing the problem
+            String nameExcMsg = nameExc.getMessage();
+            String causeText = "The specified name is not valid for use as a resource name.";
+            if (nameExcMsg != null)
+            {
+                causeText += "\n" + nameExcMsg;
+            }
+            DrbdManageException resNameExc = new DrbdManageException(
+                nameExc.getMessage(),
+                // Description
+                "Creation of the resource definition failed.",
+                // Cause
+                causeText,
+                // Correction
+                "Retry creating the resource definition with a name that is valid for use as a resource name",
+                // Error details
+                null,
+                // Nested exception
+                nameExc
+            );
+            getErrorReporter().reportProblem(
+                Level.ERROR, resNameExc, accCtx, client,
+                "createResourceDefinition" // TOOD: Provide useful context information
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            getErrorReporter().reportError(
+                sqlExc,
+                null,
+                null,
+                "A database error occured while trying to create a new resource definition."
+            );
+        }
+        return null; // FIXME: return an ApiCallRc subclass object
     }
 
     /**
