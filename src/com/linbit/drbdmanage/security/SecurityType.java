@@ -75,7 +75,12 @@ public final class SecurityType implements Comparable<SecurityType>
     @Override
     public boolean equals(Object other)
     {
-        return this.name.equals(other);
+        boolean equals = false;
+        if (other != null && other instanceof SecurityType)
+        {
+            equals = this.name.equals(((SecurityType) other).name);
+        }
+        return equals;
     }
 
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
