@@ -1,12 +1,14 @@
 package com.linbit.drbdmanage.security;
 
+import com.linbit.drbdmanage.DrbdManageException;
+
 /**
  * Thrown to indicate a sign in failure, such as incorrect credentials,
  * a non-existent identity, locked identities, disabled roles, etc.
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class SignInException extends Exception
+public class SignInException extends DrbdManageException
 {
     public SignInException(String message)
     {
@@ -18,8 +20,26 @@ public class SignInException extends Exception
         super(message, cause);
     }
 
-    public SignInException(Throwable cause)
+    public SignInException(
+        String message,
+        String descriptionText,
+        String causeText,
+        String correctionText,
+        String detailsText
+    )
     {
-        super(cause);
+        super(message, descriptionText, causeText, correctionText, detailsText, null);
+    }
+
+    public SignInException(
+        String message,
+        String descriptionText,
+        String causeText,
+        String correctionText,
+        String detailsText,
+        Throwable cause
+    )
+    {
+        super(message, descriptionText, causeText, correctionText, detailsText, cause);
     }
 }
