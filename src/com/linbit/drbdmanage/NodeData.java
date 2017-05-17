@@ -9,6 +9,7 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -102,6 +103,15 @@ public class NodeData implements Node
     }
 
     @Override
+    public Iterator<Resource> iterateResources(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return resourceMap.values().iterator();
+    }
+
+    @Override
     public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -123,6 +133,15 @@ public class NodeData implements Node
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         netInterfaceMap.remove(niRef.getName());
+    }
+
+    @Override
+    public Iterator<NetInterface> iterateNetInterfaces(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return netInterfaceMap.values().iterator();
     }
 
     @Override
@@ -150,5 +169,14 @@ public class NodeData implements Node
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         storPoolMap.remove(pool.getName());
+    }
+
+    @Override
+    public Iterator<StorPool> iterateStorPools(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return storPoolMap.values().iterator();
     }
 }

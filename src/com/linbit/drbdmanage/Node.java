@@ -4,6 +4,7 @@ import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import java.util.Iterator;
 import java.util.UUID;
 
 /**
@@ -27,6 +28,9 @@ public interface Node
     public void removeNetInterface(AccessContext accCtx, NetInterface niRef)
         throws AccessDeniedException;
 
+    public Iterator<NetInterface> iterateNetInterfaces(AccessContext accCtx)
+        throws AccessDeniedException;
+
     public Resource getResource(AccessContext accCtx, ResourceName resName)
         throws AccessDeniedException;
 
@@ -36,6 +40,9 @@ public interface Node
     public void removeResource(AccessContext accCtx, Resource resRef)
         throws AccessDeniedException;
 
+    public Iterator<Resource> iterateResources(AccessContext accCtx)
+        throws AccessDeniedException;
+
     public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
         throws AccessDeniedException;
 
@@ -43,6 +50,9 @@ public interface Node
         throws AccessDeniedException;
 
     public void removeStorPool(AccessContext accCtx, StorPool pool)
+        throws AccessDeniedException;
+
+    public Iterator<StorPool> iterateStorPools(AccessContext accCtx)
         throws AccessDeniedException;
 
     public Props getProps(AccessContext accCtx)

@@ -9,6 +9,7 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -95,6 +96,14 @@ public class ResourceDefinitionData implements ResourceDefinition
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return volumeMap.get(volNr);
+    }
+
+    @Override
+    public Iterator<VolumeDefinition> iterateVolumeDfn(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return volumeMap.values().iterator();
     }
 
     @Override

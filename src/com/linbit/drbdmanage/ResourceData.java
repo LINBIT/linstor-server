@@ -8,6 +8,7 @@ import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -89,6 +90,12 @@ public class ResourceData implements Resource
     public Volume getVolume(VolumeNumber volNr)
     {
         return volumeList.get(volNr);
+    }
+
+    @Override
+    public Iterator<Volume> iterateVolumes()
+    {
+        return volumeList.values().iterator();
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import java.util.Iterator;
 import java.util.UUID;
 
 /**
@@ -22,6 +23,9 @@ public interface ResourceDefinition
         throws AccessDeniedException;
 
     public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
+        throws AccessDeniedException;
+
+    public Iterator<VolumeDefinition> iterateVolumeDfn(AccessContext accCtx)
         throws AccessDeniedException;
 
     public Resource getResource(AccessContext accCtx, NodeName clNodeName)
