@@ -229,7 +229,7 @@ public final class PrivilegeSet implements Cloneable
      *
      * @return MAC AccessType granted by enabled privileges
      */
-    public final AccessType toMacAccess()
+    public AccessType toMacAccess()
     {
         AccessType result = null;
         long limitMask = limitPrivs != null ? limitPrivs.privileges : ~(0L);
@@ -247,7 +247,7 @@ public final class PrivilegeSet implements Cloneable
      *
      * @return RBAC AccessType granted by enabled privileges
      */
-    public final AccessType toRbacAccess()
+    public AccessType toRbacAccess()
     {
         AccessType result = null;
         long limitMask = limitPrivs != null ? limitPrivs.privileges : ~(0L);

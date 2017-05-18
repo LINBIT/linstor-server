@@ -51,7 +51,7 @@ public final class ObjectProtection
      * @param requested The type of access requested by the subject
      * @throws AccessDeniedException If access is denied
      */
-    public final void requireAccess(AccessContext context, AccessType requested)
+    public void requireAccess(AccessContext context, AccessType requested)
         throws AccessDeniedException
     {
         objectType.requireAccess(context, requested);
@@ -65,7 +65,7 @@ public final class ObjectProtection
      * @param context The security context of the subject requesting access
      * @return Allowed AccessType, or null if access is denied
      */
-    public final AccessType queryAccess(AccessContext context)
+    public AccessType queryAccess(AccessContext context)
     {
         AccessType result = null;
         {

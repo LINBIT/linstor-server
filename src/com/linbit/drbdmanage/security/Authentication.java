@@ -15,7 +15,7 @@ import java.util.Arrays;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class Authentication
+public final class Authentication
 {
     public final static String HASH_ALGORITHM = "SHA-512";
     public final static int HASH_SIZE = 64;

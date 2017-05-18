@@ -26,7 +26,7 @@ public final class AccessControlList
      * @param requested The type of access requested by the subject
      * @throws AccessDeniedException If access is denied
      */
-    public final void requireAccess(AccessContext context, AccessType requested)
+    public void requireAccess(AccessContext context, AccessType requested)
         throws AccessDeniedException
     {
         SecurityLevel globalSecLevel = SecurityLevel.get();
@@ -78,7 +78,7 @@ public final class AccessControlList
      * @param context The security context of the subject requesting access
      * @return Allowed AccessType, or null if access is denied
      */
-    public final AccessType queryAccess(AccessContext context)
+    public AccessType queryAccess(AccessContext context)
     {
         AccessType result = null;
         SecurityLevel globalSecLevel = SecurityLevel.get();
@@ -119,7 +119,7 @@ public final class AccessControlList
      * @param context Security context for access controls
      * @return Allowed level of access, or null if access is denied
      */
-    public final AccessType getEntry(AccessContext context)
+    public AccessType getEntry(AccessContext context)
     {
         Role subjRole = context.subjectRole;
         return getEntry(subjRole);
@@ -132,7 +132,7 @@ public final class AccessControlList
      * @param subjRole The role to find access control entries for
      * @return Allowed level of access, or null if access is denied
      */
-    public final AccessType getEntry(Role subjRole)
+    public AccessType getEntry(Role subjRole)
     {
         AccessType access = null;
         AccessControlEntry entry = acl.get(subjRole.name);
@@ -143,14 +143,14 @@ public final class AccessControlList
         return access;
     }
 
-    final void addEntry(Role entryRole, AccessType grantedAccess)
+    void addEntry(Role entryRole, AccessType grantedAccess)
         throws AccessDeniedException
     {
         AccessControlEntry entry = new AccessControlEntry(entryRole, grantedAccess);
         acl.put(entryRole.name, entry);
     }
 
-    final void delEntry(Role entryRole)
+    void delEntry(Role entryRole)
         throws AccessDeniedException
     {
         acl.remove(entryRole.name);

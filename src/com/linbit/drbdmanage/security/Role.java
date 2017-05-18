@@ -126,7 +126,7 @@ public final class Role implements Comparable<Role>
     }
 
     @Override
-    public final String toString()
+    public String toString()
     {
         return name.displayValue;
     }

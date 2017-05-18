@@ -60,19 +60,19 @@ public final class Initializer
         }
     }
 
-    public final Controller initController(String[] args)
+    public Controller initController(String[] args)
         throws IOException
     {
         return new Controller(SYSTEM_CTX, PUBLIC_CTX, args);
     }
 
-    public final Satellite initSatellite(String[] args)
+    public Satellite initSatellite(String[] args)
         throws IOException
     {
         return new Satellite(SYSTEM_CTX, PUBLIC_CTX, args);
     }
 
-    public static final void load(AccessContext accCtx, ControllerDatabase ctrlDb, DbAccessor driver)
+    public static void load(AccessContext accCtx, ControllerDatabase ctrlDb, DbAccessor driver)
         throws SQLException, AccessDeniedException, InvalidNameException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);

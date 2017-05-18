@@ -122,7 +122,7 @@ public final class Identity implements Comparable<Identity>
     }
 
     @Override
-    public final String toString()
+    public String toString()
     {
         return name.displayValue;
     }

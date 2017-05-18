@@ -23,7 +23,7 @@ public enum AccessType
         accessMask = mask;
     }
 
-    public final boolean hasAccess(AccessType requested)
+    public boolean hasAccess(AccessType requested)
     {
         return ((requested.accessMask & this.accessMask) == requested.accessMask);
     }
@@ -36,7 +36,7 @@ public enum AccessType
      * @param second Second AccessType, or null to indicate no access
      * @return AccessType resulting from intersecting the level of access of both arguments to the method
      */
-    public static final AccessType intersect(AccessType first, AccessType second)
+    public static AccessType intersect(AccessType first, AccessType second)
     {
         AccessType result = null;
         if (first != null && second != null)
@@ -55,7 +55,7 @@ public enum AccessType
      * @param second Second AccessType, or null to indicate no access
      * @return AccessType resulting from combining the level of access of both arguments to the method
      */
-    public static final AccessType union(AccessType first, AccessType second)
+    public static AccessType union(AccessType first, AccessType second)
     {
         AccessType result = null;
         if (first == null)
@@ -75,7 +75,7 @@ public enum AccessType
         return result;
     }
 
-    public static final AccessType get(String name)
+    public static AccessType get(String name)
         throws InvalidNameException
     {
         AccessType accType;
@@ -112,7 +112,7 @@ public enum AccessType
      * @param mask Access mask value
      * @return AccessType associated with the specified access mask value
      */
-    private static final AccessType getAccessByMask(long mask)
+    private static AccessType getAccessByMask(long mask)
     {
         AccessType result = null;
         if ((mask & CONTROL.accessMask) == CONTROL.accessMask)
