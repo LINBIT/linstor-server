@@ -14,9 +14,6 @@ import static com.linbit.drbdmanage.security.Privilege.PRIV_OBJ_VIEW;
 import static com.linbit.drbdmanage.security.Privilege.PRIV_SYS_ALL;
 import static org.junit.Assert.*;
 
-import java.util.Arrays;
-import java.util.Iterator;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -342,7 +339,7 @@ public class ObjectProtectionTest
     }
 
     @SuppressWarnings("unused")
-    private class AccessIteration
+    private static class AccessIteration
     {
         public ObjectProtection objProt;
 
@@ -360,157 +357,53 @@ public class ObjectProtectionTest
         public AccessType wantedAccessContext;
     }
 
-    private class AccessIterator implements Iterable<AccessIteration>, Iterator<AccessIteration>
+    private class AccessIterator extends AbsIterator<AccessIteration>
     {
-        private static final int OBJ_ACL_IDX = 0;
-        private static final int OBJ_SEC_IDX = 1;
-        private static final int OBJ_OWN_IDX = 2;
+        private final int OBJ_ACL_IDX = 0;
+        private final int OBJ_SEC_IDX = 1;
+        private final int OBJ_OWN_IDX = 2;
 
-        private static final int ACC_MAC_OVRD_IDX = 3;
-        private static final int ACC_PRIV_IDX = 4;
+        private final int ACC_MAC_OVRD_IDX = 3;
+        private final int ACC_PRIV_IDX = 4;
 
-        private static final int WANTED_ACC_CTX_IDX = 5;
+        private final int WANTED_ACC_CTX_IDX = 5;
 
-        private final Object[][] values = new Object[][]
+        public AccessIterator(boolean iterateSecurityLevels, int... skipColumns)
         {
-            // object protection
-            { null, VIEW, USE, CHANGE, CONTROL },       // objProt acl entry for user
-            { null, VIEW, USE, CHANGE, CONTROL },       // secDomain entry for user
-            { false, true },                            // is user owner of objProt
-            // accCtx
-            { false, true },                            // has PRIV_MAC_OVRD
-            {
-                0L, PRIV_OBJ_VIEW.id,                   //
-                PRIV_OBJ_USE.id, PRIV_OBJ_CHANGE.id ,   // privileges.... :)
-                PRIV_OBJ_CONTROL.id, PRIV_OBJ_OWNER.id, //
-                PRIV_SYS_ALL.id                         //
-            },
-            // wanted access
-            { VIEW, USE, CHANGE, CONTROL }              // wantedAccessContext
-        };
-
-        private int[] currentIdx;
-        private boolean iterateSecurityLevels;
-        private SecurityLevel currentSecLevel;
-
-        private AccessIteration currentIteration;
-
-        public AccessIterator(boolean iterateSecurityLevels)
-        {
-            this.iterateSecurityLevels = iterateSecurityLevels;
-            currentIdx = new int[values.length];
-            resetAllIdx();
-
-            if (iterateSecurityLevels)
-            {
-                currentSecLevel = SecurityLevel.NO_SECURITY;
-            }
-            else
-            {
-                currentSecLevel = SecurityLevel.get();
-            }
-        }
-
-        @Override
-        public boolean hasNext()
-        {
-            boolean hasNext = hasNextCombination();
-            if (!hasNext)
-            {
-                switch (SecurityLevel.get())
+            super(
+                new Object[][]
                 {
-                    case NO_SECURITY:
-                        currentSecLevel = SecurityLevel.RBAC;
-                        resetAllIdx();
-                        hasNext = true;
-                        break;
-                    case RBAC:
-                        currentSecLevel = SecurityLevel.MAC;
-                        resetAllIdx();
-                        hasNext = true;
-                        break;
-                    case MAC:
-                        break;
-                    default:
-                        break;
-                }
-            }
-            return hasNext;
-        }
-
-        public boolean hasNextCombination()
-        {
-            boolean hasNext = false;
-            for (int i = 0; i < currentIdx.length; ++i)
-            {
-                if (currentIdx[i] < values[i].length - 1)
-                {
-                    hasNext = true;
-                    break;
-                }
-            }
-            return hasNext;
-        }
-
-        @Override
-        public AccessIteration next()
-        {
-            incrementIdx();
-            if (iterateSecurityLevels && !SecurityLevel.get().equals(currentSecLevel))
-            {
-                try
-                {
-                    SecurityLevel.set(rootCtx, currentSecLevel);
-                }
-                catch (AccessDeniedException e)
-                {
-                    throw new RuntimeException("rootCtx cannot change securityLevel...", e);
-                }
-            }
-
-            try
-            {
-                AccessIteration nextIteration = new AccessIteration();
-
-                getObjectProtection(nextIteration);
-                getAccessContext(nextIteration);
-                getWantedAccessType(nextIteration);
-
-                currentIteration = nextIteration;
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
-
-            return currentIteration;
-        }
-
-        private void incrementIdx()
-        {
-            for (int i = 0; i < values.length; ++i)
-            {
-                if (++currentIdx[i] >= values[i].length)
-                {
-                    if (i != values.length - 1)
+                    // object protection
+                    { null, VIEW, USE, CHANGE, CONTROL },       // objProt acl entry for user
+                    { null, VIEW, USE, CHANGE, CONTROL },       // secDomain entry for user
+                    { false, true },                            // is user owner of objProt
+                    // accCtx
+                    { false, true },                            // has PRIV_MAC_OVRD
                     {
-                        currentIdx[i] = 0;
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
+                        0L, PRIV_OBJ_VIEW.id,                   //
+                        PRIV_OBJ_USE.id, PRIV_OBJ_CHANGE.id ,   // privileges.... :)
+                        PRIV_OBJ_CONTROL.id, PRIV_OBJ_OWNER.id, //
+                        PRIV_SYS_ALL.id                         //
+                    },
+                    // wanted access
+                    { VIEW, USE, CHANGE, CONTROL }              // wantedAccessContext
+                },
+                iterateSecurityLevels,
+                rootCtx,
+                skipColumns
+            );
         }
 
-        private void resetAllIdx()
+        @Override
+        public AccessIteration getNext() throws AccessDeniedException
         {
-            for (int i = 0; i < currentIdx.length; ++i)
-            {
-                currentIdx[i] = 0;
-            }
-            currentIdx[0] = -1; // we increment it at the start of next
+            AccessIteration nextIteration = new AccessIteration();
+
+            getObjectProtection(nextIteration);
+            getAccessContext(nextIteration);
+            getWantedAccessType(nextIteration);
+
+            return nextIteration;
         }
 
         private void getObjectProtection(AccessIteration iteration) throws AccessDeniedException
@@ -570,34 +463,6 @@ public class ObjectProtectionTest
         private void getWantedAccessType(AccessIteration iteration)
         {
             iteration.wantedAccessContext = getValue(WANTED_ACC_CTX_IDX);
-        }
-
-        @SuppressWarnings("unchecked")
-        private <T> T getValue(int column)
-        {
-            return (T) values[column][currentIdx[column]];
-        }
-
-        @Override
-        public Iterator<AccessIteration> iterator()
-        {
-            return this;
-        }
-
-        @Override
-        public void remove()
-        {
-            throw new UnsupportedOperationException("Remove is not supported by this iterator");
-        }
-
-        @Override
-        public String toString()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append(SecurityLevel.get());
-            sb.append(" ");
-            sb.append(Arrays.toString(currentIdx));
-            return sb.toString();
         }
     }
 }
