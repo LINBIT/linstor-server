@@ -223,6 +223,57 @@ public final class PrivilegeSet implements Cloneable
         return clonedPrivSet;
     }
 
+    /**
+     * Returns the AccessType granted by enabled privileges for MAC security components.
+     * The returned AccessType may be used to override MAC access restrictions.
+     *
+     * @return MAC AccessType granted by enabled privileges
+     */
+    public final AccessType toMacAccess()
+    {
+        AccessType result = null;
+        long limitMask = limitPrivs != null ? limitPrivs.privileges : ~(0L);
+        long privs = privileges & limitMask;
+        if ((privs & Privilege.PRIV_MAC_OVRD.id) == Privilege.PRIV_MAC_OVRD.id)
+        {
+            result = AccessType.CONTROL;
+        }
+        return result;
+    }
+
+    /**
+     * Returns the AccessType granted by enabled privileges for RBAC security components
+     * The returned AccessType may be used to override RBAC access restrictions.
+     *
+     * @return RBAC AccessType granted by enabled privileges
+     */
+    public final AccessType toRbacAccess()
+    {
+        AccessType result = null;
+        long limitMask = limitPrivs != null ? limitPrivs.privileges : ~(0L);
+        long privs = privileges & limitMask;
+        if ((privs & Privilege.PRIV_OBJ_CONTROL.id) == Privilege.PRIV_OBJ_CONTROL.id)
+        {
+            result = AccessType.CONTROL;
+        }
+        else
+        if ((privs & Privilege.PRIV_OBJ_CHANGE.id) == Privilege.PRIV_OBJ_CHANGE.id)
+        {
+            result = AccessType.CHANGE;
+        }
+        else
+        if ((privs & Privilege.PRIV_OBJ_USE.id) == Privilege.PRIV_OBJ_USE.id)
+        {
+            result = AccessType.USE;
+        }
+        else
+        if ((privs & Privilege.PRIV_OBJ_VIEW.id) == Privilege.PRIV_OBJ_VIEW.id)
+        {
+            result = AccessType.VIEW;
+        }
+        return result;
+    }
+
     static Set<Privilege> privMaskToPrivSet(long privMask)
     {
         Set<Privilege> privSet = new TreeSet<>();
