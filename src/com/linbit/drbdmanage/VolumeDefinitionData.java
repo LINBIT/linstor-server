@@ -11,6 +11,10 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import java.util.UUID;
+import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
+import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.stateflags.StateFlags;
+import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 
 /**
  *
@@ -32,6 +36,9 @@ public class VolumeDefinitionData implements VolumeDefinition
 
     // Net volume size in kiB
     private long volumeSize;
+
+    // State flags
+    private StateFlags<VlmDfnFlags> flags;
 
     VolumeDefinitionData(
         AccessContext accCtx,
@@ -77,6 +84,7 @@ public class VolumeDefinitionData implements VolumeDefinition
         volumeNr = volNr;
         minorNr = minor;
         volumeSize = volSize;
+        flags = new VlmDfnFlagsImpl(resDfnRef.getObjProt());
     }
 
     @Override
@@ -129,5 +137,19 @@ public class VolumeDefinitionData implements VolumeDefinition
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         volumeSize = newVolumeSize;
+    }
+
+    @Override
+    public StateFlags<VlmDfnFlags> getFlags()
+    {
+        return flags;
+    }
+
+    private static final class VlmDfnFlagsImpl extends StateFlagsBits<VlmDfnFlags>
+    {
+        VlmDfnFlagsImpl(ObjectProtection objProtRef)
+        {
+            super(objProtRef, StateFlagsBits.getMask(VlmDfnFlags.ALL_FLAGS));
+        }
     }
 }
