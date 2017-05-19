@@ -5,6 +5,8 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import java.util.Iterator;
+import com.linbit.drbdmanage.stateflags.Flags;
+import com.linbit.drbdmanage.stateflags.StateFlags;
 import java.util.UUID;
 
 /**
@@ -57,4 +59,29 @@ public interface Node
 
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
+
+    public StateFlags<NodeFlags> getFlags();
+
+    public enum NodeFlags implements Flags
+    {
+        REMOVE(1L);
+
+        public static final NodeFlags[] ALL_FLAGS =
+        {
+            REMOVE
+        };
+
+        public final long flagValue;
+
+        private NodeFlags(long value)
+        {
+            flagValue = value;
+        }
+
+        @Override
+        public long getFlagValue()
+        {
+            return flagValue;
+        }
+    }
 }

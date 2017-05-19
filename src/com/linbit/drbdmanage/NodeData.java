@@ -13,6 +13,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import com.linbit.drbdmanage.Node.NodeFlags;
+import com.linbit.drbdmanage.stateflags.StateFlags;
+import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 
 /**
  *
@@ -35,6 +38,9 @@ public class NodeData implements Node
     // List of storage pools
     private Map<StorPoolName, StorPool> storPoolMap;
 
+    // State flags
+    private StateFlags<NodeFlags> flags;
+
     // Access controls for this object
     private ObjectProtection objProt;
 
@@ -51,6 +57,7 @@ public class NodeData implements Node
         storPoolMap = new TreeMap<>();
         nodeProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = new ObjectProtection(accCtx);
+        flags = new NodeFlagsImpl(objProt);
     }
 
     @Override
@@ -178,5 +185,19 @@ public class NodeData implements Node
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return storPoolMap.values().iterator();
+    }
+
+    @Override
+    public StateFlags<NodeFlags> getFlags()
+    {
+        return flags;
+    }
+
+    private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlags>
+    {
+        NodeFlagsImpl(ObjectProtection objProtRef)
+        {
+            super(objProtRef, StateFlagsBits.getMask(NodeFlags.ALL_FLAGS));
+        }
     }
 }

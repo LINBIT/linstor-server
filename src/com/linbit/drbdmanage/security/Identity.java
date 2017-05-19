@@ -62,7 +62,12 @@ public final class Identity implements Comparable<Identity>
     @Override
     public boolean equals(Object other)
     {
-        return this.name.equals(other);
+        boolean equals = false;
+        if (other != null && other instanceof Identity)
+        {
+            equals = this.name.equals(((Identity) other).name);
+        }
+        return equals;
     }
 
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)

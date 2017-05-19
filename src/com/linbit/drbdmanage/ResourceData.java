@@ -9,6 +9,8 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import java.util.Iterator;
+import com.linbit.drbdmanage.stateflags.StateFlags;
+import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -31,6 +33,9 @@ public class ResourceData implements Resource
 
     // Reference to the node this resource is assigned to
     private Node assgNode;
+
+    // State flags
+    private StateFlags<RscFlags> flags;
 
     // Access control for this resource
     private ObjectProtection objProt;
@@ -59,6 +64,7 @@ public class ResourceData implements Resource
         volumeList = new TreeMap<>();
         resourceProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = new ObjectProtection(accCtx);
+        flags = new RscFlagsImpl(objProt);
     }
 
     @Override
@@ -111,6 +117,12 @@ public class ResourceData implements Resource
     }
 
     @Override
+    public StateFlags<RscFlags> getStateFlags()
+    {
+        return flags;
+    }
+
+    @Override
     public Resource create(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
@@ -145,5 +157,13 @@ public class ResourceData implements Resource
         }
 
         return newRes;
+    }
+
+    private static final class RscFlagsImpl extends StateFlagsBits<RscFlags>
+    {
+        RscFlagsImpl(ObjectProtection objProtRef)
+        {
+            super(objProtRef, StateFlagsBits.getMask(RscFlags.ALL_FLAGS));
+        }
     }
 }

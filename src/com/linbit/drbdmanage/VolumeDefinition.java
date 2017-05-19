@@ -3,6 +3,8 @@ package com.linbit.drbdmanage;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.stateflags.Flags;
+import com.linbit.drbdmanage.stateflags.StateFlags;
 import java.util.UUID;
 
 /**
@@ -32,4 +34,29 @@ public interface VolumeDefinition
 
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
+
+    public StateFlags<VlmDfnFlags> getFlags();
+
+    public enum VlmDfnFlags implements Flags
+    {
+        REMOVE(1L);
+
+        public static final VlmDfnFlags[] ALL_FLAGS =
+        {
+            REMOVE
+        };
+
+        public final long flagValue;
+
+        private VlmDfnFlags(long value)
+        {
+            flagValue = value;
+        }
+
+        @Override
+        public long getFlagValue()
+        {
+            return flagValue;
+        }
+    }
 }

@@ -13,6 +13,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
+import com.linbit.drbdmanage.stateflags.StateFlags;
+import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 
 /**
  *
@@ -35,6 +38,9 @@ public class ResourceDefinitionData implements ResourceDefinition
     // Resources defined by this ResourceDefinition
     private Map<NodeName, Resource> resourceMap;
 
+    // State flags
+    private StateFlags<RscDfnFlags> flags;
+
     // Object access controls
     private ObjectProtection objProt;
 
@@ -55,6 +61,7 @@ public class ResourceDefinitionData implements ResourceDefinition
         resourceMap = new TreeMap<>();
         rscDfnProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = new ObjectProtection(accCtx);
+        flags = new RscDfnFlagsImpl(objProt);
     }
 
     @Override
@@ -134,5 +141,19 @@ public class ResourceDefinitionData implements ResourceDefinition
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.remove(resRef.getAssignedNode().getName());
+    }
+
+    @Override
+    public StateFlags<RscDfnFlags> getFlags()
+    {
+        return flags;
+    }
+
+    private static final class RscDfnFlagsImpl extends StateFlagsBits<RscDfnFlags>
+    {
+        RscDfnFlagsImpl(ObjectProtection objProtRef)
+        {
+            super(objProtRef, StateFlagsBits.getMask(RscDfnFlags.ALL_FLAGS));
+        }
     }
 }

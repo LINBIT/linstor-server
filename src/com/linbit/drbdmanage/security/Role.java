@@ -66,7 +66,12 @@ public final class Role implements Comparable<Role>
     @Override
     public boolean equals(Object other)
     {
-        return this.name.equals(other);
+        boolean equals = false;
+        if (other != null && other instanceof Role)
+        {
+            equals = this.name.equals(((Role) other).name);
+        }
+        return equals;
     }
 
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
