@@ -199,64 +199,65 @@ public class StateTrackerTest
         {
             String label = "<NO_EVENT>";
 
+            // Using an if-chain, because switch (variable) does not support type long
             if (eventId == OBS_RES_CRT)
             {
-                label = "OBS_RES_CRT";
+                    label = "OBS_RES_CRT";
             }
             else
             if (eventId == OBS_RES_DSTR)
             {
-                label = "OBS_RES_DSTR";
+                    label = "OBS_RES_DSTR";
             }
             else
             if (eventId == OBS_ROLE)
             {
-                label = "OBS_ROLE";
+                    label = "OBS_ROLE";
             }
             else
             if (eventId == OBS_PEER_ROLE)
             {
-                label = "OBS_PEER_ROLE";
+                    label = "OBS_PEER_ROLE";
             }
             else
             if (eventId == OBS_VOL_CRT)
             {
-                label = "OBS_VOL_CRT";
+                    label = "OBS_VOL_CRT";
             }
             else
             if (eventId == OBS_VOL_DSTR)
             {
-                label = "OBS_VOL_DSTR";
+                    label = "OBS_VOL_DSTR";
             }
             else
             if (eventId == OBS_MINOR)
             {
-                label = "OBS_MINOR";
+                    label = "OBS_MINOR";
             }
             else
             if (eventId == OBS_DISK)
             {
-                label = "OBS_DISK";
+                    label = "OBS_DISK";
             }
             else
             if (eventId == OBS_REPL)
             {
-                label = "OBS_REPL";
+                    label = "OBS_REPL";
             }
             else
             if (eventId == OBS_CONN_CRT)
             {
-                label = "OBS_CONN_CRT";
+                    label = "OBS_CONN_CRT";
             }
             else
             if (eventId == OBS_CONN_DSTR)
             {
-                label = "OBS_CONN_DSTR";
+                    label = "OBS_CONN_DSTR";
             }
             else
             if (eventId == OBS_CONN)
             {
-                label = "OBS_CONN";
+                    label = "OBS_CONN";
             }
 
             return label;

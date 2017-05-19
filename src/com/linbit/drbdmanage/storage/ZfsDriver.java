@@ -134,7 +134,8 @@ public class ZfsDriver extends AbsStorageDriver
     @Override
     protected String[] getCreateCommand(String identifier, long size)
     {
-        return new String[] {
+        return new String[]
+        {
             zfsCommand,
             "create",
             "-V", size + "KB",
@@ -145,7 +146,8 @@ public class ZfsDriver extends AbsStorageDriver
     @Override
     protected String[] getDeleteCommand(String identifier)
     {
-        return new String[]{
+        return new String[]
+        {
             zfsCommand,
             "destroy",
             "-f",  // force

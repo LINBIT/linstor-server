@@ -275,7 +275,7 @@ public class WorkerPoolTest
 
         public int id;
 
-        public TestException(int id)
+        TestException(int id)
         {
             super(Integer.toString(id));
             this.id = id;

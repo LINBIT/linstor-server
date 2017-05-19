@@ -1,7 +1,6 @@
 package com.linbit.drbdmanage.propscon;
 
 import com.linbit.drbdmanage.security.AccessDeniedException;
-import com.linbit.drbdmanage.security.AccessType;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;

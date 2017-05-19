@@ -43,4 +43,8 @@ public class VolumeNumberAlloc
         }
         return result;
     }
+
+    private VolumeNumberAlloc()
+    {
+    }
 }

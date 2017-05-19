@@ -241,7 +241,7 @@ public class SecurityTypeTest
 
         public static final int IDX_GRANTED_ACCESS_TYPE = 5;
 
-        public SecTypeIterator(boolean iterateSecLevel, int... skipColumns)
+        SecTypeIterator(boolean iterateSecLevel, int... skipColumns)
         {
             super(new Object[][]
                 {

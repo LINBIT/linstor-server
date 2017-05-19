@@ -12,4 +12,8 @@ public class BigIntegerUtils
         }
         return bigInt.longValue();
     }
+
+    private BigIntegerUtils()
+    {
+    }
 }

@@ -19,4 +19,8 @@ public class DriverTraits
     public static final String PROV_FAT         = "fat";
     // Thin storage provisioning
     public static final String PROV_THIN        = "thin";
+
+    private DriverTraits()
+    {
+    }
 }

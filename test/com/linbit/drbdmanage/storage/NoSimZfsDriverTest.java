@@ -125,7 +125,7 @@ public class NoSimZfsDriverTest extends NoSimDriverTest
     @Override
     protected String[] getListVolumeNamesCommand()
     {
-        return new String[]{ "zfs", "list", "-o", "name", "-H"};
+        return new String[] { "zfs", "list", "-o", "name", "-H" };
     }
 
     @Override
@@ -137,7 +137,7 @@ public class NoSimZfsDriverTest extends NoSimDriverTest
     @Override
     protected String[] getListPoolNamesCommand()
     {
-        return new String[]{ "zpool", "list", "-o", "name", "-H" };
+        return new String[] { "zpool", "list", "-o", "name", "-H" };
     }
 
     @Override
@@ -149,7 +149,7 @@ public class NoSimZfsDriverTest extends NoSimDriverTest
         String[] lines = new String(outputData.stdoutData).split("\n");
         for (String line : lines)
         {
-            if(line.trim().equals(poolName))
+            if (line.trim().equals(poolName))
             {
                 ret = true;
                 break;

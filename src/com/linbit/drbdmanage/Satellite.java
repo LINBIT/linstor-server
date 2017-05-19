@@ -303,42 +303,42 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     }
 
     @Override
-    public final void logInit(String message)
+    public void logInit(String message)
     {
         // TODO: Log at the INFO level
         System.out.println("INIT      " + message);
     }
 
     @Override
-    public final void logInfo(String message)
+    public void logInfo(String message)
     {
         // TODO: Log at the INFO level
         System.out.println("INFO      " + message);
     }
 
     @Override
-    public final void logWarning(String message)
+    public void logWarning(String message)
     {
         // TODO: Log at the WARNING level
         System.out.println("WARNING   " + message);
     }
 
     @Override
-    public final void logError(String message)
+    public void logError(String message)
     {
         // TODO: Log at the ERROR level
         System.out.println("ERROR     " + message);
     }
 
     @Override
-    public final void logFailure(String message)
+    public void logFailure(String message)
     {
         // TODO: Log at the ERROR level
         System.err.println("FAILED    " + message);
     }
 
     @Override
-    public final void logDebug(String message)
+    public void logDebug(String message)
     {
         // TODO: Log at the DEBUG level
         System.err.println("DEBUG     " + message);

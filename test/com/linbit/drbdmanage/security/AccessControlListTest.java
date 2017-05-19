@@ -149,7 +149,7 @@ public class AccessControlListTest
         public static final int IDX_REQUESTED_ACCESS_TYPE = 2;
         public static final int IDX_GRANTED_ACCESS_TYPE = 3;
 
-        public AclIterator(boolean iterateSecurityLevel, int...skipColumns)
+        AclIterator(boolean iterateSecurityLevel, int...skipColumns)
         {
             super(new Object[][]
                 {

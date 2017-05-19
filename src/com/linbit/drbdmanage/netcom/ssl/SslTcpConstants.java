@@ -17,4 +17,8 @@ public class SslTcpConstants
 
     public static final int OUT_BUFFER_ADDITIONAL_SIZE = 50;
 
+    private SslTcpConstants()
+    {
+    }
+
 }

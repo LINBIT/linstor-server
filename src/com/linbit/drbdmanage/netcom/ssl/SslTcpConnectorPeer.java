@@ -289,19 +289,20 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                     default:
                         throw new IllegalStateException("Invalid SSL status: " +handshakeStatus);
                 }
-            }while(handshakeStatus == HandshakeStatus.NEED_TASK); // do not wait if NEED_TASK
+            }
+            while (handshakeStatus == HandshakeStatus.NEED_TASK); // do not wait if NEED_TASK
 
             if (state == HandshakeState.FAILED)
             {
                 throw new SSLException("Handshaking failed");
             }
 
-            switch(handshakeStatus)
+            switch (handshakeStatus)
             {
                 case FINISHED:
                     nextInMessage(); // prepare the next messages
                     nextOutMessage();
-                    if(msgOut != null)
+                    if (msgOut != null)
                     {
                         selKey.interestOps(SelectionKey.OP_WRITE);
                     }

@@ -76,12 +76,10 @@ public class DebugMakeSuperuser extends BaseApiCall
         }
         catch (IOException ioExc)
         {
-            ioExc.printStackTrace(System.err);
             coreSvcs.getErrorReporter().reportError(ioExc);
         }
         catch (IllegalMessageStateException msgExc)
         {
-            msgExc.printStackTrace(System.err);
             throw new ImplementationError(
                 Message.class.getName() + " object returned by the " + Peer.class.getName() +
                     " class has an illegal state",

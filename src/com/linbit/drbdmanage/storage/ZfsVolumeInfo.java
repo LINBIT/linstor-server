@@ -58,7 +58,8 @@ public class ZfsVolumeInfo extends VolumeInfo
 
     public static String[] getZfsVolumeInfoCommand(final String zfsCommand, final String pool, final String identifier)
     {
-        return new String[]{
+        return new String[]
+        {
             zfsCommand,
             "list",
             "-H", // no headers

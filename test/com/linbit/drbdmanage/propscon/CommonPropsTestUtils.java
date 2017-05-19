@@ -252,4 +252,8 @@ public class CommonPropsTestUtils
             assertFalse(iterator.hasNext());
         }
     }
+
+    private CommonPropsTestUtils()
+    {
+    }
 }

@@ -5,7 +5,7 @@ import java.util.UUID;
 /**
  * Defines a connection for a DRBD resource
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class ConnectionDefinitionData implements ConnectionDefinition
 {

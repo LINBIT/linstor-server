@@ -44,4 +44,8 @@ public class TcpPortNumberAlloc
         }
         return result;
     }
+
+    private TcpPortNumberAlloc()
+    {
+    }
 }

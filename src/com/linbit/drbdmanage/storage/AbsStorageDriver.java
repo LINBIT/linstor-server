@@ -134,7 +134,8 @@ public abstract class AbsStorageDriver implements StorageDriver
             // however, as we tried, and succeeded in removing the volume, we can ignore this
             // exception for now
         }
-        catch (ChildProcessTimeoutException | IOException | FsWatchTimeoutException | NegativeTimeException | ValueOutOfRangeException | InterruptedException exc)
+        catch (ChildProcessTimeoutException | IOException | FsWatchTimeoutException | NegativeTimeException |
+               ValueOutOfRangeException | InterruptedException exc)
         {
             // TODO: Detailed error reporting
             throw new StorageException(
@@ -397,10 +398,10 @@ public abstract class AbsStorageDriver implements StorageDriver
         {
             return uncheckedGetAsInt(map, key, defaultValue);
         }
-        catch(NumberFormatException NumberFormatExc)
+        catch (NumberFormatException numberFormatExc)
         {
             // TODO: Detailed error reporting
-            throw new StorageException("expected int value", NumberFormatExc);
+            throw new StorageException("expected int value", numberFormatExc);
         }
     }
 
@@ -444,10 +445,10 @@ public abstract class AbsStorageDriver implements StorageDriver
         {
             return uncheckedGetAsLong(map, key, defaultValue);
         }
-        catch(NumberFormatException NumberFormatExc)
+        catch (NumberFormatException numberFormatExc)
         {
             // TODO: Detailed error reporting
-            throw new StorageException("expected long value", NumberFormatExc);
+            throw new StorageException("expected long value", numberFormatExc);
         }
     }
 
@@ -547,7 +548,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         {
             Checks.rangeCheck(toleranceFactor, 1, Integer.MAX_VALUE);
         }
-        catch (ValueOutOfRangeException valueOORangeExc)
+        catch (ValueOutOfRangeException rangeExc)
         {
             // TODO: Detailed error reporting
             throw new StorageException(
@@ -555,7 +556,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                     "Tolerance factor has to be in range of 1 - %d, but was %d",
                     Integer.MAX_VALUE, toleranceFactor
                 ),
-                valueOORangeExc
+                rangeExc
             );
         }
         return toleranceFactor;

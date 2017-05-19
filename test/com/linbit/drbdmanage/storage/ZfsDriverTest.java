@@ -193,7 +193,8 @@ public class ZfsDriverTest extends StorageTestUtils
         final FileEntry testEntry = new FileEntry(
             Paths.get(expectedFilePath),
             Event.CREATE,
-            emptyFileObserver);
+            emptyFileObserver
+        );
 
         Thread thread = new Thread(
             new Runnable()
@@ -317,7 +318,8 @@ public class ZfsDriverTest extends StorageTestUtils
         FileEntry testEntry = new FileEntry(
             Paths.get(expectedFilePath),
             Event.DELETE,
-            emptyFileObserver);
+            emptyFileObserver
+        );
 
         testFileEntryGroup.fileEvent(testEntry);
         driver.deleteVolume(identifier);
@@ -398,7 +400,8 @@ public class ZfsDriverTest extends StorageTestUtils
             "/dev/zvol/" +
             ZFS_POOL_DEFAULT + "/" +
             identifier,
-            path);
+            path
+        );
     }
 
     @Test(expected = StorageException.class)
@@ -474,21 +477,23 @@ public class ZfsDriverTest extends StorageTestUtils
             "-H",
             "-o", "name",
             pool
-            );
+        );
         OutputData outData;
         if (poolExists)
         {
             outData = new TestOutputData(
                 pool,
                 "",
-                0);
+                0
+            );
         }
         else
         {
             outData = new TestOutputData(
                 "",
                 "cannot open '"+pool+"': dataset does not exist",
-                1);
+                1
+            );
         }
         ec.setExpectedBehavior(command, outData);
     }
@@ -525,14 +530,16 @@ public class ZfsDriverTest extends StorageTestUtils
             outData = new TestOutputData(
                 Long.toString(size * 1024),
                 "",
-                0);
+                0
+            );
         }
         else
         {
             outData = new TestOutputData(
                 "",
                 "cannot open '"+pool+"/"+identifier+"': dataset does not exist",
-                1);
+                1
+            );
         }
         ec.setExpectedBehavior(command, outData);
     }
@@ -559,20 +566,25 @@ public class ZfsDriverTest extends StorageTestUtils
             "get", "recordsize",
             "-o", "value",
             "-Hp",
-            pool);
+            pool
+        );
         OutputData outData;
         if (poolExists)
         {
             outData = new TestOutputData(
                 Long.toString(size * 1024),
                 "",
-                0);
+                0
+            );
         }
         else
+        {
             outData = new TestOutputData(
                 "",
                 "cannot open '" + pool + "': dataset does not exist",
-                1);
+                1
+            );
+        }
 
         ec.setExpectedBehavior(command, outData);
     }
@@ -607,14 +619,16 @@ public class ZfsDriverTest extends StorageTestUtils
             outData = new TestOutputData(
                 "",
                 "",
-                0);
+                0
+            );
         }
         else
         {
             outData = new TestOutputData(
                 "",
                 "cannot create '" + pool + "/" + identifier + "': dataset already exists",
-                1);
+                1
+            );
         }
 
         ec.setExpectedBehavior(command, outData);
@@ -647,14 +661,16 @@ public class ZfsDriverTest extends StorageTestUtils
            outData = new TestOutputData(
                "",
                "",
-               0);
+               0
+           );
         }
         else
         {
             outData = new TestOutputData(
                 "",
                 "cannot open '" + pool + "/identifier" + "': dataset does not exist",
-                1);
+                1
+            );
         }
         ec.setExpectedBehavior(command, outData);
     }

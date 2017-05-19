@@ -105,7 +105,7 @@ public class CommonMessageProcessor implements MessageProcessor
         private TcpConnector    connector;
         private Peer            client;
 
-        public ApiCallInvocation(
+        ApiCallInvocation(
             ApiCall         apiCallRef,
             AccessContext   accCtxRef,
             Message         msgRef,

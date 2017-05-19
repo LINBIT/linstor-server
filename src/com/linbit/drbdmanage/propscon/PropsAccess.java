@@ -33,4 +33,8 @@ public final class PropsAccess
         }
         return securedProps;
     }
+
+    private PropsAccess()
+    {
+    }
 }

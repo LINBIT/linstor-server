@@ -248,7 +248,6 @@ public class OutputReceiver implements Runnable
                 lineOffset = idx + 1;
             }
         }
-        System.out.flush();
         return lineOffset;
     }
 }

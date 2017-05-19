@@ -361,7 +361,7 @@ public abstract class NoSimDriverTest
             deleteVolume(identifier, "   test deleting already deleted volume [%s]...");
             fail("      deleteVolume should have thrown StorageException");
         }
-        catch(StorageException expected)
+        catch (StorageException expected)
         {
             // expected
             log(" done%n");
@@ -372,7 +372,7 @@ public abstract class NoSimDriverTest
             deleteVolume("unknownVolume", "   test deleting unknown volume [%s]...");
             fail("      deleteVolume should have thrown StorageException");
         }
-        catch(StorageException expected)
+        catch (StorageException expected)
         {
             // expected
             log(" done%n");
@@ -390,9 +390,10 @@ public abstract class NoSimDriverTest
         cleanUp();
     }
 
-    protected final void failIf(boolean condition, String format, Object...args) throws ChildProcessTimeoutException, IOException
+    protected final void failIf(boolean condition, String format, Object...args)
+        throws ChildProcessTimeoutException, IOException
     {
-        if(condition)
+        if (condition)
         {
             fail(format, args);
         }
@@ -480,7 +481,7 @@ public abstract class NoSimDriverTest
         catch (ChildProcessTimeoutException | IOException e)
         {
             e.printStackTrace();
-        };
+        }
     }
 
     protected void log(String format, Object...args)
@@ -513,11 +514,11 @@ public abstract class NoSimDriverTest
         while (identifier == null)
         {
             identifier = baseIdentifier + i;
-            i++;
             if (volumeExists(identifier))
             {
                 identifier = null;
             }
+            ++i;
         }
         identifier = prefix + identifier + suffix;
         log("using identifier: [%s]... done %n", identifier);
@@ -685,7 +686,7 @@ public abstract class NoSimDriverTest
                     log("         done%n");
                     // all mounts should have been unmounted
 
-                    String baseMountString = baseMountPath.toString();
+                    String baseMountString = baseMountPath;
                     // just to be sure that we are not executing "rm -rf /" or /*
                     if (baseMountString.startsWith("/mnt/"))
                     {
@@ -743,7 +744,9 @@ public abstract class NoSimDriverTest
                         if (id.equals(identifier))
                         {
     //                        fail("Failed to remove test volume [%s] in cleanup", identifier);
-                            log("         Failed to remove test volume [%s] - maybe because of dependencies - will retry",
+                            log(
+                                "         Failed to remove test volume [%s] - maybe because of dependencies " +
+                                "- will retry",
                                 identifier
                             );
                             volumesFailedToRemove++;
@@ -863,7 +866,7 @@ public abstract class NoSimDriverTest
         private final FileSystemWatch fsEventSvc;
         private DebugErrorReporter errorReporter;
 
-        public TestCoreServices() throws IOException
+        TestCoreServices() throws IOException
         {
             timerEventSvc = new GenericTimer<>();
             fsEventSvc = new FileSystemWatch();
@@ -893,22 +896,22 @@ public abstract class NoSimDriverTest
     {
         private static final long serialVersionUID = 1L;
 
-        public TestFailedException()
+        TestFailedException()
         {
             super();
         }
 
-        public TestFailedException(String message, Throwable cause)
+        TestFailedException(String message, Throwable cause)
         {
             super(message.trim(), cause);
         }
 
-        public TestFailedException(String message)
+        TestFailedException(String message)
         {
             super(message.trim());
         }
 
-        public TestFailedException(Throwable cause)
+        TestFailedException(Throwable cause)
         {
             super(cause);
         }

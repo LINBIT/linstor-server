@@ -44,7 +44,7 @@ public class EventsTracker
             throw new ImplementationError(
                 "Event string passed by caller is a null pointer",
                 new NullPointerException()
-                );
+            );
         }
 
         // Skip empty lines
@@ -179,7 +179,7 @@ public class EventsTracker
     private void createResource(Map<String, String> props) throws EventsSourceException
     {
         DrbdResource resource = DrbdResource.newFromProps(props);
-        tracker.putResource(resource);;
+        tracker.putResource(resource);
         tracker.multiplexer.resourceCreated(resource);
         resource.update(props, tracker.multiplexer);
     }
@@ -297,8 +297,8 @@ public class EventsTracker
         Map<String, String> props,
         String action,
         String objType
-        )
-            throws EventsSourceException
+    )
+        throws EventsSourceException
     {
         String connName = getProp(props, DrbdConnection.PROP_KEY_CONN_NAME, action, objType);
         DrbdConnection conn = resource.getConnection(connName);
@@ -315,8 +315,8 @@ public class EventsTracker
         Map<String, String> props,
         String action,
         String objType
-        )
-            throws EventsSourceException
+    )
+        throws EventsSourceException
     {
         VolumeNumber volNr = getVolumeNr(props, action, objType);
 
@@ -336,13 +336,13 @@ public class EventsTracker
         return volume;
     }
 
-    private static final String getProp(
+    private static String getProp(
         Map<String, String> props,
         String propKey,
         String action,
         String objType
-        )
-            throws EventsSourceException
+    )
+        throws EventsSourceException
     {
         String propValue = props.get(propKey);
         if (propValue == null)
@@ -351,18 +351,18 @@ public class EventsTracker
                 String.format(
                     "Event line for operation '%s %s' does not contain the '%s' argument",
                     action, objType, propKey
-                    )
-                );
+                )
+            );
         }
         return propValue;
     }
 
-    private static final VolumeNumber getVolumeNr(
+    private static VolumeNumber getVolumeNr(
         Map<String, String> props,
         String action,
         String objType
-        )
-            throws EventsSourceException
+    )
+        throws EventsSourceException
     {
         String volNrText = getProp(props, DrbdVolume.PROP_KEY_VOL_NR, action, objType);
         int parsedNumber;
@@ -378,9 +378,9 @@ public class EventsTracker
                 String.format(
                     "Event line for operation '%s %s' contains an invalid volume number",
                     action, objType
-                    ),
+                ),
                 exc
-                );
+            );
         }
         return volNr;
     }
@@ -389,15 +389,15 @@ public class EventsTracker
         String action,
         String objType,
         String resName
-        )
-            throws EventsSourceException
+    )
+        throws EventsSourceException
     {
         throw new EventsSourceException(
-            String.format(
-                "Event line for operation '%s %s' references non-existent resource '%s'",
-                action, objType, resName
-                )
-            );
+        String.format(
+            "Event line for operation '%s %s' references non-existent resource '%s'",
+            action, objType, resName
+            )
+        );
     }
 
     private void nonExistentConnection(
@@ -405,15 +405,15 @@ public class EventsTracker
         String objType,
         DrbdResource resource,
         String connName
-        )
-            throws EventsSourceException
+    )
+        throws EventsSourceException
     {
         throw new EventsSourceException(
-            String.format(
-                "Event line for operation '%s %s' references non-existent connection '%s' of resource '%s'",
-                action, objType, connName, resource.resName
-                )
-            );
+        String.format(
+            "Event line for operation '%s %s' references non-existent connection '%s' of resource '%s'",
+            action, objType, connName, resource.resName
+            )
+        );
     }
 
     private void nonExistentVolume(
@@ -422,8 +422,8 @@ public class EventsTracker
         DrbdResource resource,
         DrbdConnection connection,
         VolumeNumber volNr
-        )
-            throws EventsSourceException
+    )
+        throws EventsSourceException
     {
         if (connection == null)
         {
@@ -431,8 +431,8 @@ public class EventsTracker
                 String.format(
                     "Event line for operation '%s %s' references non-existent volume %d of resource '%s'",
                     action, objType, volNr, resource.resName
-                    )
-                );
+                )
+            );
         }
         else
         {
@@ -441,8 +441,8 @@ public class EventsTracker
                     "Event line for operation '%s %s' references non-existent peer-volume %d " +
                         "of connection '%s' of resource '%s'",
                         action, objType, volNr, connection.peerName, resource.resName
-                    )
-                );
+                )
+            );
         }
     }
 }

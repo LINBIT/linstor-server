@@ -43,4 +43,8 @@ public class NodeIdAlloc
         }
         return result;
     }
+
+    private NodeIdAlloc()
+    {
+    }
 }

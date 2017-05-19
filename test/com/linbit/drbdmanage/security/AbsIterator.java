@@ -127,7 +127,8 @@ public abstract class AbsIterator <T> implements Iterator<T>, Iterable<T>
     {
         for (int i : usedColumns)
         {
-            if (++currentIdx[i] >= values[i].length)
+            ++currentIdx[i];
+            if (currentIdx[i] >= values[i].length)
             {
                 if (i != values.length - 1)
                 {

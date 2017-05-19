@@ -90,7 +90,7 @@ public class OutputProxy implements Runnable
 
                     if (dataLimit == data.length)
                     {
-                        if(dataLimit < MAX_DATA_SIZE)
+                        if (dataLimit < MAX_DATA_SIZE)
                         {
                             byte[] enlarged = new byte[data.length + DATA_SIZE_INC];
                             System.arraycopy(data, 0, enlarged, 0, data.length);

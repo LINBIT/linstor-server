@@ -124,7 +124,7 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
     @Override
     protected String[] getListVolumeNamesCommand()
     {
-        return new String[]{ "lvs", "-o", "lv_name", "--noheading" };
+        return new String[] { "lvs", "-o", "lv_name", "--noheading" };
     }
 
     @Override
@@ -142,7 +142,7 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
         String[] lines = new String(outputData.stdoutData).split("\n");
         for (String line : lines)
         {
-            if(line.trim().equals(poolName))
+            if (line.trim().equals(poolName))
             {
                 ret = true;
                 break;

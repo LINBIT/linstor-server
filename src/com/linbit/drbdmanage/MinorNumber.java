@@ -6,7 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 /**
  * Unix minor number
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class MinorNumber implements Comparable<MinorNumber>
 {

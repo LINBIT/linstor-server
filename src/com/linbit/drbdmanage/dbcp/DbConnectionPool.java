@@ -149,7 +149,7 @@ public class DbConnectionPool implements ControllerDatabase
     @Override
     public void setServiceInstanceName(ServiceName instanceName)
     {
-        if(instanceName == null)
+        if (instanceName == null)
         {
             serviceNameInstance = SERVICE_NAME;
         }

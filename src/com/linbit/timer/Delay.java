@@ -25,4 +25,8 @@ public class Delay
             // out of sleep()
         }
     }
+
+    private Delay()
+    {
+    }
 }

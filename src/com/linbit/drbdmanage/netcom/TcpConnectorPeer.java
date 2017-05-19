@@ -83,11 +83,11 @@ public class TcpConnectorPeer implements Peer
     @Override
     public void waitUntilConnectionEstablished() throws InterruptedException
     {
-        while(!connected)
+        while (!connected)
         {
             synchronized (this)
             {
-                if(!connected)
+                if (!connected)
                 {
                     this.wait();
                 }

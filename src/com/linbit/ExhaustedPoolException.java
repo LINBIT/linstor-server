@@ -4,7 +4,7 @@ package com.linbit;
  * Throws to indicate that a pool of resources does not have any
  * remaining free capacity
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class ExhaustedPoolException extends Exception
 {

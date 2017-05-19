@@ -125,4 +125,8 @@ public class Base64
         }
         return idx;
     }
+
+    private Base64()
+    {
+    }
 }

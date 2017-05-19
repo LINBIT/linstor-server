@@ -307,4 +307,8 @@ public class Checks
             );
         }
     }
+
+    private Checks()
+    {
+    }
 }

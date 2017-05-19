@@ -10,4 +10,8 @@ public class MathUtils
         }
         return a + b;
     }
+
+    private MathUtils()
+    {
+    }
 }

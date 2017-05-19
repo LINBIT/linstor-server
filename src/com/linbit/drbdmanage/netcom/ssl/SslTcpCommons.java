@@ -90,4 +90,8 @@ public class SslTcpCommons
         }
         return store;
     }
+
+    private SslTcpCommons()
+    {
+    }
 }

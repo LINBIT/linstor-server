@@ -56,4 +56,8 @@ public class AutoIndent
             output.println();
         }
     }
+
+    private AutoIndent()
+    {
+    }
 }

@@ -179,8 +179,8 @@ public class TestExtCmd extends ExtCmd
         @Override
         public String toString()
         {
-            return "TestOutputData [stdoutData=[" + new String(stdoutData) + "], stderrData=["
-                + new String(stderrData) + "], exitCode=" + exitCode + "]";
+            return "TestOutputData [stdoutData=[" + new String(stdoutData) + "], stderrData=[" +
+                   new String(stderrData) + "], exitCode=" + exitCode + "]";
         }
     }
 

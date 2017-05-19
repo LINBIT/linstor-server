@@ -38,10 +38,12 @@ public class SslTcpConnectorMessage extends TcpConnectorMessage
     {
         ReadState state;
         int encryptedPos = 0;
-        do{
+        do
+        {
             encryptedPos = encryptedBuffer.position();
             state = super.read(inChannel);
-        }while(state != ReadState.FINISHED && encryptedPos != encryptedBuffer.position());
+        }
+        while (state != ReadState.FINISHED && encryptedPos != encryptedBuffer.position());
 
         return state;
     }
@@ -64,7 +66,7 @@ public class SslTcpConnectorMessage extends TcpConnectorMessage
                 do
                 {
                     decryptedBuffer.clear();
-                    if(!encryptedBuffer.hasRemaining())
+                    if (!encryptedBuffer.hasRemaining())
                     {
                         encryptedBuffer.clear();
                         encryptedRead = channel.read(encryptedBuffer);

@@ -94,4 +94,8 @@ public class HexViewer
         }
         System.out.printf(" | %s\u001b[0;32m\n", plainText.toString());
     }
+
+    private HexViewer()
+    {
+    }
 }

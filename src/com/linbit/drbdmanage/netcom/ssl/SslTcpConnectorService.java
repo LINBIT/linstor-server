@@ -89,7 +89,7 @@ public class SslTcpConnectorService extends TcpConnectorService
         try
         {
             InetSocketAddress address = null;
-            if(outgoing)
+            if (outgoing)
             {
                 SocketChannel channel = (SocketChannel) connKey.channel();
                 Socket socket = channel.socket();

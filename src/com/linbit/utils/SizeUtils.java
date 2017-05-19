@@ -39,4 +39,8 @@ public class SizeUtils
 
         return sizeStr;
     }
+
+    private SizeUtils()
+    {
+    }
 }

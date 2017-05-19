@@ -368,7 +368,7 @@ public class ObjectProtectionTest
 
         private final int WANTED_ACC_CTX_IDX = 5;
 
-        public AccessIterator(boolean iterateSecurityLevels, int... skipColumns)
+        AccessIterator(boolean iterateSecurityLevels, int... skipColumns)
         {
             super(
                 new Object[][]

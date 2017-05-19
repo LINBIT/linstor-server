@@ -203,4 +203,8 @@ public class StringConv
         }
         return value;
     }
+
+    private StringConv()
+    {
+    }
 }

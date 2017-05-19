@@ -207,7 +207,7 @@ public abstract class BaseDebugConsole implements DebugConsole
                 }
             }
 
-            if (unknownParameters.size() == 0)
+            if (unknownParameters.isEmpty())
             {
                 String cmdInfo = debugCmd.getCmdInfo();
                 if (cmdInfo == null)

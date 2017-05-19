@@ -11,7 +11,7 @@ import java.util.TreeMap;
 /**
  * Multiplexes state changes on DRBD resources to ResourceObserver instances
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public class StateTracker
 {

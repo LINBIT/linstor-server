@@ -83,4 +83,8 @@ public class MinorNumberAlloc
         }
         return result;
     }
+
+    private MinorNumberAlloc()
+    {
+    }
 }

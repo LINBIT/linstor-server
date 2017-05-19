@@ -206,4 +206,8 @@ public class SizeConv
         }
         return result;
     }
+
+    private SizeConv()
+    {
+    }
 }

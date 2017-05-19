@@ -48,4 +48,8 @@ public class SecurityDbFields
     static final String CONF_VALUE          = "ENTRY_VALUE";
 
     static final String KEY_SEC_LEVEL       = "SECURITYLEVEL";
+
+    private SecurityDbFields()
+    {
+    }
 }

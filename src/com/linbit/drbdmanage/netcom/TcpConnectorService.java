@@ -177,7 +177,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         {
             serverSelector.wakeup();
             boolean connected = socketChannel.connect(address);
-            if(connected)
+            if (connected)
             {
                 // if connect is true, we will never receive an OP_CONNECT
                 // even if we register for it.
@@ -193,7 +193,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                 connKey = socketChannel.register(serverSelector, OP_CONNECT);
             }
             peer = createTcpConnectorPeer(peerId, connKey, true);
-            if(connected)
+            if (connected)
             {
                 peer.connectionEstablished();
             }
@@ -662,7 +662,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         // OP_WRITE automatically
         Peer peer = (Peer) currentKey.attachment();
         peer.connectionEstablished();
-        if(connObserver != null)
+        if (connObserver != null)
         {
             connObserver.outboundConnectionEstablished(peer);
         }

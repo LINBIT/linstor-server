@@ -328,7 +328,7 @@ public class NumberAlloc
      * Used to abort a loop if the maximum number of loop iterations is reached.
      * This is part of a mechanism to prevent infinite loops.
      */
-    private static final void loopGuardAbort()
+    private static void loopGuardAbort()
     {
         throw new ImplementationError(
             String.format(
@@ -338,5 +338,9 @@ public class NumberAlloc
             // No nested exception
             null
         );
+    }
+
+    private NumberAlloc()
+    {
     }
 }

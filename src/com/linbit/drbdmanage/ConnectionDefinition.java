@@ -4,7 +4,7 @@ import java.util.UUID;
 
 /**
  *
- * @author raltnoeder
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public interface ConnectionDefinition
 {

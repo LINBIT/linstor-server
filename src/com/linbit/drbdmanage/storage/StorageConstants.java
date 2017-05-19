@@ -48,4 +48,8 @@ public class StorageConstants
             "can be larger than specified upon creation."
         );
     }
+
+    private StorageConstants()
+    {
+    }
 }

@@ -35,9 +35,10 @@ public class AutoIndentTest
     protected String getSpaces(int count)
     {
         StringBuilder sb = new StringBuilder();
-        while(count --> 0)
+        while (count > 0)
         {
             sb.append(" ");
+            --count;
         }
         return sb.toString();
     }
