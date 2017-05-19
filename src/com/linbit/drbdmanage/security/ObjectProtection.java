@@ -151,7 +151,20 @@ public final class ObjectProtection
             )
             {
                 throw new AccessDeniedException(
-                    "Changing the access control entry for the role performing the change was denied"
+                    "Changing the access control entry for the role performing the " +
+                    "change was denied",
+                    // Description
+                    "Permission to change the access control entry was denied",
+                    // Cause
+                    "Changing the access control entry for the role performing the " +
+                    "change is not permitted",
+                    // Correction
+                    "- Use another authorized role to change the access control entry\n" +
+                    "- Use the role that owns the object to change the access control entry\n" +
+                    "- Use a role with administrative privileges to change the " +
+                    "access control entry\n",
+                    // No error details
+                    null
                 );
             }
         }
@@ -170,7 +183,20 @@ public final class ObjectProtection
             )
             {
                 throw new AccessDeniedException(
-                    "Deleting the access control entry for the role performing the change was denied"
+                    "Deleting the access control entry for the role performing the change " +
+                    "was denied",
+                    // Description
+                    "Permission to change the access control entry was denied",
+                    // Cause
+                    "Changing the access control entry for the role performing the " +
+                    "change is not permitted",
+                    // Correction
+                    "- Use another authorized role to change the access control entry\n" +
+                    "- Use the role that owns the object to change the access control entry\n" +
+                    "- Use a role with administrative privileges to change the " +
+                    "access control entry\n",
+                    // No error details
+                    null
                 );
             }
         }

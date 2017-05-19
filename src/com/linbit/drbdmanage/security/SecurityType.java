@@ -194,7 +194,20 @@ public final class SecurityType implements Comparable<SecurityType>
                     {
                         throw new AccessDeniedException(
                             "Access of type '" + requested +
-                            "' not allowed by mandatory access control rules"
+                            "' not allowed by mandatory access control rules",
+                            // Description
+                            "Access was denied by mandatory access control rules",
+                            // Cause
+                            "No rule is present that allows access of type " + requested.name() +
+                            " by a subject in security domain " + context.subjectDomain.name +
+                            " to an object of security type " + name,
+                            // Correction
+                            "A rule defining the allowed level of access from the " +
+                            "subject domain to the object type must be defined.\n" +
+                            "Mandatory access control rules can only be defined by a role " +
+                            "with administrative privileges.",
+                            // No error details
+                            null
                         );
                     }
                 }

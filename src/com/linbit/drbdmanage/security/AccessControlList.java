@@ -59,7 +59,18 @@ public final class AccessControlList
                 if (!allowFlag)
                 {
                     throw new AccessDeniedException(
-                        "Access of type '" + requested + "' not allowed by the access control list"
+                        "Access of type '" + requested + "' not allowed by the " +
+                        "access control list",
+                        // Description
+                        "Access to the protected object was denied",
+                        // Cause
+                        "The access control list for the protected object does not allow " +
+                        "access of type " + requested.name() + " by role " +
+                        context.subjectRole.name,
+                        // Correction
+                        "An entry that allows access must be added by an authorized role",
+                        // No error details
+                        null
                     );
                 }
                 break;

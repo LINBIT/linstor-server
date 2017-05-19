@@ -18,8 +18,26 @@ public class IdentityLockedException extends SignInException
         super(message, cause);
     }
 
-    public IdentityLockedException(Throwable cause)
+    public IdentityLockedException(
+        String message,
+        String descriptionText,
+        String causeText,
+        String correctionText,
+        String detailsText
+    )
     {
-        super(cause);
+        super(message, descriptionText, causeText, correctionText, detailsText, null);
+    }
+
+    public IdentityLockedException(
+        String message,
+        String descriptionText,
+        String causeText,
+        String correctionText,
+        String detailsText,
+        Throwable cause
+    )
+    {
+        super(message, descriptionText, causeText, correctionText, detailsText, cause);
     }
 }

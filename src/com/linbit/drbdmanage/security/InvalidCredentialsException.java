@@ -17,8 +17,26 @@ public class InvalidCredentialsException extends SignInException
         super(message, cause);
     }
 
-    public InvalidCredentialsException(Throwable cause)
+    public InvalidCredentialsException(
+        String message,
+        String descriptionText,
+        String causeText,
+        String correctionText,
+        String detailsText
+    )
     {
-        super(cause);
+        super(message, descriptionText, causeText, correctionText, detailsText, null);
+    }
+
+    public InvalidCredentialsException(
+        String message,
+        String descriptionText,
+        String causeText,
+        String correctionText,
+        String detailsText,
+        Throwable cause
+    )
+    {
+        super(message, descriptionText, causeText, correctionText, detailsText, cause);
     }
 }

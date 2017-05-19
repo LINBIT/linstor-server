@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.security;
 import com.linbit.ErrorCheck;
 import com.linbit.InvalidNameException;
 import com.linbit.drbdmanage.ControllerDatabase;
+import com.linbit.drbdmanage.DrbdManage;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -44,14 +45,6 @@ public final class Authentication
         throws SignInException, InvalidNameException
     {
         Connection dbConn = null;
-        if (dbConn == null)
-        {
-            throw new SignInException(
-                new SQLException(
-                    "The controller database connection pool failed to provide a database connection"
-                )
-            );
-        }
         AccessContext signInCtx = null;
         try
         {
@@ -79,8 +72,19 @@ public final class Authentication
                 if (storedIdStr == null)
                 {
                     throw new SignInException(
-                        "Sign in failed: Database error: The identity field of the requested " +
-                        "database record contains a NULL value"
+                        "Sign-in failed: Database error: The identity field of the requested " +
+                        "database record contains a NULL value",
+                        // Description
+                        "Sign-in failed due to a database error",
+                        // Cause
+                        "The database record for the identity is invalid",
+                        // Correction
+                        "This error may require operator or developer intervention.\n" +
+                        "Check the database table layout and constraints.",
+                        // Error details
+                        "The identity field of the database record contains a NULL value.\n" +
+                        "This error indicates a severe problem with the database, as it should " +
+                        "normally be prevented by database constraints."
                     );
                 }
 
@@ -90,10 +94,23 @@ public final class Authentication
                 {
                     throw new SignInException(
                         String.format(
-                            "Sign in failed: Database error: Identity '%s' in the database record " +
+                            "Sign-in failed: Database error: Identity '%s' in the database record " +
                             "does not match requested identity '%s'",
                             storedIdName.getName(), idName.getName()
-                        )
+                        ),
+                        // Description
+                        "Sign-in failed due to a database error",
+                        // Cause
+                        "The database record for the identity is invalid",
+                        // Correction
+                        "This error may require operator or developer intervention.\n" +
+                        "Check the database table layout and constraints.\n" +
+                        "Check for known bugs in this version of " + DrbdManage.PROGRAM,
+                        // Error details
+                        "The database query yielded a record for another identity than the one " +
+                        "for which a record was requested.\n" +
+                        "This error indicates a severe problem with the database or this version " +
+                        "of " + DrbdManage.PROGRAM
                     );
                 }
 
@@ -143,8 +160,22 @@ public final class Authentication
                     {
                         throw new SignInException(
                             String.format(
-                                "Sign in failed: Unable to find identity '%s' although it is " +
+                                "Sign-in failed: Unable to find identity '%s' although it is " +
                                 "referenced in the security database",
+                                storedIdName.value
+                            ),
+                            // Description
+                            "Sign-in failed due to a data consistency error",
+                            // Cause
+                            "The list of identities loaded into the program does not match the " +
+                            "list of identities in the database",
+                            // Correction
+                            "Reload the program's in-memory data from the database or " +
+                            "restart the program.",
+                            // Error details
+                            String.format(
+                                "A record for the identity '%s' was found in the database, but the " +
+                                "same identity is not present in the program's in-memory data.",
                                 storedIdName.value
                             )
                         );
@@ -165,8 +196,22 @@ public final class Authentication
                         {
                             throw new SignInException(
                                 String.format(
-                                    "Sign in failed: Unable to find role '%s' although it is " +
+                                    "Sign-in failed: Unable to find role '%s' although it is " +
                                     "referenced in the security database",
+                                    storedDfltRoleName.value
+                                ),
+                                // Description
+                                "Sign-in failed due to a data consistency error",
+                                // Cause
+                                "The list of roles loaded into the program does not match the " +
+                                "list of roles in the database",
+                                // Correction
+                                "Reload the program's in-memory data from the database or " +
+                                "restart the program.",
+                                // Error details
+                                String.format(
+                                    "A record for the role '%s' was found in the database, but the " +
+                                    "same role is not present in the program's in-memory data.",
                                     storedDfltRoleName.value
                                 )
                             );
@@ -177,8 +222,22 @@ public final class Authentication
                         {
                             throw new SignInException(
                                 String.format(
-                                    "Sign in failed: Database error: Security domain field for " +
+                                    "Sign-in failed: Database error: Security domain field for " +
                                     "default role '%s' contains a NULL value",
+                                    storedDfltRoleName.value
+                                ),
+                                "Sign-in failed due to a database error",
+                                // Cause
+                                "The database record for the default role is invalid",
+                                // Correction
+                                "This error may require operator or developer intervention.\n" +
+                                "Check the database table layout and constraints.",
+                                // Error details
+                                String.format(
+                                    "The security domain field of the database record for the role '%s' " +
+                                    "contains a NULL value.\n" +
+                                    "This error indicates a severe problem with the database, as it should " +
+                                    "normally be prevented by database constraints.",
                                     storedDfltRoleName.value
                                 )
                             );
@@ -189,8 +248,22 @@ public final class Authentication
                         {
                             throw new SignInException(
                                 String.format(
-                                    "Sign in failed: Unable to find security domain '%s' " +
+                                    "Sign-in failed: Unable to find security domain '%s' " +
                                     "although it is referenced in the security database",
+                                    storedDfltTypeName.value
+                                ),
+                                // Description
+                                "Sign-in failed due to a data consistency error",
+                                // Cause
+                                "The list of security domain/types loaded into the program does not match the " +
+                                "list of security domains/types in the database",
+                                // Correction
+                                "Reload the program's in-memory data from the database or " +
+                                "restart the program.",
+                                // Error details
+                                String.format(
+                                    "A record for the security domain '%s' was found in the database, but the " +
+                                    "same security domain is not present in the program's in-memory data.",
                                     storedDfltTypeName.value
                                 )
                             );
@@ -201,8 +274,22 @@ public final class Authentication
                         {
                             throw new SignInException(
                                 String.format(
-                                    "Sign in failed: Database error: Privileges field for " +
+                                    "Sign-in failed: Database error: Privileges field for " +
                                     "default role '%s' is NULL",
+                                    storedDfltRoleName.value
+                                ),
+                                "Sign-in failed due to a database error",
+                                // Cause
+                                "The database record for the default role is invalid",
+                                // Correction
+                                "This error may require operator or developer intervention.\n" +
+                                "Check the database table layout and constraints.",
+                                // Error details
+                                String.format(
+                                    "The privileges field of the database record for the role '%s' " +
+                                    "contains a NULL value.\n" +
+                                    "This error indicates a severe problem with the database, as it should " +
+                                    "normally be prevented by database constraints.",
                                     storedDfltRoleName.value
                                 )
                             );
@@ -229,7 +316,16 @@ public final class Authentication
         catch (SQLException sqlExc)
         {
             throw new SignInException(
-                "Signin failed: Database error: The SQL query for the security database record failed",
+                "Sign-in failed: Database error: The SQL query for the security database record failed",
+                // Description
+                "Sign-in failed due to a database error",
+                // Cause
+                "The database query for the security database record failed",
+                // Correction
+                "Contact a system administrator if the problem persists.\n" +
+                "Review the error logged by the database to determine the cause of the problem.",
+                // No error details
+                null,
                 sqlExc
             );
         }
@@ -244,7 +340,16 @@ public final class Authentication
         throws InvalidCredentialsException
     {
         throw new InvalidCredentialsException(
-            "SignIn failed: Invalid signin credentials"
+            "Sign-in failed: Invalid signin credentials",
+            // Description
+            "Sign-in failed",
+            // Cause
+            "The credentials for the sign-in are not valid",
+            // Correction
+            "The name of a valid identity and a matching password must be provided " +
+            "to sign in to the system",
+            // No error details
+            null
         );
     }
 }

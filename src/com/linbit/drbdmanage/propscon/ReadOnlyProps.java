@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.propscon;
 
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.AccessType;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -195,14 +196,26 @@ public class ReadOnlyProps implements Props
         throws AccessDeniedException
     {
         throw new AccessDeniedException(
-            "Attempt to modify a read-only view of a properties container"
+            "Permission to modify a read-only properties container was denied",
+            // Description
+            "Permission to modify the properties of an object was denied",
+            // Cause
+            "A read-only view of the object properties was provided. The common reason is " +
+            "that the role that was used to fetch the object properties does not have " +
+            "write access to the protected object that the properties belong to.",
+            // Correction
+            "Write access must be granted to the protected object to fetch a modifiable " +
+            "view of the object properties",
+            // No error detail
+            null
         );
     }
 
     private void unsupported()
     {
         throw new UnsupportedOperationException(
-            "Attempt to perform an unsupported operation on a read-only view of a properties container"
+            "Attempt to perform an unsupported operation on a read-only view " +
+            "of a properties container"
         );
     }
 
