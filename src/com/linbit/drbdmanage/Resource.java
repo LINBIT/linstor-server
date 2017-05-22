@@ -65,8 +65,7 @@ public interface Resource
         @Override
         public long getFlagValue()
         {
-            // TODO: Implement
-            throw new UnsupportedOperationException("Not supported yet.");
+            return flagValue;
         }
     }
 }
