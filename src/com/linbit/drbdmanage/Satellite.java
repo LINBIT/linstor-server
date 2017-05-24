@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
@@ -9,8 +10,8 @@ import com.linbit.drbdmanage.Controller.SSLConfiguration;
 import com.linbit.drbdmanage.debug.BaseDebugConsole;
 import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
-import com.linbit.drbdmanage.debug.DebugErrorReporter;
 import com.linbit.drbdmanage.debug.SatelliteDebugCmd;
+import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
@@ -352,7 +353,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         );
         printStartupInfo();
 
-        ErrorReporter errorLog = new DebugErrorReporter(System.err);
+        ErrorReporter errorLog = new StdErrorReporter(Satellite.MODULE);
 
         try
         {

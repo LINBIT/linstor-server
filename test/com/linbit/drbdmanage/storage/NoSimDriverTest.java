@@ -12,7 +12,7 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
-import com.linbit.drbdmanage.ErrorReporter;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.SatelliteCoreServices;
 import com.linbit.drbdmanage.debug.DebugErrorReporter;
 import com.linbit.extproc.ExtCmd;

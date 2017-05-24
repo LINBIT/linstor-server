@@ -1,6 +1,6 @@
 package com.linbit;
 
-import com.linbit.drbdmanage.ErrorReporter;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import java.util.ArrayDeque;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;

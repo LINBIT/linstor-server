@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
 

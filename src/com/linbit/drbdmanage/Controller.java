@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -16,10 +17,10 @@ import com.linbit.drbdmanage.debug.BaseDebugConsole;
 import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
-import com.linbit.drbdmanage.debug.DebugErrorReporter;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
+import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
@@ -503,7 +504,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         );
         printStartupInfo();
 
-        ErrorReporter errorLog = new DebugErrorReporter(System.err);
+        ErrorReporter errorLog = new StdErrorReporter(Controller.MODULE);
 
         try
         {

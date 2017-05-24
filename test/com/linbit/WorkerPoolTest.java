@@ -15,7 +15,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.linbit.drbdmanage.ErrorReporter;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 
 public class WorkerPoolTest
 {

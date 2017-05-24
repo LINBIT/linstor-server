@@ -1,9 +1,13 @@
 package com.linbit.drbdmanage.debug;
 
-import com.linbit.drbdmanage.ErrorReporter;
+import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.drbdmanage.logging.ErrorReporter;
+import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.security.AccessContext;
 
 import java.io.PrintStream;
 import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.event.Level;
 
 /**
  * Generates / formats error reports
@@ -184,5 +188,30 @@ public class DebugErrorReporter implements ErrorReporter
     public static final String notNullOrIdFailed(String input)
     {
         return input != null ? input : ID_FAILED;
+    }
+
+    @Override
+    public void reportError(
+        Throwable errorInfo,
+        AccessContext accCtx,
+        Peer client,
+        String contextInfo
+    )
+    {
+        // TODO: include accCtx, client, contextInfo in the report
+        reportError(errorInfo);
+    }
+
+    @Override
+    public void reportProblem(
+        Level logLevel,
+        DrbdManageException errorInfo,
+        AccessContext accCtx,
+        Peer client,
+        String contextInfo
+    )
+    {
+        // TODO: include accCtx, client, contextInfo in the report
+        reportError(errorInfo);
     }
 }
