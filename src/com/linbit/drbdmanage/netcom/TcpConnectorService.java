@@ -214,11 +214,20 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
             }
             catch (IOException ioExc)
             {
+                String descriptionText = String.format(
+                    "Initialization of the %s service instance '%s' failed.",
+                    TcpConnectorService.class.getName(), serviceInstanceName
+                );
                 throw new SystemServiceStartException(
-                    String.format(
-                        "Initialization of the %s service instance '%s' failed.",
-                        TcpConnectorService.class.getName(), serviceInstanceName
-                    ),
+                    descriptionText,
+                    // Description
+                    descriptionText,
+                    // Cause
+                    ioExc.getMessage(),
+                    // Correction
+                    null,
+                    // Details
+                    null,
                     ioExc
                 );
             }
