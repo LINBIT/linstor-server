@@ -14,8 +14,12 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.event.Level;
 
+import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.logging.ErrorReporter;
+import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.security.AccessContext;
 
 public class WorkerPoolTest
 {
@@ -217,6 +221,24 @@ public class WorkerPoolTest
         public void reportError(Throwable throwable)
         {
             unexpected.add(throwable);
+        }
+
+        @Override
+        public void reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+        {
+            unexpected.add(errorInfo);
+        }
+
+        @Override
+        public void reportProblem(
+            Level logLevel,
+            DrbdManageException errorInfo,
+            AccessContext accCtx,
+            Peer client,
+            String contextInfo
+        )
+        {
+            unexpected.add(errorInfo);
         }
     }
 
