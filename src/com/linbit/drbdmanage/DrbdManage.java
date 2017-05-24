@@ -11,6 +11,7 @@ import com.linbit.drbdmanage.timer.CoreTimer;
 import com.linbit.drbdmanage.timer.CoreTimerImpl;
 import java.io.PrintStream;
 import java.util.Properties;
+import org.slf4j.event.Level;
 
 /**
  * DrbdManage common base class for the Controller and Satellite modules
@@ -81,63 +82,50 @@ public abstract class DrbdManage
         peerContext.setDebugConsole(null);
     }
 
-    public void startSystemServices(Iterable<SystemService> services, ErrorReporter errLog)
+    public void startSystemServices(Iterable<SystemService> services)
     {
+        ErrorReporter errLog = getErrorReporter();
+        // Start services
         for (SystemService sysSvc : services)
         {
-            logInfo(
+            errLog.logInfo(
                 String.format(
                     "Starting service instance '%s' of type %s",
                     sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
                 )
             );
-            boolean successFlag = false;
             try
             {
                 sysSvc.start();
-                successFlag = true;
             }
             catch (SystemServiceStartException startExc)
             {
-                errLog.reportError(startExc);
-
+                errLog.reportProblem(Level.ERROR, startExc, null, null, null);
             }
             catch (Exception unhandledExc)
             {
                 errLog.reportError(unhandledExc);
             }
-            finally
-            {
-                if (!successFlag)
-                {
-                    logFailure(
-                        String.format(
-                            "Start of the service instance '%s' of type %s failed",
-                            sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
-                        )
-                    );
-                }
-            }
         }
     }
 
-    public void stopSystemServices(Iterable<SystemService> services, ErrorReporter errLog)
+    public void stopSystemServices(Iterable<SystemService> services)
     {
-        // Shutdown service threads
+        ErrorReporter errLog = getErrorReporter();
+        // Shutdown services
         for (SystemService sysSvc : services)
         {
-            logInfo(
+            errLog.logInfo(
                 String.format(
                     "Shutting down service instance '%s' of type %s",
                     sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
                 )
             );
-            boolean successFlag = true;
             try
             {
                 sysSvc.shutdown();
 
-                logInfo(
+                errLog.logInfo(
                     String.format(
                         "Waiting for service instance '%s' to complete shutdown",
                         sysSvc.getInstanceName().displayValue
@@ -148,18 +136,6 @@ public abstract class DrbdManage
             catch (Exception unhandledExc)
             {
                 errorLog.reportError(unhandledExc);
-            }
-            finally
-            {
-                if (!successFlag)
-                {
-                    logFailure(
-                        String.format(
-                            "Shutdown of the service instance '%s' of type %s failed",
-                            sysSvc.getInstanceName().displayValue, sysSvc.getServiceName().displayValue
-                        )
-                    );
-                }
             }
         }
     }
@@ -260,13 +236,6 @@ public abstract class DrbdManage
     {
         System.out.printf("    %-24s %s\n", title, text);
     }
-
-    public abstract void logInit(String message);
-    public abstract void logInfo(String message);
-    public abstract void logWarning(String message);
-    public abstract void logError(String message);
-    public abstract void logFailure(String message);
-    public abstract void logDebug(String message);
 
     public static void printStartupInfo()
     {

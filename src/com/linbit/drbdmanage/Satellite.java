@@ -132,7 +132,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
 
                 // Initialize the worker thread pool
-                logInit("Starting worker thread pool");
+                errorLogRef.logInfo("Starting worker thread pool");
                 {
                     int cpuCount = getCpuCount();
                     int thrCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
@@ -146,19 +146,19 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 }
 
                 // Initialize the message processor
-                logInit("Initializing API call dispatcher");
+                errorLogRef.logInfo("Initializing API call dispatcher");
                 msgProc = new CommonMessageProcessor(this, workerThrPool);
 
-                logInit("Initializing test APIs");
+                errorLogRef.logInfo("Initializing test APIs");
                 {
                     // TODO: Satellite test APIs
                 }
 
                 // Initialize system services
-                startSystemServices(systemServicesMap.values(), getErrorReporter());
+                startSystemServices(systemServicesMap.values());
 
                 // Initialize the network communications service
-                logInit("Initializing main network communications service");
+                errorLogRef.logInfo("Initializing main network communications service");
                 initMainNetComService(sslConfig);
             }
             catch (AccessDeniedException accessExc)
@@ -181,9 +181,10 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     @Override
     public void run()
     {
+        ErrorReporter errLog = getErrorReporter();
         try
         {
-            logInfo("Entering debug console");
+            errLog.logInfo("Entering debug console");
 
             AccessContext privCtx = sysCtx.clone();
             AccessContext debugCtx = sysCtx.clone();
@@ -193,7 +194,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
 
-            logInfo("Debug console exited");
+            errLog.logInfo("Debug console exited");
         }
         catch (Throwable error)
         {
@@ -223,31 +224,33 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     {
         shutdownProt.requireAccess(accCtx, AccessType.USE);
 
+        ErrorReporter errLog = getErrorReporter();
+
         try
         {
             reconfigurationLock.writeLock().lock();
             if (!shutdownFinished)
             {
-                logInfo(
+                errLog.logInfo(
                     String.format(
                         "Shutdown initiated by subject '%s' using role '%s'\n",
                         accCtx.getIdentity(), accCtx.getRole()
                     )
                 );
 
-                logInfo("Shutdown in progress");
+                errLog.logInfo("Shutdown in progress");
 
                 // Shutdown service threads
-                stopSystemServices(systemServicesMap.values(), getErrorReporter());
+                stopSystemServices(systemServicesMap.values());
 
                 if (workerThrPool != null)
                 {
-                    logInfo("Shutting down worker thread pool");
+                    errLog.logInfo("Shutting down worker thread pool");
                     workerThrPool.shutdown();
                     workerThrPool = null;
                 }
 
-                logInfo("Shutdown complete");
+                errLog.logInfo("Shutdown complete");
             }
             shutdownFinished = true;
         }
@@ -300,49 +303,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
     private void initMainNetComService(SSLConfiguration sslConfig)
     {
-        logWarning("Main network communications service initialization is not implemented yet.");
-    }
-
-    @Override
-    public void logInit(String message)
-    {
-        // TODO: Log at the INFO level
-        System.out.println("INIT      " + message);
-    }
-
-    @Override
-    public void logInfo(String message)
-    {
-        // TODO: Log at the INFO level
-        System.out.println("INFO      " + message);
-    }
-
-    @Override
-    public void logWarning(String message)
-    {
-        // TODO: Log at the WARNING level
-        System.out.println("WARNING   " + message);
-    }
-
-    @Override
-    public void logError(String message)
-    {
-        // TODO: Log at the ERROR level
-        System.out.println("ERROR     " + message);
-    }
-
-    @Override
-    public void logFailure(String message)
-    {
-        // TODO: Log at the ERROR level
-        System.err.println("FAILED    " + message);
-    }
-
-    @Override
-    public void logDebug(String message)
-    {
-        // TODO: Log at the DEBUG level
-        System.err.println("DEBUG     " + message);
+        getErrorReporter().logWarning("Main network communications service initialization is not implemented yet.");
     }
 
     public static void main(String[] args)

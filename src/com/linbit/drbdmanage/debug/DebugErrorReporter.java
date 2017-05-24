@@ -176,6 +176,36 @@ public class DebugErrorReporter implements ErrorReporter
         errorOut.println("\nEND OF ERROR REPORT\n");
     }
 
+    @Override
+    public void logTrace(String message)
+    {
+        System.out.printf("%6s %s\n", "TRACE", message);
+    }
+
+    @Override
+    public void logDebug(String message)
+    {
+        System.out.printf("%6s %s\n", "DEBUG", message);
+    }
+
+    @Override
+    public void logInfo(String message)
+    {
+        System.out.printf("%6s %s\n", "INFO", message);
+    }
+
+    @Override
+    public void logWarning(String message)
+    {
+        System.out.printf("%6s %s\n", "WARN", message);
+    }
+
+    @Override
+    public void logError(String message)
+    {
+        System.out.printf("%6s %s\n", "ERROR", message);
+    }
+
     public static final void printErrorField(
         PrintStream errorOut,
         String fieldName,

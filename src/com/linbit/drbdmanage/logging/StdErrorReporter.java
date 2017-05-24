@@ -40,6 +40,7 @@ public final class StdErrorReporter implements ErrorReporter
     {
         dmModule = moduleName;
         mainLogger = org.slf4j.LoggerFactory.getLogger(DrbdManage.PROGRAM + "/" + moduleName);
+
         errorNr = new AtomicLong();
         cal = Calendar.getInstance();
     }
@@ -633,5 +634,35 @@ public final class StdErrorReporter implements ErrorReporter
             {
             }
         }
+    }
+
+    @Override
+    public void logTrace(String message)
+    {
+        mainLogger.trace(message);
+    }
+
+    @Override
+    public void logDebug(String message)
+    {
+        mainLogger.debug(message);
+    }
+
+    @Override
+    public void logInfo(String message)
+    {
+        mainLogger.info(message);
+    }
+
+    @Override
+    public void logWarning(String message)
+    {
+        mainLogger.warn(message);
+    }
+
+    @Override
+    public void logError(String message)
+    {
+        mainLogger.error(message);
     }
 }
