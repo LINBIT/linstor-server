@@ -27,6 +27,8 @@ import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConstants;
+import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -125,6 +127,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // Lock for major global changes
     private final ReadWriteLock reconfigurationLock;
 
+    // Controller configuration properties
+    private Props ctrlConf;
+    private ObjectProtection ctrlConfProt;
+
     public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
         throws IOException
     {
@@ -158,6 +164,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         // Initialize shutdown controls
         shutdownFinished = false;
         shutdownProt = new ObjectProtection(sysCtx);
+
+        ctrlConf = SerialPropsContainer.createRootContainer();
+        ctrlConfProt = new ObjectProtection(sysCtx);
     }
 
     public void initialize(ErrorReporter errorLogRef, SSLConfiguration sslConfig)
