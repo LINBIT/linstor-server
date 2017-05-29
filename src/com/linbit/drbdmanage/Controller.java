@@ -593,9 +593,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         return secret;
     }
 
-    private class ConnTracker implements ConnectionObserver
+    private static class ConnTracker implements ConnectionObserver
     {
-        private Controller controller;
+        private final Controller controller;
 
         ConnTracker(Controller controllerRef)
         {
@@ -613,7 +613,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     peerCtx = new ControllerPeerCtx();
                     connPeer.attach(peerCtx);
                 }
-                peerMap.put(connPeer.getId(), connPeer);
+                synchronized (controller.peerMap)
+                {
+                    controller.peerMap.put(connPeer.getId(), connPeer);
+                }
             }
             // TODO: If a satellite has been connected, schedule any necessary actions
         }
@@ -625,7 +628,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             {
                 ControllerPeerCtx peerCtx = new ControllerPeerCtx();
                 connPeer.attach(peerCtx);
-                peerMap.put(connPeer.getId(), connPeer);
+                synchronized (controller.peerMap)
+                {
+                    controller.peerMap.put(connPeer.getId(), connPeer);
+                }
             }
         }
 
@@ -634,7 +640,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         {
             if (connPeer != null)
             {
-                peerMap.remove(connPeer.getId());
+                synchronized (controller.peerMap)
+                {
+                    controller.peerMap.remove(connPeer.getId());
+                }
             }
         }
     }

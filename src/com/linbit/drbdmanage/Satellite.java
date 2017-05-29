@@ -487,9 +487,9 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         System.out.println();
     }
 
-    private class ConnTracker implements ConnectionObserver
+    private static class ConnTracker implements ConnectionObserver
     {
-        private Satellite satellite;
+        private final Satellite satellite;
 
         ConnTracker(Satellite satelliteRef)
         {
@@ -509,7 +509,10 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                     peerCtx = new SatellitePeerCtx();
                     connPeer.attach(peerCtx);
                 }
-                peerMap.put(connPeer.getId(), connPeer);
+                synchronized (satellite.peerMap)
+                {
+                    satellite.peerMap.put(connPeer.getId(), connPeer);
+                }
             }
         }
 
@@ -520,7 +523,10 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             {
                 SatellitePeerCtx peerCtx = new SatellitePeerCtx();
                 connPeer.attach(peerCtx);
-                peerMap.put(connPeer.getId(), connPeer);
+                synchronized (satellite.peerMap)
+                {
+                    satellite.peerMap.put(connPeer.getId(), connPeer);
+                }
             }
         }
 
@@ -529,7 +535,10 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         {
             if (connPeer != null)
             {
-                peerMap.remove(connPeer.getId());
+                synchronized (satellite.peerMap)
+                {
+                    satellite.peerMap.remove(connPeer.getId());
+                }
             }
         }
     }
