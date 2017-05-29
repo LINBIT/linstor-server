@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
@@ -589,6 +590,16 @@ public class PropsContainer implements Props
     public Props getNamespace(String namespace) throws InvalidKeyException
     {
         return findNamespace(namespace);
+    }
+
+    /**
+     * Iterates over the first level namespaces of the current PropsContainer
+     *
+     * @return An Iterator containing the keys of the namepsaces
+     */
+    public Iterator<String> iterateNamespaces()
+    {
+        return Collections.unmodifiableMap(containerMap).keySet().iterator();
     }
 
     /**

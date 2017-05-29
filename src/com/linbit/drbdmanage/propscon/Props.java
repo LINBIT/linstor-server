@@ -46,4 +46,5 @@ public interface Props
 
     public Props getNamespace(String namespace)
         throws InvalidKeyException;
+    public Iterator<String> iterateNamespaces();
 }

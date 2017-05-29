@@ -551,6 +551,27 @@ public class PropsContainerTest
         assertNull(root.getNamespace(first));
     }
 
+    @Test
+    public void testIterateNamespaces() throws InvalidKeyException
+    {
+        Iterator<String> iterateFirstNamespaces = root.iterateNamespaces();
+        int firstLevel = 0;
+        while (iterateFirstNamespaces.hasNext())
+        {
+            String expectedfirstKey = FIRST_KEY + String.valueOf(firstLevel);
+            String actualFirstKey = iterateFirstNamespaces.next();
+            assertEquals(expectedfirstKey, actualFirstKey);
+
+            Iterator<String> iterateSecondNamespaces = root.getNamespace(expectedfirstKey).iterateNamespaces();
+
+            // the "second level" only consists of keys - no namespaces
+            assertFalse(iterateSecondNamespaces.hasNext());
+
+            ++firstLevel;
+        }
+        assertEquals(3, firstLevel);
+    }
+
     /*
      * protected methods
      */
