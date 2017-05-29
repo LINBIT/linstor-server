@@ -3,10 +3,11 @@ package com.linbit.drbdmanage;
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
-import com.linbit.drbdmanage.Controller.SSLConfiguration;
 import com.linbit.drbdmanage.debug.BaseDebugConsole;
 import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
@@ -15,7 +16,8 @@ import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
-import com.linbit.drbdmanage.netcom.ssl.SslTcpConstants;
+import com.linbit.drbdmanage.netcom.TcpConnectorService;
+import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -25,12 +27,25 @@ import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.Privilege;
 import com.linbit.drbdmanage.timer.CoreTimer;
 import com.linbit.fsevent.FileSystemWatch;
+
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.slf4j.event.Level;
 
 /**
  * drbdmanageNG satellite prototype
@@ -41,6 +56,22 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 {
     // System module information
     public static final String MODULE = "Satellite";
+
+    // TCP Service configuration file
+    public static final String NET_COM_CONF_FILE = "satellite_netcom.cfg";
+    // Plain TCP Service configuration keys
+    public static final String NET_COM_CONF_TYPE_KEY = "type";
+    public static final String NET_COM_CONF_BIND_ADDR_KEY = "bind-address";
+    public static final String NET_COM_CONF_PORT_KEY = "port";
+    public static final String NET_COM_CONF_TYPE_PLAIN = "plain";
+    public static final String NET_COM_CONF_TYPE_SSL = "ssl";
+    // SSL Service configuration keys
+    public static final String NET_COM_CONF_SSL_SERVER_CERT_KEY = "server-certificate";
+    public static final String NET_COM_CONF_SSL_TRUST_CERT_KEY = "trusted-certificates";
+    public static final String NET_COM_CONF_SSL_KEY_PASS_KEY = "key-passwd";
+    public static final String NET_COM_CONF_SSL_KEYSTORE_PASS_KEY = "keystore-passwd";
+    public static final String NET_COM_CONF_SSL_TRUST_PASS_KEY = "truststore-passwd";
+    public static final String NET_COM_CONF_SSL_CONTEXT_TYPE_KEY = "ssl-context-type";
 
     // System security context
     private AccessContext sysCtx;
@@ -112,7 +143,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         shutdownProt = new ObjectProtection(sysCtx);
     }
 
-    public void initialize(ErrorReporter errorLogRef, SSLConfiguration sslConfig)
+    public void initialize(ErrorReporter errorLogRef)
         throws InitializationException
     {
         try
@@ -159,7 +190,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
                 // Initialize the network communications service
                 errorLogRef.logInfo("Initializing main network communications service");
-                initMainNetComService(sslConfig);
+                initMainNetComService();
             }
             catch (AccessDeniedException accessExc)
             {
@@ -301,9 +332,117 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         return fsWatchSvc;
     }
 
-    private void initMainNetComService(SSLConfiguration sslConfig)
+    private void initMainNetComService()
     {
-        getErrorReporter().logWarning("Main network communications service initialization is not implemented yet.");
+        try
+        {
+            Properties netComProps = new Properties();
+            try (InputStream propsIn = new FileInputStream(NET_COM_CONF_FILE))
+            {
+                netComProps.loadFromXML(propsIn);
+            }
+
+            InetAddress addr = InetAddress.getByName(netComProps.getProperty(NET_COM_CONF_BIND_ADDR_KEY));
+            String portProp = netComProps.getProperty(NET_COM_CONF_PORT_KEY);
+            int port = Integer.parseInt(portProp);
+            SocketAddress bindAddress = new InetSocketAddress(addr, port);
+
+            TcpConnector netComSvc = null;
+
+            String type = netComProps.getProperty(NET_COM_CONF_TYPE_KEY, "");
+            if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_PLAIN))
+            {
+                netComSvc = new TcpConnectorService(
+                    this,
+                    msgProc,
+                    bindAddress,
+                    publicCtx,
+                    new ConnTracker(this)
+                );
+            }
+            else
+            if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_SSL))
+            {
+                String sslProtocol = netComProps.getProperty(NET_COM_CONF_SSL_CONTEXT_TYPE_KEY);
+                String keyStoreFile = netComProps.getProperty(NET_COM_CONF_SSL_SERVER_CERT_KEY);
+                String trustStoreFile = netComProps.getProperty(NET_COM_CONF_SSL_TRUST_CERT_KEY);
+                char[] keyPasswd = netComProps.getProperty(NET_COM_CONF_SSL_KEY_PASS_KEY).toCharArray();
+                char[] keyStorePasswd = netComProps.getProperty(NET_COM_CONF_SSL_KEYSTORE_PASS_KEY).toCharArray();
+                char[] trustStorePasswd = netComProps.getProperty(NET_COM_CONF_SSL_TRUST_PASS_KEY).toCharArray();
+
+                netComSvc = new SslTcpConnectorService(
+                    this,
+                    msgProc,
+                    bindAddress,
+                    publicCtx,
+                    new ConnTracker(this),
+                    sslProtocol,
+                    keyStoreFile,
+                    keyStorePasswd,
+                    keyPasswd,
+                    trustStoreFile,
+                    trustStorePasswd
+                );
+            }
+
+            if (netComSvc != null)
+            {
+                try
+                {
+                    netComSvc.setServiceInstanceName(new ServiceName("InitialConnector"));
+                    netComConnectors.put(netComSvc.getInstanceName(), netComSvc);
+                    systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
+                    netComSvc.start();
+                }
+                catch (SystemServiceStartException | InvalidNameException exc)
+                {
+                    // TODO: reportProblem(...DrbdManageException...)
+                    getErrorReporter().reportError(exc);
+                }
+            }
+            else
+            {
+                getErrorReporter().reportProblem(
+                    Level.ERROR,
+                    new DrbdManageException(
+                        // Message
+                        String.format(
+                            "The property '%s' in configuration file '%s' is misconfigured",
+                            NET_COM_CONF_TYPE_KEY, NET_COM_CONF_FILE
+                        ),
+                        // Description
+                        "The initial network communication service can not be started.",
+                        // Cause
+                        String.format(
+                            "The service type is misconfigured.\n" +
+                            "The property '%s' must be either '%s' or '%s",
+                            NET_COM_CONF_TYPE_KEY,
+                            NET_COM_CONF_TYPE_PLAIN,
+                            NET_COM_CONF_TYPE_SSL
+                        ),
+                        // Error details
+                        String.format(
+                            "The network communication service configuration file is:\n%s",
+                            NET_COM_CONF_FILE
+                        ),
+                        // No nested exception
+                        null
+                    ),
+                    // No access context
+                    null,
+                    // Not initiated by a connected client
+                    null,
+                    // No context information
+                    null
+                );
+            }
+        }
+        catch (IOException | KeyManagementException | UnrecoverableKeyException |
+            NoSuchAlgorithmException | KeyStoreException | CertificateException exc)
+        {
+            // TODO: reportProblem(...DrbdManageException...)
+            getErrorReporter().reportError(exc);
+        }
     }
 
     public static void main(String[] args)
@@ -324,23 +463,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             Initializer sysInit = new Initializer();
             Satellite instance = sysInit.initSatellite(args);
 
-            // TODO: read and build the ssl settings from a configuration file
-            SSLConfiguration sslConfig = new SSLConfiguration();
-            {
-                char[] passwd = new char[]
-                {
-                    'c','h','a','n','g','e','m','e'
-                };
-                sslConfig.sslProtocol = SslTcpConstants.SSL_CONTEXT_DEFAULT_TYPE;
-                sslConfig.keyStoreFile = "keys/ServerKeyStore.jks";
-                sslConfig.keyStorePasswd = passwd;
-                sslConfig.keyPasswd = passwd;
-                sslConfig.trustStoreFile = "keys/TrustStore.jks";
-                sslConfig.trustStorePasswd = passwd;
-            }
-
-
-            instance.initialize(errorLog, sslConfig);
+            instance.initialize(errorLog);
             instance.run();
         }
         catch (InitializationException initExc)

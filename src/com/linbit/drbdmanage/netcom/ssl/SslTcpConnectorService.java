@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.netcom.ssl;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.KeyManagementException;
@@ -26,7 +27,7 @@ import com.linbit.drbdmanage.security.AccessContext;
 
 public class SslTcpConnectorService extends TcpConnectorService
 {
-    private SSLContext sslCtx;
+    private final SSLContext sslCtx;
 
     public SslTcpConnectorService(
         final CoreServices coreSvcsRef,
@@ -67,6 +68,46 @@ public class SslTcpConnectorService extends TcpConnectorService
         );
     }
 
+    public SslTcpConnectorService(
+        final CoreServices coreSvcsRef,
+        final MessageProcessor msgProcessorRef,
+        final SocketAddress bindAddress,
+        final AccessContext peerAccCtxRef,
+        final ConnectionObserver connObserverRef,
+        final String sslProtocol,
+        final String keyStoreFile,
+        final char[] keyStorePasswd,
+        final char[] keyPasswd,
+        final String trustStoreFile,
+        final char[] trustStorePasswd
+    )
+        throws IOException, NoSuchAlgorithmException, KeyManagementException,
+        UnrecoverableKeyException, KeyStoreException, CertificateException
+    {
+        super(coreSvcsRef, msgProcessorRef, bindAddress, peerAccCtxRef, connObserverRef);
+        try
+        {
+            serviceInstanceName = new ServiceName("SSL"+serviceInstanceName.value);
+        }
+        catch (InvalidNameException nameExc)
+        {
+            throw new ImplementationError(
+                String.format(
+                    "%s class contains an invalid name constant",
+                    TcpConnectorService.class.getName()
+                ),
+                nameExc
+            );
+        }
+
+        sslCtx = SSLContext.getInstance(sslProtocol);
+        sslCtx.init(
+            SslTcpCommons.createKeyManagers(keyStoreFile, keyStorePasswd, keyPasswd),
+            SslTcpCommons.createTrustManagers(trustStoreFile, trustStorePasswd),
+            new SecureRandom()
+        );
+    }
+
     @Override
     protected void establishConnection(final SelectionKey key) throws IOException
     {
@@ -74,9 +115,9 @@ public class SslTcpConnectorService extends TcpConnectorService
         // this method should only be called for outgoing connections
         // thus, we have to be currently in client mode
         key.interestOps(SelectionKey.OP_WRITE);
-//        SocketChannel channel = (SocketChannel) key.channel();
-//        SslTcpConnectorPeer peer = (SslTcpConnectorPeer) key.attachment();
-//        peer.encryptConnection(channel);
+        // SocketChannel channel = (SocketChannel) key.channel();
+        // SslTcpConnectorPeer peer = (SslTcpConnectorPeer) key.attachment();
+        // peer.encryptConnection(channel);
     }
 
     @Override
