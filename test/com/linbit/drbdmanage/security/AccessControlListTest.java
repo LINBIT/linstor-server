@@ -141,7 +141,7 @@ public class AccessControlListTest
         public AccessType requestedAt;
     }
 
-    private class AclIterator extends AbsIterator<AclIteration>
+    private class AclIterator extends AbsSecurityIterator<AclIteration>
     {
         public static final int IDX_ACC_MAC_OVRD = 0;
         public static final int IDX_ACC_PRIV = 1;

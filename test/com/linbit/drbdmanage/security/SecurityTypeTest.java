@@ -229,7 +229,7 @@ public class SecurityTypeTest
         public AccessType grantedAccess;
     }
 
-    private class SecTypeIterator extends AbsIterator<SecTypeIteration>
+    private class SecTypeIterator extends AbsSecurityIterator<SecTypeIteration>
     {
         public static final int IDX_PRIVS = 0;
         public static final int IDX_PRIV_MAC_OVRD = 1;

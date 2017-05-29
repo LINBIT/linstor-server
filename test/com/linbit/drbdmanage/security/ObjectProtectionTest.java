@@ -42,7 +42,7 @@ public class ObjectProtectionTest
             new Role(new RoleName("SYSTEM")),
             new SecurityType(new SecTypeName("SYSTEM")),
             new PrivilegeSet(Privilege.PRIV_SYS_ALL)
-            );
+        );
         rootCtx = sysCtx.clone();
         rootCtx.privEffective.enablePrivileges(PRIVILEGE_LIST);
         privSysAll = new PrivilegeSet(Privilege.PRIV_SYS_ALL.id);
@@ -357,7 +357,7 @@ public class ObjectProtectionTest
         public AccessType wantedAccessContext;
     }
 
-    private class AccessIterator extends AbsIterator<AccessIteration>
+    private class AccessIterator extends AbsSecurityIterator<AccessIteration>
     {
         private final int OBJ_ACL_IDX = 0;
         private final int OBJ_SEC_IDX = 1;

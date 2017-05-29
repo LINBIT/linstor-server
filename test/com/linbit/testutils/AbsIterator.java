@@ -1,29 +1,21 @@
-package com.linbit.drbdmanage.security;
+package com.linbit.testutils;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
+import com.linbit.drbdmanage.security.SecurityLevel;
+
 public abstract class AbsIterator <T> implements Iterator<T>, Iterable<T>
 {
-    private final AccessContext rootCtx;
-
     private final Object[][] values;
     private final int[] currentIdx;
     private final int[] usedColumns;
-
-    private boolean iterateSecurityLevels;
-    private SecurityLevel currentSecLevel;
-
     public T currentIteration;
 
-
-    public AbsIterator(Object[][] values, boolean iteraterSecurityLevels, AccessContext rootCtx, int[] skipColumns)
+    public AbsIterator(Object[][] values, int[] skipColumns)
     {
         this.values = values;
-        this.rootCtx = rootCtx;
         currentIdx = new int[values.length];
-        this.iterateSecurityLevels = iteraterSecurityLevels;
-
         usedColumns = new int[values.length - skipColumns.length];
         int usedIdx = 0;
         int skipIdx = 0;
@@ -40,43 +32,12 @@ public abstract class AbsIterator <T> implements Iterator<T>, Iterable<T>
             }
         }
         resetAllIdx();
-
-
-        if (iterateSecurityLevels)
-        {
-            currentSecLevel = SecurityLevel.NO_SECURITY;
-        }
-        else
-        {
-            currentSecLevel = SecurityLevel.get();
-        }
     }
 
     @Override
     public boolean hasNext()
     {
-        boolean hasNext = hasNextCombination();
-        if (!hasNext && iterateSecurityLevels)
-        {
-            switch (SecurityLevel.get())
-            {
-                case NO_SECURITY:
-                    currentSecLevel = SecurityLevel.RBAC;
-                    resetAllIdx();
-                    hasNext = true;
-                    break;
-                case RBAC:
-                    currentSecLevel = SecurityLevel.MAC;
-                    resetAllIdx();
-                    hasNext = true;
-                    break;
-                case MAC:
-                    break;
-                default:
-                    break;
-            }
-        }
-        return hasNext;
+        return hasNextCombination();
     }
 
     public boolean hasNextCombination()
@@ -84,7 +45,6 @@ public abstract class AbsIterator <T> implements Iterator<T>, Iterable<T>
         boolean hasNext = false;
         for (int i : usedColumns)
         {
-
             if (currentIdx[i] < values[i].length - 1)
             {
                 hasNext = true;
@@ -98,18 +58,6 @@ public abstract class AbsIterator <T> implements Iterator<T>, Iterable<T>
     public T next()
     {
         incrementIdx();
-        if (iterateSecurityLevels && !SecurityLevel.get().equals(currentSecLevel))
-        {
-            try
-            {
-                SecurityLevel.set(rootCtx, currentSecLevel);
-            }
-            catch (AccessDeniedException e)
-            {
-                throw new RuntimeException("rootCtx cannot change securityLevel...", e);
-            }
-        }
-
         try
         {
             currentIteration = getNext();
@@ -142,7 +90,7 @@ public abstract class AbsIterator <T> implements Iterator<T>, Iterable<T>
         }
     }
 
-    private void resetAllIdx()
+    protected void resetAllIdx()
     {
         for (int i = 0; i < currentIdx.length; ++i)
         {
