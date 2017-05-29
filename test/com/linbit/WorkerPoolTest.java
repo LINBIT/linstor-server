@@ -215,7 +215,6 @@ public class WorkerPoolTest
     private static class TestErrorReporter implements ErrorReporter
     {
         private BlockingQueue<Throwable> unexpected = new LinkedBlockingQueue<>();
-        // private BlockingQueue<Throwable> expected = new LinkedBlockingQueue<>();
 
         @Override
         public void reportError(Throwable throwable)
@@ -239,6 +238,36 @@ public class WorkerPoolTest
         )
         {
             unexpected.add(errorInfo);
+        }
+
+        @Override
+        public void logTrace(String message)
+        {
+            System.err.printf("[TRACE] %s\n", message);
+        }
+
+        @Override
+        public void logDebug(String message)
+        {
+            System.err.printf("[DEBUG] %s\n", message);
+        }
+
+        @Override
+        public void logInfo(String message)
+        {
+            System.err.printf("[INFO ] %s\n", message);
+        }
+
+        @Override
+        public void logWarning(String message)
+        {
+            System.err.printf("[WARN ] %s\n", message);
+        }
+
+        @Override
+        public void logError(String message)
+        {
+            System.err.printf("[ERROR] %s\n", message);
         }
     }
 
