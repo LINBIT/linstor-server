@@ -5,9 +5,6 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -38,7 +35,6 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
 
     private boolean needsHandshake = true;
     private HandshakeState state = HandshakeState.START;
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
     private boolean clientMode;
 
     public SslTcpConnectorPeer(
@@ -236,7 +232,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                                         myNetData.flip();
                                         state = HandshakeState.SENDING;
                                     }
-                                    int write = socketChannel.write(myNetData);
+                                    socketChannel.write(myNetData);
                                     if (!myNetData.hasRemaining())
                                     {
                                         state = HandshakeState.SENT;
@@ -278,7 +274,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                         Runnable task;
                         while ((task = engine.getDelegatedTask()) != null)
                         {
-                            executor.execute(task); //TODO run this in a workerpool or something more central
+                            new Thread(task).start();
                         }
                         handshakeStatus = engine.getHandshakeStatus();
                         break;
