@@ -5,6 +5,8 @@ import com.linbit.drbdmanage.DrbdManage;
 import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
+
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -43,6 +45,13 @@ public final class StdErrorReporter implements ErrorReporter
 
         errorNr = new AtomicLong();
         cal = Calendar.getInstance();
+
+        // check if the log directory exists
+        File logDir = new File(LOG_DIRECTORY);
+        if (!logDir.exists())
+        {
+            logDir.mkdirs();
+        }
     }
 
     @Override
