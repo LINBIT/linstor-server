@@ -60,7 +60,27 @@ public interface Node
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
+    public Iterator<NodeType> iterateNodeTypes(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    public boolean hasNodeType(AccessContext accCtx, NodeType reqType)
+        throws AccessDeniedException;
+
     public StateFlags<NodeFlags> getFlags();
+
+    public enum NodeType
+    {
+        CONTROLLER,
+        SATELLITE,
+        AUXILIARY;
+
+        public static final NodeType[] ALL_NODE_TYPES =
+        {
+            CONTROLLER,
+            SATELLITE,
+            AUXILIARY
+        };
+    }
 
     public enum NodeFlags implements Flags
     {

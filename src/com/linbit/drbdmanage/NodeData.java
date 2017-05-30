@@ -14,8 +14,12 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 import com.linbit.drbdmanage.Node.NodeFlags;
+import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
+import java.util.Collections;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  *
@@ -28,6 +32,9 @@ public class NodeData implements Node
 
     // Node name
     private NodeName clNodeName;
+
+    // Node type
+    private Set<NodeType> nodeTypeList;
 
     // List of resources assigned to this cluster node
     private Map<ResourceName, Resource> resourceMap;
@@ -47,11 +54,19 @@ public class NodeData implements Node
     // Properties container for this node
     private Props nodeProps;
 
-    NodeData(AccessContext accCtx, NodeName nameRef, SerialGenerator srlGen)
+    NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, SerialGenerator srlGen)
     {
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
+        ErrorCheck.ctorNotNull(NodeData.class, NodeType.class, types);
         objId = UUID.randomUUID();
         clNodeName = nameRef;
+        nodeTypeList = new TreeSet<>();
+        nodeTypeList.addAll(types);
+        // Default to creating an AUXILIARY type node
+        if (nodeTypeList.isEmpty())
+        {
+            nodeTypeList.add(NodeType.AUXILIARY);
+        }
         resourceMap = new TreeMap<>();
         netInterfaceMap = new TreeMap<>();
         storPoolMap = new TreeMap<>();
@@ -185,6 +200,24 @@ public class NodeData implements Node
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return storPoolMap.values().iterator();
+    }
+
+    @Override
+    public Iterator<NodeType> iterateNodeTypes(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return Collections.unmodifiableSet(nodeTypeList).iterator();
+    }
+
+    @Override
+    public boolean hasNodeType(AccessContext accCtx, NodeType reqType)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return (nodeTypeList.contains(reqType));
     }
 
     @Override
