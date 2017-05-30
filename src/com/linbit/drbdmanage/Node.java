@@ -84,7 +84,8 @@ public interface Node
 
     public enum NodeFlags implements Flags
     {
-        REMOVE(1L);
+        REMOVE(1L),
+        QIGNORE(0x10000L);
 
         public static final NodeFlags[] ALL_FLAGS =
         {
