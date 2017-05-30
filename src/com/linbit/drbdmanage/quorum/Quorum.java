@@ -1,10 +1,13 @@
-package com.linbit.drbdmanage;
+package com.linbit.drbdmanage.quorum;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import com.linbit.Checks;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbdmanage.Controller;
+import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.Node.NodeFlags;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
