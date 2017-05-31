@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.propscon;
 
 import static org.junit.Assert.*;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -117,7 +118,7 @@ public class CommonPropsTestUtils
         final String secondPrefix,
         final int secondAmount
     )
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws InvalidKeyException, InvalidValueException, AccessDeniedException, SQLException
     {
         root.setProp("/", "");
         for (int firstIdx = 0; firstIdx < firstAmount; firstIdx++)

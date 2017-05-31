@@ -1,6 +1,8 @@
 package com.linbit.drbdmanage.propscon;
 
 import com.linbit.ImplementationError;
+
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
 
@@ -13,12 +15,35 @@ public class SerialPropsContainer extends PropsContainer
 {
     private SerialGenerator serialGen;
 
-    public static SerialPropsContainer createRootContainer()
+    public static SerialPropsContainer createRootContainer() throws SQLException
+    {
+        return createRootContainer((SerialGenerator) null, null);
+    }
+
+    public static SerialPropsContainer createRootContainer(PropsConDatabaseDriver dbDriver) throws SQLException
+    {
+        return createRootContainer(null, dbDriver);
+    }
+
+    public static SerialPropsContainer createRootContainer(SerialGenerator sGen) throws SQLException
+    {
+        return createRootContainer(sGen, null);
+    }
+
+    public static SerialPropsContainer createRootContainer(SerialGenerator sGen, PropsConDatabaseDriver dbDriver)
+        throws SQLException
     {
         SerialPropsContainer con = null;
         try
         {
-            con = new SerialPropsContainer();
+            if (sGen == null)
+            {
+                con = new SerialPropsContainer();
+            }
+            else
+            {
+                con = new SerialPropsContainer(sGen);
+            }
         }
         catch (InvalidKeyException keyExc)
         {
@@ -29,42 +54,48 @@ public class SerialPropsContainer extends PropsContainer
                 keyExc
             );
         }
+        con.dbDriver = dbDriver;
         return con;
     }
 
-    public static SerialPropsContainer createRootContainer(SerialGenerator sGen)
+    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver) throws SQLException, InvalidKeyException, InvalidValueException
     {
-        SerialPropsContainer con = null;
-        try
-        {
-            con = new SerialPropsContainer(sGen);
-        }
-        catch (InvalidKeyException keyExc)
-        {
-            // If root container creation generates an InvalidKeyException,
-            // that is always a bug in the implementation
-            throw new ImplementationError(
-                "Root container creation generated an exception",
-                keyExc
-            );
-        }
-        return con;
+        return loadContainer(dbDriver, null);
+    }
+
+    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver, SerialGenerator sGen) throws SQLException, InvalidKeyException, InvalidValueException
+    {
+        SerialPropsContainer container = createRootContainer(sGen);
+        container.dbDriver = dbDriver;
+        Map<String, String> loadedProps = dbDriver.load();
+
+        // first, restore the properties
+        // although setAllProps will increase the serial number, we will override
+        // the serial number afterwards anyways
+        container.setAllProps(loadedProps, null);
+
+        // finally, restore the serial number loaded from the database
+        container.setSerial(Long.parseLong(loadedProps.get(SerialGenerator.KEY_SERIAL)));
+
+        container.closeGeneration();
+
+        return container;
     }
 
     SerialPropsContainer()
-        throws InvalidKeyException
+        throws InvalidKeyException, SQLException
     {
         this(null, null, null);
     }
 
     SerialPropsContainer(SerialGenerator sGen)
-        throws InvalidKeyException
+        throws InvalidKeyException, SQLException
     {
         this(null, null, sGen);
     }
 
     SerialPropsContainer(String key, PropsContainer parent, SerialGenerator sGen)
-        throws InvalidKeyException
+        throws InvalidKeyException, SQLException
     {
         super(key, parent);
         if (sGen == null)
@@ -85,7 +116,7 @@ public class SerialPropsContainer extends PropsContainer
 
     @Override
     public String setProp(String key, String value, String namespace)
-        throws InvalidKeyException, InvalidValueException
+        throws InvalidKeyException, InvalidValueException, SQLException
     {
         String oldValue = super.setProp(key, value, namespace);
         setSerial(serialGen.newSerial());
@@ -94,7 +125,7 @@ public class SerialPropsContainer extends PropsContainer
 
     @Override
     public boolean setAllProps(Map<? extends String, ? extends String> entryMap, String namespace)
-        throws InvalidKeyException, InvalidValueException
+        throws InvalidKeyException, InvalidValueException, SQLException
     {
         boolean changed = false;
         if (!entryMap.isEmpty())
@@ -107,7 +138,7 @@ public class SerialPropsContainer extends PropsContainer
 
     @Override
     public String removeProp(String key, String namespace)
-        throws InvalidKeyException
+        throws InvalidKeyException, SQLException
     {
         String value = super.removeProp(key, namespace);
         if (value != null)
@@ -118,7 +149,7 @@ public class SerialPropsContainer extends PropsContainer
     }
 
     @Override
-    boolean removeAllProps(Set<String> selection, String namespace)
+    boolean removeAllProps(Set<String> selection, String namespace) throws SQLException
     {
         boolean changed = false;
         changed = super.removeAllProps(selection, namespace);
@@ -130,7 +161,7 @@ public class SerialPropsContainer extends PropsContainer
     }
 
     @Override
-    boolean retainAllProps(Set<String> selection, String namespace)
+    boolean retainAllProps(Set<String> selection, String namespace) throws SQLException
     {
         boolean changed = false;
         changed = super.retainAllProps(selection, namespace);
@@ -142,7 +173,7 @@ public class SerialPropsContainer extends PropsContainer
     }
 
     @Override
-    public void clear()
+    public void clear() throws SQLException
     {
         // Cache the serial number, because the superclass' clear() method
         // empties the container completely
@@ -155,7 +186,7 @@ public class SerialPropsContainer extends PropsContainer
     }
 
     @Override
-    SerialPropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException
+    SerialPropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException, SQLException
     {
         return new SerialPropsContainer(key, con, serialGen);
     }
@@ -165,7 +196,7 @@ public class SerialPropsContainer extends PropsContainer
         serialGen.closeGeneration();
     }
 
-    private long getSerial()
+    private long getSerial() throws SQLException
     {
         long serial = 0;
         try
@@ -203,7 +234,7 @@ public class SerialPropsContainer extends PropsContainer
         return serial;
     }
 
-    private void setSerial(long serial)
+    private void setSerial(long serial) throws SQLException
     {
         String serialStr = null;
         try
@@ -239,13 +270,13 @@ public class SerialPropsContainer extends PropsContainer
         }
 
         @Override
-        public final long getSerial()
+        public final long getSerial() throws SQLException
         {
             return propsCon.getSerial();
         }
 
         @Override
-        public final void setSerial(long serial)
+        public final void setSerial(long serial) throws SQLException
         {
             propsCon.setSerial(serial);
         }

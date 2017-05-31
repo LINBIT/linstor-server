@@ -3,10 +3,12 @@ package com.linbit.drbdmanage.propscon;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -21,6 +23,7 @@ import java.util.TreeSet;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbdmanage.DrbdSqlRuntimeException;
 
 /**
  * Hierarchical properties container
@@ -52,7 +55,14 @@ public class PropsContainer implements Props
     private Set<Map.Entry<String, String>> entrySetAccessor;
     private Collection<String> valuesCollectionAccessor;
 
-    public static PropsContainer createRootContainer()
+    protected PropsConDatabaseDriver dbDriver;
+
+    public static PropsContainer createRootContainer() throws SQLException
+    {
+        return createRootContainer(null);
+    }
+
+    public static PropsContainer createRootContainer(PropsConDatabaseDriver dbDriver) throws SQLException
     {
         PropsContainer con = null;
         try
@@ -67,6 +77,19 @@ public class PropsContainer implements Props
                 "Root container creation generated an exception",
                 keyExc
             );
+        }
+        con.dbDriver = dbDriver;
+        return con;
+    }
+
+
+    public static Props loadContainer(PropsConDatabaseDriver propsConDbDriver) throws SQLException, InvalidKeyException, InvalidValueException
+    {
+        PropsContainer con = createRootContainer(propsConDbDriver);
+        if (con.dbDriver != null)
+        {
+            Map<String, String> loadedProps = con.dbDriver.load();
+            con.setAllProps(loadedProps, null);
         }
         return con;
     }
@@ -199,10 +222,11 @@ public class PropsContainer implements Props
      * @return
      * @throws InvalidKeyException
      * @throws InvalidValueException
+     * @throws SQLException
      */
     @Override
     public String setProp(String key, String value, String namespace)
-        throws InvalidKeyException, InvalidValueException
+        throws InvalidKeyException, InvalidValueException, SQLException
     {
         if (value == null)
         {
@@ -210,10 +234,12 @@ public class PropsContainer implements Props
         }
 
         String[] pathElements = splitPath(namespace, key);
-        checkKey(pathElements[PATH_KEY]);
+        String actualKey = pathElements[PATH_KEY];
+        checkKey(actualKey);
 
         PropsContainer con = ensureNamespaceExists(pathElements[PATH_NAMESPACE]);
-        String oldValue = con.propMap.put(pathElements[PATH_KEY], value);
+        dbPersist(con.getPath() + actualKey, value);
+        String oldValue = con.propMap.put(actualKey, value);
         if (oldValue == null)
         {
             con.modifySize(1);
@@ -228,19 +254,22 @@ public class PropsContainer implements Props
      * @param namespace
      * @return
      * @throws InvalidKeyException
+     * @throws SQLException
      */
     @Override
     public String removeProp(String key, String namespace)
-        throws InvalidKeyException
+        throws InvalidKeyException, SQLException
     {
         String value = null;
         String[] pathElements = splitPath(namespace, key);
-        checkKey(pathElements[PATH_KEY]);
+        String actualKey = pathElements[PATH_KEY];
+        checkKey(actualKey);
 
         PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]);
         if (con != null)
         {
-            value = con.propMap.remove(pathElements[PATH_KEY]);
+            dbRemove(con.getPath() + actualKey);
+            value = con.propMap.remove(actualKey);
             if (value != null)
             {
                 con.modifySize(-1);
@@ -255,16 +284,17 @@ public class PropsContainer implements Props
      *
      * @param entryMap
      * @param namespace
-     * @throws InvalidKeyException
-     * @throws InvalidValueException
+     * @throws Exception
      */
     public boolean setAllProps(Map<? extends String, ? extends String> entryMap, String namespace)
-        throws InvalidKeyException, InvalidValueException
+        throws InvalidKeyException, InvalidValueException, SQLException
     {
         boolean modified = false;
         Map<String, String> rollback = new TreeMap<>();
         try
         {
+            Map<String, String> persistMap = new HashMap<>();
+
             for (Map.Entry<? extends String, ? extends String> entry : entryMap.entrySet())
             {
                 String key = entry.getKey();
@@ -281,6 +311,7 @@ public class PropsContainer implements Props
 
                 PropsContainer con = ensureNamespaceExists(pathElements[PATH_NAMESPACE]);
                 String oldValue = con.propMap.put(actualKey, value);
+                persistMap.put(con.getPath() + actualKey, value);
                 rollback.put(actualKey, oldValue);
                 if (oldValue == null)
                 {
@@ -288,8 +319,10 @@ public class PropsContainer implements Props
                     modified = true;
                 }
             }
+
+            dbPersist(persistMap);
         }
-        catch (InvalidKeyException | InvalidValueException invalidKeyOrValueExc)
+        catch (InvalidKeyException | InvalidValueException | SQLException exc)
         {
             for (Map.Entry<String, String> entry : rollback.entrySet())
             {
@@ -313,7 +346,7 @@ public class PropsContainer implements Props
                 }
             }
 
-            throw invalidKeyOrValueExc;
+            throw exc;
         }
         return modified;
     }
@@ -323,8 +356,9 @@ public class PropsContainer implements Props
      *
      * @param selection
      * @param namespace
+     * @throws SQLException
      */
-    boolean removeAllProps(Set<String> selection, String namespace)
+    boolean removeAllProps(Set<String> selection, String namespace) throws SQLException
     {
         boolean changed = false;
         for (String key : selection)
@@ -332,12 +366,18 @@ public class PropsContainer implements Props
             try
             {
                 String[] pathElements = splitPath(namespace, key);
-                checkKey(pathElements[PATH_KEY]);
+                String actualKey = pathElements[PATH_KEY];
+                checkKey(actualKey);
 
                 PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]);
                 if (con != null)
                 {
-                    String value = con.propMap.remove(pathElements[PATH_KEY]);
+                    String value = con.propMap.remove(actualKey);
+
+                    // if this method gets a rollback feature, use the
+                    // dbDriver.remove(Set<String>) method after the loop instead
+                    dbRemove(con.getPath() + actualKey);
+
                     if (value != null)
                     {
                         con.modifySize(-1);
@@ -358,8 +398,9 @@ public class PropsContainer implements Props
      *
      * @param selection
      * @param namespace
+     * @throws SQLException
      */
-    boolean retainAllProps(Set<String> selection, String namespace)
+    boolean retainAllProps(Set<String> selection, String namespace) throws SQLException
     {
         boolean changed = false;
         Set<String> removeSet = new TreeSet<>();
@@ -378,12 +419,14 @@ public class PropsContainer implements Props
 
     /**
      * TODO: javadoc
+     * @throws SQLException
      */
     @Override
-    public void clear()
+    public void clear() throws SQLException
     {
         containerMap.clear();
         propMap.clear();
+        dbRemoveAll();
         if (parentContainer != null)
         {
             parentContainer.modifySize(itemCount * -1);
@@ -413,10 +456,11 @@ public class PropsContainer implements Props
      * @return
      * @throws InvalidKeyException
      * @throws InvalidValueException
+     * @throws SQLException
      */
     @Override
     public String setProp(String key, String value)
-        throws InvalidKeyException, InvalidValueException
+        throws InvalidKeyException, InvalidValueException, SQLException
     {
         return setProp(key, value, null);
     }
@@ -427,10 +471,11 @@ public class PropsContainer implements Props
      * @param key
      * @return
      * @throws InvalidKeyException
+     * @throws SQLException
      */
     @Override
     public String removeProp(String key)
-        throws InvalidKeyException
+        throws InvalidKeyException, SQLException
     {
         return removeProp(key, null);
     }
@@ -443,7 +488,8 @@ public class PropsContainer implements Props
      */
     Iterator<Map.Entry<String, String>> iterateProps()
     {
-        return propMap.entrySet().iterator();
+        // unmodifiable so that we do not have to bother with .remove() and db-persistence
+        return Collections.unmodifiableMap(propMap).entrySet().iterator();
     }
 
     /**
@@ -454,7 +500,8 @@ public class PropsContainer implements Props
      */
     Iterator<PropsContainer> iterateContainers()
     {
-        return containerMap.values().iterator();
+        // unmodifiable so that we do not have to bother with .remove() and db-persistence
+        return Collections.unmodifiableMap(containerMap).values().iterator();
     }
 
     /**
@@ -597,6 +644,7 @@ public class PropsContainer implements Props
      *
      * @return An Iterator containing the keys of the namepsaces
      */
+    @Override
     public Iterator<String> iterateNamespaces()
     {
         return Collections.unmodifiableMap(containerMap).keySet().iterator();
@@ -634,8 +682,9 @@ public class PropsContainer implements Props
      * @param namespace Path to the namespace
      * @return PropsContainer that constitutes the specified namespace
      * @throws InvalidKeyException If the namespace path is invalid
+     * @throws SQLException
      */
-    private PropsContainer ensureNamespaceExists(String namespace) throws InvalidKeyException
+    private PropsContainer ensureNamespaceExists(String namespace) throws InvalidKeyException, SQLException
     {
         PropsContainer con = this;
         try
@@ -691,7 +740,7 @@ public class PropsContainer implements Props
         return pathComponents;
     }
 
-    PropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException
+    PropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException, SQLException
     {
         return new PropsContainer(key, con);
     }
@@ -779,6 +828,38 @@ public class PropsContainer implements Props
     public Iterator<String> valuesIterator()
     {
         return new ValuesIterator(this);
+    }
+
+    private void dbPersist(String actualKey, String value) throws SQLException
+    {
+        if (dbDriver != null)
+        {
+            dbDriver.persist(actualKey, value);
+        }
+    }
+
+    private void dbRemove(String actualKey) throws SQLException
+    {
+        if (dbDriver != null)
+        {
+            dbDriver.remove(actualKey);
+        }
+    }
+
+    private void dbPersist(Map<String, String> persistMap) throws SQLException
+    {
+        if (dbDriver != null)
+        {
+            dbDriver.persist(persistMap);
+        }
+    }
+
+    private void dbRemoveAll() throws SQLException
+    {
+        if (dbDriver != null)
+        {
+            dbDriver.removeAll();
+        }
     }
 
     static class PropsConMap implements Map<String, String>
@@ -905,6 +986,14 @@ public class PropsContainer implements Props
                     invData
                 );
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to add or update entries in the properties container " + container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
+
             return oldValue;
         }
 
@@ -943,6 +1032,15 @@ public class PropsContainer implements Props
                     keyExc
                 );
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to remove entries from the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
+
             if (unknownType)
             {
                 throw new ImplementationError(
@@ -973,12 +1071,31 @@ public class PropsContainer implements Props
                     "Value for map operation violates validity contraints",
                     valueExc);
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to add or update entries in the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
         }
 
         @Override
         public void clear()
         {
-            container.clear();
+            try
+            {
+                container.clear();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to clear the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
         }
 
         @Override
@@ -1042,7 +1159,18 @@ public class PropsContainer implements Props
         @Override
         public void clear()
         {
-            container.clear();
+            try
+            {
+                container.clear();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to clear the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
         }
 
         @Override
@@ -1137,6 +1265,15 @@ public class PropsContainer implements Props
                     valueExc
                 );
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to add or update entries in the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
+
             return changed;
         }
 
@@ -1162,6 +1299,15 @@ public class PropsContainer implements Props
                     keyExc
                 );
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to remove entries from the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
+
             return changed;
         }
 
@@ -1207,6 +1353,14 @@ public class PropsContainer implements Props
                         valExc
                     );
                 }
+                catch (SQLException sqlExc)
+                {
+                    throw new DrbdSqlRuntimeException(
+                        "Failed to add or update entries in the properties container " +
+                            container.dbDriver.getInstanceName(),
+                        sqlExc
+                    );
+                }
             }
             return changed;
         }
@@ -1225,7 +1379,18 @@ public class PropsContainer implements Props
                 }
             }
             // Remove all entries with a non-matching key
-            changed = container.removeAllProps(removeSet, null);
+            try
+            {
+                changed = container.removeAllProps(removeSet, null);
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to remove entries from the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
             return changed;
         }
 
@@ -1243,7 +1408,18 @@ public class PropsContainer implements Props
                 }
             }
             // Remove all entries with a matching key
-            changed = container.removeAllProps(selection, null);
+            try
+            {
+                changed = container.removeAllProps(selection, null);
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to remove entries from the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
             return changed;
         }
     }
@@ -1326,6 +1502,14 @@ public class PropsContainer implements Props
                     valueExc
                 );
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to add or update entries in the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
             return changed;
         }
 
@@ -1367,6 +1551,14 @@ public class PropsContainer implements Props
             {
                 throw new IllegalArgumentException(e);
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to add or update entries in the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+           }
             return changed;
         }
 
@@ -1385,7 +1577,18 @@ public class PropsContainer implements Props
                 }
             }
             // Remove all entries with a non-matching key
-            changed = container.removeAllProps(removeSet, null);
+            try
+            {
+                changed = container.removeAllProps(removeSet, null);
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to remove entries from the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
             return changed;
         }
 
@@ -1404,7 +1607,18 @@ public class PropsContainer implements Props
                 }
             }
             // Remove all entries with a matching key
-            changed = container.removeAllProps(selection, null);
+            try
+            {
+                changed = container.removeAllProps(selection, null);
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to remove entries from the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
             return changed;
         }
     }
@@ -1519,7 +1733,18 @@ public class PropsContainer implements Props
                 }
             }
             // Remove all entries with a matching key
-            changed = container.removeAllProps(selection, null);
+            try
+            {
+                changed = container.removeAllProps(selection, null);
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to remove entries from the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
             return changed;
         }
 
@@ -1537,14 +1762,40 @@ public class PropsContainer implements Props
                 }
             }
             // Remove all entries with a non-matching key
-            changed = container.retainAllProps(selection, null);
+            try
+            {
+                changed = container.retainAllProps(selection, null);
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to remove entries from the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
             return changed;
         }
 
         @Override
         public void clear()
         {
-            container.clear();
+            try
+            {
+                container.clear();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "SQL exception",
+                    "Failed to clear the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc.getLocalizedMessage(),
+                    null,
+                    null,
+                    sqlExc
+                );
+            }
         }
 
         @Override
@@ -1824,6 +2075,14 @@ public class PropsContainer implements Props
                     valueExc
                 );
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Failed to add or update entries in the properties container " +
+                        container.dbDriver.getInstanceName(),
+                    sqlExc
+                );
+            }
             return oldValue;
         }
 
@@ -1849,7 +2108,7 @@ public class PropsContainer implements Props
         }
     }
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws SQLException
     {
         SerialPropsContainer serialCon = SerialPropsContainer.createRootContainer();
         SerialGenerator serialGen = serialCon.getSerialGenerator();

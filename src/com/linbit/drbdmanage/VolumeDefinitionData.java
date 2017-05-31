@@ -14,8 +14,9 @@ import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
+
+import java.sql.SQLException;
 import java.util.UUID;
-import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
@@ -55,7 +56,7 @@ public class VolumeDefinitionData implements VolumeDefinition
         long volSize,
         SerialGenerator srlGen
     )
-        throws MdException, AccessDeniedException
+        throws MdException, AccessDeniedException, SQLException
     {
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, VolumeNumber.class, volNr);

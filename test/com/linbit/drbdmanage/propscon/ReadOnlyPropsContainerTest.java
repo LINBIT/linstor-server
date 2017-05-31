@@ -28,7 +28,7 @@ public class ReadOnlyPropsContainerTest
     private Collection<String> roValues;
 
     @Before
-    public void setUp() throws Exception
+    public void setUp() throws Throwable
     {
         writableProp = PropsContainer.createRootContainer();
         roProp = new ReadOnlyProps(writableProp);
@@ -42,7 +42,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testSize() throws InvalidKeyException, InvalidValueException
+    public void testSize() throws Throwable
     {
         writableProp.clear();
 
@@ -71,7 +71,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testIsEmpty() throws InvalidKeyException, InvalidValueException
+    public void testIsEmpty() throws Throwable
     {
         writableProp.clear();
         assertTrue(roProp.isEmpty());
@@ -92,7 +92,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testGetProp() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testGetProp() throws Throwable
     {
         final String key = "key";
         final String value = "value";
@@ -104,7 +104,7 @@ public class ReadOnlyPropsContainerTest
 
 
     @Test
-    public void testGetProbWithNamespace() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testGetProbWithNamespace() throws Throwable
     {
         final String first = FIRST_KEY;
         final String second = SECOND_KEY;
@@ -116,7 +116,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testGetRemovedEntry() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testGetRemovedEntry() throws Throwable
     {
         final String key = "key";
         final String value = "value";
@@ -129,32 +129,32 @@ public class ReadOnlyPropsContainerTest
 
 
     @Test(expected = AccessDeniedException.class)
-    public void testSet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testSet() throws Throwable
     {
         roProp.setProp("key", "value");
     }
 
     @Test(expected = AccessDeniedException.class)
-    public void testSetWithNamespace() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testSetWithNamespace() throws Throwable
     {
         roProp.setProp("key", "value", "namespace");
     }
 
     @Test(expected = AccessDeniedException.class)
-    public void testRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testRemove() throws Throwable
     {
         roProp.removeProp(FIRST_KEY+"0");
     }
 
     @Test(expected = AccessDeniedException.class)
-    public void testRemoveWithNamespace() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testRemoveWithNamespace() throws Throwable
     {
         roProp.removeProp(SECOND_KEY+"0", FIRST_KEY+"0");
     }
 
 
     @Test
-    public void testGetPath() throws InvalidKeyException, InvalidValueException
+    public void testGetPath() throws Throwable
     {
         assertEquals("", roProp.getPath());
 
@@ -171,7 +171,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testGetPathTrailingSlash() throws InvalidKeyException, InvalidValueException
+    public void testGetPathTrailingSlash() throws Throwable
     {
         writableProp.setProp("a/b/c/d", "value");
         final Props namespaceC = roProp.getNamespace("a/b/c");
@@ -180,7 +180,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -201,7 +201,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testIteratorUnsupportedRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testIteratorUnsupportedRemove() throws Throwable
     {
         final Iterator<Entry<String, String>> iterator = roProp.iterator();
         iterator.next();
@@ -212,7 +212,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testKeyIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeyIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -230,7 +230,7 @@ public class ReadOnlyPropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testKeyIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<String> iterator = roProp.keysIterator();
         iterator.next();
@@ -241,7 +241,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testValuesIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -259,7 +259,7 @@ public class ReadOnlyPropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testValuesIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<String> iterator = roProp.valuesIterator();
         iterator.next();
@@ -270,7 +270,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testGetNamespace() throws InvalidKeyException, InvalidValueException
+    public void testGetNamespace() throws Throwable
     {
         final String first = FIRST_KEY;
         final String second = SECOND_KEY;
@@ -290,7 +290,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = AccessDeniedException.class)
-    public void testGetNamespaceSet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testGetNamespaceSet() throws Throwable
     {
         final Props firstNamespace = roProp.getNamespace(FIRST_KEY + "0");
         firstNamespace.setProp("key", "value");
@@ -301,7 +301,7 @@ public class ReadOnlyPropsContainerTest
      */
 
     @Test
-    public void testEntrySet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySet() throws Throwable
     {
         final Set<Entry<String, String>> expectedEntries = new HashSet<>(
             generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
@@ -312,7 +312,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testEntrySetInsertToProps() throws InvalidKeyException, InvalidValueException
+    public void testEntrySetInsertToProps() throws Throwable
     {
         writableProp.clear();
 
@@ -334,7 +334,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testEntrySetRemoveFromProps() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySetRemoveFromProps() throws Throwable
     {
         final String removedKey = FIRST_KEY + "0";
 
@@ -346,7 +346,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testEntrySetSize() throws InvalidKeyException, InvalidValueException
+    public void testEntrySetSize() throws Throwable
     {
         assertEquals(roProp.size(), roEntrySet.size());
 
@@ -365,7 +365,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testEntrySetIsEmpty() throws InvalidKeyException, InvalidValueException
+    public void testEntrySetIsEmpty() throws Throwable
     {
         // we have filled roProp and keySet in the setup of JUnit
         assertFalse(roEntrySet.isEmpty());
@@ -389,7 +389,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testEntrySetIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySetIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -412,7 +412,7 @@ public class ReadOnlyPropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<Entry<String, String>> iterator = roEntrySet.iterator();
 
@@ -446,7 +446,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testEntrySetAdd() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySetAdd() throws Throwable
     {
         // create a new entry with defined key and empty string as value
         final String insertedKey = "test";
@@ -456,7 +456,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testEntrySetRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySetRemove() throws Throwable
     {
         Entry<String, String> entryToRemove = createEntry(FIRST_KEY+"0", "0");
         roEntrySet.remove(entryToRemove);
@@ -533,7 +533,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testEntrySetHashCode() throws InvalidKeyException, InvalidValueException
+    public void testEntrySetHashCode() throws Throwable
     {
         final int origHashCode = roEntrySet.hashCode();
 
@@ -554,7 +554,7 @@ public class ReadOnlyPropsContainerTest
      */
 
     @Test
-    public void testKeySet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySet() throws Throwable
     {
         final Set<String> expectedKeys = new HashSet<>(
             generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
@@ -565,7 +565,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testKeySetInsertToProps() throws InvalidKeyException, InvalidValueException
+    public void testKeySetInsertToProps() throws Throwable
     {
         writableProp.clear();
 
@@ -586,7 +586,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testKeySetRemoveFromProps() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySetRemoveFromProps() throws Throwable
     {
 
         final String removedKey = FIRST_KEY + "0";
@@ -599,7 +599,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testKeySetSize() throws InvalidKeyException, InvalidValueException
+    public void testKeySetSize() throws Throwable
     {
         assertEquals(roProp.size(), roKeySet.size());
 
@@ -618,7 +618,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testKeySetIsEmpty() throws InvalidKeyException, InvalidValueException
+    public void testKeySetIsEmpty() throws Throwable
     {
         // we have filled roProp and keySet in the setup of JUnit
         assertFalse(roKeySet.isEmpty());
@@ -642,7 +642,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testKeySetIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySetIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -660,7 +660,7 @@ public class ReadOnlyPropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testKeySetIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<String> iterator = roKeySet.iterator();
 
@@ -689,13 +689,13 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testKeySetAdd() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySetAdd() throws Throwable
     {
         roKeySet.add("test");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testKeySetRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySetRemove() throws Throwable
     {
         roKeySet.remove(FIRST_KEY+"0");
     }
@@ -766,7 +766,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testKeySetHashCode() throws InvalidKeyException, InvalidValueException
+    public void testKeySetHashCode() throws Throwable
     {
         final int origHashCode = roKeySet.hashCode();
 
@@ -787,7 +787,7 @@ public class ReadOnlyPropsContainerTest
      */
 
     @Test
-    public void testMap() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMap() throws Throwable
     {
         final Set<Entry<String, String>> entrySet = roMap.entrySet();
 
@@ -795,7 +795,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapInsertIntoProps() throws InvalidKeyException, InvalidValueException
+    public void testMapInsertIntoProps() throws Throwable
     {
         final String key = "key";
         final String value = "value";
@@ -806,7 +806,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapRemoveFromProps() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapRemoveFromProps() throws Throwable
     {
         final String key = FIRST_KEY+"0";
         assertEquals("0", roMap.get(key));
@@ -818,7 +818,7 @@ public class ReadOnlyPropsContainerTest
 
 
     @Test
-    public void testMapSize() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapSize() throws Throwable
     {
         assertEquals(roProp.size(), roMap.size());
 
@@ -840,7 +840,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapIsEmpty() throws InvalidKeyException, InvalidValueException
+    public void testMapIsEmpty() throws Throwable
     {
         // map is filled in setup
         assertFalse(roMap.isEmpty());
@@ -857,7 +857,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapContainsKey() throws InvalidKeyException
+    public void testMapContainsKey() throws Throwable
     {
         final Collection<String> keys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         for (final String key : keys)
@@ -872,7 +872,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapContainsValue() throws InvalidKeyException
+    public void testMapContainsValue() throws Throwable
     {
         final Collection<String> values = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         for (final String value : values)
@@ -886,7 +886,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapGet() throws InvalidKeyException
+    public void testMapGet() throws Throwable
     {
         final Collection<String> keys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         for (final String key : keys)
@@ -897,19 +897,19 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testMapPut() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapPut() throws Throwable
     {
         roMap.put("new key", "new value");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testMapRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapRemove() throws Throwable
     {
         roMap.remove(FIRST_KEY+"0");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testMapPutAll() throws InvalidKeyException
+    public void testMapPutAll() throws Throwable
     {
         final String[][] entriesToInsert = new String[][]
         {
@@ -935,7 +935,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapEquals() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapEquals() throws Throwable
     {
         // we assume that map contains the correct data
         // thus we clone all entries into a new hashmap, and call map.equals
@@ -956,7 +956,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapHashCode() throws InvalidKeyException, InvalidValueException
+    public void testMapHashCode() throws Throwable
     {
         final int origHashCode = roMap.hashCode();
 
@@ -974,7 +974,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapEntryGetKey() throws InvalidKeyException, InvalidValueException
+    public void testMapEntryGetKey() throws Throwable
     {
         writableProp.clear();
         final String key = "key";
@@ -989,7 +989,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapEntryGetValue() throws InvalidKeyException, InvalidValueException
+    public void testMapEntryGetValue() throws Throwable
     {
         writableProp.clear();
         final String key = "key";
@@ -1004,7 +1004,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testMapEntrySetValue() throws InvalidKeyException, InvalidValueException
+    public void testMapEntrySetValue() throws Throwable
     {
         writableProp.clear();
         final String key = "key";
@@ -1020,7 +1020,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testMapEntryEquals() throws InvalidKeyException, InvalidValueException
+    public void testMapEntryEquals() throws Throwable
     {
         writableProp.clear();
         final String key = "key";
@@ -1050,7 +1050,7 @@ public class ReadOnlyPropsContainerTest
      */
 
     @Test
-    public void testValueSet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValueSet() throws Throwable
     {
         final Collection<String> expectedValues = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 
@@ -1060,7 +1060,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testValuesInsertToProps() throws InvalidKeyException, InvalidValueException
+    public void testValuesInsertToProps() throws Throwable
     {
         writableProp.clear();
 
@@ -1081,7 +1081,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testValuesRemoveFromProps() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesRemoveFromProps() throws Throwable
     {
         final String removedKey = FIRST_KEY + "0";
         final String removedValue = "0";
@@ -1094,7 +1094,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testValuesSize() throws InvalidKeyException, InvalidValueException
+    public void testValuesSize() throws Throwable
     {
         assertEquals(roProp.size(), roValues.size());
 
@@ -1113,7 +1113,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testValuesIsEmpty() throws InvalidKeyException, InvalidValueException
+    public void testValuesIsEmpty() throws Throwable
     {
         // we have filled roProp and keySet in the setup of JUnit
         assertFalse(roValues.isEmpty());
@@ -1137,7 +1137,7 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test
-    public void testValuesColIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesColIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -1156,7 +1156,7 @@ public class ReadOnlyPropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testValuesColIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<String> iterator = roValues.iterator();
 
@@ -1191,13 +1191,13 @@ public class ReadOnlyPropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testValuesAdd() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesAdd() throws Throwable
     {
         roValues.add("some value");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testValuesRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesRemove() throws Throwable
     {
         roValues.remove("0");
     }
@@ -1281,7 +1281,7 @@ public class ReadOnlyPropsContainerTest
 
     /*
     @Test
-    public void testValuesHashCode() throws InvalidKeyException, InvalidValueException
+    public void testValuesHashCode() throws Throwable
     {
         final int origHashCode = roValues.hashCode();
 

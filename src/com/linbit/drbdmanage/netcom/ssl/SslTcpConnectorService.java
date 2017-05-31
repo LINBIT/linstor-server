@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.netcom.ssl;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -45,27 +46,8 @@ public class SslTcpConnectorService extends TcpConnectorService
         UnrecoverableKeyException, KeyStoreException, CertificateException
     {
         super(coreSvcsRef, msgProcessorRef, peerAccCtxRef, connObserverRef);
-        try
-        {
-            serviceInstanceName = new ServiceName("SSL"+serviceInstanceName.value);
-        }
-        catch (InvalidNameException nameExc)
-        {
-            throw new ImplementationError(
-                String.format(
-                    "%s class contains an invalid name constant",
-                    TcpConnectorService.class.getName()
-                ),
-                nameExc
-            );
-        }
-
         sslCtx = SSLContext.getInstance(sslProtocol);
-        sslCtx.init(
-            SslTcpCommons.createKeyManagers(keyStoreFile, keyStorePasswd, keyPasswd),
-            SslTcpCommons.createTrustManagers(trustStoreFile, trustStorePasswd),
-            new SecureRandom()
-        );
+        initialize(sslProtocol, keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
     }
 
     public SslTcpConnectorService(
@@ -85,6 +67,22 @@ public class SslTcpConnectorService extends TcpConnectorService
         UnrecoverableKeyException, KeyStoreException, CertificateException
     {
         super(coreSvcsRef, msgProcessorRef, bindAddress, peerAccCtxRef, connObserverRef);
+        sslCtx = SSLContext.getInstance(sslProtocol);
+        initialize(sslProtocol, keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
+    }
+
+    private void initialize(
+        final String sslProtocol,
+        final String keyStoreFile,
+        final char[] keyStorePasswd,
+        final char[] keyPasswd,
+        final String trustStoreFile,
+        final char[] trustStorePasswd
+    )
+        throws ImplementationError, NoSuchAlgorithmException, KeyManagementException,
+        KeyStoreException, IOException, CertificateException, UnrecoverableKeyException,
+        FileNotFoundException
+    {
         try
         {
             serviceInstanceName = new ServiceName("SSL"+serviceInstanceName.value);
@@ -100,7 +98,6 @@ public class SslTcpConnectorService extends TcpConnectorService
             );
         }
 
-        sslCtx = SSLContext.getInstance(sslProtocol);
         sslCtx.init(
             SslTcpCommons.createKeyManagers(keyStoreFile, keyStorePasswd, keyPasswd),
             SslTcpCommons.createTrustManagers(trustStoreFile, trustStorePasswd),

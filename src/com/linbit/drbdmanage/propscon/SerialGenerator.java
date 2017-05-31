@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.propscon;
 
+import java.sql.SQLException;
+
 /**
  * Serial number generator
  *
@@ -19,7 +21,7 @@ public interface SerialGenerator
      *
      * @return Serial number
      */
-    public long peekSerial();
+    public long peekSerial() throws SQLException;
 
     /**
      * Returns the serial number for a new generation of information. Multiple calls
@@ -27,8 +29,9 @@ public interface SerialGenerator
      * closed by calling closeGeneration().
      *
      * @return New generation serial number
+     * @throws SQLException
      */
-    public long newSerial();
+    public long newSerial() throws SQLException;
 
     /**
      * Closes a generation of information. Calls of newSerial() that are made after

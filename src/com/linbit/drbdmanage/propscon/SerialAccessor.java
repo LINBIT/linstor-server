@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.propscon;
 
+import java.sql.SQLException;
+
 /**
  * Access interface for serial numbers
  *
@@ -7,6 +9,6 @@ package com.linbit.drbdmanage.propscon;
  */
 public interface SerialAccessor
 {
-    long getSerial();
-    void setSerial(long serial);
+    long getSerial() throws SQLException;
+    void setSerial(long serial) throws SQLException;
 }

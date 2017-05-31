@@ -9,11 +9,12 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
+
+import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 
@@ -52,6 +53,7 @@ public class ResourceDefinitionData implements ResourceDefinition
         ResourceName resName,
         SerialGenerator srlGen
     )
+        throws SQLException
     {
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceName.class, resName);
         objId = UUID.randomUUID();

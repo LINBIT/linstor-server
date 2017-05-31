@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.propscon;
 
+import java.sql.SQLException;
+
 import com.linbit.ErrorCheck;
 
 /**
@@ -27,9 +29,10 @@ public class SeqSerialGenerator implements SerialGenerator
      * of information.
      *
      * @return Serial number
+     * @throws SQLException
      */
     @Override
-    public long peekSerial()
+    public long peekSerial() throws SQLException
     {
         return accessor.getSerial();
     }
@@ -40,9 +43,10 @@ public class SeqSerialGenerator implements SerialGenerator
      * closed by calling closeGeneration().
      *
      * @return New generation serial number
+     * @throws SQLException
      */
     @Override
-    public long newSerial()
+    public long newSerial() throws SQLException
     {
         long serial = 0;
         synchronized (serialMutex)

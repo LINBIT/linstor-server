@@ -26,21 +26,21 @@ public class SerialPropsContainerTest
     private SerialGenerator serialGenerator;
 
     @Before
-    public void setUp() throws Exception
+    public void setUp() throws Throwable
     {
         root = SerialPropsContainer.createRootContainer();
         serialGenerator = root.getSerialGenerator();
     }
 
     @Test
-    public void testInitialSerialNumber() throws InvalidKeyException
+    public void testInitialSerialNumber() throws Throwable
     {
         assertSerial(0);
         assertEquals("0", root.getProp(serialKey));
     }
 
     @Test
-    public void testSet() throws InvalidKeyException, InvalidValueException
+    public void testSet() throws Throwable
     {
         final String key = "key";
         final String value = "value";
@@ -62,7 +62,7 @@ public class SerialPropsContainerTest
     }
 
     @Test
-    public void testSetSerial() throws InvalidKeyException, InvalidValueException
+    public void testSetSerial() throws Throwable
     {
         assertSerial(0);
         root.setProp(serialKey, Integer.toString(-20));
@@ -70,7 +70,7 @@ public class SerialPropsContainerTest
     }
 
     @Test
-    public void testSetAll() throws InvalidKeyException, InvalidValueException
+    public void testSetAll() throws Throwable
     {
         final Map<String, String> map = new HashMap<>();
         map.put("a", "a");
@@ -84,7 +84,7 @@ public class SerialPropsContainerTest
     }
 
     @Test
-    public void testRemove() throws InvalidKeyException, InvalidValueException
+    public void testRemove() throws Throwable
     {
         final String key = "key";
         root.setProp(key, "value");
@@ -102,7 +102,7 @@ public class SerialPropsContainerTest
     }
 
     @Test
-    public void testRemoveSerial() throws InvalidKeyException
+    public void testRemoveSerial() throws Throwable
     {
         assertEquals("0", root.getProp(serialKey));
         root.removeProp(serialKey);
@@ -110,7 +110,7 @@ public class SerialPropsContainerTest
     }
 
     @Test
-    public void testClear() throws InvalidKeyException, InvalidValueException
+    public void testClear() throws Throwable
     {
         root.setProp("key", "value");
         assertSerial(1);
@@ -128,7 +128,7 @@ public class SerialPropsContainerTest
 
 
     @Test
-    public void testRemoveAll() throws InvalidKeyException, InvalidValueException
+    public void testRemoveAll() throws Throwable
     {
         final Map<String, String> map = new HashMap<>();
         final String key1 = "a";
@@ -154,7 +154,7 @@ public class SerialPropsContainerTest
     }
 
     @Test
-    public void testRetainAll() throws InvalidKeyException, InvalidValueException
+    public void testRetainAll() throws Throwable
     {
         final Map<String, String> map = new HashMap<>();
         final String key1 = "a";
@@ -178,7 +178,7 @@ public class SerialPropsContainerTest
         assertSerial(1);
     }
 
-    private void assertSerial(int currentSerial) throws InvalidKeyException
+    private void assertSerial(int currentSerial) throws Throwable
     {
         assertEquals(currentSerial, serialGenerator.peekSerial());
         assertEquals(Integer.toString(currentSerial), root.getProp(serialKey));

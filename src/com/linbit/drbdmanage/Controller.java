@@ -26,8 +26,11 @@ import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
-import com.linbit.drbdmanage.netcom.ssl.SslTcpConstants;
+import com.linbit.drbdmanage.propscon.InvalidKeyException;
+import com.linbit.drbdmanage.propscon.InvalidValueException;
 import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.PropsConDatabaseDriver;
+import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -49,6 +52,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -56,6 +61,7 @@ import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -82,6 +88,21 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // The random data will be Base64 encoded, so the length of the
     // shared secret string will be (SECRET_LEN + 2) / 3 * 4
     private static final int DRBD_SHARED_SECRET_SIZE = 15;
+
+    private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
+
+    private static final String PROPSCON_KEY_NETCOM = "netcom";
+    private static final String PROPSCON_KEY_NETCOM_BINDADDR = "bindaddress";
+    private static final String PROPSCON_KEY_NETCOM_PORT = "port";
+    private static final String PROPSCON_KEY_NETCOM_TYPE = "type";
+    private static final String PROPSCON_KEY_NETCOM_TRUSTSTORE = "trustStore";
+    private static final String PROPSCON_KEY_NETCOM_TRUSTSTORE_PASSWD = "trustStorePasswd";
+    private static final String PROPSCON_KEY_NETCOM_KEYSTORE = "keyStore";
+    private static final String PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD = "keyStorePasswd";
+    private static final String PROPSCON_KEY_NETCOM_KEY_PASSWD = "keyPasswd";
+    private static final String PROPSCON_KEY_NETCOM_SSL_PROTOCOL = "sslProtocol";
+    private static final String PROPSCON_NETCOM_TYPE_PLAIN = "plain";
+    private static final String PROPSCON_NETCOM_TYPE_SSL = "ssl";
 
     // System security context
     private AccessContext sysCtx;
@@ -151,8 +172,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             systemServicesMap.put(timer.getInstanceName(), timer);
         }
         dbConnPool = new DbConnectionPool();
-        securityDbDriver = new DbDerbyPersistence();
-        persistenceDbDriver = new DerbyDriver();
         systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
 
         // Initialize network communications connectors map
@@ -164,16 +183,14 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         // Initialize shutdown controls
         shutdownFinished = false;
         shutdownProt = new ObjectProtection(sysCtx);
-
-        ctrlConf = SerialPropsContainer.createRootContainer();
-        ctrlConfProt = new ObjectProtection(sysCtx);
     }
 
-    public void initialize(ErrorReporter errorLogRef, SSLConfiguration sslConfig)
-        throws InitializationException
+    public void initialize(ErrorReporter errorLogRef)
+        throws InitializationException, SQLException
     {
         try
         {
+
             reconfigurationLock.writeLock().lock();
 
             shutdownFinished = false;
@@ -202,6 +219,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 }
                 try
                 {
+                    // TODO: determine which DBDriver to use
+                    securityDbDriver = new DbDerbyPersistence();
+                    persistenceDbDriver = new DerbyDriver(errorLogRef);
+
                     String connectionUrl = dbProps.getProperty(
                         DB_CONN_URL,
                         persistenceDbDriver.getDefaultConnectionUrl()
@@ -254,6 +275,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     );
                 }
 
+                ctrlConf = SerialPropsContainer.createRootContainer(
+                    persistenceDbDriver.getPropsConDatabaseDriver(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, dbConnPool));
+                ctrlConfProt = new ObjectProtection(sysCtx);
+
                 // Initialize the worker thread pool
                 errorLogRef.logInfo("Starting worker thread pool");
                 {
@@ -281,12 +306,38 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     msgProc.addApiCall(new DebugMakeSuperuser(this, this));
                 }
 
+                Props config = loadPropsCon(errorLogRef);
+                if (config == null)
+                {
+                    // we could not load the props - the loadPropsCon(..) should have
+                    // reported the error already
+                    // as we didn't start any services yet,
+                    // TODO: we should retry in a minute or so
+                }
+                else
+                {
+                    errorLogRef.logInfo("Initializing network communications services");
+                    try
+                    {
+                        initNetComServices(config.getNamespace(PROPSCON_KEY_NETCOM), errorLogRef);
+                    }
+                    catch (InvalidKeyException e)
+                    {
+                        errorLogRef.reportError(
+                            new ImplementationError(
+                                "Constant key is invalid: " + PROPSCON_KEY_NETCOM,
+                                e
+                            )
+                        );
+                    }
+                }
+                // Initialize the network communications service
+
+
+
+
                 // Initialize system services
                 startSystemServices(systemServicesMap.values());
-
-                // Initialize the network communications service
-                errorLogRef.logInfo("Initializing network communications services");
-                initNetComServices(sslConfig);
             }
             catch (AccessDeniedException accessExc)
             {
@@ -297,11 +348,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                         accessExc
                     )
                 );
-            }
-            catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException |
-                KeyStoreException | CertificateException exc)
-            {
-                errorLogRef.reportError(exc);
             }
         }
         finally
@@ -484,22 +530,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             Initializer sysInit = new Initializer();
             Controller instance = sysInit.initController(args);
 
-            // TODO: read and build the ssl settings from a configuration file
-            SSLConfiguration sslConfig = new SSLConfiguration();
-            {
-                char[] passwd = new char[]
-                {
-                    'c','h','a','n','g','e','m','e'
-                };
-                sslConfig.sslProtocol = SslTcpConstants.SSL_CONTEXT_DEFAULT_TYPE;
-                sslConfig.keyStoreFile = "keys/ServerKeyStore.jks";
-                sslConfig.keyStorePasswd = passwd;
-                sslConfig.keyPasswd = passwd;
-                sslConfig.trustStoreFile = "keys/TrustStore.jks";
-                sslConfig.trustStorePasswd = passwd;
-            }
-
-            instance.initialize(errorLog, sslConfig);
+            instance.initialize(errorLog);
             instance.run();
         }
         catch (InitializationException initExc)
@@ -523,61 +554,233 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         System.out.println();
     }
 
-    private void initNetComServices(SSLConfiguration sslConfig) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException
+    private Props loadPropsCon(ErrorReporter errorLogRef)
     {
+        Props config = null;
         try
         {
-            {
-                TcpConnector netComPlainSvc = new TcpConnectorService(
-                    this,
-                    msgProc,
-                    publicCtx,
-                    new ConnTracker(this)
+            PropsConDatabaseDriver propsConDbDriver = persistenceDbDriver.getPropsConDatabaseDriver(
+                DB_CONTROLLER_PROPSCON_INSTANCE_NAME, dbConnPool
+            );
+            config = PropsContainer.loadContainer(propsConDbDriver);
+        }
+        catch (SQLException sqlExc)
+        {
+            errorLogRef.reportError(
+                new SystemServiceStartException(
+                    "Failed to load controller's config from the database",
+                    "Failed to load PropsContainer from the database",
+                    sqlExc.getLocalizedMessage(),
+                    null,
+                    null,
+                    sqlExc
+               )
+            );
+        }
+        catch (InvalidKeyException | InvalidValueException invalidPropExc)
+        {
+            errorLogRef.reportError(
+                new SystemServiceStartException(
+                    "Failed to load controller's config from the database",
+                    "Failed to load PropsContainer from the database",
+                    invalidPropExc.getLocalizedMessage(),
+                    null,
+                    null,
+                    invalidPropExc
+               )
+            );
+        }
+        return config;
+    }
+
+    private void initNetComServices(Props netComProps, ErrorReporter errorLog)
+    {
+        if (netComProps == null)
+        {
+            errorLog.reportError(
+                new SystemServiceStartException(
+                    "No netCom services defined",
+                    "The propsContainer loaded from the database did not contain any netCom services",
+                    null,
+                    "Inset at least one netCom service to the database",
+                    null)
                 );
+        }
+        else
+        {
+            Iterator<String> namespaces = netComProps.iterateNamespaces();
+            while (namespaces.hasNext())
+            {
+                String namespaceStr = namespaces.next();
+                ServiceName serviceName;
                 try
                 {
-                    netComPlainSvc.setServiceInstanceName(new ServiceName("NetComService"));
-                    netComConnectors.put(netComPlainSvc.getInstanceName(), netComPlainSvc);
-                    systemServicesMap.put(netComPlainSvc.getInstanceName(), netComPlainSvc);
-                    netComPlainSvc.start();
+                    serviceName = new ServiceName(namespaceStr);
                 }
-                catch (SystemServiceStartException | InvalidNameException exc)
+                catch (InvalidNameException invalidNameExc)
                 {
-                    getErrorReporter().reportError(exc);
+                    errorLog.reportError(
+                        new SystemServiceStartException(
+                            "Invalid sevice name",
+                            "The given name is not a valid service name: " + namespaceStr,
+                            null,
+                            "Correct the name (entries) in the database",
+                            null,
+                            invalidNameExc
+                        )
+                    );
+                    continue; // netComSvc cannot be initialized without serviceName
                 }
+                Props configProp;
+                try
+                {
+                    configProp = netComProps.getNamespace(namespaceStr);
+                }
+                catch (InvalidKeyException invalidKeyExc)
+                {
+                    errorLog.reportError(
+                        new SystemServiceStartException(
+                            "Invalid namespace name",
+                            "The given name is not a valid name for a propsContainer namespace: " + namespaceStr,
+                            null,
+                            "Correct the name (entries) in the database",
+                            null,
+                            invalidKeyExc
+                        )
+                    );
+                    continue;
+                }
+                String bindAddressStr;
+                int port;
+                String type;
+                try
+                {
+                    bindAddressStr = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_BINDADDR);
+                    port = Integer.parseInt(loadPropChecked(configProp, PROPSCON_KEY_NETCOM_PORT));
+                    type = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TYPE);
+                }
+                catch (SystemServiceStartException sysSvcStartExc)
+                {
+                    errorLog.reportError(sysSvcStartExc);
+                    continue;
+                }
+
+                SocketAddress bindAddress = new InetSocketAddress(bindAddressStr, port);
+
+                TcpConnector netComSvc = null;
+                if (type.equals(PROPSCON_NETCOM_TYPE_PLAIN))
+                {
+                    try
+                    {
+                        netComSvc = new TcpConnectorService(
+                            this,
+                            msgProc,
+                            bindAddress ,
+                            publicCtx,
+                            new ConnTracker(null)
+                        );
+                    }
+                    catch (IOException ioExc)
+                    {
+                        errorLog.reportError(
+                            new SystemServiceStartException(
+                                "Cannot start plain TCP connector service",
+                                "Constructing a new TCP connector service failed",
+                                ioExc.getLocalizedMessage(),
+                                null,
+                                null,
+                                ioExc
+                            )
+                        );
+                        continue;
+                    }
+                }
+                else
+                if (type.equals(PROPSCON_NETCOM_TYPE_SSL))
+                {
+                    try
+                    {
+                        netComSvc = new SslTcpConnectorService(
+                            this,
+                            msgProc,
+                            bindAddress ,
+                            publicCtx,
+                            new ConnTracker(null),
+                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_SSL_PROTOCOL),
+                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE),
+                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD).toCharArray(),
+                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEY_PASSWD).toCharArray(),
+                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE),
+                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE_PASSWD).toCharArray()
+                        );
+                    }
+                    catch (
+                        KeyManagementException | UnrecoverableKeyException |
+                        NoSuchAlgorithmException | KeyStoreException | CertificateException |
+                        IOException exc
+                    )
+                    {
+                        errorLog.reportError(
+                            new SystemServiceStartException(
+                                "Cannot start ssl TCP connector service",
+                                "Constructing a new ssl TCP connector service failed",
+                                exc.getLocalizedMessage(),
+                                null,
+                                null,
+                                exc
+                            )
+                        );
+                        continue;
+                    }
+                    catch (SystemServiceStartException sysSvcStartExc)
+                    {
+                        errorLog.reportError(sysSvcStartExc);
+                        continue;
+                    }
+                }
+
+                netComSvc.setServiceInstanceName(serviceName);
+                netComConnectors.put(serviceName, netComSvc);
+                systemServicesMap.put(serviceName, netComSvc);
+                try
+                {
+                    netComSvc.start();
+                }
+                catch (SystemServiceStartException sysSvcStartExc)
+                {
+                    errorLog.reportError(sysSvcStartExc);
+                }
+                errorLog.logInfo("Started " + serviceName.displayValue + " on " + bindAddressStr + ":" + port);
+            }
+        }
+    }
+
+    private String loadPropChecked(Props props, String key) throws SystemServiceStartException
+    {
+        String value = null;
+        try
+        {
+            value = props.getProp(key);
+            if (value == null)
+            {
+                throw new SystemServiceStartException(
+                    "Missing Property",
+                    String.format("The propContainer %s is missing an entry with the key %s",
+                        props.getPath(),
+                        key
+                    ),
+                    null,
+                    "Insert the necessary property",
+                    null);
             }
 
-            if (sslConfig != null)
-            {
-                TcpConnector netComSslSvc = new SslTcpConnectorService(
-                    this,
-                    msgProc,
-                    publicCtx,
-                    new ConnTracker(this),
-                    sslConfig.sslProtocol,
-                    sslConfig.keyStoreFile,
-                    sslConfig.keyStorePasswd,
-                    sslConfig.keyPasswd,
-                    sslConfig.trustStoreFile,
-                    sslConfig.trustStorePasswd
-                );
-                try
-                {
-                    netComSslSvc.setServiceInstanceName(new ServiceName("NetComSslService"));
-                    netComConnectors.put(netComSslSvc.getInstanceName(), netComSslSvc);
-                    systemServicesMap.put(netComSslSvc.getInstanceName(), netComSslSvc);
-                    netComSslSvc.start();
-                }
-                catch (SystemServiceStartException | InvalidNameException exc)
-                {
-                    getErrorReporter().reportError(exc);
-                }
-            }
         }
-        catch (IOException exc)
+        catch (InvalidKeyException invalidKeyExc)
         {
-            getErrorReporter().reportError(exc);
+            throw new ImplementationError("Constant key is invalid " + key, invalidKeyExc);
         }
+
+        return value;
     }
 
     /**
@@ -837,15 +1040,5 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 controller.getErrorReporter().reportError(accExc);
             }
         }
-    }
-
-    public static class SSLConfiguration
-    {
-        public String sslProtocol;
-        public String keyStoreFile;
-        public char[] keyStorePasswd;
-        public char[] keyPasswd;
-        public String trustStoreFile;
-        public char[] trustStorePasswd;
     }
 }

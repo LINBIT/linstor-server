@@ -9,6 +9,7 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -55,6 +56,7 @@ public class NodeData implements Node
     private Props nodeProps;
 
     NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, SerialGenerator srlGen)
+        throws SQLException
     {
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
         ErrorCheck.ctorNotNull(NodeData.class, NodeType.class, types);

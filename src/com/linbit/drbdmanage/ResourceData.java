@@ -8,6 +8,8 @@ import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
+
+import java.sql.SQLException;
 import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
@@ -53,6 +55,7 @@ public class ResourceData implements Resource
         NodeId nodeIdRef,
         SerialGenerator srlGen
     )
+        throws SQLException
     {
         resNodeId = nodeIdRef;
         ErrorCheck.ctorNotNull(ResourceData.class, ResourceDefinition.class, resDfnRef);
@@ -130,7 +133,7 @@ public class ResourceData implements Resource
         NodeId nodeId,
         SerialGenerator srlGen
     )
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         ErrorCheck.ctorNotNull(Resource.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(Resource.class, Node.class, nodeRef);

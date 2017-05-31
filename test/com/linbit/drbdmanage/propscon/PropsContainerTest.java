@@ -16,8 +16,6 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.linbit.drbdmanage.security.AccessDeniedException;
-
 public class PropsContainerTest
 {
     private PropsContainer root;
@@ -27,7 +25,7 @@ public class PropsContainerTest
     private Collection<String> values;
 
     @Before
-    public void setUp() throws Exception
+    public void setUp() throws Throwable
     {
         root = PropsContainer.createRootContainer();
 
@@ -40,7 +38,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSize() throws InvalidKeyException, InvalidValueException
+    public void testSize() throws Throwable
     {
         root.clear();
 
@@ -69,7 +67,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testIsEmpty() throws InvalidKeyException, InvalidValueException
+    public void testIsEmpty() throws Throwable
     {
         root.clear();
         assertTrue(root.isEmpty());
@@ -90,7 +88,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testGetProp() throws InvalidKeyException, InvalidValueException
+    public void testGetProp() throws Throwable
     {
         final String key = "key";
         final String value = "value";
@@ -101,7 +99,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testGetProbWithNamespace() throws InvalidKeyException, InvalidValueException
+    public void testGetProbWithNamespace() throws Throwable
     {
         final String first = FIRST_KEY;
         final String second = SECOND_KEY;
@@ -113,7 +111,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testGetRemovedEntry() throws InvalidKeyException, InvalidValueException
+    public void testGetRemovedEntry() throws Throwable
     {
         final String key = "key";
         final String value = "value";
@@ -125,7 +123,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetWhitespaceEntry() throws InvalidKeyException, InvalidValueException
+    public void testSetWhitespaceEntry() throws Throwable
     {
         final String key = "key with blanks";
         final String value = "value with \nnewline";
@@ -135,7 +133,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetReturnOldValue() throws InvalidKeyException, InvalidValueException
+    public void testSetReturnOldValue() throws Throwable
     {
         final String key = FIRST_KEY + "0";
         final String origValue = "value";
@@ -148,7 +146,7 @@ public class PropsContainerTest
     }
 
     @Test(expected = InvalidKeyException.class)
-    public void testSetTooLongKey() throws InvalidKeyException, InvalidValueException
+    public void testSetTooLongKey() throws Throwable
     {
         final StringBuilder sb = new StringBuilder();
         for (int idx = 0; idx < PropsContainer.PATH_MAX_LENGTH; idx++)
@@ -161,7 +159,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetDeepPaths() throws InvalidKeyException, InvalidValueException
+    public void testSetDeepPaths() throws Throwable
     {
         final StringBuilder sb = new StringBuilder();
         for (int idx = 0; idx < (PropsContainer.PATH_MAX_LENGTH >> 1) - 1; idx++)
@@ -172,7 +170,7 @@ public class PropsContainerTest
     }
 
     @Test(expected = InvalidValueException.class)
-    public void testSetInvalidValue() throws InvalidKeyException, InvalidValueException
+    public void testSetInvalidValue() throws Throwable
     {
         root.setProp("key", null);
 
@@ -180,7 +178,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetSimpleEntryOverride() throws InvalidKeyException, InvalidValueException
+    public void testSetSimpleEntryOverride() throws Throwable
     {
         final String key = "key";
         final String value = "value";
@@ -191,7 +189,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetEntryAndContainer() throws InvalidKeyException, InvalidValueException
+    public void testSetEntryAndContainer() throws Throwable
     {
         final String key = "key";
         final String value = "value";
@@ -206,7 +204,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetIntoSubcontainer() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testSetIntoSubcontainer() throws Throwable
     {
         final String first = FIRST_KEY;
         final String second1 = "second1";
@@ -225,7 +223,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetIntoDetachedContainer() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testSetIntoDetachedContainer() throws Throwable
     {
         root.setProp("a/b/c", "abc");
 
@@ -239,7 +237,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetAllProps() throws InvalidKeyException, InvalidValueException
+    public void testSetAllProps() throws Throwable
     {
         root.clear();
 
@@ -270,7 +268,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetAllRollback() throws InvalidKeyException, InvalidValueException
+    public void testSetAllRollback() throws Throwable
     {
         root.clear();
         final Map<String, String> map = new HashMap<>();
@@ -307,7 +305,7 @@ public class PropsContainerTest
     }
 
     @Test(expected = InvalidKeyException.class)
-    public void testSetAllPropsNullKey() throws InvalidKeyException, InvalidValueException
+    public void testSetAllPropsNullKey() throws Throwable
     {
         final Map<String, String> map = new HashMap<>();
         map.put(null, "value");
@@ -316,7 +314,7 @@ public class PropsContainerTest
     }
 
     @Test(expected = InvalidValueException.class)
-    public void testSetAllPropsNullValue() throws InvalidKeyException, InvalidValueException
+    public void testSetAllPropsNullValue() throws Throwable
     {
         final Map<String, String> map = new HashMap<>();
         map.put("key", null);
@@ -325,7 +323,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testSetAllPropsWithNamespace() throws InvalidKeyException, InvalidValueException
+    public void testSetAllPropsWithNamespace() throws Throwable
     {
         root.clear();
         final String namespace = "namespace";
@@ -363,7 +361,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testRemoveSimpleEntry() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testRemoveSimpleEntry() throws Throwable
     {
         final String key = "key";
         final String value = "value";
@@ -376,7 +374,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testRemoveFromSubcontainer() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testRemoveFromSubcontainer() throws Throwable
     {
         final String first = FIRST_KEY;
         final String second = "second1";
@@ -395,7 +393,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testRemoveWithNamespace() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testRemoveWithNamespace() throws Throwable
     {
         final String removedContainer = FIRST_KEY + "0";
         final String removedEntryKey = SECOND_KEY + "2";
@@ -410,7 +408,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testGetPath() throws InvalidKeyException, InvalidValueException
+    public void testGetPath() throws Throwable
     {
         assertEquals("", root.getPath());
 
@@ -427,7 +425,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testGetPathTrailingSlash() throws InvalidKeyException, InvalidValueException
+    public void testGetPathTrailingSlash() throws Throwable
     {
         root.setProp("a/b/c/d", "value");
         final Props namespaceC = root.getNamespace("a/b/c");
@@ -436,7 +434,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -463,7 +461,7 @@ public class PropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<Entry<String, String>> iterator = root.iterator();
         iterator.next();
@@ -474,7 +472,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testKeyIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeyIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -492,7 +490,7 @@ public class PropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testKeyIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<String> iterator = root.keysIterator();
         iterator.next();
@@ -503,7 +501,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testValuesIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -521,7 +519,7 @@ public class PropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testValuesIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<String> iterator = root.valuesIterator();
         iterator.next();
@@ -532,7 +530,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testGetNamespace() throws InvalidKeyException, InvalidValueException
+    public void testGetNamespace() throws Throwable
     {
         final String first = FIRST_KEY;
         final String second = SECOND_KEY;
@@ -552,7 +550,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testIterateNamespaces() throws InvalidKeyException
+    public void testIterateNamespaces() throws Throwable
     {
         Iterator<String> iterateFirstNamespaces = root.iterateNamespaces();
         int firstLevel = 0;
@@ -577,7 +575,7 @@ public class PropsContainerTest
      */
 
     @Test
-    public void testRemoveAllProps() throws InvalidKeyException, InvalidValueException
+    public void testRemoveAllProps() throws Throwable
     {
         root.clear();
 
@@ -619,7 +617,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testRemoveAllPropsWithNamespace() throws InvalidKeyException, InvalidValueException
+    public void testRemoveAllPropsWithNamespace() throws Throwable
     {
         root.clear();
 
@@ -658,7 +656,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testRetainAllProps() throws InvalidKeyException, InvalidValueException
+    public void testRetainAllProps() throws Throwable
     {
         final Map<String, String> map = new HashMap<>();
         map.put("a", "a");
@@ -702,7 +700,7 @@ public class PropsContainerTest
      */
 
     @Test
-    public void testEntrySet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySet() throws Throwable
     {
         final Set<Entry<String, String>> expectedEntries = new HashSet<>(
             generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
@@ -713,7 +711,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testEntrySetInsertToProps() throws InvalidKeyException, InvalidValueException
+    public void testEntrySetInsertToProps() throws Throwable
     {
         root.clear();
 
@@ -736,7 +734,7 @@ public class PropsContainerTest
 
     @Test
     public void testEntrySetRemoveFromProps()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final String removedKey = FIRST_KEY + "0";
 
@@ -748,7 +746,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testEntrySetSize() throws InvalidKeyException, InvalidValueException
+    public void testEntrySetSize() throws Throwable
     {
         assertEquals(root.size(), entrySet.size());
 
@@ -799,7 +797,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testEntrySetIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySetIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -826,7 +824,7 @@ public class PropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<Entry<String, String>> iterator = entrySet.iterator();
 
@@ -862,7 +860,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testEntrySetAdd() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySetAdd() throws Throwable
     {
         // create a new entry with defined key and empty string as value
         final String insertedKey = "test";
@@ -893,7 +891,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testEntrySetAddNullKey() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySetAddNullKey() throws Throwable
     {
         // create a new entry with defined key and empty string as value
         final String insertedKey = "test";
@@ -924,7 +922,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testEntrySetRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testEntrySetRemove() throws Throwable
     {
         final Set<Entry<String, String>> expectedEntries = new HashSet<>(
             generateEntries(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT));
@@ -1123,7 +1121,7 @@ public class PropsContainerTest
      */
 
     @Test
-    public void testKeySet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySet() throws Throwable
     {
         final Set<String> expectedKeys = new HashSet<>(
             generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
@@ -1134,7 +1132,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testKeySetInsertToProps() throws InvalidKeyException, InvalidValueException
+    public void testKeySetInsertToProps() throws Throwable
     {
         root.clear();
 
@@ -1155,7 +1153,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testKeySetRemoveFromProps() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySetRemoveFromProps() throws Throwable
     {
 
         final String removedKey = FIRST_KEY + "0";
@@ -1168,7 +1166,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testKeySetSize() throws InvalidKeyException, InvalidValueException
+    public void testKeySetSize() throws Throwable
     {
         assertEquals(root.size(), keySet.size());
 
@@ -1219,7 +1217,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testKeySetIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySetIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -1237,7 +1235,7 @@ public class PropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testKeySetIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<String> iterator = keySet.iterator();
 
@@ -1270,7 +1268,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testKeySetAdd() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySetAdd() throws Throwable
     {
         // create a new entry with defined key and empty string as value
         final String insertedKey = "test";
@@ -1293,7 +1291,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testKeySetRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testKeySetRemove() throws Throwable
     {
         final Set<String> expectedKeys = new HashSet<>(
             generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT)
@@ -1417,7 +1415,7 @@ public class PropsContainerTest
      */
 
     @Test
-    public void testMap() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMap() throws Throwable
     {
         final Set<Entry<String, String>> entrySet = map.entrySet();
 
@@ -1425,7 +1423,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapInsertIntoProps() throws InvalidKeyException, InvalidValueException
+    public void testMapInsertIntoProps() throws Throwable
     {
         final String key = "key";
         final String value = "value";
@@ -1436,7 +1434,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapRemoveFromProps() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapRemoveFromProps() throws Throwable
     {
         final String key = FIRST_KEY + "0";
         assertEquals("0", map.get(key));
@@ -1447,7 +1445,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapSize() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapSize() throws Throwable
     {
         assertEquals(root.size(), map.size());
 
@@ -1514,7 +1512,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapGet() throws InvalidKeyException
+    public void testMapGet() throws Throwable
     {
         final Collection<String> keys = generateKeys(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         for (final String key : keys)
@@ -1525,7 +1523,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapPut() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapPut() throws Throwable
     {
         final String insertedKey = "new key";
         final String insertedValue = "new value";
@@ -1545,7 +1543,7 @@ public class PropsContainerTest
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testMapPutNullKey() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapPutNullKey() throws Throwable
     {
         final String insertedKey = null;
         final String insertedValue = "new value";
@@ -1553,7 +1551,7 @@ public class PropsContainerTest
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testMapPutNullValue() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapPutNullValue() throws Throwable
     {
         final String insertedKey = "new key";
         final String insertedValue = null;
@@ -1561,7 +1559,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapRemove() throws Throwable
     {
         final String removedEntryKey = FIRST_KEY + "0";
         map.remove(removedEntryKey);
@@ -1579,7 +1577,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapPutAll() throws InvalidKeyException
+    public void testMapPutAll() throws Throwable
     {
         final HashMap<String, String> mapToInsert = new HashMap<>();
 
@@ -1634,7 +1632,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapEquals() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testMapEquals() throws Throwable
     {
         // we assume that map contains the correct data
         // thus we clone all entries into a new hashmap, and call map.equals
@@ -1671,7 +1669,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapEntryGetKey() throws InvalidKeyException, InvalidValueException
+    public void testMapEntryGetKey() throws Throwable
     {
         root.clear();
         final String key = "key";
@@ -1686,7 +1684,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapEntryGetValue() throws InvalidKeyException, InvalidValueException
+    public void testMapEntryGetValue() throws Throwable
     {
         root.clear();
         final String key = "key";
@@ -1701,7 +1699,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapEntrySetValue() throws InvalidKeyException, InvalidValueException
+    public void testMapEntrySetValue() throws Throwable
     {
         root.clear();
         final String key = "key";
@@ -1720,7 +1718,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testMapEntryEquals() throws InvalidKeyException, InvalidValueException
+    public void testMapEntryEquals() throws Throwable
     {
         root.clear();
         final String key = "key";
@@ -1767,7 +1765,7 @@ public class PropsContainerTest
      */
 
     @Test
-    public void testValueSet() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValueSet() throws Throwable
     {
         final Collection<String> expectedValues = generateValues(FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 
@@ -1777,7 +1775,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testValuesInsertToProps() throws InvalidKeyException, InvalidValueException
+    public void testValuesInsertToProps() throws Throwable
     {
         root.clear();
 
@@ -1799,7 +1797,7 @@ public class PropsContainerTest
 
     @Test
     public void testValuesRemoveFromProps()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final String removedKey = FIRST_KEY + "0";
         final String removedValue = "0";
@@ -1812,7 +1810,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testValuesSize() throws InvalidKeyException, InvalidValueException
+    public void testValuesSize() throws Throwable
     {
         assertEquals(root.size(), values.size());
 
@@ -1831,7 +1829,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testValuesIsEmpty() throws InvalidKeyException, InvalidValueException
+    public void testValuesIsEmpty() throws Throwable
     {
         // we have filled root and keySet in the setup of JUnit
         assertFalse(values.isEmpty());
@@ -1855,7 +1853,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testValuesColIterator() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesColIterator() throws Throwable
     {
         // PropsContainer iterates the entries first, then the containers
         // thus, we add a container which should be come before the "first" alpha-numerically entry
@@ -1874,7 +1872,7 @@ public class PropsContainerTest
 
     @Test(expected = UnsupportedOperationException.class)
     public void testValuesColIteratorUnsupportedRemove()
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException
+        throws Throwable
     {
         final Iterator<String> iterator = values.iterator();
 
@@ -1909,13 +1907,13 @@ public class PropsContainerTest
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testValuesAdd() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesAdd() throws Throwable
     {
         values.add("some value");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testValuesRemove() throws InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void testValuesRemove() throws Throwable
     {
         values.remove("0");
     }
@@ -2001,7 +1999,7 @@ public class PropsContainerTest
     }
 
     @Test
-    public void testValuesHashCode() throws InvalidKeyException, InvalidValueException
+    public void testValuesHashCode() throws Throwable
     {
         final int origHashCode = values.hashCode();
 

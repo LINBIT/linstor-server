@@ -154,6 +154,7 @@ public class ReadOnlyProps implements Props
         return ret;
     }
 
+
     @Override
     public Iterator<String> iterateNamespaces()
     {
