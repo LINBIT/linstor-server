@@ -68,8 +68,7 @@ public class VolumeData implements Volume
     @Override
     public StateFlags<VlmFlags> getFlags()
     {
-        // TODO: Implement
-        throw new UnsupportedOperationException("Not supported yet.");
+        return flags;
     }
 
     private static final class VlmFlagsImpl extends StateFlagsBits<VlmFlags>
