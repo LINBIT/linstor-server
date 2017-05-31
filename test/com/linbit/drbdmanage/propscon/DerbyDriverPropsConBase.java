@@ -33,20 +33,11 @@ public class DerbyDriverPropsConBase
     private static final Properties DB_PROPS = new Properties();
 
     private static final String TABLE_NAME = PropsConDerbyDriver.PROPSCON_TABLE_NAME;
-    private static final String COL_INSTANCE = PropsConDerbyDriver.PROPSCON_COL_INSTANCE;
+//    private static final String COL_INSTANCE = PropsConDerbyDriver.PROPSCON_COL_INSTANCE;
     private static final String COL_KEY = PropsConDerbyDriver.PROPSCON_COL_KEY;
-    private static final String COL_VALUE = PropsConDerbyDriver.PROPSCON_COL_VALUE;
+//    private static final String COL_VALUE = PropsConDerbyDriver.PROPSCON_COL_VALUE;
 
-    private static final String CREATE_TABLE =
-        "CREATE TABLE " + TABLE_NAME + "\n" +
-        "(\n" +
-        "    " + COL_INSTANCE + " VARCHAR(512) NOT NULL \n" +
-        "        CONSTRAINT PRP_INST_CHKNAME CHECK(UPPER(" + COL_INSTANCE + ") = " + COL_INSTANCE +
-        "            AND LENGTH(" + COL_INSTANCE + ") >= 2),\n" +
-        "    " + COL_KEY + " VARCHAR(512) NOT NULL, \n" +
-        "    " + COL_VALUE + " VARCHAR(512) NOT NULL, \n " +
-        "    PRIMARY KEY (" + COL_INSTANCE + ", " + COL_KEY + ")\n" +
-        ")";
+    private static final String CREATE_TABLE = PropsConDerbyDriver.CREATE_TABLE;
     private static final String DROP_TABLE =
         "DROP TABLE " + TABLE_NAME;
     private static final String SELECT_ALL =

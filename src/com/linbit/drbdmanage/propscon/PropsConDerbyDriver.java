@@ -19,6 +19,16 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     public static final String PROPSCON_COL_KEY = "PROP_KEY";
     public static final String PROPSCON_COL_VALUE = "PROP_VALUE";
 
+    public static final String CREATE_TABLE =
+        "CREATE TABLE " + PROPSCON_TABLE_NAME + "\n" +
+        "(\n" +
+        "    " + PROPSCON_COL_INSTANCE + " VARCHAR(512) NOT NULL \n" +
+        "        CONSTRAINT PRP_INST_CHKNAME CHECK(UPPER(" + PROPSCON_COL_INSTANCE + ") = " + PROPSCON_COL_INSTANCE +
+        "            AND LENGTH(" + PROPSCON_COL_INSTANCE + ") >= 2),\n" +
+        "    " + PROPSCON_COL_KEY + " VARCHAR(512) NOT NULL, \n" +
+        "    " + PROPSCON_COL_VALUE + " VARCHAR(512) NOT NULL, \n " +
+        "    PRIMARY KEY (" + PROPSCON_COL_INSTANCE + ", " + PROPSCON_COL_KEY + ")\n" +
+        ")";
     private static final String MERGE_STATEMENT =
         "MERGE INTO PROPS_CONTAINERS AS DST "+
         "USING MERGE_PROPS_CONTAINER AS SRC "+
@@ -57,6 +67,25 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         this.pool = pool;
 
         Connection connection = pool.getConnection();
+
+        try
+        {
+            PreparedStatement stmt = connection.prepareStatement(CREATE_TABLE);
+            stmt.executeUpdate();
+            stmt.close();
+        }
+        catch (SQLException sqlExc)
+        {
+            if (sqlExc.getSQLState().equals("X0Y32"))
+            {
+                // table already exists - ignore this exception
+            }
+            else
+            {
+                throw sqlExc;
+            }
+        }
+
         try
         {
             PreparedStatement stmt = connection.prepareStatement(CREATE_MERGE_TABLE);

@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 /**
  * Serial number-tracking properties container
@@ -70,15 +71,25 @@ public class SerialPropsContainer extends PropsContainer
         Map<String, String> loadedProps = dbDriver.load();
 
         // first, restore the properties
-        // although setAllProps will increase the serial number, we will override
-        // the serial number afterwards anyways
-        container.setAllProps(loadedProps, null);
 
-        // finally, restore the serial number loaded from the database
-        container.setSerial(Long.parseLong(loadedProps.get(SerialGenerator.KEY_SERIAL)));
+        // we should skip the .setAllProps method as that triggers a db re-persist
+        for (Entry<String, String> entry : loadedProps.entrySet())
+        {
+            String key = entry.getKey();
+            String value = entry.getValue();
 
-        container.closeGeneration();
-
+            SerialPropsContainer targetContainer = container;
+            int idx = key.lastIndexOf("/");
+            if (idx != -1)
+            {
+                targetContainer = (SerialPropsContainer) container.ensureNamespaceExists(key.substring(0, idx));
+            }
+            String oldValue = targetContainer.getRawPropMap().put(key, value);
+            if (oldValue == null)
+            {
+                targetContainer.modifySize(1);
+            }
+        }
         return container;
     }
 

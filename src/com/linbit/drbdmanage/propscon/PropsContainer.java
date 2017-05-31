@@ -89,7 +89,23 @@ public class PropsContainer implements Props
         if (con.dbDriver != null)
         {
             Map<String, String> loadedProps = con.dbDriver.load();
-            con.setAllProps(loadedProps, null);
+            for (Entry<String, String> entry : loadedProps.entrySet())
+            {
+                String key = entry.getKey();
+                String value = entry.getValue();
+
+                PropsContainer targetContainer = con;
+                int idx = key.lastIndexOf("/");
+                if (idx != -1)
+                {
+                    targetContainer = con.ensureNamespaceExists(key.substring(0, idx));
+                }
+                String oldValue = targetContainer.propMap.put(key.substring(idx + 1), value);
+                if (oldValue == null)
+                {
+                    targetContainer.modifySize(1);
+                }
+            }
         }
         return con;
     }
@@ -677,6 +693,17 @@ public class PropsContainer implements Props
     }
 
     /**
+     * Returns the map used to save the properties in the current namespace
+     *
+     * Currently this method is used by the SerialPropsCon to bypass set*Prop methods
+     * @return
+     */
+    protected Map<String, String> getRawPropMap()
+    {
+        return propMap;
+    }
+
+    /**
      * Creates the path to the specified namespace if it does not exist already
      *
      * @param namespace Path to the namespace
@@ -684,7 +711,7 @@ public class PropsContainer implements Props
      * @throws InvalidKeyException If the namespace path is invalid
      * @throws SQLException
      */
-    private PropsContainer ensureNamespaceExists(String namespace) throws InvalidKeyException, SQLException
+    protected PropsContainer ensureNamespaceExists(String namespace) throws InvalidKeyException, SQLException
     {
         PropsContainer con = this;
         try
