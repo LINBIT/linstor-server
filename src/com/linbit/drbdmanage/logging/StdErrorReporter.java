@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
@@ -33,10 +34,21 @@ public final class StdErrorReporter implements ErrorReporter
 
     private static final String LOG_DIRECTORY = "logs";
 
+    private static final String SECTION_SEPARATOR;
+    private static final int SEPARATOR_WIDTH = 60;
+
+    static
+    {
+        char[] separator = new char[SEPARATOR_WIDTH];
+        Arrays.fill(separator, '=');
+        SECTION_SEPARATOR = new String(separator);
+    }
+
     private String dmModule;
     private final Logger mainLogger;
     private final Calendar cal;
     private final AtomicLong errorNr;
+    private final String instanceId;
 
     public StdErrorReporter(String moduleName)
     {
@@ -44,6 +56,9 @@ public final class StdErrorReporter implements ErrorReporter
         mainLogger = org.slf4j.LoggerFactory.getLogger(DrbdManage.PROGRAM + "/" + moduleName);
 
         errorNr = new AtomicLong();
+
+        // Generate a unique instance ID based on the creation time of this instance
+        instanceId = String.format("%07X", ((System.currentTimeMillis() / 1000) & 0xFFFFFFF));
         cal = Calendar.getInstance();
 
         // check if the log directory exists
@@ -92,153 +107,15 @@ public final class StdErrorReporter implements ErrorReporter
             {
                 if (loopCtr <= 0)
                 {
-                    output.println("Reported error:");
+                    output.println("Reported error:\n===============\n");
                 }
                 else
                 {
-                    output.println("Caused by:");
+                    output.println("Caused by:\n==========\n");
                 }
 
-                String category;
-                if (curErrorInfo instanceof DrbdManageException)
-                {
-                    category = "DrbdManageException";
 
-                    // Error description/cause/correction/details report
-                    reportDrbdManageException(output, (DrbdManageException) curErrorInfo);
-                }
-                else
-                if (curErrorInfo instanceof RuntimeException)
-                {
-                    category = "RuntimeException";
-                }
-                else
-                if (curErrorInfo instanceof Exception)
-                {
-                    category = "Exception";
-                }
-                else
-                if (curErrorInfo instanceof Error)
-                {
-                    category = "Error";
-                }
-                else
-                {
-                    category = "Throwable";
-                }
-
-                // Determine exception class simple name
-                String tClassName = UNKNOWN_LABEL;
-                try
-                {
-                    Class<? extends Throwable> tClass = curErrorInfo.getClass();
-                    String simpleName = tClass.getSimpleName();
-                    if (simpleName != null)
-                    {
-                        tClassName = simpleName;
-                    }
-                }
-                catch (Exception ignored)
-                {
-                }
-
-                // Determine exception class canonical name
-                String tFullClassName = UNKNOWN_LABEL;
-                try
-                {
-                    Class<? extends Throwable> tClass = curErrorInfo.getClass();
-                    String canName = tClass.getCanonicalName();
-                    if (canName != null)
-                    {
-                        tFullClassName = canName;
-                    }
-                }
-                catch (Exception ignored)
-                {
-                }
-
-                // Determine the code location where the exception was generated
-                String tGeneratedAt = UNKNOWN_LABEL;
-                try
-                {
-                    StackTraceElement[] traceItems = curErrorInfo.getStackTrace();
-                    if (traceItems != null)
-                    {
-                        if (traceItems.length >= 1)
-                        {
-                            StackTraceElement topItem = traceItems[0];
-                            if (topItem != null)
-                            {
-                                String methodName = topItem.getMethodName();
-                                String fileName = topItem.getFileName();
-                                String lineNumber = Integer.toString(topItem.getLineNumber());
-
-                                StringBuilder result = new StringBuilder();
-                                if (methodName != null)
-                                {
-                                    result.append("Method '");
-                                    result.append(methodName);
-                                    result.append("'");
-                                }
-                                if (fileName != null)
-                                {
-                                    if (result.length() > 0)
-                                    {
-                                        result.append(", ");
-                                    }
-                                    result.append("Source file '");
-                                    result.append(fileName);
-                                    result.append("', Line #");
-                                    result.append(lineNumber);
-                                }
-                                if (result.length() > 0)
-                                {
-                                    String resultStr = result.toString();
-                                    if (resultStr != null)
-                                    {
-                                        tGeneratedAt = resultStr;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ignored)
-                {
-                }
-
-                // Report information about the exception
-                output.print(String.format(ERROR_FIELD_FORMAT, "Category:", category));
-                output.print(String.format(ERROR_FIELD_FORMAT, "Class name:", tClassName));
-                output.print(String.format(ERROR_FIELD_FORMAT, "Class canonical name:", tFullClassName));
-                output.print(String.format(ERROR_FIELD_FORMAT, "Generated at:", tGeneratedAt));
-
-                output.println();
-
-                // Report the exception's message
-                try
-                {
-                    String msg = curErrorInfo.getMessage();
-                    if (msg != null)
-                    {
-                        output.print(String.format(ERROR_FIELD_FORMAT, "Error message:", msg));
-                    }
-                }
-                catch (Exception ignored)
-                {
-                }
-
-                output.println();
-
-                if (loopCtr <= 0 && contextInfo != null)
-                {
-                    output.println("Error context:");
-                    AutoIndent.printWithIndent(output, 4, contextInfo);
-                    output.println();
-                }
-
-                // Report the call backtrace
-                reportBacktrace(output, curErrorInfo);
+                reportExceptionDetails(output, errorInfo, loopCtr == 0 ? contextInfo : null);
 
                 ++loopCtr;
             }
@@ -335,12 +212,25 @@ public final class StdErrorReporter implements ErrorReporter
                      nestedErrorInfo != null;
                      nestedErrorInfo = nestedErrorInfo.getCause())
                 {
-                    output.println("Caused by:\n");
+                    output.println("Caused by:\n==========\n");
 
                     if (nestedErrorInfo instanceof DrbdManageException)
                     {
-                        reportDrbdManageException(output, (DrbdManageException) nestedErrorInfo);
+                        boolean detailsAvailable = reportDrbdManageException(
+                            output, (DrbdManageException) nestedErrorInfo
+                        );
+                        if (!detailsAvailable)
+                        {
+                            reportExceptionDetails(output, nestedErrorInfo, loopCtr == 0 ? contextInfo : null);
+                        }
                     }
+                    else
+                    {
+                        // FIXME: If a message is available, report the message,
+                        //        else report as error
+                    }
+
+                    ++loopCtr;
                 }
 
                 String logMsg = formatLogMsg(reportNr, errorInfo);
@@ -391,15 +281,15 @@ public final class StdErrorReporter implements ErrorReporter
         if (excMsg == null)
         {
             logMsg = String.format(
-                "Problem of type '%s' logged to report number %d\n",
-                errorInfo.getClass().getName(), reportNr
+                "Problem of type '%s' logged to report number %s-%06d\n",
+                errorInfo.getClass().getName(), instanceId, reportNr
             );
         }
         else
         {
             logMsg = excMsg + String.format(
-                " [Report number %d]\n",
-                reportNr
+                " [Report number %s-%06d]\n",
+                instanceId, reportNr
             );
         }
         return logMsg;
@@ -448,7 +338,9 @@ public final class StdErrorReporter implements ErrorReporter
 
     private void reportHeader(PrintStream output, long reportNr)
     {
-        output.print(String.format("ERROR REPORT %d\n\n", reportNr));
+        output.print(String.format("ERROR REPORT %s-%06d\n\n", instanceId, reportNr));
+        output.println(SECTION_SEPARATOR);
+        output.println();
         output.printf(ERROR_FIELD_FORMAT, "Module:", dmModule);
         output.printf(ERROR_FIELD_FORMAT, "Version:", DrbdManage.VERSION);
 
@@ -475,6 +367,8 @@ public final class StdErrorReporter implements ErrorReporter
         output.printf(ERROR_FIELD_FORMAT, "Time:", String.format("%02d:%02d:%02d", hour, minute, second));
 
         output.println();
+        output.println(SECTION_SEPARATOR);
+        output.println();
     }
 
     private boolean reportDrbdManageException(PrintStream output, DrbdManageException dmExc)
@@ -485,6 +379,11 @@ public final class StdErrorReporter implements ErrorReporter
         String causeMsg         = dmExc.getCauseText();
         String correctionMsg    = dmExc.getCorrectionText();
         String detailsMsg       = dmExc.getDetailsText();
+
+        if (descriptionMsg == null)
+        {
+            descriptionMsg = dmExc.getMessage();
+        }
 
         if (descriptionMsg != null)
         {
@@ -520,6 +419,157 @@ public final class StdErrorReporter implements ErrorReporter
         }
 
         return detailsAvailable;
+    }
+
+    private void reportExceptionDetails(PrintStream output, Throwable errorInfo, String contextInfo)
+    {
+        String category;
+        if (errorInfo instanceof DrbdManageException)
+        {
+            category = "DrbdManageException";
+
+            // Error description/cause/correction/details report
+            reportDrbdManageException(output, (DrbdManageException) errorInfo);
+        }
+        else
+        if (errorInfo instanceof RuntimeException)
+        {
+            category = "RuntimeException";
+        }
+        else
+        if (errorInfo instanceof Exception)
+        {
+            category = "Exception";
+        }
+        else
+        if (errorInfo instanceof Error)
+        {
+            category = "Error";
+        }
+        else
+        {
+            category = "Throwable";
+        }
+
+        // Determine exception class simple name
+        String tClassName = UNKNOWN_LABEL;
+        try
+        {
+            Class<? extends Throwable> tClass = errorInfo.getClass();
+            String simpleName = tClass.getSimpleName();
+            if (simpleName != null)
+            {
+                tClassName = simpleName;
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+
+        // Determine exception class canonical name
+        String tFullClassName = UNKNOWN_LABEL;
+        try
+        {
+            Class<? extends Throwable> tClass = errorInfo.getClass();
+            String canName = tClass.getCanonicalName();
+            if (canName != null)
+            {
+                tFullClassName = canName;
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+
+        // Determine the code location where the exception was generated
+        String tGeneratedAt = UNKNOWN_LABEL;
+        try
+        {
+            StackTraceElement[] traceItems = errorInfo.getStackTrace();
+            if (traceItems != null)
+            {
+                if (traceItems.length >= 1)
+                {
+                    StackTraceElement topItem = traceItems[0];
+                    if (topItem != null)
+                    {
+                        String methodName = topItem.getMethodName();
+                        String fileName = topItem.getFileName();
+                        int lineNumber = topItem.getLineNumber();
+
+                        StringBuilder result = new StringBuilder();
+                        if (methodName != null)
+                        {
+                            result.append("Method '");
+                            result.append(methodName);
+                            result.append("'");
+                        }
+                        if (fileName != null)
+                        {
+                            if (result.length() > 0)
+                            {
+                                result.append(", ");
+                            }
+                            result.append("Source file '");
+                            result.append(fileName);
+                            if (lineNumber >= 0)
+                            {
+                                result.append("', Line #");
+                                result.append(Integer.toString(lineNumber));
+                            }
+                            else
+                            {
+                                result.append(", Unknown line number");
+                            }
+                        }
+                        if (result.length() > 0)
+                        {
+                            String resultStr = result.toString();
+                            if (resultStr != null)
+                            {
+                                tGeneratedAt = resultStr;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+
+        // Report information about the exception
+        output.print(String.format(ERROR_FIELD_FORMAT, "Category:", category));
+        output.print(String.format(ERROR_FIELD_FORMAT, "Class name:", tClassName));
+        output.print(String.format(ERROR_FIELD_FORMAT, "Class canonical name:", tFullClassName));
+        output.print(String.format(ERROR_FIELD_FORMAT, "Generated at:", tGeneratedAt));
+
+        output.println();
+
+        // Report the exception's message
+        try
+        {
+            String msg = errorInfo.getMessage();
+            if (msg != null)
+            {
+                output.print(String.format(ERROR_FIELD_FORMAT, "Error message:", msg));
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+
+        output.println();
+
+        if (contextInfo != null)
+        {
+            output.println("Error context:");
+            AutoIndent.printWithIndent(output, 4, contextInfo);
+            output.println();
+        }
+
+        // Report the call backtrace
+        reportBacktrace(output, errorInfo);
     }
 
     private void reportBacktrace(PrintStream output, Throwable errorInfo)
@@ -586,15 +636,15 @@ public final class StdErrorReporter implements ErrorReporter
         {
             reportStream = new FileOutputStream(
                 String.format(
-                    "%s/ErrorReport-%06d.log",
-                    LOG_DIRECTORY, reportNr
+                    "%s/ErrorReport-%s-%06d.log",
+                    LOG_DIRECTORY, instanceId, reportNr
                 )
             );
             reportPrinter = new PrintStream(reportStream);
         }
         catch (IOException ioExc)
         {
-            System.err.printf("Unable to create error report file for error report %d:\n", reportNr);
+            System.err.printf("Unable to create error report file for error report %s-%06d:\n", instanceId, reportNr);
             System.err.println(ioExc.getMessage());
             System.err.println("The error report will be written to the standard error stream instead.\n");
 
