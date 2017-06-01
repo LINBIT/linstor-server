@@ -62,6 +62,7 @@ public class PropsContainer implements Props
         return createRootContainer(null);
     }
 
+    @SuppressWarnings("unused") // for the throw of SQLException - which is needed by SerialPropsContainer
     public static PropsContainer createRootContainer(PropsConDatabaseDriver dbDriver) throws SQLException
     {
         PropsContainer con = null;
@@ -83,7 +84,7 @@ public class PropsContainer implements Props
     }
 
 
-    public static Props loadContainer(PropsConDatabaseDriver propsConDbDriver) throws SQLException, InvalidKeyException, InvalidValueException
+    public static Props loadContainer(PropsConDatabaseDriver propsConDbDriver) throws SQLException, InvalidKeyException
     {
         PropsContainer con = createRootContainer(propsConDbDriver);
         if (con.dbDriver != null)
@@ -674,7 +675,7 @@ public class PropsContainer implements Props
      * @return The namespace's PropsContainer, or null, if the namespace does not exist
      * @throws InvalidKeyException If the namespace specification is invalid
      */
-    private PropsContainer findNamespace(String namespace) throws InvalidKeyException
+    private PropsContainer findNamespace(String namespace)
     {
         PropsContainer con = this;
         if (namespace != null)
@@ -767,6 +768,7 @@ public class PropsContainer implements Props
         return pathComponents;
     }
 
+    @SuppressWarnings("unused") // for the throw of SQLException - which is needed by SerialPropsContainer
     PropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException, SQLException
     {
         return new PropsContainer(key, con);

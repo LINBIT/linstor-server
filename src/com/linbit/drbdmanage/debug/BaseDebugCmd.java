@@ -5,7 +5,6 @@ import com.linbit.ErrorCheck;
 import com.linbit.drbdmanage.CommonDebugControl;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.DrbdManage;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.Set;
@@ -139,7 +138,6 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         PrintStream debugErr,
         String paramName
     )
-        throws IOException
     {
         printError(
             debugErr,
@@ -160,7 +158,6 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         String correctionText,
         String errorDetailsText
     )
-        throws IOException
     {
         if (errorText != null)
         {

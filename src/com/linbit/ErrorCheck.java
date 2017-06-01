@@ -12,7 +12,7 @@ public class ErrorCheck
     {
     }
 
-    public static final void ctorNotNull(Class objClass, Class argClass, Object param)
+    public static final void ctorNotNull(Class<?> objClass, Class<?> argClass, Object param)
     {
         if (param == null)
         {

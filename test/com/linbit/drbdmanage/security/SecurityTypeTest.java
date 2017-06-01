@@ -167,7 +167,7 @@ public class SecurityTypeTest
     }
 
     @Test
-    public void testQueryAccess() throws AccessDeniedException
+    public void testQueryAccess()
     {
         SecTypeIterator secTypeIt = new SecTypeIterator(true, SecTypeIterator.IDX_DOMAIN_TARGET);
         for (SecTypeIteration iteration : secTypeIt)

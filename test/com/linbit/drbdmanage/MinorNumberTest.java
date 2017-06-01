@@ -105,7 +105,6 @@ public class MinorNumberTest
      */
     @Test
     public void testCompareTo()
-        throws ValueOutOfRangeException
     {
         // Compare to same instance
         if (refNr.compareTo(refNr) != 0)

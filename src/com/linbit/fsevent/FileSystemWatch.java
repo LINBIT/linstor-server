@@ -450,7 +450,7 @@ public class FileSystemWatch implements Runnable, SystemService
         }
     }
 
-    private boolean probeFileEntry(FileEntry watchEntry) throws IOException
+    private boolean probeFileEntry(FileEntry watchEntry)
     {
         boolean trigger = false;
         if (watchEntry.watchEvent == Event.CREATE)

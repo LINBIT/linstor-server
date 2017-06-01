@@ -82,7 +82,6 @@ public abstract class BaseDebugConsole implements DebugConsole
             );
 
             String inputLine;
-            commandLineLoop:
             while (!exitFlag)
             {
                 // Print the console prompt if required
@@ -540,6 +539,7 @@ public abstract class BaseDebugConsole implements DebugConsole
         }
     }
 
+    @Override
     public void exitConsole()
     {
         exitFlag = true;

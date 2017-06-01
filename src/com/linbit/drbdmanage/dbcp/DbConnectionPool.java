@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnection;
 import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.pool2.impl.GenericObjectPool;
@@ -36,7 +37,7 @@ public class DbConnectionPool implements ControllerDatabase
     private int minIdleConnections = DEFAULT_MIN_IDLE_CONNECTIONS;
     private int maxIdleConnections = DEFAULT_MAX_IDLE_CONNECTIONS;
 
-    private PoolingDataSource dataSource = null;
+    private PoolingDataSource<PoolableConnection> dataSource = null;
 
     private ServiceName serviceNameInstance;
     private String dbConnectionUrl;
@@ -171,13 +172,13 @@ public class DbConnectionPool implements ControllerDatabase
         poolConfig.setBlockWhenExhausted(true);
         poolConfig.setFairness(true);
 
-        GenericObjectPool connPool = new GenericObjectPool<>(poolConnFactory, poolConfig);
+        GenericObjectPool<PoolableConnection> connPool = new GenericObjectPool<>(poolConnFactory, poolConfig);
 
         poolConnFactory.setPool(connPool);
         poolConnFactory.setValidationQueryTimeout(dbTimeout);
         poolConnFactory.setMaxOpenPrepatedStatements(dbMaxOpen);
 
-        dataSource = new PoolingDataSource(connPool);
+        dataSource = new PoolingDataSource<PoolableConnection>(connPool);
         started = true;
     }
 

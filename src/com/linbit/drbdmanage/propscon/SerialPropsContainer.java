@@ -59,12 +59,12 @@ public class SerialPropsContainer extends PropsContainer
         return con;
     }
 
-    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver) throws SQLException, InvalidKeyException, InvalidValueException
+    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver) throws SQLException, InvalidKeyException
     {
         return loadContainer(dbDriver, null);
     }
 
-    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver, SerialGenerator sGen) throws SQLException, InvalidKeyException, InvalidValueException
+    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver, SerialGenerator sGen) throws SQLException, InvalidKeyException
     {
         SerialPropsContainer container = createRootContainer(sGen);
         container.dbDriver = dbDriver;

@@ -14,8 +14,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-import com.linbit.drbdmanage.Node.NodeFlags;
-import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.stateflags.FlagsPersistenceBase;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;

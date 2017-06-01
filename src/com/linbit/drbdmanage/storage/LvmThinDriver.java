@@ -34,7 +34,7 @@ public class LvmThinDriver extends LvmDriver
     {
     }
 
-    LvmThinDriver(final ExtCmd ec) throws StorageException
+    LvmThinDriver(final ExtCmd ec)
     {
         this.extCommand = ec;
     }

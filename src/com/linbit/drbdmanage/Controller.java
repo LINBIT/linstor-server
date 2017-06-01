@@ -27,7 +27,6 @@ import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
 import com.linbit.drbdmanage.propscon.InvalidKeyException;
-import com.linbit.drbdmanage.propscon.InvalidValueException;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.propscon.PropsContainer;
@@ -67,6 +66,8 @@ import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import org.slf4j.event.Level;
 
 /**
  * drbdmanageNG controller prototype
@@ -153,7 +154,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private ObjectProtection ctrlConfProt;
 
     public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
-        throws IOException
     {
         // Initialize synchronization
         reconfigurationLock = new ReentrantReadWriteLock(true);
@@ -542,10 +542,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         {
             errorLog.reportError(implError);
         }
-        catch (IOException ioExc)
-        {
-            errorLog.reportError(ioExc);
-        }
         catch (Throwable error)
         {
             errorLog.reportError(error);
@@ -577,7 +573,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                )
             );
         }
-        catch (InvalidKeyException | InvalidValueException invalidPropExc)
+        catch (InvalidKeyException invalidPropExc)
         {
             errorLogRef.reportError(
                 new SystemServiceStartException(
@@ -670,30 +666,13 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 TcpConnector netComSvc = null;
                 if (type.equals(PROPSCON_NETCOM_TYPE_PLAIN))
                 {
-                    try
-                    {
-                        netComSvc = new TcpConnectorService(
-                            this,
-                            msgProc,
-                            bindAddress ,
-                            publicCtx,
-                            new ConnTracker(null)
-                        );
-                    }
-                    catch (IOException ioExc)
-                    {
-                        errorLog.reportError(
-                            new SystemServiceStartException(
-                                "Cannot start plain TCP connector service",
-                                "Constructing a new TCP connector service failed",
-                                ioExc.getLocalizedMessage(),
-                                null,
-                                null,
-                                ioExc
-                            )
-                        );
-                        continue;
-                    }
+                    netComSvc = new TcpConnectorService(
+                        this,
+                        msgProc,
+                        bindAddress ,
+                        publicCtx,
+                        new ConnTracker(null)
+                    );
                 }
                 else
                 if (type.equals(PROPSCON_NETCOM_TYPE_SSL))
@@ -738,19 +717,40 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                         continue;
                     }
                 }
-
-                netComSvc.setServiceInstanceName(serviceName);
-                netComConnectors.put(serviceName, netComSvc);
-                systemServicesMap.put(serviceName, netComSvc);
-                try
+                if (netComSvc == null)
                 {
-                    netComSvc.start();
+                    errorLog.reportProblem(
+                        Level.ERROR,
+                        new DrbdManageException(
+                            "Invalid connection type",
+                            String.format(
+                                "The connection type has to be either '%s' or '%s', but was '%s'",
+                                PROPSCON_NETCOM_TYPE_PLAIN,
+                                PROPSCON_NETCOM_TYPE_SSL,
+                                type),
+                            null,
+                            "Correct the entry in the database",
+                            null),
+                        null, // accCtx
+                        null, // client
+                        null  // contextInfo
+                        );
                 }
-                catch (SystemServiceStartException sysSvcStartExc)
+                else
                 {
-                    errorLog.reportError(sysSvcStartExc);
+                    netComSvc.setServiceInstanceName(serviceName);
+                    netComConnectors.put(serviceName, netComSvc);
+                    systemServicesMap.put(serviceName, netComSvc);
+                    try
+                    {
+                        netComSvc.start();
+                    }
+                    catch (SystemServiceStartException sysSvcStartExc)
+                    {
+                        errorLog.reportError(sysSvcStartExc);
+                    }
+                    errorLog.logInfo("Started " + serviceName.displayValue + " on " + bindAddressStr + ":" + port);
                 }
-                errorLog.logInfo("Started " + serviceName.displayValue + " on " + bindAddressStr + ":" + port);
             }
         }
     }

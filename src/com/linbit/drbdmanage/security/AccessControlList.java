@@ -155,14 +155,12 @@ public final class AccessControlList
     }
 
     void addEntry(Role entryRole, AccessType grantedAccess)
-        throws AccessDeniedException
     {
         AccessControlEntry entry = new AccessControlEntry(entryRole, grantedAccess);
         acl.put(entryRole.name, entry);
     }
 
     void delEntry(Role entryRole)
-        throws AccessDeniedException
     {
         acl.remove(entryRole.name);
     }

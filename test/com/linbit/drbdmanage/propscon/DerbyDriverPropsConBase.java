@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
-import com.linbit.drbdmanage.security.AccessDeniedException;
 
 public class DerbyDriverPropsConBase
 {
@@ -55,6 +54,7 @@ public class DerbyDriverPropsConBase
     protected PropsConDerbyDriver dbDriver;
     protected static DbConnectionPool dbConnPool;
 
+    @SuppressWarnings("unused")
     @BeforeClass
     public static void setUpBeforeClass() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
     {
@@ -230,7 +230,7 @@ public class DerbyDriverPropsConBase
         }
     }
 
-    protected void checkExpectedMap(Map<String, String> expectedMap, Props props) throws InvalidKeyException, AccessDeniedException
+    protected void checkExpectedMap(Map<String, String> expectedMap, Props props)
     {
         assertEquals("Unexpected entries in PropsContainer", expectedMap.size() , props.size());
 

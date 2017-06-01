@@ -131,7 +131,7 @@ public final class StdErrorReporter implements ErrorReporter
                 String tClassName = UNKNOWN_LABEL;
                 try
                 {
-                    Class tClass = curErrorInfo.getClass();
+                    Class<? extends Throwable> tClass = curErrorInfo.getClass();
                     String simpleName = tClass.getSimpleName();
                     if (simpleName != null)
                     {
@@ -146,7 +146,7 @@ public final class StdErrorReporter implements ErrorReporter
                 String tFullClassName = UNKNOWN_LABEL;
                 try
                 {
-                    Class tClass = curErrorInfo.getClass();
+                    Class<? extends Throwable> tClass = curErrorInfo.getClass();
                     String canName = tClass.getCanonicalName();
                     if (canName != null)
                     {

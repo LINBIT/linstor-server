@@ -582,12 +582,12 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
         }
     }
 
-    void debugOut(Class cl, String message)
+    void debugOut(Class<?> cl, String message)
     {
         System.err.println(cl.getSimpleName() + ": " + message);
     }
 
-    void debugOutFormat(Class cl, String format, Object... args)
+    void debugOutFormat(Class<?> cl, String format, Object... args)
     {
         String message = String.format(format, args);
         System.err.println(cl.getSimpleName() + ": " + message);

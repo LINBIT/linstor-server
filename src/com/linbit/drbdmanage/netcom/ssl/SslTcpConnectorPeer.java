@@ -90,15 +90,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     @Override
     protected TcpConnectorMessage createMessage(boolean forSend)
     {
-        try
-        {
-            // FIXME: Null is definitely wrong here
-            return new SslTcpConnectorMessage(forSend, sslEngine, this);
-        }
-        catch (SSLException sslExc)
-        {
-            throw new RuntimeException(sslExc);
-        }
+        return new SslTcpConnectorMessage(forSend, sslEngine, this);
     }
 
     // Only SSL-Clients should call this method

@@ -3,7 +3,6 @@ package com.linbit.drbdmanage;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import java.util.UUID;
-import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;

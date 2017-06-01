@@ -61,7 +61,6 @@ public final class Initializer
     }
 
     public Controller initController(String[] args)
-        throws IOException
     {
         return new Controller(SYSTEM_CTX, PUBLIC_CTX, args);
     }

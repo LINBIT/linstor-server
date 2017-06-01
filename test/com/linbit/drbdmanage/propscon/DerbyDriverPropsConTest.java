@@ -5,7 +5,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -13,12 +12,10 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import com.linbit.drbdmanage.security.AccessDeniedException;
-
 public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
 {
     @Test
-    public void testPersistSimple() throws InvalidKeyException, InvalidValueException, SQLException
+    public void testPersistSimple() throws Throwable
     {
         PropsContainer container = PropsContainer.createRootContainer(dbDriver);
         String expectedKey = "key";
@@ -40,7 +37,7 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
     }
 
     @Test
-    public void testPersistNested() throws InvalidKeyException, InvalidValueException, SQLException
+    public void testPersistNested() throws Throwable
     {
         PropsContainer container = PropsContainer.createRootContainer(dbDriver);
         Map<String, String> map = new HashMap<>();
@@ -53,7 +50,7 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
     }
 
     @Test
-    public void testPersistUpdate() throws InvalidKeyException, InvalidValueException, SQLException
+    public void testPersistUpdate() throws Throwable
     {
         PropsContainer container = PropsContainer.createRootContainer(dbDriver);
         Map<String, String> map = new HashMap<>();
@@ -75,7 +72,7 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
     }
 
     @Test
-    public void testPersistMultipleContainer() throws InvalidKeyException, InvalidValueException, SQLException
+    public void testPersistMultipleContainer() throws Throwable
     {
         String expectedInstanceName1 = "INSTANCE_1";
         String expectedInstanceName2 = "INSTANCE_2";
@@ -110,7 +107,7 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
     }
 
     @Test
-    public void testLoadSimple() throws SQLException, InvalidKeyException, InvalidValueException
+    public void testLoadSimple() throws Throwable
     {
         String instanceName = DEFAULT_INSTANCE_NAME;
         String key = "a";
@@ -126,7 +123,7 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
     }
 
     @Test
-    public void testLoadNested() throws SQLException, InvalidKeyException, InvalidValueException
+    public void testLoadNested() throws Throwable
     {
         String instanceName = DEFAULT_INSTANCE_NAME;
         String key1 = "a";
@@ -146,7 +143,7 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
     }
 
     @Test
-    public void testLoadUpdate() throws SQLException, InvalidKeyException, AccessDeniedException, InvalidValueException
+    public void testLoadUpdate() throws Throwable
     {
         String instanceName = DEFAULT_INSTANCE_NAME;
         String key1 = "a";
@@ -176,7 +173,7 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
     }
 
     @Test
-    public void testLoadMultiple() throws SQLException, InvalidKeyException, AccessDeniedException, InvalidValueException
+    public void testLoadMultiple() throws Throwable
     {
         String instanceName1 = "INSTANCE_1";
         String instanceName2 = "INSTANCE_2";

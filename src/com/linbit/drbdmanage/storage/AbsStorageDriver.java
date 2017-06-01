@@ -261,6 +261,7 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     // TODO add JavaDoc
     // TODO extract to interface
+    @SuppressWarnings("unused")
     public void restoreSnapshot(String snapshotName) throws StorageException
     {
         throw new UnsupportedOperationException("Snapshots are not supported by "+ getClass());

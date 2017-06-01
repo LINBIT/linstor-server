@@ -6,7 +6,6 @@ import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLException;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage;
 
@@ -22,7 +21,6 @@ public class SslTcpConnectorMessage extends TcpConnectorMessage
         final SSLEngine sslEngine,
         final SslTcpConnectorPeer peer
     )
-        throws SSLException
     {
         super(forSend);
         this.sslEngine = sslEngine;

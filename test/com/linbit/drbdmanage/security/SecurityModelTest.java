@@ -261,10 +261,8 @@ public class SecurityModelTest
 
     @Test
     public void testSysTypeModify()
-        throws AccessDeniedException
     {
         ObjectProtection prot = null;
-        AccessContext banditCtx = null;
         try
         {
             // Create object as creator
@@ -329,10 +327,8 @@ public class SecurityModelTest
 
     @Test
     public void testSysOwnerModify()
-        throws AccessDeniedException
     {
         ObjectProtection prot = null;
-        AccessContext banditCtx = null;
         try
         {
             // Create object as creator

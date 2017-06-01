@@ -130,7 +130,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         MessageProcessor msgProcessorRef,
         AccessContext defaultPeerAccCtxRef,
         ConnectionObserver connObserverRef
-    ) throws IOException
+    )
     {
         ErrorCheck.ctorNotNull(TcpConnectorService.class, CoreServices.class, coreSvcsRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, MessageProcessor.class, msgProcessorRef);
@@ -156,7 +156,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         SocketAddress bindAddressRef,
         AccessContext defaultPeerAccCtxRef,
         ConnectionObserver connObserverRef
-    ) throws IOException
+    )
     {
         this(coreSvcsRef, msgProcessorRef, defaultPeerAccCtxRef, connObserverRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, SocketAddress.class, bindAddressRef);

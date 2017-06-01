@@ -1,7 +1,5 @@
 package com.linbit.drbd.md;
 
-import com.linbit.drbd.md.MetaDataApi.SizeSpec;
-
 /**
  * Calculates DRBD data / meta data size using a native external library
  *

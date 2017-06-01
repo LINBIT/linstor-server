@@ -6,12 +6,10 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.linbit.drbdmanage.security.AccessDeniedException;
-
 public class DerbyDriverSerialPropsConTest extends DerbyDriverPropsConBase
 {
     @Test
-    public void test() throws SQLException, InvalidKeyException, InvalidValueException, AccessDeniedException
+    public void test() throws SQLException, InvalidKeyException, InvalidValueException
     {
         SerialPropsContainer container = SerialPropsContainer.createRootContainer(dbDriver);
         String expectedKey = "key";

@@ -79,7 +79,7 @@ public class DebugErrorReporter implements ErrorReporter
             String tClassName = ID_FAILED;
             try
             {
-                Class tClass = curErrorInfo.getClass();
+                Class<? extends Throwable> tClass = curErrorInfo.getClass();
                 tClassName = notNullOrIdFailed(tClass.getSimpleName());
             }
             catch (Exception ignored)
@@ -89,7 +89,7 @@ public class DebugErrorReporter implements ErrorReporter
             String tFullClassName = ID_FAILED;
             try
             {
-                Class tClass = curErrorInfo.getClass();
+                Class<? extends Throwable> tClass = curErrorInfo.getClass();
                 tFullClassName = notNullOrIdFailed(tClass.getCanonicalName());
             }
             catch (Exception ignored)

@@ -35,7 +35,7 @@ public class LvmDriver extends AbsStorageDriver
     {
     }
 
-    LvmDriver(final ExtCmd ec) throws StorageException
+    LvmDriver(final ExtCmd ec)
     {
         this.extCommand = ec;
     }
