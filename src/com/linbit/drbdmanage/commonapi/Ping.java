@@ -1,8 +1,9 @@
-package com.linbit.drbdmanage.controllerapi;
+package com.linbit.drbdmanage.commonapi;
 
+import com.linbit.drbdmanage.commonapi.BaseApiCall;
 import com.linbit.ImplementationError;
-import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.DrbdManage;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
@@ -19,7 +20,7 @@ import java.io.InputStream;
  */
 public class Ping extends BaseApiCall
 {
-    private Controller      ctrl;
+    private DrbdManage      ctrl;
     private CoreServices    coreSvcs;
 
     @Override
@@ -29,7 +30,7 @@ public class Ping extends BaseApiCall
     }
 
     public Ping(
-        Controller      ctrlRef,
+        DrbdManage      ctrlRef,
         CoreServices    coreSvcsRef
     )
     {

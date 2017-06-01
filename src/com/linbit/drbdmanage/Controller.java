@@ -12,7 +12,7 @@ import com.linbit.drbdmanage.controllerapi.CreateDebugConsole;
 import com.linbit.drbdmanage.controllerapi.DebugCommand;
 import com.linbit.drbdmanage.controllerapi.DebugMakeSuperuser;
 import com.linbit.drbdmanage.controllerapi.DestroyDebugConsole;
-import com.linbit.drbdmanage.controllerapi.Ping;
+import com.linbit.drbdmanage.commonapi.Ping;
 import com.linbit.drbdmanage.debug.BaseDebugConsole;
 import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
@@ -599,8 +599,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     "The propsContainer loaded from the database did not contain any netCom services",
                     null,
                     "Inset at least one netCom service to the database",
-                    null)
-                );
+                    null
+                )
+            );
         }
         else
         {
@@ -730,11 +731,12 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                                 type),
                             null,
                             "Correct the entry in the database",
-                            null),
+                            null
+                        ),
                         null, // accCtx
                         null, // client
                         null  // contextInfo
-                        );
+                    );
                 }
                 else
                 {

@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.controllerapi;
 
+import com.linbit.drbdmanage.commonapi.BaseApiCall;
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.CoreServices;
