@@ -29,6 +29,7 @@ import com.linbit.drbdmanage.timer.CoreTimer;
 import com.linbit.fsevent.FileSystemWatch;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -369,19 +370,104 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 char[] keyStorePasswd = netComProps.getProperty(NET_COM_CONF_SSL_KEYSTORE_PASS_KEY).toCharArray();
                 char[] trustStorePasswd = netComProps.getProperty(NET_COM_CONF_SSL_TRUST_PASS_KEY).toCharArray();
 
-                netComSvc = new SslTcpConnectorService(
-                    this,
-                    msgProc,
-                    bindAddress,
-                    publicCtx,
-                    new ConnTracker(this),
-                    sslProtocol,
-                    keyStoreFile,
-                    keyStorePasswd,
-                    keyPasswd,
-                    trustStoreFile,
-                    trustStorePasswd
-                );
+                try
+                {
+                    netComSvc = new SslTcpConnectorService(
+                        this,
+                        msgProc,
+                        bindAddress,
+                        publicCtx,
+                        new ConnTracker(this),
+                        sslProtocol,
+                        keyStoreFile,
+                        keyStorePasswd,
+                        keyPasswd,
+                        trustStoreFile,
+                        trustStorePasswd
+                    );
+                }
+                catch (KeyManagementException keyMgmtExc)
+                {
+                    getErrorReporter().reportProblem(
+                        Level.ERROR,
+                        new DrbdManageException(
+                            "Initialization of the SSLContext failed. See cause for details",
+                            keyMgmtExc
+                        ),
+                        null, // accCtx
+                        null, // client
+                        null  // contextInfo
+                    );
+                }
+                catch (UnrecoverableKeyException unrecoverableKeyExc)
+                {
+                    String errorMsg = "A private or public key for the initialization of SSL encryption could " +
+                        "not be loaded";
+                    getErrorReporter().reportProblem(
+                        Level.ERROR,
+                        new DrbdManageException(
+                            errorMsg,
+                            errorMsg,
+                            null,
+                            "Check whether the password for the SSL keystores is correct.",
+                            null,
+                            unrecoverableKeyExc),
+                        null, // accCtx
+                        null, // client
+                        null  // contextInfo
+                    );
+                }
+                catch (NoSuchAlgorithmException exc)
+                {
+                    getErrorReporter().reportProblem(
+                        Level.ERROR,
+                        new DrbdManageException(
+                            String.format(
+                                "SSL initialization failed: " +
+                                "The SSL/TLS encryption protocol '%s' is not available on this system.",
+                                sslProtocol
+                            ),
+                            "SSL initialization failed.",
+                            String.format(
+                                "The SSL/TLS protocol '%s' is not available on this system",
+                                sslProtocol
+                            ),
+                            "- Select a supported SSL/TLS protocol in the network communications configuration\n" +
+                            "or\n" +
+                            "- Enable support for the currently selected SSL/TLS protocol on this system",
+                            null,
+                            exc
+                        ),
+                        null, // accCtx
+                        null, // client
+                        null  //contextInfo
+                    );
+                }
+                catch (KeyStoreException keyStoreExc)
+                {
+                    throw new ImplementationError(
+                        "Default SSL keystore type could not be found by the KeyStore instance",
+                        keyStoreExc
+                    );
+                }
+                catch (CertificateException exc)
+                {
+                    getErrorReporter().reportProblem(
+                        Level.ERROR,
+                        new DrbdManageException(
+                            "A required SSL certificate could not be loaded",
+                            "A required SSL certificate could not be loaded from the keystore files",
+                            null,
+                            "Ensure that the required SSL certificates are contained in the keystore files.\n" +
+                            "Refer to documentation for information on how to setup SSL encryption.",
+                            null,
+                            exc
+                        ),
+                        null, // accCtx
+                        null, // client
+                        null  // contextInfo
+                    );
+                }
             }
 
             if (netComSvc != null)
@@ -393,10 +479,35 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                     systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
                     netComSvc.start();
                 }
-                catch (SystemServiceStartException | InvalidNameException exc)
+                catch (SystemServiceStartException sysSvcStartExc )
                 {
-                    // TODO: reportProblem(...DrbdManageException...)
-                    getErrorReporter().reportError(exc);
+                    String errorMsg = sysSvcStartExc.getMessage();
+                    if (errorMsg == null)
+                    {
+                        errorMsg = "The initial network communications service failed to start.";
+                    }
+                    getErrorReporter().reportProblem(
+                        Level.ERROR,
+                        new DrbdManageException(
+                            errorMsg,
+                            errorMsg, // description
+                            null, // cause
+                            null, // correction
+                            null, // details
+                            sysSvcStartExc // Nested throwable
+                        ),
+                        null, // accessContext
+                        null, // client
+                        null  // contextInfo
+                    );
+
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    throw new ImplementationError(
+                        "Hardcoded ServiceInstanceName for netComSvc is invalid",
+                        invalidNameExc
+                    );
                 }
             }
             else
@@ -436,11 +547,33 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 );
             }
         }
-        catch (IOException | KeyManagementException | UnrecoverableKeyException |
-            NoSuchAlgorithmException | KeyStoreException | CertificateException exc)
+        catch (FileNotFoundException fileExc)
         {
-            // TODO: reportProblem(...DrbdManageException...)
-            getErrorReporter().reportError(exc);
+            String errorMsg = "The configuration file for the initial network communications service could " +
+                "not be opened.";
+            String fileExcMsg = fileExc.getMessage();
+            getErrorReporter().reportProblem(
+                Level.ERROR,
+                new DrbdManageException(
+                    fileExcMsg != null ?
+                        "Can not open configuration file: " + fileExc.getMessage() :
+                        errorMsg + " The system did not provide any error description.",
+                    "The configuration file for the initial network communications service could not be opened.",
+                    fileExcMsg != null ?
+                        "The system returned the following error description:\n" +
+                        fileExc.getMessage() :
+                        "The system did not provide any error description.",
+                    "Make sure that the file exists and can be accessed by this process.",
+                    null
+                ),
+                null, // No access context
+                null, // No client connection
+                null // No context information
+            );
+        }
+        catch (IOException ioExc)
+        {
+            getErrorReporter().reportError(ioExc);
         }
     }
 
