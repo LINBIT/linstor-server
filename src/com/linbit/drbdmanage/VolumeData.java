@@ -7,8 +7,12 @@ import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.stateflags.FlagsPersistenceBase;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
+import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  *
@@ -73,9 +77,18 @@ public class VolumeData implements Volume
 
     private static final class VlmFlagsImpl extends StateFlagsBits<VlmFlags>
     {
-        VlmFlagsImpl(ObjectProtection objProtRef)
+        VlmFlagsImpl(ObjectProtection objProtRef, VlmFlagsPersistence persistenceRef)
         {
-            super(objProtRef, StateFlagsBits.getMask(VlmFlags.ALL_FLAGS));
+            super(objProtRef, StateFlagsBits.getMask(VlmFlags.ALL_FLAGS), persistenceRef);
+        }
+    }
+
+    private static final class VlmFlagsPersistence extends FlagsPersistenceBase implements StateFlagsPersistence
+    {
+        @Override
+        public void persist(Connection dbConn) throws SQLException
+        {
+            // TODO: Update the state flags in the database
         }
     }
 }

@@ -8,11 +8,14 @@ import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.stateflags.FlagsPersistenceBase;
 
 import java.sql.SQLException;
 import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
+import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
+import java.sql.Connection;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -67,7 +70,11 @@ public class ResourceData implements Resource
         volumeList = new TreeMap<>();
         resourceProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = new ObjectProtection(accCtx);
-        flags = new RscFlagsImpl(objProt);
+        {
+            RscFlagsPersistence flagsPersistence = new RscFlagsPersistence();
+            flags = new RscFlagsImpl(objProt, flagsPersistence);
+            flagsPersistence.setStateFlagsRef(flags);
+        }
     }
 
     @Override
@@ -164,9 +171,18 @@ public class ResourceData implements Resource
 
     private static final class RscFlagsImpl extends StateFlagsBits<RscFlags>
     {
-        RscFlagsImpl(ObjectProtection objProtRef)
+        RscFlagsImpl(ObjectProtection objProtRef, RscFlagsPersistence persistenceRef)
         {
-            super(objProtRef, StateFlagsBits.getMask(RscFlags.ALL_FLAGS));
+            super(objProtRef, StateFlagsBits.getMask(RscFlags.ALL_FLAGS), persistenceRef);
+        }
+    }
+
+    private static final class RscFlagsPersistence extends FlagsPersistenceBase implements StateFlagsPersistence
+    {
+        @Override
+        public void persist(Connection dbConn) throws SQLException
+        {
+            // TODO: Update the state flags in the database
         }
     }
 }

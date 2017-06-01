@@ -16,8 +16,11 @@ import java.util.TreeMap;
 import java.util.UUID;
 import com.linbit.drbdmanage.Node.NodeFlags;
 import com.linbit.drbdmanage.Node.NodeType;
+import com.linbit.drbdmanage.stateflags.FlagsPersistenceBase;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
+import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
+import java.sql.Connection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
@@ -74,7 +77,11 @@ public class NodeData implements Node
         storPoolMap = new TreeMap<>();
         nodeProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = new ObjectProtection(accCtx);
-        flags = new NodeFlagsImpl(objProt);
+        {
+            NodeFlagsPersistence flagsPersistence = new NodeFlagsPersistence();
+            flags = new NodeFlagsImpl(objProt, flagsPersistence);
+            flagsPersistence.setStateFlagsRef(flags);
+        }
     }
 
     @Override
@@ -230,9 +237,18 @@ public class NodeData implements Node
 
     private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlags>
     {
-        NodeFlagsImpl(ObjectProtection objProtRef)
+        NodeFlagsImpl(ObjectProtection objProtRef, NodeFlagsPersistence persistenceRef)
         {
-            super(objProtRef, StateFlagsBits.getMask(NodeFlags.ALL_FLAGS));
+            super(objProtRef, StateFlagsBits.getMask(NodeFlags.ALL_FLAGS), persistenceRef);
+        }
+    }
+
+    private static final class NodeFlagsPersistence extends FlagsPersistenceBase implements StateFlagsPersistence
+    {
+        @Override
+        public void persist(Connection dbConn) throws SQLException
+        {
+            // TODO: Update the state flags in the database
         }
     }
 }

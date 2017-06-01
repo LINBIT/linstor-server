@@ -12,6 +12,8 @@ import com.linbit.drbdmanage.Node.NodeFlags;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.StateFlags;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.TreeSet;
 
 /**
@@ -212,11 +214,12 @@ public class Quorum
      * @param accCtx
      * @throws AccessDeniedException
      */
-    public void readjustQignoreFlags(AccessContext accCtx) throws AccessDeniedException
+    public void readjustQignoreFlags(AccessContext accCtx, Connection dbConn)
+        throws AccessDeniedException, SQLException
     {
         for (Node node : quorumNodes)
         {
-            node.getFlags().disableFlags(accCtx, NodeFlags.QIGNORE);
+            node.getFlags().disableFlags(accCtx, dbConn, NodeFlags.QIGNORE);
         }
     }
 }

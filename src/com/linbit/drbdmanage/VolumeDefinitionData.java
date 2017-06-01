@@ -18,8 +18,11 @@ import com.linbit.drbdmanage.security.AccessType;
 import java.sql.SQLException;
 import java.util.UUID;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.stateflags.FlagsPersistenceBase;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
+import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
+import java.sql.Connection;
 
 /**
  *
@@ -94,7 +97,11 @@ public class VolumeDefinitionData implements VolumeDefinition
         minorNr = minor;
         volumeSize = volSize;
         vlmDfnProps = SerialPropsContainer.createRootContainer(srlGen);
-        flags = new VlmDfnFlagsImpl(resDfnRef.getObjProt());
+        {
+            VlmDfnFlagsPersistence flagsPersistence = new VlmDfnFlagsPersistence();
+            flags = new VlmDfnFlagsImpl(resDfnRef.getObjProt(), flagsPersistence);
+            flagsPersistence.setStateFlagsRef(flags);
+        }
     }
 
     @Override
@@ -164,9 +171,18 @@ public class VolumeDefinitionData implements VolumeDefinition
 
     private static final class VlmDfnFlagsImpl extends StateFlagsBits<VlmDfnFlags>
     {
-        VlmDfnFlagsImpl(ObjectProtection objProtRef)
+        VlmDfnFlagsImpl(ObjectProtection objProtRef, VlmDfnFlagsPersistence persistenceRef)
         {
-            super(objProtRef, StateFlagsBits.getMask(VlmDfnFlags.ALL_FLAGS));
+            super(objProtRef, StateFlagsBits.getMask(VlmDfnFlags.ALL_FLAGS), persistenceRef);
+        }
+    }
+
+    private static final class VlmDfnFlagsPersistence extends FlagsPersistenceBase implements StateFlagsPersistence
+    {
+        @Override
+        public void persist(Connection dbConn) throws SQLException
+        {
+            // TODO: Update the state flags in the database
         }
     }
 }

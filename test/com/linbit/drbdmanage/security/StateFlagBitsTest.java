@@ -11,22 +11,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.InvalidNameException;
-import com.linbit.drbdmanage.security.AccessContext;
-import com.linbit.drbdmanage.security.AccessDeniedException;
-import com.linbit.drbdmanage.security.AccessType;
-import com.linbit.drbdmanage.security.Identity;
-import com.linbit.drbdmanage.security.IdentityName;
-import com.linbit.drbdmanage.security.ObjectProtection;
-import com.linbit.drbdmanage.security.Privilege;
-import com.linbit.drbdmanage.security.PrivilegeSet;
-import com.linbit.drbdmanage.security.Role;
-import com.linbit.drbdmanage.security.RoleName;
-import com.linbit.drbdmanage.security.SecTypeName;
-import com.linbit.drbdmanage.security.SecurityLevel;
-import com.linbit.drbdmanage.security.SecurityType;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.testutils.SimpleIterator;
+import java.sql.SQLException;
 
 public class StateFlagBitsTest
 {
@@ -69,7 +57,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testEnableAllFlags() throws AccessDeniedException
+    public void testEnableAllFlags() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -95,14 +83,14 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.enableAllFlags(accCtx);
+                stateFlags.enableAllFlags(accCtx, null);
                 assertEquals(FlagImpl.getValidMask(), stateFlags.getFlagsBits(rootCtx));
             }
             else
             {
                 try
                 {
-                    stateFlags.enableAllFlags(accCtx);
+                    stateFlags.enableAllFlags(accCtx, null);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -115,7 +103,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testDisableAllFlags() throws AccessDeniedException
+    public void testDisableAllFlags() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -142,14 +130,14 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.disableAllFlags(accCtx);
+                stateFlags.disableAllFlags(accCtx, null);
                 assertEquals(0, stateFlags.getFlagsBits(rootCtx));
             }
             else
             {
                 try
                 {
-                    stateFlags.disableAllFlags(accCtx);
+                    stateFlags.disableAllFlags(accCtx, null);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -162,7 +150,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testEnableFlags() throws AccessDeniedException
+    public void testEnableFlags() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -196,14 +184,14 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.enableFlags(accCtx, flagsToSet);
+                stateFlags.enableFlags(accCtx, null, flagsToSet);
                 assertEquals(toEnableSet | preSet, stateFlags.getFlagsBits(rootCtx));
             }
             else
             {
                 try
                 {
-                    stateFlags.enableFlags(accCtx);
+                    stateFlags.enableFlags(accCtx, null);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -216,7 +204,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testDisableFlags() throws AccessDeniedException
+    public void testDisableFlags() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -250,14 +238,14 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.disableFlags(accCtx, flagsToUnset);
+                stateFlags.disableFlags(accCtx, null, flagsToUnset);
                 assertEquals(preSet & ~toDisableSet, stateFlags.getFlagsBits(rootCtx));
             }
             else
             {
                 try
                 {
-                    stateFlags.disableFlags(accCtx);
+                    stateFlags.disableFlags(accCtx, null);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -270,7 +258,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testEnableFlagsExcept() throws AccessDeniedException
+    public void testEnableFlagsExcept() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -304,7 +292,7 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.enableFlagsExcept(accCtx, flagsToSetExcept);
+                stateFlags.enableFlagsExcept(accCtx, null, flagsToSetExcept);
                 assertEquals(preSet | (FlagImpl.getValidMask() & ~toEnableExceptSet),
                     stateFlags.getFlagsBits(rootCtx));
             }
@@ -312,7 +300,7 @@ public class StateFlagBitsTest
             {
                 try
                 {
-                    stateFlags.enableFlagsExcept(accCtx);
+                    stateFlags.enableFlagsExcept(accCtx, null);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -325,7 +313,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testDisableFlagsExcept() throws AccessDeniedException
+    public void testDisableFlagsExcept() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -359,14 +347,14 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.disableFlagsExcept(accCtx, flagsToUnset);
+                stateFlags.disableFlagsExcept(accCtx, null, flagsToUnset);
                 assertEquals(preSet & toDisableSet, stateFlags.getFlagsBits(rootCtx));
             }
             else
             {
                 try
                 {
-                    stateFlags.disableFlagsExcept(accCtx);
+                    stateFlags.disableFlagsExcept(accCtx, null);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -379,7 +367,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testIsSet() throws AccessDeniedException
+    public void testIsSet() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -431,7 +419,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testIsUnset() throws AccessDeniedException
+    public void testIsUnset() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -483,7 +471,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testIsSomeSet() throws AccessDeniedException
+    public void testIsSomeSet() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -535,7 +523,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testIsSomeUnset() throws AccessDeniedException
+    public void testIsSomeUnset() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -587,7 +575,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testgetBitFlags() throws AccessDeniedException
+    public void testgetBitFlags() throws AccessDeniedException, SQLException
     {
         SimpleIterator iterator = new SimpleIterator(new Object[][]
         {
@@ -703,10 +691,11 @@ public class StateFlagBitsTest
         return flags;
     }
 
-    private StateFlagBitsImpl createStateflags(ObjectProtection op, FlagImpl... flagsPreSet) throws AccessDeniedException
+    private StateFlagBitsImpl createStateflags(ObjectProtection op, FlagImpl... flagsPreSet)
+        throws AccessDeniedException, SQLException
     {
         StateFlagBitsImpl stateFlags = new StateFlagBitsImpl(op, FlagImpl.getValidMask());
-        stateFlags.enableFlags(rootCtx, flagsPreSet);
+        stateFlags.enableFlags(rootCtx, null, flagsPreSet);
         return stateFlags;
     }
 
@@ -752,7 +741,7 @@ public class StateFlagBitsTest
     {
         public StateFlagBitsImpl(ObjectProtection objProtRef, long validFlagsMask)
         {
-            super(objProtRef, validFlagsMask);
+            super(objProtRef, validFlagsMask, null);
         }
     }
 }
