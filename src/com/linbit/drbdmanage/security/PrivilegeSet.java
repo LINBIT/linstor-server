@@ -15,7 +15,9 @@ public final class PrivilegeSet implements Cloneable
 {
     private PrivilegeSet limitPrivs;
 
-    private long privileges;
+    // Privileges bit field
+    // Assignment is guaranteed to be atomic by means of declaring the long volatile
+    private volatile long privileges;
 
     PrivilegeSet()
     {
