@@ -427,7 +427,7 @@ public class ObjectProtectionTest
 
             if (secEntry != null)
             {
-                someOtherUserSecDomain.addEntry(rootCtx, userSecDomain, secEntry);
+                someOtherUserSecDomain.addRule(rootCtx, userSecDomain, secEntry);
             }
 
             iteration.objProtOwner = subjRole;

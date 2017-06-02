@@ -55,7 +55,7 @@ public class SecurityModelTest
         );
 
         userType = new SecurityType(new SecTypeName("User"));
-        userType.addEntry(sysCtx, userType, AccessType.CONTROL);
+        userType.addRule(sysCtx, userType, AccessType.CONTROL);
 
         creatorCtx = sysCtx.impersonate(
             new Identity(new IdentityName("ObjCreator")),

@@ -295,10 +295,10 @@ public final class SecurityType implements Comparable<SecurityType>
      * @param context Security context specifying the subject domain
      * @return Allowed level of access, or null if access is denied
      */
-    public AccessType getEntry(AccessContext context)
+    public AccessType getRule(AccessContext context)
     {
         SecurityType domain = context.subjectDomain;
-        return SecurityType.this.getEntry(domain);
+        return SecurityType.this.getRule(domain);
     }
 
     /**
@@ -308,12 +308,12 @@ public final class SecurityType implements Comparable<SecurityType>
      * @param domain The security domain to find an access control rule for
      * @return Allowed level of access, or null if access is denied
      */
-    public AccessType getEntry(SecurityType domain)
+    public AccessType getRule(SecurityType domain)
     {
         return rules.get(domain.name);
     }
 
-    public void addEntry(AccessContext context, SecurityType domain, AccessType grantedAccess)
+    public void addRule(AccessContext context, SecurityType domain, AccessType grantedAccess)
         throws AccessDeniedException
     {
         PrivilegeSet privs = context.getEffectivePrivs();
@@ -321,7 +321,7 @@ public final class SecurityType implements Comparable<SecurityType>
         rules.put(domain.name, grantedAccess);
     }
 
-    public void delEntry(AccessContext context, SecurityType domain)
+    public void delRule(AccessContext context, SecurityType domain)
         throws AccessDeniedException
     {
         PrivilegeSet privs = context.getEffectivePrivs();

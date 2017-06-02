@@ -45,7 +45,7 @@ public final class Initializer
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
             // Adjust the type enforcement rules for the SYSTEM domain/type
-            SecurityType.SYSTEM_TYPE.addEntry(
+            SecurityType.SYSTEM_TYPE.addRule(
                 initCtx,
                 SecurityType.SYSTEM_TYPE, AccessType.CONTROL
             );

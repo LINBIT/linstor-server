@@ -56,25 +56,25 @@ public class SecurityTypeTest
             boolean expectedException = !SecurityLevel.get().equals(SecurityLevel.NO_SECURITY) &&
                 !accCtx.privEffective.hasPrivileges(PRIV_SYS_ALL);
 
-            AccessType origAccessType = sourceDomain.getEntry(targetDomain);
+            AccessType origAccessType = sourceDomain.getRule(targetDomain);
 
             if (expectedException)
             {
                 try
                 {
-                    sourceDomain.addEntry(accCtx, targetDomain, grantedAccess);
+                    sourceDomain.addRule(accCtx, targetDomain, grantedAccess);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
                 {
                     // expected
                 }
-                assertEquals(origAccessType, sourceDomain.getEntry(targetDomain));
+                assertEquals(origAccessType, sourceDomain.getRule(targetDomain));
             }
             else
             {
-                sourceDomain.addEntry(accCtx, targetDomain, grantedAccess);
-                assertEquals(grantedAccess, sourceDomain.getEntry(targetDomain));
+                sourceDomain.addRule(accCtx, targetDomain, grantedAccess);
+                assertEquals(grantedAccess, sourceDomain.getRule(targetDomain));
             }
         }
     }
@@ -90,7 +90,7 @@ public class SecurityTypeTest
             SecurityType targetDomain = iteration.targetDomain;
             AccessType accessType = iteration.requestingAccessType;
 
-            sourceDomain.addEntry(rootCtx, targetDomain, accessType);
+            sourceDomain.addRule(rootCtx, targetDomain, accessType);
 
             boolean expectedException = !SecurityLevel.get().equals(SecurityLevel.NO_SECURITY) &&
                 !accCtx.privEffective.hasPrivileges(PRIV_SYS_ALL);
@@ -99,7 +99,7 @@ public class SecurityTypeTest
             {
                 try
                 {
-                    sourceDomain.delEntry(accCtx, targetDomain);
+                    sourceDomain.delRule(accCtx, targetDomain);
 //                    System.out.println(secTypeIt);
                     fail("Exception expected");
                 }
@@ -107,12 +107,12 @@ public class SecurityTypeTest
                 {
                     // expected
                 }
-                assertEquals(accessType, sourceDomain.getEntry(targetDomain));
+                assertEquals(accessType, sourceDomain.getRule(targetDomain));
             }
             else
             {
-                sourceDomain.delEntry(accCtx, targetDomain);
-                assertNull(sourceDomain.getEntry(targetDomain));
+                sourceDomain.delRule(accCtx, targetDomain);
+                assertNull(sourceDomain.getRule(targetDomain));
             }
         }
     }
@@ -207,9 +207,9 @@ public class SecurityTypeTest
 
             if (accCtx.subjectDomain == secTypeTarget)
             {
-                assertEquals(grantedAT, secTypeSource.getEntry(accCtx));
+                assertEquals(grantedAT, secTypeSource.getRule(accCtx));
             }
-            assertEquals(grantedAT, secTypeSource.getEntry(secTypeTarget));
+            assertEquals(grantedAT, secTypeSource.getRule(secTypeTarget));
         }
     }
 
@@ -282,7 +282,7 @@ public class SecurityTypeTest
             iteration.requestingAccessType = getValue(IDX_REQUESTED_ACCESS_TYPE);
             iteration.grantedAccessType = getValue(IDX_GRANTED_ACCESS_TYPE);
 
-            iteration.sourceDomain.addEntry(rootCtx, iteration.targetDomain, iteration.grantedAccess);
+            iteration.sourceDomain.addRule(rootCtx, iteration.targetDomain, iteration.grantedAccess);
 
             return iteration;
         }
