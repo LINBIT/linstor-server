@@ -18,17 +18,18 @@ public enum SecurityLevel
     // Mandatory access control - Objects additionaly protected by domain/type rules
     MAC;
 
-    private static final AtomicReference<SecurityLevel> global = new AtomicReference<>(SecurityLevel.MAC);
+    private static final AtomicReference<SecurityLevel> GLOBAL_SEC_LEVEL_REF =
+        new AtomicReference<>(SecurityLevel.MAC);
 
     public static SecurityLevel get()
     {
-        return global.get();
+        return GLOBAL_SEC_LEVEL_REF.get();
     }
 
     public static void set(AccessContext accCtx, SecurityLevel newLevel)
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        global.set(newLevel);
+        GLOBAL_SEC_LEVEL_REF.set(newLevel);
     }
 }
