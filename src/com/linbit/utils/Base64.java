@@ -73,7 +73,7 @@ public class Base64
         final int inputLength = input.length();
         if (inputLength % 4 != 0)
         {
-            throw new IllegalArgumentException("Only base64 with padding input is allowed");
+            throw new IllegalArgumentException("Only padded Base64 input is supported");
         }
         int decodedLength = (inputLength * 3) / 4;
         final int paddingIndex = input.indexOf('=');

@@ -8,7 +8,7 @@ public class BigIntegerUtils
     {
         if (bigInt.bitLength() > 63)
         {
-            throw new ArithmeticException("long overflow");
+            throw new ArithmeticException("Input value for conversion is not within the range of data type long");
         }
         return bigInt.longValue();
     }
