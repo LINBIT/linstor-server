@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.security;
 
 import com.linbit.ImplementationError;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -15,7 +16,7 @@ public final class AccessControlList
 
     AccessControlList()
     {
-        acl = new TreeMap<>();
+        acl = Collections.synchronizedMap(new TreeMap<RoleName, AccessControlEntry>());
     }
 
     /**

@@ -6,6 +6,7 @@ import com.linbit.drbdmanage.ControllerDatabase;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -53,7 +54,7 @@ public final class SecurityType implements Comparable<SecurityType>
     SecurityType(SecTypeName typeName)
     {
         name = typeName;
-        rules = new TreeMap<>();
+        rules = Collections.synchronizedMap(new TreeMap<SecTypeName, AccessType>());
     }
 
     public static SecurityType create(AccessContext accCtx, SecTypeName typeName)
