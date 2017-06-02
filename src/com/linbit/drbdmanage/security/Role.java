@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Security role
@@ -19,6 +22,7 @@ import java.util.TreeSet;
 public final class Role implements Comparable<Role>
 {
     private static final Map<RoleName, Role> GLOBAL_ROLE_MAP = new TreeMap<>();
+    private static final ReadWriteLock GLOBAL_ROLE_MAP_LOCK = new ReentrantReadWriteLock();
 
     // Name of this security role
     public final RoleName name;
@@ -51,6 +55,112 @@ public final class Role implements Comparable<Role>
         privileges = new PrivilegeSet();
     }
 
+    public static Role create(AccessContext accCtx, RoleName roleName)
+        throws AccessDeniedException
+    {
+        accCtx.privEffective.requirePrivileges(Privilege.PRIV_SYS_ALL);
+
+        Lock writeLock = GLOBAL_ROLE_MAP_LOCK.writeLock();
+
+        Role roleObj;
+        try
+        {
+            writeLock.lock();
+            roleObj = GLOBAL_ROLE_MAP.get(roleName);
+            if (roleObj == null)
+            {
+                roleObj = new Role(roleName);
+                GLOBAL_ROLE_MAP.put(roleName, roleObj);
+            }
+        }
+        finally
+        {
+            writeLock.unlock();
+        }
+        return roleObj;
+    }
+
+    public static Role get(RoleName rlName)
+    {
+        Lock readLock = GLOBAL_ROLE_MAP_LOCK.readLock();
+
+        Role roleObj;
+        try
+        {
+            readLock.lock();
+            roleObj = GLOBAL_ROLE_MAP.get(rlName);
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+        return roleObj;
+    }
+
+    public static Set<Role> getAll()
+    {
+        Lock readLock = GLOBAL_ROLE_MAP_LOCK.readLock();
+
+        Set<Role> result = new TreeSet();
+        try
+        {
+            readLock.lock();
+            result.addAll(GLOBAL_ROLE_MAP.values());
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+        return result;
+    }
+
+    static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
+        throws SQLException, InvalidNameException
+    {
+        Connection dbConn = ctrlDb.getConnection();
+        if (dbConn == null)
+        {
+            throw new SQLException(
+                "The controller database connection pool failed to provide a database connection"
+            );
+        }
+
+        Lock writeLock = GLOBAL_ROLE_MAP_LOCK.writeLock();
+
+        try
+        {
+            writeLock.lock();
+            GLOBAL_ROLE_MAP.clear();
+
+            GLOBAL_ROLE_MAP.put(SYSTEM_ROLE.name, SYSTEM_ROLE);
+            GLOBAL_ROLE_MAP.put(PUBLIC_ROLE.name, PUBLIC_ROLE);
+
+            ResultSet loadData = secDb.loadRoles(dbConn);
+            while (loadData.next())
+            {
+                String name = loadData.getString(SecurityDbFields.ROLE_DSP_NAME);
+                RoleName rlName = new RoleName(name);
+                if (!rlName.equals(SYSTEM_ROLE.name) &&
+                    !rlName.equals(PUBLIC_ROLE.name))
+                {
+                    Role secRole = new Role(rlName);
+                    GLOBAL_ROLE_MAP.put(rlName, secRole);
+                }
+            }
+        }
+        finally
+        {
+            writeLock.unlock();
+            ctrlDb.returnConnection(dbConn);
+        }
+    }
+
+    @Override
+    public String toString()
+    {
+        return name.displayValue;
+    }
+
     @Override
     public int compareTo(Role other)
     {
@@ -72,67 +182,5 @@ public final class Role implements Comparable<Role>
             equals = this.name.equals(((Role) other).name);
         }
         return equals;
-    }
-
-    static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws SQLException, InvalidNameException
-    {
-        Connection dbConn = ctrlDb.getConnection();
-        if (dbConn == null)
-        {
-            throw new SQLException(
-                "The controller database connection pool failed to provide a database connection"
-            );
-        }
-        try
-        {
-            GLOBAL_ROLE_MAP.clear();
-
-            GLOBAL_ROLE_MAP.put(SYSTEM_ROLE.name, SYSTEM_ROLE);
-            GLOBAL_ROLE_MAP.put(PUBLIC_ROLE.name, PUBLIC_ROLE);
-
-            ResultSet loadData = secDb.loadRoles(dbConn);
-            while (loadData.next())
-            {
-                String name = loadData.getString(SecurityDbFields.ROLE_DSP_NAME);
-                RoleName rlName = new RoleName(name);
-                if (!rlName.equals(SYSTEM_ROLE.name) &&
-                    !rlName.equals(PUBLIC_ROLE.name))
-                {
-                    Role secRole = new Role(rlName);
-                    GLOBAL_ROLE_MAP.put(rlName, secRole);
-                }
-            }
-        }
-        finally
-        {
-            ctrlDb.returnConnection(dbConn);
-        }
-    }
-
-    public static Role get(RoleName rlName)
-    {
-        return GLOBAL_ROLE_MAP.get(rlName);
-    }
-
-    public static Set<Role> getAll()
-    {
-        Set<Role> result = new TreeSet<>();
-        result.addAll(GLOBAL_ROLE_MAP.values());
-        return result;
-    }
-
-    // FIXME: Replace constructor with static create() method
-    public Role(AccessContext accCtx, RoleName roleName)
-        throws AccessDeniedException
-    {
-        this(roleName);
-        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-    }
-
-    @Override
-    public String toString()
-    {
-        return name.displayValue;
     }
 }

@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Represents the type of an object protected by access controls
@@ -20,6 +23,7 @@ import java.util.TreeSet;
 public final class SecurityType implements Comparable<SecurityType>
 {
     private static final Map<SecTypeName, SecurityType> GLOBAL_TYPE_MAP = new TreeMap<>();
+    private static final ReadWriteLock GLOBAL_TYPE_MAP_LOCK = new ReentrantReadWriteLock();
 
     // Name of this security type
     public final SecTypeName name;
@@ -46,41 +50,69 @@ public final class SecurityType implements Comparable<SecurityType>
         }
     }
 
-    // FIXME: Replace constructor with static create() method
-    public SecurityType(AccessContext accCtx, SecTypeName typeName)
-        throws AccessDeniedException
-    {
-        this(typeName);
-        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-    }
-
     SecurityType(SecTypeName typeName)
     {
         name = typeName;
         rules = new TreeMap<>();
     }
 
-    @Override
-    public int compareTo(SecurityType other)
+    public static SecurityType create(AccessContext accCtx, SecTypeName typeName)
+        throws AccessDeniedException
     {
-        return this.name.compareTo(other.name);
-    }
+        accCtx.privEffective.requirePrivileges(Privilege.PRIV_SYS_ALL);
 
-    @Override
-    public int hashCode()
-    {
-       return this.name.hashCode();
-    }
+        Lock writeLock = GLOBAL_TYPE_MAP_LOCK.writeLock();
 
-    @Override
-    public boolean equals(Object other)
-    {
-        boolean equals = false;
-        if (other != null && other instanceof SecurityType)
+        SecurityType secTypeObj;
+        try
         {
-            equals = this.name.equals(((SecurityType) other).name);
+            writeLock.lock();
+            secTypeObj = GLOBAL_TYPE_MAP.get(typeName);
+            if (secTypeObj == null)
+            {
+                secTypeObj = new SecurityType(typeName);
+                GLOBAL_TYPE_MAP.put(typeName, secTypeObj);
+            }
         }
-        return equals;
+        finally
+        {
+            writeLock.unlock();
+        }
+        return secTypeObj;
+    }
+
+    public static SecurityType get(SecTypeName typeName)
+    {
+        Lock readLock = GLOBAL_TYPE_MAP_LOCK.readLock();
+
+        SecurityType secTypeObj;
+        try
+        {
+            readLock.lock();
+            secTypeObj = GLOBAL_TYPE_MAP.get(typeName);
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+        return secTypeObj;
+    }
+
+    public static Set<SecurityType> getAll()
+    {
+        Lock readLock = GLOBAL_TYPE_MAP_LOCK.readLock();
+
+        Set<SecurityType> result = new TreeSet<>();
+        try
+        {
+            readLock.lock();
+            result.addAll(GLOBAL_TYPE_MAP.values());
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+        return result;
     }
 
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
@@ -93,8 +125,12 @@ public final class SecurityType implements Comparable<SecurityType>
                 "The controller database connection pool failed to provide a database connection"
             );
         }
+
+        Lock writeLock = GLOBAL_TYPE_MAP_LOCK.writeLock();
+
         try
         {
+            writeLock.lock();
             GLOBAL_TYPE_MAP.clear();
 
             GLOBAL_TYPE_MAP.put(SYSTEM_TYPE.name, SYSTEM_TYPE);
@@ -135,20 +171,9 @@ public final class SecurityType implements Comparable<SecurityType>
         }
         finally
         {
+            writeLock.unlock();
             ctrlDb.returnConnection(dbConn);
         }
-    }
-
-    public static SecurityType get(SecTypeName typeName)
-    {
-        return GLOBAL_TYPE_MAP.get(typeName);
-    }
-
-    public static Set<SecurityType> getAll()
-    {
-        Set<SecurityType> result = new TreeSet<>();
-        result.addAll(GLOBAL_TYPE_MAP.values());
-        return result;
     }
 
     /**
@@ -279,6 +304,7 @@ public final class SecurityType implements Comparable<SecurityType>
     /**
      * Returns the level of access granted to an object of the security type
      * of this instance to the specified security domain by an access control rule
+     *
      * @param domain The security domain to find an access control rule for
      * @return Allowed level of access, or null if access is denied
      */
@@ -317,5 +343,28 @@ public final class SecurityType implements Comparable<SecurityType>
     public String toString()
     {
         return name.displayValue;
+    }
+
+    @Override
+    public int compareTo(SecurityType other)
+    {
+        return this.name.compareTo(other.name);
+    }
+
+    @Override
+    public int hashCode()
+    {
+       return this.name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other)
+    {
+        boolean equals = false;
+        if (other != null && other instanceof SecurityType)
+        {
+            equals = this.name.equals(((SecurityType) other).name);
+        }
+        return equals;
     }
 }

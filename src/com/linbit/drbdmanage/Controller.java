@@ -488,7 +488,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             impCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
             AccessContext privPeerCtx = impCtx.impersonate(
-                new Identity(impCtx, new IdentityName("DebugClient")),
+                Identity.create(impCtx, new IdentityName("DebugClient")),
                 sysCtx.getRole(),
                 sysCtx.getDomain(),
                 Privilege.PRIV_SYS_ALL
