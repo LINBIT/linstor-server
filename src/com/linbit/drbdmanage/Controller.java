@@ -668,7 +668,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                         msgProc,
                         bindAddress ,
                         publicCtx,
-                        new ConnTracker(null)
+                        new ConnTracker(this)
                     );
                 }
                 else
@@ -681,7 +681,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                             msgProc,
                             bindAddress ,
                             publicCtx,
-                            new ConnTracker(null),
+                            new ConnTracker(this),
                             loadPropChecked(configProp, PROPSCON_KEY_NETCOM_SSL_PROTOCOL),
                             loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE),
                             loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD).toCharArray(),
