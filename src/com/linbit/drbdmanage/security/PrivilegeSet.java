@@ -111,10 +111,13 @@ public final class PrivilegeSet implements Cloneable
     public void disablePrivileges(Privilege... privList)
     {
         long privMask = ~getPrivMask(privList);
-        privileges &= privMask;
-        if (limitPrivs != null)
+        synchronized (this)
         {
-            privileges &= limitPrivs.privileges;
+            privileges &= privMask;
+            if (limitPrivs != null)
+            {
+                privileges &= limitPrivs.privileges;
+            }
         }
     }
 
@@ -131,9 +134,12 @@ public final class PrivilegeSet implements Cloneable
     {
         if (limitPrivs != null)
         {
-            limitPrivs.requirePrivileges(privList);
-            long privMask = getPrivMask(privList);
-            privileges = (privileges & limitPrivs.privileges) | privMask;
+            synchronized (this)
+            {
+                limitPrivs.requirePrivileges(privList);
+                long privMask = getPrivMask(privList);
+                privileges = (privileges & limitPrivs.privileges) | privMask;
+            }
         }
         else
         {
