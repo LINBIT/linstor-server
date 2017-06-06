@@ -1,15 +1,30 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.logging.ErrorReporter;
+import com.linbit.ImplementationError;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.Privilege;
 import com.linbit.drbdmanage.timer.CoreTimer;
 import com.linbit.drbdmanage.timer.CoreTimerImpl;
+
+import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Properties;
 import org.slf4j.event.Level;
 
@@ -235,6 +250,265 @@ public abstract class DrbdManage
     public void printField(PrintStream out, String title, String text)
     {
         System.out.printf("    %-24s %s\n", title, text);
+    }
+
+    /**
+     * Loads implementations of the {@link ApiCall} from the package
+     * where {@link BaseApiCall} is currently placed + ".common"
+     * and stores them into msgProc.
+     *
+     * If the componentRef's class equals {@link Controller}, then the ApiCall
+     * classes from the {@link BaseApiCall}'s package + ".controller" are loaded.
+     * Otherwise the ".satellite" package is loaded additionally.
+     *
+     * The parameter componentRef is used to initialize the ApiCall.
+     *
+     * @param msgProc
+     * @param componentRef
+     * @param isController
+     * @throws IOException
+     */
+    protected static void loadApiCalls(
+        final CommonMessageProcessor msgProc,
+        final DrbdManage componentRef,
+        final CoreServices coreService
+    )
+    {
+        final ClassLoader cl = componentRef.getClass().getClassLoader();
+
+        String[] pkgsToload;
+        String basePackage = BaseApiCall.class.getPackage().getName();
+        String commonPkg = basePackage + ".common";
+
+        if (componentRef.getClass().equals(Controller.class))
+        {
+            pkgsToload = new String[]
+            {
+                commonPkg,
+                basePackage + ".controller"
+            };
+        }
+        else
+        {
+            pkgsToload = new String[]
+            {
+                commonPkg,
+                basePackage + ".satellite"
+            };
+        }
+
+        final Path basePath = Paths.get("bin").toAbsolutePath();
+
+        for (final String pkgToLoad : pkgsToload)
+        {
+            Path pkgPath = Paths.get(pkgToLoad.replaceAll("\\.", File.separator));
+            pkgPath = basePath.resolve(pkgPath);
+
+            if (!pkgPath.toFile().exists())
+            {
+                componentRef.errorLog.logDebug(
+                    String.format(
+                        "Package '%s' does not exist - skipping dynamic load of ApiCalls",
+                        pkgPath
+                    )
+                );
+            }
+            else
+            try
+            {
+                Files.walkFileTree(basePath.resolve(pkgPath), new SimpleFileVisitor<Path>()
+                {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+                    {
+                        loadClass(msgProc, componentRef, coreService, cl, basePath, pkgToLoad, file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            }
+            catch (IOException ioExc)
+            {
+                componentRef.errorLog.reportError(
+                    new DrbdManageException(
+                        "Failed to load classes from " + pkgPath,
+                        "See cause for more details",
+                        ioExc.getLocalizedMessage(),
+                        null,
+                        null,
+                        ioExc
+                    )
+                );
+            }
+        }
+    }
+
+    private static void loadClass(
+        final CommonMessageProcessor msgProc,
+        final DrbdManage componentRef,
+        final CoreServices coreService,
+        final ClassLoader cl,
+        final Path basePath,
+        final String pkgToLoad,
+        Path file
+    )
+    {
+        if (file.getFileName().toString().endsWith(".class"))
+        {
+            if (file.isAbsolute())
+            {
+                file = basePath.relativize(file);
+            }
+            String fullQualifiedClassName = file.toString().replaceAll(File.separator, ".");
+            fullQualifiedClassName = fullQualifiedClassName.substring(0, fullQualifiedClassName.lastIndexOf(".")); // cut the ".class"
+            Class<?> clazz = null;
+            try
+            {
+                clazz = cl.loadClass(fullQualifiedClassName);
+            }
+            catch (ClassNotFoundException e)
+            {
+                componentRef.errorLog.reportProblem(Level.DEBUG,
+                    new DrbdManageException(
+                        "Dynamic loading of API classes threw ClassNotFoundException",
+                        String.format(
+                            "Loading the class '%s' resulted in a ClassNotFoundException",
+                            fullQualifiedClassName),
+                        String.format(
+                            "While loading all classes from package '%s', the class '%s' could not be laoded",
+                            pkgToLoad,
+                            fullQualifiedClassName),
+                        null,
+                        null,
+                        e),
+                    null, // accCtx
+                    null, // client
+                    null  // contextInfo
+                );
+            }
+
+            if (clazz != null)
+            {
+                if (Modifier.isAbstract(clazz.getModifiers()))
+                {
+                    String message = String.format(
+                        "Skipping dynamic loading of api class '%s' as it is abstract",
+                        fullQualifiedClassName
+                    );
+                    componentRef.errorLog.reportError(
+                        new DrbdManageException(
+                            message,
+                            message,
+                            "Cannot instantiate abstract class",
+                            "Make the class instantiable or move the class from the api package",
+                            null
+                        )
+                    );
+
+                }
+                else
+                if (!ApiCall.class.isAssignableFrom(clazz))
+                {
+                    String message = String.format(
+                        "Skipping dynamic loading of api class '%s' as it does not implement ApiCall",
+                        fullQualifiedClassName
+                    );
+                    componentRef.errorLog.reportError(
+                        new DrbdManageException(
+                            message,
+                            message,
+                            null,
+                            "Let the class implement ApiCall or move the class from the api package",
+                            null
+                        )
+                    );
+                }
+                else
+                {
+                    Constructor<?>[] declaredConstructors = clazz.getDeclaredConstructors();
+                    Constructor<?> ctor = null;
+                    for (Constructor<?> declaredConstructor : declaredConstructors)
+                    {
+                        Class<?>[] parameterTypes = declaredConstructor.getParameterTypes();
+
+                        if (Modifier.isPublic(declaredConstructor.getModifiers()) &&
+                            parameterTypes.length == 2 &&
+                            parameterTypes[0].isAssignableFrom(componentRef.getClass()) &&
+                            parameterTypes[1].isAssignableFrom(CoreServices.class))
+                        {
+                            ctor = declaredConstructor;
+                            break;
+                        }
+                    }
+                    if (ctor == null)
+                    {
+                        String message = String.format(
+                            "Skipping dynamic loading of api class '%s' as it does not contain the expected constructor",
+                            fullQualifiedClassName
+                        );
+                        componentRef.errorLog.reportError(
+                            new DrbdManageException(
+                                message,
+                                message,
+                                null,
+                                String.format(
+                                    "Create a public constructor with the parameters %s and %s",
+                                    componentRef.getClass().getName(),
+                                    CoreServices.class.getName()
+                                ),
+                                null
+                            )
+                        );
+                    }
+                    else
+                    {
+                        Object instance = null;
+                        try
+                        {
+                            instance = ctor.newInstance(componentRef, coreService);
+                        }
+                        catch (
+                            InstantiationException | IllegalAccessException |
+                            IllegalArgumentException | InvocationTargetException exc
+                        )
+                        {
+                            String message = String.format(
+                                "Creating new instance of %s failed. See cause for more details",
+                                fullQualifiedClassName
+                            );
+                            componentRef.errorLog.reportError(
+                                new DrbdManageException(
+                                    message,
+                                    message,
+                                    exc.getLocalizedMessage(),
+                                    null,
+                                    null,
+                                    exc
+                                )
+                            );
+                        }
+                        if (instance != null)
+                        {
+                            try
+                            {
+                                ApiCall baseInstance = (ApiCall) instance;
+                                msgProc.addApiCall(baseInstance);
+                                componentRef.errorLog.logTrace("Loaded API class: " + fullQualifiedClassName);
+                            }
+                            catch (ClassCastException ccExc)
+                            {
+                                // technically this should never occur
+                                componentRef.errorLog.reportError(
+                                    new ImplementationError(
+                                        "Previous checks if dynamically loaded api class is castable failed",
+                                        ccExc
+                                    )
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public static void printStartupInfo()

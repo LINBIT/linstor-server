@@ -181,9 +181,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 msgProc = new CommonMessageProcessor(this, workerThrPool);
 
                 errorLogRef.logInfo("Initializing test APIs");
-                {
-                    // TODO: Satellite test APIs
-                }
+                DrbdManage.loadApiCalls(msgProc, this, this);
 
                 // Initialize system services
                 startSystemServices(systemServicesMap.values());

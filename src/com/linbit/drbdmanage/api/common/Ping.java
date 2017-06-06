@@ -1,9 +1,9 @@
-package com.linbit.drbdmanage.commonapi;
+package com.linbit.drbdmanage.api.common;
 
-import com.linbit.drbdmanage.commonapi.BaseApiCall;
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.DrbdManage;
+import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;

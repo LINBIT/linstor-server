@@ -1,4 +1,4 @@
-package com.linbit.drbdmanage.commonapi;
+package com.linbit.drbdmanage.api;
 
 import com.google.protobuf.GeneratedMessageV3;
 import com.linbit.drbdmanage.ApiCall;

@@ -1,31 +1,32 @@
-package com.linbit.drbdmanage.controllerapi;
+package com.linbit.drbdmanage.api.controller;
 
-import com.linbit.drbdmanage.commonapi.BaseApiCall;
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.proto.MsgDebugReplyOuterClass.MsgDebugReply;
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Debug API - make a peer a superuser
+ * Destroys (frees) the peer's debug console
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class DebugMakeSuperuser extends BaseApiCall
+public class DestroyDebugConsole extends BaseApiCall
 {
-    private Controller ctrl;
-    private CoreServices coreSvcs;
+    private Controller      ctrl;
+    private CoreServices    coreSvcs;
 
-    public DebugMakeSuperuser(
+    public DestroyDebugConsole(
         Controller ctrlRef,
         CoreServices coreSvcsRef
     )
@@ -37,47 +38,50 @@ public class DebugMakeSuperuser extends BaseApiCall
     @Override
     public String getName()
     {
-        return DebugMakeSuperuser.class.getSimpleName();
+        return DestroyDebugConsole.class.getSimpleName();
     }
 
     @Override
     public void execute(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        TcpConnector connector,
-        Peer client
+        AccessContext   accCtx,
+        Message         msg,
+        int             msgId,
+        InputStream     msgDataIn,
+        TcpConnector    connector,
+        Peer            client
     )
     {
         try
         {
+            Message reply = client.createMessage();
             ByteArrayOutputStream replyOut = new ByteArrayOutputStream();
             writeMsgHeader(replyOut, msgId, "DebugReply");
 
-            ByteArrayOutputStream debugErr = new ByteArrayOutputStream();
             MsgDebugReply.Builder msgDbgReplyBld = MsgDebugReply.newBuilder();
+            try
+            {
+                ctrl.destroyDebugConsole(accCtx, client);
 
-            if (ctrl.debugMakePeerPrivileged(client))
-            {
-                msgDbgReplyBld.addDebugOut("Security context has been changed");
+                msgDbgReplyBld.addDebugOut("Debug console destroyed");
             }
-            else
+            catch (AccessDeniedException accessExc)
             {
-                msgDbgReplyBld.addDebugErr("Request to change the security context has been denied");
+                coreSvcs.getErrorReporter().reportError(accessExc);
+                msgDbgReplyBld.addDebugErr(
+                    "Error:\n" +
+                    "    The request to destroy the debug console was denied.\n" +
+                    "Cause:\n    " +
+                    accessExc.getMessage() +
+                    "\n"
+                );
             }
 
-            MsgDebugReply msgDbgReply = msgDbgReplyBld.build();
-            Message reply = client.createMessage();
             {
-                msgDbgReply.writeDelimitedTo(replyOut);
+                MsgDebugReply dbgReply = msgDbgReplyBld.build();
+                dbgReply.writeDelimitedTo(replyOut);
                 reply.setData(replyOut.toByteArray());
             }
             client.sendMessage(reply);
-        }
-        catch (IOException ioExc)
-        {
-            coreSvcs.getErrorReporter().reportError(ioExc);
         }
         catch (IllegalMessageStateException msgExc)
         {
@@ -86,6 +90,10 @@ public class DebugMakeSuperuser extends BaseApiCall
                     " class has an illegal state",
                 msgExc
             );
+        }
+        catch (IOException ioExc)
+        {
+            coreSvcs.getErrorReporter().reportError(ioExc);
         }
     }
 }

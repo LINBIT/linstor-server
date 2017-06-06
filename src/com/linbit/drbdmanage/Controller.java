@@ -8,11 +8,6 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
-import com.linbit.drbdmanage.controllerapi.CreateDebugConsole;
-import com.linbit.drbdmanage.controllerapi.DebugCommand;
-import com.linbit.drbdmanage.controllerapi.DebugMakeSuperuser;
-import com.linbit.drbdmanage.controllerapi.DestroyDebugConsole;
-import com.linbit.drbdmanage.commonapi.Ping;
 import com.linbit.drbdmanage.debug.BaseDebugConsole;
 import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
@@ -298,13 +293,14 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 msgProc = new CommonMessageProcessor(this, workerThrPool);
 
                 errorLogRef.logInfo("Initializing test APIs");
-                {
-                    msgProc.addApiCall(new Ping(this, this));
-                    msgProc.addApiCall(new CreateDebugConsole(this, this));
-                    msgProc.addApiCall(new DestroyDebugConsole(this, this));
-                    msgProc.addApiCall(new DebugCommand(this, this));
-                    msgProc.addApiCall(new DebugMakeSuperuser(this, this));
-                }
+                DrbdManage.loadApiCalls(msgProc, this, this);
+//                {
+//                    msgProc.addApiCall(new Ping(this, this));
+//                    msgProc.addApiCall(new CreateDebugConsole(this, this));
+//                    msgProc.addApiCall(new DestroyDebugConsole(this, this));
+//                    msgProc.addApiCall(new DebugCommand(this, this));
+//                    msgProc.addApiCall(new DebugMakeSuperuser(this, this));
+//                }
 
                 Props config = loadPropsCon(errorLogRef);
                 if (config == null)
