@@ -589,166 +589,162 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     {
         if (netComProps == null)
         {
+            String errorMsg = "The controller configuration does not define any network communication services";
             errorLog.reportError(
                 new SystemServiceStartException(
-                    "No netCom services defined",
-                    "The propsContainer loaded from the database did not contain any netCom services",
+                    errorMsg,
+                    errorMsg,
                     null,
-                    "Inset at least one netCom service to the database",
+                    null,
+                    "Define at least one network communication service",
                     null
                 )
             );
         }
         else
         {
-            Iterator<String> namespaces = netComProps.iterateNamespaces();
-            while (namespaces.hasNext())
+            try
             {
-                String namespaceStr = namespaces.next();
-                ServiceName serviceName;
-                try
+                Iterator<String> namespaces = netComProps.iterateNamespaces();
+                while (namespaces.hasNext())
                 {
-                    serviceName = new ServiceName(namespaceStr);
-                }
-                catch (InvalidNameException invalidNameExc)
-                {
-                    errorLog.reportError(
-                        new SystemServiceStartException(
-                            "Invalid sevice name",
-                            "The given name is not a valid service name: " + namespaceStr,
-                            null,
-                            "Correct the name (entries) in the database",
-                            null,
-                            invalidNameExc
-                        )
-                    );
-                    continue; // netComSvc cannot be initialized without serviceName
-                }
-                Props configProp;
-                try
-                {
-                    configProp = netComProps.getNamespace(namespaceStr);
-                }
-                catch (InvalidKeyException invalidKeyExc)
-                {
-                    errorLog.reportError(
-                        new SystemServiceStartException(
-                            "Invalid namespace name",
-                            "The given name is not a valid name for a propsContainer namespace: " + namespaceStr,
-                            null,
-                            "Correct the name (entries) in the database",
-                            null,
-                            invalidKeyExc
-                        )
-                    );
-                    continue;
-                }
-                String bindAddressStr;
-                int port;
-                String type;
-                try
-                {
-                    bindAddressStr = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_BINDADDR);
-                    port = Integer.parseInt(loadPropChecked(configProp, PROPSCON_KEY_NETCOM_PORT));
-                    type = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TYPE);
-                }
-                catch (SystemServiceStartException sysSvcStartExc)
-                {
-                    errorLog.reportError(sysSvcStartExc);
-                    continue;
-                }
-
-                SocketAddress bindAddress = new InetSocketAddress(bindAddressStr, port);
-
-                TcpConnector netComSvc = null;
-                if (type.equals(PROPSCON_NETCOM_TYPE_PLAIN))
-                {
-                    netComSvc = new TcpConnectorService(
-                        this,
-                        msgProc,
-                        bindAddress ,
-                        publicCtx,
-                        new ConnTracker(this)
-                    );
-                }
-                else
-                if (type.equals(PROPSCON_NETCOM_TYPE_SSL))
-                {
+                    String namespaceStr = namespaces.next();
+                    ServiceName serviceName;
                     try
                     {
-                        netComSvc = new SslTcpConnectorService(
-                            this,
-                            msgProc,
-                            bindAddress ,
-                            publicCtx,
-                            new ConnTracker(this),
-                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_SSL_PROTOCOL),
-                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE),
-                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD).toCharArray(),
-                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEY_PASSWD).toCharArray(),
-                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE),
-                            loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE_PASSWD).toCharArray()
+                        serviceName = new ServiceName(namespaceStr);
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        throw new SystemServiceStartException(
+                            String.format(
+                                "The name '%s' can not be used for a network communication service instance",
+                                namespaceStr
+                            ),
+                            String.format(
+                                "The name '%s' is not a valid name for a network communication service instance",
+                                namespaceStr
+                            ),
+                            null,
+                            "Change the name of the network communication service instance",
+                            null,
+                            invalidNameExc
                         );
                     }
-                    catch (
-                        KeyManagementException | UnrecoverableKeyException |
-                        NoSuchAlgorithmException | KeyStoreException | CertificateException |
-                        IOException exc
-                    )
+                    Props configProp;
+                    try
                     {
-                        errorLog.reportError(
-                            new SystemServiceStartException(
-                                "Cannot start ssl TCP connector service",
-                                "Constructing a new ssl TCP connector service failed",
-                                exc.getLocalizedMessage(),
+                        configProp = netComProps.getNamespace(namespaceStr);
+                    }
+                    catch (InvalidKeyException invalidKeyExc)
+                    {
+                        throw new ImplementationError(
+                            String.format(
+                                "A properties container returned the key '%s' as the identifier for a namespace, " +
+                                "but using the same key to obtain a reference to the namespace generated an " +
+                                "%s",
+                                namespaceStr,
+                                invalidKeyExc.getClass().getSimpleName()
+                            ),
+                            invalidKeyExc
+                        );
+                    }
+                    String bindAddressStr = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_BINDADDR);
+                    Integer port = Integer.parseInt(loadPropChecked(configProp, PROPSCON_KEY_NETCOM_PORT));
+                    String type = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TYPE);
+
+                    SocketAddress bindAddress = new InetSocketAddress(bindAddressStr, port);
+
+                    TcpConnector netComSvc = null;
+                    if (type.equals(PROPSCON_NETCOM_TYPE_PLAIN))
+                    {
+                        netComSvc = new TcpConnectorService(
+                            this,
+                            msgProc,
+                            bindAddress,
+                            publicCtx,
+                            new ConnTracker(this)
+                        );
+                    }
+                    else
+                    if (type.equals(PROPSCON_NETCOM_TYPE_SSL))
+                    {
+                        try
+                        {
+                            netComSvc = new SslTcpConnectorService(
+                                this,
+                                msgProc,
+                                bindAddress ,
+                                publicCtx,
+                                new ConnTracker(this),
+                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_SSL_PROTOCOL),
+                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE),
+                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD).toCharArray(),
+                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEY_PASSWD).toCharArray(),
+                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE),
+                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE_PASSWD).toCharArray()
+                            );
+                        }
+                        catch (
+                            KeyManagementException | UnrecoverableKeyException |
+                            NoSuchAlgorithmException | KeyStoreException | CertificateException |
+                            IOException exc
+                        )
+                        {
+                            String errorMsg = "Initialization of an SSL-enabled network communication service failed";
+                            errorLog.reportError(exc);
+                            throw new SystemServiceStartException(
+                                errorMsg,
+                                errorMsg,
+                                null,
                                 null,
                                 null,
                                 exc
+                            );
+                        }
+                    }
+                    else
+                    {
+                        errorLog.reportProblem(
+                            Level.ERROR,
+                            new DrbdManageException(
+                                String.format(
+                                    "The connection type for the network communication service '%s' is not valid",
+                                    serviceName
+                                ),
+                                String.format(
+                                    "The connection type has to be either '%s' or '%s', but was '%s'",
+                                    PROPSCON_NETCOM_TYPE_PLAIN,
+                                    PROPSCON_NETCOM_TYPE_SSL,
+                                    type),
+                                null,
+                                "Correct the entry in the database",
+                                null
+                            ),
+                            null, // accCtx
+                            null, // client
+                            null  // contextInfo
+                        );
+                    }
+
+                    if (netComSvc != null)
+                    {
+                        netComSvc.setServiceInstanceName(serviceName);
+                        netComConnectors.put(serviceName, netComSvc);
+                        systemServicesMap.put(serviceName, netComSvc);
+                        netComSvc.start();
+                        errorLog.logInfo(
+                            String.format(
+                                "Started network communication service '%s', bound to %s:%d",
+                                serviceName.displayValue, bindAddressStr, port
                             )
                         );
-                        continue;
-                    }
-                    catch (SystemServiceStartException sysSvcStartExc)
-                    {
-                        errorLog.reportError(sysSvcStartExc);
-                        continue;
                     }
                 }
-                if (netComSvc == null)
-                {
-                    errorLog.reportProblem(
-                        Level.ERROR,
-                        new DrbdManageException(
-                            "Invalid connection type",
-                            String.format(
-                                "The connection type has to be either '%s' or '%s', but was '%s'",
-                                PROPSCON_NETCOM_TYPE_PLAIN,
-                                PROPSCON_NETCOM_TYPE_SSL,
-                                type),
-                            null,
-                            "Correct the entry in the database",
-                            null
-                        ),
-                        null, // accCtx
-                        null, // client
-                        null  // contextInfo
-                    );
-                }
-                else
-                {
-                    netComSvc.setServiceInstanceName(serviceName);
-                    netComConnectors.put(serviceName, netComSvc);
-                    systemServicesMap.put(serviceName, netComSvc);
-                    try
-                    {
-                        netComSvc.start();
-                    }
-                    catch (SystemServiceStartException sysSvcStartExc)
-                    {
-                        errorLog.reportError(sysSvcStartExc);
-                    }
-                    errorLog.logInfo("Started " + serviceName.displayValue + " on " + bindAddressStr + ":" + port);
-                }
+            }
+            catch (SystemServiceStartException sysSvcStartExc)
+            {
+                errorLog.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
             }
         }
     }
@@ -761,15 +757,17 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             value = props.getProp(key);
             if (value == null)
             {
+                String errorMsg = String.format(
+                    "The configuration entry '%s/%s' is missing in the configuration",
+                    props.getPath(), key
+                );
                 throw new SystemServiceStartException(
-                    "Missing Property",
-                    String.format("The propContainer %s is missing an entry with the key %s",
-                        props.getPath(),
-                        key
-                    ),
+                    errorMsg,
+                    errorMsg,
                     null,
-                    "Insert the necessary property",
-                    null);
+                    "Add the missing configuration entry to the configuration",
+                    null
+                );
             }
 
         }
