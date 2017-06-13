@@ -23,6 +23,7 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDatabaseDriv
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
+import com.linbit.drbdmanage.security.AccessContext;
 
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -49,10 +50,12 @@ public class DerbyDriver implements DatabaseDriver
     }
 
     private ErrorReporter errorReporter;
+    private AccessContext privCtx;
 
-    public DerbyDriver(ErrorReporter errorReporter)
+    public DerbyDriver(ErrorReporter errorReporter, AccessContext privCtx)
     {
         this.errorReporter = errorReporter;
+        this.privCtx = privCtx;
     }
 
     @Override
@@ -76,7 +79,7 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public NodeDatabaseDriver getNodeDatabaseDriver(String nodeName)
     {
-        return new NodeDerbyDriver(nodeName);
+        return new NodeDerbyDriver(privCtx, nodeName);
     }
 
     @Override

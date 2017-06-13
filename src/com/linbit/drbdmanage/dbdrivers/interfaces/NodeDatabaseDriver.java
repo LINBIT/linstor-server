@@ -11,7 +11,6 @@ import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPool;
 import com.linbit.drbdmanage.StorPoolName;
-import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
 public interface NodeDatabaseDriver
@@ -20,7 +19,7 @@ public interface NodeDatabaseDriver
 
     StateFlagsPersistence getStateFlagPersistence();
 
-    ObjectDatabaseDriver<NodeType> getNodeTypeDriver();
+    StateFlagsPersistence getNodeTypeStateFlagPersistence();
 
     ObjectDatabaseDriver<InetAddress> getNodeNetInterfaceDriver(NetInterfaceName netInterfaceName);
 

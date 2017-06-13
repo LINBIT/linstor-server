@@ -1,10 +1,13 @@
 package com.linbit;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import com.linbit.drbdmanage.DrbdSqlRuntimeException;
 
 public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
 {
@@ -95,11 +98,31 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
 
         if (oldValue == null)
         {
-            dbDriver.insert(key, value);
+            try
+            {
+                dbDriver.insert(key, value);
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Inserting to the database from a TransactionMap caused exception",
+                    sqlExc
+                );
+            }
         }
         else
         {
-            dbDriver.update(key, value);
+            try
+            {
+                dbDriver.update(key, value);
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "Deleting from the database from a TransactionMap caused exception",
+                    sqlExc
+                );
+            }
         }
         return oldValue;
     }

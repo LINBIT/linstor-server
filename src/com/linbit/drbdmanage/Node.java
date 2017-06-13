@@ -64,7 +64,7 @@ public interface Node extends TransactionObject
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public Iterator<NodeType> iterateNodeTypes(AccessContext accCtx)
+    public long getNodeTypes(AccessContext accCtx)
         throws AccessDeniedException;
 
     public boolean hasNodeType(AccessContext accCtx, NodeType reqType)
@@ -74,11 +74,24 @@ public interface Node extends TransactionObject
 
     public ObjectDatabaseDriver<InetAddress> getNetInterfaceDriver(NetInterfaceName name);
 
-    public enum NodeType
+    public enum NodeType implements Flags
     {
-        CONTROLLER,
-        SATELLITE,
-        AUXILIARY;
+        CONTROLLER(1),
+        SATELLITE(2),
+        AUXILIARY(4);
+
+        private final int flag;
+
+        private NodeType(int flag)
+        {
+            this.flag = flag;
+        }
+
+        @Override
+        public long getFlagValue()
+        {
+            return flag;
+        }
 
         public static final NodeType[] ALL_NODE_TYPES =
         {
@@ -111,5 +124,4 @@ public interface Node extends TransactionObject
             return flagValue;
         }
     }
-
 }

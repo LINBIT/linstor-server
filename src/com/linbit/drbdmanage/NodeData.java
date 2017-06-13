@@ -3,7 +3,6 @@ package com.linbit.drbdmanage;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.ObjectDatabaseDriver;
-import com.linbit.TransactionCollection;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDatabaseDriver;
@@ -25,7 +24,6 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
 import java.net.InetAddress;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  *
@@ -43,7 +41,7 @@ public class NodeData implements Node
     private StateFlags<NodeFlags> flags;
 
     // Node type
-    private TransactionCollection<NodeType> nodeTypeList;
+    private StateFlags<NodeType> nodeTypeFlags;
 
     // List of resources assigned to this cluster node
     private TransactionMap<ResourceName, Resource> resourceMap;
@@ -63,13 +61,13 @@ public class NodeData implements Node
     private NodeDatabaseDriver dbDriver;
 
     NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, SerialGenerator srlGen)
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         this(accCtx, nameRef, types, srlGen, null);
     }
 
     NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, SerialGenerator srlGen, TransactionMgr transMgr)
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
         ErrorCheck.ctorNotNull(NodeData.class, NodeType.class, types);
@@ -78,10 +76,6 @@ public class NodeData implements Node
 
         dbDriver = DrbdManage.getNodeDatabaseDriver(nameRef);
 
-        nodeTypeList = new TransactionCollection<>(
-            new TreeSet<NodeType>(),
-            dbDriver.getNodeTypeDriver()
-        );
         resourceMap = new TransactionMap<>(
             new TreeMap<ResourceName, Resource>(),
             dbDriver.getNodeResourceMapDriver()
@@ -95,12 +89,15 @@ public class NodeData implements Node
             dbDriver.getNodeStorPoolMapDriver()
         );
 
-        nodeTypeList.addAll(types);
+        for (NodeType type : types)
+        {
+            nodeTypeFlags.enableFlags(accCtx, type);
+        }
 
         // Default to creating an AUXILIARY type node
-        if (nodeTypeList.isEmpty())
+        if (!nodeTypeFlags.isSomeSet(accCtx, NodeType.ALL_NODE_TYPES))
         {
-            nodeTypeList.add(NodeType.AUXILIARY);
+            nodeTypeFlags.enableFlags(accCtx, NodeType.AUXILIARY);
         }
         nodeProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = ObjectProtection.create(
@@ -109,6 +106,7 @@ public class NodeData implements Node
             transMgr
         );
         flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence());
+        nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence());
     }
 
     // TODO add static load function
@@ -243,12 +241,12 @@ public class NodeData implements Node
     }
 
     @Override
-    public Iterator<NodeType> iterateNodeTypes(AccessContext accCtx)
+    public long getNodeTypes(AccessContext accCtx)
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        return nodeTypeList.iterator();
+        return nodeTypeFlags.getFlagsBits(accCtx);
     }
 
     @Override
@@ -257,7 +255,7 @@ public class NodeData implements Node
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        return nodeTypeList.contains(reqType);
+        return nodeTypeFlags.isSet(accCtx, reqType);
     }
 
     @Override
@@ -279,7 +277,7 @@ public class NodeData implements Node
         // nodeName is unmodifiable
 
         // flags
-        nodeTypeList.commit();
+        nodeTypeFlags.commit();
         resourceMap.commit();
         netInterfaceMap.commit();
         storPoolMap.commit();
@@ -291,7 +289,7 @@ public class NodeData implements Node
     @Override
     public void rollback()
     {
-        nodeTypeList.rollback();
+        nodeTypeFlags.rollback();
         resourceMap.rollback();
         netInterfaceMap.rollback();
         storPoolMap.rollback();
@@ -310,7 +308,7 @@ public class NodeData implements Node
     @Override
     public boolean isDirty()
     {
-        return nodeTypeList.isDirty() ||
+        return nodeTypeFlags.isDirty() ||
             resourceMap.isDirty() ||
             netInterfaceMap.isDirty() ||
             storPoolMap.isDirty() ||
@@ -324,6 +322,14 @@ public class NodeData implements Node
         NodeFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
             super(objProtRef, StateFlagsBits.getMask(NodeFlags.ALL_FLAGS), persistenceRef);
+        }
+    }
+
+    private static final class NodeTypesFlagsImpl extends StateFlagsBits<NodeType>
+    {
+        NodeTypesFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
+        {
+            super(objProtRef, StateFlagsBits.getMask(NodeType.ALL_NODE_TYPES), persistenceRef);
         }
     }
 }
