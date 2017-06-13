@@ -11,5 +11,5 @@ import java.sql.SQLException;
  */
 public interface StateFlagsPersistence
 {
-    void persist(Connection dbConn) throws SQLException;
+    void persist(Connection dbConn, long flags) throws SQLException;
 }

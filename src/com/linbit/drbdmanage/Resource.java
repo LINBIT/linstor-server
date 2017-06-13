@@ -1,12 +1,11 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.propscon.Props;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 
-import java.sql.SQLException;
 import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
@@ -16,17 +15,8 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Resource
+public interface Resource extends TransactionObject
 {
-    public Resource create(
-        AccessContext accCtx,
-        ResourceDefinition resDfnRef,
-        Node nodeRef,
-        NodeId nodeId,
-        SerialGenerator srlGen
-    )
-        throws AccessDeniedException, SQLException;
-
     public UUID getUuid();
 
     public ObjectProtection getObjProt();

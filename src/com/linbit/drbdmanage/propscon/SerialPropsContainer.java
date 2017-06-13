@@ -1,6 +1,8 @@
 package com.linbit.drbdmanage.propscon;
 
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -59,16 +61,16 @@ public class SerialPropsContainer extends PropsContainer
         return con;
     }
 
-    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver) throws SQLException, InvalidKeyException
+    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver, TransactionMgr transMgr) throws SQLException, InvalidKeyException
     {
-        return loadContainer(dbDriver, null);
+        return loadContainer(dbDriver, transMgr, null);
     }
 
-    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver, SerialGenerator sGen) throws SQLException, InvalidKeyException
+    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver, TransactionMgr transMgr, SerialGenerator sGen) throws SQLException, InvalidKeyException
     {
         SerialPropsContainer container = createRootContainer(sGen);
         container.dbDriver = dbDriver;
-        Map<String, String> loadedProps = dbDriver.load();
+        Map<String, String> loadedProps = dbDriver.load(transMgr.dbCon);
 
         // first, restore the properties
 

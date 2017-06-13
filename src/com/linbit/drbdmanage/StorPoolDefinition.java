@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import java.util.UUID;
 
@@ -8,7 +9,7 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface StorPoolDefinition
+public interface StorPoolDefinition extends TransactionObject
 {
     public UUID getUuid();
 

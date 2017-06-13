@@ -1,6 +1,10 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.TransactionMap;
+import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -9,8 +13,6 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
-import com.linbit.drbdmanage.stateflags.FlagsPersistenceBase;
-
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
@@ -19,7 +21,6 @@ import java.util.UUID;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
-import java.sql.Connection;
 
 /**
  *
@@ -34,13 +35,13 @@ public class ResourceDefinitionData implements ResourceDefinition
     private ResourceName resourceName;
 
     // Connections to the peer resources
-    private Map<NodeName, Map<Integer, ConnectionDefinition>> connectionMap;
+    private TransactionMap<NodeName, Map<Integer, ConnectionDefinition>> connectionMap;
 
     // Volumes of the resource
-    private Map<VolumeNumber, VolumeDefinition> volumeMap;
+    private TransactionMap<VolumeNumber, VolumeDefinition> volumeMap;
 
     // Resources defined by this ResourceDefinition
-    private Map<NodeName, Resource> resourceMap;
+    private TransactionMap<NodeName, Resource> resourceMap;
 
     // State flags
     private StateFlags<RscDfnFlags> flags;
@@ -51,26 +52,74 @@ public class ResourceDefinitionData implements ResourceDefinition
     // Properties container for this resource definition
     private Props rscDfnProps;
 
-    ResourceDefinitionData(
+    private ResourceDefinitionDatabaseDriver dbDriver;
+
+    private ResourceDefinitionData(
         AccessContext accCtx,
         ResourceName resName,
-        SerialGenerator srlGen
+        SerialGenerator srlGen,
+        TransactionMgr transMgr
     )
         throws SQLException
     {
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceName.class, resName);
         objId = UUID.randomUUID();
         resourceName = resName;
-        connectionMap = new TreeMap<>();
-        volumeMap = new TreeMap<>();
-        resourceMap = new TreeMap<>();
+
+        dbDriver = DrbdManage.getResourceDefinitionDatabaseDriver(this);
+
+        connectionMap = new TransactionMap<>(
+            new TreeMap<NodeName, Map<Integer, ConnectionDefinition>>(),
+            dbDriver.getConnectionMapDriver()
+        );
+        volumeMap = new TransactionMap<>(
+            new TreeMap<VolumeNumber, VolumeDefinition>(),
+            dbDriver.getVolumeMapDriver()
+        );
+        resourceMap = new TransactionMap<>(
+            new TreeMap<NodeName, Resource>(),
+            dbDriver.getResourceMapDriver()
+        );
         rscDfnProps = SerialPropsContainer.createRootContainer(srlGen);
-        objProt = new ObjectProtection(accCtx);
-        {
-            RscDfnFlagsPersistence flagsPersistence = new RscDfnFlagsPersistence();
-            flags = new RscDfnFlagsImpl(objProt, flagsPersistence);
-            flagsPersistence.setStateFlagsRef(flags);
-        }
+        objProt = ObjectProtection.load(
+            transMgr,
+            ObjectProtection.buildPath(this),
+            true,
+            accCtx
+        );
+        flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence());
+    }
+
+    public static ResourceDefinitionData create(
+        AccessContext accCtx,
+        ResourceName resName,
+        SerialGenerator srlGen
+    )
+        throws SQLException
+    {
+        return create(accCtx, resName, srlGen, null);
+    }
+
+    public static ResourceDefinitionData create(
+        AccessContext accCtx,
+        ResourceName resName,
+        SerialGenerator srlGen,
+        TransactionMgr transMgr
+    )
+        throws SQLException
+    {
+        return new ResourceDefinitionData(accCtx, resName, srlGen, transMgr);
+    }
+
+    public static ResourceDefinitionData load(
+        AccessContext accCtx,
+        ResourceName resName,
+        TransactionMgr transMgr
+    )
+
+    {
+        // TODO: implement ResourceDefinitionData.load(...)
+        return null;
     }
 
     @Override
@@ -160,18 +209,46 @@ public class ResourceDefinitionData implements ResourceDefinition
 
     private static final class RscDfnFlagsImpl extends StateFlagsBits<RscDfnFlags>
     {
-        RscDfnFlagsImpl(ObjectProtection objProtRef, RscDfnFlagsPersistence persistenceRef)
+        RscDfnFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
             super(objProtRef, StateFlagsBits.getMask(RscDfnFlags.ALL_FLAGS), persistenceRef);
         }
     }
 
-    private static final class RscDfnFlagsPersistence extends FlagsPersistenceBase implements StateFlagsPersistence
+    @Override
+    public void setConnection(TransactionMgr transMgr) throws ImplementationError
     {
-        @Override
-        public void persist(Connection dbConn) throws SQLException
-        {
-            // TODO: Update the state flags in the database
-        }
+        transMgr.register(this);
+        dbDriver.setConnection(transMgr.dbCon);
+    }
+
+    @Override
+    public void commit()
+    {
+        connectionMap.commit();
+        volumeMap.commit();
+        resourceMap.commit();
+        flags.commit();
+        objProt.commit();
+    }
+
+    @Override
+    public void rollback()
+    {
+        connectionMap.rollback();
+        volumeMap.rollback();
+        resourceMap.rollback();
+        flags.rollback();
+        objProt.rollback();
+    }
+
+    @Override
+    public boolean isDirty()
+    {
+        return connectionMap.isDirty() ||
+            volumeMap.isDirty() ||
+            resourceMap.isDirty() ||
+            flags.isDirty() ||
+            objProt.isDirty();
     }
 }

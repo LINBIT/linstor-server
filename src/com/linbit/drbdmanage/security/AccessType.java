@@ -23,6 +23,11 @@ public enum AccessType
         accessMask = mask;
     }
 
+    public long getAccessMask()
+    {
+        return accessMask;
+    }
+
     public boolean hasAccess(AccessType requested)
     {
         return ((requested.accessMask & this.accessMask) == requested.accessMask);

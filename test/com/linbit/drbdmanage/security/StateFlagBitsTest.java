@@ -83,14 +83,14 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.enableAllFlags(accCtx, null);
+                stateFlags.enableAllFlags(accCtx);
                 assertEquals(FlagImpl.getValidMask(), stateFlags.getFlagsBits(rootCtx));
             }
             else
             {
                 try
                 {
-                    stateFlags.enableAllFlags(accCtx, null);
+                    stateFlags.enableAllFlags(accCtx);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -130,14 +130,14 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.disableAllFlags(accCtx, null);
+                stateFlags.disableAllFlags(accCtx);
                 assertEquals(0, stateFlags.getFlagsBits(rootCtx));
             }
             else
             {
                 try
                 {
-                    stateFlags.disableAllFlags(accCtx, null);
+                    stateFlags.disableAllFlags(accCtx);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -184,14 +184,14 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.enableFlags(accCtx, null, flagsToSet);
+                stateFlags.enableFlags(accCtx, flagsToSet);
                 assertEquals(toEnableSet | preSet, stateFlags.getFlagsBits(rootCtx));
             }
             else
             {
                 try
                 {
-                    stateFlags.enableFlags(accCtx, null);
+                    stateFlags.enableFlags(accCtx);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -238,14 +238,14 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.disableFlags(accCtx, null, flagsToUnset);
+                stateFlags.disableFlags(accCtx, flagsToUnset);
                 assertEquals(preSet & ~toDisableSet, stateFlags.getFlagsBits(rootCtx));
             }
             else
             {
                 try
                 {
-                    stateFlags.disableFlags(accCtx, null);
+                    stateFlags.disableFlags(accCtx);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -292,7 +292,7 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.enableFlagsExcept(accCtx, null, flagsToSetExcept);
+                stateFlags.enableFlagsExcept(accCtx, flagsToSetExcept);
                 assertEquals(preSet | (FlagImpl.getValidMask() & ~toEnableExceptSet),
                     stateFlags.getFlagsBits(rootCtx));
             }
@@ -300,7 +300,7 @@ public class StateFlagBitsTest
             {
                 try
                 {
-                    stateFlags.enableFlagsExcept(accCtx, null);
+                    stateFlags.enableFlagsExcept(accCtx);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -347,14 +347,14 @@ public class StateFlagBitsTest
 
             if (grantedAt != null && grantedAt.hasAccess(CHANGE))
             {
-                stateFlags.disableFlagsExcept(accCtx, null, flagsToUnset);
+                stateFlags.disableFlagsExcept(accCtx, flagsToUnset);
                 assertEquals(preSet & toDisableSet, stateFlags.getFlagsBits(rootCtx));
             }
             else
             {
                 try
                 {
-                    stateFlags.disableFlagsExcept(accCtx, null);
+                    stateFlags.disableFlagsExcept(accCtx);
                     fail("Exception expected");
                 }
                 catch (AccessDeniedException expected)
@@ -620,7 +620,7 @@ public class StateFlagBitsTest
     }
 
     @Test
-    public void testGetValidFlagsBits() throws AccessDeniedException
+    public void testGetValidFlagsBits() throws AccessDeniedException, SQLException
     {
         AccessType[] grantedAccessTypes = new AccessType[]
         {
@@ -667,7 +667,7 @@ public class StateFlagBitsTest
         return accCtx;
     }
 
-    private ObjectProtection createObjectProtection(AccessType... grantedAccess) throws AccessDeniedException
+    private ObjectProtection createObjectProtection(AccessType... grantedAccess) throws AccessDeniedException, SQLException
     {
         AccessContext objCtx = new AccessContext(someOtherUserId, someOtherRole, someOtherUserSecDomain, privSysAll);
         ObjectProtection objProt = new ObjectProtection(objCtx);
@@ -695,7 +695,7 @@ public class StateFlagBitsTest
         throws AccessDeniedException, SQLException
     {
         StateFlagBitsImpl stateFlags = new StateFlagBitsImpl(op, FlagImpl.getValidMask());
-        stateFlags.enableFlags(rootCtx, null, flagsPreSet);
+        stateFlags.enableFlags(rootCtx, flagsPreSet);
         return stateFlags;
     }
 

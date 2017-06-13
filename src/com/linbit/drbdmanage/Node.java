@@ -1,9 +1,13 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.ObjectDatabaseDriver;
+import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
+
+import java.net.InetAddress;
 import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
@@ -13,7 +17,7 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Node
+public interface Node extends TransactionObject
 {
     public UUID getUuid();
 
@@ -68,6 +72,8 @@ public interface Node
 
     public StateFlags<NodeFlags> getFlags();
 
+    public ObjectDatabaseDriver<InetAddress> getNetInterfaceDriver(NetInterfaceName name);
+
     public enum NodeType
     {
         CONTROLLER,
@@ -105,4 +111,5 @@ public interface Node
             return flagValue;
         }
     }
+
 }

@@ -1,6 +1,12 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.ObjectDatabaseDriver;
+import com.linbit.TransactionCollection;
+import com.linbit.TransactionMap;
+import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -11,15 +17,13 @@ import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import java.sql.SQLException;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-import com.linbit.drbdmanage.stateflags.FlagsPersistenceBase;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
-import java.sql.Connection;
-import java.util.Collections;
+
+import java.net.InetAddress;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -35,20 +39,20 @@ public class NodeData implements Node
     // Node name
     private NodeName clNodeName;
 
-    // Node type
-    private Set<NodeType> nodeTypeList;
-
-    // List of resources assigned to this cluster node
-    private Map<ResourceName, Resource> resourceMap;
-
-    // List of network interfaces used for replication on this cluster node
-    private Map<NetInterfaceName, NetInterface> netInterfaceMap;
-
-    // List of storage pools
-    private Map<StorPoolName, StorPool> storPoolMap;
-
     // State flags
     private StateFlags<NodeFlags> flags;
+
+    // Node type
+    private TransactionCollection<NodeType> nodeTypeList;
+
+    // List of resources assigned to this cluster node
+    private TransactionMap<ResourceName, Resource> resourceMap;
+
+    // List of network interfaces used for replication on this cluster node
+    private TransactionMap<NetInterfaceName, NetInterface> netInterfaceMap;
+
+    // List of storage pools
+    private TransactionMap<StorPoolName, StorPool> storPoolMap;
 
     // Access controls for this object
     private ObjectProtection objProt;
@@ -56,31 +60,58 @@ public class NodeData implements Node
     // Properties container for this node
     private Props nodeProps;
 
+    private NodeDatabaseDriver dbDriver;
+
     NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, SerialGenerator srlGen)
+        throws SQLException
+    {
+        this(accCtx, nameRef, types, srlGen, null);
+    }
+
+    NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, SerialGenerator srlGen, TransactionMgr transMgr)
         throws SQLException
     {
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
         ErrorCheck.ctorNotNull(NodeData.class, NodeType.class, types);
         objId = UUID.randomUUID();
         clNodeName = nameRef;
-        nodeTypeList = new TreeSet<>();
+
+        dbDriver = DrbdManage.getNodeDatabaseDriver(nameRef);
+
+        nodeTypeList = new TransactionCollection<>(
+            new TreeSet<NodeType>(),
+            dbDriver.getNodeTypeDriver()
+        );
+        resourceMap = new TransactionMap<>(
+            new TreeMap<ResourceName, Resource>(),
+            dbDriver.getNodeResourceMapDriver()
+        );
+        netInterfaceMap = new TransactionMap<>(
+            new TreeMap<NetInterfaceName, NetInterface>(),
+            dbDriver.getNodeNetInterfaceMapDriver()
+        );
+        storPoolMap = new TransactionMap<>(
+            new TreeMap<StorPoolName, StorPool>(),
+            dbDriver.getNodeStorPoolMapDriver()
+        );
+
         nodeTypeList.addAll(types);
+
         // Default to creating an AUXILIARY type node
         if (nodeTypeList.isEmpty())
         {
             nodeTypeList.add(NodeType.AUXILIARY);
         }
-        resourceMap = new TreeMap<>();
-        netInterfaceMap = new TreeMap<>();
-        storPoolMap = new TreeMap<>();
         nodeProps = SerialPropsContainer.createRootContainer(srlGen);
-        objProt = new ObjectProtection(accCtx);
-        {
-            NodeFlagsPersistence flagsPersistence = new NodeFlagsPersistence();
-            flags = new NodeFlagsImpl(objProt, flagsPersistence);
-            flagsPersistence.setStateFlagsRef(flags);
-        }
+        objProt = ObjectProtection.create(
+            ObjectProtection.buildPath(this),
+            accCtx,
+            transMgr
+        );
+        flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence());
     }
+
+    // TODO add static load function
 
     @Override
     public UUID getUuid()
@@ -148,6 +179,8 @@ public class NodeData implements Node
         return netInterfaceMap.get(niName);
     }
 
+    // TODO: instead of addNetInterface, what about a createNetInterface (which creates a netInterface
+    // + passes it a node-specific db-driver to persist the address)
     @Override
     public void addNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
     {
@@ -197,7 +230,7 @@ public class NodeData implements Node
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        storPoolMap.remove(pool.getName());
+        storPoolMap.put(pool.getName(), pool);
     }
 
     @Override
@@ -215,7 +248,7 @@ public class NodeData implements Node
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        return Collections.unmodifiableSet(nodeTypeList).iterator();
+        return nodeTypeList.iterator();
     }
 
     @Override
@@ -224,7 +257,7 @@ public class NodeData implements Node
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        return (nodeTypeList.contains(reqType));
+        return nodeTypeList.contains(reqType);
     }
 
     @Override
@@ -233,20 +266,64 @@ public class NodeData implements Node
         return flags;
     }
 
-    private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlags>
+    @Override
+    public ObjectDatabaseDriver<InetAddress> getNetInterfaceDriver(NetInterfaceName netInterfaceName)
     {
-        NodeFlagsImpl(ObjectProtection objProtRef, NodeFlagsPersistence persistenceRef)
-        {
-            super(objProtRef, StateFlagsBits.getMask(NodeFlags.ALL_FLAGS), persistenceRef);
-        }
+        return dbDriver.getNodeNetInterfaceDriver(netInterfaceName);
     }
 
-    private static final class NodeFlagsPersistence extends FlagsPersistenceBase implements StateFlagsPersistence
+    @Override
+    public void commit()
     {
-        @Override
-        public void persist(Connection dbConn) throws SQLException
+        // objId is unmodifiable
+        // nodeName is unmodifiable
+
+        // flags
+        nodeTypeList.commit();
+        resourceMap.commit();
+        netInterfaceMap.commit();
+        storPoolMap.commit();
+        flags.commit();
+        objProt.commit();
+        nodeProps.commit();
+    }
+
+    @Override
+    public void rollback()
+    {
+        nodeTypeList.rollback();
+        resourceMap.rollback();
+        netInterfaceMap.rollback();
+        storPoolMap.rollback();
+        flags.rollback();
+        objProt.rollback();
+        nodeProps.rollback();
+    }
+
+    @Override
+    public void setConnection(TransactionMgr transMgr) throws ImplementationError
+    {
+        transMgr.register(this);
+        dbDriver.setConnection(transMgr.dbCon);
+    }
+
+    @Override
+    public boolean isDirty()
+    {
+        return nodeTypeList.isDirty() ||
+            resourceMap.isDirty() ||
+            netInterfaceMap.isDirty() ||
+            storPoolMap.isDirty() ||
+            flags.isDirty() ||
+            objProt.isDirty() ||
+            nodeProps.isDirty();
+    }
+
+    private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlags>
+    {
+        NodeFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
-            // TODO: Update the state flags in the database
+            super(objProtRef, StateFlagsBits.getMask(NodeFlags.ALL_FLAGS), persistenceRef);
         }
     }
 }

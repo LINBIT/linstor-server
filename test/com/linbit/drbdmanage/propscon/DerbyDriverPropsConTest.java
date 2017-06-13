@@ -12,6 +12,9 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.dbdrivers.derby.PropsConDerbyDriver;
+
 public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
 {
     @Test
@@ -77,8 +80,8 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
         String expectedInstanceName1 = "INSTANCE_1";
         String expectedInstanceName2 = "INSTANCE_2";
 
-        PropsConDerbyDriver driver1 = new PropsConDerbyDriver(expectedInstanceName1, dbConnPool);
-        PropsConDerbyDriver driver2 = new PropsConDerbyDriver(expectedInstanceName2, dbConnPool);
+        PropsConDerbyDriver driver1 = new PropsConDerbyDriver(expectedInstanceName1, dbConnPool.getConnection());
+        PropsConDerbyDriver driver2 = new PropsConDerbyDriver(expectedInstanceName2, dbConnPool.getConnection());
 
         PropsContainer container1 = PropsContainer.createRootContainer(driver1);
         PropsContainer container2 = PropsContainer.createRootContainer(driver2);
@@ -114,7 +117,7 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
         String value = "b";
         insert(instanceName, key, value);
 
-        Props props = PropsContainer.loadContainer(dbDriver);
+        Props props = PropsContainer.loadContainer(dbDriver, new TransactionMgr(dbConnPool));
 
         Set<Entry<String,String>> entrySet = props.entrySet();
         assertEquals("Unexpected entries in PropsContainer", 1 , entrySet.size());
@@ -133,7 +136,7 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
         insert(instanceName, key1, value1);
         insert(instanceName, key2, value2);
 
-        Props props = PropsContainer.loadContainer(dbDriver);
+        Props props = PropsContainer.loadContainer(dbDriver, new TransactionMgr(dbConnPool));
         assertEquals("Unexpected entries in PropsContainer", 2 , props.size());
 
         assertTrue("PropsContainer missing key [" + key1 + "]", props.keySet().contains(key1));
@@ -156,19 +159,19 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
         insert(instanceName, key1, value1);
         map.put(key1, value1);
 
-        Props props = PropsContainer.loadContainer(dbDriver);
+        Props props = PropsContainer.loadContainer(dbDriver, new TransactionMgr(dbConnPool));
         checkExpectedMap(map, props);
 
         insert(instanceName, key2, value2);
         map.put(key2, value2);
 
-        props = PropsContainer.loadContainer(dbDriver);
+        props = PropsContainer.loadContainer(dbDriver, new TransactionMgr(dbConnPool));
         checkExpectedMap(map, props);
 
         delete(instanceName, key2);
         map.remove(key2);
 
-        props = PropsContainer.loadContainer(dbDriver);
+        props = PropsContainer.loadContainer(dbDriver, new TransactionMgr(dbConnPool));
         checkExpectedMap(map, props);
     }
 
@@ -178,8 +181,8 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
         String instanceName1 = "INSTANCE_1";
         String instanceName2 = "INSTANCE_2";
 
-        PropsConDerbyDriver driver1 = new PropsConDerbyDriver(instanceName1, dbConnPool);
-        PropsConDerbyDriver driver2 = new PropsConDerbyDriver(instanceName2, dbConnPool);
+        PropsConDerbyDriver driver1 = new PropsConDerbyDriver(instanceName1, dbConnPool.getConnection());
+        PropsConDerbyDriver driver2 = new PropsConDerbyDriver(instanceName2, dbConnPool.getConnection());
 
         Map<String, String> map1 = new HashMap<>();
         map1.put("a", "b");
@@ -194,8 +197,8 @@ public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
         insert(instanceName1, map1);
         insert(instanceName2, map2);
 
-        Props props1 = PropsContainer.loadContainer(driver1);
-        Props props2 = PropsContainer.loadContainer(driver2);
+        Props props1 = PropsContainer.loadContainer(driver1, new TransactionMgr(dbConnPool));
+        Props props2 = PropsContainer.loadContainer(driver2, new TransactionMgr(dbConnPool));
 
         checkExpectedMap(map1, props1);
         checkExpectedMap(map2, props2);

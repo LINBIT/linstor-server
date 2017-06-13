@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
+import com.linbit.drbdmanage.dbdrivers.derby.PropsConDerbyDriver;
 
 public class DerbyDriverPropsConBase
 {
@@ -31,9 +32,9 @@ public class DerbyDriverPropsConBase
     private static final String DB_PASSWORD = "linbit";
     private static final Properties DB_PROPS = new Properties();
 
-    private static final String TABLE_NAME = PropsConDerbyDriver.PROPSCON_TABLE_NAME;
+    private static final String TABLE_NAME = PropsConDerbyDriver.TBL_PROP;
 //    private static final String COL_INSTANCE = PropsConDerbyDriver.PROPSCON_COL_INSTANCE;
-    private static final String COL_KEY = PropsConDerbyDriver.PROPSCON_COL_KEY;
+    private static final String COL_KEY = PropsConDerbyDriver.COL_KEY;
 //    private static final String COL_VALUE = PropsConDerbyDriver.PROPSCON_COL_VALUE;
 
     private static final String CREATE_TABLE = PropsConDerbyDriver.CREATE_TABLE;
@@ -71,7 +72,7 @@ public class DerbyDriverPropsConBase
         // fail fast, not for each testcase
         try
         {
-            new PropsConDerbyDriver(DEFAULT_INSTANCE_NAME, dbConnPool);
+            new PropsConDerbyDriver(DEFAULT_INSTANCE_NAME, dbConnPool.getConnection());
         }
         catch (SQLException sqlExc)
         {
@@ -98,7 +99,7 @@ public class DerbyDriverPropsConBase
     @Before
     public void setUp() throws SQLException
     {
-        dbDriver = new PropsConDerbyDriver(DEFAULT_INSTANCE_NAME, dbConnPool);
+        dbDriver = new PropsConDerbyDriver(DEFAULT_INSTANCE_NAME, dbConnPool.getConnection());
 
         connection = dbConnPool.getConnection();
         createTable(true);

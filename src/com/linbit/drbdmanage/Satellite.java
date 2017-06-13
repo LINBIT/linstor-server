@@ -8,6 +8,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
+import com.linbit.drbdmanage.dbdrivers.NoOpDriver;
 import com.linbit.drbdmanage.debug.BaseDebugConsole;
 import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
@@ -22,6 +23,7 @@ import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
+import com.linbit.drbdmanage.security.EmptySecurityDbDriver;
 import com.linbit.drbdmanage.security.Initializer;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.Privilege;
@@ -41,6 +43,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -142,7 +145,22 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
         // Initialize shutdown controls
         shutdownFinished = false;
-        shutdownProt = new ObjectProtection(sysCtx);
+        try
+        {
+            shutdownProt = ObjectProtection.create(
+                ObjectProtection.buildPath(this, "shutdown"),
+                sysCtx,
+                null
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            // cannot happen
+            throw new ImplementationError(
+                "Creating an ObjectProtection without TransactionManager threw an SQLException",
+                sqlExc
+            );
+        }
     }
 
     public void initialize(ErrorReporter errorLogRef)
@@ -161,7 +179,21 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 setErrorLog(initCtx, errorLogRef);
 
                 // Set CONTROL access for the SYSTEM role on shutdown
-                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+                try
+                {
+                    shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+                }
+                catch (SQLException sqlExc)
+                {
+                    // cannot happen
+                    throw new ImplementationError(
+                        "ObjectProtection without TransactionManager threw an SQLException",
+                        sqlExc
+                    );
+                }
+
+                securityDbDriver = new EmptySecurityDbDriver();
+                persistenceDbDriver = new NoOpDriver();
 
                 // Initialize the worker thread pool
                 errorLogRef.logInfo("Starting worker thread pool");

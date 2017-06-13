@@ -3,7 +3,6 @@ package com.linbit.drbdmanage.stateflags;
 import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
-import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
@@ -11,22 +10,22 @@ import java.sql.SQLException;
  */
 public interface StateFlags<T extends Flags> extends TransactionObject
 {
-    void enableAllFlags(final AccessContext accCtx, final Connection dbConn)
+    void enableAllFlags(final AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    void disableAllFlags(final AccessContext accCtx, final Connection dbConn)
+    void disableAllFlags(final AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    void enableFlags(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    void enableFlags(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException;
 
-    void disableFlags(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    void disableFlags(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException;
 
-    void enableFlagsExcept(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    void enableFlagsExcept(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException;
 
-    void disableFlagsExcept(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    void disableFlagsExcept(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException;
 
     boolean isSet(final AccessContext accCtx, final T... flags)

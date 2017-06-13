@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.propscon;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,8 +23,10 @@ import java.util.TreeSet;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
+import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 
 /**
  * Hierarchical properties container
@@ -56,6 +59,8 @@ public class PropsContainer implements Props
     private Collection<String> valuesCollectionAccessor;
 
     protected PropsConDatabaseDriver dbDriver;
+    protected Connection dbCon;
+    private Map<String, String> cachedPropMap;
 
     public static PropsContainer createRootContainer() throws SQLException
     {
@@ -84,28 +89,28 @@ public class PropsContainer implements Props
     }
 
 
-    public static Props loadContainer(PropsConDatabaseDriver propsConDbDriver) throws SQLException, InvalidKeyException
+    public static Props loadContainer(PropsConDatabaseDriver propsConDbDriver, TransactionMgr transMgr) throws SQLException, InvalidKeyException
     {
         PropsContainer con = createRootContainer(propsConDbDriver);
-        if (con.dbDriver != null)
-        {
-            Map<String, String> loadedProps = con.dbDriver.load();
-            for (Entry<String, String> entry : loadedProps.entrySet())
-            {
-                String key = entry.getKey();
-                String value = entry.getValue();
+        con.dbCon = transMgr.dbCon;
+        transMgr.register(con);
 
-                PropsContainer targetContainer = con;
-                int idx = key.lastIndexOf("/");
-                if (idx != -1)
-                {
-                    targetContainer = con.ensureNamespaceExists(key.substring(0, idx));
-                }
-                String oldValue = targetContainer.propMap.put(key.substring(idx + 1), value);
-                if (oldValue == null)
-                {
-                    targetContainer.modifySize(1);
-                }
+        Map<String, String> loadedProps = con.dbDriver.load(transMgr.dbCon);
+        for (Entry<String, String> entry : loadedProps.entrySet())
+        {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            PropsContainer targetContainer = con;
+            int idx = key.lastIndexOf("/");
+            if (idx != -1)
+            {
+                targetContainer = con.ensureNamespaceExists(key.substring(0, idx));
+            }
+            String oldValue = targetContainer.propMap.put(key.substring(idx + 1), value);
+            if (oldValue == null)
+            {
+                targetContainer.modifySize(1);
             }
         }
         return con;
@@ -121,6 +126,7 @@ public class PropsContainer implements Props
 
             rootContainer = this;
             parentContainer = null;
+            cachedPropMap = new HashMap<>();
         }
         else
         {
@@ -133,6 +139,7 @@ public class PropsContainer implements Props
 
             rootContainer = parent.getRoot();
             parentContainer = parent;
+            cachedPropMap = null;
         }
         propMap = new TreeMap<>();
         containerMap = new TreeMap<>();
@@ -208,7 +215,12 @@ public class PropsContainer implements Props
     }
 
     /**
-     * TODO: javadoc
+     * Returns the property if found.
+     *
+     * getProp("a", "b/c") has the same effect as getProp("b/c/a", null)
+     *
+     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * this operation is also persisted to the database
      *
      * @param key
      * @param namespace
@@ -231,7 +243,13 @@ public class PropsContainer implements Props
     }
 
     /**
-     * TODO: javadoc
+     * Sets the given property.
+     * Creates all necessary non-existent namespaces.
+     *
+     * setProp("a", "value", "b/c") has the same effect as setProp("b/c/a", "value", null)
+     *
+     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * this operation is also persisted to the database
      *
      * @param key
      * @param value
@@ -255,17 +273,22 @@ public class PropsContainer implements Props
         checkKey(actualKey);
 
         PropsContainer con = ensureNamespaceExists(pathElements[PATH_NAMESPACE]);
-        dbPersist(con.getPath() + actualKey, value);
         String oldValue = con.propMap.put(actualKey, value);
         if (oldValue == null)
         {
             con.modifySize(1);
+            dbPersist(con.getPath() + actualKey, value, oldValue);
         }
         return oldValue;
     }
 
     /**
-     * TODO: javadoc
+     * Removes the specified property and returns the old value (could be null).
+     *
+     * removeProp("a", "b/c") has the same effect as removeProp("b/c/a", null)
+     *
+     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * this operation is also persisted to the database
      *
      * @param key
      * @param namespace
@@ -285,19 +308,25 @@ public class PropsContainer implements Props
         PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]);
         if (con != null)
         {
-            dbRemove(con.getPath() + actualKey);
             value = con.propMap.remove(actualKey);
             if (value != null)
             {
                 con.modifySize(-1);
                 con.removeCleanup();
+                dbRemove(con.getPath() + actualKey, value);
             }
         }
         return value;
     }
 
     /**
-     * TODO: javadoc
+     * Sets all props from the given map into the given namespace.
+     * The namespace parameter acts as a prefix for all keys of the map.
+     *
+     * Returns true if any property has been modified by this method.
+     *
+     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * this operation is also persisted to the database
      *
      * @param entryMap
      * @param namespace
@@ -307,69 +336,40 @@ public class PropsContainer implements Props
         throws InvalidKeyException, InvalidValueException, SQLException
     {
         boolean modified = false;
-        Map<String, String> rollback = new TreeMap<>();
-        try
+        for (Map.Entry<? extends String, ? extends String> entry : entryMap.entrySet())
         {
-            Map<String, String> persistMap = new HashMap<>();
+            String key = entry.getKey();
+            String value = entry.getValue();
 
-            for (Map.Entry<? extends String, ? extends String> entry : entryMap.entrySet())
+            if (value == null)
             {
-                String key = entry.getKey();
-                String value = entry.getValue();
-
-                if (value == null)
-                {
-                    throw new InvalidValueException("Value must not be null");
-                }
-
-                String[] pathElements = splitPath(namespace, key);
-                String actualKey = pathElements[PATH_KEY];
-                checkKey(actualKey);
-
-                PropsContainer con = ensureNamespaceExists(pathElements[PATH_NAMESPACE]);
-                String oldValue = con.propMap.put(actualKey, value);
-                persistMap.put(con.getPath() + actualKey, value);
-                rollback.put(actualKey, oldValue);
-                if (oldValue == null)
-                {
-                    con.modifySize(1);
-                    modified = true;
-                }
+                throw new InvalidValueException("Value must not be null");
             }
 
-            dbPersist(persistMap);
-        }
-        catch (InvalidKeyException | InvalidValueException | SQLException exc)
-        {
-            for (Map.Entry<String, String> entry : rollback.entrySet())
+            String[] pathElements = splitPath(namespace, key);
+            String actualKey = pathElements[PATH_KEY];
+            checkKey(actualKey);
+
+            PropsContainer con = ensureNamespaceExists(pathElements[PATH_NAMESPACE]);
+            String oldValue = con.propMap.put(actualKey, value);
+            if (oldValue == null)
             {
-                String key = entry.getKey();
-                String value = entry.getValue();
-
-                String[] pathElements = splitPath(namespace, key);
-                checkKey(pathElements[PATH_KEY]);
-
-                PropsContainer con = findNamespace(pathElements[PATH_NAMESPACE]);
-
-                if (value == null) // entry did not exist before this setAll
-                {
-                    con.propMap.remove(key);
-                    con.modifySize(-1);
-                    con.removeCleanup();
-                }
-                else
-                {
-                    con.propMap.put(key, value);
-                }
+                con.modifySize(1);
+                modified = true;
+                dbPersist(actualKey, value, oldValue);
             }
-
-            throw exc;
         }
         return modified;
     }
 
     /**
-     * TODO: javadoc
+     * Removes all properties from the given set.
+     * The namespace parameter acts as a prefix for all given properties.
+     *
+     * Returns true if any property has been modified by this method
+     *
+     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * this operation is also persisted to the database
      *
      * @param selection
      * @param namespace
@@ -391,15 +391,13 @@ public class PropsContainer implements Props
                 {
                     String value = con.propMap.remove(actualKey);
 
-                    // if this method gets a rollback feature, use the
-                    // dbDriver.remove(Set<String>) method after the loop instead
-                    dbRemove(con.getPath() + actualKey);
-
                     if (value != null)
                     {
                         con.modifySize(-1);
                         con.removeCleanup();
                         changed = true;
+
+                        dbRemove(con.getPath() + actualKey, value);
                     }
                 }
             }
@@ -411,8 +409,13 @@ public class PropsContainer implements Props
     }
 
     /**
-     * TODO: javadoc
+     * Retains all properties of the given set.
+     * The namespace acts as a prefix for the properties of the set.
      *
+     * Returns true if any property has been modified by this method
+     *
+     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * this operation is also persisted to the database
      * @param selection
      * @param namespace
      * @throws SQLException
@@ -435,7 +438,11 @@ public class PropsContainer implements Props
     }
 
     /**
-     * TODO: javadoc
+     * Removes all properties from this instance.
+     *
+     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * this operation is also persisted to the database
+     *
      * @throws SQLException
      */
     @Override
@@ -453,7 +460,12 @@ public class PropsContainer implements Props
     }
 
     /**
-     * TODO: javadoc
+     * Returns the property if found.
+     *
+     * getProp("a") has the same effect as getProp("a", null)
+     *
+     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * this operation is also persisted to the database
      *
      * @param key
      * @return
@@ -466,7 +478,13 @@ public class PropsContainer implements Props
     }
 
     /**
-     * TODO: javadoc
+     * Sets the given property.
+     * Creates all necessary non-existent namespaces.
+     *
+     * setProp("a", "value") has the same effect as setProp("a", "value", null)
+     *
+     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * this operation is also persisted to the database
      *
      * @param key
      * @param value
@@ -483,7 +501,12 @@ public class PropsContainer implements Props
     }
 
     /**
-     * TODO: javadoc
+     * Removes the specified property and returns the old value (could be null).
+     *
+     * removeProp("a") has the same effect as removeProp("a", null)
+     *
+     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * this operation is also persisted to the database
      *
      * @param key
      * @return
@@ -859,35 +882,111 @@ public class PropsContainer implements Props
         return new ValuesIterator(this);
     }
 
-    private void dbPersist(String actualKey, String value) throws SQLException
+    @Override
+    public void setConnection(TransactionMgr transMgr)
     {
-        if (dbDriver != null)
+        transMgr.register(rootContainer);
+        dbCon = transMgr.dbCon;
+    }
+
+    @Override
+    public boolean isDirty()
+    {
+        return !rootContainer.cachedPropMap.isEmpty();
+    }
+
+    @Override
+    public void commit()
+    {
+        rootContainer.cachedPropMap.clear();
+    }
+
+    @Override
+    public void rollback()
+    {
+        PropsContainer root = rootContainer;
+        for (Entry<String, String> entry : root.cachedPropMap.entrySet())
         {
-            dbDriver.persist(actualKey, value);
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            try
+            {
+                // do not use root.setProp or root.removeProp
+                // as those will trigger again a database update and a caching update.
+                // Thus, we just use raw propMap to bypass the database and cachings
+                PropsContainer targetContainer = root;
+                int idx = key.lastIndexOf("/");
+                if (idx != -1)
+                {
+                    targetContainer = root.ensureNamespaceExists(key.substring(0, idx));
+                }
+                String oldValue;
+                if (entry.getValue() == null)
+                {
+                    oldValue = targetContainer.propMap.remove(entry.getKey());
+                }
+                else
+                {
+                    oldValue = targetContainer.propMap.put(key, value);
+                }
+                if (oldValue == null)
+                {
+                    targetContainer.modifySize(1);
+                }
+            }
+            catch (InvalidKeyException | SQLException e)
+            {
+                // cannot happen
+                throw new ImplementationError(
+                    "Rolling back propsContainer threw an exception.",
+                    e
+                );
+            }
         }
     }
 
-    private void dbRemove(String actualKey) throws SQLException
+    private void dbPersist(String actualKey, String value, String oldValue) throws SQLException
     {
+        Map<String, String> map = rootContainer.cachedPropMap;
+        if (!map.containsKey(actualKey))
+        {
+            map.put(actualKey, oldValue);
+        }
         if (dbDriver != null)
         {
-            dbDriver.remove(actualKey);
+            dbDriver.persist(dbCon, actualKey, value);
         }
     }
 
-    private void dbPersist(Map<String, String> persistMap) throws SQLException
+    private void dbRemove(String actualKey, String oldValue) throws SQLException
     {
+        Map<String, String> map = rootContainer.cachedPropMap;
+        if (!map.containsKey(actualKey))
+        {
+            map.put(actualKey, oldValue);
+        }
         if (dbDriver != null)
         {
-            dbDriver.persist(persistMap);
+            dbDriver.remove(dbCon, actualKey);
         }
     }
 
     private void dbRemoveAll() throws SQLException
     {
+        Map<String, String> map = rootContainer.cachedPropMap;
+        Set<Entry<String,String>> entrySet = rootContainer.entrySet();
+        for (Entry<String, String> entry : entrySet)
+        {
+            if (!map.containsKey(entry.getKey()))
+            {
+                map.put(entry.getKey(), entry.getValue());
+            }
+        }
+
         if (dbDriver != null)
         {
-            dbDriver.removeAll();
+            dbDriver.removeAll(dbCon);
         }
     }
 

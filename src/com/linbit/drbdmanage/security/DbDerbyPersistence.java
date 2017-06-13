@@ -10,7 +10,7 @@ import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ROLES;
 import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ID_ROLE_MAP;
 import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_DFLT_ROLES;
 import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_OBJ_PROT;
-import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ACL_ENTRIES;
+import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ACL_MAP;
 
 import static com.linbit.drbdmanage.security.SecurityDbFields.VW_IDENTITIES_LOAD;
 import static com.linbit.drbdmanage.security.SecurityDbFields.VW_ROLES_LOAD;
@@ -85,13 +85,13 @@ public class DbDerbyPersistence implements DbAccessor
 
     private static final String SLCT_ACL_ENTRIES =
         "SELECT " + OBJECT_PATH + ", " + ROLE_NAME + ", " + ACCESS_TYPE +
-        " FROM " + TBL_ACL_ENTRIES +
+        " FROM " + TBL_ACL_MAP +
         " WHERE " + OBJECT_PATH + " = ?";
 
 
     private static final String SLCT_SEC_LEVEL =
         "SELECT " + CONF_KEY + ", " + CONF_VALUE +
-        " FROM " + TBL_ACL_ENTRIES +
+        " FROM " + TBL_ACL_MAP +
         " WHERE " + CONF_KEY + " = " + KEY_SEC_LEVEL;
 
     @Override
@@ -145,22 +145,28 @@ public class DbDerbyPersistence implements DbAccessor
         return dbQuery(dbConn, SLCT_TE_RULES);
     }
 
-    @Override
-    public ResultSet loadObjectProtection(Connection dbConn, String objectPath) throws SQLException
-    {
-        return dbQuery(dbConn, SLCT_OBJ_PROT, new String[] { objectPath });
-    }
-
-    @Override
-    public ResultSet loadAclEntries(Connection dbConn, String objectPath) throws SQLException
-    {
-        return dbQuery(dbConn, SLCT_ACL_ENTRIES, new String[] { objectPath });
-    }
+//    @Override
+//    public ResultSet loadObjectProtection(Connection dbConn, String objectPath) throws SQLException
+//    {
+//        return dbQuery(dbConn, SLCT_OBJ_PROT, new String[] { objectPath });
+//    }
+//
+//    @Override
+//    public ResultSet loadAclEntries(Connection dbConn, String objectPath) throws SQLException
+//    {
+//        return dbQuery(dbConn, SLCT_ACL_ENTRIES, new String[] { objectPath });
+//    }
 
     @Override
     public ResultSet loadSecurityLevel(Connection dbConn) throws SQLException
     {
         return dbQuery(dbConn, SLCT_SEC_LEVEL);
+    }
+
+    @Override
+    public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objectPath)
+    {
+        return new ObjectProtectionDerbyDriver(objectPath);
     }
 
     private ResultSet dbQuery(Connection dbConn, String sqlQuery) throws SQLException

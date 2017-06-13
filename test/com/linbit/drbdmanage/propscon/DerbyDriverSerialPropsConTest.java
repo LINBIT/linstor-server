@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import com.linbit.TransactionMgr;
+
 public class DerbyDriverSerialPropsConTest extends DerbyDriverPropsConBase
 {
     @Test
@@ -30,7 +32,7 @@ public class DerbyDriverSerialPropsConTest extends DerbyDriverPropsConBase
 
         checkExpectedMap(expectedMap, container);
 
-        SerialPropsContainer container2 = SerialPropsContainer.loadContainer(dbDriver);
+        SerialPropsContainer container2 = SerialPropsContainer.loadContainer(dbDriver, new TransactionMgr(dbConnPool));
         checkExpectedMap(expectedMap, container2);
     }
 

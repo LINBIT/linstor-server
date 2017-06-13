@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage.security;
 
-import com.linbit.InvalidNameException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +25,7 @@ public class SecurityModelTest
 
     @Before
     public void setUp()
-        throws AccessDeniedException
+        throws Throwable
     {
         // Restore the global security level to MAC before each test
         SecurityLevel.set(sysCtx, SecurityLevel.MAC);
@@ -38,7 +37,7 @@ public class SecurityModelTest
     }
 
     public SecurityModelTest()
-        throws InvalidNameException, AccessDeniedException
+        throws Throwable
     {
         sysCtx = new AccessContext(
             new Identity(new IdentityName("SYSTEM")),
@@ -73,7 +72,7 @@ public class SecurityModelTest
     // Access allowed by ACL and type
     @Test
     public void testObjProtAllow()
-        throws AccessDeniedException
+        throws Throwable
     {
         AccessContext buddyCtx = sysCtx.impersonate(
             buddyId, buddyRole, userType
@@ -87,7 +86,7 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelMacObjProtAclDeny()
-        throws AccessDeniedException
+        throws Throwable
     {
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -114,7 +113,7 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelRbacObjProtAclDeny()
-        throws AccessDeniedException
+        throws Throwable
     {
         SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
 
@@ -143,7 +142,7 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelMacTypeDeny()
-        throws AccessDeniedException
+        throws Throwable
     {
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -172,7 +171,7 @@ public class SecurityModelTest
     // Test ACL modification by owner and authorized user at the MAC security level
     @Test
     public void testSecLevelMacBuddyAclModify()
-        throws AccessDeniedException
+        throws Throwable
     {
         AccessContext buddyCtx = sysCtx.impersonate(
             buddyId, buddyRole, creatorCtx.getDomain()
@@ -187,7 +186,7 @@ public class SecurityModelTest
     // Test ACL modification by owner and authorized user at the RBAC security level
     @Test
     public void testSecLevelRbacBuddyAclModify()
-        throws AccessDeniedException
+        throws Throwable
     {
         SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
 
@@ -204,7 +203,7 @@ public class SecurityModelTest
     // Test ACL modification by unauthorized user at the MAC security level
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelMacBanditAclModify()
-        throws AccessDeniedException
+        throws Throwable
     {
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -232,7 +231,7 @@ public class SecurityModelTest
     // Test ACL modification by unauthorized user at the RBAC security level
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelRbacBanditAclModify()
-        throws AccessDeniedException
+        throws Throwable
     {
         SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
 
@@ -260,7 +259,7 @@ public class SecurityModelTest
     }
 
     @Test
-    public void testSysTypeModify()
+    public void testSysTypeModify() throws Throwable
     {
         ObjectProtection prot = null;
         try
@@ -277,7 +276,7 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelMacBanditTypeModify()
-        throws AccessDeniedException
+        throws Throwable
     {
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -301,7 +300,7 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelRbacBanditTypeModify()
-        throws AccessDeniedException
+        throws Throwable
     {
         SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
 
@@ -326,7 +325,7 @@ public class SecurityModelTest
     }
 
     @Test
-    public void testSysOwnerModify()
+    public void testSysOwnerModify() throws Throwable
     {
         ObjectProtection prot = null;
         try
@@ -344,7 +343,7 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelMacBanditOwnerModify()
-        throws AccessDeniedException
+        throws Throwable
     {
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -367,7 +366,7 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelRbacBanditOwnerModify()
-        throws AccessDeniedException
+        throws Throwable
     {
         SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
 
@@ -392,7 +391,7 @@ public class SecurityModelTest
 
     @Test
     public void testCloning()
-        throws AccessDeniedException
+        throws Throwable
     {
         // Create object as creator
         ObjectProtection prot = new ObjectProtection(creatorCtx);
@@ -429,7 +428,7 @@ public class SecurityModelTest
 
     @Test
     public void testEffectivePrivs()
-        throws AccessDeniedException
+        throws Throwable
     {
         ObjectProtection prot = null;
         AccessContext buddyCtx = null;
@@ -474,7 +473,7 @@ public class SecurityModelTest
 
     @Test
     public void testLimitPrivs()
-        throws AccessDeniedException
+        throws Throwable
     {
         ObjectProtection prot = null;
         AccessContext buddyCtx = null;
@@ -517,7 +516,7 @@ public class SecurityModelTest
 
     @Test
     public void testSysCreatorModify()
-        throws AccessDeniedException
+        throws Throwable
     {
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -529,7 +528,7 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelMacBanditCreatorModify()
-        throws AccessDeniedException
+        throws Throwable
     {
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -552,14 +551,14 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelMacImpersonateDeny()
-        throws AccessDeniedException
+        throws Throwable
     {
         publicCtx.impersonate(Identity.SYSTEM_ID, Role.SYSTEM_ROLE, userType);
     }
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelRbacImpersonateDeny()
-        throws AccessDeniedException
+        throws Throwable
     {
         SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
 
@@ -568,7 +567,7 @@ public class SecurityModelTest
 
     @Test
     public void testSecLevelRbacTypeOvrd()
-        throws AccessDeniedException
+        throws Throwable
     {
         SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
 
@@ -597,7 +596,7 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testSecLevelRbacAclDeny()
-        throws AccessDeniedException
+        throws Throwable
     {
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -624,7 +623,7 @@ public class SecurityModelTest
 
     @Test
     public void testSecLevelNoneObjProtOvrd()
-        throws AccessDeniedException
+        throws Throwable
     {
         SecurityLevel.set(sysCtx, SecurityLevel.NO_SECURITY);
 
@@ -636,7 +635,7 @@ public class SecurityModelTest
 
     @Test(expected=AccessDeniedException.class)
     public void testBanditSetSecLevel()
-        throws AccessDeniedException
+        throws Throwable
     {
         AccessContext banditCtx = sysCtx.impersonate(
             banditId, banditRole, publicCtx.getDomain()

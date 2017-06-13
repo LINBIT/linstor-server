@@ -26,11 +26,9 @@ public interface DbAccessor
         throws SQLException;
     ResultSet loadTeRules(Connection dbConn)
         throws SQLException;
-    ResultSet loadObjectProtection(Connection dbConn, String objectPath)
-        throws SQLException;
-    ResultSet loadAclEntries(Connection dbConn, String objectPath)
-        throws SQLException;
 
     ResultSet loadSecurityLevel(Connection dbConn)
         throws SQLException;
+
+    ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objectPath);
 }

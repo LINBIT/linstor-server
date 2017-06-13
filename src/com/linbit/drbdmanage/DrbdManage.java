@@ -1,6 +1,13 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.drbdmanage.api.BaseApiCall;
+import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.ImplementationError;
 import com.linbit.SystemService;
@@ -9,6 +16,8 @@ import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.DbAccessor;
+import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.drbdmanage.security.Privilege;
 import com.linbit.drbdmanage.timer.CoreTimer;
 import com.linbit.drbdmanage.timer.CoreTimerImpl;
@@ -25,6 +34,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Properties;
 import org.slf4j.event.Level;
 
@@ -63,6 +74,10 @@ public abstract class DrbdManage
     // Core system services
     //
     private CoreTimer timerEventSvc;
+
+    // Database drivers
+    protected static DbAccessor securityDbDriver;
+    protected static DatabaseDriver persistenceDbDriver;
 
     // Error & exception logging facility
     private ErrorReporter errorLog;
@@ -538,5 +553,42 @@ public abstract class DrbdManage
         System.out.println();
 
         System.out.println("System components initialization in progress\n");
+    }
+
+    // static Database reference getters
+
+    public static PropsConDatabaseDriver getPropConDatabaseDriver(String instanceName, Connection con) throws SQLException
+    {
+        return persistenceDbDriver.getPropsDatabaseDriver(con, instanceName);
+    }
+
+    public static NodeDatabaseDriver getNodeDatabaseDriver(NodeName nameRef)
+    {
+        return persistenceDbDriver.getNodeDatabaseDriver(nameRef.value);
+    }
+
+    public static ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objProtPath)
+    {
+        return securityDbDriver.getObjectProtectionDatabaseDriver(objProtPath);
+    }
+
+    public static ResourceDatabaseDriver getResourceDatabaseDriver(Resource res)
+    {
+        return persistenceDbDriver.getResourceDatabaseDriver(res);
+    }
+
+    public static ResourceDefinitionDatabaseDriver getResourceDefinitionDatabaseDriver(ResourceDefinition resDfn)
+    {
+        return persistenceDbDriver.getResourceDefinitionDatabaseDriver(resDfn);
+    }
+
+    public static VolumeDatabaseDriver getVolumeDatabaseDriver(Volume volume)
+    {
+        return persistenceDbDriver.getVolumeDatabaseDriver(volume);
+    }
+
+    public static VolumeDefinitionDatabaseDriver getVolumeDefinitionDatabaseDriver(VolumeDefinition volumeDefinition)
+    {
+        return persistenceDbDriver.getVolumeDefinitionDatabaseDriver(volumeDefinition);
     }
 }

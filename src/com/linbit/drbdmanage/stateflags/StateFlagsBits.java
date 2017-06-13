@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.stateflags;
 
+import com.linbit.ImplementationError;
+import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -20,6 +22,8 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     private long changedStateFlags;
     private final long mask;
     private final StateFlagsPersistence persistence;
+
+    private Connection dbConn;
 
     public StateFlagsBits(
         final ObjectProtection objProtRef,
@@ -45,66 +49,61 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     }
 
     @Override
-    public void enableAllFlags(final AccessContext accCtx, final Connection dbConn)
+    public void enableAllFlags(final AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        changedStateFlags |= mask;
-
-        if (persistence != null)
-        {
-            persistence.persist(dbConn);
-        }
+        setFlags(changedStateFlags | mask);
     }
 
     @Override
-    public void disableAllFlags(final AccessContext accCtx, final Connection dbConn)
+    public void disableAllFlags(final AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        changedStateFlags = 0L;
+        setFlags(0L);
     }
 
     @Override
-    public void enableFlags(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    public void enableFlags(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
-        changedStateFlags = (changedStateFlags | flagsBits) & mask;
+        setFlags((changedStateFlags | flagsBits) & mask);
     }
 
     @Override
-    public void disableFlags(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    public void disableFlags(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
-        changedStateFlags &= ~flagsBits;
+        setFlags(changedStateFlags & ~flagsBits);
     }
 
     @Override
-    public void enableFlagsExcept(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    public void enableFlagsExcept(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
-        changedStateFlags |= (mask & ~flagsBits);
+        setFlags(changedStateFlags | (mask & ~flagsBits));
     }
 
     @Override
-    public void disableFlagsExcept(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    public void disableFlagsExcept(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
-        changedStateFlags &= flagsBits;
+        setFlags(changedStateFlags & flagsBits);
     }
 
     @Override
@@ -169,6 +168,18 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     }
 
     @Override
+    public boolean isDirty()
+    {
+        return changedStateFlags != stateFlags;
+    }
+
+    @Override
+    public void setConnection(TransactionMgr transMgr) throws ImplementationError
+    {
+
+    }
+
+    @Override
     public long getValidFlagsBits(final AccessContext accCtx)
         throws AccessDeniedException
     {
@@ -185,5 +196,14 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
             bitMask |= curFlag.getFlagValue();
         }
         return bitMask;
+    }
+
+    private void setFlags(final long bits) throws SQLException
+    {
+        changedStateFlags = bits;
+        if (persistence != null)
+        {
+            persistence.persist(dbConn, changedStateFlags);
+        }
     }
 }

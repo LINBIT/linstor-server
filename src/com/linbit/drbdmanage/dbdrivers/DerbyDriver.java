@@ -1,14 +1,28 @@
 package com.linbit.drbdmanage.dbdrivers;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.drbdmanage.dbcp.DbConnectionPool;
+import com.linbit.drbdmanage.Resource;
+import com.linbit.drbdmanage.ResourceDefinition;
+import com.linbit.drbdmanage.Volume;
+import com.linbit.drbdmanage.VolumeDefinition;
+import com.linbit.drbdmanage.dbdrivers.derby.NodeDerbyDriver;
+import com.linbit.drbdmanage.dbdrivers.derby.PropsConDerbyDriver;
+import com.linbit.drbdmanage.dbdrivers.derby.ResourceDefinitionDerbyDriver;
+import com.linbit.drbdmanage.dbdrivers.derby.ResourceDerbyDriver;
+import com.linbit.drbdmanage.dbdrivers.derby.VolumeDefinitionDerbyDriver;
+import com.linbit.drbdmanage.dbdrivers.derby.VolumeDerbyDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.propscon.PropsConDatabaseDriver;
-import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
 
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -54,8 +68,38 @@ public class DerbyDriver implements DatabaseDriver
     }
 
     @Override
-    public PropsConDatabaseDriver getPropsConDatabaseDriver(String instanceName, DbConnectionPool dbPool) throws SQLException
+    public PropsConDatabaseDriver getPropsDatabaseDriver(Connection con, String instanceName) throws SQLException
     {
-        return new PropsConDerbyDriver(instanceName, dbPool);
+        return new PropsConDerbyDriver(instanceName, con);
+    }
+
+    @Override
+    public NodeDatabaseDriver getNodeDatabaseDriver(String nodeName)
+    {
+        return new NodeDerbyDriver(nodeName);
+    }
+
+    @Override
+    public ResourceDatabaseDriver getResourceDatabaseDriver(Resource res)
+    {
+        return new ResourceDerbyDriver(res);
+    }
+
+    @Override
+    public ResourceDefinitionDatabaseDriver getResourceDefinitionDatabaseDriver(ResourceDefinition resDfn)
+    {
+        return new ResourceDefinitionDerbyDriver(resDfn);
+    }
+
+    @Override
+    public VolumeDatabaseDriver getVolumeDatabaseDriver(Volume volume)
+    {
+        return new VolumeDerbyDriver(volume);
+    }
+
+    @Override
+    public VolumeDefinitionDatabaseDriver getVolumeDefinitionDatabaseDriver(VolumeDefinition volumeDefinition)
+    {
+        return new VolumeDefinitionDerbyDriver(volumeDefinition);
     }
 }

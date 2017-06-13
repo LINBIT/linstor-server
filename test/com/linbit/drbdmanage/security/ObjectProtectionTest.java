@@ -17,8 +17,6 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.linbit.InvalidNameException;
-
 public class ObjectProtectionTest
 {
     private AccessContext sysCtx;
@@ -35,7 +33,7 @@ public class ObjectProtectionTest
     private SecurityType someOtherUserSecDomain;
 
     @Before
-    public void setUp() throws InvalidNameException, AccessDeniedException
+    public void setUp() throws Exception
     {
         sysCtx = new AccessContext(
             new Identity(new IdentityName("SYSTEM")),
@@ -60,7 +58,7 @@ public class ObjectProtectionTest
     }
 
     @Test
-    public void testGetOwner() throws AccessDeniedException
+    public void testGetOwner() throws Exception
     {
         AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, privSysAll);
         ObjectProtection objProt = new ObjectProtection(accCtx);
@@ -170,7 +168,7 @@ public class ObjectProtectionTest
     }
 
     @Test
-    public void testDelAclEntryAccessAllCombinations() throws AccessDeniedException
+    public void testDelAclEntryAccessAllCombinations() throws Exception
     {
         Role[] targetRoles = new Role[]
         {
@@ -233,7 +231,7 @@ public class ObjectProtectionTest
     }
 
     @Test
-    public void testGetCreator() throws AccessDeniedException
+    public void testGetCreator() throws Exception
     {
         AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, privSysAll);
         ObjectProtection objProt = new ObjectProtection(accCtx);
@@ -296,7 +294,7 @@ public class ObjectProtectionTest
     }
 
     @Test
-    public void testSetSecurityType()
+    public void testSetSecurityType() throws Exception
     {
         AccessIterator accIt = new AccessIterator(true);
         for (AccessIteration iteration : accIt)
@@ -395,7 +393,7 @@ public class ObjectProtectionTest
         }
 
         @Override
-        public AccessIteration getNext() throws AccessDeniedException
+        public AccessIteration getNext() throws Exception
         {
             AccessIteration nextIteration = new AccessIteration();
 
@@ -406,7 +404,7 @@ public class ObjectProtectionTest
             return nextIteration;
         }
 
-        private void getObjectProtection(AccessIteration iteration) throws AccessDeniedException
+        private void getObjectProtection(AccessIteration iteration) throws Exception
         {
             AccessType aclEntry = getValue(OBJ_ACL_IDX);
             AccessType secEntry =  getValue(OBJ_SEC_IDX);
@@ -439,7 +437,7 @@ public class ObjectProtectionTest
             iteration.objProt = objProt;
         }
 
-        private void getAccessContext(AccessIteration iteration) throws AccessDeniedException
+        private void getAccessContext(AccessIteration iteration) throws Exception
         {
             boolean hasPrivMacOvrd = getValue(ACC_MAC_OVRD_IDX);
             long privs = getValue(ACC_PRIV_IDX);

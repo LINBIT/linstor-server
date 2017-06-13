@@ -7,14 +7,15 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.TransactionMgr;
 import com.linbit.WorkerPool;
 import com.linbit.drbdmanage.debug.BaseDebugConsole;
 import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
-import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
@@ -23,7 +24,6 @@ import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
 import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.Props;
-import com.linbit.drbdmanage.propscon.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
@@ -31,7 +31,6 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.Authentication;
-import com.linbit.drbdmanage.security.DbAccessor;
 import com.linbit.drbdmanage.security.DbDerbyPersistence;
 import com.linbit.drbdmanage.security.Identity;
 import com.linbit.drbdmanage.security.IdentityName;
@@ -134,10 +133,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // Map of network communications connectors
     private final Map<ServiceName, TcpConnector> netComConnectors;
 
-    // Database drivers
-    private DbAccessor securityDbDriver;
-    private DatabaseDriver persistenceDbDriver;
-
     // Shutdown controls
     private boolean shutdownFinished;
     private ObjectProtection shutdownProt;
@@ -178,7 +173,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
         // Initialize shutdown controls
         shutdownFinished = false;
-        shutdownProt = new ObjectProtection(sysCtx);
     }
 
     public void initialize(ErrorReporter errorLogRef)
@@ -197,9 +191,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
                 // Initialize the error & exception reporting facility
                 setErrorLog(initCtx, errorLogRef);
-
-                // Set CONTROL access for the SYSTEM role on shutdown
-                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
 
                 // Initialize the database connections
                 errorLogRef.logInfo("Initializing the database connection pool");
@@ -238,6 +229,23 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     errorLogRef.reportError(sqlExc);
                 }
 
+                // get a connection to initialize objects
+                TransactionMgr transMgr = new TransactionMgr(dbConnPool);
+
+                shutdownProt = ObjectProtection.load(
+                    transMgr,
+                    ObjectProtection.buildPath(this, "shutdown"),
+                    true,
+                    sysCtx
+                );
+//                shutdownProt = new ObjectProtection(sysCtx, ObjectProtection.buildPath(this, "shutdown"));
+
+                shutdownProt.setConnection(transMgr);
+                // Set CONTROL access for the SYSTEM role on shutdown
+                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+
+                transMgr.commit(true);
+
                 // Load security identities, roles, domains/types, etc.
                 errorLogRef.logInfo("Loading security objects");
                 try
@@ -272,8 +280,19 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 }
 
                 ctrlConf = SerialPropsContainer.createRootContainer(
-                    persistenceDbDriver.getPropsConDatabaseDriver(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, dbConnPool));
-                ctrlConfProt = new ObjectProtection(sysCtx);
+                    persistenceDbDriver.getPropsDatabaseDriver(
+                        transMgr.dbCon,
+                        DB_CONTROLLER_PROPSCON_INSTANCE_NAME
+                    )
+                );
+                ctrlConfProt = ObjectProtection.load(
+                    transMgr,
+                    ObjectProtection.buildPath(this, "conf"),
+                    true,
+                    sysCtx
+                );
+
+                transMgr.commit(); // in case the objProt has just been created
 
                 // Initialize the worker thread pool
                 errorLogRef.logInfo("Starting worker thread pool");
@@ -552,10 +571,13 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         Props config = null;
         try
         {
-            PropsConDatabaseDriver propsConDbDriver = persistenceDbDriver.getPropsConDatabaseDriver(
-                DB_CONTROLLER_PROPSCON_INSTANCE_NAME, dbConnPool
+            TransactionMgr transMgr = new TransactionMgr(dbConnPool);
+            PropsConDatabaseDriver propsConDbDriver = persistenceDbDriver.getPropsDatabaseDriver(
+                transMgr.dbCon,
+                DB_CONTROLLER_PROPSCON_INSTANCE_NAME
             );
-            config = PropsContainer.loadContainer(propsConDbDriver);
+            config = PropsContainer.loadContainer(propsConDbDriver, transMgr);
+            dbConnPool.returnConnection(transMgr.dbCon);
         }
         catch (SQLException sqlExc)
         {

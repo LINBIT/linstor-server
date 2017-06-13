@@ -101,7 +101,7 @@ public final class Role implements Comparable<Role>
     {
         Lock readLock = GLOBAL_ROLE_MAP_LOCK.readLock();
 
-        Set<Role> result = new TreeSet();
+        Set<Role> result = new TreeSet<>();
         try
         {
             readLock.lock();

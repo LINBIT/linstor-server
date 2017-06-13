@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.linbit.Checks;
+import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.CoreServices;
@@ -12,7 +13,6 @@ import com.linbit.drbdmanage.Node.NodeFlags;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.StateFlags;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.TreeSet;
 
@@ -214,12 +214,14 @@ public class Quorum
      * @param accCtx
      * @throws AccessDeniedException
      */
-    public void readjustQignoreFlags(AccessContext accCtx, Connection dbConn)
+    public void readjustQignoreFlags(AccessContext accCtx, TransactionMgr transMgr)
         throws AccessDeniedException, SQLException
     {
         for (Node node : quorumNodes)
         {
-            node.getFlags().disableFlags(accCtx, dbConn, NodeFlags.QIGNORE);
+            StateFlags<NodeFlags> flags = node.getFlags();
+            flags.setConnection(transMgr);
+            flags.disableFlags(accCtx, NodeFlags.QIGNORE);
         }
     }
 }

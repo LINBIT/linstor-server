@@ -2,11 +2,15 @@ package com.linbit.drbdmanage;
 
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.TransactionMgr;
+import com.linbit.TransactionSimpleObject;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -17,12 +21,11 @@ import com.linbit.drbdmanage.security.AccessType;
 
 import java.sql.SQLException;
 import java.util.UUID;
+
 import com.linbit.drbdmanage.security.ObjectProtection;
-import com.linbit.drbdmanage.stateflags.FlagsPersistenceBase;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
-import java.sql.Connection;
 
 /**
  *
@@ -31,19 +34,19 @@ import java.sql.Connection;
 public class VolumeDefinitionData implements VolumeDefinition
 {
     // Object identifier
-    private UUID objId;
+    private final UUID objId;
 
     // Resource definition this VolumeDefinition belongs to
     private ResourceDefinition resourceDfn;
 
     // DRBD volume number
-    private VolumeNumber volumeNr;
+    private final VolumeNumber volumeNr;
 
     // DRBD device minor number
-    private MinorNumber minorNr;
+    private TransactionSimpleObject<MinorNumber> minorNr;
 
     // Net volume size in kiB
-    private long volumeSize;
+    private TransactionSimpleObject<Long> volumeSize;
 
     // Properties container for this volume definition
     private Props vlmDfnProps;
@@ -51,7 +54,9 @@ public class VolumeDefinitionData implements VolumeDefinition
     // State flags
     private StateFlags<VlmDfnFlags> flags;
 
-    VolumeDefinitionData(
+    private VolumeDefinitionDatabaseDriver dbDriver;
+
+    private VolumeDefinitionData(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
         VolumeNumber volNr,
@@ -93,16 +98,30 @@ public class VolumeDefinitionData implements VolumeDefinition
 
         objId = UUID.randomUUID();
         resourceDfn = resDfnRef;
+
+        dbDriver = DrbdManage.getVolumeDefinitionDatabaseDriver(this);
+
         volumeNr = volNr;
-        minorNr = minor;
-        volumeSize = volSize;
+        minorNr = new TransactionSimpleObject<MinorNumber>(
+            minor,
+            dbDriver.getMinorNumberDriver()
+        );
+        volumeSize = new TransactionSimpleObject<Long>(
+            volSize,
+            dbDriver.getVolumeSizeDriver()
+        );
+
+        // TODO: do not create new prop, but load existing container
         vlmDfnProps = SerialPropsContainer.createRootContainer(srlGen);
-        {
-            VlmDfnFlagsPersistence flagsPersistence = new VlmDfnFlagsPersistence();
-            flags = new VlmDfnFlagsImpl(resDfnRef.getObjProt(), flagsPersistence);
-            flagsPersistence.setStateFlagsRef(flags);
-        }
+
+        flags = new VlmDfnFlagsImpl(
+            resDfnRef.getObjProt(),
+            dbDriver.getStateFlagsPersistence()
+        );
     }
+
+     // TODO: implement static VolumeDefinitionData.create(...)
+     // TODO: implement static VolumeDefinitionData.load(...)
 
     @Override
     public UUID getUuid()
@@ -136,15 +155,15 @@ public class VolumeDefinitionData implements VolumeDefinition
         throws AccessDeniedException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return minorNr;
+        return minorNr.get();
     }
 
     @Override
     public void setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        minorNr = newMinorNr;
+        minorNr.set(newMinorNr);
     }
 
     @Override
@@ -152,15 +171,15 @@ public class VolumeDefinitionData implements VolumeDefinition
         throws AccessDeniedException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return volumeSize;
+        return volumeSize.get();
     }
 
     @Override
     public void setVolumeSize(AccessContext accCtx, long newVolumeSize)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        volumeSize = newVolumeSize;
+        volumeSize.set(newVolumeSize);
     }
 
     @Override
@@ -169,20 +188,48 @@ public class VolumeDefinitionData implements VolumeDefinition
         return flags;
     }
 
-    private static final class VlmDfnFlagsImpl extends StateFlagsBits<VlmDfnFlags>
+    @Override
+    public void setConnection(TransactionMgr transMgr) throws ImplementationError
     {
-        VlmDfnFlagsImpl(ObjectProtection objProtRef, VlmDfnFlagsPersistence persistenceRef)
-        {
-            super(objProtRef, StateFlagsBits.getMask(VlmDfnFlags.ALL_FLAGS), persistenceRef);
-        }
+        transMgr.register(this);
+        dbDriver.setConnection(transMgr.dbCon);
     }
 
-    private static final class VlmDfnFlagsPersistence extends FlagsPersistenceBase implements StateFlagsPersistence
+    @Override
+    public void commit()
     {
-        @Override
-        public void persist(Connection dbConn) throws SQLException
+        vlmDfnProps.commit();
+        resourceDfn.commit();
+        minorNr.commit();
+        volumeSize.commit();
+        flags.commit();
+    }
+
+    @Override
+    public void rollback()
+    {
+        vlmDfnProps.rollback();
+        resourceDfn.rollback();
+        minorNr.rollback();
+        volumeSize.rollback();
+        flags.rollback();
+    }
+
+    @Override
+    public boolean isDirty()
+    {
+        return vlmDfnProps.isDirty() ||
+            resourceDfn.isDirty() ||
+            minorNr.isDirty() ||
+            volumeSize.isDirty() ||
+            flags.isDirty();
+    }
+
+    private static final class VlmDfnFlagsImpl extends StateFlagsBits<VlmDfnFlags>
+    {
+        VlmDfnFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
-            // TODO: Update the state flags in the database
+            super(objProtRef, StateFlagsBits.getMask(VlmDfnFlags.ALL_FLAGS), persistenceRef);
         }
     }
 }

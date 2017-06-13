@@ -155,15 +155,15 @@ public final class AccessControlList
         return access;
     }
 
-    void addEntry(Role entryRole, AccessType grantedAccess)
+    AccessControlEntry addEntry(Role entryRole, AccessType grantedAccess)
     {
         AccessControlEntry entry = new AccessControlEntry(entryRole, grantedAccess);
-        acl.put(entryRole.name, entry);
+        return acl.put(entryRole.name, entry);
     }
 
-    void delEntry(Role entryRole)
+    AccessControlEntry delEntry(Role entryRole)
     {
-        acl.remove(entryRole.name);
+        return acl.remove(entryRole.name);
     }
 
     private boolean hasAccessPrivilege(AccessContext context, AccessType requested)
