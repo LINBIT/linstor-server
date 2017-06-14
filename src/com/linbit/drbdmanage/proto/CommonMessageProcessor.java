@@ -14,7 +14,12 @@ import com.linbit.drbdmanage.security.AccessContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Dispatcher for received messages
@@ -24,6 +29,7 @@ import java.util.TreeMap;
 public class CommonMessageProcessor implements MessageProcessor
 {
     private final TreeMap<String, ApiCall> apiCallMap;
+    private final ReadWriteLock apiLock;
 
     private final CoreServices    coreSvcs;
     private final WorkQueue       workQ;
@@ -32,23 +38,68 @@ public class CommonMessageProcessor implements MessageProcessor
     {
         ErrorCheck.ctorNotNull(CommonMessageProcessor.class, WorkQueue.class, workQRef);
         apiCallMap  = new TreeMap<>();
+        apiLock     = new ReentrantReadWriteLock();
         coreSvcs    = coreSvcsRef;
         workQ       = workQRef;
     }
 
     public void addApiCall(ApiCall apiCallObj)
     {
-        apiCallMap.put(apiCallObj.getName(), apiCallObj);
+        Lock writeLock = apiLock.writeLock();
+        try
+        {
+            writeLock.lock();
+            apiCallMap.put(apiCallObj.getName(), apiCallObj);
+        }
+        finally
+        {
+            writeLock.unlock();
+        }
     }
 
     public void removeApiCall(String apiCallName)
     {
-        apiCallMap.remove(apiCallName);
+        Lock writeLock = apiLock.writeLock();
+        try
+        {
+            writeLock.lock();
+            apiCallMap.remove(apiCallName);
+        }
+        finally
+        {
+            writeLock.unlock();
+        }
     }
 
     public void clearApiCalls()
     {
-        apiCallMap.clear();
+        Lock writeLock = apiLock.writeLock();
+        try
+        {
+            writeLock.lock();
+            apiCallMap.clear();
+        }
+        finally
+        {
+            writeLock.unlock();
+        }
+    }
+
+    public Set<String> getApiCallNames()
+    {
+        Lock readLock = apiLock.readLock();
+        Set<String> apiNames;
+        try
+        {
+            readLock.lock();
+            apiNames = new TreeSet<>();
+            apiNames.addAll(apiCallMap.keySet());
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+        return apiNames;
     }
 
     @Override
@@ -63,7 +114,17 @@ public class CommonMessageProcessor implements MessageProcessor
             int msgId = header.getMsgId();
             String apiCallName = header.getApiCall();
 
-            ApiCall apiCallObj = apiCallMap.get(apiCallName);
+            Lock readLock = apiLock.readLock();
+            ApiCall apiCallObj;
+            try
+            {
+                readLock.lock();
+                apiCallObj = apiCallMap.get(apiCallName);
+            }
+            finally
+            {
+                readLock.unlock();
+            }
             if (apiCallObj != null)
             {
                 ApiCallInvocation apiCallInv = new ApiCallInvocation(
