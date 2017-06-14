@@ -12,7 +12,14 @@ public class TransactionSimpleObject<T> implements TransactionObject
     {
         object = obj;
         cachedObject = obj;
-        dbDriver = driver;
+        if (driver == null)
+        {
+            dbDriver = new NoOpObjectDatabaseDriver<T>();
+        }
+        else
+        {
+            dbDriver = driver;
+        }
     }
 
     public void set(T obj) throws SQLException

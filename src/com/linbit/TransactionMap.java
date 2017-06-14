@@ -18,7 +18,16 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     public TransactionMap(Map<T, U> mapRef, MapDatabaseDriver<T, U> driver)
     {
         map = mapRef;
-        dbDriver = driver;
+        if (driver == null)
+        {
+            dbDriver = new NoOpMapDatabaseDriver<>();
+        }
+        else
+        {
+            dbDriver = driver;
+        }
+
+
         oldValues = new HashMap<>();
     }
 

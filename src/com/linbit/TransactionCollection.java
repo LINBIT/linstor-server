@@ -17,10 +17,18 @@ public class TransactionCollection<T> implements TransactionObject, Collection<T
 
     private ObjectDatabaseDriver<T> dbDriver;
 
-    public TransactionCollection(Collection<T> data, ObjectDatabaseDriver<T> dbDriver)
+    public TransactionCollection(Collection<T> data, ObjectDatabaseDriver<T> driver)
     {
         this.data = data;
-        this.dbDriver = dbDriver;
+
+        if (driver == null)
+        {
+            dbDriver = new NoOpObjectDatabaseDriver<T>();
+        }
+        else
+        {
+            dbDriver = driver;
+        }
 
         inserted = new ArrayList<>();
         deleted = new ArrayList<>();
