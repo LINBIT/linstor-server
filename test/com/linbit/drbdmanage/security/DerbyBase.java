@@ -25,8 +25,9 @@ import com.linbit.drbdmanage.security.PrivilegeSet;
 import com.linbit.drbdmanage.security.Role;
 import com.linbit.drbdmanage.security.SecurityType;
 
-public abstract class DerbyBase
+public abstract class DerbyBase implements DerbyConstants
 {
+
     private static final String DB_URL = "jdbc:derby:directory:database";
     private static final String DB_USER = "drbdmanage";
     private static final String DB_PASSWORD = "linbit";
