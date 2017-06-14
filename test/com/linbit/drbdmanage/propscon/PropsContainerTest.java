@@ -278,6 +278,8 @@ public class PropsContainerTest
         map.put("", "root");
         root.setAllProps(map, null);
 
+        root.commit();
+
         final Map<String, String> overrideMap = new HashMap<>();
         overrideMap.put("a", "overriddenA");
         overrideMap.put("b", null); // should cause an invalidValueException and a rollback

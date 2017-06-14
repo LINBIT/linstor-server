@@ -19,70 +19,36 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     public static final String COL_KEY = "PROP_KEY";
     public static final String COL_VALUE = "PROP_VALUE";
 
-    public static final String CREATE_TABLE =
-        "CREATE TABLE " + TBL_PROP + "\n" +
-        "(\n" +
-        "    " + COL_INSTANCE + " VARCHAR(512) NOT NULL \n" +
-        "        CONSTRAINT PRP_INST_CHKNAME CHECK(UPPER(" + COL_INSTANCE + ") = " + COL_INSTANCE +
-        "            AND LENGTH(" + COL_INSTANCE + ") >= 2),\n" +
-        "    " + COL_KEY + " VARCHAR(512) NOT NULL, \n" +
-        "    " + COL_VALUE + " VARCHAR(512) NOT NULL, \n " +
-        "    PRIMARY KEY (" + COL_INSTANCE + ", " + COL_KEY + ")\n" +
-        ")";
     private static final String SELECT_ENTRY_FOR_UPDATE =
-        "SELECT " + COL_INSTANCE + ", " + COL_KEY + ", " + COL_VALUE +
-        " FROM " + TBL_PROP + " FOR UPDATE of " + COL_VALUE +
-        " WHERE " + COL_INSTANCE + " = ? AND " +
-        "       " + COL_KEY +      " = ?";
+        "SELECT " + COL_INSTANCE + ", " + COL_KEY + ", " + COL_VALUE + "\n" +
+        " FROM " + TBL_PROP + "\n" +
+        " WHERE " + COL_INSTANCE + " = ? AND \n" +
+        "       " + COL_KEY +      " = ? \n" +
+        " FOR UPDATE OF " + COL_INSTANCE + "," + COL_KEY + ", "+ COL_VALUE;
     private static final String INSERT_ENTRY =
-        "INSERT INTO " + TBL_PROP +
+        "INSERT INTO " + TBL_PROP + "\n" +
         " VALUES (?, ?, ?)";
 
     private static final String SELECT_ALL_ENTRIES_BY_INSTANCE =
-        "SELECT " + COL_KEY + ", " + COL_VALUE +
-        " FROM " + TBL_PROP +
+        "SELECT " + COL_KEY + ", " + COL_VALUE + "\n" +
+        " FROM " + TBL_PROP + "\n" +
         " WHERE " + COL_INSTANCE + " = ?";
 
     private static final String REMOVE_ENTRY =
-        "DELETE FROM " + TBL_PROP +
-        "    WHERE " + COL_INSTANCE + " = ? " +
+        "DELETE FROM " + TBL_PROP + "\n" +
+        "    WHERE " + COL_INSTANCE + " = ? \n" +
         "        AND " + COL_KEY + " = ?";
 
     private static final String REMOVE_ALL_ENTRIES =
-        "DELETE FROM " + TBL_PROP +
+        "DELETE FROM " + TBL_PROP + "\n" +
         "    WHERE " + COL_INSTANCE + " = ? ";
 
 
     private final String instanceName;
 
-    public PropsConDerbyDriver(String instanceName, Connection connection) throws SQLException
+    public PropsConDerbyDriver(String instanceName)
     {
         this.instanceName = instanceName;
-
-        if (connection != null)
-        {
-            try
-            {
-                PreparedStatement stmt = connection.prepareStatement(CREATE_TABLE);
-                stmt.executeUpdate();
-                stmt.close();
-            }
-            catch (SQLException sqlExc)
-            {
-                if (sqlExc.getSQLState().equals("X0Y32"))
-                {
-                    // table already exists - ignore this exception
-                }
-                else
-                {
-                    throw sqlExc;
-                }
-            }
-        }
-        else
-        {
-
-        }
     }
 
     @Override
@@ -125,6 +91,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         }
         else
         {
+            resultSet.moveToInsertRow();
             resultSet.updateString(1, instanceName);
             resultSet.updateString(2, key);
             resultSet.updateString(3, value);

@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage.dbdrivers;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.linbit.ServiceName;
@@ -38,7 +37,7 @@ public interface DatabaseDriver
      * Returns the database driver specific implementation for {@link PropsContainer}-IO.
      * @throws SQLException
      */
-    PropsConDatabaseDriver getPropsDatabaseDriver(Connection con, String instanceName) throws SQLException;
+    PropsConDatabaseDriver getPropsDatabaseDriver(String instanceName);
 
     /**
      * Returns the database driver specific implementation for {@link NodeData}-IO

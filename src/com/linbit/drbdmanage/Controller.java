@@ -283,7 +283,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
                 ctrlConf = SerialPropsContainer.createRootContainer(
                     persistenceDbDriver.getPropsDatabaseDriver(
-                        transMgr.dbCon,
                         DB_CONTROLLER_PROPSCON_INSTANCE_NAME
                     )
                 );
@@ -575,7 +574,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         {
             TransactionMgr transMgr = new TransactionMgr(dbConnPool);
             PropsConDatabaseDriver propsConDbDriver = persistenceDbDriver.getPropsDatabaseDriver(
-                transMgr.dbCon,
                 DB_CONTROLLER_PROPSCON_INSTANCE_NAME
             );
             config = PropsContainer.loadContainer(propsConDbDriver, transMgr);

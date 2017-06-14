@@ -58,6 +58,7 @@ public class SerialPropsContainer extends PropsContainer
             );
         }
         con.dbDriver = dbDriver;
+        con.commit(); // the serial number has been set
         return con;
     }
 

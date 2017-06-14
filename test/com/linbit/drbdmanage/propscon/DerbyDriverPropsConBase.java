@@ -2,8 +2,6 @@ package com.linbit.drbdmanage.propscon;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,11 +31,20 @@ public class DerbyDriverPropsConBase
     private static final Properties DB_PROPS = new Properties();
 
     private static final String TABLE_NAME = PropsConDerbyDriver.TBL_PROP;
-//    private static final String COL_INSTANCE = PropsConDerbyDriver.PROPSCON_COL_INSTANCE;
+    private static final String COL_INSTANCE = PropsConDerbyDriver.COL_INSTANCE;
     private static final String COL_KEY = PropsConDerbyDriver.COL_KEY;
-//    private static final String COL_VALUE = PropsConDerbyDriver.PROPSCON_COL_VALUE;
+    private static final String COL_VALUE = PropsConDerbyDriver.COL_VALUE;
 
-    private static final String CREATE_TABLE = PropsConDerbyDriver.CREATE_TABLE;
+    private static final String CREATE_TABLE =
+        "CREATE TABLE " + TABLE_NAME+ "\n" +
+        "(\n" +
+        "    " + COL_INSTANCE + " VARCHAR(512) NOT NULL \n" +
+        "        CONSTRAINT PRP_INST_CHKNAME CHECK(UPPER(" + COL_INSTANCE + ") = " + COL_INSTANCE +
+        "            AND LENGTH(" + COL_INSTANCE + ") >= 2),\n" +
+        "    " + COL_KEY + " VARCHAR(512) NOT NULL, \n" +
+        "    " + COL_VALUE + " VARCHAR(512) NOT NULL, \n " +
+        "    PRIMARY KEY (" + COL_INSTANCE + ", " + COL_KEY + ")\n" +
+        ")";
     private static final String DROP_TABLE =
         "DROP TABLE " + TABLE_NAME;
     private static final String SELECT_ALL =
@@ -51,11 +58,11 @@ public class DerbyDriverPropsConBase
 
     private List<Statement> statements = new ArrayList<>();
 
-    private Connection connection;
+    private static Connection con;
     protected PropsConDerbyDriver dbDriver;
-    protected static DbConnectionPool dbConnPool;
+    private static DbConnectionPool dbConnPool;
+    private static List<Connection> connections = new ArrayList<>();
 
-    @SuppressWarnings("unused")
     @BeforeClass
     public static void setUpBeforeClass() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
     {
@@ -67,41 +74,21 @@ public class DerbyDriverPropsConBase
 
         dbConnPool = new DbConnectionPool();
         dbConnPool.initializeDataSource(DB_URL, DB_PROPS);
-
-        // create a dummy driver, just to test if the DB is available
-        // fail fast, not for each testcase
-        try
-        {
-            new PropsConDerbyDriver(DEFAULT_INSTANCE_NAME, dbConnPool.getConnection());
-        }
-        catch (SQLException sqlExc)
-        {
-            SQLException cause = sqlExc;
-            while (cause != null)
-            {
-                if ("XSDB6".equals(cause.getSQLState()))
-                {
-                    // another instance is using the db...
-                    fail(cause.getLocalizedMessage());
-                }
-                cause = cause.getNextException();
-            }
-            throw sqlExc;
-        }
+        con = dbConnPool.getConnection();
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception
     {
+        con.close();
         dbConnPool.shutdown();
     }
 
     @Before
     public void setUp() throws SQLException
     {
-        dbDriver = new PropsConDerbyDriver(DEFAULT_INSTANCE_NAME, dbConnPool.getConnection());
+        dbDriver = new PropsConDerbyDriver(DEFAULT_INSTANCE_NAME);
 
-        connection = dbConnPool.getConnection();
         createTable(true);
     }
 
@@ -113,48 +100,56 @@ public class DerbyDriverPropsConBase
             statement.close();
         }
         dropTable();
-        connection.close();
+        for (Connection con : connections)
+        {
+            con.close();
+        }
+        connections.clear();
+    }
+
+    protected static Connection getConnection() throws SQLException
+    {
+        Connection con = dbConnPool.getConnection();
+        con.setAutoCommit(false);
+        connections.add(con);
+        return con;
     }
 
     private void createTable(boolean dropIfExists) throws SQLException
     {
-        try (Connection con = dbConnPool.getConnection())
+        try (Statement statement = con.createStatement())
         {
-            try (Statement statement = con.createStatement())
+            statement.executeUpdate(CREATE_TABLE);
+        }
+        catch (SQLException sqlExc)
+        {
+            if ("X0Y32".equals(sqlExc.getSQLState())) // table already exists
             {
-                statement.executeUpdate(CREATE_TABLE);
-            }
-            catch (SQLException sqlExc)
-            {
-                if ("X0Y32".equals(sqlExc.getSQLState())) // table already exists
+                if (dropIfExists)
                 {
-                    if (dropIfExists)
-                    {
-                        dropTable();
-                        createTable(false);
-                    }
-                    else
-                    {
-                        throw sqlExc;
-                    }
+                    dropTable();
+                    createTable(false);
                 }
                 else
                 {
                     throw sqlExc;
                 }
             }
+            else
+            {
+                throw sqlExc;
+            }
         }
+        con.commit();
     }
 
     private void dropTable() throws SQLException
     {
-        try (Connection con = dbConnPool.getConnection())
+        try (Statement statement = con.createStatement())
         {
-            try (Statement statement = con.createStatement())
-            {
-                statement.executeUpdate(DROP_TABLE);
-            }
+            statement.executeUpdate(DROP_TABLE);
         }
+        con.commit();
     }
 
     protected String debugGetAllContent() throws SQLException
@@ -172,7 +167,7 @@ public class DerbyDriverPropsConBase
 
     protected ResultSet getAllContent() throws SQLException
     {
-        PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL);
+        PreparedStatement preparedStatement = getConnection().prepareStatement(SELECT_ALL);
         statements.add(preparedStatement);
         return preparedStatement.executeQuery();
     }
@@ -200,21 +195,19 @@ public class DerbyDriverPropsConBase
 
     protected void insert(String instanceName, String key, String value) throws SQLException
     {
-        try (Connection con = dbConnPool.getConnection())
+        try (PreparedStatement preparedStatement = con.prepareStatement(INSERT))
         {
-            try (PreparedStatement preparedStatement = con.prepareStatement(INSERT))
-            {
-                preparedStatement.setString(1, instanceName);
-                preparedStatement.setString(2, key);
-                preparedStatement.setString(3, value);
-                preparedStatement.executeUpdate();
-            }
+            preparedStatement.setString(1, instanceName);
+            preparedStatement.setString(2, key);
+            preparedStatement.setString(3, value);
+            preparedStatement.executeUpdate();
         }
+        con.commit();
     }
 
     protected void insert(String instanceName, Map<String, String> map) throws SQLException
     {
-        try (Connection con = dbConnPool.getConnection())
+        try (Connection con = getConnection())
         {
             try (PreparedStatement preparedStatement = con.prepareStatement(INSERT))
             {
@@ -228,6 +221,7 @@ public class DerbyDriverPropsConBase
                     preparedStatement.executeUpdate();
                 }
             }
+            con.commit();
         }
     }
 
@@ -251,7 +245,7 @@ public class DerbyDriverPropsConBase
 
     protected void delete(String instanceName, String key) throws SQLException
     {
-        try (Connection con = dbConnPool.getConnection())
+        try (Connection con = getConnection())
         {
             try (PreparedStatement preparedStatement = con.prepareStatement(DELETE))
             {
@@ -259,6 +253,7 @@ public class DerbyDriverPropsConBase
                 preparedStatement.setString(1, key);
                 preparedStatement.executeUpdate();
             }
+            con.commit();
         }
     }
 }

@@ -107,7 +107,8 @@ public class PropsContainer implements Props
             {
                 targetContainer = con.ensureNamespaceExists(key.substring(0, idx));
             }
-            String oldValue = targetContainer.propMap.put(key.substring(idx + 1), value);
+            String actualKey = key.substring(idx + 1);
+            String oldValue = targetContainer.propMap.put(actualKey, value);
             if (oldValue == null)
             {
                 targetContainer.modifySize(1);
@@ -277,8 +278,8 @@ public class PropsContainer implements Props
         if (oldValue == null)
         {
             con.modifySize(1);
-            dbPersist(con.getPath() + actualKey, value, oldValue);
         }
+        dbPersist(con.getPath() + actualKey, value, oldValue);
         return oldValue;
     }
 
@@ -309,11 +310,11 @@ public class PropsContainer implements Props
         if (con != null)
         {
             value = con.propMap.remove(actualKey);
+            dbRemove(con.getPath() + actualKey, value);
             if (value != null)
             {
                 con.modifySize(-1);
                 con.removeCleanup();
-                dbRemove(con.getPath() + actualKey, value);
             }
         }
         return value;
@@ -343,6 +344,7 @@ public class PropsContainer implements Props
 
             if (value == null)
             {
+                rollback();
                 throw new InvalidValueException("Value must not be null");
             }
 
@@ -352,11 +354,11 @@ public class PropsContainer implements Props
 
             PropsContainer con = ensureNamespaceExists(pathElements[PATH_NAMESPACE]);
             String oldValue = con.propMap.put(actualKey, value);
+            dbPersist(key, value, oldValue);
             if (oldValue == null)
             {
                 con.modifySize(1);
                 modified = true;
-                dbPersist(actualKey, value, oldValue);
             }
         }
         return modified;
@@ -895,6 +897,14 @@ public class PropsContainer implements Props
         return !rootContainer.cachedPropMap.isEmpty();
     }
 
+    private void cache(String key, String value)
+    {
+        if (!rootContainer.cachedPropMap.containsKey(key))
+        {
+            rootContainer.cachedPropMap.put(key, value);
+        }
+    }
+
     @Override
     public void commit()
     {
@@ -946,29 +956,37 @@ public class PropsContainer implements Props
         }
     }
 
-    private void dbPersist(String actualKey, String value, String oldValue) throws SQLException
+    private void dbPersist(String key, String value, String oldValue) throws SQLException
     {
-        Map<String, String> map = rootContainer.cachedPropMap;
-        if (!map.containsKey(actualKey))
-        {
-            map.put(actualKey, oldValue);
-        }
+        cache(key, oldValue);
         if (dbDriver != null)
         {
-            dbDriver.persist(dbCon, actualKey, value);
+            try
+            {
+                dbDriver.persist(dbCon, key, value);
+            }
+            catch (SQLException sqlExc)
+            {
+                rollback();
+                throw sqlExc;
+            }
         }
     }
 
-    private void dbRemove(String actualKey, String oldValue) throws SQLException
+    private void dbRemove(String key, String oldValue) throws SQLException
     {
-        Map<String, String> map = rootContainer.cachedPropMap;
-        if (!map.containsKey(actualKey))
-        {
-            map.put(actualKey, oldValue);
-        }
+        cache(key, oldValue);
         if (dbDriver != null)
         {
-            dbDriver.remove(dbCon, actualKey);
+            try
+            {
+                dbDriver.remove(dbCon, key);
+            }
+            catch (SQLException sqlExc)
+            {
+                rollback();
+                throw sqlExc;
+            }
         }
     }
 
@@ -978,15 +996,20 @@ public class PropsContainer implements Props
         Set<Entry<String,String>> entrySet = rootContainer.entrySet();
         for (Entry<String, String> entry : entrySet)
         {
-            if (!map.containsKey(entry.getKey()))
-            {
-                map.put(entry.getKey(), entry.getValue());
-            }
+            cache(entry.getKey(), entry.getValue());
         }
 
         if (dbDriver != null)
         {
-            dbDriver.removeAll(dbCon);
+            try
+            {
+                dbDriver.removeAll(dbCon);
+            }
+            catch (SQLException sqlExc)
+            {
+                rollback();
+                throw sqlExc;
+            }
         }
     }
 
@@ -1666,7 +1689,7 @@ public class PropsContainer implements Props
         public boolean addAll(Collection<? extends Map.Entry<String, String>> collection)
         {
             boolean changed = false;
-            Map<String, String> map = new TreeMap<String, String>();
+            Map<String, String> map = new HashMap<>();
             for (Map.Entry<String, String> entry : collection)
             {
                 map.put(entry.getKey(), entry.getValue());

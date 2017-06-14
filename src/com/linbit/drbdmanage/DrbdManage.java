@@ -34,8 +34,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Properties;
 import org.slf4j.event.Level;
 
@@ -557,9 +555,9 @@ public abstract class DrbdManage
 
     // static Database reference getters
 
-    public static PropsConDatabaseDriver getPropConDatabaseDriver(String instanceName, Connection con) throws SQLException
+    public static PropsConDatabaseDriver getPropConDatabaseDriver(String instanceName)
     {
-        return persistenceDbDriver.getPropsDatabaseDriver(con, instanceName);
+        return persistenceDbDriver.getPropsDatabaseDriver(instanceName);
     }
 
     public static NodeDatabaseDriver getNodeDatabaseDriver(NodeName nameRef)

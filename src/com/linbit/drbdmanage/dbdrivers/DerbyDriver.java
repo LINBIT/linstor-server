@@ -71,9 +71,9 @@ public class DerbyDriver implements DatabaseDriver
     }
 
     @Override
-    public PropsConDatabaseDriver getPropsDatabaseDriver(Connection con, String instanceName) throws SQLException
+    public PropsConDatabaseDriver getPropsDatabaseDriver(String instanceName)
     {
-        return new PropsConDerbyDriver(instanceName, con);
+        return new PropsConDerbyDriver(instanceName);
     }
 
     @Override

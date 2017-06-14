@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage.dbdrivers;
 
-import java.sql.Connection;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
@@ -47,7 +46,7 @@ public class NoOpDriver implements DatabaseDriver
     }
 
     @Override
-    public PropsConDatabaseDriver getPropsDatabaseDriver(Connection dbCon, String instanceName)
+    public PropsConDatabaseDriver getPropsDatabaseDriver(String instanceName)
     {
         return null; // intentionally null
     }
