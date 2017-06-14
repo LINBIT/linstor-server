@@ -43,6 +43,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -693,6 +694,8 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             "CmdEndService",
             "CmdDisplayConnections",
             "CmdCloseConnection",
+            "CmdDisplaySystemStatus",
+            "CmdDisplayApis",
             "CmdTestErrorLog",
             "CmdShutdown"
         };
@@ -786,6 +789,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
     public static interface DebugControl extends CommonDebugControl
     {
+        Satellite getModuleInstance();
     }
 
     private static class DebugControlImpl implements DebugControl
@@ -795,6 +799,18 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         DebugControlImpl(Satellite satelliteRef)
         {
             satellite = satelliteRef;
+        }
+
+        @Override
+        public DrbdManage getInstance()
+        {
+            return satellite;
+        }
+
+        @Override
+        public Satellite getModuleInstance()
+        {
+            return satellite;
         }
 
         @Override
@@ -843,6 +859,12 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 peerMapCpy.putAll(satellite.peerMap);
             }
             return peerMapCpy;
+        }
+
+        @Override
+        public Set<String> getApiCallNames()
+        {
+            return satellite.msgProc.getApiCallNames();
         }
 
         @Override

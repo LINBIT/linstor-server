@@ -167,11 +167,18 @@ public class CmdDisplayConnections extends BaseDebugCmd
                 }
 
                 debugOut.println(ruler);
-                debugOut.printf("%d connections\n", count);
+                if (count == 1)
+                {
+                    debugOut.println("1 connection");
+                }
+                else
+                {
+                    debugOut.printf("%d connections\n", count);
+                }
             }
             else
             {
-                debugOut.println("There are no connections to clients registered at this time.");
+                debugOut.println("There are no connections registered at this time.");
             }
         }
     }

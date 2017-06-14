@@ -58,6 +58,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -872,6 +873,8 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             "CmdEndService",
             "CmdDisplayConnections",
             "CmdCloseConnection",
+            "CmdDisplaySystemStatus",
+            "CmdDisplayApis",
             "CmdTestErrorLog",
             "CmdShutdown"
         };
@@ -965,6 +968,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
     public interface DebugControl extends CommonDebugControl
     {
+        Controller getModuleInstance();
     }
 
     private static class DebugControlImpl implements DebugControl
@@ -974,6 +978,18 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         DebugControlImpl(Controller controllerRef)
         {
             controller = controllerRef;
+        }
+
+        @Override
+        public DrbdManage getInstance()
+        {
+            return controller;
+        }
+
+        @Override
+        public Controller getModuleInstance()
+        {
+            return controller;
         }
 
         @Override
@@ -1022,6 +1038,12 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 peerMapCpy.putAll(controller.peerMap);
             }
             return peerMapCpy;
+        }
+
+        @Override
+        public Set<String> getApiCallNames()
+        {
+            return controller.msgProc.getApiCallNames();
         }
 
         @Override
