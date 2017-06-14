@@ -12,19 +12,19 @@ import com.linbit.drbdmanage.DrbdManageRuntimeException;
  */
 public enum AccessType
 {
-    VIEW(0x1L),
-    USE(0x3L),
-    CHANGE(0x7L),
-    CONTROL(0xFL);
+    VIEW((short) 0x1),
+    USE((short) 0x3),
+    CHANGE((short) 0x7),
+    CONTROL((short) 0xF);
 
-    private final long accessMask;
+    private final short accessMask;
 
-    private AccessType(long mask)
+    private AccessType(short mask)
     {
         accessMask = mask;
     }
 
-    public long getAccessMask()
+    public short getAccessMask()
     {
         return accessMask;
     }

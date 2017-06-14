@@ -6,30 +6,18 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 
-import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.derby.PropsConDerbyDriver;
+import com.linbit.drbdmanage.security.DerbyBase;
 
-public class DerbyDriverPropsConBase
+public class DerbyPropsConBase extends DerbyBase
 {
-    private static final String DB_URL = "jdbc:derby:directory:database";
-    private static final String DB_USER = "drbdmanage";
-    private static final String DB_PASSWORD = "linbit";
-    private static final Properties DB_PROPS = new Properties();
-
     private static final String TABLE_NAME = PropsConDerbyDriver.TBL_PROP;
     private static final String COL_INSTANCE = PropsConDerbyDriver.COL_INSTANCE;
     private static final String COL_KEY = PropsConDerbyDriver.COL_KEY;
@@ -56,105 +44,32 @@ public class DerbyDriverPropsConBase
 
     protected static final String DEFAULT_INSTANCE_NAME = "DEFAULT_INSTANCE";
 
-    private List<Statement> statements = new ArrayList<>();
 
-    private static Connection con;
     protected PropsConDerbyDriver dbDriver;
-    private static DbConnectionPool dbConnPool;
-    private static List<Connection> connections = new ArrayList<>();
 
-    @BeforeClass
-    public static void setUpBeforeClass() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
+    public DerbyPropsConBase() throws SQLException
     {
-        // load the clientDriver...
-        Class.forName("org.apache.derby.jdbc.ClientDriver").newInstance();
-        DB_PROPS.setProperty("create", "true");
-        DB_PROPS.setProperty("user", DB_USER);
-        DB_PROPS.setProperty("password", DB_PASSWORD);
-
-        dbConnPool = new DbConnectionPool();
-        dbConnPool.initializeDataSource(DB_URL, DB_PROPS);
-        con = dbConnPool.getConnection();
+        super(
+            new String[] { CREATE_TABLE },
+            new String[] {}, // default values
+            new String[] { "TRUNCATE TABLE " + TABLE_NAME},
+            new String[] { "DROP TABLE " + TABLE_NAME}
+        );
     }
 
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception
-    {
-        con.close();
-        dbConnPool.shutdown();
-    }
-
+    @Override
     @Before
     public void setUp() throws SQLException
     {
+        super.setUp();
         dbDriver = new PropsConDerbyDriver(DEFAULT_INSTANCE_NAME);
-
-        createTable(true);
-    }
-
-    @After
-    public void tearDown() throws SQLException
-    {
-        for (Statement statement : statements)
-        {
-            statement.close();
-        }
-        dropTable();
-        for (Connection con : connections)
-        {
-            con.close();
-        }
-        connections.clear();
-    }
-
-    protected static Connection getConnection() throws SQLException
-    {
-        Connection con = dbConnPool.getConnection();
-        con.setAutoCommit(false);
-        connections.add(con);
-        return con;
-    }
-
-    private void createTable(boolean dropIfExists) throws SQLException
-    {
-        try (Statement statement = con.createStatement())
-        {
-            statement.executeUpdate(CREATE_TABLE);
-        }
-        catch (SQLException sqlExc)
-        {
-            if ("X0Y32".equals(sqlExc.getSQLState())) // table already exists
-            {
-                if (dropIfExists)
-                {
-                    dropTable();
-                    createTable(false);
-                }
-                else
-                {
-                    throw sqlExc;
-                }
-            }
-            else
-            {
-                throw sqlExc;
-            }
-        }
-        con.commit();
-    }
-
-    private void dropTable() throws SQLException
-    {
-        try (Statement statement = con.createStatement())
-        {
-            statement.executeUpdate(DROP_TABLE);
-        }
-        con.commit();
     }
 
     protected String debugGetAllContent() throws SQLException
     {
-        ResultSet allContent = getAllContent();
+        Connection connection = getConnection();
+        PreparedStatement stmt = connection.prepareStatement(SELECT_ALL);
+        ResultSet allContent = stmt.executeQuery();
         StringBuilder sb = new StringBuilder();
         while (allContent.next())
         {
@@ -162,13 +77,16 @@ public class DerbyDriverPropsConBase
                 .append(allContent.getString(2)).append(" = ")
                 .append(allContent.getString(3)).append("\n");
         }
+        allContent.close();
+        stmt.close();
+        connection.close();
         return sb.toString();
     }
 
     protected ResultSet getAllContent() throws SQLException
     {
         PreparedStatement preparedStatement = getConnection().prepareStatement(SELECT_ALL);
-        statements.add(preparedStatement);
+        add(preparedStatement);
         return preparedStatement.executeQuery();
     }
 
@@ -195,14 +113,17 @@ public class DerbyDriverPropsConBase
 
     protected void insert(String instanceName, String key, String value) throws SQLException
     {
-        try (PreparedStatement preparedStatement = con.prepareStatement(INSERT))
+        try (Connection con = getConnection())
         {
-            preparedStatement.setString(1, instanceName);
-            preparedStatement.setString(2, key);
-            preparedStatement.setString(3, value);
-            preparedStatement.executeUpdate();
+            try (PreparedStatement preparedStatement = con.prepareStatement(INSERT))
+            {
+                preparedStatement.setString(1, instanceName);
+                preparedStatement.setString(2, key);
+                preparedStatement.setString(3, value);
+                preparedStatement.executeUpdate();
+            }
+            con.commit();
         }
-        con.commit();
     }
 
     protected void insert(String instanceName, Map<String, String> map) throws SQLException

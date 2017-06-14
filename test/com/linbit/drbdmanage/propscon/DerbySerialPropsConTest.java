@@ -9,8 +9,13 @@ import org.junit.Test;
 
 import com.linbit.TransactionMgr;
 
-public class DerbyDriverSerialPropsConTest extends DerbyDriverPropsConBase
+public class DerbySerialPropsConTest extends DerbyPropsConBase
 {
+    public DerbySerialPropsConTest() throws SQLException
+    {
+        super();
+    }
+
     @Test
     public void test() throws SQLException, InvalidKeyException, InvalidValueException
     {

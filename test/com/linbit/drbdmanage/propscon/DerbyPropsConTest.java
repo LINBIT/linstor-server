@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,8 +17,13 @@ import org.junit.Test;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.derby.PropsConDerbyDriver;
 
-public class DerbyDriverPropsConTest extends DerbyDriverPropsConBase
+public class DerbyPropsConTest extends DerbyPropsConBase
 {
+    public DerbyPropsConTest() throws SQLException
+    {
+        super();
+    }
+
     @Test
     public void testPersistSimple() throws Throwable
     {
