@@ -249,7 +249,7 @@ public abstract class DrbdManage
 
     public void printField(PrintStream out, String title, String text)
     {
-        System.out.printf("    %-24s %s\n", title, text);
+        out.printf("    %-24s %s\n", title, text);
     }
 
     /**
