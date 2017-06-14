@@ -11,7 +11,7 @@ public class TransactionSimpleObject<T> implements TransactionObject
     public TransactionSimpleObject(T obj, ObjectDatabaseDriver<T> driver)
     {
         object = obj;
-        cachedObject = null;
+        cachedObject = obj;
         dbDriver = driver;
     }
 

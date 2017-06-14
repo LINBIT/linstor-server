@@ -209,7 +209,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     // TODO: determine which DBDriver to use
                     AccessContext privCtx = sysCtx.clone();
                     privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                    securityDbDriver = new DbDerbyPersistence();
+                    securityDbDriver = new DbDerbyPersistence(privCtx);
                     persistenceDbDriver = new DerbyDriver(errorLogRef, privCtx);
 
                     String connectionUrl = dbProps.getProperty(
@@ -230,23 +230,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 {
                     errorLogRef.reportError(sqlExc);
                 }
-
-                // get a connection to initialize objects
-                TransactionMgr transMgr = new TransactionMgr(dbConnPool);
-
-                shutdownProt = ObjectProtection.load(
-                    transMgr,
-                    ObjectProtection.buildPath(this, "shutdown"),
-                    true,
-                    sysCtx
-                );
-//                shutdownProt = new ObjectProtection(sysCtx, ObjectProtection.buildPath(this, "shutdown"));
-
-                shutdownProt.setConnection(transMgr);
-                // Set CONTROL access for the SYSTEM role on shutdown
-                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
-
-                transMgr.commit(true);
 
                 // Load security identities, roles, domains/types, etc.
                 errorLogRef.logInfo("Loading security objects");
@@ -280,6 +263,23 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                         algoExc
                     );
                 }
+
+                // get a connection to initialize objects
+                TransactionMgr transMgr = new TransactionMgr(dbConnPool);
+
+                shutdownProt = ObjectProtection.load(
+                    transMgr,
+                    ObjectProtection.buildPath(this, "shutdown"),
+                    true,
+                    sysCtx
+                );
+//                shutdownProt = new ObjectProtection(sysCtx, ObjectProtection.buildPath(this, "shutdown"));
+
+                shutdownProt.setConnection(transMgr);
+                // Set CONTROL access for the SYSTEM role on shutdown
+                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+
+                transMgr.commit(true);
 
                 ctrlConf = SerialPropsContainer.createRootContainer(
                     persistenceDbDriver.getPropsDatabaseDriver(

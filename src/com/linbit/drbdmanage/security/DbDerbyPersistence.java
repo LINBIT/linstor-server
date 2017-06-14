@@ -94,6 +94,13 @@ public class DbDerbyPersistence implements DbAccessor
         " FROM " + TBL_ACL_MAP +
         " WHERE " + CONF_KEY + " = " + KEY_SEC_LEVEL;
 
+    private AccessContext dbCtx;
+
+    public DbDerbyPersistence(AccessContext privCtx)
+    {
+        dbCtx = privCtx;
+    }
+
     @Override
     public ResultSet getSignInEntry(Connection dbConn, IdentityName idName) throws SQLException
     {
@@ -166,7 +173,7 @@ public class DbDerbyPersistence implements DbAccessor
     @Override
     public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objectPath)
     {
-        return new ObjectProtectionDerbyDriver(objectPath);
+        return new ObjectProtectionDerbyDriver(dbCtx, objectPath);
     }
 
     private ResultSet dbQuery(Connection dbConn, String sqlQuery) throws SQLException

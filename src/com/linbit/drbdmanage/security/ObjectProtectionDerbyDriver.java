@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ObjectDatabaseDriver;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
@@ -30,7 +31,8 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
     // ObjectProtection SQL statements
     private static final String OP_INSERT =
-        "INSERT INTO " + TBL_OP + " VALUES (?, ?, ?, ?)";
+        " INSERT INTO " + TBL_OP +
+        " VALUES (?, ?, ?, ?)";
     private static final String OP_UPDATE =
         " UPDATE " + TBL_OP +
         " SET " + OP_CREATOR       + " = ?, " +
@@ -68,7 +70,8 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
 
     private static final String ACL_INSERT =
-        "INSERT INTO " + TBL_ACL + " VALUE (?, ?, ?)";
+        " INSERT INTO " + TBL_ACL +
+        " VALUES (?, ?, ?)";
     private static final String ACL_UPDATE =
         " UPDATE " + TBL_ACL +
         " SET " + ACL_ACCESS_TYPE + " = ? " +
@@ -78,15 +81,24 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         " DELETE FROM " + TBL_ACL +
         " WHERE " + ACL_OBJECT_PATH + " = ? AND " +
         "       " + ACL_ROLE_NAME + " = ?";
+    private static final String ACL_LOAD =
+        " SELECT " +
+        "     ACL." + ACL_ROLE_NAME + ", " +
+        "     ACL." + ACL_ACCESS_TYPE +
+        " FROM " +
+        "     " + TBL_ACL + " AS ACL " +
+        " WHERE " + ACL_OBJECT_PATH + " = ?";
 
 
     private String objPath;
     private ObjectDatabaseDriver<Identity> identityDriver;
     private ObjectDatabaseDriver<Role> roleDriver;
     private ObjectDatabaseDriver<SecurityType> securityTypeDriver;
+    private AccessContext dbCtx;
 
-    public ObjectProtectionDerbyDriver(String objectPath)
+    public ObjectProtectionDerbyDriver(AccessContext accCtx, String objectPath)
     {
+        dbCtx = accCtx;
         objPath = objectPath;
         identityDriver = new IdentityDerbyDriver();
         roleDriver = new RoleDerbyDriver();
@@ -189,21 +201,53 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                 SecurityType secType = SecurityType.get(new SecTypeName(resultSet.getString(3)));
                 PrivilegeSet privLimitSet = new PrivilegeSet(resultSet.getLong(4));
                 AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
-                // TODO should we not enable the privs?
-                // TODO should we not save the currently enabled privs?
                 objProt = new ObjectProtection(accCtx, this);
             }
             catch (InvalidNameException invalidNameExc)
             {
-                // should not be possible
                 throw new DrbdSqlRuntimeException(
                     "A name has been modified in the database to an illegal string.",
                     invalidNameExc
                 );
             }
         }
+
         resultSet.close();
         stmt.close();
+
+        if (objProt != null)
+        {
+            // restore ACL
+            stmt = con.prepareStatement(ACL_LOAD);
+            stmt.setString(1, objPath);
+            resultSet = stmt.executeQuery();
+
+            while (resultSet.next())
+            {
+                try
+                {
+                    Role role = Role.get(new RoleName(resultSet.getString(1)));
+                    AccessType type = AccessType.get(resultSet.getInt(2));
+
+                    objProt.addAclEntry(dbCtx, role, type);
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    throw new DrbdSqlRuntimeException(
+                        "A name has been modified in the database to an illegal string.",
+                        invalidNameExc
+                    );
+                }
+                catch (AccessDeniedException accessDeniedExc)
+                {
+                    throw new ImplementationError(
+                        "Database's accessContext has insufficient rights to restore object protection",
+                        accessDeniedExc
+                    );
+                }
+            }
+            objProt.commit(); // commit the transactions so that the object is not dirty anymore
+        }
 
         return objProt;
     }
