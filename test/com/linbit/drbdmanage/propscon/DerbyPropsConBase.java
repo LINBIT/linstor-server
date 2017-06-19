@@ -18,29 +18,15 @@ import com.linbit.drbdmanage.security.DerbyBase;
 
 public class DerbyPropsConBase extends DerbyBase
 {
-    private static final String TABLE_NAME = PropsConDerbyDriver.TBL_PROP;
-    private static final String COL_INSTANCE = PropsConDerbyDriver.COL_INSTANCE;
-    private static final String COL_KEY = PropsConDerbyDriver.COL_KEY;
-    private static final String COL_VALUE = PropsConDerbyDriver.COL_VALUE;
 
-    private static final String CREATE_TABLE =
-        "CREATE TABLE " + TABLE_NAME+ "\n" +
-        "(\n" +
-        "    " + COL_INSTANCE + " VARCHAR(512) NOT NULL \n" +
-        "        CONSTRAINT PRP_INST_CHKNAME CHECK(UPPER(" + COL_INSTANCE + ") = " + COL_INSTANCE +
-        "            AND LENGTH(" + COL_INSTANCE + ") >= 2),\n" +
-        "    " + COL_KEY + " VARCHAR(512) NOT NULL, \n" +
-        "    " + COL_VALUE + " VARCHAR(512) NOT NULL, \n " +
-        "    PRIMARY KEY (" + COL_INSTANCE + ", " + COL_KEY + ")\n" +
-        ")";
-    private static final String DROP_TABLE =
-        "DROP TABLE " + TABLE_NAME;
     private static final String SELECT_ALL =
-        "SELECT * FROM " + TABLE_NAME;
+        "SELECT * FROM " + TBL_PROPS_CONTAINERS;
     private static final String INSERT =
-        "INSERT INTO " + TABLE_NAME + " VALUES (?, ?, ?)";
+        "INSERT INTO " + TBL_PROPS_CONTAINERS + " VALUES (?, ?, ?)";
     private static final String DELETE =
-        "DELETE FROM " + TABLE_NAME + " WHERE " + COL_KEY + " = ?";
+        "DELETE FROM " + TBL_PROPS_CONTAINERS +
+        " WHERE " + PROPS_INSTANCE + " = ? AND" +
+        "       " + PROP_KEY + " = ?";
 
     protected static final String DEFAULT_INSTANCE_NAME = "DEFAULT_INSTANCE";
 
@@ -49,12 +35,6 @@ public class DerbyPropsConBase extends DerbyBase
 
     public DerbyPropsConBase() throws SQLException
     {
-        super(
-            new String[] { CREATE_TABLE },
-            new String[] {}, // default values
-            new String[] { "TRUNCATE TABLE " + TABLE_NAME},
-            new String[] { "DROP TABLE " + TABLE_NAME}
-        );
     }
 
     @Override
@@ -171,8 +151,20 @@ public class DerbyPropsConBase extends DerbyBase
             try (PreparedStatement preparedStatement = con.prepareStatement(DELETE))
             {
                 preparedStatement.setString(1, instanceName);
-                preparedStatement.setString(1, key);
+                preparedStatement.setString(2, key);
                 preparedStatement.executeUpdate();
+            }
+            con.commit();
+        }
+    }
+
+    protected void truncate() throws SQLException
+    {
+        try (Connection con = getConnection())
+        {
+            try (PreparedStatement stmt = con.prepareStatement(TRUNCATE_PROPS_CONTAINERS))
+            {
+                stmt.executeUpdate();
             }
             con.commit();
         }

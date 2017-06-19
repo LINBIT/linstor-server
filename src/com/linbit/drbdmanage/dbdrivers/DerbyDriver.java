@@ -1,8 +1,5 @@
 package com.linbit.drbdmanage.dbdrivers;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;

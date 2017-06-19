@@ -27,6 +27,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
     @Test
     public void testPersistSimple() throws Throwable
     {
+        truncate();
         Connection con = getConnection();
         PropsContainer container = PropsContainer.createRootContainer(dbDriver);
         container.setConnection(new TransactionMgr(con));

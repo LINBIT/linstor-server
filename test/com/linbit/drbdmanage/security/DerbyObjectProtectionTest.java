@@ -17,12 +17,6 @@ public class DerbyObjectProtectionTest extends DerbyBase
 {
     public DerbyObjectProtectionTest() throws SQLException
     {
-        super(
-            CREATE_SECURITY_TABLES,
-            INSERT_SECURITY_DEFAULTS,
-            TRUNCATE_SECURITY_TABLES,
-            DROP_SECURITY_TABLES
-        );
     }
 
     private static final String OP_SELECT =

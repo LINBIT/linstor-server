@@ -42,11 +42,6 @@ public abstract class DerbyBase implements DerbyConstants
     private static boolean initialized = false;
     private static DbDerbyPersistence secureDbDriver;
 
-    private static String[] createTables;
-    private static String[] defaultValues;
-    private static String[] truncateTables;
-    private static String[] dropTables;
-
     static
     {
         PrivilegeSet sysPrivs = new PrivilegeSet(Privilege.PRIV_SYS_ALL);
@@ -67,26 +62,10 @@ public abstract class DerbyBase implements DerbyConstants
         }
     }
 
-    public DerbyBase(String[] createTables, String[] defaultValues, String[] truncateTables, String[] dropTables) throws SQLException
+    public DerbyBase() throws SQLException
     {
         if (!initialized)
         {
-            DerbyBase.createTables = new String[CREATE_SECURITY_TABLES.length + createTables.length];
-            System.arraycopy(CREATE_SECURITY_TABLES, 0, DerbyBase.createTables, 0, CREATE_SECURITY_TABLES.length);
-            System.arraycopy(createTables, 0, DerbyBase.createTables, CREATE_SECURITY_TABLES.length, createTables.length);
-
-            DerbyBase.defaultValues = new String[INSERT_SECURITY_DEFAULTS.length + defaultValues.length];
-            System.arraycopy(INSERT_SECURITY_DEFAULTS, 0, DerbyBase.defaultValues, 0, INSERT_SECURITY_DEFAULTS.length);
-            System.arraycopy(defaultValues, 0, DerbyBase.defaultValues, INSERT_SECURITY_DEFAULTS.length, defaultValues.length);
-
-            DerbyBase.truncateTables = new String[TRUNCATE_SECURITY_TABLES.length + truncateTables.length];
-            System.arraycopy(TRUNCATE_SECURITY_TABLES, 0, DerbyBase.truncateTables, 0, TRUNCATE_SECURITY_TABLES.length);
-            System.arraycopy(truncateTables, 0, DerbyBase.truncateTables, TRUNCATE_SECURITY_TABLES.length, truncateTables.length);
-
-            DerbyBase.dropTables = new String[DROP_SECURITY_TABLES.length + dropTables.length];
-            System.arraycopy(DROP_SECURITY_TABLES, 0, DerbyBase.dropTables, 0, DROP_SECURITY_TABLES.length);
-            System.arraycopy(dropTables, 0, DerbyBase.dropTables, DROP_SECURITY_TABLES.length, dropTables.length);
-
             createTables();
             insertDefaults();
 
@@ -175,7 +154,7 @@ public abstract class DerbyBase implements DerbyConstants
 
     private void createTables() throws SQLException
     {
-        for (int idx = 0; idx < createTables.length; ++idx)
+        for (int idx = 0; idx < CREATE_TABLES.length; ++idx)
         {
             createTable(con, true, idx);
         }
@@ -184,7 +163,7 @@ public abstract class DerbyBase implements DerbyConstants
 
     private void insertDefaults() throws SQLException
     {
-        for (String insert : defaultValues)
+        for (String insert : INSERT_DEFAULT_VALUES)
         {
             try (PreparedStatement stmt = con.prepareStatement(insert))
             {
@@ -196,7 +175,7 @@ public abstract class DerbyBase implements DerbyConstants
 
     private static void dropTables() throws SQLException
     {
-        for (int idx = 0; idx < dropTables.length; ++idx)
+        for (int idx = 0; idx < DROP_TABLES.length; ++idx)
         {
             dropTable(con, idx);
         }
@@ -204,7 +183,7 @@ public abstract class DerbyBase implements DerbyConstants
 
     private void truncateTables() throws SQLException
     {
-        for (String sql : truncateTables)
+        for (String sql : TRUNCATE_TABLES)
         {
             PreparedStatement stmt = con.prepareStatement(sql);
             stmt.executeUpdate();
@@ -216,7 +195,7 @@ public abstract class DerbyBase implements DerbyConstants
     {
         try
         {
-            try (PreparedStatement stmt = connection.prepareStatement(createTables[idx]))
+            try (PreparedStatement stmt = connection.prepareStatement(CREATE_TABLES[idx]))
             {
 //                System.out.print("creating... " + createTables[idx]);
                 stmt.executeUpdate();
@@ -231,7 +210,7 @@ public abstract class DerbyBase implements DerbyConstants
                 if (dropIfExists)
                 {
 //                    System.out.print("exists, ");
-                    dropTable(connection, dropTables.length - 1 - idx);
+                    dropTable(connection, DROP_TABLES.length - 1 - idx);
                     createTable(connection, false, idx);
                 }
                 else
@@ -249,7 +228,7 @@ public abstract class DerbyBase implements DerbyConstants
 
     private static void dropTable(Connection connection, int idx) throws SQLException
     {
-        try (PreparedStatement stmt = connection.prepareStatement(dropTables[idx]))
+        try (PreparedStatement stmt = connection.prepareStatement(DROP_TABLES[idx]))
         {
 //            System.out.print("dropping... " + dropTables[idx]);
             stmt.executeUpdate();

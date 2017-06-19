@@ -2,287 +2,353 @@ package com.linbit.drbdmanage.security;
 
 public interface DerbyConstants
 {
-    /*
-     * Database names
-     */
-
     // View names
     public static final String VIEW_SEC_IDENTITIES_LOAD = "SEC_IDENTITIES_LOAD";
-    public static final String VIEW_SEC_ROLES_LOAD = "SEC_ROLES_LOAD";
-    public static final String VIEW_SEC_TYPES_LOAD = "SEC_TYPES_LOAD";
+    public static final String VIEW_SEC_ROLES_LOAD      = "SEC_ROLES_LOAD";
+    public static final String VIEW_SEC_TYPES_LOAD      = "SEC_TYPES_LOAD";
     public static final String VIEW_SEC_TYPE_RULES_LOAD = "SEC_TYPE_RULES_LOAD";
 
     // Table names
-    public static final String TBL_SEC_CONFIGURATION = "SEC_CONFIGURATION";
-    public static final String TBL_SEC_IDENTITIES = "SEC_IDENTITIES";
-    public static final String TBL_SEC_TYPES = "SEC_TYPES";
-    public static final String TBL_SEC_ROLES = "SEC_ROLES";
-    public static final String TBL_SEC_ID_ROLE_MAP = "SEC_ID_ROLE_MAP";
-    public static final String TBL_SEC_ACCESS_TYPES = "SEC_ACCESS_TYPES";
-    public static final String TBL_SEC_TYPE_RULES = "SEC_TYPE_RULES";
-    public static final String TBL_SEC_DFLT_ROLES = "SEC_DFLT_ROLES";
+    public static final String TBL_SEC_CONFIGURATION     = "SEC_CONFIGURATION";
+    public static final String TBL_SEC_IDENTITIES        = "SEC_IDENTITIES";
+    public static final String TBL_SEC_TYPES             = "SEC_TYPES";
+    public static final String TBL_SEC_ROLES             = "SEC_ROLES";
+    public static final String TBL_SEC_ID_ROLE_MAP       = "SEC_ID_ROLE_MAP";
+    public static final String TBL_SEC_ACCESS_TYPES      = "SEC_ACCESS_TYPES";
+    public static final String TBL_SEC_TYPE_RULES        = "SEC_TYPE_RULES";
+    public static final String TBL_SEC_DFLT_ROLES        = "SEC_DFLT_ROLES";
     public static final String TBL_SEC_OBJECT_PROTECTION = "SEC_OBJECT_PROTECTION";
-    public static final String TBL_SEC_ACL_MAP = "SEC_ACL_MAP";
+    public static final String TBL_SEC_ACL_MAP           = "SEC_ACL_MAP";
+    public static final String TBL_CTRL_CONFIGURATION    = "CTRL_CONFIGURATION";
+    public static final String TBL_NODES                 = "NODES";
+    public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
+    public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
+    public static final String TBL_NODE_RESOURCE         = "NODE_RESOURCE";
+    public static final String TBL_VOLUME_DEFINITIONS    = "VOLUME_DEFINITIONS";
+    public static final String TBL_STOR_POOL_DEFINITIONS = "STOR_POOL_DEFINITIONS";
+    public static final String TBL_NODE_STOR_POOL        = "NODE_STOR_POOL";
+    public static final String TBL_PROPS_CONTAINERS      = "PROPS_CONTAINERS";
 
     // SEC_CONFIGURATION column names
-    public static final String SEC_CONFIG_ENTRY_KEY = "ENTRY_KEY";
-    public static final String SEC_CONFIG_ENTRY_DSP_KEY = "ENTRY_DSP_KEY";
-    public static final String SEC_CONFIG_ENTRY_VALUE = "ENTRY_VALUE";
+    public static final String ENTRY_KEY     = "ENTRY_KEY";
+    public static final String ENTRY_DSP_KEY = "ENTRY_DSP_KEY";
+    public static final String ENTRY_VALUE   = "ENTRY_VALUE";
 
     // SEC_IDENTITIES column names
-    public static final String ID_NAME = "IDENTITY_NAME";
-    public static final String ID_DSP_NAME = "IDENTITY_DSP_NAME";
-    public static final String ID_PASS_SALT = "PASS_SALT";
-    public static final String ID_PASS_HASH = "PASS_HASH";
-    public static final String ID_ENABLED = "ID_ENABLED";
-    public static final String ID_LOCKED = "ID_LOCKED";
+    public static final String IDENTITY_NAME     = "IDENTITY_NAME";
+    public static final String IDENTITY_DSP_NAME = "IDENTITY_DSP_NAME";
+    public static final String PASS_SALT         = "PASS_SALT";
+    public static final String PASS_HASH         = "PASS_HASH";
+    public static final String ID_ENABLED        = "ID_ENABLED";
+    public static final String ID_LOCKED         = "ID_LOCKED";
 
     // SEC_TYPES column names
-    public static final String TYPE_NAME = "TYPE_NAME";
+    public static final String TYPE_NAME     = "TYPE_NAME";
     public static final String TYPE_DSP_NAME = "TYPE_DSP_NAME";
-    public static final String TYPE_ENABLED = "TYPE_ENABLED";
+    public static final String TYPE_ENABLED  = "TYPE_ENABLED";
 
     // SEC_ROLES column names
-    public static final String ROLE_NAME = "ROLE_NAME";
-    public static final String ROLE_DSP_NAME = "ROLE_DSP_NAME";
-    public static final String DOMAIN_NAME = "DOMAIN_NAME";
-    public static final String ROLE_ENABLED = "ROLE_ENABLED";
+    public static final String ROLE_NAME       = "ROLE_NAME";
+    public static final String ROLE_DSP_NAME   = "ROLE_DSP_NAME";
+    public static final String DOMAIN_NAME     = "DOMAIN_NAME";
+    public static final String ROLE_ENABLED    = "ROLE_ENABLED";
     public static final String ROLE_PRIVILEGES = "ROLE_PRIVILEGES";
 
     // SEC_ACCESS_TYPES column names
-    public static final String ACCESS_TYPE_NAME = "ACCESS_TYPE_NAME";
+    public static final String ACCESS_TYPE_NAME  = "ACCESS_TYPE_NAME";
     public static final String ACCESS_TYPE_VALUE = "ACCESS_TYPE_VALUE";
+
+    // SEC_TYPE_RULES column names
     public static final String ACCESS_TYPE = "ACCESS_TYPE";
 
     // SEC_OBJECT_PROTECTION column names
-    public static final String OBJECT_PATH = "OBJECT_PATH";
+    public static final String OBJECT_PATH           = "OBJECT_PATH";
     public static final String CREATOR_IDENTITY_NAME = "CREATOR_IDENTITY_NAME";
-    public static final String OWNER_ROLE_NAME = "OWNER_ROLE_NAME";
-    public static final String SECURITY_TYPE_NAME = "SECURITY_TYPE_NAME";
+    public static final String OWNER_ROLE_NAME       = "OWNER_ROLE_NAME";
+    public static final String SECURITY_TYPE_NAME    = "SECURITY_TYPE_NAME";
 
+    // NODES column names
+    public static final String NODE_NAME     = "NODE_NAME";
+    public static final String NODE_DSP_NAME = "NODE_DSP_NAME";
+    public static final String NODE_FLAGS    = "NODE_FLAGS";
+    public static final String NODE_TYPE     = "NODE_TYPE";
 
-    /* ***************************************
-     *                                       *
-     *          CREATE statements            *
-     *                                       *
-     *************************************** */
+    // NODE_NET_INTERFACES column names
+    public static final String NODE_NET_NAME = "NODE_NET_NAME";
+    public static final String INET_ADDRESS  = "INET_ADDRESS";
 
-    public static final String CREATE_TABLE_SEC_CONFIG =
-        "CREATE TABLE " + TBL_SEC_CONFIGURATION + " \n" +
+    // RESOURCE_DEFINITIONS column names
+    public static final String RESOURCE_NAME     = "RESOURCE_NAME";
+    public static final String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
+
+    // VOLUME_DEFINITIONS column names
+    public static final String VLM_ID        = "VLM_ID";
+    public static final String VLM_SIZE      = "VLM_SIZE";
+    public static final String VLM_MINOR_NR  = "VLM_MINOR_NR";
+
+    // STOR_POOL_DEFINITIONS column names
+    public static final String POOL_NAME     = "POOL_NAME";
+    public static final String POOL_DSP_NAME = "POOL_DSP_NAME";
+    public static final String DRIVER_NAME   = "DRIVER_NAME";
+
+    // PROPS_CONTAINERS column names
+    public static final String PROPS_INSTANCE = "PROPS_INSTANCE";
+    public static final String PROP_KEY       = "PROP_KEY";
+    public static final String PROP_VALUE     = "PROP_VALUE";
+
+    // create statements
+    public static final String CREATE_TABLE_SEC_CONFIGURATION =
+        "CREATE TABLE SEC_CONFIGURATION \n" +
         "( \n" +
-        "   " + SEC_CONFIG_ENTRY_KEY + " VARCHAR(24) NOT NULL PRIMARY KEY \n" +
-        "       CONSTRAINT SEC_CONF_CHKKEY CHECK (UPPER(" + SEC_CONFIG_ENTRY_KEY + ") = " + SEC_CONFIG_ENTRY_KEY + " AND LENGTH(" + SEC_CONFIG_ENTRY_KEY + ") >= 3), \n" +
-        "   " + SEC_CONFIG_ENTRY_DSP_KEY + " VARCHAR(24) NOT NULL, \n" +
-        "   " + SEC_CONFIG_ENTRY_VALUE + " VARCHAR(24) NOT NULL, \n" +
-        "       CONSTRAINT SEC_CONF_CHKDSPKEY CHECK (UPPER(" + SEC_CONFIG_ENTRY_DSP_KEY + ") = " + SEC_CONFIG_ENTRY_KEY + ") \n" +
+        "    ENTRY_KEY VARCHAR(24) NOT NULL PRIMARY KEY \n" +
+        "        CONSTRAINT SEC_CONF_CHKKEY CHECK (UPPER(ENTRY_KEY) = ENTRY_KEY AND LENGTH(ENTRY_KEY) >= 3), \n" +
+        "    ENTRY_DSP_KEY VARCHAR(24) NOT NULL, \n" +
+        "    ENTRY_VALUE VARCHAR(24) NOT NULL, \n" +
+        "        CONSTRAINT SEC_CONF_CHKDSPKEY CHECK (UPPER(ENTRY_DSP_KEY) = ENTRY_KEY)" +
         ")";
     public static final String CREATE_TABLE_SEC_IDENTITIES =
-        "CREATE TABLE " + TBL_SEC_IDENTITIES + " \n" +
+        "CREATE TABLE SEC_IDENTITIES \n" +
         "( \n" +
-        "   " + ID_NAME + " VARCHAR(24) NOT NULL PRIMARY KEY \n" +
-        "       CONSTRAINT SEC_ID_CHKNAME CHECK (UPPER(" + ID_NAME + ") = " + ID_NAME + " AND LENGTH(" + ID_NAME + ") >= 3), \n" +
-        "   " + ID_DSP_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "   " + ID_PASS_SALT + " CHAR(16) FOR BIT DATA, \n" +
-        "   " + ID_PASS_HASH + " CHAR(64) FOR BIT DATA, \n" +
-        "   " + ID_ENABLED + " BOOLEAN NOT NULL DEFAULT TRUE, \n" +
-        "   " + ID_LOCKED + " BOOLEAN NOT NULL DEFAULT TRUE, \n" +
-        "   CONSTRAINT SEC_ID_CHKDSPNAME CHECK (UPPER(" + ID_DSP_NAME + ") = " + ID_NAME + ") \n" +
+        "    IDENTITY_NAME VARCHAR(24) NOT NULL PRIMARY KEY \n" +
+        "        CONSTRAINT SEC_ID_CHKNAME CHECK (UPPER(IDENTITY_NAME) = IDENTITY_NAME AND LENGTH(IDENTITY_NAME) >= 3), \n" +
+        "    IDENTITY_DSP_NAME VARCHAR(24) NOT NULL, \n" +
+        "    PASS_SALT CHAR(16) FOR BIT DATA, \n" +
+        "    PASS_HASH CHAR(64) FOR BIT DATA, \n" +
+        "    ID_ENABLED BOOLEAN NOT NULL DEFAULT TRUE, \n" +
+        "    ID_LOCKED BOOLEAN NOT NULL DEFAULT TRUE, \n" +
+        "        CONSTRAINT SEC_ID_CHKDSPNAME CHECK (UPPER(IDENTITY_DSP_NAME) = IDENTITY_NAME)" +
         ")";
     public static final String CREATE_TABLE_SEC_TYPES =
-        "CREATE TABLE " + TBL_SEC_TYPES + " \n" +
+        "CREATE TABLE SEC_TYPES \n" +
         "( \n" +
-        "    " + TYPE_NAME + " VARCHAR(24) NOT NULL PRIMARY KEY \n" +
-        "        CONSTRAINT SEC_TYPES_CHKNAME CHECK (UPPER(" + TYPE_NAME + ") = " + TYPE_NAME + " AND LENGTH(" + TYPE_NAME + ") >= 3), \n" +
-        "    " + TYPE_DSP_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    " + TYPE_ENABLED + " BOOLEAN NOT NULL DEFAULT TRUE, \n" +
-        "    CONSTRAINT SEC_TYPES_CHKDSPNAME CHECK (UPPER(" + TYPE_DSP_NAME + ") = " + TYPE_NAME + ") \n" +
+        "    TYPE_NAME VARCHAR(24) NOT NULL PRIMARY KEY \n" +
+        "        CONSTRAINT SEC_TYPES_CHKNAME CHECK (UPPER(TYPE_NAME) = TYPE_NAME AND LENGTH(TYPE_NAME) >= 3), \n" +
+        "    TYPE_DSP_NAME VARCHAR(24) NOT NULL, \n" +
+        "    TYPE_ENABLED BOOLEAN NOT NULL DEFAULT TRUE, \n" +
+        "    CONSTRAINT SEC_TYPES_CHKDSPNAME CHECK (UPPER(TYPE_DSP_NAME) = TYPE_NAME)" +
         ")";
     public static final String CREATE_TABLE_SEC_ROLES =
-        "CREATE TABLE " + TBL_SEC_ROLES + " \n" +
+        "CREATE TABLE SEC_ROLES \n" +
         "( \n" +
-        "    " + ROLE_NAME + " VARCHAR(24) NOT NULL PRIMARY KEY \n" +
-        "        CONSTRAINT SEC_ROLES_CHKNAME CHECK (UPPER(" + ROLE_NAME + ") = " + ROLE_NAME + " AND LENGTH(" + ROLE_NAME + ") >= 3), \n" +
-        "    " + ROLE_DSP_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    " + DOMAIN_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    " + ROLE_ENABLED + " BOOLEAN NOT NULL DEFAULT TRUE, \n" +
-        "    " + ROLE_PRIVILEGES + " BIGINT NOT NULL DEFAULT 0, \n" +
-        "    FOREIGN KEY (" + DOMAIN_NAME + ") REFERENCES " + TBL_SEC_TYPES + "(" + TYPE_NAME + "), \n" +
-        "    CONSTRAINT SEC_ROLES_CHKDSPNAME CHECK (UPPER(" + ROLE_DSP_NAME + ") = " + ROLE_NAME + ") \n" +
+        "    ROLE_NAME VARCHAR(24) NOT NULL PRIMARY KEY \n" +
+        "        CONSTRAINT SEC_ROLES_CHKNAME CHECK (UPPER(ROLE_NAME) = ROLE_NAME AND LENGTH(ROLE_NAME) >= 3), \n" +
+        "    ROLE_DSP_NAME VARCHAR(24) NOT NULL, \n" +
+        "    DOMAIN_NAME VARCHAR(24) NOT NULL, \n" +
+        "    ROLE_ENABLED BOOLEAN NOT NULL DEFAULT TRUE, \n" +
+        "    ROLE_PRIVILEGES BIGINT NOT NULL DEFAULT 0, \n" +
+        "    FOREIGN KEY (DOMAIN_NAME) REFERENCES SEC_TYPES(TYPE_NAME), \n" +
+        "    CONSTRAINT SEC_ROLES_CHKDSPNAME CHECK (UPPER(ROLE_DSP_NAME) = ROLE_NAME)" +
         ")";
     public static final String CREATE_TABLE_SEC_ID_ROLE_MAP =
-        "CREATE TABLE " + TBL_SEC_ID_ROLE_MAP + " \n" +
+        "CREATE TABLE SEC_ID_ROLE_MAP \n" +
         "( \n" +
-        "    " + ID_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    " + ROLE_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    PRIMARY KEY (" + ID_NAME + ", " + ROLE_NAME + "), \n" +
-        "    FOREIGN KEY (" + ID_NAME + ") REFERENCES " + TBL_SEC_IDENTITIES + "(" + ID_NAME + ") ON DELETE CASCADE, \n" +
-        "    FOREIGN KEY (" + ROLE_NAME + ") REFERENCES " + TBL_SEC_ROLES + "(" + ROLE_NAME + ") ON DELETE CASCADE \n" +
+        "    IDENTITY_NAME VARCHAR(24) NOT NULL, \n" +
+        "    ROLE_NAME VARCHAR(24) NOT NULL, \n" +
+        "    PRIMARY KEY (IDENTITY_NAME, ROLE_NAME), \n" +
+        "    FOREIGN KEY (IDENTITY_NAME) REFERENCES SEC_IDENTITIES(IDENTITY_NAME) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (ROLE_NAME) REFERENCES SEC_ROLES(ROLE_NAME) ON DELETE CASCADE" +
         ")";
     public static final String CREATE_TABLE_SEC_ACCESS_TYPES =
-        "CREATE TABLE " + TBL_SEC_ACCESS_TYPES + " \n" +
+        "CREATE TABLE SEC_ACCESS_TYPES \n" +
         "( \n" +
-        "    " + ACCESS_TYPE_NAME + " VARCHAR(24) NOT NULL PRIMARY KEY \n" +
-        "        CONSTRAINT SEC_ACCESS_TYPES_CHKNAME CHECK (UPPER(" + ACCESS_TYPE_NAME + ") = " + ACCESS_TYPE_NAME + "), \n" +
-        "    " + ACCESS_TYPE_VALUE + " SMALLINT NOT NULL UNIQUE \n" +
+        "    ACCESS_TYPE_NAME VARCHAR(24) NOT NULL PRIMARY KEY \n" +
+        "        CONSTRAINT SEC_ACCESS_TYPES_CHKNAME CHECK (UPPER(ACCESS_TYPE_NAME) = ACCESS_TYPE_NAME), \n" +
+        "    ACCESS_TYPE_VALUE SMALLINT NOT NULL UNIQUE" +
         ")";
     public static final String CREATE_TABLE_SEC_TYPE_RULES =
-        "CREATE TABLE " + TBL_SEC_TYPE_RULES + " \n" +
+        "CREATE TABLE SEC_TYPE_RULES \n" +
         "( \n" +
-        "    " + DOMAIN_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    " + TYPE_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    " + ACCESS_TYPE + " SMALLINT NOT NULL, \n" +
-        "    PRIMARY KEY (" + DOMAIN_NAME + ", " + TYPE_NAME + "), \n" +
-        "    FOREIGN KEY (" + DOMAIN_NAME + ") REFERENCES " + TBL_SEC_TYPES + "(" + TYPE_NAME + ") ON DELETE CASCADE, \n" +
-        "    FOREIGN KEY (" + TYPE_NAME + ") REFERENCES " + TBL_SEC_TYPES + "(" + TYPE_NAME + ") ON DELETE CASCADE, \n" +
-        "    FOREIGN KEY (" + ACCESS_TYPE + ") REFERENCES " + TBL_SEC_ACCESS_TYPES + "(" + ACCESS_TYPE_VALUE + ") ON DELETE RESTRICT \n" +
+        "    DOMAIN_NAME VARCHAR(24) NOT NULL, \n" +
+        "    TYPE_NAME VARCHAR(24) NOT NULL, \n" +
+        "    ACCESS_TYPE SMALLINT NOT NULL, \n" +
+        "    PRIMARY KEY (DOMAIN_NAME, TYPE_NAME), \n" +
+        "    FOREIGN KEY (DOMAIN_NAME) REFERENCES SEC_TYPES(TYPE_NAME) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (TYPE_NAME) REFERENCES SEC_TYPES(TYPE_NAME) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (ACCESS_TYPE) REFERENCES SEC_ACCESS_TYPES(ACCESS_TYPE_VALUE) ON DELETE RESTRICT" +
         ")";
     public static final String CREATE_TABLE_SEC_DFLT_ROLES =
-        "CREATE TABLE " + TBL_SEC_DFLT_ROLES + " \n" +
+        "CREATE TABLE SEC_DFLT_ROLES \n" +
         "( \n" +
-        "    " + ID_NAME + " VARCHAR(24) NOT NULL PRIMARY KEY, \n" +
-        "    " + ROLE_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    FOREIGN KEY (" + ID_NAME + ", " + ROLE_NAME + ") REFERENCES " + TBL_SEC_ID_ROLE_MAP + "(" + ID_NAME + ", " + ROLE_NAME + ") \n" +
-        "        ON DELETE CASCADE \n" +
+        "    IDENTITY_NAME VARCHAR(24) NOT NULL PRIMARY KEY, \n" +
+        "    ROLE_NAME VARCHAR(24) NOT NULL, \n" +
+        "    FOREIGN KEY (IDENTITY_NAME, ROLE_NAME) REFERENCES SEC_ID_ROLE_MAP(IDENTITY_NAME, ROLE_NAME) \n" +
+        "        ON DELETE CASCADE" +
         ")";
     public static final String CREATE_TABLE_SEC_OBJECT_PROTECTION =
-        "CREATE TABLE " + TBL_SEC_OBJECT_PROTECTION + " \n" +
+        "CREATE TABLE SEC_OBJECT_PROTECTION \n" +
         "( \n" +
-        "    " + OBJECT_PATH + " VARCHAR(512) NOT NULL PRIMARY KEY, \n" +
-        "    " + CREATOR_IDENTITY_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    " + OWNER_ROLE_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    " + SECURITY_TYPE_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    FOREIGN KEY (" + CREATOR_IDENTITY_NAME + ") REFERENCES " + TBL_SEC_IDENTITIES + "(" + ID_NAME + ") ON DELETE RESTRICT, \n" +
-        "    FOREIGN KEY (" + OWNER_ROLE_NAME + ") REFERENCES " + TBL_SEC_ROLES + "(" + ROLE_NAME + ") ON DELETE RESTRICT, \n" +
-        "    FOREIGN KEY (" + SECURITY_TYPE_NAME + ") REFERENCES " + TBL_SEC_TYPES + "(" + TYPE_NAME + ") ON DELETE RESTRICT \n" +
+        "    OBJECT_PATH VARCHAR(512) NOT NULL PRIMARY KEY, \n" +
+        "    CREATOR_IDENTITY_NAME VARCHAR(24) NOT NULL, \n" +
+        "    OWNER_ROLE_NAME VARCHAR(24) NOT NULL, \n" +
+        "    SECURITY_TYPE_NAME VARCHAR(24) NOT NULL, \n" +
+        "    FOREIGN KEY (CREATOR_IDENTITY_NAME) REFERENCES SEC_IDENTITIES(IDENTITY_NAME) ON DELETE RESTRICT, \n" +
+        "    FOREIGN KEY (OWNER_ROLE_NAME) REFERENCES SEC_ROLES(ROLE_NAME) ON DELETE RESTRICT, \n" +
+        "    FOREIGN KEY (SECURITY_TYPE_NAME) REFERENCES SEC_TYPES(TYPE_NAME) ON DELETE RESTRICT" +
         ")";
     public static final String CREATE_TABLE_SEC_ACL_MAP =
-        "CREATE TABLE " + TBL_SEC_ACL_MAP + " \n" +
+        "CREATE TABLE SEC_ACL_MAP \n" +
         "( \n" +
-        "    " + OBJECT_PATH + " VARCHAR(512) NOT NULL, \n" +
-        "    " + ROLE_NAME + " VARCHAR(24) NOT NULL, \n" +
-        "    " + ACCESS_TYPE + " SMALLINT NOT NULL, \n" +
-        "    PRIMARY KEY (" + OBJECT_PATH + ", " + ROLE_NAME + "), \n" +
-        "    FOREIGN KEY (" + OBJECT_PATH + ") REFERENCES " + TBL_SEC_OBJECT_PROTECTION + "(" + OBJECT_PATH + ") ON DELETE CASCADE, \n" +
-        "    FOREIGN KEY (" + ROLE_NAME + ") REFERENCES " + TBL_SEC_ROLES + "(" + ROLE_NAME + ") ON DELETE RESTRICT, \n" +
-        "    FOREIGN KEY (" + ACCESS_TYPE + ") REFERENCES " + TBL_SEC_ACCESS_TYPES + "(" + ACCESS_TYPE_VALUE + ") ON DELETE RESTRICT \n" +
+        "    OBJECT_PATH VARCHAR(512) NOT NULL, \n" +
+        "    ROLE_NAME VARCHAR(24) NOT NULL, \n" +
+        "    ACCESS_TYPE SMALLINT NOT NULL, \n" +
+        "    PRIMARY KEY (OBJECT_PATH, ROLE_NAME), \n" +
+        "    FOREIGN KEY (OBJECT_PATH) REFERENCES SEC_OBJECT_PROTECTION(OBJECT_PATH) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (ROLE_NAME) REFERENCES SEC_ROLES(ROLE_NAME) ON DELETE RESTRICT, \n" +
+        "    FOREIGN KEY (ACCESS_TYPE) REFERENCES SEC_ACCESS_TYPES(ACCESS_TYPE_VALUE) ON DELETE RESTRICT" +
         ")";
-    public static final String CREATE_VIEW_SEC_ID_LOAD =
-        "CREATE VIEW " + VIEW_SEC_IDENTITIES_LOAD + " AS " +
-        "    SELECT " + ID_DSP_NAME + ", " + ID_ENABLED + " " +
-        "    FROM " + TBL_SEC_IDENTITIES;
+    public static final String CREATE_TABLE_CTRL_CONFIGURATION =
+        "CREATE TABLE CTRL_CONFIGURATION \n" +
+        "( \n" +
+        "    ENTRY_KEY VARCHAR(512) NOT NULL PRIMARY KEY \n" +
+        "        CONSTRAINT CTRL_CONF_CHKKEY CHECK (UPPER(ENTRY_KEY) = ENTRY_KEY AND LENGTH(ENTRY_KEY) >= 1), \n" +
+        "    ENTRY_VALUE VARCHAR(512) NOT NULL, \n" +
+        "    ENTRY_DSP_KEY VARCHAR(512) NOT NULL, \n" +
+        "        CONSTRAINT CTRL_CONF_CHKDSPNAME CHECK (UPPER(ENTRY_DSP_KEY) = ENTRY_KEY)" +
+        ")";
+    public static final String CREATE_TABLE_NODES =
+        "CREATE TABLE NODES \n" +
+        "( \n" +
+        "    NODE_NAME VARCHAR(255) NOT NULL PRIMARY KEY \n" +
+        "        CONSTRAINT NODES_CHKNAME CHECK (UPPER(NODE_NAME) = NODE_NAME AND LENGTH(NODE_NAME) >= 2), \n" +
+        "    NODE_DSP_NAME VARCHAR(255) NOT NULL, \n" +
+        "    NODE_FLAGS BIGINT NOT NULL, \n" +
+        "    NODE_TYPE INT NOT NULL, \n" +
+        "    CONSTRAINT NODES_CHKDSPNAME CHECK (UPPER(NODE_DSP_NAME) = NODE_NAME)" +
+        ")";
+    public static final String CREATE_TABLE_NODE_NET_INTERFACES =
+        "CREATE TABLE NODE_NET_INTERFACES \n" +
+        "( \n" +
+        "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
+        "    NODE_NET_NAME VARCHAR(255) NOT NULL, \n" +
+        "    INET_ADDRESS VARCHAR(270) NOT NULL, \n" +
+        "    PRIMARY KEY (NODE_NAME, NODE_NET_NAME), \n" +
+        "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE" +
+        ")";
+    public static final String CREATE_TABLE_RESOURCE_DEFINITIONS =
+        "CREATE TABLE RESOURCE_DEFINITIONS \n" +
+        "( \n" +
+        "    RESOURCE_NAME VARCHAR(48) NOT NULL PRIMARY KEY \n" +
+        "        CONSTRAINT RSC_DFN_CHKNAME CHECK (UPPER(RESOURCE_NAME) = RESOURCE_NAME AND LENGTH(RESOURCE_NAME) >= 3), \n" +
+        "    RESOURCE_DSP_NAME VARCHAR(48) NOT NULL, \n" +
+        "    CONSTRAINT RSC_DFN_CHKDSPNAME CHECK (UPPER(RESOURCE_DSP_NAME) = RESOURCE_NAME)" +
+        ")";
+    public static final String CREATE_TABLE_NODE_RESOURCE =
+        "CREATE TABLE NODE_RESOURCE \n" +
+        "( \n" +
+        "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
+        "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
+        "    PRIMARY KEY (NODE_NAME, RESOURCE_NAME), \n" +
+        "    FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE" +
+        ")";
+    public static final String CREATE_TABLE_VOLUME_DEFINITIONS =
+        "CREATE TABLE VOLUME_DEFINITIONS \n" +
+        "( \n" +
+        "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
+        "    VLM_ID INT NOT NULL, \n" +
+        "    VLM_SIZE BIGINT NOT NULL, \n" +
+        "    VLM_MINOR_NR INT NOT NULL UNIQUE, \n" +
+        "    PRIMARY KEY (RESOURCE_NAME, VLM_ID), \n" +
+        "    FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) ON DELETE CASCADE" +
+        ")";
+    public static final String CREATE_TABLE_STOR_POOL_DEFINITIONS =
+        "CREATE TABLE STOR_POOL_DEFINITIONS \n" +
+        "( \n" +
+        "    POOL_NAME VARCHAR(32) NOT NULL PRIMARY KEY \n" +
+        "        CONSTRAINT STOR_POOL_CHKNAME CHECK (UPPER(POOL_NAME) = POOL_NAME AND LENGTH(POOL_NAME) >= 3), \n" +
+        "    POOL_DSP_NAME VARCHAR(32) NOT NULL, \n" +
+        "    DRIVER_NAME VARCHAR(256) NOT NULL, \n" +
+        "    CONSTRAINT STOR_POOL_CHKDSPNAME CHECK (UPPER(POOL_DSP_NAME) = POOL_NAME)" +
+        ")";
+    public static final String CREATE_TABLE_NODE_STOR_POOL =
+        "CREATE TABLE NODE_STOR_POOL \n" +
+        "( \n" +
+        "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
+        "    POOL_NAME VARCHAR(32) NOT NULL, \n" +
+        "    PRIMARY KEY (NODE_NAME, POOL_NAME), \n" +
+        "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (POOL_NAME) REFERENCES STOR_POOL_DEFINITIONS(POOL_NAME) ON DELETE CASCADE" +
+        ")";
+    public static final String CREATE_TABLE_PROPS_CONTAINERS =
+        "CREATE TABLE PROPS_CONTAINERS \n" +
+        "( \n" +
+        "    PROPS_INSTANCE VARCHAR(512) NOT NULL \n" +
+        "        CONSTRAINT PRP_INST_CHKNAME CHECK(UPPER(PROPS_INSTANCE) = PROPS_INSTANCE AND LENGTH(PROPS_INSTANCE) >= 2), \n" +
+        "    PROP_KEY VARCHAR(512) NOT NULL, \n" +
+        "    PROP_VALUE VARCHAR(4096) NOT NULL, \n" +
+        "    PRIMARY KEY (PROPS_INSTANCE, PROP_KEY)" +
+        ")";
+
+    // create views
+    public static final String CREATE_VIEW_SEC_IDENTITIES_LOAD =
+        "CREATE VIEW SEC_IDENTITIES_LOAD AS \n" +
+        "    SELECT IDENTITY_DSP_NAME, ID_ENABLED \n" +
+        "    FROM SEC_IDENTITIES";
     public static final String CREATE_VIEW_SEC_ROLES_LOAD =
-        "CREATE VIEW " + VIEW_SEC_ROLES_LOAD + " AS " +
-        "    SELECT " + ROLE_DSP_NAME + ", " + ROLE_ENABLED +
-        "    FROM " + TBL_SEC_ROLES;
+        "CREATE VIEW SEC_ROLES_LOAD AS \n" +
+        "    SELECT ROLE_DSP_NAME, ROLE_ENABLED \n" +
+        "    FROM SEC_ROLES";
     public static final String CREATE_VIEW_SEC_TYPES_LOAD =
-        "CREATE VIEW " + VIEW_SEC_TYPES_LOAD + " AS " +
-        "    SELECT " + TYPE_DSP_NAME + ", " + TYPE_ENABLED +
-        "    FROM " + TBL_SEC_TYPES;
-    public static final String CREATE_VIEW_SEC_TYPES_RULES_LOAD =
-        "CREATE VIEW " + VIEW_SEC_TYPE_RULES_LOAD + " AS " +
-        "    SELECT " + DOMAIN_NAME + ", " + TYPE_NAME + ", " + TBL_SEC_ACCESS_TYPES + "." + ACCESS_TYPE_NAME + " " + "AS " + ACCESS_TYPE +
-        "    FROM " + TBL_SEC_TYPE_RULES +
-        "    LEFT JOIN " + TBL_SEC_ACCESS_TYPES +
-        "        ON " + TBL_SEC_TYPE_RULES + "." + ACCESS_TYPE + " = " + TBL_SEC_ACCESS_TYPES + "." + ACCESS_TYPE_VALUE +
-        "    ORDER BY " + DOMAIN_NAME + ", " + TYPE_NAME + " ASC";
+        "CREATE VIEW SEC_TYPES_LOAD AS \n" +
+        "    SELECT TYPE_DSP_NAME, TYPE_ENABLED \n" +
+        "    FROM SEC_TYPES";
+    public static final String CREATE_VIEW_SEC_TYPE_RULES_LOAD =
+        "CREATE VIEW SEC_TYPE_RULES_LOAD AS \n" +
+        "    SELECT DOMAIN_NAME, TYPE_NAME, SEC_ACCESS_TYPES.ACCESS_TYPE_NAME AS ACCESS_TYPE \n" +
+        "    FROM SEC_TYPE_RULES \n" +
+        "    LEFT JOIN SEC_ACCESS_TYPES ON SEC_TYPE_RULES.ACCESS_TYPE = SEC_ACCESS_TYPES.ACCESS_TYPE_VALUE \n" +
+        "    ORDER BY DOMAIN_NAME, TYPE_NAME ASC";
 
-    /* ***************************************
-     *                                       *
-     *          INSERT statements            *
-     *                                       *
-     *************************************** */
-
-    public static final String INSERT_SEC_ACCESS_TYPE_CONTROL = "INSERT INTO " + TBL_SEC_ACCESS_TYPES + " (" + ACCESS_TYPE_NAME + ", " + ACCESS_TYPE_VALUE + ") " +
-        " VALUES ('CONTROL', 15)";
-    public static final String INSERT_SEC_ACCESS_TYPE_CHANGE = "INSERT INTO " + TBL_SEC_ACCESS_TYPES + " (" + ACCESS_TYPE_NAME + ", " + ACCESS_TYPE_VALUE + ") " +
-        " VALUES ('CHANGE', 7)";
-    public static final String INSERT_SEC_ACCESS_TYPES_USE = "INSERT INTO " + TBL_SEC_ACCESS_TYPES + " (" + ACCESS_TYPE_NAME + ", " + ACCESS_TYPE_VALUE + ") " +
-        " VALUES ('USE', 3)";
-    public static final String INSERT_SEC_ACCESS_TYPES_VIEW =
-        " INSERT INTO " + TBL_SEC_ACCESS_TYPES + " (" + ACCESS_TYPE_NAME + ", " + ACCESS_TYPE_VALUE + ") " +
-        " VALUES ('VIEW', 1)";
-    public static final String INSERT_SEC_ID_SYSTEM =
-        " INSERT INTO " + TBL_SEC_IDENTITIES + " (" + ID_NAME + ", " + ID_DSP_NAME + ", " + ID_ENABLED + ", " + ID_LOCKED + ") " +
-        " VALUES('SYSTEM', 'SYSTEM', TRUE, TRUE)";
-    public static final String INSERT_SEC_ID_PUBLIC =
-        " INSERT INTO " + TBL_SEC_IDENTITIES + " (" + ID_NAME + ", " + ID_DSP_NAME + ", " + ID_ENABLED + ", " + ID_LOCKED + ") " +
-        " VALUES('PUBLIC', 'PUBLIC', TRUE, TRUE)";
-    public static final String INSERT_SEC_TYPES_SYSTEM =
-        " INSERT INTO " + TBL_SEC_TYPES + " (" + TYPE_NAME + ", " + TYPE_DSP_NAME + ", " + TYPE_ENABLED + ") " +
-        " VALUES ('SYSTEM', 'SYSTEM', TRUE)";
-    public static final String INSERT_SEC_TYPES_PUBLIC =
-        " INSERT INTO " + TBL_SEC_TYPES + " (" + TYPE_NAME + ", " + TYPE_DSP_NAME + ", " + TYPE_ENABLED + ") " +
-        " VALUES ('PUBLIC', 'PUBLIC', TRUE)";
-    public static final String INSERT_SEC_ROLES_SYSTEM =
-        " INSERT INTO " + TBL_SEC_ROLES + " (" + ROLE_NAME + ", " + ROLE_DSP_NAME + ", " + DOMAIN_NAME + ", " + ROLE_ENABLED + ", " + ROLE_PRIVILEGES + ") " +
-        " VALUES('SYSTEM', 'SYSTEM', 'SYSTEM', TRUE, -9223372036854775808)";
-    public static final String INSERT_SEC_ROLES_PUBLIC =
-        " INSERT INTO " + TBL_SEC_ROLES + " (" + ROLE_NAME + ", " + ROLE_DSP_NAME + ", " + DOMAIN_NAME + ", " + ROLE_ENABLED + ", " + ROLE_PRIVILEGES + ") " +
-        " VALUES('PUBLIC', 'PUBLIC', 'PUBLIC', TRUE, 0)";
-    public static final String INSERT_SEC_ID_ROLE_MAP_SYSTEM =
-        " INSERT INTO " + TBL_SEC_ID_ROLE_MAP + " (" + ID_NAME + ", " + ROLE_NAME + ") " +
-        " VALUES ('SYSTEM', 'SYSTEM')";
-    public static final String INSERT_SEC_ID_ROLE_MAP_PUBLIC =
-        " INSERT INTO " + TBL_SEC_ID_ROLE_MAP + " (" + ID_NAME + ", " + ROLE_NAME + ") " +
-        " VALUES ('PUBLIC', 'PUBLIC')";
-    public static final String INSERT_SEC_DFLT_ROLES_SYSTEM =
-        " INSERT INTO " + TBL_SEC_DFLT_ROLES + " (" + ID_NAME + ", " + ROLE_NAME + ") " +
-        " VALUES ('SYSTEM', 'SYSTEM')";
-    public static final String INSERT_SEC_DFLT_ROLES_PUBLIC =
-        " INSERT INTO " + TBL_SEC_DFLT_ROLES + " (" + ID_NAME + ", " + ROLE_NAME + ") " +
-        " VALUES ('PUBLIC', 'PUBLIC')";
-    public static final String INSERT_SEC_CONF_MAC =
-        " INSERT INTO " + TBL_SEC_CONFIGURATION + " (" + SEC_CONFIG_ENTRY_KEY + ", " + SEC_CONFIG_ENTRY_DSP_KEY + ", " + SEC_CONFIG_ENTRY_VALUE + ") " +
-        " VALUES ('SECURITYLEVEL', 'SecurityLevel', 'MAC')";
-
-    /* ***************************************
-     *                                       *
-     *           DROP statements             *
-     *                                       *
-     *************************************** */
-
-
-    public static final String DROP_VIEW_SEC_TYPE_RULES_LOAD = "DROP VIEW " + VIEW_SEC_TYPE_RULES_LOAD;
-    public static final String DROP_VIEW_SEC_TYPES_LOAD = "DROP VIEW " + VIEW_SEC_TYPES_LOAD;
-    public static final String DROP_VIEW_SEC_ROLES_LOAD = "DROP VIEW " + VIEW_SEC_ROLES_LOAD;
-    public static final String DROP_VIEW_SEC_IDENTITIES_LOAD = "DROP VIEW " + VIEW_SEC_IDENTITIES_LOAD;
-    public static final String DROP_TBL_SEC_ACL_MAP = "DROP TABLE " + TBL_SEC_ACL_MAP;
+    // drop statements
+    public static final String DROP_VIEW_SEC_TYPE_RULES_LOAD  = "DROP VIEW " + VIEW_SEC_TYPE_RULES_LOAD;
+    public static final String DROP_VIEW_SEC_TYPES_LOAD       = "DROP VIEW " + VIEW_SEC_TYPES_LOAD;
+    public static final String DROP_VIEW_SEC_ROLES_LOAD       = "DROP VIEW " + VIEW_SEC_ROLES_LOAD;
+    public static final String DROP_VIEW_SEC_IDENTITIES_LOAD  = "DROP VIEW " + VIEW_SEC_IDENTITIES_LOAD;
+    public static final String DROP_TBL_PROPS_CONTAINERS      = "DROP TABLE " + TBL_PROPS_CONTAINERS;
+    public static final String DROP_TBL_NODE_STOR_POOL        = "DROP TABLE " + TBL_NODE_STOR_POOL;
+    public static final String DROP_TBL_STOR_POOL_DEFINITIONS = "DROP TABLE " + TBL_STOR_POOL_DEFINITIONS;
+    public static final String DROP_TBL_VOLUME_DEFINITIONS    = "DROP TABLE " + TBL_VOLUME_DEFINITIONS;
+    public static final String DROP_TBL_NODE_RESOURCE         = "DROP TABLE " + TBL_NODE_RESOURCE;
+    public static final String DROP_TBL_RESOURCE_DEFINITIONS  = "DROP TABLE " + TBL_RESOURCE_DEFINITIONS;
+    public static final String DROP_TBL_NODE_NET_INTERFACES   = "DROP TABLE " + TBL_NODE_NET_INTERFACES;
+    public static final String DROP_TBL_NODES                 = "DROP TABLE " + TBL_NODES;
+    public static final String DROP_TBL_CTRL_CONFIGURATION    = "DROP TABLE " + TBL_CTRL_CONFIGURATION;
+    public static final String DROP_TBL_SEC_ACL_MAP           = "DROP TABLE " + TBL_SEC_ACL_MAP;
     public static final String DROP_TBL_SEC_OBJECT_PROTECTION = "DROP TABLE " + TBL_SEC_OBJECT_PROTECTION;
-    public static final String DORP_TBL_SEC_DFLT_ROLES = "DROP TABLE " + TBL_SEC_DFLT_ROLES;
-    public static final String DROP_TBL_SEC_TYPE_RULES = "DROP TABLE " + TBL_SEC_TYPE_RULES;
-    public static final String DROP_TBL_SEC_ACCESS_TYPES = "DROP TABLE " + TBL_SEC_ACCESS_TYPES;
-    public static final String DROP_TBL_SEC_ID_ROLE_MAP = "DROP TABLE " + TBL_SEC_ID_ROLE_MAP;
-    public static final String DROP_TBL_SEC_ROLES = "DROP TABLE " + TBL_SEC_ROLES;
-    public static final String DROP_TBL_SEC_TYPES = "DROP TABLE " + TBL_SEC_TYPES;
-    public static final String DROP_TBL_SEC_IDENTITIES = "DROP TABLE " + TBL_SEC_IDENTITIES;
-    public static final String DROP_TBL_SEC_CONFIG = "DROP TABLE " + TBL_SEC_CONFIGURATION;
+    public static final String DROP_TBL_SEC_DFLT_ROLES        = "DROP TABLE " + TBL_SEC_DFLT_ROLES;
+    public static final String DROP_TBL_SEC_TYPE_RULES        = "DROP TABLE " + TBL_SEC_TYPE_RULES;
+    public static final String DROP_TBL_SEC_ACCESS_TYPES      = "DROP TABLE " + TBL_SEC_ACCESS_TYPES;
+    public static final String DROP_TBL_SEC_ID_ROLE_MAP       = "DROP TABLE " + TBL_SEC_ID_ROLE_MAP;
+    public static final String DROP_TBL_SEC_ROLES             = "DROP TABLE " + TBL_SEC_ROLES;
+    public static final String DROP_TBL_SEC_TYPES             = "DROP TABLE " + TBL_SEC_TYPES;
+    public static final String DROP_TBL_SEC_IDENTITIES        = "DROP TABLE " + TBL_SEC_IDENTITIES;
+    public static final String DROP_TBL_SEC_CONFIGURATION     = "DROP TABLE " + TBL_SEC_CONFIGURATION;
 
-    /* ***************************************
-     *                                       *
-     *         TRUNCATE statements           *
-     *                                       *
-     *************************************** */
+    // truncate statements
+    public static final String TRUNCATE_PROPS_CONTAINERS      = "DELETE FROM " + TBL_PROPS_CONTAINERS;
+    public static final String TRUNCATE_NODE_STOR_POOL        = "DELETE FROM " + TBL_NODE_STOR_POOL;
+    public static final String TRUNCATE_STOR_POOL_DEFINITIONS = "DELETE FROM " + TBL_STOR_POOL_DEFINITIONS;
+    public static final String TRUNCATE_VOLUME_DEFINITIONS    = "DELETE FROM " + TBL_VOLUME_DEFINITIONS;
+    public static final String TRUNCATE_NODE_RESOURCE         = "DELETE FROM " + TBL_NODE_RESOURCE;
+    public static final String TRUNCATE_RESOURCE_DEFINITIONS  = "DELETE FROM " + TBL_RESOURCE_DEFINITIONS;
+    public static final String TRUNCATE_NODE_NET_INTERFACES   = "DELETE FROM " + TBL_NODE_NET_INTERFACES;
+    public static final String TRUNCATE_NODES                 = "DELETE FROM " + TBL_NODES;
+    public static final String TRUNCATE_CTRL_CONFIGURATION    = "DELETE FROM " + TBL_CTRL_CONFIGURATION;
+    public static final String TRUNCATE_SEC_ACL_MAP           = "DELETE FROM " + TBL_SEC_ACL_MAP;
+    public static final String TRUNCATE_SEC_OBJECT_PROTECTION = "DELETE FROM " + TBL_SEC_OBJECT_PROTECTION;
+    public static final String TRUNCATE_SEC_DFLT_ROLES        = "DELETE FROM " + TBL_SEC_DFLT_ROLES;
+    public static final String TRUNCATE_SEC_TYPE_RULES        = "DELETE FROM " + TBL_SEC_TYPE_RULES;
+    public static final String TRUNCATE_SEC_ACCESS_TYPES      = "DELETE FROM " + TBL_SEC_ACCESS_TYPES;
+    public static final String TRUNCATE_SEC_ID_ROLE_MAP       = "DELETE FROM " + TBL_SEC_ID_ROLE_MAP;
+    public static final String TRUNCATE_SEC_ROLES             = "DELETE FROM " + TBL_SEC_ROLES;
+    public static final String TRUNCATE_SEC_TYPES             = "DELETE FROM " + TBL_SEC_TYPES;
+    public static final String TRUNCATE_SEC_IDENTITIES        = "DELETE FROM " + TBL_SEC_IDENTITIES;
+    public static final String TRUNCATE_SEC_CONFIGURATION     = "DELETE FROM " + TBL_SEC_CONFIGURATION;
 
-    public static final String TRUNCATE_SEC_ACL_MAP = "DELETE FROM " + TBL_SEC_ACL_MAP + " WHERE 1=1";
-    public static final String TRUNCATE_SEC_OBJECT_PROTECTION = "DELETE FROM " + TBL_SEC_OBJECT_PROTECTION + " WHERE 1=1";
-    public static final String TRUNCATE_SEC_DFLT_ROLES = "DELETE FROM " + TBL_SEC_DFLT_ROLES + " WHERE 1=1";
-    public static final String TRUNCATE_SEC_TYPE_RULES = "DELETE FROM " + TBL_SEC_TYPE_RULES + " WHERE 1=1";
-    public static final String TRUNCATE_SEC_ACCESS_TYPES = "DELETE FROM " + TBL_SEC_ACCESS_TYPES + " WHERE 1=1";
-    public static final String TRUNCATE_SEC_ID_ROLE_MAP = "DELETE FROM " + TBL_SEC_ID_ROLE_MAP + " WHERE 1=1";
-    public static final String TRUNCATE_SEC_ROLES = "DELETE FROM " + TBL_SEC_ROLES + " WHERE 1=1";
-    public static final String TRUNCATE_SEC_TYPES = "DELETE FROM " + TBL_SEC_TYPES + " WHERE 1=1";
-    public static final String TRUNCATE_SEC_IDENTITIES = "DELETE FROM " + TBL_SEC_IDENTITIES + " WHERE 1=1";
-    public static final String TRUNCATE_SEC_CONFIG = "DELETE FROM " + TBL_SEC_CONFIGURATION + " WHERE 1=1";
-
-    /* ***************************************
-     *                                       *
-     *         Convenience arrays            *
-     *                                       *
-     *************************************** */
-
-    public static final String[] CREATE_SECURITY_TABLES = new String[]
+    // create statement array
+    public static final String[] CREATE_TABLES =
     {
-        CREATE_TABLE_SEC_CONFIG,
+        CREATE_TABLE_SEC_CONFIGURATION,
         CREATE_TABLE_SEC_IDENTITIES,
         CREATE_TABLE_SEC_TYPES,
         CREATE_TABLE_SEC_ROLES,
@@ -292,31 +358,99 @@ public interface DerbyConstants
         CREATE_TABLE_SEC_DFLT_ROLES,
         CREATE_TABLE_SEC_OBJECT_PROTECTION,
         CREATE_TABLE_SEC_ACL_MAP,
-        CREATE_VIEW_SEC_ID_LOAD,
+        CREATE_TABLE_CTRL_CONFIGURATION,
+        CREATE_TABLE_NODES,
+        CREATE_TABLE_NODE_NET_INTERFACES,
+        CREATE_TABLE_RESOURCE_DEFINITIONS,
+        CREATE_TABLE_NODE_RESOURCE,
+        CREATE_TABLE_VOLUME_DEFINITIONS,
+        CREATE_TABLE_STOR_POOL_DEFINITIONS,
+        CREATE_TABLE_NODE_STOR_POOL,
+        CREATE_TABLE_PROPS_CONTAINERS,
+        CREATE_VIEW_SEC_IDENTITIES_LOAD,
         CREATE_VIEW_SEC_ROLES_LOAD,
         CREATE_VIEW_SEC_TYPES_LOAD,
-        CREATE_VIEW_SEC_TYPES_RULES_LOAD
+        CREATE_VIEW_SEC_TYPE_RULES_LOAD,
     };
-    public static final String[] INSERT_SECURITY_DEFAULTS = new String[]
+
+    // insert statements (default values)
+    public static final String[] INSERT_DEFAULT_VALUES =
     {
-        INSERT_SEC_ACCESS_TYPE_CONTROL,
-        INSERT_SEC_ACCESS_TYPE_CHANGE,
-        INSERT_SEC_ACCESS_TYPES_USE,
-        INSERT_SEC_ACCESS_TYPES_VIEW,
-        INSERT_SEC_ID_SYSTEM,
-        INSERT_SEC_ID_PUBLIC,
-        INSERT_SEC_TYPES_SYSTEM,
-        INSERT_SEC_TYPES_PUBLIC,
-        INSERT_SEC_ROLES_SYSTEM,
-        INSERT_SEC_ROLES_PUBLIC,
-        INSERT_SEC_ID_ROLE_MAP_SYSTEM,
-        INSERT_SEC_ID_ROLE_MAP_PUBLIC,
-        INSERT_SEC_DFLT_ROLES_SYSTEM,
-        INSERT_SEC_DFLT_ROLES_PUBLIC,
-        INSERT_SEC_CONF_MAC
+        "INSERT INTO SEC_ACCESS_TYPES (ACCESS_TYPE_NAME, ACCESS_TYPE_VALUE) \n" +
+        "    VALUES ('CONTROL', 15)",
+        "INSERT INTO SEC_ACCESS_TYPES (ACCESS_TYPE_NAME, ACCESS_TYPE_VALUE) \n" +
+        "    VALUES ('CHANGE', 7)",
+        "INSERT INTO SEC_ACCESS_TYPES (ACCESS_TYPE_NAME, ACCESS_TYPE_VALUE) \n" +
+        "    VALUES ('USE', 3)",
+        "INSERT INTO SEC_ACCESS_TYPES (ACCESS_TYPE_NAME, ACCESS_TYPE_VALUE) \n" +
+        "    VALUES ('VIEW', 1)",
+        "INSERT INTO SEC_IDENTITIES (IDENTITY_NAME, IDENTITY_DSP_NAME, ID_ENABLED, ID_LOCKED) \n" +
+        "    VALUES('SYSTEM', 'SYSTEM', TRUE, TRUE)",
+        "INSERT INTO SEC_IDENTITIES (IDENTITY_NAME, IDENTITY_DSP_NAME, ID_ENABLED, ID_LOCKED) \n" +
+        "    VALUES('PUBLIC', 'PUBLIC', TRUE, TRUE)",
+        "INSERT INTO SEC_TYPES (TYPE_NAME, TYPE_DSP_NAME, TYPE_ENABLED) \n" +
+        "    VALUES ('SYSTEM', 'SYSTEM', TRUE)",
+        "INSERT INTO SEC_TYPES (TYPE_NAME, TYPE_DSP_NAME, TYPE_ENABLED) \n" +
+        "    VALUES ('PUBLIC', 'PUBLIC', TRUE)",
+        "INSERT INTO SEC_ROLES (ROLE_NAME, ROLE_DSP_NAME, DOMAIN_NAME, ROLE_ENABLED, ROLE_PRIVILEGES) \n" +
+        "    VALUES('SYSTEM', 'SYSTEM', 'SYSTEM', TRUE, -9223372036854775808)",
+        "INSERT INTO SEC_ROLES (ROLE_NAME, ROLE_DSP_NAME, DOMAIN_NAME, ROLE_ENABLED, ROLE_PRIVILEGES) \n" +
+        "    VALUES('PUBLIC', 'PUBLIC', 'PUBLIC', TRUE, 0)",
+        "INSERT INTO SEC_ID_ROLE_MAP (IDENTITY_NAME, ROLE_NAME) \n" +
+        "    VALUES ('SYSTEM', 'SYSTEM')",
+        "INSERT INTO SEC_ID_ROLE_MAP (IDENTITY_NAME, ROLE_NAME) \n" +
+        "    VALUES ('PUBLIC', 'PUBLIC')",
+        "INSERT INTO SEC_DFLT_ROLES (IDENTITY_NAME, ROLE_NAME) \n" +
+        "    VALUES ('SYSTEM', 'SYSTEM')",
+        "INSERT INTO SEC_DFLT_ROLES (IDENTITY_NAME, ROLE_NAME) \n" +
+        "    VALUES ('PUBLIC', 'PUBLIC')",
+        "INSERT INTO SEC_CONFIGURATION (ENTRY_KEY, ENTRY_DSP_KEY, ENTRY_VALUE) \n" +
+        "    VALUES ('SECURITYLEVEL', 'SecurityLevel', 'MAC')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/tcp0/bindaddress', 'localhost')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/tcp0/port', '9500')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/tcp0/type', 'plain')",
     };
-    public static final String[] TRUNCATE_SECURITY_TABLES = new String[]
+
+    // drop statement array
+    public static final String[] DROP_TABLES =
     {
+        DROP_VIEW_SEC_TYPE_RULES_LOAD,
+        DROP_VIEW_SEC_TYPES_LOAD,
+        DROP_VIEW_SEC_ROLES_LOAD,
+        DROP_VIEW_SEC_IDENTITIES_LOAD,
+        DROP_TBL_PROPS_CONTAINERS,
+        DROP_TBL_NODE_STOR_POOL,
+        DROP_TBL_STOR_POOL_DEFINITIONS,
+        DROP_TBL_VOLUME_DEFINITIONS,
+        DROP_TBL_NODE_RESOURCE,
+        DROP_TBL_RESOURCE_DEFINITIONS,
+        DROP_TBL_NODE_NET_INTERFACES,
+        DROP_TBL_NODES,
+        DROP_TBL_CTRL_CONFIGURATION,
+        DROP_TBL_SEC_ACL_MAP,
+        DROP_TBL_SEC_OBJECT_PROTECTION,
+        DROP_TBL_SEC_DFLT_ROLES,
+        DROP_TBL_SEC_TYPE_RULES,
+        DROP_TBL_SEC_ACCESS_TYPES,
+        DROP_TBL_SEC_ID_ROLE_MAP,
+        DROP_TBL_SEC_ROLES,
+        DROP_TBL_SEC_TYPES,
+        DROP_TBL_SEC_IDENTITIES,
+        DROP_TBL_SEC_CONFIGURATION,
+    };
+
+    // truncate statement array
+    public static final String[] TRUNCATE_TABLES =
+    {
+        TRUNCATE_PROPS_CONTAINERS,
+        TRUNCATE_NODE_STOR_POOL,
+        TRUNCATE_STOR_POOL_DEFINITIONS,
+        TRUNCATE_VOLUME_DEFINITIONS,
+        TRUNCATE_NODE_RESOURCE,
+        TRUNCATE_RESOURCE_DEFINITIONS,
+        TRUNCATE_NODE_NET_INTERFACES,
+        TRUNCATE_NODES,
+        TRUNCATE_CTRL_CONFIGURATION,
         TRUNCATE_SEC_ACL_MAP,
         TRUNCATE_SEC_OBJECT_PROTECTION,
         TRUNCATE_SEC_DFLT_ROLES,
@@ -326,26 +460,6 @@ public interface DerbyConstants
         TRUNCATE_SEC_ROLES,
         TRUNCATE_SEC_TYPES,
         TRUNCATE_SEC_IDENTITIES,
-        TRUNCATE_SEC_CONFIG
+        TRUNCATE_SEC_CONFIGURATION,
     };
-    public static final String[] DROP_SECURITY_TABLES = new String[]
-    {
-        DROP_VIEW_SEC_TYPE_RULES_LOAD,
-        DROP_VIEW_SEC_TYPES_LOAD,
-        DROP_VIEW_SEC_ROLES_LOAD,
-        DROP_VIEW_SEC_IDENTITIES_LOAD,
-        DROP_TBL_SEC_ACL_MAP,
-        DROP_TBL_SEC_OBJECT_PROTECTION,
-        DORP_TBL_SEC_DFLT_ROLES,
-        DROP_TBL_SEC_TYPE_RULES,
-        DROP_TBL_SEC_ACCESS_TYPES,
-        DROP_TBL_SEC_ID_ROLE_MAP,
-        DROP_TBL_SEC_ROLES,
-        DROP_TBL_SEC_TYPES,
-        DROP_TBL_SEC_IDENTITIES,
-        DROP_TBL_SEC_CONFIG
-    };
-
-
-
 }
