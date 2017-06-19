@@ -71,10 +71,21 @@ public abstract class DerbyBase implements DerbyConstants
     {
         if (!initialized)
         {
-            DerbyBase.createTables = createTables;
-            DerbyBase.defaultValues = defaultValues;
-            DerbyBase.truncateTables = truncateTables;
-            DerbyBase.dropTables = dropTables;
+            DerbyBase.createTables = new String[CREATE_SECURITY_TABLES.length + createTables.length];
+            System.arraycopy(CREATE_SECURITY_TABLES, 0, DerbyBase.createTables, 0, CREATE_SECURITY_TABLES.length);
+            System.arraycopy(createTables, 0, DerbyBase.createTables, CREATE_SECURITY_TABLES.length, createTables.length);
+
+            DerbyBase.defaultValues = new String[INSERT_SECURITY_DEFAULTS.length + defaultValues.length];
+            System.arraycopy(INSERT_SECURITY_DEFAULTS, 0, DerbyBase.defaultValues, 0, INSERT_SECURITY_DEFAULTS.length);
+            System.arraycopy(defaultValues, 0, DerbyBase.defaultValues, INSERT_SECURITY_DEFAULTS.length, defaultValues.length);
+
+            DerbyBase.truncateTables = new String[TRUNCATE_SECURITY_TABLES.length + truncateTables.length];
+            System.arraycopy(TRUNCATE_SECURITY_TABLES, 0, DerbyBase.truncateTables, 0, TRUNCATE_SECURITY_TABLES.length);
+            System.arraycopy(truncateTables, 0, DerbyBase.truncateTables, TRUNCATE_SECURITY_TABLES.length, truncateTables.length);
+
+            DerbyBase.dropTables = new String[DROP_SECURITY_TABLES.length + dropTables.length];
+            System.arraycopy(DROP_SECURITY_TABLES, 0, DerbyBase.dropTables, 0, DROP_SECURITY_TABLES.length);
+            System.arraycopy(dropTables, 0, DerbyBase.dropTables, DROP_SECURITY_TABLES.length, dropTables.length);
 
             createTables();
             insertDefaults();
