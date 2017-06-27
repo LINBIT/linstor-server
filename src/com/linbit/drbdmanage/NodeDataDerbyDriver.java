@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -19,6 +20,9 @@ import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.drbdmanage.propscon.InvalidKeyException;
+import com.linbit.drbdmanage.propscon.InvalidValueException;
+import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -124,6 +128,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     flags.add(flag);
                 }
             }
+
             node = new NodeData(accCtx, nodeName, types, flags, serialGen, transMgr);
 
             // load the netInterfaces
@@ -132,6 +137,28 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             {
                 node.addNetInterface(dbCtx, netIf);
             }
+
+            // load props
+            PropsConDatabaseDriver propDriver = DrbdManage.getPropConDatabaseDriver(PropsContainer.buildPath(nodeName));
+            Props props = node.getProps(dbCtx);
+            Map<String, String> loadedProps = propDriver.load(con);
+            for (Entry<String, String> entry : loadedProps.entrySet())
+            {
+                try
+                {
+                    props.setProp(entry.getKey(), entry.getValue());
+                }
+                catch (InvalidKeyException | InvalidValueException invalidException)
+                {
+                    throw new DrbdSqlRuntimeException(
+                        "Invalid property loaded from instance: " + PropsContainer.buildPath(nodeName),
+                        invalidException
+                    );
+                }
+            }
+
+
+
         }
         return node;
     }
@@ -170,11 +197,6 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     public PropsConDatabaseDriver getPropsConDriver(NodeName nodeName)
     {
         return new PropsConDerbyDriver(PropsContainer.buildPath(nodeName));
-    }
-
-    private void getNetInterfaces(NodeData node) throws SQLException
-    {
-
     }
 
     private class NodeResourceMapDriver implements MapDatabaseDriver<ResourceName, Resource>

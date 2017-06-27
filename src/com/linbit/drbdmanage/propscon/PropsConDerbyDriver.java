@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 
 import java.util.Set;
@@ -14,10 +15,10 @@ import java.util.TreeMap;
 
 public class PropsConDerbyDriver implements PropsConDatabaseDriver
 {
-    public static final String TBL_PROP = "PROPS_CONTAINERS";
-    public static final String COL_INSTANCE = "PROPS_INSTANCE";
-    public static final String COL_KEY = "PROP_KEY";
-    public static final String COL_VALUE = "PROP_VALUE";
+    private static final String TBL_PROP = DerbyConstants.TBL_PROPS_CONTAINERS;
+    private static final String COL_INSTANCE = DerbyConstants.PROPS_INSTANCE;
+    private static final String COL_KEY = DerbyConstants.PROP_KEY;
+    private static final String COL_VALUE = DerbyConstants.PROP_VALUE;
 
     private static final String SELECT_ENTRY_FOR_UPDATE =
         "SELECT " + COL_INSTANCE + ", " + COL_KEY + ", " + COL_VALUE + "\n" +
@@ -25,9 +26,6 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         " WHERE " + COL_INSTANCE + " = ? AND \n" +
         "       " + COL_KEY +      " = ? \n" +
         " FOR UPDATE OF " + COL_INSTANCE + "," + COL_KEY + ", "+ COL_VALUE;
-    private static final String INSERT_ENTRY =
-        "INSERT INTO " + TBL_PROP + "\n" +
-        " VALUES (?, ?, ?)";
 
     private static final String SELECT_ALL_ENTRIES_BY_INSTANCE =
         "SELECT " + COL_KEY + ", " + COL_VALUE + "\n" +
@@ -45,10 +43,12 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
 
 
     private final String instanceName;
+    private final String instanceNameUpper;
 
     public PropsConDerbyDriver(String instanceName)
     {
         this.instanceName = instanceName;
+        instanceNameUpper = instanceName.toUpperCase();
     }
 
     @Override
@@ -80,7 +80,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
             ResultSet.CONCUR_UPDATABLE
         );
 
-        stmt.setString(1, instanceName);
+        stmt.setString(1, instanceNameUpper);
         stmt.setString(2, key);
 
         ResultSet resultSet = stmt.executeQuery();
@@ -92,7 +92,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         else
         {
             resultSet.moveToInsertRow();
-            resultSet.updateString(1, instanceName);
+            resultSet.updateString(1, instanceNameUpper);
             resultSet.updateString(2, key);
             resultSet.updateString(3, value);
             resultSet.insertRow();
@@ -108,7 +108,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         {
             PreparedStatement stmt = dbConn.prepareStatement(REMOVE_ENTRY);
 
-            stmt.setString(1, instanceName);
+            stmt.setString(1, instanceNameUpper);
             stmt.setString(2, key);
 
             stmt.executeUpdate();
@@ -123,7 +123,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         {
             PreparedStatement stmt = dbConn.prepareStatement(REMOVE_ENTRY);
 
-            stmt.setString(1, instanceName);
+            stmt.setString(1, instanceNameUpper);
 
             for (String key : keys)
             {
@@ -142,7 +142,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
             dbConn.setAutoCommit(false);
             PreparedStatement stmt = dbConn.prepareStatement(REMOVE_ALL_ENTRIES);
 
-            stmt.setString(1, instanceName);
+            stmt.setString(1, instanceNameUpper);
             stmt.executeUpdate();
 
             stmt.close();
@@ -157,7 +157,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         {
             PreparedStatement stmt = dbConn.prepareStatement(SELECT_ALL_ENTRIES_BY_INSTANCE);
 
-            stmt.setString(1, instanceName);
+            stmt.setString(1, instanceNameUpper);
 
             ResultSet resultSet = stmt.executeQuery();
 
