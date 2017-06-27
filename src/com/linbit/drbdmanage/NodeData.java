@@ -2,10 +2,10 @@ package com.linbit.drbdmanage;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.ObjectDatabaseDriver;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.TransactionObject;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -14,22 +14,24 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
+
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
-import java.net.InetAddress;
 import java.util.Set;
 
 /**
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class NodeData implements Node
+public class NodeData extends BaseTransactionObject implements Node
 {
     // Object identifier
     private UUID objId;
@@ -38,7 +40,7 @@ public class NodeData implements Node
     private NodeName clNodeName;
 
     // State flags
-    private StateFlags<NodeFlags> flags;
+    private StateFlags<NodeFlag> flags;
 
     // Node type
     private StateFlags<NodeType> nodeTypeFlags;
@@ -58,15 +60,11 @@ public class NodeData implements Node
     // Properties container for this node
     private Props nodeProps;
 
-    private NodeDatabaseDriver dbDriver;
+    private NodeDataDatabaseDriver dbDriver;
 
-    NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, SerialGenerator srlGen)
-        throws SQLException, AccessDeniedException
-    {
-        this(accCtx, nameRef, types, srlGen, null);
-    }
+    private final List<TransactionObject> transObjList;
 
-    NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, SerialGenerator srlGen, TransactionMgr transMgr)
+    NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, Set<NodeFlag> flagSet, SerialGenerator srlGen, TransactionMgr transMgr)
         throws SQLException, AccessDeniedException
     {
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
@@ -74,42 +72,103 @@ public class NodeData implements Node
         objId = UUID.randomUUID();
         clNodeName = nameRef;
 
-        dbDriver = DrbdManage.getNodeDatabaseDriver(nameRef);
+        dbDriver = DrbdManage.getNodeDataDatabaseDriver();
 
         resourceMap = new TransactionMap<>(
             new TreeMap<ResourceName, Resource>(),
-            dbDriver.getNodeResourceMapDriver()
+            dbDriver.getNodeResourceMapDriver(nameRef)
         );
         netInterfaceMap = new TransactionMap<>(
             new TreeMap<NetInterfaceName, NetInterface>(),
-            dbDriver.getNodeNetInterfaceMapDriver()
+            dbDriver.getNodeNetInterfaceMapDriver(this)
         );
         storPoolMap = new TransactionMap<>(
             new TreeMap<StorPoolName, StorPool>(),
-            dbDriver.getNodeStorPoolMapDriver()
+            dbDriver.getNodeStorPoolMapDriver(this)
         );
 
-        for (NodeType type : types)
+        nodeProps = SerialPropsContainer.createRootContainer(srlGen, dbDriver.getPropsConDriver(nameRef));
+        objProt = ObjectProtection.getInstance(
+            accCtx,
+            transMgr,
+            ObjectProtection.buildPath(this),
+            true
+        );
+        flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence(nameRef));
+        nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence(nameRef));
+
+        transObjList = Arrays.<TransactionObject> asList(
+            flags,
+            nodeTypeFlags,
+            resourceMap,
+            netInterfaceMap,
+            storPoolMap,
+            objProt,
+            nodeProps
+        );
+
+        if (flagSet != null)
         {
-            nodeTypeFlags.enableFlags(accCtx, type);
+            flags.enableFlags(accCtx, flagSet.toArray(new NodeFlag[flagSet.size()]));
         }
 
-        // Default to creating an AUXILIARY type node
-        if (!nodeTypeFlags.isSomeSet(accCtx, NodeType.ALL_NODE_TYPES))
+        if (types == null || types.isEmpty())
         {
+            // Default to creating an AUXILIARY type node
             nodeTypeFlags.enableFlags(accCtx, NodeType.AUXILIARY);
         }
-        nodeProps = SerialPropsContainer.createRootContainer(srlGen);
-        objProt = ObjectProtection.create(
-            ObjectProtection.buildPath(this),
-            accCtx,
-            transMgr
-        );
-        flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence());
-        nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence());
+        else
+        {
+            NodeType[] typeArr = types.toArray(new NodeType[0]);
+            nodeTypeFlags.enableFlags(accCtx, typeArr);
+        }
+
+        if (transMgr != null)
+        {
+            setConnection(transMgr);
+        }
     }
 
-    // TODO add static load function
+    public static NodeData getInstance(
+        AccessContext accCtx,
+        NodeName nameRef,
+        Set<NodeType> types,
+        Set<NodeFlag> flags,
+        SerialGenerator srlGen,
+        TransactionMgr transMgr,
+        boolean createIfNotExists
+    )
+        throws SQLException, AccessDeniedException
+    {
+        NodeData nodeData = null;
+
+        NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver();
+        if (transMgr != null)
+        {
+            nodeData = dbDriver.load(transMgr.dbCon, nameRef, accCtx, srlGen, transMgr);
+            // TODO: gh - ensure nodeData is loaded completely
+        }
+
+        if (nodeData != null)
+        {
+            nodeData.objProt.requireAccess(accCtx, AccessType.CONTROL);
+        }
+        else
+        if (createIfNotExists)
+        {
+            nodeData = new NodeData(accCtx, nameRef, types, flags, srlGen, transMgr);
+            if (transMgr != null)
+            {
+                dbDriver.create(transMgr.dbCon, nodeData);
+            }
+        }
+
+        if (nodeData != null)
+        {
+            nodeData.initialized();
+        }
+        return nodeData;
+    }
 
     @Override
     public UUID getUuid()
@@ -228,7 +287,7 @@ public class NodeData implements Node
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        storPoolMap.put(pool.getName(), pool);
+        storPoolMap.remove(pool.getName());
     }
 
     @Override
@@ -259,69 +318,71 @@ public class NodeData implements Node
     }
 
     @Override
-    public StateFlags<NodeFlags> getFlags()
+    public StateFlags<NodeFlag> getFlags()
     {
         return flags;
     }
 
     @Override
-    public ObjectDatabaseDriver<InetAddress> getNetInterfaceDriver(NetInterfaceName netInterfaceName)
+    public void initialized()
     {
-        return dbDriver.getNodeNetInterfaceDriver(netInterfaceName);
-    }
-
-    @Override
-    public void commit()
-    {
-        // objId is unmodifiable
-        // nodeName is unmodifiable
-
-        // flags
-        nodeTypeFlags.commit();
-        resourceMap.commit();
-        netInterfaceMap.commit();
-        storPoolMap.commit();
-        flags.commit();
-        objProt.commit();
-        nodeProps.commit();
-    }
-
-    @Override
-    public void rollback()
-    {
-        nodeTypeFlags.rollback();
-        resourceMap.rollback();
-        netInterfaceMap.rollback();
-        storPoolMap.rollback();
-        flags.rollback();
-        objProt.rollback();
-        nodeProps.rollback();
+        for (TransactionObject transObj : transObjList)
+        {
+            transObj.initialized();
+        }
     }
 
     @Override
     public void setConnection(TransactionMgr transMgr) throws ImplementationError
     {
-        transMgr.register(this);
-        dbDriver.setConnection(transMgr.dbCon);
+        if (transMgr != null)
+        {
+            transMgr.register(this);
+        }
+        for (TransactionObject transObj : transObjList)
+        {
+            transObj.setConnection(transMgr);
+        }
     }
 
     @Override
-    public boolean isDirty()
+    public void commit()
     {
-        return nodeTypeFlags.isDirty() ||
-            resourceMap.isDirty() ||
-            netInterfaceMap.isDirty() ||
-            storPoolMap.isDirty() ||
-            flags.isDirty() ||
-            objProt.isDirty() ||
-            nodeProps.isDirty();
+        for (TransactionObject transObj : transObjList)
+        {
+            transObj.commit();
+        }
     }
 
-    private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlags>
+    @Override
+    public void rollback()
+    {
+        for (TransactionObject transObj : transObjList)
+        {
+            transObj.rollback();
+        }
+    }
+
+     @Override
+    public boolean isDirty()
+    {
+        boolean dirty = false;
+        for (TransactionObject transObj : transObjList)
+        {
+            if (transObj.isDirty())
+            {
+                dirty = true;
+                break;
+            }
+        }
+        return dirty;
+    }
+
+    private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlag>
     {
         NodeFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
-            super(objProtRef, StateFlagsBits.getMask(NodeFlags.ALL_FLAGS), persistenceRef);
+            super(objProtRef, StateFlagsBits.getMask(NodeFlag.ALL_FLAGS), persistenceRef);
         }
     }
 

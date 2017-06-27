@@ -28,4 +28,33 @@ public interface NetInterface extends TransactionObject
 
     public void setAddress(AccessContext accCtx, InetAddress newAddress)
         throws AccessDeniedException, SQLException;
+
+    public NetInterfaceType getNetInterfaceType(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    public void setNetInterfaceType(AccessContext accCtx, NetInterfaceType type)
+        throws AccessDeniedException, SQLException;
+
+    public static enum NetInterfaceType
+    {
+        IP, RDMA, RoCE;
+
+        public static NetInterfaceType byValue(String str)
+        {
+            NetInterfaceType type = null;
+            switch (str.toUpperCase())
+            {
+                case "IP":
+                    type = IP;
+                    break;
+                case "RDMA":
+                    type = IP;
+                    break;
+                case "ROCE":
+                    type = IP;
+                    break;
+            }
+            return type;
+        }
+    }
 }

@@ -267,11 +267,11 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 // get a connection to initialize objects
                 TransactionMgr transMgr = new TransactionMgr(dbConnPool);
 
-                shutdownProt = ObjectProtection.load(
+                shutdownProt = ObjectProtection.getInstance(
+                    sysCtx,
                     transMgr,
                     ObjectProtection.buildPath(this, "shutdown"),
-                    true,
-                    sysCtx
+                    true
                 );
 //                shutdownProt = new ObjectProtection(sysCtx, ObjectProtection.buildPath(this, "shutdown"));
 
@@ -286,11 +286,11 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                         DB_CONTROLLER_PROPSCON_INSTANCE_NAME
                     )
                 );
-                ctrlConfProt = ObjectProtection.load(
+                ctrlConfProt = ObjectProtection.getInstance(
+                    sysCtx,
                     transMgr,
                     ObjectProtection.buildPath(this, "conf"),
-                    true,
-                    sysCtx
+                    true
                 );
 
                 transMgr.commit(); // in case the objProt has just been created

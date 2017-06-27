@@ -1,26 +1,15 @@
-package com.linbit.drbdmanage.dbdrivers.derby;
-
-import java.sql.Connection;
+package com.linbit.drbdmanage;
 
 import com.linbit.ObjectDatabaseDriver;
-import com.linbit.drbdmanage.MinorNumber;
-import com.linbit.drbdmanage.VolumeDefinition;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
-public class VolumeDefinitionDerbyDriver implements VolumeDefinitionDatabaseDriver
+public class VolumeDataDefinitionDerbyDriver implements VolumeDefinitionDataDatabaseDriver
 {
 
-    public VolumeDefinitionDerbyDriver(VolumeDefinition volumeDefinition)
+    public VolumeDataDefinitionDerbyDriver(VolumeDefinition volumeDefinition)
     {
         // TODO Auto-generated constructor stub
-    }
-
-    @Override
-    public void setConnection(Connection con)
-    {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

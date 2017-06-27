@@ -1,5 +1,6 @@
 package com.linbit;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,6 +17,10 @@ public class TransactionCollection<T> implements TransactionObject, Collection<T
     protected Collection<T> deleted;
 
     private ObjectDatabaseDriver<T> dbDriver;
+
+    private Connection con;
+
+    private boolean initialized = false;
 
     public TransactionCollection(Collection<T> data, ObjectDatabaseDriver<T> driver)
     {
@@ -34,6 +39,11 @@ public class TransactionCollection<T> implements TransactionObject, Collection<T
         deleted = new ArrayList<>();
     }
 
+    @Override
+    public void initialized()
+    {
+        initialized = true;
+    }
 
     @Override
     public boolean isDirty()
@@ -44,8 +54,15 @@ public class TransactionCollection<T> implements TransactionObject, Collection<T
     @Override
     public void setConnection(TransactionMgr transMgr)
     {
-        transMgr.register(this);
-        dbDriver.setConnection(transMgr.dbCon);
+        if (transMgr != null)
+        {
+            transMgr.register(this);
+            con = transMgr.dbCon;
+        }
+        else
+        {
+            con = null;
+        }
     }
 
     @Override
@@ -108,16 +125,19 @@ public class TransactionCollection<T> implements TransactionObject, Collection<T
     public boolean add(T element)
     {
         boolean changed = data.add(element);
-        if (changed)
+        if (initialized && changed)
         {
             inserted.add(element);
-            try
+            if (con != null)
             {
-                dbDriver.insert(element);
-            }
-            catch (SQLException sqlExc)
-            {
-                throw new DrbdSqlRuntimeException("Adding an element to TransactionCollection failed", sqlExc);
+                try
+                {
+                    dbDriver.insert(con, element);
+                }
+                catch (SQLException sqlExc)
+                {
+                    throw new DrbdSqlRuntimeException("Adding an element to TransactionCollection failed", sqlExc);
+                }
             }
         }
         return changed;
@@ -134,17 +154,20 @@ public class TransactionCollection<T> implements TransactionObject, Collection<T
         // however, if data (which is also of type T) contained the element,
         // the element itself has to be of type T (otherwise it couldn't be
         // added to data in the first place)
-        if (remove)
+        if (initialized && remove)
         {
             // thus, it is now safe to cast element to T
             deleted.add((T) element);
-            try
+            if (con != null)
             {
-                dbDriver.delete((T) element);
-            }
-            catch (SQLException sqlExc)
-            {
-                throw new DrbdSqlRuntimeException("Removing an element to TransactionCollection failed", sqlExc);
+                try
+                {
+                    dbDriver.delete(con, (T) element);
+                }
+                catch (SQLException sqlExc)
+                {
+                    throw new DrbdSqlRuntimeException("Removing an element to TransactionCollection failed", sqlExc);
+                }
             }
         }
         return remove;
@@ -164,16 +187,22 @@ public class TransactionCollection<T> implements TransactionObject, Collection<T
         {
             if (data.add(elem))
             {
-                try
+                if (initialized)
                 {
-                    dbDriver.insert(elem);
-                }
-                catch (SQLException sqlExc)
-                {
-                    throw new DrbdSqlRuntimeException("Adding an element to TransactionCollection failed", sqlExc);
+                    if (con != null)
+                    {
+                        try
+                        {
+                            dbDriver.insert(con, elem);
+                        }
+                        catch (SQLException sqlExc)
+                        {
+                            throw new DrbdSqlRuntimeException("Adding an element to TransactionCollection failed", sqlExc);
+                        }
+                    }
+                    inserted.add(elem);
                 }
                 changed = true;
-                inserted.add(elem);
             }
         }
         return changed;
@@ -188,16 +217,22 @@ public class TransactionCollection<T> implements TransactionObject, Collection<T
         {
             if (data.remove(elem))
             {
-                try
+                if (initialized)
                 {
-                    dbDriver.delete((T) elem);
-                }
-                catch (SQLException sqlExc)
-                {
-                    throw new DrbdSqlRuntimeException("Removing an element to TransactionCollection failed", sqlExc);
+                    if (con != null)
+                    {
+                        try
+                        {
+                            dbDriver.delete(con, (T) elem);
+                        }
+                        catch (SQLException sqlExc)
+                        {
+                            throw new DrbdSqlRuntimeException("Removing an element to TransactionCollection failed", sqlExc);
+                        }
+                    }
+                    deleted.add((T) elem);
                 }
                 changed = true;
-                deleted.add((T) elem);
             }
         }
         return changed;
@@ -210,21 +245,24 @@ public class TransactionCollection<T> implements TransactionObject, Collection<T
         boolean changed = false;
         for (Object elem : collection)
         {
-            if (!data.contains(elem))
+            if (data.remove(elem))
             {
-                if (data.remove(elem))
+                if (initialized)
                 {
-                    try
+                    if (con != null)
                     {
-                        dbDriver.delete((T) elem);
-                    }
-                    catch (SQLException sqlExc)
-                    {
-                        throw new DrbdSqlRuntimeException("Removing an element to TransactionCollection failed", sqlExc);
+                        try
+                        {
+                            dbDriver.delete(con, (T) elem);
+                        }
+                        catch (SQLException sqlExc)
+                        {
+                            throw new DrbdSqlRuntimeException("Removing an element to TransactionCollection failed", sqlExc);
+                        }
                     }
                     deleted.add((T) elem);
-                    changed = true;
                 }
+                changed = true;
             }
         }
         return changed;
@@ -233,18 +271,24 @@ public class TransactionCollection<T> implements TransactionObject, Collection<T
     @Override
     public void clear()
     {
-        for (T elem : data)
+        if (initialized)
         {
-            try
+            if (con != null)
             {
-                dbDriver.delete(elem);
+                for (T elem : data)
+                {
+                    try
+                    {
+                        dbDriver.delete(con, elem);
+                    }
+                    catch (SQLException sqlExc)
+                    {
+                        throw new DrbdSqlRuntimeException("Removing an element to TransactionCollection failed", sqlExc);
+                    }
+                }
             }
-            catch (SQLException sqlExc)
-            {
-                throw new DrbdSqlRuntimeException("Removing an element to TransactionCollection failed", sqlExc);
-            }
+            deleted.addAll(data);
         }
-        deleted.addAll(data);
         data.clear();
     }
 }

@@ -5,11 +5,9 @@ import java.sql.SQLException;
 
 public interface ObjectDatabaseDriver<T>
 {
-    public void setConnection(Connection con);
+    public void insert(Connection con, T element) throws SQLException;
 
-    public void insert(T element) throws SQLException;
+    public void update(Connection con, T element) throws SQLException;
 
-    public void update(T element) throws SQLException;
-
-    public void delete(T element) throws SQLException;
+    public void delete(Connection con, T element) throws SQLException;
 }

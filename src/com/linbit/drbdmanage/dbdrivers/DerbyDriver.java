@@ -1,25 +1,38 @@
 package com.linbit.drbdmanage.dbdrivers;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.drbdmanage.Resource;
-import com.linbit.drbdmanage.ResourceDefinition;
-import com.linbit.drbdmanage.Volume;
-import com.linbit.drbdmanage.VolumeDefinition;
-import com.linbit.drbdmanage.dbdrivers.derby.NodeDerbyDriver;
-import com.linbit.drbdmanage.dbdrivers.derby.PropsConDerbyDriver;
-import com.linbit.drbdmanage.dbdrivers.derby.ResourceDefinitionDerbyDriver;
-import com.linbit.drbdmanage.dbdrivers.derby.ResourceDerbyDriver;
-import com.linbit.drbdmanage.dbdrivers.derby.VolumeDefinitionDerbyDriver;
-import com.linbit.drbdmanage.dbdrivers.derby.VolumeDerbyDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.drbdmanage.NetInterfaceDataDatabaseDriver;
+import com.linbit.drbdmanage.NetInterfaceDataDerbyDriver;
+import com.linbit.drbdmanage.NetInterfaceName;
+import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NodeDataDerbyDriver;
+import com.linbit.drbdmanage.ResourceData;
+import com.linbit.drbdmanage.ResourceDataDerbyDriver;
+import com.linbit.drbdmanage.ResourceDefinitionDataDerbyDriver;
+import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.StorPoolDataDerbyDriver;
+import com.linbit.drbdmanage.StorPoolDefinition;
+import com.linbit.drbdmanage.StorPoolDefinitionDataDerbyDriver;
+import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.VolumeData;
+import com.linbit.drbdmanage.VolumeDataDefinitionDerbyDriver;
+import com.linbit.drbdmanage.VolumeDataDerbyDriver;
+import com.linbit.drbdmanage.VolumeDefinitionData;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
+import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
 import com.linbit.drbdmanage.security.AccessContext;
 
 /**
@@ -47,12 +60,27 @@ public class DerbyDriver implements DatabaseDriver
     }
 
     private ErrorReporter errorReporter;
-    private AccessContext privCtx;
+    private final AccessContext privCtx;
+    private final NodeDataDerbyDriver nodeDriver;
+    private final VolumeDataDerbyDriver volumeDriver;
+
+    private Map<String, PropsConDerbyDriver> propsDriverCache = new WeakHashMap<>();
+    private Map<String, NodeDataDerbyDriver> nodeDriverCache = new WeakHashMap<>();
+    private Map<ResourceData, ResourceDataDerbyDriver> resDriverCache = new WeakHashMap<>();
+    private Map<ResourceName, ResourceDefinitionDataDerbyDriver> resDefDriverCache = new WeakHashMap<>();
+    private Map<VolumeData, VolumeDataDerbyDriver> volDriverCache = new WeakHashMap<>();
+    private Map<VolumeDefinitionData, VolumeDataDefinitionDerbyDriver> volDefDriverCache = new WeakHashMap<>();
+    private Map<StorPoolName, StorPoolDefinitionDataDerbyDriver> storPoolDfnDriverCache = new WeakHashMap<>();
+    private Map<Tuple<Node, StorPoolDefinition>, StorPoolDataDerbyDriver> storPoolDriverCache = new WeakHashMap<>();
+    private Map<Tuple<Node, NetInterfaceName>, NetInterfaceDataDerbyDriver> netInterfaceDriverCache = new WeakHashMap<>();
+
 
     public DerbyDriver(ErrorReporter errorReporter, AccessContext privCtx)
     {
         this.errorReporter = errorReporter;
         this.privCtx = privCtx;
+        nodeDriver = new NodeDataDerbyDriver(privCtx);
+        volumeDriver = new VolumeDataDerbyDriver(privCtx);
     }
 
     @Override
@@ -70,36 +98,154 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public PropsConDatabaseDriver getPropsDatabaseDriver(String instanceName)
     {
-        return new PropsConDerbyDriver(instanceName);
+        PropsConDerbyDriver driver = propsDriverCache.get(instanceName);
+        if (driver == null)
+        {
+            driver = new PropsConDerbyDriver(instanceName);
+            propsDriverCache.put(instanceName, driver);
+        }
+        return driver;
+    }
+
+
+    @Override
+    public NodeDataDatabaseDriver getNodeDatabaseDriver()
+    {
+        return nodeDriver;
     }
 
     @Override
-    public NodeDatabaseDriver getNodeDatabaseDriver(String nodeName)
+    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver(ResourceData res)
     {
-        return new NodeDerbyDriver(privCtx, nodeName);
+        ResourceDataDerbyDriver driver = resDriverCache.get(res);
+        if (driver == null)
+        {
+            driver = new ResourceDataDerbyDriver(res);
+            resDriverCache.put(res, driver);
+        }
+        return driver;
     }
 
     @Override
-    public ResourceDatabaseDriver getResourceDatabaseDriver(Resource res)
+    public ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName)
     {
-        return new ResourceDerbyDriver(res);
+        ResourceDefinitionDataDerbyDriver driver= resDefDriverCache.get(resName);
+        if (driver == null)
+        {
+            driver = new ResourceDefinitionDataDerbyDriver(resName);
+            resDefDriverCache.put(resName, driver);
+        }
+        return driver;
     }
 
     @Override
-    public ResourceDefinitionDatabaseDriver getResourceDefinitionDatabaseDriver(ResourceDefinition resDfn)
+    public VolumeDataDatabaseDriver getVolumeDataDatabaseDriver()
     {
-        return new ResourceDefinitionDerbyDriver(resDfn);
+        return volumeDriver;
     }
 
     @Override
-    public VolumeDatabaseDriver getVolumeDatabaseDriver(Volume volume)
+    public VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(VolumeDefinitionData volumeDef)
     {
-        return new VolumeDerbyDriver(volume);
+        VolumeDataDefinitionDerbyDriver driver = volDefDriverCache.get(volumeDef);
+        if (driver == null)
+        {
+            driver = new VolumeDataDefinitionDerbyDriver(volumeDef);
+            volDefDriverCache.put(volumeDef, driver);
+        }
+        return driver;
     }
 
     @Override
-    public VolumeDefinitionDatabaseDriver getVolumeDefinitionDatabaseDriver(VolumeDefinition volumeDefinition)
+    public StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver(StorPoolName name)
     {
-        return new VolumeDefinitionDerbyDriver(volumeDefinition);
+        StorPoolDefinitionDataDerbyDriver driver = storPoolDfnDriverCache.get(name);
+        if (driver == null)
+        {
+            driver = new StorPoolDefinitionDataDerbyDriver(name);
+            storPoolDfnDriverCache.put(name, driver);
+        }
+        return driver;
     }
+
+    @Override
+    public StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef)
+    {
+        Tuple<Node, StorPoolDefinition> key = new Tuple<Node, StorPoolDefinition>(nodeRef, storPoolDfnRef);
+        StorPoolDataDerbyDriver driver = storPoolDriverCache.get(key);
+        if (driver == null)
+        {
+            driver = new StorPoolDataDerbyDriver(nodeRef, storPoolDfnRef);
+            storPoolDriverCache.put(key, driver);
+        }
+        return driver;
+    }
+
+    @Override
+    public NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node nodeRef, NetInterfaceName netName)
+    {
+        Tuple<Node, NetInterfaceName> key = new Tuple<Node, NetInterfaceName>(nodeRef, netName);
+        NetInterfaceDataDerbyDriver driver = netInterfaceDriverCache.get(key);
+        if (driver == null)
+        {
+            driver = new NetInterfaceDataDerbyDriver(privCtx, nodeRef, netName);
+            netInterfaceDriverCache.put(key, driver);
+        }
+        return driver;
+    }
+
+
+
+    private static class Tuple<A, B>
+    {
+        public final A a;
+        public final B b;
+
+        public Tuple(A a, B b)
+        {
+            this.a = a;
+            this.b = b;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((a == null) ? 0 : a.hashCode());
+            result = prime * result + ((b == null) ? 0 : b.hashCode());
+            return result;
+        }
+
+        @SuppressWarnings("rawtypes")
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Tuple other = (Tuple) obj;
+            if (a == null)
+            {
+                if (other.a != null)
+                    return false;
+            }
+            else
+                if (!a.equals(other.a))
+                    return false;
+            if (b == null)
+            {
+                if (other.b != null)
+                    return false;
+            }
+            else
+                if (!b.equals(other.b))
+                    return false;
+            return true;
+        }
+    }
+
 }

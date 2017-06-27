@@ -15,7 +15,6 @@ import java.util.Set;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.dbdrivers.derby.PropsConDerbyDriver;
 
 public class DerbyPropsConTest extends DerbyPropsConBase
 {

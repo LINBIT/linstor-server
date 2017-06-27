@@ -1,13 +1,11 @@
 package com.linbit.drbdmanage;
 
-import com.linbit.ObjectDatabaseDriver;
 import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 
-import java.net.InetAddress;
 import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
@@ -70,9 +68,7 @@ public interface Node extends TransactionObject
     public boolean hasNodeType(AccessContext accCtx, NodeType reqType)
         throws AccessDeniedException;
 
-    public StateFlags<NodeFlags> getFlags();
-
-    public ObjectDatabaseDriver<InetAddress> getNetInterfaceDriver(NetInterfaceName name);
+    public StateFlags<NodeFlag> getFlags();
 
     public enum NodeType implements Flags
     {
@@ -101,19 +97,19 @@ public interface Node extends TransactionObject
         };
     }
 
-    public enum NodeFlags implements Flags
+    public enum NodeFlag implements Flags
     {
         REMOVE(1L),
         QIGNORE(0x10000L);
 
-        public static final NodeFlags[] ALL_FLAGS =
+        public static final NodeFlag[] ALL_FLAGS =
         {
-            REMOVE
+            REMOVE, QIGNORE
         };
 
         public final long flagValue;
 
-        private NodeFlags(long value)
+        private NodeFlag(long value)
         {
             flagValue = value;
         }

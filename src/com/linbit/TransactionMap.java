@@ -1,10 +1,12 @@
 package com.linbit;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
@@ -14,6 +16,10 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     private MapDatabaseDriver<T, U> dbDriver;
     private Map<T, U> map;
     private Map<T, U> oldValues;
+
+    private Connection con;
+
+    private boolean initialized = false;
 
     public TransactionMap(Map<T, U> mapRef, MapDatabaseDriver<T, U> driver)
     {
@@ -27,15 +33,28 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
             dbDriver = driver;
         }
 
-
         oldValues = new HashMap<>();
+    }
+
+    @Override
+    public void initialized()
+    {
+        initialized = true;
     }
 
     @Override
     public void setConnection(TransactionMgr transMgr) throws ImplementationError
     {
-        transMgr.register(this);
-        dbDriver.setConnection(transMgr.dbCon);
+        if (transMgr != null)
+        {
+            transMgr.register(this);
+            con = transMgr.dbCon;
+        }
+        else
+        {
+            con = null;
+        }
+
     }
 
     @Override
@@ -102,37 +121,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     public U put(T key, U value)
     {
         U oldValue = map.put(key, value);
-
-        cache(key, oldValue);
-
-        if (oldValue == null)
-        {
-            try
-            {
-                dbDriver.insert(key, value);
-            }
-            catch (SQLException sqlExc)
-            {
-                throw new DrbdSqlRuntimeException(
-                    "Inserting to the database from a TransactionMap caused exception",
-                    sqlExc
-                );
-            }
-        }
-        else
-        {
-            try
-            {
-                dbDriver.update(key, value);
-            }
-            catch (SQLException sqlExc)
-            {
-                throw new DrbdSqlRuntimeException(
-                    "Deleting from the database from a TransactionMap caused exception",
-                    sqlExc
-                );
-            }
-        }
+        cache(key, value, oldValue);
         return oldValue;
     }
 
@@ -141,11 +130,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     public U remove(Object key)
     {
         U oldValue = map.remove(key);
-
-        if (oldValue != null)
-        {
-            cache((T) key, oldValue);
-        }
+        cache((T) key, null, oldValue);
         return oldValue;
     }
 
@@ -163,7 +148,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     {
         for (Entry<T, U> entry : map.entrySet())
         {
-            cache(entry.getKey(), entry.getValue());
+            cache(entry.getKey(), null, entry.getValue());
         }
         map.clear();
     }
@@ -186,11 +171,64 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
         return Collections.unmodifiableSet(map.entrySet());
     }
 
-    private void cache(T key, U oldValue)
+
+    private void cache(T key, U value, U oldValue)
     {
-        if (!oldValues.containsKey(key))
+        if (initialized && !Objects.equals(value, oldValue))
         {
-            oldValues.put(key, oldValue);
+            if (!oldValues.containsKey(key))
+            {
+                oldValues.put(key, oldValue);
+            }
+
+            if (con != null)
+            {
+                if (oldValue == null)
+                {
+                    try
+                    {
+                        dbDriver.insert(con, key, value);
+                    }
+                    catch (SQLException sqlExc)
+                    {
+                        throw new DrbdSqlRuntimeException(
+                            "Inserting to the database from a TransactionMap caused exception",
+                            sqlExc
+                        );
+                    }
+                }
+                else
+                {
+                    if (value == null)
+                    {
+                        try
+                        {
+                            dbDriver.delete(con, key, oldValue);
+                        }
+                        catch (SQLException sqlExc)
+                        {
+                            throw new DrbdSqlRuntimeException(
+                                "Deleting from the database from a TransactionMap caused exception",
+                                sqlExc
+                            );
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            dbDriver.update(con, key, value);
+                        }
+                        catch (SQLException sqlExc)
+                        {
+                            throw new DrbdSqlRuntimeException(
+                                "Updating the database from a TransactionMap caused exception",
+                                sqlExc
+                            );
+                        }
+                    }
+                }
+            }
         }
     }
 }

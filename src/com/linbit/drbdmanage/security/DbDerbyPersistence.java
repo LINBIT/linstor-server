@@ -35,6 +35,8 @@ import static com.linbit.drbdmanage.security.SecurityDbFields.CONF_VALUE;
 
 import static com.linbit.drbdmanage.security.SecurityDbFields.KEY_SEC_LEVEL;
 import java.sql.Statement;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  *
@@ -42,6 +44,8 @@ import java.sql.Statement;
  */
 public class DbDerbyPersistence implements DbAccessor
 {
+    private final Map<String, ObjectProtectionDatabaseDriver> driverCache = new WeakHashMap<>();
+
     private static final String SLCT_SIGNIN_ENTRY =
         "SELECT " +
         TBL_IDENTITIES + "." + IDENTITY_NAME + ", " +
@@ -152,18 +156,6 @@ public class DbDerbyPersistence implements DbAccessor
         return dbQuery(dbConn, SLCT_TE_RULES);
     }
 
-//    @Override
-//    public ResultSet loadObjectProtection(Connection dbConn, String objectPath) throws SQLException
-//    {
-//        return dbQuery(dbConn, SLCT_OBJ_PROT, new String[] { objectPath });
-//    }
-//
-//    @Override
-//    public ResultSet loadAclEntries(Connection dbConn, String objectPath) throws SQLException
-//    {
-//        return dbQuery(dbConn, SLCT_ACL_ENTRIES, new String[] { objectPath });
-//    }
-
     @Override
     public ResultSet loadSecurityLevel(Connection dbConn) throws SQLException
     {
@@ -173,7 +165,13 @@ public class DbDerbyPersistence implements DbAccessor
     @Override
     public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objectPath)
     {
-        return new ObjectProtectionDerbyDriver(dbCtx, objectPath);
+        ObjectProtectionDatabaseDriver driver = driverCache.get(objectPath);
+        if (driver == null)
+        {
+            driver = new ObjectProtectionDerbyDriver(dbCtx, objectPath);
+            driverCache.put(objectPath, driver);
+        }
+        return driver;
     }
 
     private ResultSet dbQuery(Connection dbConn, String sqlQuery) throws SQLException

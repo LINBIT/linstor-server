@@ -1,12 +1,18 @@
 package com.linbit;
 
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Objects;
 
 public class TransactionSimpleObject<T> implements TransactionObject
 {
+    private boolean initialized = false;
+
     private T object;
     private T cachedObject;
     private ObjectDatabaseDriver<T> dbDriver;
+
+    private Connection con;
 
     public TransactionSimpleObject(T obj, ObjectDatabaseDriver<T> driver)
     {
@@ -24,20 +30,30 @@ public class TransactionSimpleObject<T> implements TransactionObject
 
     public void set(T obj) throws SQLException
     {
-        if (obj == null)
+        if (initialized)
         {
-            dbDriver.delete(object);
+            if (con != null && !Objects.equals(obj, cachedObject))
+            {
+                if (obj == null)
+                {
+                    dbDriver.delete(con, object);
+                }
+                else
+                {
+                    if (object == null)
+                    {
+                        dbDriver.insert(con, obj);
+                    }
+                    else
+                    {
+                        dbDriver.update(con, obj);
+                    }
+                }
+            }
         }
         else
         {
-            if (object == null)
-            {
-                dbDriver.insert(obj);
-            }
-            else
-            {
-                dbDriver.update(obj);
-            }
+            cachedObject = obj;
         }
         object = obj;
     }
@@ -48,10 +64,23 @@ public class TransactionSimpleObject<T> implements TransactionObject
     }
 
     @Override
+    public void initialized()
+    {
+        initialized = true;
+    }
+
+    @Override
     public void setConnection(TransactionMgr transMgr) throws ImplementationError
     {
-        transMgr.register(this);
-        dbDriver.setConnection(transMgr.dbCon);
+        if (transMgr != null)
+        {
+            transMgr.register(this);
+            con = transMgr.dbCon;
+        }
+        else
+        {
+            con = null;
+        }
     }
 
     @Override

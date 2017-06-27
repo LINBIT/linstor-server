@@ -13,7 +13,6 @@ import java.util.Map.Entry;
 
 import org.junit.Before;
 
-import com.linbit.drbdmanage.dbdrivers.derby.PropsConDerbyDriver;
 import com.linbit.drbdmanage.security.DerbyBase;
 
 public class DerbyPropsConBase extends DerbyBase

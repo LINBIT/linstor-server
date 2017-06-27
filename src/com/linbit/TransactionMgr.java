@@ -58,11 +58,11 @@ public class TransactionMgr
 
     public void rollback() throws SQLException
     {
-        dbCon.rollback();
         for (TransactionObject transObj : transObjects)
         {
             transObj.rollback();
         }
+        dbCon.rollback();
     }
 
     public void clearTransactionObjects()

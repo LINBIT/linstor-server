@@ -1,4 +1,4 @@
-package com.linbit.drbdmanage.dbdrivers.derby;
+package com.linbit.drbdmanage.propscon;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

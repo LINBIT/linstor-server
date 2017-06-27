@@ -2,12 +2,14 @@ package com.linbit.drbdmanage;
 
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.ImplementationError;
 import com.linbit.SystemService;
@@ -560,9 +562,9 @@ public abstract class DrbdManage
         return persistenceDbDriver.getPropsDatabaseDriver(instanceName);
     }
 
-    public static NodeDatabaseDriver getNodeDatabaseDriver(NodeName nameRef)
+    public static NodeDataDatabaseDriver getNodeDataDatabaseDriver()
     {
-        return persistenceDbDriver.getNodeDatabaseDriver(nameRef.value);
+        return persistenceDbDriver.getNodeDatabaseDriver();
     }
 
     public static ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objProtPath)
@@ -570,23 +572,38 @@ public abstract class DrbdManage
         return securityDbDriver.getObjectProtectionDatabaseDriver(objProtPath);
     }
 
-    public static ResourceDatabaseDriver getResourceDatabaseDriver(Resource res)
+    public static ResourceDataDatabaseDriver getResourceDataDatabaseDriver(ResourceData res)
     {
-        return persistenceDbDriver.getResourceDatabaseDriver(res);
+        return persistenceDbDriver.getResourceDataDatabaseDriver(res);
     }
 
-    public static ResourceDefinitionDatabaseDriver getResourceDefinitionDatabaseDriver(ResourceDefinition resDfn)
+    public static ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName)
     {
-        return persistenceDbDriver.getResourceDefinitionDatabaseDriver(resDfn);
+        return persistenceDbDriver.getResourceDefinitionDataDatabaseDriver(resName);
     }
 
-    public static VolumeDatabaseDriver getVolumeDatabaseDriver(Volume volume)
+    public static VolumeDataDatabaseDriver getVolumeDataDatabaseDriver()
     {
-        return persistenceDbDriver.getVolumeDatabaseDriver(volume);
+        return persistenceDbDriver.getVolumeDataDatabaseDriver();
     }
 
-    public static VolumeDefinitionDatabaseDriver getVolumeDefinitionDatabaseDriver(VolumeDefinition volumeDefinition)
+    public static VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(VolumeDefinitionData volumeDefinition)
     {
-        return persistenceDbDriver.getVolumeDefinitionDatabaseDriver(volumeDefinition);
+        return persistenceDbDriver.getVolumeDefinitionDataDatabaseDriver(volumeDefinition);
+    }
+
+    public static StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef)
+    {
+        return persistenceDbDriver.getStorPoolDataDatabaseDriver(nodeRef, storPoolDfnRef);
+    }
+
+    public static StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDriver(StorPoolName name)
+    {
+        return persistenceDbDriver.getStorPoolDefinitionDataDatabaseDriver(name);
+    }
+
+    public static NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node node, NetInterfaceName name)
+    {
+        return persistenceDbDriver.getNetInterfaceDataDatabaseDriver(node, name);
     }
 }

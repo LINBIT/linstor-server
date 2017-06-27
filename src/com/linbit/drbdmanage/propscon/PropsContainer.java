@@ -26,6 +26,8 @@ import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
+import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 
 /**
@@ -41,6 +43,11 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
  */
 public class PropsContainer implements Props
 {
+    private static final String PATH_SEPARATOR      = "/";
+    private static final String PATH_STOR_POOL_CONF = "/storPoolConf/";
+    private static final String PATH_NODES = "/nodes/";
+
+
     public static final int PATH_MAX_LENGTH = 256;
 
     private PropsContainer rootContainer;
@@ -61,6 +68,8 @@ public class PropsContainer implements Props
     protected PropsConDatabaseDriver dbDriver;
     protected Connection dbCon;
     private Map<String, String> cachedPropMap;
+
+    private boolean initialized = false;
 
     public static PropsContainer createRootContainer() throws SQLException
     {
@@ -102,7 +111,7 @@ public class PropsContainer implements Props
             String value = entry.getValue();
 
             PropsContainer targetContainer = con;
-            int idx = key.lastIndexOf("/");
+            int idx = key.lastIndexOf(PATH_SEPARATOR);
             if (idx != -1)
             {
                 targetContainer = con.ensureNamespaceExists(key.substring(0, idx));
@@ -123,7 +132,7 @@ public class PropsContainer implements Props
         {
             // Create root PropsContainer
 
-            containerKey = "/";
+            containerKey = PATH_SEPARATOR;
 
             rootContainer = this;
             parentContainer = null;
@@ -591,11 +600,11 @@ public class PropsContainer implements Props
         }
 
         StringBuilder sanitizedPath = new StringBuilder();
-        StringTokenizer tokens = new StringTokenizer(path, "/");
+        StringTokenizer tokens = new StringTokenizer(path, PATH_SEPARATOR);
 
-        if (path.startsWith("/") && !forceRelative)
+        if (path.startsWith(PATH_SEPARATOR) && !forceRelative)
         {
-            sanitizedPath.append("/");
+            sanitizedPath.append(PATH_SEPARATOR);
         }
         boolean empty = true;
         while (tokens.hasMoreTokens())
@@ -605,7 +614,7 @@ public class PropsContainer implements Props
             {
                 if (!empty)
                 {
-                    sanitizedPath.append("/");
+                    sanitizedPath.append(PATH_SEPARATOR);
                 }
                 sanitizedPath.append(item);
                 empty = false;
@@ -630,13 +639,13 @@ public class PropsContainer implements Props
             // If a namespace was specified, the path is always relative to the namespace
             safePath = sanitizePath(path, true);
 
-            if (safeNamespace.length() == 0 || safeNamespace.endsWith("/"))
+            if (safeNamespace.length() == 0 || safeNamespace.endsWith(PATH_SEPARATOR))
             {
                 safePath = safeNamespace + safePath;
             }
             else
             {
-                safePath = safeNamespace + "/" + safePath;
+                safePath = safeNamespace + PATH_SEPARATOR + safePath;
             }
         }
         else
@@ -705,11 +714,11 @@ public class PropsContainer implements Props
         PropsContainer con = this;
         if (namespace != null)
         {
-            if (namespace.startsWith("/"))
+            if (namespace.startsWith(PATH_SEPARATOR))
             {
                 con = getRoot();
             }
-            StringTokenizer tokens = new StringTokenizer(namespace, "/");
+            StringTokenizer tokens = new StringTokenizer(namespace, PATH_SEPARATOR);
             while (tokens.hasMoreTokens() && con != null)
             {
                 con = con.containerMap.get(tokens.nextToken());
@@ -744,11 +753,11 @@ public class PropsContainer implements Props
         {
             if (namespace != null)
             {
-                if (namespace.startsWith("/"))
+                if (namespace.startsWith(PATH_SEPARATOR))
                 {
                     con = getRoot();
                 }
-                StringTokenizer tokens = new StringTokenizer(namespace, "/");
+                StringTokenizer tokens = new StringTokenizer(namespace, PATH_SEPARATOR);
                 while (tokens.hasMoreTokens())
                 {
                     String key = tokens.nextToken();
@@ -788,7 +797,7 @@ public class PropsContainer implements Props
         {
             pathComponents = parentContainer.getPathComponents();
             pathComponents.append(containerKey);
-            pathComponents.append("/");
+            pathComponents.append(PATH_SEPARATOR);
         }
         return pathComponents;
     }
@@ -818,7 +827,7 @@ public class PropsContainer implements Props
 
     private static void checkKey(String key) throws InvalidKeyException
     {
-        if (key.contains("/"))
+        if (key.contains(PATH_SEPARATOR))
         {
             throw new InvalidKeyException();
         }
@@ -834,7 +843,7 @@ public class PropsContainer implements Props
         {
             for (PropsContainer subCon : containerMap.values())
             {
-                subCon.collectAllKeys(prefix + subCon.containerKey + "/", collector, recursive);
+                subCon.collectAllKeys(prefix + subCon.containerKey + PATH_SEPARATOR, collector, recursive);
             }
         }
     }
@@ -849,7 +858,7 @@ public class PropsContainer implements Props
         {
             for (PropsContainer subCon : containerMap.values())
             {
-                subCon.collectAllEntries(prefix + subCon.containerKey + "/", collector, recursive);
+                subCon.collectAllEntries(prefix + subCon.containerKey + PATH_SEPARATOR, collector, recursive);
             }
         }
     }
@@ -885,10 +894,23 @@ public class PropsContainer implements Props
     }
 
     @Override
+    public void initialized()
+    {
+        initialized = true;
+    }
+
+    @Override
     public void setConnection(TransactionMgr transMgr)
     {
-        transMgr.register(rootContainer);
-        dbCon = transMgr.dbCon;
+        if (transMgr != null)
+        {
+            transMgr.register(rootContainer);
+            dbCon = transMgr.dbCon;
+        }
+        else
+        {
+            dbCon = null;
+        }
     }
 
     @Override
@@ -899,9 +921,12 @@ public class PropsContainer implements Props
 
     private void cache(String key, String value)
     {
-        if (!rootContainer.cachedPropMap.containsKey(key))
+        if (initialized)
         {
-            rootContainer.cachedPropMap.put(key, value);
+            if (!rootContainer.cachedPropMap.containsKey(key))
+            {
+                rootContainer.cachedPropMap.put(key, value);
+            }
         }
     }
 
@@ -926,7 +951,7 @@ public class PropsContainer implements Props
                 // as those will trigger again a database update and a caching update.
                 // Thus, we just use raw propMap to bypass the database and cachings
                 PropsContainer targetContainer = root;
-                int idx = key.lastIndexOf("/");
+                int idx = key.lastIndexOf(PATH_SEPARATOR);
                 if (idx != -1)
                 {
                     targetContainer = root.ensureNamespaceExists(key.substring(0, idx));
@@ -958,57 +983,66 @@ public class PropsContainer implements Props
 
     private void dbPersist(String key, String value, String oldValue) throws SQLException
     {
-        cache(key, oldValue);
-        if (dbDriver != null)
+        if (initialized)
         {
-            try
+            cache(key, oldValue);
+            if (dbDriver != null)
             {
-                dbDriver.persist(dbCon, key, value);
-            }
-            catch (SQLException sqlExc)
-            {
-                rollback();
-                throw sqlExc;
+                try
+                {
+                    dbDriver.persist(dbCon, key, value);
+                }
+                catch (SQLException sqlExc)
+                {
+                    rollback();
+                    throw sqlExc;
+                }
             }
         }
     }
 
     private void dbRemove(String key, String oldValue) throws SQLException
     {
-        cache(key, oldValue);
-        if (dbDriver != null)
+        if (initialized)
         {
-            try
+            cache(key, oldValue);
+            if (dbDriver != null)
             {
-                dbDriver.remove(dbCon, key);
-            }
-            catch (SQLException sqlExc)
-            {
-                rollback();
-                throw sqlExc;
+                try
+                {
+                    dbDriver.remove(dbCon, key);
+                }
+                catch (SQLException sqlExc)
+                {
+                    rollback();
+                    throw sqlExc;
+                }
             }
         }
     }
 
     private void dbRemoveAll() throws SQLException
     {
-        Map<String, String> map = rootContainer.cachedPropMap;
-        Set<Entry<String,String>> entrySet = rootContainer.entrySet();
-        for (Entry<String, String> entry : entrySet)
+        if (initialized)
         {
-            cache(entry.getKey(), entry.getValue());
-        }
-
-        if (dbDriver != null)
-        {
-            try
+            Map<String, String> map = rootContainer.cachedPropMap;
+            Set<Entry<String,String>> entrySet = rootContainer.entrySet();
+            for (Entry<String, String> entry : entrySet)
             {
-                dbDriver.removeAll(dbCon);
+                cache(entry.getKey(), entry.getValue());
             }
-            catch (SQLException sqlExc)
+
+            if (dbDriver != null)
             {
-                rollback();
-                throw sqlExc;
+                try
+                {
+                    dbDriver.removeAll(dbCon);
+                }
+                catch (SQLException sqlExc)
+                {
+                    rollback();
+                    throw sqlExc;
+                }
             }
         }
     }
@@ -1016,10 +1050,12 @@ public class PropsContainer implements Props
     static class PropsConMap implements Map<String, String>
     {
         private PropsContainer container;
+        protected String instanceName;
 
         PropsConMap(PropsContainer con)
         {
             container = con;
+            instanceName = con.dbDriver.getInstanceName();
         }
 
         @Override
@@ -1140,7 +1176,7 @@ public class PropsContainer implements Props
             catch (SQLException sqlExc)
             {
                 throw new DrbdSqlRuntimeException(
-                    "Failed to add or update entries in the properties container " + container.dbDriver.getInstanceName(),
+                    "Failed to add or update entries in the properties container " + instanceName,
                     sqlExc
                 );
             }
@@ -1186,8 +1222,7 @@ public class PropsContainer implements Props
             catch (SQLException sqlExc)
             {
                 throw new DrbdSqlRuntimeException(
-                    "Failed to remove entries from the properties container " +
-                        container.dbDriver.getInstanceName(),
+                    "Failed to remove entries from the properties container " + instanceName,
                     sqlExc
                 );
             }
@@ -1225,8 +1260,7 @@ public class PropsContainer implements Props
             catch (SQLException sqlExc)
             {
                 throw new DrbdSqlRuntimeException(
-                    "Failed to add or update entries in the properties container " +
-                        container.dbDriver.getInstanceName(),
+                    "Failed to add or update entries in the properties container " + instanceName,
                     sqlExc
                 );
             }
@@ -1242,8 +1276,7 @@ public class PropsContainer implements Props
             catch (SQLException sqlExc)
             {
                 throw new DrbdSqlRuntimeException(
-                    "Failed to clear the properties container " +
-                        container.dbDriver.getInstanceName(),
+                    "Failed to clear the properties container " + instanceName,
                     sqlExc
                 );
             }
@@ -1289,10 +1322,12 @@ public class PropsContainer implements Props
     static abstract class BaseSet<T> implements Set<T>
     {
         PropsContainer container;
+        String instanceName;
 
         BaseSet(PropsContainer con)
         {
             container = con;
+            instanceName = con.dbDriver.getInstanceName();
         }
 
         @Override
@@ -1318,7 +1353,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to clear the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
             }
@@ -1420,7 +1455,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to add or update entries in the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
             }
@@ -1454,7 +1489,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to remove entries from the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
             }
@@ -1508,7 +1543,7 @@ public class PropsContainer implements Props
                 {
                     throw new DrbdSqlRuntimeException(
                         "Failed to add or update entries in the properties container " +
-                            container.dbDriver.getInstanceName(),
+                            instanceName,
                         sqlExc
                     );
                 }
@@ -1538,7 +1573,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to remove entries from the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
             }
@@ -1567,7 +1602,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to remove entries from the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
             }
@@ -1657,7 +1692,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to add or update entries in the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
             }
@@ -1706,7 +1741,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to add or update entries in the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
            }
@@ -1736,7 +1771,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to remove entries from the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
             }
@@ -1766,7 +1801,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to remove entries from the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
             }
@@ -1792,10 +1827,12 @@ public class PropsContainer implements Props
     static class ValuesCollection implements Collection<String>
     {
         private PropsContainer container;
+        private String instanceName;
 
         ValuesCollection(PropsContainer con)
         {
             container = con;
+            instanceName = con.dbDriver.getInstanceName();
         }
 
         @Override
@@ -1892,7 +1929,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to remove entries from the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
             }
@@ -1921,7 +1958,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to remove entries from the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc
                 );
             }
@@ -1940,7 +1977,7 @@ public class PropsContainer implements Props
                 throw new DrbdSqlRuntimeException(
                     "SQL exception",
                     "Failed to clear the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        instanceName,
                     sqlExc.getLocalizedMessage(),
                     null,
                     null,
@@ -2519,5 +2556,16 @@ public class PropsContainer implements Props
         {
             System.err.println(ioExc.getMessage());
         }
+    }
+
+    public static String buildPath(StorPoolName storPoolName, NodeName nodeName)
+    {
+        return PATH_STOR_POOL_CONF + nodeName.value +
+            PATH_SEPARATOR + storPoolName.value;
+    }
+
+    public static String buildPath(NodeName nodeName)
+    {
+        return PATH_NODES + nodeName.value;
     }
 }

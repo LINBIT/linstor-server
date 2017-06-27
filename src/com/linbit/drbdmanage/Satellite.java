@@ -147,10 +147,11 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         shutdownFinished = false;
         try
         {
-            shutdownProt = ObjectProtection.create(
-                ObjectProtection.buildPath(this, "shutdown"),
+            shutdownProt = ObjectProtection.getInstance(
                 sysCtx,
-                null
+                null,
+                ObjectProtection.buildPath(this, "shutdown"),
+                true
             );
         }
         catch (SQLException sqlExc)
@@ -159,6 +160,14 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             throw new ImplementationError(
                 "Creating an ObjectProtection without TransactionManager threw an SQLException",
                 sqlExc
+            );
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            // cannot happen as the objProt cannot be loaded
+            throw new ImplementationError(
+                "ObjectProtection instance which should not even exist rejected system's access context. Panic.",
+                accessDeniedExc
             );
         }
     }

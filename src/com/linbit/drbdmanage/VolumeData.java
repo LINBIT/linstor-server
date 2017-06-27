@@ -1,10 +1,12 @@
 package com.linbit.drbdmanage;
 
-import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
+
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.UUID;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -17,7 +19,7 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class VolumeData implements Volume
+public class VolumeData extends BaseTransactionObject implements Volume
 {
     // Object identifier
     private UUID objId;
@@ -37,25 +39,63 @@ public class VolumeData implements Volume
     // State flags
     private StateFlags<VlmFlags> flags;
 
-    private VolumeDatabaseDriver dbDriver;
+    private VolumeDataDatabaseDriver dbDriver;
 
-    private VolumeData(Resource resRef, VolumeDefinition volDfn)
+    VolumeData(Resource resRef, VolumeDefinition volDfn)
     {
         objId = UUID.randomUUID();
         resourceRef = resRef;
         resourceDfn = resRef.getDefinition();
         volumeDfn = volDfn;
 
-        dbDriver = DrbdManage.getVolumeDatabaseDriver(this);
+        dbDriver = DrbdManage.getVolumeDataDatabaseDriver();
 
         flags = new VlmFlagsImpl(
             resRef.getObjProt(),
             dbDriver.getStateFlagsPersistence()
         );
+
+        transObjs = Arrays.asList(
+            resourceRef,
+            volumeDfn,
+            volumeProps,
+            flags
+        );
     }
 
-    // TODO: create static VolumeData.create(...)
-    // TODO: create static VolumeData.load(...)
+    public static VolumeData getInstance(
+        Resource resRef,
+        VolumeDefinition volDfn,
+        TransactionMgr transMgr,
+        boolean createIfNotExists) throws SQLException
+    {
+        VolumeData vol = null;
+
+        VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver();
+        boolean created = false;
+        if (transMgr != null)
+        {
+            vol = driver.load(transMgr.dbCon, resRef, volDfn);
+        }
+
+        if (vol == null && createIfNotExists)
+        {
+            vol = new VolumeData(resRef, volDfn);
+            created = true;
+        }
+
+        if (vol != null)
+        {
+            vol.initialized();
+        }
+        if (created && transMgr != null)
+        {
+            driver.create(transMgr.dbCon, vol);
+        }
+
+        return vol;
+    }
+
 
     @Override
     public UUID getUuid()
@@ -100,40 +140,5 @@ public class VolumeData implements Volume
         {
             super(objProtRef, StateFlagsBits.getMask(VlmFlags.ALL_FLAGS), persistenceRef);
         }
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgr) throws ImplementationError
-    {
-        transMgr.register(this);
-        dbDriver.setConnection(transMgr.dbCon);
-    }
-
-    @Override
-    public void commit()
-    {
-        resourceRef.commit();
-        volumeDfn.commit();
-        volumeProps.commit();
-        flags.commit();
-    }
-
-    @Override
-    public void rollback()
-    {
-        resourceRef.rollback();
-        volumeDfn.rollback();
-        volumeProps.rollback();
-        flags.rollback();
-    }
-
-    @Override
-    public boolean isDirty()
-    {
-        return resourceRef.isDirty() ||
-            resourceDfn.isDirty() ||
-            volumeDfn.isDirty() ||
-            volumeProps.isDirty() ||
-            flags.isDirty();
     }
 }

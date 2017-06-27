@@ -1,10 +1,9 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -14,6 +13,7 @@ import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -26,7 +26,7 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class ResourceDefinitionData implements ResourceDefinition
+public class ResourceDefinitionData extends BaseTransactionObject implements ResourceDefinition
 {
     // Object identifier
     private UUID objId;
@@ -52,21 +52,21 @@ public class ResourceDefinitionData implements ResourceDefinition
     // Properties container for this resource definition
     private Props rscDfnProps;
 
-    private ResourceDefinitionDatabaseDriver dbDriver;
+    private ResourceDefinitionDataDatabaseDriver dbDriver;
 
-    private ResourceDefinitionData(
+    ResourceDefinitionData(
         AccessContext accCtx,
         ResourceName resName,
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceName.class, resName);
         objId = UUID.randomUUID();
         resourceName = resName;
 
-        dbDriver = DrbdManage.getResourceDefinitionDatabaseDriver(this);
+        dbDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(resName);
 
         connectionMap = new TransactionMap<>(
             new TreeMap<NodeName, Map<Integer, ConnectionDefinition>>(),
@@ -81,24 +81,25 @@ public class ResourceDefinitionData implements ResourceDefinition
             dbDriver.getResourceMapDriver()
         );
         rscDfnProps = SerialPropsContainer.createRootContainer(srlGen);
-        objProt = ObjectProtection.load(
+        objProt = ObjectProtection.getInstance(
+            accCtx,
             transMgr,
             ObjectProtection.buildPath(this),
-            true,
-            accCtx
+            true
         );
         flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence());
+
+        transObjs = Arrays.asList(
+            connectionMap,
+            volumeMap,
+            resourceMap,
+            flags,
+            objProt,
+            rscDfnProps
+        );
     }
 
-    public static ResourceDefinitionData create(
-        AccessContext accCtx,
-        ResourceName resName,
-        SerialGenerator srlGen
-    )
-        throws SQLException
-    {
-        return create(accCtx, resName, srlGen, null);
-    }
+    // TODO: gh - rewrite create and load to getInstance
 
     public static ResourceDefinitionData create(
         AccessContext accCtx,
@@ -106,20 +107,38 @@ public class ResourceDefinitionData implements ResourceDefinition
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
-        return new ResourceDefinitionData(accCtx, resName, srlGen, transMgr);
+        ResourceDefinitionData rdd = new ResourceDefinitionData(accCtx, resName, srlGen, transMgr);
+        rdd.dbDriver.create(transMgr.dbCon);
+        return rdd;
+
     }
 
     public static ResourceDefinitionData load(
         AccessContext accCtx,
         ResourceName resName,
-        TransactionMgr transMgr
+        SerialGenerator srlGen,
+        TransactionMgr transMgr,
+        boolean createIfNotExists
     )
-
+        throws AccessDeniedException, SQLException
     {
-        // TODO: implement ResourceDefinitionData.load(...)
-        return null;
+        ResourceDefinitionData tmp = new ResourceDefinitionData(accCtx, resName, srlGen, transMgr);
+        ResourceDefinitionData ret = null;
+        if (transMgr != null && tmp.dbDriver.exists(transMgr.dbCon))
+        {
+            ret = tmp;
+        }
+        else
+        {
+            if (createIfNotExists)
+            {
+                tmp.dbDriver.create(transMgr.dbCon);
+                ret = tmp;
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -213,42 +232,5 @@ public class ResourceDefinitionData implements ResourceDefinition
         {
             super(objProtRef, StateFlagsBits.getMask(RscDfnFlags.ALL_FLAGS), persistenceRef);
         }
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgr) throws ImplementationError
-    {
-        transMgr.register(this);
-        dbDriver.setConnection(transMgr.dbCon);
-    }
-
-    @Override
-    public void commit()
-    {
-        connectionMap.commit();
-        volumeMap.commit();
-        resourceMap.commit();
-        flags.commit();
-        objProt.commit();
-    }
-
-    @Override
-    public void rollback()
-    {
-        connectionMap.rollback();
-        volumeMap.rollback();
-        resourceMap.rollback();
-        flags.rollback();
-        objProt.rollback();
-    }
-
-    @Override
-    public boolean isDirty()
-    {
-        return connectionMap.isDirty() ||
-            volumeMap.isDirty() ||
-            resourceMap.isDirty() ||
-            flags.isDirty() ||
-            objProt.isDirty();
     }
 }

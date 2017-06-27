@@ -272,24 +272,16 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
     private class IdentityDerbyDriver implements ObjectDatabaseDriver<Identity>
     {
-        private Connection dbCon;
-
         @Override
-        public void setConnection(Connection con)
+        public void insert(Connection con, Identity element) throws SQLException
         {
-            dbCon = con;
+            update(con, element);
         }
 
         @Override
-        public void insert(Identity element) throws SQLException
+        public void update(Connection con, Identity element) throws SQLException
         {
-            update(element);
-        }
-
-        @Override
-        public void update(Identity element) throws SQLException
-        {
-            PreparedStatement stmt = dbCon.prepareStatement(OP_UPDATE_IDENTITY);
+            PreparedStatement stmt = con.prepareStatement(OP_UPDATE_IDENTITY);
 
             stmt.setString(1, element.name.value);
             stmt.setString(2, objPath);
@@ -299,7 +291,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         }
 
         @Override
-        public void delete(Identity element) throws SQLException
+        public void delete(Connection con, Identity element) throws SQLException
         {
             throw new DrbdSqlRuntimeException("ObjectProtection's identity must not be set to null");
         }
@@ -307,24 +299,16 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
     private class RoleDerbyDriver implements ObjectDatabaseDriver<Role>
     {
-        private Connection dbCon;
-
         @Override
-        public void setConnection(Connection con)
+        public void insert(Connection con, Role element) throws SQLException
         {
-            dbCon = con;
+            update(con, element);
         }
 
         @Override
-        public void insert(Role element) throws SQLException
+        public void update(Connection con, Role element) throws SQLException
         {
-            update(element);
-        }
-
-        @Override
-        public void update(Role element) throws SQLException
-        {
-            PreparedStatement stmt = dbCon.prepareStatement(OP_UPDATE_ROLE);
+            PreparedStatement stmt = con.prepareStatement(OP_UPDATE_ROLE);
 
             stmt.setString(1, element.name.value);
             stmt.setString(2, objPath);
@@ -334,7 +318,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         }
 
         @Override
-        public void delete(Role element) throws SQLException
+        public void delete(Connection con, Role element) throws SQLException
         {
             throw new DrbdSqlRuntimeException("ObjectProtection's identity must not be set to null");
         }
@@ -342,24 +326,16 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
     private class SecurityTypeDerbyDriver implements ObjectDatabaseDriver<SecurityType>
     {
-        private Connection dbCon;
-
         @Override
-        public void setConnection(Connection con)
+        public void insert(Connection con, SecurityType element) throws SQLException
         {
-            dbCon = con;
+            update(con, element);
         }
 
         @Override
-        public void insert(SecurityType element) throws SQLException
+        public void update(Connection con, SecurityType element) throws SQLException
         {
-            update(element);
-        }
-
-        @Override
-        public void update(SecurityType element) throws SQLException
-        {
-            PreparedStatement stmt = dbCon.prepareStatement(OP_UPDATE_SEC_TYPE);
+            PreparedStatement stmt = con.prepareStatement(OP_UPDATE_SEC_TYPE);
 
             stmt.setString(1, element.name.value);
             stmt.setString(2, objPath);
@@ -369,7 +345,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         }
 
         @Override
-        public void delete(SecurityType element) throws SQLException
+        public void delete(Connection con, SecurityType element) throws SQLException
         {
             throw new DrbdSqlRuntimeException("ObjectProtection's identity must not be set to null");
         }

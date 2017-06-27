@@ -3,17 +3,24 @@ package com.linbit.drbdmanage.dbdrivers;
 import java.sql.SQLException;
 
 import com.linbit.ServiceName;
+import com.linbit.drbdmanage.NetInterfaceDataDatabaseDriver;
+import com.linbit.drbdmanage.NetInterfaceName;
+import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeData;
-import com.linbit.drbdmanage.Resource;
-import com.linbit.drbdmanage.ResourceDefinition;
-import com.linbit.drbdmanage.Volume;
-import com.linbit.drbdmanage.VolumeDefinition;
-import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.drbdmanage.ResourceData;
+import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.StorPoolDefinition;
+import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.VolumeData;
+import com.linbit.drbdmanage.VolumeDefinitionData;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 
 /**
@@ -42,25 +49,41 @@ public interface DatabaseDriver
     /**
      * Returns the database driver specific implementation for {@link NodeData}-IO
      */
-    NodeDatabaseDriver getNodeDatabaseDriver(String nodeName);
+    NodeDataDatabaseDriver getNodeDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link Resource}-IO
+     * Returns the database driver specific implementation for {@link ResourceData}-IO
      */
-    ResourceDatabaseDriver getResourceDatabaseDriver(Resource res);
+    ResourceDataDatabaseDriver getResourceDataDatabaseDriver(ResourceData res);
 
     /**
-     * Returns the database driver specific implementation for {@link ResourceDefinition}-IO
+     * Returns the database driver specific implementation for {@link ResourceDefinitionData}-IO
      */
-    ResourceDefinitionDatabaseDriver getResourceDefinitionDatabaseDriver(ResourceDefinition resDfn);
+    ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName);
 
     /**
-     * Returns the database driver specific implementation for {@link Volume}-IO
+     * Returns the database driver specific implementation for {@link VolumeData}-IO
      */
-    VolumeDatabaseDriver getVolumeDatabaseDriver(Volume volume);
+    VolumeDataDatabaseDriver getVolumeDataDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link VolumeDefinition}-IO
+     * Returns the database driver specific implementation for {@link VolumeDefinitionData}-IO
      */
-    VolumeDefinitionDatabaseDriver getVolumeDefinitionDatabaseDriver(VolumeDefinition volumeDefinition);
+    VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(VolumeDefinitionData volumeDefinition);
+
+    /**
+     * Returns the database driver specific implementation for {@link StorPoolDefinitionData}-IO
+     */
+    StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver(StorPoolName name);
+
+    /**
+     * Returns the database driver specific implementation for {@link StorPoolData}-IO
+     */
+    StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef);
+
+    /**
+     * Returns the database driver specific implementation for {@link NetInterfaceDataDatabaseDriver}-IO
+     */
+    NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node node, NetInterfaceName name);
+
 }

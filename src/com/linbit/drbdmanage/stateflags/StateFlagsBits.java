@@ -23,7 +23,9 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     private final long mask;
     private final StateFlagsPersistence persistence;
 
-    private Connection dbConn;
+    private Connection con;
+
+    private boolean initialized = false;
 
     public StateFlagsBits(
         final ObjectProtection objProtRef,
@@ -156,6 +158,12 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     }
 
     @Override
+    public void initialized()
+    {
+        initialized = true;
+    }
+
+    @Override
     public void commit()
     {
         stateFlags = changedStateFlags;
@@ -176,7 +184,15 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     @Override
     public void setConnection(TransactionMgr transMgr) throws ImplementationError
     {
-
+        if (transMgr != null)
+        {
+            transMgr.register(this);
+            con = transMgr.dbCon;
+        }
+        else
+        {
+            con = null;
+        }
     }
 
     @Override
@@ -201,9 +217,16 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     private void setFlags(final long bits) throws SQLException
     {
         changedStateFlags = bits;
-        if (persistence != null)
+        if (initialized)
         {
-            persistence.persist(dbConn, changedStateFlags);
+            if (persistence != null && con != null)
+            {
+                persistence.persist(con, changedStateFlags);
+            }
+        }
+        else
+        {
+            commit();
         }
     }
 }

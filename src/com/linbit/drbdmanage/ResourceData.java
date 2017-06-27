@@ -1,10 +1,9 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -13,6 +12,7 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.StateFlags;
@@ -26,7 +26,7 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class ResourceData implements Resource
+public class ResourceData extends BaseTransactionObject implements Resource
 {
     // Object identifier
     private UUID objId;
@@ -35,7 +35,7 @@ public class ResourceData implements Resource
     private ResourceDefinition resourceDfn;
 
     // List of volumes of this resource
-    private TransactionMap<VolumeNumber, Volume> volumeList;
+    private TransactionMap<VolumeNumber, Volume> volumeMap;
 
     // Reference to the node this resource is assigned to
     private Node assgNode;
@@ -52,9 +52,9 @@ public class ResourceData implements Resource
     // Properties container for this resource
     private Props resourceProps;
 
-    private ResourceDatabaseDriver dbDriver;
+    private ResourceDataDatabaseDriver dbDriver;
 
-    private ResourceData(
+    ResourceData(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
         Node nodeRef,
@@ -62,7 +62,7 @@ public class ResourceData implements Resource
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         resNodeId = nodeIdRef;
         ErrorCheck.ctorNotNull(ResourceData.class, ResourceDefinition.class, resDfnRef);
@@ -71,20 +71,29 @@ public class ResourceData implements Resource
         assgNode = nodeRef;
         objId = UUID.randomUUID();
 
-        dbDriver = DrbdManage.getResourceDatabaseDriver(this);
+        dbDriver = DrbdManage.getResourceDataDatabaseDriver(this);
 
-        volumeList = new TransactionMap<>(
+        volumeMap = new TransactionMap<>(
             new TreeMap<VolumeNumber, Volume>(),
             dbDriver.getVolumeMapDriver()
         );
         resourceProps = SerialPropsContainer.createRootContainer(srlGen);
-        objProt = ObjectProtection.load(
+        objProt = ObjectProtection.getInstance(
+            accCtx,
             transMgr,
             ObjectProtection.buildPath(this),
-            true,
-            accCtx
+            true
         );
         flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence());
+
+        transObjs = Arrays.asList(
+            resourceDfn,
+            volumeMap,
+            assgNode,
+            flags,
+            objProt,
+            resourceProps
+        );
     }
 
     @Override
@@ -115,13 +124,13 @@ public class ResourceData implements Resource
     @Override
     public Volume getVolume(VolumeNumber volNr)
     {
-        return volumeList.get(volNr);
+        return volumeMap.get(volNr);
     }
 
     @Override
     public Iterator<Volume> iterateVolumes()
     {
-        return Collections.unmodifiableCollection(volumeList.values()).iterator();
+        return Collections.unmodifiableCollection(volumeMap.values()).iterator();
     }
 
     @Override
@@ -142,18 +151,7 @@ public class ResourceData implements Resource
         return flags;
     }
 
-    public static Resource create(
-        AccessContext accCtx,
-        ResourceDefinition resDfn,
-        Node node,
-        NodeId nodeId,
-        SerialGenerator srlGen
-    )
-        throws AccessDeniedException, SQLException
-    {
-        return create(accCtx, resDfn, node, nodeId, srlGen, null);
-    }
-
+    // TODO: gh - rewrite create method to getInstance (including load functionality)
     public static Resource create(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
@@ -191,53 +189,11 @@ public class ResourceData implements Resource
         return newRes;
     }
 
-    // TODO: implement ResourceData.load(...)
-
     private static final class RscFlagsImpl extends StateFlagsBits<RscFlags>
     {
         RscFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
             super(objProtRef, StateFlagsBits.getMask(RscFlags.ALL_FLAGS), persistenceRef);
         }
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgr) throws ImplementationError
-    {
-        transMgr.register(this);
-        dbDriver.setConnection(transMgr.dbCon);
-    }
-
-    @Override
-    public void commit()
-    {
-        resourceDfn.commit();
-        volumeList.commit();
-        assgNode.commit();
-        flags.commit();
-        objProt.commit();
-        resourceProps.commit();
-    }
-
-    @Override
-    public void rollback()
-    {
-        resourceDfn.rollback();
-        volumeList.rollback();
-        assgNode.rollback();
-        flags.rollback();
-        objProt.rollback();
-        resourceProps.rollback();
-    }
-
-    @Override
-    public boolean isDirty()
-    {
-        return resourceDfn.isDirty() ||
-            volumeList.isDirty()     ||
-            assgNode.isDirty()       ||
-            flags.isDirty()          ||
-            objProt.isDirty()        ||
-            resourceProps.isDirty();
     }
 }

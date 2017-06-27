@@ -1,7 +1,7 @@
 package com.linbit.drbdmanage;
 
-import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
+import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -9,6 +9,7 @@ import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import java.net.InetAddress;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -16,33 +17,83 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class NetInterfaceData implements NetInterface
+public class NetInterfaceData extends BaseTransactionObject implements NetInterface
 {
+    private UUID niUuid;
     private Node niNode;
     private NetInterfaceName niName;
-    private TransactionSimpleObject<InetAddress> niAddress;
+
     private ObjectProtection objProt;
-    private UUID niUuid;
+    private TransactionSimpleObject<InetAddress> niAddress;
+    private TransactionSimpleObject<NetInterfaceType> niType;
 
-    NetInterfaceData(AccessContext accCtx, Node node, NetInterfaceName name, InetAddress addr) throws SQLException
-    {
-        this(accCtx, node, name, addr, null);
-    }
+    private final NetInterfaceDataDatabaseDriver dbDriver;
 
-    NetInterfaceData(AccessContext accCtx, Node node, NetInterfaceName name, InetAddress addr, TransactionMgr transMgr) throws SQLException
+    NetInterfaceData(
+        AccessContext accCtx,
+        Node node,
+        NetInterfaceName name,
+        InetAddress addr,
+        TransactionMgr transMgr,
+        NetInterfaceType netType
+    )
+        throws SQLException, AccessDeniedException
     {
+        niUuid = UUID.randomUUID();
         niNode = node;
         niName = name;
+        dbDriver = DrbdManage.getNetInterfaceDataDatabaseDriver(node, name);
+
         niAddress = new TransactionSimpleObject<InetAddress>(
             addr,
-            node.getNetInterfaceDriver(name)
+            dbDriver.getNetInterfaceAddressDriver()
         );
-        niUuid = UUID.randomUUID();
-        objProt = ObjectProtection.create(
-            ObjectProtection.buildPath(this),
-            accCtx,
-            transMgr
+        niType = new TransactionSimpleObject<NetInterfaceType>(
+            netType,
+            dbDriver.getNetInterfaceTypeDriver()
         );
+        objProt = ObjectProtection.getInstance(accCtx, transMgr, ObjectProtection.buildPath(this), true);
+
+        transObjs = Arrays.<TransactionObject> asList(
+            niAddress,
+            niType
+        );
+    }
+
+    public static NetInterfaceData getInstance(
+        AccessContext accCtx,
+        Node node,
+        NetInterfaceName name,
+        InetAddress addr,
+        TransactionMgr transMgr,
+        NetInterfaceType netType,
+        boolean createIfNotExists
+    )
+        throws SQLException, AccessDeniedException
+    {
+        NetInterfaceData netData = null;
+        NetInterfaceDataDatabaseDriver driver = DrbdManage.getNetInterfaceDataDatabaseDriver(node, name);
+
+        if (transMgr != null)
+        {
+            netData = driver.load(transMgr.dbCon, accCtx, transMgr);
+        }
+
+        if (netData == null && createIfNotExists)
+        {
+            netData = new NetInterfaceData(accCtx, node, name, addr, transMgr, netType);
+            if (transMgr != null)
+            {
+                driver.create(transMgr.dbCon, netData);
+            }
+        }
+
+        if (netData != null)
+        {
+            netData.initialized();
+        }
+
+        return netData;
     }
 
     @Override
@@ -86,27 +137,18 @@ public class NetInterfaceData implements NetInterface
     }
 
     @Override
-    public void setConnection(TransactionMgr transMgr) throws ImplementationError
+    public NetInterfaceType getNetInterfaceType(AccessContext accCtx)
+        throws AccessDeniedException
     {
-        transMgr.register(this);
-        niAddress.setConnection(transMgr);
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return niType.get();
     }
 
     @Override
-    public void commit()
+    public void setNetInterfaceType(AccessContext accCtx, NetInterfaceType type)
+        throws AccessDeniedException, SQLException
     {
-        niAddress.commit();
-    }
-
-    @Override
-    public void rollback()
-    {
-        niAddress.rollback();
-    }
-
-    @Override
-    public boolean isDirty()
-    {
-        return niAddress.isDirty();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        niType.set(type);
     }
 }

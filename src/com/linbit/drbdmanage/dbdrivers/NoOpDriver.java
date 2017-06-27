@@ -3,16 +3,22 @@ package com.linbit.drbdmanage.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.drbdmanage.Resource;
-import com.linbit.drbdmanage.ResourceDefinition;
-import com.linbit.drbdmanage.Volume;
-import com.linbit.drbdmanage.VolumeDefinition;
-import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.drbdmanage.NetInterfaceDataDatabaseDriver;
+import com.linbit.drbdmanage.NetInterfaceName;
+import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.ResourceData;
+import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.StorPoolDefinition;
+import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.VolumeDefinitionData;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 
 public class NoOpDriver implements DatabaseDriver
 {
@@ -52,32 +58,51 @@ public class NoOpDriver implements DatabaseDriver
     }
 
     @Override
-    public NodeDatabaseDriver getNodeDatabaseDriver(String nodeName)
+    public NodeDataDatabaseDriver getNodeDatabaseDriver()
     {
         return null; // intentionally null
     }
 
     @Override
-    public ResourceDatabaseDriver getResourceDatabaseDriver(Resource res)
+    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver(ResourceData res)
     {
         return null; // intentionally null
     }
 
     @Override
-    public ResourceDefinitionDatabaseDriver getResourceDefinitionDatabaseDriver(ResourceDefinition resDfn)
+    public ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName)
     {
         return null; // intentionally null
     }
 
     @Override
-    public VolumeDatabaseDriver getVolumeDatabaseDriver(Volume volume)
+    public VolumeDataDatabaseDriver getVolumeDataDatabaseDriver()
     {
         return null; // intentionally null
     }
 
     @Override
-    public VolumeDefinitionDatabaseDriver getVolumeDefinitionDatabaseDriver(VolumeDefinition volumeDefinition)
+    public VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(VolumeDefinitionData volumeDefinition)
     {
         return null; // intentionally null
     }
+
+    @Override
+    public StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver(StorPoolName name)
+    {
+        return null; // intentionally null
+    }
+
+    @Override
+    public StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef)
+    {
+        return null; // intentionally null
+    }
+
+    @Override
+    public NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node node, NetInterfaceName name)
+    {
+        return null; // intentionally null
+    }
+
 }

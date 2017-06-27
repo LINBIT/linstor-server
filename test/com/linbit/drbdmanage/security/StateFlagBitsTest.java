@@ -670,7 +670,7 @@ public class StateFlagBitsTest
     private ObjectProtection createObjectProtection(AccessType... grantedAccess) throws AccessDeniedException, SQLException
     {
         AccessContext objCtx = new AccessContext(someOtherUserId, someOtherRole, someOtherUserSecDomain, privSysAll);
-        ObjectProtection objProt = new ObjectProtection(objCtx);
+        ObjectProtection objProt = new ObjectProtection(objCtx, null);
         for (AccessType grantedAt : grantedAccess)
         {
             if (grantedAt != null)

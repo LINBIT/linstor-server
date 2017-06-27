@@ -1,6 +1,8 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.ErrorCheck;
+
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -8,7 +10,8 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class NetworkPathData implements NetworkPath
+//TODO: gh - should we persist this object too?
+public class NetworkPathData extends BaseTransactionObject implements NetworkPath
 {
     // Object identifier
     private UUID objId;
@@ -32,5 +35,11 @@ public class NetworkPathData implements NetworkPath
         srcInterface = fromInterface;
         dstNode = toNode;
         dstInterface = toInterface;
+
+        transObjs = Arrays.asList(
+            srcInterface,
+            dstNode,
+            dstInterface
+        );
     }
 }

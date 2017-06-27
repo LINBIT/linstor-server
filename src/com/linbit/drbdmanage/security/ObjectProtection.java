@@ -1,7 +1,7 @@
 package com.linbit.drbdmanage.security;
 
-import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -12,20 +12,24 @@ import com.linbit.ObjectDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
+import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.DrbdManage;
 import com.linbit.drbdmanage.NetInterface;
 import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceData;
 import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.Satellite;
+import com.linbit.drbdmanage.StorPoolData;
+import com.linbit.drbdmanage.StorPoolDefinitionData;
 
 /**
  * Security protection for drbdmanageNG object
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class ObjectProtection implements TransactionObject
+public final class ObjectProtection extends BaseTransactionObject
 {
     private static final String PATH_SEPARATOR               = "/";
     private static final String PATH_RESOURCES               = "/resources/";
@@ -33,6 +37,8 @@ public final class ObjectProtection implements TransactionObject
     private static final String PATH_NODES                   = "/nodes/";
     private static final String PATH_NET_INTERFACES          = "/netinterfaces/";
     private static final String PATH_SYS                     = "/sys/";
+    private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
+    private static final String PATH_STOR_POOLS              = "/storpools/";
     private static final String PATH_CONTROLLER              = PATH_SYS + "controller/";
     private static final String PATH_SATELLITE               = PATH_SYS + "satellite/";
 
@@ -56,14 +62,13 @@ public final class ObjectProtection implements TransactionObject
     // Security type for the object
     private TransactionSimpleObject<SecurityType> objectType;
 
-    // Database connection
-    private Connection dbCon;
-
     // Database driver
     private ObjectProtectionDatabaseDriver dbDriver;
 
     // Is this object already persisted or not
     private boolean persisted;
+
+    private boolean initialized;
 
     /**
      * Loads an ObjectProtection instance from the database.
@@ -71,63 +76,54 @@ public final class ObjectProtection implements TransactionObject
      * The {@code accCtx} parameter is only used when no ObjectProtection was found in the
      * database and the {@code createIfNotExists} parameter is set to true
      *
+     * @param accCtx
      * @param transMgr
      * @param objPath
      * @param createIfNotExists
-     * @param accCtx
      * @return
      * @throws SQLException
+     * @throws AccessDeniedException
      */
-    public static ObjectProtection load(TransactionMgr transMgr, String objPath, boolean createIfNotExists, AccessContext accCtx) throws SQLException
+    public static ObjectProtection getInstance(AccessContext accCtx, TransactionMgr transMgr, String objPath, boolean createIfNotExists)
+        throws SQLException, AccessDeniedException
     {
-        if (transMgr == null)
-        {
-            throw new ImplementationError("Trying to load an ObjectProtection without a TransactionManager", new NullPointerException());
-        }
         ObjectProtectionDatabaseDriver dbDriver = DrbdManage.getObjectProtectionDatabaseDriver(objPath);
-        ObjectProtection objProt = dbDriver.loadObjectProtection(transMgr.dbCon);
+        ObjectProtection objProt = null;
+
+        if (transMgr != null)
+        {
+            objProt = dbDriver.loadObjectProtection(transMgr.dbCon);
+        }
 
         if (objProt == null && createIfNotExists)
         {
-            objProt = create(objPath, accCtx, transMgr);
+            objProt = new ObjectProtection(accCtx, dbDriver);
+            if (transMgr != null)
+            {
+                dbDriver.insertOp(transMgr.dbCon, objProt);
+            }
         }
 
         if (objProt != null)
         {
+            objProt.requireAccess(accCtx, AccessType.CONTROL);
             objProt.dbDriver = dbDriver;
-            objProt.dbCon = transMgr.dbCon;
-            objProt.persisted = true;
-            transMgr.register(objProt);
+
+            if (transMgr == null)
+            {
+                // satellite
+                objProt.persisted = false;
+                objProt.dbCon = null;
+            }
+            else
+            {
+                transMgr.register(objProt);
+                objProt.dbCon = transMgr.dbCon;
+                objProt.persisted = true;
+            }
         }
 
         return objProt;
-    }
-
-    public static ObjectProtection create(String objPath, AccessContext accCtx, TransactionMgr transMgr) throws SQLException
-    {
-        ObjectProtectionDatabaseDriver dbDriver = DrbdManage.getObjectProtectionDatabaseDriver(objPath);
-        ObjectProtection objProt = new ObjectProtection(accCtx, dbDriver);
-        objProt.dbDriver = dbDriver;
-        if (transMgr == null)
-        {
-            objProt.persisted = false;
-            objProt.dbCon = null;
-        }
-        else
-        {
-            transMgr.register(objProt);
-            objProt.dbCon = transMgr.dbCon;
-            dbDriver.insertOp(transMgr.dbCon, objProt);
-            objProt.persisted = true;
-        }
-
-        return objProt;
-    }
-
-
-    ObjectProtection(AccessContext accCtx)
-    {
-        this(accCtx, null);
     }
 
     /**
@@ -159,6 +155,12 @@ public final class ObjectProtection implements TransactionObject
         objectType = new TransactionSimpleObject<SecurityType>(accCtx.subjectDomain, secTypeDriver);
         objectAcl = new AccessControlList();
         cachedAcl = new HashMap<>();
+
+        transObjs = Arrays.<TransactionObject>asList(
+            objectCreator,
+            objectOwner,
+            objectType
+        );
     }
 
 
@@ -331,43 +333,23 @@ public final class ObjectProtection implements TransactionObject
         delAcl(entryRole, oldEntry);
     }
 
-    // TODO dont forget to call this method (ObjectProtection.destroy(Connection) )
-    public void destroy(Connection con) throws SQLException
-    {
-        dbDriver.deleteOp(con);
-        persisted = false;
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgr)
-    {
-        transMgr.register(this);
-        dbCon = transMgr.dbCon;
-    }
-
     @Override
     public boolean isDirty()
     {
-        return !cachedAcl.isEmpty() || objectCreator.isDirty() ||
-            objectOwner.isDirty() || objectType.isDirty();
+        return super.isDirty() || !cachedAcl.isEmpty();
     }
 
     @Override
     public void commit()
     {
-        objectCreator.commit();
-        objectOwner.commit();
-        objectType.commit();
-
+        super.commit();
         cachedAcl.clear();
     }
 
     @Override
     public void rollback()
     {
-        objectCreator.rollback();
-        objectOwner.rollback();
-        objectType.rollback();
+        super.rollback();
 
         for (Entry<Role, AccessControlEntry> entry : cachedAcl.entrySet())
         {
@@ -385,7 +367,7 @@ public final class ObjectProtection implements TransactionObject
 
     private void updateOp() throws SQLException
     {
-        if (dbCon != null)
+        if (initialized && dbCon != null)
         {
             if (!persisted)
             {
@@ -401,42 +383,48 @@ public final class ObjectProtection implements TransactionObject
 
     private void setAcl(Role entryRole, AccessType grantedAccess, AccessControlEntry oldEntry) throws SQLException
     {
-        if (dbCon != null)
+        if (initialized)
         {
-            if (!persisted)
+            if (dbCon != null)
             {
-                updateOp();
-            }
+                if (!persisted)
+                {
+                    updateOp();
+                }
 
-            if (oldEntry == null)
-            {
-                dbDriver.insertAcl(dbCon, entryRole, grantedAccess);
+                if (oldEntry == null)
+                {
+                    dbDriver.insertAcl(dbCon, entryRole, grantedAccess);
+                }
+                else
+                {
+                    dbDriver.updateAcl(dbCon, entryRole, grantedAccess);
+                }
             }
-            else
+            if (!cachedAcl.containsKey(entryRole))
             {
-                dbDriver.updateAcl(dbCon, entryRole, grantedAccess);
+                cachedAcl.put(entryRole, oldEntry);
             }
-        }
-        if (!cachedAcl.containsKey(entryRole))
-        {
-            cachedAcl.put(entryRole, oldEntry);
         }
     }
 
     private void delAcl(Role entryRole, AccessControlEntry oldEntry) throws SQLException
     {
-        if (dbCon != null)
+        if (initialized)
         {
-            if (!persisted)
+            if (dbCon != null)
             {
-                updateOp();
-            }
+                if (!persisted)
+                {
+                    updateOp();
+                }
 
-            dbDriver.deleteAcl(dbCon, entryRole);
-        }
-        if (!cachedAcl.containsKey(entryRole))
-        {
-            cachedAcl.put(entryRole, oldEntry);
+                dbDriver.deleteAcl(dbCon, entryRole);
+            }
+            if (!cachedAcl.containsKey(entryRole))
+            {
+                cachedAcl.put(entryRole, oldEntry);
+            }
         }
     }
 
@@ -483,7 +471,21 @@ public final class ObjectProtection implements TransactionObject
 
     public static String buildPath(Node node)
     {
-        return PATH_NODES + node.getName().value;
+        return buildPath(node.getName());
     }
 
+    public static String buildPath(NodeName nodeName)
+    {
+        return PATH_NODES + nodeName.value;
+    }
+
+    public static String buildPath(StorPoolDefinitionData storPoolDefinitionData)
+    {
+        return PATH_STOR_POOL_DEFINITIONS + storPoolDefinitionData.getName().value;
+    }
+
+    public static String buildPath(StorPoolData storPoolData)
+    {
+        return PATH_STOR_POOLS + storPoolData.getName().value;
+    }
 }

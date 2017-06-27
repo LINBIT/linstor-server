@@ -2,15 +2,13 @@ package com.linbit.drbdmanage;
 
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
-import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
-import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -20,6 +18,7 @@ import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.UUID;
 
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -31,7 +30,7 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class VolumeDefinitionData implements VolumeDefinition
+public class VolumeDefinitionData extends BaseTransactionObject implements VolumeDefinition
 {
     // Object identifier
     private final UUID objId;
@@ -54,9 +53,9 @@ public class VolumeDefinitionData implements VolumeDefinition
     // State flags
     private StateFlags<VlmDfnFlags> flags;
 
-    private VolumeDefinitionDatabaseDriver dbDriver;
+    private VolumeDefinitionDataDatabaseDriver dbDriver;
 
-    private VolumeDefinitionData(
+    VolumeDefinitionData(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
         VolumeNumber volNr,
@@ -99,7 +98,7 @@ public class VolumeDefinitionData implements VolumeDefinition
         objId = UUID.randomUUID();
         resourceDfn = resDfnRef;
 
-        dbDriver = DrbdManage.getVolumeDefinitionDatabaseDriver(this);
+        dbDriver = DrbdManage.getVolumeDefinitionDataDatabaseDriver(this);
 
         volumeNr = volNr;
         minorNr = new TransactionSimpleObject<MinorNumber>(
@@ -118,10 +117,17 @@ public class VolumeDefinitionData implements VolumeDefinition
             resDfnRef.getObjProt(),
             dbDriver.getStateFlagsPersistence()
         );
+
+        transObjs = Arrays.asList(
+            vlmDfnProps,
+            resourceDfn,
+            minorNr,
+            volumeSize,
+            flags
+        );
     }
 
-     // TODO: implement static VolumeDefinitionData.create(...)
-     // TODO: implement static VolumeDefinitionData.load(...)
+     // TODO: gh - implement static VolumeDefinitionData.getInstance(...)
 
     @Override
     public UUID getUuid()
@@ -186,43 +192,6 @@ public class VolumeDefinitionData implements VolumeDefinition
     public StateFlags<VlmDfnFlags> getFlags()
     {
         return flags;
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgr) throws ImplementationError
-    {
-        transMgr.register(this);
-        dbDriver.setConnection(transMgr.dbCon);
-    }
-
-    @Override
-    public void commit()
-    {
-        vlmDfnProps.commit();
-        resourceDfn.commit();
-        minorNr.commit();
-        volumeSize.commit();
-        flags.commit();
-    }
-
-    @Override
-    public void rollback()
-    {
-        vlmDfnProps.rollback();
-        resourceDfn.rollback();
-        minorNr.rollback();
-        volumeSize.rollback();
-        flags.rollback();
-    }
-
-    @Override
-    public boolean isDirty()
-    {
-        return vlmDfnProps.isDirty() ||
-            resourceDfn.isDirty() ||
-            minorNr.isDirty() ||
-            volumeSize.isDirty() ||
-            flags.isDirty();
     }
 
     private static final class VlmDfnFlagsImpl extends StateFlagsBits<VlmDfnFlags>
