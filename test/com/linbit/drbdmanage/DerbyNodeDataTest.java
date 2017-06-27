@@ -384,7 +384,7 @@ public class DerbyNodeDataTest extends DerbyBase
 
         NodeName nodeName = new NodeName("TestNodeName");
 
-        insertObjProt(con, nodeName, sysCtx);
+        insertObjProt(con, ObjectProtection.buildPath(nodeName), sysCtx);
         insertNode(con, nodeName, 0, NodeType.AUXILIARY);
         con.commit();
 
@@ -437,21 +437,31 @@ public class DerbyNodeDataTest extends DerbyBase
         String storPoolTestValue = "storPoolTestValue";
 
 
-        insertObjProt(con, nodeName, sysCtx);
+        insertObjProt(con, ObjectProtection.buildPath(nodeName), sysCtx);
         insertNode(con, nodeName, NodeFlag.QIGNORE.getFlagValue(), NodeType.AUXILIARY);
         insertProp(con, PropsContainer.buildPath(nodeName), nodeTestKey, nodeTestValue);
+
+        insertObjProt(con, ObjectProtection.buildPath(nodeName, netName), sysCtx);
         insertNetInterface(con, netIfUuid, nodeName, netName, netHost, netType);
+
+        insertObjProt(con, ObjectProtection.buildPath(resName), sysCtx);
         insertResDfn(con, resName);
         // TODO: gh - create db table for connectionDefinitions
         // TODO: gh - insertConnectionDfn
+        insertObjProt(con, ObjectProtection.buildPath(nodeName, resName), sysCtx);
         // TODO: gh - insert resource
         // TODO: gh - insert testprops for resource
         // TODO: gh - insert stateFlags for resource
         insertVolDfn(con, resName, volNr, 5_000_000L, 10);
         // TODO: gh - insert volume
         // TODO: gh - insertProp(con, PropsContainer.buildPath(volIdentifier), volTestKey, volTestValue);
+
+        insertObjProt(con, ObjectProtection.buildPathSPD(poolName), sysCtx);
         insertStorPoolDfn(con, storPoolDfnId, poolName);
+
+        insertObjProt(con, ObjectProtection.buildPathSP(poolName), sysCtx);
         insertStorPool(con, storPoolId, nodeName, poolName, driver);
+
         insertProp(con, storPoolPropsInstance, storPoolTestKey, storPoolTestValue);
         con.commit();
 

@@ -278,10 +278,10 @@ public abstract class DerbyBase implements DerbyConstants
 
 
 
-    protected void insertObjProt(Connection dbCon, NodeName node, AccessContext accCtx) throws SQLException
+    protected void insertObjProt(Connection dbCon, String objPath, AccessContext accCtx) throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_SEC_OBJECT_PROTECTION);
-        stmt.setString(1, ObjectProtection.buildPath(node));
+        stmt.setString(1, objPath);
         stmt.setString(2, accCtx.subjectId.name.value);
         stmt.setString(3, accCtx.subjectRole.name.value);
         stmt.setString(4, accCtx.subjectDomain.name.value);

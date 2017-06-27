@@ -84,7 +84,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         objProt = ObjectProtection.getInstance(
             accCtx,
             transMgr,
-            ObjectProtection.buildPath(this),
+            ObjectProtection.buildPath(resName),
             true
         );
         flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence());

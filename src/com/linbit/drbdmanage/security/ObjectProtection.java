@@ -15,14 +15,11 @@ import com.linbit.TransactionSimpleObject;
 import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.DrbdManage;
-import com.linbit.drbdmanage.NetInterface;
-import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.NodeName;
-import com.linbit.drbdmanage.ResourceData;
-import com.linbit.drbdmanage.ResourceDefinitionData;
+import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.Satellite;
-import com.linbit.drbdmanage.StorPoolData;
-import com.linbit.drbdmanage.StorPoolDefinitionData;
+import com.linbit.drbdmanage.StorPoolName;
 
 /**
  * Security protection for drbdmanageNG object
@@ -428,18 +425,16 @@ public final class ObjectProtection extends BaseTransactionObject
         }
     }
 
-    public static String buildPath(ResourceData res)
+    public static String buildPath(NodeName nodeName, ResourceName resDefName)
     {
-        String nodeName = res.getAssignedNode().getName().value;
-        String defName = res.getDefinition().getName().value;
         return PATH_RESOURCES +
-            nodeName + PATH_SEPARATOR +
-            defName;
+            nodeName.value + PATH_SEPARATOR +
+            resDefName.value;
     }
 
-    public static String buildPath(ResourceDefinitionData resourceDefinitionData)
+    public static String buildPath(ResourceName resDfnName)
     {
-        return PATH_RESOURCE_DEFINITIONS + resourceDefinitionData.getName().value;
+        return PATH_RESOURCE_DEFINITIONS + resDfnName.value;
     }
 
     /**
@@ -460,18 +455,11 @@ public final class ObjectProtection extends BaseTransactionObject
         return PATH_SATELLITE + subPath;
     }
 
-    public static String buildPath(NetInterface netInterfaceData)
+    public static String buildPath(NodeName nodeName, NetInterfaceName netName)
     {
-        String nodeName = netInterfaceData.getNode().getName().value;
-        String netName = netInterfaceData.getName().value;
         return PATH_NET_INTERFACES +
-            nodeName + PATH_SEPARATOR +
-            netName;
-    }
-
-    public static String buildPath(Node node)
-    {
-        return buildPath(node.getName());
+            nodeName.value + PATH_SEPARATOR +
+            netName.value;
     }
 
     public static String buildPath(NodeName nodeName)
@@ -479,13 +467,13 @@ public final class ObjectProtection extends BaseTransactionObject
         return PATH_NODES + nodeName.value;
     }
 
-    public static String buildPath(StorPoolDefinitionData storPoolDefinitionData)
+    public static String buildPathSPD(StorPoolName storPoolName)
     {
-        return PATH_STOR_POOL_DEFINITIONS + storPoolDefinitionData.getName().value;
+        return PATH_STOR_POOL_DEFINITIONS + storPoolName.value;
     }
 
-    public static String buildPath(StorPoolData storPoolData)
+    public static String buildPathSP(StorPoolName storPoolName)
     {
-        return PATH_STOR_POOLS + storPoolData.getName().value;
+        return PATH_STOR_POOLS + storPoolName.value;
     }
 }

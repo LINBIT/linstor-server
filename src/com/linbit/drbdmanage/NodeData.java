@@ -91,7 +91,7 @@ public class NodeData extends BaseTransactionObject implements Node
         objProt = ObjectProtection.getInstance(
             accCtx,
             transMgr,
-            ObjectProtection.buildPath(this),
+            ObjectProtection.buildPath(nameRef),
             true
         );
         flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence(nameRef));

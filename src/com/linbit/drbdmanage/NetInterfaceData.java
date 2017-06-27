@@ -29,6 +29,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
     private final NetInterfaceDataDatabaseDriver dbDriver;
 
+    // used by getInstance
     NetInterfaceData(
         AccessContext accCtx,
         Node node,
@@ -39,10 +40,40 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     )
         throws SQLException, AccessDeniedException
     {
-        niUuid = UUID.randomUUID();
+        this(
+            UUID.randomUUID(),
+            ObjectProtection.getInstance(
+                accCtx,
+                transMgr,
+                ObjectProtection.buildPath(
+                    node.getName(),
+                    name
+                ),
+                true
+            ),
+            name,
+            node,
+            addr,
+            netType
+        );
+    }
+
+    // used by db drivers
+    NetInterfaceData(
+        UUID uuid,
+        ObjectProtection objectProtection,
+        NetInterfaceName netName,
+        Node node,
+        InetAddress addr,
+        NetInterfaceType netType
+    )
+    {
+        niUuid = uuid;
         niNode = node;
-        niName = name;
-        dbDriver = DrbdManage.getNetInterfaceDataDatabaseDriver(node, name);
+        niName = netName;
+        objProt = objectProtection;
+
+        dbDriver = DrbdManage.getNetInterfaceDataDatabaseDriver(node, netName);
 
         niAddress = new TransactionSimpleObject<InetAddress>(
             addr,
@@ -52,7 +83,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             netType,
             dbDriver.getNetInterfaceTypeDriver()
         );
-        objProt = ObjectProtection.getInstance(accCtx, transMgr, ObjectProtection.buildPath(this), true);
 
         transObjs = Arrays.<TransactionObject> asList(
             niAddress,
@@ -76,7 +106,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         if (transMgr != null)
         {
-            netData = driver.load(transMgr.dbCon, accCtx, transMgr);
+            netData = driver.load(transMgr.dbCon);
         }
 
         if (netData == null && createIfNotExists)

@@ -65,7 +65,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         objProt = ObjectProtection.getInstance(
             accCtx,
             transMgr,
-            ObjectProtection.buildPath(this),
+            ObjectProtection.buildPathSP(storPoolDefRef.getName()),
             true
         );
 //        dbDriver = DrbdManage.getStorPoolDataDatabaseDriver(nodeRef, storPoolDefRef);

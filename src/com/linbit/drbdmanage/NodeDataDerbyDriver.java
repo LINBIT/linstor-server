@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -125,6 +126,12 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             }
             node = new NodeData(accCtx, nodeName, types, flags, serialGen, transMgr);
 
+            // load the netInterfaces
+            List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadInterfaces(con, node);
+            for (NetInterfaceData netIf : netIfaces)
+            {
+                node.addNetInterface(dbCtx, netIf);
+            }
         }
         return node;
     }
@@ -163,6 +170,11 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     public PropsConDatabaseDriver getPropsConDriver(NodeName nodeName)
     {
         return new PropsConDerbyDriver(PropsContainer.buildPath(nodeName));
+    }
+
+    private void getNetInterfaces(NodeData node) throws SQLException
+    {
+
     }
 
     private class NodeResourceMapDriver implements MapDatabaseDriver<ResourceName, Resource>

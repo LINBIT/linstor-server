@@ -51,7 +51,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         objProt = ObjectProtection.getInstance(
             accCtx,
             transMgr,
-            ObjectProtection.buildPath(this),
+            ObjectProtection.buildPathSPD(nameRef),
             true
         );
 

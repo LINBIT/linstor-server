@@ -6,31 +6,44 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ObjectDatabaseDriver;
-import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.dbdrivers.UpdateOnlyDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
+import com.linbit.utils.UuidUtils;
 
 public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriver
 {
     private static final String TBL_NODE_NET = DerbyConstants.TBL_NODE_NET_INTERFACES;
 
     private static final String NODE_NAME = DerbyConstants.NODE_NAME;
+
+    private static final String NET_UUID = DerbyConstants.UUID;
     private static final String NET_NAME = DerbyConstants.NODE_NET_NAME;
     private static final String NET_DSP_NAME = DerbyConstants.NODE_NET_DSP_NAME;
     private static final String INET_ADDRESS = DerbyConstants.INET_ADDRESS;
     private static final String INET_TYPE = DerbyConstants.INET_TRANSPORT_TYPE;
 
-    private static final String NNI_SELECT =
-        " SELECT " + NET_DSP_NAME + ", " + INET_ADDRESS + ", " + INET_TYPE +
+    private static final String NNI_SELECT_BY_NODE_AND_NET =
+        " SELECT " + NET_UUID + ", " + NET_DSP_NAME + ", " + INET_ADDRESS + ", " + INET_TYPE +
         " FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ? AND " +
         "       " + NET_NAME  + " = ?";
+    private static final String NNI_SELECT_BY_NODE =
+        " SELECT "  + NET_UUID + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
+                      INET_ADDRESS + ", " + INET_TYPE +
+        " FROM " + TBL_NODE_NET +
+        " WHERE " + NODE_NAME + " = ?";
 
     private static final String NNI_INSERT =
         " INSERT INTO " + TBL_NODE_NET +
@@ -70,37 +83,17 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     @Override
-    public NetInterfaceData load(Connection con, AccessContext accCtx, TransactionMgr transMgr)
+    public NetInterfaceData load(Connection con)
         throws SQLException, AccessDeniedException
     {
-        PreparedStatement stmt = con.prepareStatement(NNI_SELECT);
+        PreparedStatement stmt = con.prepareStatement(NNI_SELECT_BY_NODE_AND_NET);
         stmt.setString(1, node.getName().value);
         stmt.setString(2, netName.value);
         ResultSet resultSet = stmt.executeQuery();
         NetInterfaceData netIfData = null;
         if (resultSet.next())
         {
-            InetAddress addr;
-            String type = resultSet.getString(INET_TYPE);
-            try
-            {
-                addr = InetAddress.getByName(resultSet.getString(INET_ADDRESS));
-            }
-            catch (UnknownHostException unknownHostExc)
-            {
-                throw new DrbdSqlRuntimeException(
-                    "SQL-based change to NetInterface's host caused an UnknownHostException",
-                    unknownHostExc
-                );
-            }
-            netIfData = new NetInterfaceData(
-                accCtx,
-                node,
-                netName,
-                addr,
-                transMgr,
-                NetInterfaceType.byValue(type)
-            );
+            netIfData = restoreInstance(con, node, netName, resultSet);
         }
         return netIfData;
     }
@@ -125,7 +118,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
     public void ensureEntryExists(Connection con, NetInterfaceData netIfData) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NNI_SELECT);
+        PreparedStatement stmt = con.prepareStatement(NNI_SELECT_BY_NODE_AND_NET);
         stmt.setString(1, node.getName().value);
         stmt.setString(2, netName.value);
         ResultSet resultSet = stmt.executeQuery();
@@ -168,6 +161,32 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return netIfTypeDriver;
     }
 
+
+    public static List<NetInterfaceData> loadInterfaces(Connection con, Node node)
+        throws SQLException
+    {
+        PreparedStatement stmt = con.prepareStatement(NNI_SELECT_BY_NODE);
+        stmt.setString(1, node.getName().value);
+        ResultSet resultSet = stmt.executeQuery();
+
+        List<NetInterfaceData> netIfDataList = new ArrayList<>();
+        while (resultSet.next())
+        {
+            NetInterfaceName netName;
+            try
+            {
+                netName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
+            }
+            catch (InvalidNameException e)
+            {
+                throw new DrbdSqlRuntimeException("NetInterface contains illegal displayName");
+            }
+            netIfDataList.add(restoreInstance(con, node, netName, resultSet));
+        }
+
+        return netIfDataList;
+    }
+
     private InetAddress getAddress(NetInterface value)
     {
         try
@@ -190,6 +209,47 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         {
             throw new ImplementationError("NodeDerbyDriver should have a clone of sysCtx", accessDeniedExc);
         }
+    }
+
+    private static NetInterfaceData restoreInstance(
+        Connection con,
+        Node node,
+        NetInterfaceName netName,
+        ResultSet resultSet
+    )
+        throws SQLException
+    {
+        UUID uuid = UuidUtils.asUUID(resultSet.getBytes(NET_UUID));
+        InetAddress addr;
+        String type = resultSet.getString(INET_TYPE);
+        try
+        {
+            addr = InetAddress.getByName(resultSet.getString(INET_ADDRESS));
+        }
+        catch (UnknownHostException unknownHostExc)
+        {
+            throw new DrbdSqlRuntimeException(
+                "SQL-based change to NetInterface's host caused an UnknownHostException",
+                unknownHostExc
+            );
+        }
+
+        ObjectProtection objProt;
+        {
+            ObjectProtectionDatabaseDriver opDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+                ObjectProtection.buildPath(node.getName(), netName)
+            );
+            objProt = opDriver.loadObjectProtection(con);
+        }
+
+        return new NetInterfaceData(
+            uuid,
+            objProt,
+            netName,
+            node,
+            addr,
+            NetInterfaceType.byValue(type)
+        );
     }
 
     private class NodeNetInterfaceAddressDriver extends UpdateOnlyDatabaseDriver<InetAddress>

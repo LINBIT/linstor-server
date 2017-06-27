@@ -81,7 +81,10 @@ public class ResourceData extends BaseTransactionObject implements Resource
         objProt = ObjectProtection.getInstance(
             accCtx,
             transMgr,
-            ObjectProtection.buildPath(this),
+            ObjectProtection.buildPath(
+                nodeRef.getName(),
+                resDfnRef.getName()
+            ),
             true
         );
         flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence());
