@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.netcom;
 
+import com.linbit.ServiceName;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import java.net.InetSocketAddress;
@@ -17,6 +18,13 @@ public interface Peer
      * @return Unique peer identifier
      */
     String getId();
+
+    /**
+     * Returns the service instance name of the connector associated with this peer object
+     *
+     * @return Connector service instance name
+     */
+    ServiceName getConnectorInstanceName();
 
     /**
      * Returns the security context of the connected peer

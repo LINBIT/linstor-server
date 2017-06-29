@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.netcom;
 
+import com.linbit.ServiceName;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.Privilege;
@@ -78,6 +79,17 @@ public class TcpConnectorPeer implements Peer
     public String getId()
     {
         return peerId;
+    }
+
+    @Override
+    public ServiceName getConnectorInstanceName()
+    {
+        ServiceName connInstName = null;
+        if (connector != null)
+        {
+            connInstName = connector.getInstanceName();
+        }
+        return connInstName;
     }
 
     @Override
