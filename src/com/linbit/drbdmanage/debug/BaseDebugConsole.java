@@ -570,6 +570,7 @@ public abstract class BaseDebugConsole implements DebugConsole
         ParamParserState state = ParamParserState.SKIP_COMMAND;
         String key = null;
         String value = null;
+        StringBuilder valueCache = new StringBuilder();
         for (int idx = 0; idx < commandChars.length; ++idx)
         {
             char cc = commandChars[idx];
@@ -621,7 +622,9 @@ public abstract class BaseDebugConsole implements DebugConsole
                     if (cc == ')')
                     {
                         length = idx - valueOffset;
-                        value = new String(commandChars, valueOffset, length);
+                        valueCache.append(commandChars, valueOffset, length);
+                        value = valueCache.toString();
+                        valueCache.setLength(0);
                         if (key != null)
                         {
                             parameters.put(key, value);
@@ -635,6 +638,10 @@ public abstract class BaseDebugConsole implements DebugConsole
                     else
                     if (cc == '\\')
                     {
+                        // Cache the value up to before the backslash
+                        length = idx - valueOffset;
+                        valueCache.append(commandChars, valueOffset, length);
+                        valueOffset = idx + 1;
                         // Ignore the next character's special meaning
                         state = ParamParserState.ESCAPE;
                     }
