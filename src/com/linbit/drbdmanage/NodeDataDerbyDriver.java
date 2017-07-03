@@ -30,6 +30,7 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
+import com.linbit.utils.UuidUtils;
 
 public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 {
@@ -63,7 +64,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 
     private static final String NODE_RESOURCE_INSERT =
         " INSERT INTO " + TBL_NODE_RESOURCE +
-        " VALUES (?, ?)";
+        " VALUES (?, ?, ?, ?, ?)";
     private static final String NODE_RESOURCE_DELETE =
         " DELETE FROM " + TBL_NODE_RESOURCE +
         " WHERE " + NODE_RESOURCE_NODE_NAME     + " = ? AND " +
@@ -131,8 +132,8 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 
             node = new NodeData(accCtx, nodeName, types, flags, serialGen, transMgr);
 
-            // load the netInterfaces
-            List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadInterfaces(con, node);
+            // load netInterfaces
+            List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadNetInterfaceData(con, node);
             for (NetInterfaceData netIf : netIfaces)
             {
                 node.addNetInterface(dbCtx, netIf);
@@ -157,8 +158,12 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 }
             }
 
-
-
+            // load resources
+            List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceData(con, dbCtx, node, serialGen, transMgr);
+            for (ResourceData res : resList)
+            {
+                node.addResource(dbCtx, res);
+            }
         }
         return node;
     }
@@ -213,8 +218,21 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         {
             PreparedStatement stmt = con.prepareStatement(NODE_RESOURCE_INSERT);
 
-            stmt.setString(1, nodeName.value);
-            stmt.setString(2, key.value);
+            stmt.setBytes(1, UuidUtils.asByteArray(value.getUuid()));
+            stmt.setString(2, nodeName.value);
+            stmt.setString(3, key.value);
+            stmt.setInt(4, value.getNodeId().value);
+            try
+            {
+                stmt.setLong(5, value.getStateFlags().getFlagsBits(dbCtx));
+            }
+            catch (AccessDeniedException accessDeniedExc)
+            {
+                throw new ImplementationError(
+                    "Database's access context has no permission to get resource' flags",
+                    accessDeniedExc
+                );
+            }
 
             stmt.executeUpdate();
             stmt.close();

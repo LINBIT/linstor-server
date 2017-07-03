@@ -31,11 +31,6 @@ public interface Volume extends TransactionObject
     {
         CLEAN(1L);
 
-        public static final VlmFlags[] ALL_FLAGS =
-        {
-            CLEAN
-        };
-
         public final long flagValue;
 
         private VlmFlags(long value)

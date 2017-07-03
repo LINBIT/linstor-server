@@ -54,6 +54,17 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     private ResourceDefinitionDataDatabaseDriver dbDriver;
 
+    /**
+     * Constructor used by getInstance
+     *
+     * @param accCtx
+     * @param resName
+     * @param srlGen
+     * @param transMgr
+     *
+     * @throws SQLException
+     * @throws AccessDeniedException
+     */
     ResourceDefinitionData(
         AccessContext accCtx,
         ResourceName resName,
@@ -62,8 +73,37 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     )
         throws SQLException, AccessDeniedException
     {
+        this(
+            ObjectProtection.getInstance(
+                accCtx,
+                transMgr,
+                ObjectProtection.buildPath(resName),
+                true
+            ),
+            UUID.randomUUID(),
+            resName,
+            srlGen,
+            transMgr
+        );
+    }
+
+    /**
+     * Constructor used by database drivers
+     *
+     * @param objProt
+     * @param resName
+     * @param serialGen
+     * @param transMgr
+     * @throws SQLException
+     */
+    ResourceDefinitionData(
+        ObjectProtection objProtRef, UUID objIdRef, ResourceName resName, SerialGenerator serialGen, TransactionMgr transMgr
+    )
+        throws SQLException
+    {
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceName.class, resName);
-        objId = UUID.randomUUID();
+        ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ObjectProtection.class, objProtRef);
+        objId = objIdRef;
         resourceName = resName;
 
         dbDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(resName);
@@ -80,13 +120,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             new TreeMap<NodeName, Resource>(),
             dbDriver.getResourceMapDriver()
         );
-        rscDfnProps = SerialPropsContainer.createRootContainer(srlGen);
-        objProt = ObjectProtection.getInstance(
-            accCtx,
-            transMgr,
-            ObjectProtection.buildPath(resName),
-            true
-        );
+        rscDfnProps = SerialPropsContainer.createRootContainer(serialGen);
+        objProt = objProtRef;
         flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence());
 
         transObjs = Arrays.asList(
@@ -99,46 +134,40 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         );
     }
 
-    // TODO: gh - rewrite create and load to getInstance
-
-    public static ResourceDefinitionData create(
+    public static ResourceDefinitionData getInstance(
         AccessContext accCtx,
         ResourceName resName,
-        SerialGenerator srlGen,
-        TransactionMgr transMgr
-    )
-        throws SQLException, AccessDeniedException
-    {
-        ResourceDefinitionData rdd = new ResourceDefinitionData(accCtx, resName, srlGen, transMgr);
-        rdd.dbDriver.create(transMgr.dbCon);
-        return rdd;
-
-    }
-
-    public static ResourceDefinitionData load(
-        AccessContext accCtx,
-        ResourceName resName,
-        SerialGenerator srlGen,
+        SerialGenerator serialGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
     )
-        throws AccessDeniedException, SQLException
+        throws SQLException, AccessDeniedException
     {
-        ResourceDefinitionData tmp = new ResourceDefinitionData(accCtx, resName, srlGen, transMgr);
-        ResourceDefinitionData ret = null;
-        if (transMgr != null && tmp.dbDriver.exists(transMgr.dbCon))
+        ResourceDefinitionDataDatabaseDriver driver = DrbdManage.getResourceDefinitionDataDatabaseDriver(resName);
+
+        ResourceDefinitionData resDfn = null;
+        if (transMgr != null)
         {
-            ret = tmp;
+            resDfn = driver.load(transMgr.dbCon, serialGen, transMgr);
         }
-        else
+
+        if (resDfn == null)
         {
             if (createIfNotExists)
             {
-                tmp.dbDriver.create(transMgr.dbCon);
-                ret = tmp;
+                resDfn = new ResourceDefinitionData(accCtx, resName, serialGen, transMgr);
+                if (transMgr != null)
+                {
+                    driver.create(transMgr.dbCon, resDfn);
+                }
             }
         }
-        return ret;
+
+        if (resDfn != null)
+        {
+            resDfn.initialized();
+        }
+        return resDfn;
     }
 
     @Override
@@ -230,7 +259,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     {
         RscDfnFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
-            super(objProtRef, StateFlagsBits.getMask(RscDfnFlags.ALL_FLAGS), persistenceRef);
+            super(objProtRef, StateFlagsBits.getMask(RscDfnFlags.values()), persistenceRef);
         }
     }
 }

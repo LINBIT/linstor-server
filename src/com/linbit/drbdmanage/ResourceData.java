@@ -54,6 +54,19 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     private ResourceDataDatabaseDriver dbDriver;
 
+    /**
+     * Constructor used by getInstance
+     *
+     * @param accCtx
+     * @param resDfnRef
+     * @param nodeRef
+     * @param nodeIdRef
+     * @param srlGen
+     * @param transMgr
+     *
+     * @throws SQLException
+     * @throws AccessDeniedException
+     */
     ResourceData(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
@@ -64,29 +77,62 @@ public class ResourceData extends BaseTransactionObject implements Resource
     )
         throws SQLException, AccessDeniedException
     {
-        resNodeId = nodeIdRef;
+        this(
+            ObjectProtection.getInstance(
+                accCtx,
+                transMgr,
+                ObjectProtection.buildPath(
+                    nodeRef.getName(),
+                    resDfnRef.getName()
+                ),
+                true
+            ),
+            UUID.randomUUID(),
+            resDfnRef,
+            nodeRef,
+            nodeIdRef,
+            srlGen,
+            transMgr
+        );
+    }
+
+    /**
+     * Constructor used by database drivers
+     *
+     * @param objProt
+     * @param resDfnRef
+     * @param nodeRef
+     * @param nodeIdRef
+     * @param srlGen
+     * @param transMgr
+     * @throws SQLException
+     */
+    ResourceData(
+        ObjectProtection objProtRef,
+        UUID objIdRef,
+        ResourceDefinition resDfnRef,
+        Node nodeRef,
+        NodeId nodeIdRef,
+        SerialGenerator srlGen,
+        TransactionMgr transMgr
+    )
+        throws SQLException
+    {
         ErrorCheck.ctorNotNull(ResourceData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(ResourceData.class, Node.class, nodeRef);
+        resNodeId = nodeIdRef;
         resourceDfn = resDfnRef;
         assgNode = nodeRef;
-        objId = UUID.randomUUID();
+        objId = objIdRef;
 
-        dbDriver = DrbdManage.getResourceDataDatabaseDriver(this);
+        dbDriver = DrbdManage.getResourceDataDatabaseDriver(nodeRef.getName(), resDfnRef.getName());
 
         volumeMap = new TransactionMap<>(
             new TreeMap<VolumeNumber, Volume>(),
             dbDriver.getVolumeMapDriver()
         );
         resourceProps = SerialPropsContainer.createRootContainer(srlGen);
-        objProt = ObjectProtection.getInstance(
-            accCtx,
-            transMgr,
-            ObjectProtection.buildPath(
-                nodeRef.getName(),
-                resDfnRef.getName()
-            ),
-            true
-        );
+        objProt = objProtRef;
         flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence());
 
         transObjs = Arrays.asList(
@@ -99,6 +145,43 @@ public class ResourceData extends BaseTransactionObject implements Resource
         );
     }
 
+    // TODO: gh - rewrite create method to getInstance (including load functionality)
+    public static Resource create(
+        AccessContext accCtx,
+        ResourceDefinition resDfnRef,
+        Node nodeRef,
+        NodeId nodeId,
+        SerialGenerator srlGen,
+        TransactionMgr transMgr
+    )
+        throws AccessDeniedException, SQLException
+    {
+        ErrorCheck.ctorNotNull(Resource.class, ResourceDefinition.class, resDfnRef);
+        ErrorCheck.ctorNotNull(Resource.class, Node.class, nodeRef);
+
+        Resource newRes = new ResourceData(accCtx, resDfnRef, nodeRef, nodeId, srlGen, transMgr);
+
+        // Access controls on the node and resource must not change
+        // while the transaction is in progress
+        synchronized (nodeRef)
+        {
+            synchronized (resDfnRef)
+            {
+                nodeRef.addResource(accCtx, newRes);
+                try
+                {
+                    resDfnRef.addResource(accCtx, newRes);
+                }
+                catch (AccessDeniedException accExc)
+                {
+                    // Rollback adding the resource to the node
+                    nodeRef.removeResource(accCtx, newRes);
+                }
+            }
+        }
+
+        return newRes;
+    }
     @Override
     public UUID getUuid()
     {
@@ -154,49 +237,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
         return flags;
     }
 
-    // TODO: gh - rewrite create method to getInstance (including load functionality)
-    public static Resource create(
-        AccessContext accCtx,
-        ResourceDefinition resDfnRef,
-        Node nodeRef,
-        NodeId nodeId,
-        SerialGenerator srlGen,
-        TransactionMgr transMgr
-    )
-        throws AccessDeniedException, SQLException
-    {
-        ErrorCheck.ctorNotNull(Resource.class, ResourceDefinition.class, resDfnRef);
-        ErrorCheck.ctorNotNull(Resource.class, Node.class, nodeRef);
-
-        Resource newRes = new ResourceData(accCtx, resDfnRef, nodeRef, nodeId, srlGen, transMgr);
-
-        // Access controls on the node and resource must not change
-        // while the transaction is in progress
-        synchronized (nodeRef)
-        {
-            synchronized (resDfnRef)
-            {
-                nodeRef.addResource(accCtx, newRes);
-                try
-                {
-                    resDfnRef.addResource(accCtx, newRes);
-                }
-                catch (AccessDeniedException accExc)
-                {
-                    // Rollback adding the resource to the node
-                    nodeRef.removeResource(accCtx, newRes);
-                }
-            }
-        }
-
-        return newRes;
-    }
-
     private static final class RscFlagsImpl extends StateFlagsBits<RscFlags>
     {
         RscFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
-            super(objProtRef, StateFlagsBits.getMask(RscFlags.ALL_FLAGS), persistenceRef);
+            super(objProtRef, StateFlagsBits.getMask(RscFlags.values()), persistenceRef);
         }
     }
 }

@@ -382,7 +382,7 @@ public class NodeData extends BaseTransactionObject implements Node
     {
         NodeFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
-            super(objProtRef, StateFlagsBits.getMask(NodeFlag.ALL_FLAGS), persistenceRef);
+            super(objProtRef, StateFlagsBits.getMask(NodeFlag.values()), persistenceRef);
         }
     }
 
@@ -390,7 +390,7 @@ public class NodeData extends BaseTransactionObject implements Node
     {
         NodeTypesFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
-            super(objProtRef, StateFlagsBits.getMask(NodeType.ALL_NODE_TYPES), persistenceRef);
+            super(objProtRef, StateFlagsBits.getMask(NodeType.values()), persistenceRef);
         }
     }
 }

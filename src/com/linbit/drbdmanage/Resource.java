@@ -41,12 +41,6 @@ public interface Resource extends TransactionObject
         CLEAN(1L),
         REMOVE(2L);
 
-        public static final RscFlags[] ALL_FLAGS =
-        {
-            CLEAN,
-            REMOVE
-        };
-
         public final long flagValue;
 
         private RscFlags(long value)

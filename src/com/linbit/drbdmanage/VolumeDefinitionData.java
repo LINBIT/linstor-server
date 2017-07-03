@@ -198,7 +198,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         VlmDfnFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
         {
-            super(objProtRef, StateFlagsBits.getMask(VlmDfnFlags.ALL_FLAGS), persistenceRef);
+            super(objProtRef, StateFlagsBits.getMask(VlmDfnFlags.values()), persistenceRef);
         }
     }
 }

@@ -159,11 +159,12 @@ public class DerbyNodeDataTest extends DerbyBase
         );
 
         ResourceName resName = new ResourceName("TestRes");
-        ResourceDefinitionData rdd = ResourceDefinitionData.create(
+        ResourceDefinitionData rdd = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
             null,
-            transMgr
+            transMgr,
+            true
         );
 
         Resource res = ResourceData.create(sysCtx, rdd, node, new NodeId(1), null, transMgr);
@@ -407,6 +408,7 @@ public class DerbyNodeDataTest extends DerbyBase
         java.util.UUID nodeUuid = java.util.UUID.randomUUID();
         String nodeTestKey = "nodeTestKey";
         String nodeTestValue = "nodeTestValue";
+        NodeId nodeId = new NodeId(13);
 
         java.util.UUID netIfUuid = java.util.UUID.randomUUID();
         NetInterfaceName netName = new NetInterfaceName("TestNetName");
@@ -414,7 +416,10 @@ public class DerbyNodeDataTest extends DerbyBase
         String netType = "IP";
 
         ResourceName resName = new ResourceName("TestResName");
+        java.util.UUID resDfnUuid = java.util.UUID.randomUUID();
         java.util.UUID resUuid = java.util.UUID.randomUUID();
+        String resTestKey = "resTestKey";
+        String resTestValue = "resTestValue";
 
         int connNr = 1;
 
@@ -445,12 +450,12 @@ public class DerbyNodeDataTest extends DerbyBase
         insertNetInterface(con, netIfUuid, nodeName, netName, netHost, netType);
 
         insertObjProt(con, ObjectProtection.buildPath(resName), sysCtx);
-        insertResDfn(con, resName);
+        insertResDfn(con, resDfnUuid, resName);
         // TODO: gh - create db table for connectionDefinitions
         // TODO: gh - insertConnectionDfn
         insertObjProt(con, ObjectProtection.buildPath(nodeName, resName), sysCtx);
-        // TODO: gh - insert resource
-        // TODO: gh - insert testprops for resource
+        insertRes(con, resUuid, nodeName, resName, nodeId, Resource.RscFlags.CLEAN);
+        insertProp(con, PropsContainer.buildPath(nodeName, resName), resTestKey, resTestValue);
         // TODO: gh - insert stateFlags for resource
         insertVolDfn(con, resName, volNr, 5_000_000L, 10);
         // TODO: gh - insert volume
@@ -491,11 +496,10 @@ public class DerbyNodeDataTest extends DerbyBase
         {
             Props nodeProps = node.getProps(sysCtx);
             assertNotNull(nodeProps);
-            assertEquals(2, nodeProps.size()); // serial number + testEntry
             assertEquals(nodeTestValue, nodeProps.getProp(nodeTestKey));
             assertNotNull(nodeProps.getProp(SerialGenerator.KEY_SERIAL));
+            assertEquals(2, nodeProps.size()); // serial number + testEntry
         }
-
         {
             Resource res = node.getResource(sysCtx, resName);
             assertNotNull(res);
@@ -506,18 +510,21 @@ public class DerbyNodeDataTest extends DerbyBase
                 resDfn.getConnectionDfn(sysCtx, nodeName, connNr);
                 // TODO: gh - implement and test connections
             }
-            // TODO: gh - NODE_RESOURCE.UUID is missing
-            // TODO: gh - NODE_RESOURCE.NODE_ID is missing
+            assertEquals(nodeId, res.getNodeId());
             assertNotNull(res.getObjProt());
             {
                 Props resProps = res.getProps(sysCtx);
                 assertNotNull(resProps);
-                // TODO: gh - test resProps
+
+                assertEquals(resTestValue, resProps.getProp(resTestKey));
+                assertNotNull(resProps.getProp(SerialGenerator.KEY_SERIAL));
+                assertEquals(2, resProps.size()); // serial number + testEntry
             }
             {
                 StateFlags<RscFlags> resStateFlags = res.getStateFlags();
                 assertNotNull(resStateFlags);
-                // TODO: gh - test stateFlags
+                assertTrue(resStateFlags.isSet(sysCtx, RscFlags.CLEAN));
+                assertFalse(resStateFlags.isSet(sysCtx, RscFlags.REMOVE));
             }
             assertEquals(resUuid, res.getUuid());
             {
@@ -541,9 +548,9 @@ public class DerbyNodeDataTest extends DerbyBase
             {
                 Props storPoolConfig = storPool.getConfiguration(sysCtx);
                 assertNotNull(storPoolConfig);
-                assertEquals(2, storPoolConfig.size()); // serial number + testEntry
                 assertEquals(storPoolTestValue, storPoolConfig.getProp(storPoolTestKey));
                 assertNotNull(storPoolConfig.getProp(SerialGenerator.KEY_SERIAL));
+                assertEquals(2, storPoolConfig.size()); // serial number + testEntry
             }
             {
                 StorPoolDefinition storPoolDefinition = storPool.getDefinition(sysCtx);

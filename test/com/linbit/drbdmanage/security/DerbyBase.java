@@ -18,13 +18,16 @@ import com.linbit.InvalidNameException;
 import com.linbit.drbdmanage.DatabaseSetter;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node.NodeType;
+import com.linbit.drbdmanage.NodeId;
 import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
+import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.utils.UuidUtils;
 
 public abstract class DerbyBase implements DerbyConstants
@@ -325,23 +328,37 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.executeUpdate();
     }
 
-    protected void insertResDfn(Connection dbCon, ResourceName resName) throws SQLException
+    protected void insertResDfn(Connection dbCon, java.util.UUID uuid, ResourceName resName)
+        throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_RESOURCE_DEFINITIONS);
-        stmt.setString(1, resName.value);
-        stmt.setString(2, resName.displayValue);
-        stmt.executeUpdate();
-    }
-
-    protected void insertRes(Connection dbCon, NodeName nodeName, ResourceName resName) throws SQLException
-    {
-        PreparedStatement stmt = dbCon.prepareStatement(INSERT_RESOURCE_DEFINITIONS);
-        stmt.setString(1, nodeName.value);
+        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, resName.value);
+        stmt.setString(3, resName.displayValue);
         stmt.executeUpdate();
     }
 
-    protected void insertVolDfn(Connection dbCon, ResourceName resName, VolumeNumber volId, long volSize, int minorNr) throws SQLException
+    protected void insertRes(
+        Connection dbCon,
+        java.util.UUID uuid,
+        NodeName nodeName,
+        ResourceName resName,
+        NodeId nodeId,
+        Resource.RscFlags... resFlags
+    )
+        throws SQLException
+    {
+        PreparedStatement stmt = dbCon.prepareStatement(INSERT_NODE_RESOURCE);
+        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(2, nodeName.value);
+        stmt.setString(3, resName.value);
+        stmt.setInt(4, nodeId.value);
+        stmt.setLong(5, StateFlagsBits.getMask(resFlags));
+        stmt.executeUpdate();
+    }
+
+    protected void insertVolDfn(Connection dbCon, ResourceName resName, VolumeNumber volId, long volSize, int minorNr)
+        throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_VOLUME_DEFINITIONS);
         stmt.setString(1, resName.value);
@@ -360,7 +377,8 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.executeUpdate();
     }
 
-    protected void insertStorPool(Connection dbCon, java.util.UUID uuid, NodeName nodeName, StorPoolName poolName, String driver) throws SQLException
+    protected void insertStorPool(Connection dbCon, java.util.UUID uuid, NodeName nodeName, StorPoolName poolName, String driver)
+        throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_NODE_STOR_POOL);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
@@ -370,7 +388,8 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.executeUpdate();
     }
 
-    protected void insertProp(Connection dbCon, String instance, String key, String value) throws SQLException
+    protected void insertProp(Connection dbCon, String instance, String key, String value)
+        throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_PROPS_CONTAINERS);
         stmt.setString(1, instance.toUpperCase());

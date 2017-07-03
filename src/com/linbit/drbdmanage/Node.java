@@ -88,24 +88,12 @@ public interface Node extends TransactionObject
         {
             return flag;
         }
-
-        public static final NodeType[] ALL_NODE_TYPES =
-        {
-            CONTROLLER,
-            SATELLITE,
-            AUXILIARY
-        };
     }
 
     public enum NodeFlag implements Flags
     {
         REMOVE(1L),
         QIGNORE(0x10000L);
-
-        public static final NodeFlag[] ALL_FLAGS =
-        {
-            REMOVE, QIGNORE
-        };
 
         public final long flagValue;
 

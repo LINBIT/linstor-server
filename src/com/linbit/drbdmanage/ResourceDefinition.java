@@ -49,11 +49,6 @@ public interface ResourceDefinition extends TransactionObject
     {
         REMOVE(1L);
 
-        public static final RscDfnFlags[] ALL_FLAGS =
-        {
-            REMOVE
-        };
-
         public final long flagValue;
 
         private RscDfnFlags(long value)

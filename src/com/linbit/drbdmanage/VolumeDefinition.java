@@ -44,11 +44,6 @@ public interface VolumeDefinition extends TransactionObject
     {
         REMOVE(1L);
 
-        public static final VlmDfnFlags[] ALL_FLAGS =
-        {
-            REMOVE
-        };
-
         public final long flagValue;
 
         private VlmDfnFlags(long value)

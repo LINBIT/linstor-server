@@ -11,7 +11,7 @@ import com.linbit.drbdmanage.NetInterfaceDataDerbyDriver;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeDataDerbyDriver;
-import com.linbit.drbdmanage.ResourceData;
+import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDataDerbyDriver;
 import com.linbit.drbdmanage.ResourceDefinitionDataDerbyDriver;
 import com.linbit.drbdmanage.ResourceName;
@@ -66,7 +66,7 @@ public class DerbyDriver implements DatabaseDriver
 
     private Map<String, PropsConDerbyDriver> propsDriverCache = new WeakHashMap<>();
     private Map<String, NodeDataDerbyDriver> nodeDriverCache = new WeakHashMap<>();
-    private Map<ResourceData, ResourceDataDerbyDriver> resDriverCache = new WeakHashMap<>();
+    private Map<Tuple<NodeName, ResourceName>, ResourceDataDerbyDriver> resDriverCache = new WeakHashMap<>();
     private Map<ResourceName, ResourceDefinitionDataDerbyDriver> resDefDriverCache = new WeakHashMap<>();
     private Map<VolumeData, VolumeDataDerbyDriver> volDriverCache = new WeakHashMap<>();
     private Map<VolumeDefinitionData, VolumeDataDefinitionDerbyDriver> volDefDriverCache = new WeakHashMap<>();
@@ -115,13 +115,14 @@ public class DerbyDriver implements DatabaseDriver
     }
 
     @Override
-    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver(ResourceData res)
+    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver(NodeName nodeName, ResourceName resName)
     {
-        ResourceDataDerbyDriver driver = resDriverCache.get(res);
+        Tuple<NodeName, ResourceName> key = new Tuple<NodeName, ResourceName>(nodeName, resName);
+        ResourceDataDerbyDriver driver = resDriverCache.get(key);
         if (driver == null)
         {
-            driver = new ResourceDataDerbyDriver(res);
-            resDriverCache.put(res, driver);
+            driver = new ResourceDataDerbyDriver(privCtx, nodeName, resName);
+            resDriverCache.put(key, driver);
         }
         return driver;
     }

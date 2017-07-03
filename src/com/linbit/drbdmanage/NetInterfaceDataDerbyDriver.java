@@ -47,7 +47,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
     private static final String NNI_INSERT =
         " INSERT INTO " + TBL_NODE_NET +
-        " VALUES (?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?)";
     private static final String NNI_DELETE =
         " DELETE FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ? AND " +
@@ -106,11 +106,12 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         InetAddress inetAddress = getAddress(netInterfaceData);
         NetInterfaceType type = getNetInterfaceType(netInterfaceData);
 
-        stmt.setString(1, node.getName().value);
-        stmt.setString(2, netInterfaceData.getName().value);
-        stmt.setString(3, netInterfaceData.getName().displayValue);
-        stmt.setString(4, inetAddress.getHostAddress());
-        stmt.setString(5, type.name());
+        stmt.setBytes(1, UuidUtils.asByteArray(netInterfaceData.getUuid()));
+        stmt.setString(2, node.getName().value);
+        stmt.setString(3, netInterfaceData.getName().value);
+        stmt.setString(4, netInterfaceData.getName().displayValue);
+        stmt.setString(5, inetAddress.getHostAddress());
+        stmt.setString(6, type.name());
 
         stmt.executeUpdate();
         stmt.close();
@@ -162,7 +163,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
 
-    public static List<NetInterfaceData> loadInterfaces(Connection con, Node node)
+    public static List<NetInterfaceData> loadNetInterfaceData(Connection con, Node node)
         throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(NNI_SELECT_BY_NODE);

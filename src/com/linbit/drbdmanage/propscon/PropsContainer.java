@@ -27,6 +27,7 @@ import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
 import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 
@@ -46,7 +47,7 @@ public class PropsContainer implements Props
     private static final String PATH_SEPARATOR      = "/";
     private static final String PATH_STOR_POOL_CONF = "/storPoolConf/";
     private static final String PATH_NODES = "/nodes/";
-
+    private static final String PATH_RESOURCES = "/resources/";
 
     public static final int PATH_MAX_LENGTH = 256;
 
@@ -2567,5 +2568,11 @@ public class PropsContainer implements Props
     public static String buildPath(NodeName nodeName)
     {
         return PATH_NODES + nodeName.value;
+    }
+
+    public static String buildPath(NodeName nodeName, ResourceName resName)
+    {
+        return PATH_RESOURCES + nodeName.value +
+            PATH_SEPARATOR + resName.value;
     }
 }
