@@ -169,6 +169,14 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     }
                 }
 
+                // restore volumes
+                VolumeDataDerbyDriver volDataDriver = (VolumeDataDerbyDriver) DrbdManage.getVolumeDataDatabaseDriver();
+                List<VolumeData> volList = volDataDriver.load(con, resData, serialGen);
+                for (VolumeData volData : volList)
+                {
+                    resData.setVolume(dbCtx, volData);
+                }
+
                 resList.add(resData);
             }
             catch (InvalidNameException invalidNameExc)

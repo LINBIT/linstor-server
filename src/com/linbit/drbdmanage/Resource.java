@@ -25,6 +25,8 @@ public interface Resource extends TransactionObject
 
     public Volume getVolume(VolumeNumber volNr);
 
+    public Volume setVolume(AccessContext accCtx, Volume vol) throws AccessDeniedException;
+
     public Iterator<Volume> iterateVolumes();
 
     public Node getAssignedNode();
@@ -54,4 +56,5 @@ public interface Resource extends TransactionObject
             return flagValue;
         }
     }
+
 }

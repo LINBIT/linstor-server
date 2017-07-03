@@ -4,12 +4,15 @@ import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.SerialGenerator;
+import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
@@ -39,21 +42,53 @@ public class VolumeData extends BaseTransactionObject implements Volume
     // State flags
     private StateFlags<VlmFlags> flags;
 
-    private VolumeDataDatabaseDriver dbDriver;
+    private String blockDevicePath;
 
-    VolumeData(Resource resRef, VolumeDefinition volDfn)
+    VolumeData(Resource resRef, VolumeDefinition volDfn, String blockDevicePathRef, SerialGenerator srlGen)
+        throws SQLException
     {
-        objId = UUID.randomUUID();
+        this(
+            UUID.randomUUID(),
+            resRef,
+            volDfn,
+            blockDevicePathRef,
+            srlGen
+        );
+    }
+
+    /**
+     * Constructor used by database drivers
+     *
+     * @param asUUID
+     * @param res
+     * @param volDfn
+     * @param volumeNumber
+     * @param string
+     * @throws SQLException
+     */
+    VolumeData(
+        UUID uuid,
+        Resource resRef,
+        VolumeDefinition volDfnRef,
+        String blockDevicePathRef,
+        SerialGenerator srlGen
+    )
+        throws SQLException
+    {
+        objId = uuid;
         resourceRef = resRef;
         resourceDfn = resRef.getDefinition();
-        volumeDfn = volDfn;
+        volumeDfn = volDfnRef;
+        blockDevicePath = blockDevicePathRef;
 
-        dbDriver = DrbdManage.getVolumeDataDatabaseDriver();
+        VolumeDataDatabaseDriver dbDriver = DrbdManage.getVolumeDataDatabaseDriver();
 
         flags = new VlmFlagsImpl(
             resRef.getObjProt(),
             dbDriver.getStateFlagsPersistence()
         );
+
+        volumeProps = SerialPropsContainer.createRootContainer(srlGen, dbDriver.getPropsConDriver(resRef, volDfnRef));
 
         transObjs = Arrays.asList(
             resourceRef,
@@ -67,32 +102,33 @@ public class VolumeData extends BaseTransactionObject implements Volume
         Resource resRef,
         VolumeDefinition volDfn,
         TransactionMgr transMgr,
-        boolean createIfNotExists) throws SQLException
+        String blockDevicePathRef,
+        boolean createIfNotExists,
+        SerialGenerator serialGen
+    )
+        throws SQLException
     {
         VolumeData vol = null;
 
         VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver();
-        boolean created = false;
         if (transMgr != null)
         {
-            vol = driver.load(transMgr.dbCon, resRef, volDfn);
+            vol = driver.load(transMgr.dbCon, resRef, volDfn, serialGen);
         }
 
         if (vol == null && createIfNotExists)
         {
-            vol = new VolumeData(resRef, volDfn);
-            created = true;
+            vol = new VolumeData(resRef, volDfn, blockDevicePathRef, serialGen);
+            if (transMgr != null)
+            {
+                driver.create(transMgr.dbCon, vol);
+            }
         }
 
         if (vol != null)
         {
             vol.initialized();
         }
-        if (created && transMgr != null)
-        {
-            driver.create(transMgr.dbCon, vol);
-        }
-
         return vol;
     }
 
@@ -140,5 +176,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
         {
             super(objProtRef, StateFlagsBits.getMask(VlmFlags.values()), persistenceRef);
         }
+    }
+
+    public String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException
+    {
+        resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return blockDevicePath;
     }
 }

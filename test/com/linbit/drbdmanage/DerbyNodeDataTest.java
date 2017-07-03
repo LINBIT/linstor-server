@@ -423,10 +423,13 @@ public class DerbyNodeDataTest extends DerbyBase
 
         int connNr = 1;
 
+        java.util.UUID volDfnUuid = java.util.UUID.randomUUID();
         VolumeNumber volNr = new VolumeNumber(42);
 
-        String volTestKey = "storPoolTestKey";
-        String volTestValue = "storPoolTestValue";
+        java.util.UUID volUuid = java.util.UUID.randomUUID();
+        String volTestBlockDev = "/dev/do/not/use/me";
+        String volTestKey = "volTestKey";
+        String volTestValue = "volTestValue";
 
         java.util.UUID storPoolDfnId = java.util.UUID.randomUUID();
         StorPoolName poolName = new StorPoolName("TestPoolName");
@@ -457,9 +460,9 @@ public class DerbyNodeDataTest extends DerbyBase
         insertRes(con, resUuid, nodeName, resName, nodeId, Resource.RscFlags.CLEAN);
         insertProp(con, PropsContainer.buildPath(nodeName, resName), resTestKey, resTestValue);
         // TODO: gh - insert stateFlags for resource
-        insertVolDfn(con, resName, volNr, 5_000_000L, 10);
-        // TODO: gh - insert volume
-        // TODO: gh - insertProp(con, PropsContainer.buildPath(volIdentifier), volTestKey, volTestValue);
+        insertVolDfn(con, volDfnUuid, resName, volNr, 5_000_000L, 10);
+        insertVol(con, volUuid, nodeName, resName, volNr, volTestBlockDev, Volume.VlmFlags.CLEAN);
+        insertProp(con, PropsContainer.buildPath(nodeName, resName, volNr), volTestKey, volTestValue);
 
         insertObjProt(con, ObjectProtection.buildPathSPD(poolName), sysCtx);
         insertStorPoolDfn(con, storPoolDfnId, poolName);
@@ -507,7 +510,7 @@ public class DerbyNodeDataTest extends DerbyBase
             {
                 ResourceDefinition resDfn = res.getDefinition();
                 assertNotNull(resDfn);
-                resDfn.getConnectionDfn(sysCtx, nodeName, connNr);
+                ConnectionDefinition conDfn = resDfn.getConnectionDfn(sysCtx, nodeName, connNr);
                 // TODO: gh - implement and test connections
             }
             assertEquals(nodeId, res.getNodeId());
@@ -530,14 +533,17 @@ public class DerbyNodeDataTest extends DerbyBase
             {
                 Volume vol = res.getVolume(volNr);
                 assertNotNull(vol);
-                StateFlags<VlmFlags> flags = vol.getFlags();
-                assertNotNull(flags);
-                // TODO: gh - VOLUMES table is missing
-                // TODO: gh - VOLUMES.FLAGS is missing
+                {
+                    StateFlags<VlmFlags> flags = vol.getFlags();
+                    assertNotNull(flags);
+                    flags.isSet(sysCtx, Volume.VlmFlags.CLEAN);
+                }
                 {
                     Props volProps = vol.getProps(sysCtx);
                     assertNotNull(volProps);
-
+                    assertEquals(volTestValue, volProps.getProp(volTestKey));
+                    assertNotNull(volProps.getProp(SerialGenerator.KEY_SERIAL));
+                    assertEquals(2, volProps.size()); // serial number + testEntry
                 }
             }
         }

@@ -36,6 +36,7 @@ public final class ObjectProtection extends BaseTransactionObject
     private static final String PATH_SYS                     = "/sys/";
     private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
     private static final String PATH_STOR_POOLS              = "/storpools/";
+
     private static final String PATH_CONTROLLER              = PATH_SYS + "controller/";
     private static final String PATH_SATELLITE               = PATH_SYS + "satellite/";
 

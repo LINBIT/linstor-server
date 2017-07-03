@@ -23,6 +23,7 @@ import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
@@ -357,14 +358,36 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.executeUpdate();
     }
 
-    protected void insertVolDfn(Connection dbCon, ResourceName resName, VolumeNumber volId, long volSize, int minorNr)
+    protected void insertVolDfn(Connection dbCon, java.util.UUID uuid, ResourceName resName, VolumeNumber volId, long volSize, int minorNr)
         throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_VOLUME_DEFINITIONS);
-        stmt.setString(1, resName.value);
-        stmt.setInt(2, volId.value);
-        stmt.setLong(3, volSize);
-        stmt.setInt(4, minorNr);
+        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(2, resName.value);
+        stmt.setInt(3, volId.value);
+        stmt.setLong(4, volSize);
+        stmt.setInt(5, minorNr);
+        stmt.executeUpdate();
+    }
+
+    protected void insertVol(
+        Connection dbCon,
+        java.util.UUID uuid,
+        NodeName nodeName,
+        ResourceName resName,
+        VolumeNumber volNr,
+        String blockDev,
+        VlmFlags... flags
+    )
+        throws SQLException
+    {
+        PreparedStatement stmt = dbCon.prepareStatement(INSERT_VOLUMES);
+        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(2, nodeName.value);
+        stmt.setString(3, resName.value);
+        stmt.setInt(4, volNr.value);
+        stmt.setString(5, blockDev);
+        stmt.setLong(6, StateFlagsBits.getMask(flags));
         stmt.executeUpdate();
     }
 

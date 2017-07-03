@@ -9,11 +9,13 @@ import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceData;
+import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.VolumeData;
 import com.linbit.drbdmanage.VolumeDefinitionData;
+import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
@@ -70,7 +72,7 @@ public interface DatabaseDriver
     /**
      * Returns the database driver specific implementation for {@link VolumeDefinitionData}-IO
      */
-    VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(VolumeDefinitionData volumeDefinition);
+    VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(ResourceDefinition resDef, VolumeNumber volNr);
 
     /**
      * Returns the database driver specific implementation for {@link StorPoolDefinitionData}-IO

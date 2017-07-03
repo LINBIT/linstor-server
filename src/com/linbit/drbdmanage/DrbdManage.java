@@ -587,9 +587,9 @@ public abstract class DrbdManage
         return persistenceDbDriver.getVolumeDataDatabaseDriver();
     }
 
-    public static VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(VolumeDefinitionData volumeDefinition)
+    public static VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(ResourceDefinition resDfn,VolumeNumber volNr)
     {
-        return persistenceDbDriver.getVolumeDefinitionDataDatabaseDriver(volumeDefinition);
+        return persistenceDbDriver.getVolumeDefinitionDataDatabaseDriver(resDfn, volNr);
     }
 
     public static StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef)

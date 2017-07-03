@@ -7,10 +7,11 @@ import com.linbit.drbdmanage.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolName;
-import com.linbit.drbdmanage.VolumeDefinitionData;
+import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
@@ -82,7 +83,7 @@ public class NoOpDriver implements DatabaseDriver
     }
 
     @Override
-    public VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(VolumeDefinitionData volumeDefinition)
+    public VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(ResourceDefinition resDfn, VolumeNumber volNr)
     {
         return null; // intentionally null
     }

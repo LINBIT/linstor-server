@@ -98,7 +98,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         objId = UUID.randomUUID();
         resourceDfn = resDfnRef;
 
-        dbDriver = DrbdManage.getVolumeDefinitionDataDatabaseDriver(this);
+        dbDriver = DrbdManage.getVolumeDefinitionDataDatabaseDriver(resDfnRef, volNr);
 
         volumeNr = volNr;
         minorNr = new TransactionSimpleObject<MinorNumber>(

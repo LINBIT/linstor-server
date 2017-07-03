@@ -10,6 +10,7 @@ import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -145,7 +146,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         );
     }
 
-    // TODO: gh - rewrite create method to getInstance (including load functionality)
+    // TODO: gh - rewrite create method to getInstance (including load functionality and objProt access check)
     public static Resource create(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
@@ -211,6 +212,15 @@ public class ResourceData extends BaseTransactionObject implements Resource
     public Volume getVolume(VolumeNumber volNr)
     {
         return volumeMap.get(volNr);
+    }
+
+    @Override
+    public Volume setVolume(AccessContext accCtx, Volume vol)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        return volumeMap.put(vol.getVolumeDfn().getVolumeNumber(accCtx), vol);
     }
 
     @Override
