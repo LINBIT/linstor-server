@@ -58,7 +58,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         );
     }
 
-    // used by db drivers
+    // used by db drivers and tests
     NetInterfaceData(
         UUID uuid,
         ObjectProtection objectProtection,
@@ -86,7 +86,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         transObjs = Arrays.<TransactionObject> asList(
             niAddress,
-            niType
+            niType,
+            objProt
         );
     }
 

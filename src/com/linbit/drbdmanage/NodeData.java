@@ -102,7 +102,6 @@ public class NodeData extends BaseTransactionObject implements Node
         throws SQLException
     {
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
-        ErrorCheck.ctorNotNull(NodeData.class, NodeType.class, types);
 
         objId = uuidRef;
         objProt = objProtRef;

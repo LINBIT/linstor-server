@@ -54,8 +54,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         "       " + NET_NAME  + " = ?";
     private static final String NNI_UPDATE_ADR =
         " UPDATE " + TBL_NODE_NET +
-        " SET "   + INET_ADDRESS  + " = ?, " +
-        "       " + INET_TYPE     + " = ? " +
+        " SET "   + INET_ADDRESS  + " = ? " +
         " WHERE " + NODE_NAME     + " = ? AND " +
         "       " + NET_NAME      + " = ?";
     private static final String NNI_UPDATE_TYPE =
@@ -134,7 +133,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
             equals &= getNetInterfaceType(netIfData).name().equals(resultSet.getString(INET_TYPE));
             if (!equals)
             {
-                throw new DrbdSqlRuntimeException("A emporary NetInterfaceData instance is not allowed to override a persisted instance.");
+                throw new DrbdSqlRuntimeException("A temporary NetInterfaceData instance is not allowed to override a persisted instance.");
             }
         }
         else

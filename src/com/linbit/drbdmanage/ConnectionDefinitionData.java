@@ -1,7 +1,9 @@
 package com.linbit.drbdmanage;
 
+import java.sql.SQLException;
 import java.util.UUID;
 
+import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -19,7 +21,45 @@ public class ConnectionDefinitionData implements ConnectionDefinition
 
     private ObjectProtection objProt;
 
-    private int port;
+    private ResourceDefinition resDfn;
+
+    private Node sourceNode;
+
+    private Node targetNode;
+
+    ConnectionDefinitionData(AccessContext accCtx, ResourceDefinition resDfn, Node node1, Node node2, TransactionMgr transMgr) throws SQLException, AccessDeniedException
+    {
+        this(
+            UUID.randomUUID(),
+            ObjectProtection.getInstance(
+                accCtx,
+                transMgr,
+                ObjectProtection.buildPath(node1.getName(), node2.getName()),
+                true
+            ),
+            resDfn,
+            node1,
+            node2
+        );
+    }
+
+    public ConnectionDefinitionData(UUID uuid, ObjectProtection objProtRef, ResourceDefinition resDfnRef, Node node1, Node node2)
+    {
+        objId = uuid;
+        objProt = objProtRef;
+        resDfn = resDfnRef;
+
+        if (node1.getName().compareTo(node2.getName()) < 0)
+        {
+            sourceNode = node1;
+            targetNode = node2;
+        }
+        else
+        {
+            sourceNode = node2;
+            targetNode = node1;
+        }
+    }
 
     @Override
     public UUID getUuid()
@@ -31,13 +71,20 @@ public class ConnectionDefinitionData implements ConnectionDefinition
     public ResourceDefinition getResourceDefinition(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return null;
+        return resDfn;
     }
 
     @Override
-    public int getPort(AccessContext accCtx) throws AccessDeniedException
+    public Node getSourceNode(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return port;
+        return sourceNode;
+    }
+
+    @Override
+    public Node getTargetNode(AccessContext accCtx) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return targetNode;
     }
 }

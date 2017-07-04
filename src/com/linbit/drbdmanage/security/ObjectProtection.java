@@ -36,6 +36,7 @@ public final class ObjectProtection extends BaseTransactionObject
     private static final String PATH_SYS                     = "/sys/";
     private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
     private static final String PATH_STOR_POOLS              = "/storpools/";
+    private static final String PATH_CONNECTION_DEFINITIONS  = "/connectiondefinitions/";
 
     private static final String PATH_CONTROLLER              = PATH_SYS + "controller/";
     private static final String PATH_SATELLITE               = PATH_SYS + "satellite/";
@@ -476,5 +477,26 @@ public final class ObjectProtection extends BaseTransactionObject
     public static String buildPathSP(StorPoolName storPoolName)
     {
         return PATH_STOR_POOLS + storPoolName.value;
+    }
+
+    public static String buildPath(NodeName sourceName, NodeName targetName)
+    {
+        NodeName source;
+        NodeName target;
+
+        if (sourceName.compareTo(targetName) < 0)
+        {
+            source = sourceName;
+            target = targetName;
+        }
+        else
+        {
+            source = targetName;
+            target = sourceName;
+        }
+
+        return PATH_CONNECTION_DEFINITIONS +
+            source.value + PATH_SEPARATOR +
+            target.value;
     }
 }

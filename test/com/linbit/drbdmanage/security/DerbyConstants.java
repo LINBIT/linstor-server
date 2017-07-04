@@ -115,6 +115,29 @@ public interface DerbyConstants
     public static final String PROP_KEY       = "PROP_KEY";
     public static final String PROP_VALUE     = "PROP_VALUE";
 
+    // table column counts
+    public static final int TBL_COL_COUNT_SEC_CONFIGURATION      = 3;
+    public static final int TBL_COL_COUNT_SEC_IDENTITIES         = 6;
+    public static final int TBL_COL_COUNT_SEC_TYPES              = 3;
+    public static final int TBL_COL_COUNT_SEC_ROLES              = 5;
+    public static final int TBL_COL_COUNT_SEC_ID_ROLE_MAP        = 2;
+    public static final int TBL_COL_COUNT_SEC_ACCESS_TYPES       = 2;
+    public static final int TBL_COL_COUNT_SEC_TYPE_RULES         = 3;
+    public static final int TBL_COL_COUNT_SEC_DFLT_ROLES         = 2;
+    public static final int TBL_COL_COUNT_SEC_OBJECT_PROTECTION  = 4;
+    public static final int TBL_COL_COUNT_SEC_ACL_MAP            = 3;
+    public static final int TBL_COL_COUNT_CTRL_CONFIGURATION     = 3;
+    public static final int TBL_COL_COUNT_NODES                  = 6;
+    public static final int TBL_COL_COUNT_NODE_NET_INTERFACES    = 6;
+    public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS   = 3;
+    public static final int TBL_COL_COUNT_NODE_RESOURCE          = 5;
+    public static final int TBL_COL_COUNT_VOLUME_DEFINITIONS     = 5;
+    public static final int TBL_COL_COUNT_VOLUMES                = 6;
+    public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS  = 3;
+    public static final int TBL_COL_COUNT_NODE_STOR_POOL         = 4;
+    public static final int TBL_COL_COUNT_CONNECTION_DEFINITIONS = 4;
+    public static final int TBL_COL_COUNT_PROPS_CONTAINERS       = 3;
+
     // create statements
     public static final String CREATE_TABLE_SEC_CONFIGURATION = 
         "CREATE TABLE SEC_CONFIGURATION \n" + 

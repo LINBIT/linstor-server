@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.HashSet;
 
 import org.junit.Test;
@@ -53,11 +52,6 @@ public class DerbyNodeDataTest extends DerbyBase
         " SELECT " + PROP_KEY + ", " + PROP_VALUE +
         " FROM " + TBL_PROPS_CONTAINERS +
         " WHERE " + PROPS_INSTANCE + " = ?";
-
-    public DerbyNodeDataTest() throws SQLException
-    {
-        super();
-    }
 
     // TODO: bunch of tests for constraint checks
     // TODO: VolumeDefinitionsTest
@@ -406,11 +400,15 @@ public class DerbyNodeDataTest extends DerbyBase
         Connection con = getConnection();
         TransactionMgr transMgr = new TransactionMgr(con);
 
-        NodeName nodeName = new NodeName("TestNodeName");
+        NodeName nodeName = new NodeName("TestSourceNodeName");
         java.util.UUID nodeUuid = randomUUID();
         String nodeTestKey = "nodeTestKey";
         String nodeTestValue = "nodeTestValue";
         NodeId nodeId = new NodeId(13);
+
+        NodeName nodeName2 = new NodeName("TestTargetNodeName");
+        java.util.UUID node2Uuid = randomUUID();
+        NodeId nodeId2 = new NodeId(42);
 
         java.util.UUID netIfUuid = randomUUID();
         NetInterfaceName netName = new NetInterfaceName("TestNetName");
@@ -424,6 +422,7 @@ public class DerbyNodeDataTest extends DerbyBase
         String resTestValue = "resTestValue";
 
         int connNr = 1;
+        java.util.UUID conUuid = randomUUID();
 
         java.util.UUID volDfnUuid = randomUUID();
         VolumeNumber volNr = new VolumeNumber(42);
@@ -451,17 +450,19 @@ public class DerbyNodeDataTest extends DerbyBase
         insertNode(con, nodeUuid, nodeName, NodeFlag.QIGNORE.getFlagValue(), NodeType.AUXILIARY);
         insertProp(con, PropsContainer.buildPath(nodeName), nodeTestKey, nodeTestValue);
 
+        insertObjProt(con, ObjectProtection.buildPath(nodeName2), sysCtx);
+        insertNode(con, node2Uuid, nodeName2, 0, NodeType.AUXILIARY);
+
         insertObjProt(con, ObjectProtection.buildPath(nodeName, netName), sysCtx);
         insertNetInterface(con, netIfUuid, nodeName, netName, netHost, netType);
 
         insertObjProt(con, ObjectProtection.buildPath(resName), sysCtx);
         insertResDfn(con, resDfnUuid, resName);
-        // TODO: gh - create db table for connectionDefinitions
-        // TODO: gh - insertConnectionDfn
+
+        insertConnDfn(con, conUuid, resName, nodeName, nodeName2);
         insertObjProt(con, ObjectProtection.buildPath(nodeName, resName), sysCtx);
         insertRes(con, resUuid, nodeName, resName, nodeId, Resource.RscFlags.CLEAN);
         insertProp(con, PropsContainer.buildPath(nodeName, resName), resTestKey, resTestValue);
-        // TODO: gh - insert stateFlags for resource
         insertVolDfn(con, volDfnUuid, resName, volNr, 5_000_000L, 10);
         insertVol(con, volUuid, nodeName, resName, volNr, volTestBlockDev, Volume.VlmFlags.CLEAN);
         insertProp(con, PropsContainer.buildPath(nodeName, resName, volNr), volTestKey, volTestValue);
@@ -478,9 +479,9 @@ public class DerbyNodeDataTest extends DerbyBase
         NodeData node = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
 
         assertNotNull(node);
+
         assertEquals(NodeFlag.QIGNORE.flagValue, node.getFlags().getFlagsBits(sysCtx));
         assertEquals(nodeName, node.getName()); // NodeName class implements equals
-
         {
             NetInterface netIf = node.getNetInterface(sysCtx, netName);
             assertNotNull(netIf);
@@ -513,6 +514,7 @@ public class DerbyNodeDataTest extends DerbyBase
                 ResourceDefinition resDfn = res.getDefinition();
                 assertNotNull(resDfn);
                 ConnectionDefinition conDfn = resDfn.getConnectionDfn(sysCtx, nodeName, connNr);
+                assertEquals(conUuid, conDfn.getUuid());
                 // TODO: gh - implement and test connections
             }
             assertEquals(nodeId, res.getNodeId());

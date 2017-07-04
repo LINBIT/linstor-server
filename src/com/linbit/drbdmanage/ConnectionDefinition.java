@@ -15,5 +15,7 @@ public interface ConnectionDefinition
 
     public ResourceDefinition getResourceDefinition(AccessContext accCtx) throws AccessDeniedException;
 
-    public int getPort(AccessContext accCtx) throws AccessDeniedException;
+    public Node getSourceNode(AccessContext accCtx) throws AccessDeniedException;
+
+    public Node getTargetNode(AccessContext accCtx) throws AccessDeniedException;
 }
