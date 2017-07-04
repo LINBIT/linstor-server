@@ -43,6 +43,7 @@ public class VolumeDataDefinitionDerbyDriver implements VolumeDefinitionDataData
         volNr = volNrRef;
     }
 
+    @Override
     public VolumeDefinitionData load(Connection con, SerialGenerator serialGen) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(VD_SELECT);
@@ -88,6 +89,8 @@ public class VolumeDataDefinitionDerbyDriver implements VolumeDefinitionDataData
             }
         }
 
+        resultSet.close();
+        stmt.close();
 
         return ret;
     }

@@ -95,6 +95,10 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         {
             netIfData = restoreInstance(con, node, netName, resultSet);
         }
+
+        resultSet.close();
+        stmt.close();
+
         return netIfData;
     }
 
@@ -137,6 +141,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         {
             create(con, netIfData);
         }
+        resultSet.close();
+        stmt.close();
     }
 
     public void delete(Connection con, NetInterface nid) throws SQLException
@@ -184,6 +190,9 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
             }
             netIfDataList.add(restoreInstance(con, node, netName, resultSet));
         }
+
+        resultSet.close();
+        stmt.close();
 
         return netIfDataList;
     }

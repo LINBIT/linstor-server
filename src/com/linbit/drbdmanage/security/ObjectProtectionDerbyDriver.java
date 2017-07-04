@@ -246,7 +246,8 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                     );
                 }
             }
-            objProt.commit(); // commit the transactions so that the object is not dirty anymore
+            resultSet.close();
+            stmt.close();
         }
 
         return objProt;

@@ -98,6 +98,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
             resultSet.insertRow();
         }
 
+        resultSet.close();
         stmt.close();
     }
 

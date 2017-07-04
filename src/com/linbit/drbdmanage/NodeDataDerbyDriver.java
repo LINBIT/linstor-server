@@ -132,14 +132,14 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 
             node = new NodeData(accCtx, nodeName, types, flags, serialGen, transMgr);
 
-            // load netInterfaces
+            // restore netInterfaces
             List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadNetInterfaceData(con, node);
             for (NetInterfaceData netIf : netIfaces)
             {
                 node.addNetInterface(dbCtx, netIf);
             }
 
-            // load props
+            // restore props
             PropsConDatabaseDriver propDriver = DrbdManage.getPropConDatabaseDriver(PropsContainer.buildPath(nodeName));
             Props props = node.getProps(dbCtx);
             Map<String, String> loadedProps = propDriver.load(con);
@@ -158,13 +158,17 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 }
             }
 
-            // load resources
+            // restore resources
             List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceData(con, dbCtx, node, serialGen, transMgr);
             for (ResourceData res : resList)
             {
                 node.addResource(dbCtx, res);
             }
         }
+
+        resultSet.close();
+        stmt.close();
+
         return node;
     }
 

@@ -63,7 +63,8 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
             UUID id = UuidUtils.asUUID(resultSet.getBytes(SPD_UUID));
             spdd = new StorPoolDefinitionData(accCtx, name, transMgr, id);
         }
-
+        resultSet.close();
+        stmt.close();
         return spdd;
     }
 

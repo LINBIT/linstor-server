@@ -124,5 +124,14 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         {
             create(con, storPoolData);
         }
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    public static void loadStorPools(Connection con, NodeData node)
+    {
+        // TODO Auto-generated method stub
+
     }
 }

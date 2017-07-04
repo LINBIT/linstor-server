@@ -57,7 +57,10 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         stmt.setString(1, resName.value);
         ResultSet resultSet = stmt.executeQuery();
 
-        return resultSet.next();
+        boolean exists = resultSet.next();
+        resultSet.close();
+        stmt.close();
+        return exists;
     }
 
     @Override
@@ -85,6 +88,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 );
             }
         }
+        resultSet.close();
+        stmt.close();
 
         return ret;
     }

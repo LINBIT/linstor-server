@@ -85,6 +85,8 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         ResultSet resultSet = stmt.executeQuery();
 
         List<ResourceData> list = load(con, resultSet, dbCtx, node, serialGen, transMgr);
+        resultSet.close();
+        stmt.close();
 
         ResourceData ret = null;
         if (!list.isEmpty())
@@ -101,7 +103,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         stmt.setString(1, node.getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        return load(con, resultSet, dbCtx, node, serialGen, transMgr);
+        List<ResourceData> ret = load(con, resultSet, dbCtx, node, serialGen, transMgr);
+        resultSet.close();
+        stmt.close();
+
+        return ret;
     }
 
     private static List<ResourceData> load(

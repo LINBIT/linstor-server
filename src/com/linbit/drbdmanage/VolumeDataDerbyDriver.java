@@ -69,6 +69,9 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             ResultSet resultSet = stmt.executeQuery();
 
             List<VolumeData> volList = load(con, resultSet, res, serialGen);
+            resultSet.close();
+            stmt.close();
+
             VolumeData ret = null;
             if (!volList.isEmpty())
             {
@@ -93,7 +96,11 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         stmt.setString(2, res.getDefinition().getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        return load(con, resultSet, res, serialGen);
+        List<VolumeData> ret = load(con, resultSet, res, serialGen);
+        resultSet.close();
+        stmt.close();
+
+        return ret;
     }
 
 
@@ -196,7 +203,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
             volList.add(volData);
         }
-
+        // resultSet should be closed by caller of this method
         return volList;
     }
 
@@ -221,6 +228,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             );
         }
         stmt.executeUpdate();
+        stmt.close();
     }
 
 
