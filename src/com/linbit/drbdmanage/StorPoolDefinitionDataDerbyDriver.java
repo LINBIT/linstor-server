@@ -6,11 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
-import com.linbit.drbdmanage.security.AccessContext;
-import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.utils.UuidUtils;
 
 public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionDataDatabaseDriver
@@ -51,7 +50,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     }
 
     @Override
-    public StorPoolDefinitionData load(Connection con, AccessContext accCtx, TransactionMgr transMgr) throws SQLException, AccessDeniedException
+    public StorPoolDefinitionData load(Connection con) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(SPD_SELECT);
         stmt.setString(1, name.value);
@@ -61,7 +60,13 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         if (resultSet.next())
         {
             UUID id = UuidUtils.asUUID(resultSet.getBytes(SPD_UUID));
-            spdd = new StorPoolDefinitionData(accCtx, name, transMgr, id);
+
+            ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+                ObjectProtection.buildPathSPD(name)
+            );
+            ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+
+            spdd = new StorPoolDefinitionData(id, objProt, name);
         }
         resultSet.close();
         stmt.close();

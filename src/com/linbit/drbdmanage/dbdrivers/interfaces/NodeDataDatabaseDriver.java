@@ -15,8 +15,6 @@ import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPool;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.security.AccessContext;
-import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
 public interface NodeDataDatabaseDriver
@@ -36,6 +34,6 @@ public interface NodeDataDatabaseDriver
     public void create(Connection con, NodeData nodeData)
         throws SQLException;
 
-    public NodeData load(Connection con, NodeName nodeName, AccessContext accCtx, SerialGenerator serialGen, TransactionMgr transMgr)
-        throws SQLException, AccessDeniedException;
+    public NodeData load(Connection con, NodeName nodeName, SerialGenerator serialGen, TransactionMgr transMgr)
+        throws SQLException;
 }

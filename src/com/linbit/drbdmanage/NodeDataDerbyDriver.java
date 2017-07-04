@@ -29,6 +29,7 @@ import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 import com.linbit.utils.UuidUtils;
 
@@ -37,6 +38,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private static final String TBL_NODE = DerbyConstants.TBL_NODES;
     private static final String TBL_NODE_RESOURCE = DerbyConstants.TBL_NODE_RESOURCE;
 
+    private static final String NODE_UUID = DerbyConstants.UUID;
     private static final String NODE_NAME = DerbyConstants.NODE_NAME;
     private static final String NODE_DSP_NAME = DerbyConstants.NODE_DSP_NAME;
     private static final String NODE_FLAGS = DerbyConstants.NODE_FLAGS;
@@ -47,12 +49,12 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private static final String NODE_RESOURCE_RESOURCE_NAME = DerbyConstants.RESOURCE_NAME;
 
     private static final String NODE_SELECT =
-        " SELECT " + NODE_DSP_NAME + ", " + NODE_TYPE + ", " + NODE_FLAGS + ", " + OBJ_PATH +
+        " SELECT " + NODE_UUID + ", " + NODE_DSP_NAME + ", " + NODE_TYPE + ", " + NODE_FLAGS + ", " + OBJ_PATH +
         " FROM " + TBL_NODE +
         " WHERE " + NODE_NAME + " = ?";
     private static final String NODE_INSERT =
         " INSERT INTO " + TBL_NODE +
-        " VALUES (?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?)";
     private static final String NODE_UPDATE_FLAGS =
         " UPDATE " + TBL_NODE +
         " SET "   + NODE_FLAGS + " = ? " +
@@ -83,11 +85,12 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         try
         {
             PreparedStatement stmt = con.prepareStatement(NODE_INSERT);
-            stmt.setString(1, node.getName().value);
-            stmt.setString(2, node.getName().displayValue);
-            stmt.setLong(3, node.getFlags().getFlagsBits(dbCtx));
-            stmt.setLong(4, node.getNodeTypes(dbCtx));
-            stmt.setString(5, ObjectProtection.buildPath(node.getName()));
+            stmt.setBytes(1, UuidUtils.asByteArray(node.getUuid()));
+            stmt.setString(2, node.getName().value);
+            stmt.setString(3, node.getName().displayValue);
+            stmt.setLong(4, node.getFlags().getFlagsBits(dbCtx));
+            stmt.setLong(5, node.getNodeTypes(dbCtx));
+            stmt.setString(6, ObjectProtection.buildPath(node.getName()));
             stmt.executeUpdate();
             stmt.close();
         }
@@ -101,75 +104,106 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public NodeData load(Connection con, NodeName nodeName, AccessContext accCtx, SerialGenerator serialGen, TransactionMgr transMgr)
-        throws SQLException, AccessDeniedException
+    public NodeData load(Connection con, NodeName nodeName, SerialGenerator serialGen, TransactionMgr transMgr)
+        throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NODE_SELECT);
-        stmt.setString(1, nodeName.value);
-        ResultSet resultSet = stmt.executeQuery();
-
-        NodeData node = null;
-        if (resultSet.next())
+        try
         {
-            Set<NodeType> types = new HashSet<>();
-            long typeBits = resultSet.getLong(NODE_TYPE);
-            for (NodeType type : NodeType.values())
+            PreparedStatement stmt = con.prepareStatement(NODE_SELECT);
+            stmt.setString(1, nodeName.value);
+            ResultSet resultSet = stmt.executeQuery();
+
+            NodeData node = null;
+            if (resultSet.next())
             {
-                if ((typeBits & type.getFlagValue()) == type.getFlagValue())
+                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+                    ObjectProtection.buildPath(nodeName)
+                );
+                ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+
+                Set<NodeType> types = new HashSet<>();
+                long typeBits = resultSet.getLong(NODE_TYPE);
+                for (NodeType type : NodeType.values())
                 {
-                    types.add(type);
+                    if ((typeBits & type.getFlagValue()) == type.getFlagValue())
+                    {
+                        types.add(type);
+                    }
                 }
-            }
-            Set<NodeFlag> flags = new HashSet<>();
-            long flagBits = resultSet.getLong(NODE_FLAGS);
-            for (NodeFlag flag : NodeFlag.values())
-            {
-                if ((flagBits & flag.flagValue) == flag.flagValue)
+                Set<NodeFlag> flags = new HashSet<>();
+                long flagBits = resultSet.getLong(NODE_FLAGS);
+                for (NodeFlag flag : NodeFlag.values())
                 {
-                    flags.add(flag);
+                    if ((flagBits & flag.flagValue) == flag.flagValue)
+                    {
+                        flags.add(flag);
+                    }
+                }
+
+                node = new NodeData(
+                    UuidUtils.asUUID(resultSet.getBytes(NODE_UUID)),
+                    objProt,
+                    nodeName,
+                    types,
+                    flags,
+                    serialGen,
+                    transMgr
+                );
+
+                // restore netInterfaces
+                List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadNetInterfaceData(con, node);
+                    for (NetInterfaceData netIf : netIfaces)
+                    {
+                            node.addNetInterface(dbCtx, netIf);
+                    }
+
+
+                // restore props
+                PropsConDatabaseDriver propDriver = DrbdManage.getPropConDatabaseDriver(PropsContainer.buildPath(nodeName));
+                Props props = node.getProps(dbCtx);
+                Map<String, String> loadedProps = propDriver.load(con);
+                for (Entry<String, String> entry : loadedProps.entrySet())
+                {
+                    try
+                    {
+                        props.setProp(entry.getKey(), entry.getValue());
+                    }
+                    catch (InvalidKeyException | InvalidValueException invalidException)
+                    {
+                        throw new DrbdSqlRuntimeException(
+                            "Invalid property loaded from instance: " + PropsContainer.buildPath(nodeName),
+                            invalidException
+                        );
+                    }
+                }
+
+                // restore resources
+                List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceData(con, dbCtx, node, serialGen, transMgr);
+                for (ResourceData res : resList)
+                {
+                    node.addResource(dbCtx, res);
+                }
+
+                // restore storPools
+                List<StorPoolData> storPoolList = StorPoolDataDerbyDriver.loadStorPools(con, node, transMgr, serialGen);
+                for (StorPoolData storPool : storPoolList)
+                {
+                    node.addStorPool(dbCtx, storPool);
                 }
             }
 
-            node = new NodeData(accCtx, nodeName, types, flags, serialGen, transMgr);
+            resultSet.close();
+            stmt.close();
 
-            // restore netInterfaces
-            List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadNetInterfaceData(con, node);
-            for (NetInterfaceData netIf : netIfaces)
-            {
-                node.addNetInterface(dbCtx, netIf);
-            }
-
-            // restore props
-            PropsConDatabaseDriver propDriver = DrbdManage.getPropConDatabaseDriver(PropsContainer.buildPath(nodeName));
-            Props props = node.getProps(dbCtx);
-            Map<String, String> loadedProps = propDriver.load(con);
-            for (Entry<String, String> entry : loadedProps.entrySet())
-            {
-                try
-                {
-                    props.setProp(entry.getKey(), entry.getValue());
-                }
-                catch (InvalidKeyException | InvalidValueException invalidException)
-                {
-                    throw new DrbdSqlRuntimeException(
-                        "Invalid property loaded from instance: " + PropsContainer.buildPath(nodeName),
-                        invalidException
-                    );
-                }
-            }
-
-            // restore resources
-            List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceData(con, dbCtx, node, serialGen, transMgr);
-            for (ResourceData res : resList)
-            {
-                node.addResource(dbCtx, res);
-            }
+            return node;
         }
-
-        resultSet.close();
-        stmt.close();
-
-        return node;
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            throw new ImplementationError(
+                "Database's access context has no permission to fully restore NodeData",
+                accessDeniedExc
+            );
+        }
     }
 
     @Override

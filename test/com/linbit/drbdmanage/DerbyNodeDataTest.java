@@ -385,8 +385,10 @@ public class DerbyNodeDataTest extends DerbyBase
 
         NodeName nodeName = new NodeName("TestNodeName");
 
+        java.util.UUID uuid = randomUUID();
+
         insertObjProt(con, ObjectProtection.buildPath(nodeName), sysCtx);
-        insertNode(con, nodeName, 0, NodeType.AUXILIARY);
+        insertNode(con, uuid, nodeName, 0, NodeType.AUXILIARY);
         con.commit();
 
         NodeData node = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
@@ -405,36 +407,36 @@ public class DerbyNodeDataTest extends DerbyBase
         TransactionMgr transMgr = new TransactionMgr(con);
 
         NodeName nodeName = new NodeName("TestNodeName");
-        java.util.UUID nodeUuid = java.util.UUID.randomUUID();
+        java.util.UUID nodeUuid = randomUUID();
         String nodeTestKey = "nodeTestKey";
         String nodeTestValue = "nodeTestValue";
         NodeId nodeId = new NodeId(13);
 
-        java.util.UUID netIfUuid = java.util.UUID.randomUUID();
+        java.util.UUID netIfUuid = randomUUID();
         NetInterfaceName netName = new NetInterfaceName("TestNetName");
         String netHost = "127.0.0.1";
         String netType = "IP";
 
         ResourceName resName = new ResourceName("TestResName");
-        java.util.UUID resDfnUuid = java.util.UUID.randomUUID();
-        java.util.UUID resUuid = java.util.UUID.randomUUID();
+        java.util.UUID resDfnUuid = randomUUID();
+        java.util.UUID resUuid = randomUUID();
         String resTestKey = "resTestKey";
         String resTestValue = "resTestValue";
 
         int connNr = 1;
 
-        java.util.UUID volDfnUuid = java.util.UUID.randomUUID();
+        java.util.UUID volDfnUuid = randomUUID();
         VolumeNumber volNr = new VolumeNumber(42);
 
-        java.util.UUID volUuid = java.util.UUID.randomUUID();
+        java.util.UUID volUuid = randomUUID();
         String volTestBlockDev = "/dev/do/not/use/me";
         String volTestKey = "volTestKey";
         String volTestValue = "volTestValue";
 
-        java.util.UUID storPoolDfnId = java.util.UUID.randomUUID();
+        java.util.UUID storPoolDfnId = randomUUID();
         StorPoolName poolName = new StorPoolName("TestPoolName");
 
-        java.util.UUID storPoolId = java.util.UUID.randomUUID();
+        java.util.UUID storPoolId = randomUUID();
         String driver = LvmDriver.class.getSimpleName();
 
         String storPoolPropsInstance = PropsContainer.buildPath(
@@ -446,7 +448,7 @@ public class DerbyNodeDataTest extends DerbyBase
 
 
         insertObjProt(con, ObjectProtection.buildPath(nodeName), sysCtx);
-        insertNode(con, nodeName, NodeFlag.QIGNORE.getFlagValue(), NodeType.AUXILIARY);
+        insertNode(con, nodeUuid, nodeName, NodeFlag.QIGNORE.getFlagValue(), NodeType.AUXILIARY);
         insertProp(con, PropsContainer.buildPath(nodeName), nodeTestKey, nodeTestValue);
 
         insertObjProt(con, ObjectProtection.buildPath(nodeName, netName), sysCtx);
@@ -567,9 +569,8 @@ public class DerbyNodeDataTest extends DerbyBase
             }
             {
                 StorageDriver storageDriver = storPool.getDriver(sysCtx);
-                assertNotNull(storageDriver);
-                assertEquals(driver, storageDriver.getClass().getSimpleName());
-                // TODO: gh - store and test driver props
+                assertNull(storageDriver);
+                // in controller storDriver HAS to be null (as we are testing database, we have to be testing the controller)
             }
             assertEquals(driver, storPool.getDriverName());
             assertEquals(poolName, storPool.getName());

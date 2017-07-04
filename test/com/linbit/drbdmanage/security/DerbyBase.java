@@ -280,7 +280,10 @@ public abstract class DerbyBase implements DerbyConstants
         connection.commit();
     }
 
-
+    protected java.util.UUID randomUUID()
+    {
+        return java.util.UUID.randomUUID();
+    }
 
     protected void insertObjProt(Connection dbCon, String objPath, AccessContext accCtx) throws SQLException
     {
@@ -292,7 +295,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.executeUpdate();
     }
 
-    protected void insertNode(Connection dbCon, NodeName nodeName, long flags, NodeType... types)throws SQLException
+    protected void insertNode(Connection dbCon, java.util.UUID uuid, NodeName nodeName, long flags, NodeType... types)throws SQLException
     {
         long typeMask = 0;
         for (NodeType type : types)
@@ -301,11 +304,12 @@ public abstract class DerbyBase implements DerbyConstants
         }
 
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_NODES);
-        stmt.setString(1, nodeName.value);
-        stmt.setString(2, nodeName.displayValue);
-        stmt.setLong(3, flags);
-        stmt.setLong(4, typeMask);
-        stmt.setString(5, ObjectProtection.buildPath(nodeName));
+        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(2, nodeName.value);
+        stmt.setString(3, nodeName.displayValue);
+        stmt.setLong(4, flags);
+        stmt.setLong(5, typeMask);
+        stmt.setString(6, ObjectProtection.buildPath(nodeName));
         stmt.executeUpdate();
     }
 

@@ -4,13 +4,18 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.StorPoolData;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.security.AccessContext;
-import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.utils.UuidUtils;
 
 public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
@@ -22,11 +27,12 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     private static final String NSP_POOL = DerbyConstants.POOL_NAME;
     private static final String NSP_DRIVER = DerbyConstants.DRIVER_NAME;
 
-    private static final String NSP_SELECT =
+    private static final String NSP_SELECT_BY_NODE =
         " SElECT " + NSP_UUID + ", " + NSP_NODE + ", " + NSP_POOL + ", " + NSP_DRIVER +
         " FROM " + TBL_NSP +
-        " WHERE " + NSP_NODE + " = ? AND " +
-        "       " + NSP_POOL + " = ?";
+        " WHERE " + NSP_NODE + " = ?";
+    private static final String NSP_SELECT = NSP_SELECT_BY_NODE +
+        " AND "  + NSP_POOL + " = ?";
     private static final String NSP_INSERT =
         " INSERT INTO " + TBL_NSP +
         " VALUES (?, ?, ?, ?)";
@@ -60,11 +66,10 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     @Override
     public StorPoolData load(
         Connection con,
-        AccessContext accCtx,
         TransactionMgr transMgr,
         SerialGenerator serGen
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(NSP_SELECT);
         stmt.setString(1, node.getName().value);
@@ -74,21 +79,75 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         StorPoolData sp = null;
         if (resultSet.next())
         {
+            ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+                ObjectProtection.buildPathSP(storPoolDfn.getName())
+            );
+            ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+
             sp = new StorPoolData(
-                accCtx,
+                UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)),
+                objProt,
                 storPoolDfn,
                 transMgr,
                 null,   // storageDriver, has to be null in the controller
                 resultSet.getString(NSP_DRIVER),
                 serGen,
-                node,
-                UuidUtils.asUUID(resultSet.getBytes(NSP_UUID))
+                node
             );
         }
         resultSet.close();
         stmt.close();
 
         return sp;
+    }
+
+    public static List<StorPoolData> loadStorPools(Connection con, NodeData node, TransactionMgr transMgr, SerialGenerator serGen) throws SQLException
+    {
+        PreparedStatement stmt = con.prepareStatement(NSP_SELECT_BY_NODE);
+        stmt.setString(1, node.getName().value);
+        ResultSet resultSet = stmt.executeQuery();
+
+        List<StorPoolData> storPoolList = new ArrayList<>();
+        try
+        {
+            while(resultSet.next())
+            {
+                StorPoolName storPoolName;
+                    storPoolName = new StorPoolName(resultSet.getString(NSP_POOL));
+
+                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+                    ObjectProtection.buildPathSP(storPoolName)
+                    );
+                ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+
+                StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = DrbdManage.getStorPoolDefinitionDataDriver(storPoolName);
+                StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(con);
+
+
+                StorPoolData storPoolData = new StorPoolData(
+                    UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)),
+                    objProt,
+                    storPoolDef,
+                    transMgr,
+                    null, // controller should not have an instance of storage driver.
+                    resultSet.getString(NSP_DRIVER),
+                    serGen,
+                    node
+                );
+
+                storPoolList.add(storPoolData);
+            }
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new DrbdSqlRuntimeException(
+                String.format("Invalid storage name loaded from Table %s: %s ", TBL_NSP, resultSet.getString(NSP_POOL)),
+                invalidNameExc
+            );
+        }
+
+
+        return storPoolList;
     }
 
     @Override
@@ -129,9 +188,4 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         stmt.close();
     }
 
-    public static void loadStorPools(Connection con, NodeData node)
-    {
-        // TODO Auto-generated method stub
-
-    }
 }

@@ -70,13 +70,13 @@ public interface DerbyConstants
     public static final String SECURITY_TYPE_NAME    = "SECURITY_TYPE_NAME";
 
     // NODES column names
+    public static final String UUID          = "UUID";
     public static final String NODE_NAME     = "NODE_NAME";
     public static final String NODE_DSP_NAME = "NODE_DSP_NAME";
     public static final String NODE_FLAGS    = "NODE_FLAGS";
     public static final String NODE_TYPE     = "NODE_TYPE";
 
     // NODE_NET_INTERFACES column names
-    public static final String UUID                = "UUID";
     public static final String NODE_NET_NAME       = "NODE_NET_NAME";
     public static final String NODE_NET_DSP_NAME   = "NODE_NET_DSP_NAME";
     public static final String INET_ADDRESS        = "INET_ADDRESS";
@@ -227,6 +227,7 @@ public interface DerbyConstants
     public static final String CREATE_TABLE_NODES = 
         "CREATE TABLE NODES \n" + 
         "( \n" + 
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" + 
         "    NODE_NAME VARCHAR(255) NOT NULL PRIMARY KEY \n" + 
         "        CONSTRAINT NODES_CHKNAME CHECK (UPPER(NODE_NAME) = NODE_NAME AND LENGTH(NODE_NAME) >= 2), \n" + 
         "    NODE_DSP_NAME VARCHAR(255) NOT NULL, \n" + 
@@ -509,7 +510,7 @@ public interface DerbyConstants
         " VALUES (?, ?, ?)";
     public static final String INSERT_NODES = 
         " INSERT INTO " + TBL_NODES + 
-        " VALUES (?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?)";
     public static final String INSERT_NODE_NET_INTERFACES = 
         " INSERT INTO " + TBL_NODE_NET_INTERFACES + 
         " VALUES (?, ?, ?, ?, ?, ?)";

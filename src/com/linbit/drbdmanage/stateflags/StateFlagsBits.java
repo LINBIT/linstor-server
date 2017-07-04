@@ -68,6 +68,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         setFlags(0L);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void enableFlags(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
@@ -78,6 +79,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         setFlags((changedStateFlags | flagsBits) & mask);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void disableFlags(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
@@ -88,6 +90,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         setFlags(changedStateFlags & ~flagsBits);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void enableFlagsExcept(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
@@ -98,6 +101,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         setFlags(changedStateFlags | (mask & ~flagsBits));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void disableFlagsExcept(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
@@ -108,6 +112,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         setFlags(changedStateFlags & flagsBits);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean isSet(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException
@@ -118,6 +123,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         return (changedStateFlags & flagsBits) == flagsBits;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean isUnset(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException
@@ -128,6 +134,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         return (changedStateFlags & flagsBits) == 0L;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean isSomeSet(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException
@@ -138,6 +145,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         return (changedStateFlags & flagsBits) != 0L;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean isSomeUnset(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException

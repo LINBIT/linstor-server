@@ -64,14 +64,49 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private final List<TransactionObject> transObjList;
 
-    NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, Set<NodeFlag> flagSet, SerialGenerator srlGen, TransactionMgr transMgr)
+    NodeData(
+        AccessContext accCtx,
+        NodeName nameRef,
+        Set<NodeType> types,
+        Set<NodeFlag> flagSet,
+        SerialGenerator srlGen,
+        TransactionMgr transMgr
+    )
         throws SQLException, AccessDeniedException
+    {
+        this(
+            UUID.randomUUID(),
+            ObjectProtection.getInstance(
+                accCtx,
+                transMgr,
+                ObjectProtection.buildPath(nameRef),
+                true
+            ),
+            nameRef,
+            types,
+            flagSet,
+            srlGen,
+            transMgr
+        );
+    }
+
+    NodeData(
+        UUID uuidRef,
+        ObjectProtection objProtRef,
+        NodeName nameRef,
+        Set<NodeType> types,
+        Set<NodeFlag> flagSet,
+        SerialGenerator srlGen,
+        TransactionMgr transMgr
+    )
+        throws SQLException
     {
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
         ErrorCheck.ctorNotNull(NodeData.class, NodeType.class, types);
-        objId = UUID.randomUUID();
-        clNodeName = nameRef;
 
+        objId = uuidRef;
+        objProt = objProtRef;
+        clNodeName = nameRef;
         dbDriver = DrbdManage.getNodeDataDatabaseDriver();
 
         resourceMap = new TransactionMap<>(
@@ -87,15 +122,27 @@ public class NodeData extends BaseTransactionObject implements Node
             dbDriver.getNodeStorPoolMapDriver(this)
         );
 
-        nodeProps = SerialPropsContainer.createRootContainer(srlGen, dbDriver.getPropsConDriver(nameRef));
-        objProt = ObjectProtection.getInstance(
-            accCtx,
-            transMgr,
-            ObjectProtection.buildPath(nameRef),
-            true
-        );
-        flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence(nameRef));
-        nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence(nameRef));
+        nodeProps = SerialPropsContainer.loadContainer(dbDriver.getPropsConDriver(nameRef), transMgr, srlGen);
+
+
+        long initialFlags = 0;
+        if (flagSet != null)
+        {
+            initialFlags = StateFlagsBits.getMask(flagSet.toArray(new NodeFlag[0]));
+        }
+        flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence(nameRef), initialFlags);
+
+        long initialTypes = 0;
+        if (types == null || types.isEmpty())
+        {
+            // Default to creating an AUXILIARY type node
+            initialTypes = NodeType.AUXILIARY.getFlagValue();
+        }
+        else
+        {
+            initialTypes = StateFlagsBits.getMask(types.toArray(new NodeType[0]));
+        }
+        nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence(nameRef), initialTypes);
 
         transObjList = Arrays.<TransactionObject> asList(
             flags,
@@ -106,22 +153,6 @@ public class NodeData extends BaseTransactionObject implements Node
             objProt,
             nodeProps
         );
-
-        if (flagSet != null)
-        {
-            flags.enableFlags(accCtx, flagSet.toArray(new NodeFlag[flagSet.size()]));
-        }
-
-        if (types == null || types.isEmpty())
-        {
-            // Default to creating an AUXILIARY type node
-            nodeTypeFlags.enableFlags(accCtx, NodeType.AUXILIARY);
-        }
-        else
-        {
-            NodeType[] typeArr = types.toArray(new NodeType[0]);
-            nodeTypeFlags.enableFlags(accCtx, typeArr);
-        }
 
         if (transMgr != null)
         {
@@ -145,8 +176,7 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver();
         if (transMgr != null)
         {
-            nodeData = dbDriver.load(transMgr.dbCon, nameRef, accCtx, srlGen, transMgr);
-            // TODO: gh - ensure nodeData is loaded completely
+            nodeData = dbDriver.load(transMgr.dbCon, nameRef, srlGen, transMgr);
         }
 
         if (nodeData != null)
@@ -380,17 +410,17 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlag>
     {
-        NodeFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
+        NodeFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef, long initialFlags)
         {
-            super(objProtRef, StateFlagsBits.getMask(NodeFlag.values()), persistenceRef);
+            super(objProtRef, StateFlagsBits.getMask(NodeFlag.values()), persistenceRef, initialFlags);
         }
     }
 
     private static final class NodeTypesFlagsImpl extends StateFlagsBits<NodeType>
     {
-        NodeTypesFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
+        NodeTypesFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef, long initialFlags)
         {
-            super(objProtRef, StateFlagsBits.getMask(NodeType.values()), persistenceRef);
+            super(objProtRef, StateFlagsBits.getMask(NodeType.values()), persistenceRef, initialFlags);
         }
     }
 }

@@ -43,31 +43,41 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     )
         throws AccessDeniedException, SQLException
     {
-        this(accCtx, storPoolDef, transMgr, storDriver,storDriverSimpleClassName, serGen, nodeRef, UUID.randomUUID());
+        this(
+            UUID.randomUUID(),
+            ObjectProtection.getInstance(
+                accCtx,
+                transMgr,
+                ObjectProtection.buildPathSP(storPoolDef.getName()),
+                true
+            ),
+            storPoolDef,
+            transMgr,
+            storDriver,
+            storDriverSimpleClassName,
+            serGen,
+            nodeRef
+        );
     }
 
     StorPoolData(
-        AccessContext accCtx,
+        UUID id,
+        ObjectProtection objProtRef,
         StorPoolDefinition storPoolDefRef,
         TransactionMgr transMgr,
         StorageDriver storDriverRef,
         String storDriverSimpleClassNameRef,
         SerialGenerator serGen,
-        Node nodeRef,
-        UUID id
+        Node nodeRef
     )
-        throws AccessDeniedException, SQLException
+        throws SQLException
     {
         uuid = id;
         storPoolDef = storPoolDefRef;
         storDriver = storDriverRef;
         storDriverSimpleClassName = storDriverSimpleClassNameRef;
-        objProt = ObjectProtection.getInstance(
-            accCtx,
-            transMgr,
-            ObjectProtection.buildPathSP(storPoolDefRef.getName()),
-            true
-        );
+        objProt = objProtRef;
+
 //        dbDriver = DrbdManage.getStorPoolDataDatabaseDriver(nodeRef, storPoolDefRef);
         props = SerialPropsContainer.loadContainer(
             DrbdManage.getPropConDatabaseDriver(
@@ -105,7 +115,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                 throw new ImplementationError("Controller should not have an instance of StorageDriver", null);
             }
             nodeRef.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-            storPoolData = driver.load(transMgr.dbCon, accCtx, transMgr, serGen);
+            storPoolData = driver.load(transMgr.dbCon, transMgr, serGen);
             if (storPoolData == null && createIfNotExists)
             {
                 storPoolData = new StorPoolData(

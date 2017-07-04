@@ -29,12 +29,21 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     StorPoolDefinitionData(AccessContext accCtx, StorPoolName nameRef, TransactionMgr transMgr)
         throws AccessDeniedException, SQLException
     {
-        this(accCtx, nameRef, transMgr, UUID.randomUUID());
+        this(
+            UUID.randomUUID(),
+            ObjectProtection.getInstance(
+                accCtx,
+                transMgr,
+                ObjectProtection.buildPathSPD(nameRef),
+                true
+            ),
+            nameRef
+        );
     }
 
     /**
      * Constructor used by other Constructor as well as from the DerbyDriver for
-     * restoring the UUID
+     * restoring the UUID and the ObjectProtection
      *
      * @param accCtx
      * @param nameRef
@@ -43,17 +52,11 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
      * @throws AccessDeniedException
      * @throws SQLException
      */
-    StorPoolDefinitionData(AccessContext accCtx, StorPoolName nameRef, TransactionMgr transMgr, UUID id)
-        throws AccessDeniedException, SQLException
+    StorPoolDefinitionData(UUID id, ObjectProtection objProtRef, StorPoolName nameRef)
     {
-        name = nameRef;
         uuid = id;
-        objProt = ObjectProtection.getInstance(
-            accCtx,
-            transMgr,
-            ObjectProtection.buildPathSPD(nameRef),
-            true
-        );
+        objProt = objProtRef;
+        name = nameRef;
 
         transObjs = Arrays.<TransactionObject>asList(objProt);
     }
@@ -71,7 +74,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         StorPoolDefinitionDataDatabaseDriver dbDriver = DrbdManage.getStorPoolDefinitionDataDriver(nameRef);
         if (transMgr != null)
         {
-            storPoolDfn = dbDriver.load(transMgr.dbCon, accCtx, transMgr);
+            storPoolDfn = dbDriver.load(transMgr.dbCon);
             if (storPoolDfn == null && createIfNotExists)
             {
                 storPoolDfn = new StorPoolDefinitionData(accCtx, nameRef, transMgr);

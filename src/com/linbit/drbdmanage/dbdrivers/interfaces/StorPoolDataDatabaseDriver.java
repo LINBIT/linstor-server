@@ -6,13 +6,11 @@ import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.StorPoolData;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.security.AccessContext;
-import com.linbit.drbdmanage.security.AccessDeniedException;
 
 public interface StorPoolDataDatabaseDriver
 {
-    public StorPoolData load(Connection con, AccessContext accCtx, TransactionMgr transMgr, SerialGenerator serGen)
-        throws SQLException, AccessDeniedException;
+    public StorPoolData load(Connection con, TransactionMgr transMgr, SerialGenerator serGen)
+        throws SQLException;
 
     public void create(Connection dbCon, StorPoolData storPoolData)
         throws SQLException;
