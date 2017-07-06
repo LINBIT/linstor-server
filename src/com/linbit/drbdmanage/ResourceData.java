@@ -134,7 +134,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         );
         resourceProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = objProtRef;
-        flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence());
+        flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence(nodeRef.getName()));
 
         transObjs = Arrays.asList(
             resourceDfn,

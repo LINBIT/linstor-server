@@ -69,9 +69,8 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     @Override
     public void create(Connection con, VolumeDefinitionData volDfnData) throws SQLException
     {
-        try
+        try(PreparedStatement stmt = con.prepareStatement(VD_INSERT))
         {
-            PreparedStatement stmt = con.prepareStatement(VD_INSERT);
             stmt.setBytes(1, UuidUtils.asByteArray(volDfnData.getUuid()));
             stmt.setString(2, volDfnData.getResourceDfn().getName().value);
             stmt.setInt(3, volDfnData.getVolumeNumber(dbCtx).value);
@@ -120,6 +119,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     }
 
                     ret = new VolumeDefinitionData(
+                        UuidUtils.asUUID(resultSet.getBytes(VD_UUID)),
                         dbCtx, // volumeDefinition does not have objProt, but require access to their resource's objProt
                         resDfn,
                         volNr,
@@ -133,6 +133,8 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 }
                 catch (AccessDeniedException accessDeniedExc)
                 {
+                    resultSet.close();
+                    stmt.close();
                     throw new ImplementationError(
                         "Database's access context has no permission to create VolumeDefinition",
                         accessDeniedExc
@@ -140,6 +142,8 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 }
                 catch (MdException mdExc)
                 {
+                    resultSet.close();
+                    stmt.close();
                     throw new DrbdSqlRuntimeException(
                         "Invalid volume size: " + resultSet.getLong(VD_SIZE),
                         mdExc
@@ -147,6 +151,8 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 }
                 catch (ValueOutOfRangeException valueOutOfRangeExc)
                 {
+                    resultSet.close();
+                    stmt.close();
                     throw new DrbdSqlRuntimeException(
                         "Invalid minor number: " + resultSet.getInt(VD_MINOR_NR),
                         valueOutOfRangeExc
@@ -176,6 +182,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         stmt.setString(1, resDfn.getName().value);
         stmt.setInt(2, volNr.value);
         stmt.executeUpdate();
+        stmt.close();
 
         cacheRemove(resDfn, volNr);
     }

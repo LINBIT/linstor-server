@@ -20,6 +20,7 @@ import com.linbit.drbdmanage.security.AccessType;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -57,6 +58,9 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     private VolumeDefinitionDataDatabaseDriver dbDriver;
 
+    /**
+     * Constructor used by getInstance
+     */
     VolumeDefinitionData(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
@@ -69,6 +73,36 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     )
         throws MdException, AccessDeniedException, SQLException
     {
+        this(
+            UUID.randomUUID(),
+            accCtx,
+            resDfnRef,
+            volNr,
+            minor,
+            volSize,
+            transMgr,
+            srlGen,
+            initFlags
+        );
+    }
+
+    /**
+     * Constructor used by database drivers and tests
+     */
+    VolumeDefinitionData(
+        UUID uuid,
+        AccessContext accCtx,
+        ResourceDefinition resDfnRef,
+        VolumeNumber volNr,
+        MinorNumber minor,
+        long volSize,
+        TransactionMgr transMgr,
+        SerialGenerator srlGen,
+        Set<VlmDfnFlags> initFlags
+    )
+        throws MdException, AccessDeniedException, SQLException
+    {
+
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, VolumeNumber.class, volNr);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, MinorNumber.class, minor);
@@ -99,7 +133,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             }
         }
 
-        objId = UUID.randomUUID();
+        objId = uuid;
         resourceDfn = resDfnRef;
 
         dbDriver = DrbdManage.getVolumeDefinitionDataDatabaseDriver(resDfnRef, volNr);
@@ -114,8 +148,12 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             dbDriver.getVolumeSizeDriver()
         );
 
-        // TODO: do not create new prop, but load existing container
         vlmDfnProps = SerialPropsContainer.loadContainer(dbDriver.getPropsDriver(), transMgr, srlGen);
+
+        if (initFlags == null)
+        {
+            initFlags = new HashSet<>();
+        }
 
         flags = new VlmDfnFlagsImpl(
             resDfnRef.getObjProt(),
@@ -132,7 +170,56 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         );
     }
 
-     // TODO: gh - implement static VolumeDefinitionData.getInstance(...)
+    public static VolumeDefinitionData getInstance(
+        ResourceDefinition resDfn,
+        VolumeNumber volNr,
+        TransactionMgr transMgr,
+        SerialGenerator serialGen,
+        AccessContext accCtx,
+        MinorNumber minor,
+        long volSize,
+        Set<VlmDfnFlags> initFlags,
+        boolean createIfNotExists
+    )
+        throws SQLException, AccessDeniedException, MdException
+    {
+        VolumeDefinitionData volDfn = null;
+
+        VolumeDefinitionDataDatabaseDriver driver = DrbdManage.getVolumeDefinitionDataDatabaseDriver(resDfn, volNr);
+        if (transMgr != null)
+        {
+            volDfn = driver.load(transMgr.dbCon, transMgr, serialGen);
+        }
+
+        if (volDfn == null)
+        {
+            if (createIfNotExists)
+            {
+                volDfn = new VolumeDefinitionData(
+                    accCtx,
+                    resDfn,
+                    volNr,
+                    minor,
+                    volSize,
+                    transMgr,
+                    serialGen,
+                    initFlags
+                );
+                if (transMgr != null)
+                {
+                    driver.create(transMgr.dbCon, volDfn);
+                }
+            }
+        }
+
+        if (volDfn != null)
+        {
+            volDfn.initialized();
+        }
+
+
+        return volDfn;
+    }
 
     @Override
     public UUID getUuid()

@@ -1,9 +1,10 @@
 package com.linbit.drbdmanage;
 
-final class DrbdManageUtils
+public class DrbdManageTestUtils
 {
-    static void clearCaches()
+    public static void clearCaches()
     {
+        ConnectionDefinitionDataDerbyDriver.clearCache();
         NetInterfaceDataDerbyDriver.clearCache();
         NodeDataDerbyDriver.clearCache();
         ResourceDataDerbyDriver.clearCache();

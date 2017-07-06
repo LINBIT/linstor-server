@@ -16,6 +16,7 @@ import org.junit.BeforeClass;
 
 import com.linbit.InvalidNameException;
 import com.linbit.drbdmanage.DatabaseSetter;
+import com.linbit.drbdmanage.DrbdManageTestUtils;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.NodeId;
@@ -95,51 +96,60 @@ public abstract class DerbyBase implements DerbyConstants
     @BeforeClass
     public static void setUpBeforeClass() throws SQLException
     {
-        File dbFolder = new File(DB_FOLDER);
-        if (dbFolder.exists())
+        if (dbConnPool == null)
         {
-            deleteFolder(dbFolder);
+            File dbFolder = new File(DB_FOLDER);
+            if (dbFolder.exists())
+            {
+                deleteFolder(dbFolder);
+            }
+
+            // load the clientDriver...
+            DB_PROPS.setProperty("create", "true");
+            DB_PROPS.setProperty("user", DB_USER);
+            DB_PROPS.setProperty("password", DB_PASSWORD);
+
+            dbConnPool = new DbConnectionPool();
+            dbConnPool.initializeDataSource(DB_URL, DB_PROPS);
+
+            con = dbConnPool.getConnection();
+            secureDbDriver = new DbDerbyPersistence(sysCtx);
+            DerbyDriver persistenceDbDriver = new DerbyDriver(
+                new StdErrorReporter("TESTING"),
+                sysCtx
+            );
+            DatabaseSetter.setDatabaseClasses(
+                secureDbDriver,
+                persistenceDbDriver
+            );
         }
-
-        // load the clientDriver...
-        DB_PROPS.setProperty("create", "true");
-        DB_PROPS.setProperty("user", DB_USER);
-        DB_PROPS.setProperty("password", DB_PASSWORD);
-
-        dbConnPool = new DbConnectionPool();
-        dbConnPool.initializeDataSource(DB_URL, DB_PROPS);
-
-        con = dbConnPool.getConnection();
-
-        secureDbDriver = new DbDerbyPersistence(sysCtx);
-        DerbyDriver persistenceDbDriver = new DerbyDriver(
-            new StdErrorReporter("TESTING"),
-            sysCtx
-        );
-        DatabaseSetter.setDatabaseClasses(
-            secureDbDriver,
-            persistenceDbDriver
-        );
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception
     {
 //        dropTables();
-        File dbFolder = new File(DB_FOLDER);
-        deleteFolder(dbFolder);
+//        File dbFolder = new File(DB_FOLDER);
+//        deleteFolder(dbFolder);
 
-        con.close();
-        dbConnPool.shutdown();
+//        con.close();
+//        dbConnPool.shutdown();
+//        initialized = false;
     }
 
-    private static void deleteFolder(File folder) {
+    private static void deleteFolder(File folder)
+    {
         File[] files = folder.listFiles();
-        if(files!=null) { //some JVMs return null for empty dirs
-            for(File f: files) {
-                if(f.isDirectory()) {
+        if (files != null) //some JVMs return null for empty directories
+        {
+            for(File f : files)
+            {
+                if(f.isDirectory())
+                {
                     deleteFolder(f);
-                } else {
+                }
+                else
+                {
                     f.delete();
                 }
             }
@@ -153,6 +163,7 @@ public abstract class DerbyBase implements DerbyConstants
         truncateTables();
         insertDefaults();
         ObjectProtectionDerbyDriver.clearCache();
+        DrbdManageTestUtils.clearCaches();
     }
 
     @After
@@ -191,7 +202,7 @@ public abstract class DerbyBase implements DerbyConstants
         con.commit();
     }
 
-    private void insertDefaults() throws SQLException
+    private static void insertDefaults() throws SQLException
     {
         for (String insert : INSERT_DEFAULT_VALUES)
         {
@@ -211,7 +222,7 @@ public abstract class DerbyBase implements DerbyConstants
 //        }
 //    }
 
-    private void truncateTables() throws SQLException
+    private static void truncateTables() throws SQLException
     {
         for (String sql : TRUNCATE_TABLES)
         {
@@ -281,12 +292,12 @@ public abstract class DerbyBase implements DerbyConstants
         connection.commit();
     }
 
-    protected java.util.UUID randomUUID()
+    protected static java.util.UUID randomUUID()
     {
         return java.util.UUID.randomUUID();
     }
 
-    protected void insertObjProt(Connection dbCon, String objPath, AccessContext accCtx) throws SQLException
+    protected static void insertObjProt(Connection dbCon, String objPath, AccessContext accCtx) throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_SEC_OBJECT_PROTECTION);
         stmt.setString(1, objPath);
@@ -297,7 +308,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected void insertNode(Connection dbCon, java.util.UUID uuid, NodeName nodeName, long flags, NodeType... types)throws SQLException
+    protected static void insertNode(Connection dbCon, java.util.UUID uuid, NodeName nodeName, long flags, NodeType... types)throws SQLException
     {
         long typeMask = 0;
         for (NodeType type : types)
@@ -316,7 +327,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected void insertNetInterface(
+    protected static void insertNetInterface(
         Connection dbCon,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -337,7 +348,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected void insertConnDfn(
+    protected static void insertConnDfn(
         Connection dbCon,
         java.util.UUID uuid,
         ResourceName resName,
@@ -356,7 +367,7 @@ public abstract class DerbyBase implements DerbyConstants
     }
 
 
-    protected void insertResDfn(Connection dbCon, java.util.UUID uuid, ResourceName resName)
+    protected static void insertResDfn(Connection dbCon, java.util.UUID uuid, ResourceName resName)
         throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_RESOURCE_DEFINITIONS);
@@ -367,7 +378,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected void insertRes(
+    protected static void insertRes(
         Connection dbCon,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -387,7 +398,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected void insertVolDfn(
+    protected static void insertVolDfn(
         Connection dbCon,
         java.util.UUID uuid,
         ResourceName resName,
@@ -409,7 +420,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected void insertVol(
+    protected static void insertVol(
         Connection dbCon,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -431,7 +442,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected void insertStorPoolDfn(Connection dbCon, java.util.UUID uuid, StorPoolName poolName) throws SQLException
+    protected static void insertStorPoolDfn(Connection dbCon, java.util.UUID uuid, StorPoolName poolName) throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_STOR_POOL_DEFINITIONS);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
@@ -441,7 +452,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected void insertStorPool(Connection dbCon, java.util.UUID uuid, NodeName nodeName, StorPoolName poolName, String driver)
+    protected static void insertStorPool(Connection dbCon, java.util.UUID uuid, NodeName nodeName, StorPoolName poolName, String driver)
         throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_NODE_STOR_POOL);
@@ -453,7 +464,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected void insertProp(Connection dbCon, String instance, String key, String value)
+    protected static void insertProp(Connection dbCon, String instance, String key, String value)
         throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_PROPS_CONTAINERS);

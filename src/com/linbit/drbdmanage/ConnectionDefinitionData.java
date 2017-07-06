@@ -34,7 +34,7 @@ public class ConnectionDefinitionData implements ConnectionDefinition
             ObjectProtection.getInstance(
                 accCtx,
                 transMgr,
-                ObjectProtection.buildPath(node1.getName(), node2.getName()),
+                ObjectProtection.buildPath(resDfn.getName(), node1.getName(), node2.getName()),
                 true
             ),
             resDfn,
@@ -43,7 +43,7 @@ public class ConnectionDefinitionData implements ConnectionDefinition
         );
     }
 
-    public ConnectionDefinitionData(UUID uuid, ObjectProtection objProtRef, ResourceDefinition resDfnRef, Node node1, Node node2)
+    ConnectionDefinitionData(UUID uuid, ObjectProtection objProtRef, ResourceDefinition resDfnRef, Node node1, Node node2)
     {
         objId = uuid;
         objProt = objProtRef;

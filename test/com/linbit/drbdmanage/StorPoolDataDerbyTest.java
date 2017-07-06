@@ -162,4 +162,36 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertEquals(LvmDriver.class.getSimpleName(), loadedStorPool.getDriverName());
         assertEquals(spName, loadedStorPool.getName());
     }
+
+    @Test
+    public void testDelete() throws Exception
+    {
+        StorPoolData.getInstance(
+            sysCtx,
+            spdd,
+            transMgr,
+            null, // storageDriver
+            LvmDriver.class.getSimpleName(),
+            null, // serialGen
+            node,
+            true // create
+        );
+        con.commit();
+        transMgr.commit();
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
+        ResultSet resultSet = stmt.executeQuery();
+        assertTrue("Database did not persist storPool", resultSet.next());
+
+        resultSet.close();
+
+        driver.delete(con, spName);
+
+        resultSet = stmt.executeQuery();
+
+        assertFalse("Database did not delete storPool", resultSet.next());
+
+        resultSet.close();
+        stmt.close();
+    }
 }

@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.MapDatabaseDriver;
+import com.linbit.NoOpMapDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Resource.RscFlags;
@@ -55,6 +56,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         " INSERT INTO " + TBL_RES + " VALUES (?, ?, ?, ?, ?)";
     private static final String RES_DELETE =
         " DELETE FROM " + TBL_RES +
+        " WHERE " + RES_NODE_NAME + " = ? AND " +
+                    RES_NAME      + " = ?";
+    private static final String RES_UPDATE_FLAG =
+        " UPDATE " + TBL_RES +
+        " SET " + RES_FLAGS + " = ? " +
         " WHERE " + RES_NODE_NAME + " = ? AND " +
                     RES_NAME      + " = ?";
 
@@ -109,6 +115,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
             {
                 if (cacheGet(value) != value)
                 {
+                    resultSet.close();
                     throw new ImplementationError("Two different ResourceData share the same primary key", null);
                 }
             }
@@ -116,6 +123,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
             {
                 create(con, value, accCtx);
             }
+            resultSet.close();
         }
     }
 
@@ -151,7 +159,13 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return ret;
     }
 
-    public static void delete(Connection con, ResourceData res) throws SQLException
+    @Override
+    public void delete(Connection con, ResourceData res) throws SQLException
+    {
+        deleteRes(con, res);
+    }
+
+    public static void deleteRes(Connection con, ResourceData res) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(RES_DELETE);
 
@@ -290,15 +304,15 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     @Override
     public MapDatabaseDriver<VolumeNumber, Volume> getVolumeMapDriver()
     {
-        // TODO Auto-generated method stub
-        return null;
+        // any changes (including create and delete) of volume should be
+        // handled by VolumeDataDerbyDriver anyway. should...
+        return new NoOpMapDatabaseDriver<>(); // TODO: gh - rethink...
     }
 
     @Override
-    public StateFlagsPersistence getStateFlagPersistence()
+    public StateFlagsPersistence getStateFlagPersistence(NodeName nodeName)
     {
-        // TODO Auto-generated method stub
-        return null;
+        return new FlagDriver(nodeName);
     }
 
     private static void cache(ResourceData res)
@@ -364,5 +378,30 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
             node.getName().value,
             resName.value
         );
+    }
+
+    private class FlagDriver implements StateFlagsPersistence
+    {
+
+        private NodeName nodeName;
+
+        public FlagDriver(NodeName nodeName)
+        {
+            this.nodeName = nodeName;
+        }
+
+        @Override
+        public void persist(Connection con, long flags) throws SQLException
+        {
+            PreparedStatement stmt = con.prepareStatement(RES_UPDATE_FLAG);
+
+            stmt.setLong(1, flags);
+
+            stmt.setString(2, nodeName.value);
+            stmt.setString(3, resName.value);
+
+            stmt.executeUpdate();
+            stmt.close();
+        }
     }
 }

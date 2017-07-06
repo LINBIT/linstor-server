@@ -479,7 +479,7 @@ public final class ObjectProtection extends BaseTransactionObject
         return PATH_STOR_POOLS + storPoolName.value;
     }
 
-    public static String buildPath(NodeName sourceName, NodeName targetName)
+    public static String buildPath(ResourceName resName, NodeName sourceName, NodeName targetName)
     {
         NodeName source;
         NodeName target;
@@ -496,6 +496,7 @@ public final class ObjectProtection extends BaseTransactionObject
         }
 
         return PATH_CONNECTION_DEFINITIONS +
+            resName.value + PATH_SEPARATOR +
             source.value + PATH_SEPARATOR +
             target.value;
     }

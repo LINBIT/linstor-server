@@ -170,6 +170,8 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                         }
                         catch (InvalidKeyException | InvalidValueException invalidException)
                         {
+                            resultSet.close();
+                            stmt.close();
                             throw new DrbdSqlRuntimeException(
                                 "Invalid property loaded from instance: " + PropsContainer.buildPath(nodeName),
                                 invalidException
@@ -228,12 +230,13 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         stmt.setString(1, node.getName().value);
 
         stmt.executeUpdate();
+        stmt.close();
 
         // TODO: gh - also delete all its resources, and other sub-objects?
         cacheRemove(node);
     }
 
-    private void cache(NodeData node)
+    private static void cache(NodeData node)
     {
         if (node != null)
         {
@@ -241,7 +244,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         }
     }
 
-    private void cacheRemove(NodeData node)
+    private static void cacheRemove(NodeData node)
     {
         if (node != null)
         {
@@ -249,12 +252,12 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         }
     }
 
-    private NodeData cacheGet(NodeName nodeName)
+    private static NodeData cacheGet(NodeName nodeName)
     {
         return nodeCache.get(getPk(nodeName));
     }
 
-    private PrimaryKey getPk(NodeName nodeName)
+    private static PrimaryKey getPk(NodeName nodeName)
     {
         return new PrimaryKey(nodeName.value);
     }
@@ -326,7 +329,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         @Override
         public void delete(Connection con, ResourceName key, Resource value) throws SQLException
         {
-            ResourceDataDerbyDriver.delete(con, (ResourceData) value);
+            ResourceDataDerbyDriver.deleteRes(con, (ResourceData) value);
         }
     }
 

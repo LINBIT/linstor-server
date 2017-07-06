@@ -143,7 +143,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         // we do not check if node gets created, as testPersistSimple() does that already
         // thus, we only check if the net interface got persisted
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
-        stmt.setString(1, nodeName.value);
         ResultSet resultSet = stmt.executeQuery();
         if (resultSet.next())
         {
