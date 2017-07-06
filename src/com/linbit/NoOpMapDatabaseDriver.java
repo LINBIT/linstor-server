@@ -12,7 +12,7 @@ public class NoOpMapDatabaseDriver<T, U> implements MapDatabaseDriver<T, U>
     }
 
     @Override
-    public void update(Connection con, T key, U value) throws SQLException
+    public void update(Connection con, T key, U oldValue, U value) throws SQLException
     {
         // no-op
     }

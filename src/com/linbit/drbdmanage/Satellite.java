@@ -382,6 +382,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 netComProps.loadFromXML(propsIn);
             }
 
+            // TODO: gh - add default values for netcom (plain)
             InetAddress addr = InetAddress.getByName(netComProps.getProperty(NET_COM_CONF_BIND_ADDR_KEY));
             String portProp = netComProps.getProperty(NET_COM_CONF_PORT_KEY);
             int port = Integer.parseInt(portProp);

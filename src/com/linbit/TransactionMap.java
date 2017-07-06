@@ -217,7 +217,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
                     {
                         try
                         {
-                            dbDriver.update(con, key, value);
+                            dbDriver.update(con, key, oldValue, value);
                         }
                         catch (SQLException sqlExc)
                         {

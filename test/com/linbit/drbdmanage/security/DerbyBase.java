@@ -152,6 +152,7 @@ public abstract class DerbyBase implements DerbyConstants
     {
         truncateTables();
         insertDefaults();
+        ObjectProtectionDerbyDriver.clearCache();
     }
 
     @After
@@ -386,7 +387,15 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected void insertVolDfn(Connection dbCon, java.util.UUID uuid, ResourceName resName, VolumeNumber volId, long volSize, int minorNr)
+    protected void insertVolDfn(
+        Connection dbCon,
+        java.util.UUID uuid,
+        ResourceName resName,
+        VolumeNumber volId,
+        long volSize,
+        int minorNr,
+        long flags
+    )
         throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_VOLUME_DEFINITIONS);
@@ -395,6 +404,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.setInt(3, volId.value);
         stmt.setLong(4, volSize);
         stmt.setInt(5, minorNr);
+        stmt.setLong(6, flags);
         stmt.executeUpdate();
         stmt.close();
     }

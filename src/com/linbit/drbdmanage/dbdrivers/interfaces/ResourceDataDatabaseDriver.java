@@ -5,7 +5,7 @@ import java.sql.SQLException;
 
 import com.linbit.MapDatabaseDriver;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.NodeData;
+import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.ResourceData;
 import com.linbit.drbdmanage.Volume;
 import com.linbit.drbdmanage.VolumeNumber;
@@ -18,6 +18,10 @@ public interface ResourceDataDatabaseDriver
 
     public StateFlagsPersistence getStateFlagPersistence();
 
-    public ResourceData load(Connection con, NodeData node, SerialGenerator serialGen, TransactionMgr transMgr)
+    public void create(Connection dbCon, ResourceData resData)
         throws SQLException;
+
+    public ResourceData load(Connection con, Node node, SerialGenerator serialGen, TransactionMgr transMgr)
+        throws SQLException;
+
 }

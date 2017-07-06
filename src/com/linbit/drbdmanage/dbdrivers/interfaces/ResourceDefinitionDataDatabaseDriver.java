@@ -33,4 +33,7 @@ public interface ResourceDefinitionDataDatabaseDriver
 
     public ResourceDefinitionData load(Connection dbCon, SerialGenerator serialGen, TransactionMgr transMgr)
         throws SQLException;
+
+    void delete(Connection con)
+        throws SQLException;
 }

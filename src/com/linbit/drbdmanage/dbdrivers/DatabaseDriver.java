@@ -7,7 +7,6 @@ import com.linbit.drbdmanage.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeData;
-import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceData;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
@@ -57,7 +56,7 @@ public interface DatabaseDriver
     /**
      * Returns the database driver specific implementation for {@link ResourceData}-IO
      */
-    ResourceDataDatabaseDriver getResourceDataDatabaseDriver(NodeName nodeName, ResourceName resName);
+    ResourceDataDatabaseDriver getResourceDataDatabaseDriver(ResourceName resName);
 
     /**
      * Returns the database driver specific implementation for {@link ResourceDefinitionData}-IO

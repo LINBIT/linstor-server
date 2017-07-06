@@ -79,6 +79,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         throws SQLException, AccessDeniedException
     {
         this(
+            UUID.randomUUID(),
             ObjectProtection.getInstance(
                 accCtx,
                 transMgr,
@@ -88,7 +89,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
                 ),
                 true
             ),
-            UUID.randomUUID(),
             resDfnRef,
             nodeRef,
             nodeIdRef,
@@ -98,7 +98,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     /**
-     * Constructor used by database drivers
+     * Constructor used by database drivers and tests
      *
      * @param objProt
      * @param resDfnRef
@@ -109,8 +109,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
      * @throws SQLException
      */
     ResourceData(
-        ObjectProtection objProtRef,
         UUID objIdRef,
+        ObjectProtection objProtRef,
         ResourceDefinition resDfnRef,
         Node nodeRef,
         NodeId nodeIdRef,
@@ -126,7 +126,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         assgNode = nodeRef;
         objId = objIdRef;
 
-        dbDriver = DrbdManage.getResourceDataDatabaseDriver(nodeRef.getName(), resDfnRef.getName());
+        dbDriver = DrbdManage.getResourceDataDatabaseDriver(resDfnRef.getName());
 
         volumeMap = new TransactionMap<>(
             new TreeMap<VolumeNumber, Volume>(),
@@ -146,43 +146,63 @@ public class ResourceData extends BaseTransactionObject implements Resource
         );
     }
 
-    // TODO: gh - rewrite create method to getInstance (including load functionality and objProt access check)
-    public static Resource create(
+    public static ResourceData getInstance(
         AccessContext accCtx,
-        ResourceDefinition resDfnRef,
-        Node nodeRef,
+        ResourceDefinition resDfn,
+        Node node,
         NodeId nodeId,
         SerialGenerator srlGen,
-        TransactionMgr transMgr
+        TransactionMgr transMgr,
+        boolean createIfNotExists
     )
-        throws AccessDeniedException, SQLException
+        throws SQLException, AccessDeniedException
     {
-        ErrorCheck.ctorNotNull(Resource.class, ResourceDefinition.class, resDfnRef);
-        ErrorCheck.ctorNotNull(Resource.class, Node.class, nodeRef);
+        ResourceData resData = null;
 
-        Resource newRes = new ResourceData(accCtx, resDfnRef, nodeRef, nodeId, srlGen, transMgr);
+        ResourceDataDatabaseDriver driver = DrbdManage.getResourceDataDatabaseDriver(resDfn.getName());
 
-        // Access controls on the node and resource must not change
-        // while the transaction is in progress
-        synchronized (nodeRef)
+        if (transMgr != null)
         {
-            synchronized (resDfnRef)
+            resData = driver.load(transMgr.dbCon, node, srlGen, transMgr);
+        }
+
+        if (resData != null)
+        {
+            resData.objProt.requireAccess(accCtx, AccessType.VIEW);
+        }
+        else
+        {
+            if (createIfNotExists)
             {
-                nodeRef.addResource(accCtx, newRes);
-                try
-                {
-                    resDfnRef.addResource(accCtx, newRes);
-                }
-                catch (AccessDeniedException accExc)
-                {
-                    // Rollback adding the resource to the node
-                    nodeRef.removeResource(accCtx, newRes);
-                }
+                resData = new ResourceData(accCtx, resDfn, node, nodeId, srlGen, transMgr);
+                // we do not persist resData here, because node.addResource(...) will also trigger the insert
             }
         }
 
-        return newRes;
+        if (resData != null)
+        {
+            synchronized (node)
+            {
+                synchronized (resDfn)
+                {
+                    node.addResource(accCtx, resData);
+                    try
+                    {
+                        resDfn.addResource(accCtx, resData);
+                    }
+                    catch (AccessDeniedException accExc)
+                    {
+                        // Rollback adding the resource to the node
+                        node.removeResource(accCtx, resData);
+                    }
+                }
+            }
+
+            resData.initialized();
+        }
+        return resData;
     }
+
     @Override
     public UUID getUuid()
     {

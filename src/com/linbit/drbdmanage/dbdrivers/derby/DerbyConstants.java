@@ -91,13 +91,13 @@ public class DerbyConstants
     public static final String RES_FLAGS     = "RES_FLAGS";
 
     // VOLUME_DEFINITIONS column names
-    public static final String VLM_ID        = "VLM_ID";
+    public static final String VLM_NR        = "VLM_NR";
     public static final String VLM_SIZE      = "VLM_SIZE";
     public static final String VLM_MINOR_NR  = "VLM_MINOR_NR";
+    public static final String VLM_FLAGS     = "VLM_FLAGS";
 
     // VOLUMES column names
     public static final String BLOCK_DEVICE_PATH = "BLOCK_DEVICE_PATH";
-    public static final String VLM_FLAGS         = "VLM_FLAGS";
 
     // STOR_POOL_DEFINITIONS column names
     public static final String POOL_NAME     = "POOL_NAME";

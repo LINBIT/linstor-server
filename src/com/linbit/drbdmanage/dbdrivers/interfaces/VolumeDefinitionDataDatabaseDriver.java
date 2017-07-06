@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.linbit.ObjectDatabaseDriver;
+import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.MinorNumber;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -11,11 +12,20 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
 public interface VolumeDefinitionDataDatabaseDriver
 {
-    StateFlagsPersistence getStateFlagsPersistence();
+    public StateFlagsPersistence getStateFlagsPersistence();
 
-    ObjectDatabaseDriver<MinorNumber> getMinorNumberDriver();
+    public ObjectDatabaseDriver<MinorNumber> getMinorNumberDriver();
 
-    ObjectDatabaseDriver<Long> getVolumeSizeDriver();
+    public ObjectDatabaseDriver<Long> getVolumeSizeDriver();
 
-    VolumeDefinitionData load(Connection con, SerialGenerator serialGen) throws SQLException;
+    public PropsConDatabaseDriver getPropsDriver();
+
+    public void create(Connection con, VolumeDefinitionData volDfnData)
+        throws SQLException;
+
+    public VolumeDefinitionData load(Connection con, TransactionMgr transMgr, SerialGenerator serialGen)
+        throws SQLException;
+
+    public void delete(Connection con)
+        throws SQLException;
 }

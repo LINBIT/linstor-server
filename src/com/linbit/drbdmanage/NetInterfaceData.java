@@ -121,6 +121,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         if (netData != null)
         {
+            node.addNetInterface(accCtx, netData);
+
             netData.initialized();
         }
 

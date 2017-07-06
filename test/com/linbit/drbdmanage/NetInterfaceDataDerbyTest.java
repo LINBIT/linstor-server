@@ -3,7 +3,7 @@ package com.linbit.drbdmanage;
 import static org.junit.Assert.*;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,7 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 import com.linbit.ObjectDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
@@ -22,33 +21,19 @@ import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
 
-public class DerbyNetInterfaceDataTest extends DerbyBase
+public class NetInterfaceDataDerbyTest extends DerbyBase
 {
-    private static final NetInterfaceName niName;
-    private static final NodeName nodeName;
-
-    private static final String niAddrStr = "127.0.0.1";
-    private static final InetAddress niAddr;
-    private static final NetInterfaceType niTransportType = NetInterfaceType.IP;
-
     private static final String SELECT_ALL_NODE_NET_INTERFACES =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + NODE_NET_NAME + ", " + NODE_NET_DSP_NAME + ", " +
-            INET_ADDRESS + ", " + INET_TRANSPORT_TYPE +
+                     INET_ADDRESS + ", " + INET_TRANSPORT_TYPE +
         " FROM " + TBL_NODE_NET_INTERFACES;
 
-    static
-    {
-        try
-        {
-            nodeName = new NodeName("TestNodeName");
-            niName = new NetInterfaceName("TestNetInterfaceName");
-            niAddr = InetAddress.getByName(niAddrStr);
-        }
-        catch (InvalidNameException | UnknownHostException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
+    private final NetInterfaceName niName;
+    private final NodeName nodeName;
+
+    private final String niAddrStr = "127.0.0.1";
+    private final InetAddress niAddr;
+    private final NetInterfaceType niTransportType = NetInterfaceType.IP;
 
     private TransactionMgr transMgr;
     private Connection con;
@@ -62,6 +47,13 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     private NetInterfaceData niData;
     private ObjectDatabaseDriver<InetAddress> niAddrDriver;
     private ObjectDatabaseDriver<NetInterfaceType> niTypeDriver;
+
+    public NetInterfaceDataDerbyTest() throws Exception
+    {
+        nodeName = new NodeName("TestNodeName");
+        niName = new NetInterfaceName("TestNetInterfaceName");
+        niAddr = InetAddress.getByName(niAddrStr);
+    }
 
     @Before
     public void startUp() throws Exception
@@ -98,6 +90,7 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     @Test
     public void testPersistSimple() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
 
@@ -115,6 +108,7 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     @Test
     public void testPersistDuplicate() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
         try
         {
@@ -128,8 +122,53 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     }
 
     @Test
+    public void testPersistGetInstance() throws Exception
+    {
+        NetInterfaceName netInterfaceName = new NetInterfaceName("TestNetIface");
+        String host = "127.0.0.1";
+        int port = 1234;
+        InetAddress inetAddress = new InetSocketAddress(host, port).getAddress();
+        NetInterfaceData.getInstance(
+            sysCtx,
+            node,
+            netInterfaceName,
+            inetAddress,
+            transMgr,
+            NetInterfaceType.IP,
+            true
+        );
+        con.commit();
+        transMgr.commit();
+
+        // we do not check if node gets created, as testPersistSimple() does that already
+        // thus, we only check if the net interface got persisted
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
+        stmt.setString(1, nodeName.value);
+        ResultSet resultSet = stmt.executeQuery();
+        if (resultSet.next())
+        {
+            assertEquals(netInterfaceName.value, resultSet.getString(NODE_NET_NAME));
+            assertEquals(netInterfaceName.displayValue, resultSet.getString(NODE_NET_DSP_NAME));
+            assertEquals(host, resultSet.getString(INET_ADDRESS));
+            assertEquals("IP", resultSet.getString(INET_TRANSPORT_TYPE));
+            // transport: IP, RDMA, RoCE
+        }
+        else
+        {
+            fail("Database did not persist netInterface");
+        }
+        if (resultSet.next())
+        {
+            fail("Database persisted too many netInterfaces");
+        }
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
     public void testLoadSimple() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
 
         NetInterfaceData netData = dbDriver.load(con);
@@ -146,6 +185,7 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     @Test
     public void testLoadStatic() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
 
         List<NetInterfaceData> niList = NetInterfaceDataDerbyDriver.loadNetInterfaceData(con, node);
@@ -161,9 +201,12 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
         assertEquals(niTransportType, netData.getNetInterfaceType(sysCtx));
     }
 
+    // TODO: gh - testLoadGetInstance
+
     @Test
     public void testDeleteSimple() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
 
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
@@ -185,6 +228,7 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
         assertFalse(stmt.executeQuery().next());
 
+        niData.initialized();
         dbDriver.ensureEntryExists(con, niData);
 
         assertTrue(stmt.executeQuery().next());
@@ -198,6 +242,7 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     @Test (expected = ImplementationError.class)
     public void testAddrDelete() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
         niAddrDriver.delete(con, niAddr);
     }
@@ -205,6 +250,7 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     @Test (expected = ImplementationError.class)
     public void testAddrInsert() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
         niAddrDriver.insert(con, niAddr);
     }
@@ -212,6 +258,7 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     @Test
     public void testAddrUpdate() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
         String addrStr = "::1";
         InetAddress addr = InetAddress.getByName(addrStr);
@@ -227,6 +274,7 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     @Test (expected = ImplementationError.class)
     public void testTypeDelete() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
         niTypeDriver.delete(con, niTransportType);
     }
@@ -234,6 +282,7 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     @Test (expected = ImplementationError.class)
     public void testTypeInsert() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
         niTypeDriver.insert(con, niTransportType);
     }
@@ -241,6 +290,7 @@ public class DerbyNetInterfaceDataTest extends DerbyBase
     @Test
     public void testTypeUpdate() throws Exception
     {
+        niData.initialized();
         dbDriver.create(con, niData);
         niTypeDriver.update(con, NetInterfaceType.RDMA);
 

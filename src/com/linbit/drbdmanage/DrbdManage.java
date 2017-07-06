@@ -572,9 +572,9 @@ public abstract class DrbdManage
         return securityDbDriver.getObjectProtectionDatabaseDriver(objProtPath);
     }
 
-    public static ResourceDataDatabaseDriver getResourceDataDatabaseDriver(NodeName nodeName, ResourceName resName)
+    public static ResourceDataDatabaseDriver getResourceDataDatabaseDriver(ResourceName resName)
     {
-        return persistenceDbDriver.getResourceDataDatabaseDriver(nodeName, resName);
+        return persistenceDbDriver.getResourceDataDatabaseDriver(resName);
     }
 
     public static ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName)

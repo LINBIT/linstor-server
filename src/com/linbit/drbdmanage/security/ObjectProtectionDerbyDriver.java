@@ -4,11 +4,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Hashtable;
+import java.util.Map;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ObjectDatabaseDriver;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
+import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 
 
 public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriver
@@ -89,6 +92,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         "     " + TBL_ACL + " AS ACL " +
         " WHERE " + ACL_OBJECT_PATH + " = ?";
 
+    private static Map<PrimaryKey, ObjectProtection> objProtCache = new Hashtable<>();
 
     private String objPath;
     private ObjectDatabaseDriver<Identity> identityDriver;
@@ -117,6 +121,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
         stmt.executeUpdate();
         stmt.close();
+        cache(objProt, objPath);
     }
 
     @Override
@@ -142,6 +147,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
         stmt.executeUpdate();
         stmt.close();
+        cacheRemove(objPath);
     }
 
     @Override
@@ -155,6 +161,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
         stmt.executeUpdate();
         stmt.close();
+
     }
 
     @Override
@@ -191,45 +198,19 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
         ResultSet resultSet = stmt.executeQuery();
 
-        ObjectProtection objProt = null;
-        if (resultSet.next())
+        ObjectProtection objProt = cacheGet(objPath);
+        if (objProt == null)
         {
-            try
-            {
-                Identity identity = Identity.get(new IdentityName(resultSet.getString(1)));
-                Role role = Role.get(new RoleName(resultSet.getString(2)));
-                SecurityType secType = SecurityType.get(new SecTypeName(resultSet.getString(3)));
-                PrivilegeSet privLimitSet = new PrivilegeSet(resultSet.getLong(4));
-                AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
-                objProt = new ObjectProtection(accCtx, this);
-            }
-            catch (InvalidNameException invalidNameExc)
-            {
-                throw new DrbdSqlRuntimeException(
-                    "A name has been modified in the database to an illegal string.",
-                    invalidNameExc
-                );
-            }
-        }
-
-        resultSet.close();
-        stmt.close();
-
-        if (objProt != null)
-        {
-            // restore ACL
-            stmt = con.prepareStatement(ACL_LOAD);
-            stmt.setString(1, objPath);
-            resultSet = stmt.executeQuery();
-
-            while (resultSet.next())
+            if (resultSet.next())
             {
                 try
                 {
-                    Role role = Role.get(new RoleName(resultSet.getString(1)));
-                    AccessType type = AccessType.get(resultSet.getInt(2));
-
-                    objProt.addAclEntry(dbCtx, role, type);
+                    Identity identity = Identity.get(new IdentityName(resultSet.getString(1)));
+                    Role role = Role.get(new RoleName(resultSet.getString(2)));
+                    SecurityType secType = SecurityType.get(new SecTypeName(resultSet.getString(3)));
+                    PrivilegeSet privLimitSet = new PrivilegeSet(resultSet.getLong(4));
+                    AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
+                    objProt = new ObjectProtection(accCtx, this);
                 }
                 catch (InvalidNameException invalidNameExc)
                 {
@@ -238,12 +219,46 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                         invalidNameExc
                     );
                 }
-                catch (AccessDeniedException accessDeniedExc)
+
+                resultSet.close();
+                stmt.close();
+
+                // restore ACL
+                stmt = con.prepareStatement(ACL_LOAD);
+                stmt.setString(1, objPath);
+                resultSet = stmt.executeQuery();
+
+                while (resultSet.next())
                 {
-                    throw new ImplementationError(
-                        "Database's accessContext has insufficient rights to restore object protection",
-                        accessDeniedExc
-                    );
+                    try
+                    {
+                        Role role = Role.get(new RoleName(resultSet.getString(1)));
+                        AccessType type = AccessType.get(resultSet.getInt(2));
+
+                        objProt.addAclEntry(dbCtx, role, type);
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        throw new DrbdSqlRuntimeException(
+                            "A name has been modified in the database to an illegal string.",
+                            invalidNameExc
+                        );
+                    }
+                    catch (AccessDeniedException accessDeniedExc)
+                    {
+                        throw new ImplementationError(
+                            " Database's accessContext has insufficient rights to restore object protection",
+                            accessDeniedExc
+                        );
+                    }
+                }
+            }
+            else
+            {
+                if (!resultSet.next())
+                {
+                    // XXX: user deleted db entry during runtime - throw exception?
+                    // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
                 }
             }
             resultSet.close();
@@ -269,6 +284,26 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     public ObjectDatabaseDriver<SecurityType> getSecurityTypeDriver()
     {
         return securityTypeDriver;
+    }
+
+    private static void cache(ObjectProtection objProt, String objPath)
+    {
+        objProtCache.put(new PrimaryKey(objPath), objProt);
+    }
+
+    private static ObjectProtection cacheGet(String objPath)
+    {
+        return objProtCache.get(new PrimaryKey(objPath));
+    }
+
+    private static void cacheRemove(String objPath)
+    {
+        objProtCache.remove(new PrimaryKey(objPath));
+    }
+
+    static void clearCache()
+    {
+        objProtCache.clear();
     }
 
     private class IdentityDerbyDriver implements ObjectDatabaseDriver<Identity>

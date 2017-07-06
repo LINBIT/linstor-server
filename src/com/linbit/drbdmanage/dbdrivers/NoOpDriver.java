@@ -6,7 +6,6 @@ import com.linbit.ServiceName;
 import com.linbit.drbdmanage.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolDefinition;
@@ -65,7 +64,7 @@ public class NoOpDriver implements DatabaseDriver
     }
 
     @Override
-    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver(NodeName nodeName, ResourceName resName)
+    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver(ResourceName resName)
     {
         return null; // intentionally null
     }

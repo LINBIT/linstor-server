@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,6 +15,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ObjectDatabaseDriver;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
+import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.UpdateOnlyDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -34,16 +36,13 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     private static final String INET_ADDRESS = DerbyConstants.INET_ADDRESS;
     private static final String INET_TYPE = DerbyConstants.INET_TRANSPORT_TYPE;
 
-    private static final String NNI_SELECT_BY_NODE_AND_NET =
-        " SELECT " + NET_UUID + ", " + NET_DSP_NAME + ", " + INET_ADDRESS + ", " + INET_TYPE +
-        " FROM " + TBL_NODE_NET +
-        " WHERE " + NODE_NAME + " = ? AND " +
-        "       " + NET_NAME  + " = ?";
     private static final String NNI_SELECT_BY_NODE =
-        " SELECT "  + NET_UUID + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
+        " SELECT "  + NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
                       INET_ADDRESS + ", " + INET_TYPE +
         " FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ?";
+    private static final String NNI_SELECT_BY_NODE_AND_NET = NNI_SELECT_BY_NODE +
+        " AND "   + NET_NAME  + " = ?";
 
     private static final String NNI_INSERT =
         " INSERT INTO " + TBL_NODE_NET +
@@ -71,6 +70,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
     private final AccessContext dbCtx;
 
+    private static Hashtable<PrimaryKey, NetInterfaceData> niCache = new Hashtable<>();
+
     public NetInterfaceDataDerbyDriver(AccessContext ctx, Node nodeRef, NetInterfaceName nameRef)
     {
         dbCtx = ctx;
@@ -89,12 +90,22 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         stmt.setString(1, node.getName().value);
         stmt.setString(2, netName.value);
         ResultSet resultSet = stmt.executeQuery();
-        NetInterfaceData netIfData = null;
-        if (resultSet.next())
+        NetInterfaceData netIfData = cacheGet(node, netName);
+        if (netIfData == null)
         {
-            netIfData = restoreInstance(con, node, netName, resultSet);
+            if (resultSet.next())
+            {
+                netIfData = restoreInstance(con, node, netName, resultSet);
+            }
         }
-
+        else
+        {
+            if (!resultSet.next())
+            {
+                // XXX: user deleted db entry during runtime - throw exception?
+                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+            }
+        }
         resultSet.close();
         stmt.close();
 
@@ -118,6 +129,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
         stmt.executeUpdate();
         stmt.close();
+
+        cache(netInterfaceData);
     }
 
     public void ensureEntryExists(Connection con, NetInterfaceData netIfData) throws SQLException
@@ -126,33 +139,40 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         stmt.setString(1, node.getName().value);
         stmt.setString(2, netName.value);
         ResultSet resultSet = stmt.executeQuery();
+
+        NetInterfaceData niCached = cacheGet(netIfData.getNode(), netIfData.getName());
         if (resultSet.next())
         {
-            boolean equals = true;
-            equals &= getAddress(netIfData).getHostAddress().equals(resultSet.getString(INET_ADDRESS));
-            equals &= getNetInterfaceType(netIfData).name().equals(resultSet.getString(INET_TYPE));
-            if (!equals)
+            if (niCached != netIfData)
             {
-                throw new DrbdSqlRuntimeException("A temporary NetInterfaceData instance is not allowed to override a persisted instance.");
+                throw new ImplementationError("Two different NetInterfaceData share the same primary key", null);
             }
         }
         else
         {
+            if (niCached != null)
+            {
+                // XXX: user deleted db entry during runtime - throw exception?
+                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+            }
             create(con, netIfData);
         }
         resultSet.close();
         stmt.close();
     }
 
-    public void delete(Connection con, NetInterface nid) throws SQLException
+    @Override
+    public void delete(Connection con, NetInterfaceData niData) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(NNI_DELETE);
 
         stmt.setString(1, node.getName().value);
-        stmt.setString(2, nid.getName().value);
+        stmt.setString(2, niData.getName().value);
 
         stmt.executeUpdate();
         stmt.close();
+
+        cacheRemove(niData);
     }
 
     @Override
@@ -228,37 +248,76 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     )
         throws SQLException
     {
-        UUID uuid = UuidUtils.asUUID(resultSet.getBytes(NET_UUID));
-        InetAddress addr;
-        String type = resultSet.getString(INET_TYPE);
-        try
+        NetInterfaceData ret = cacheGet(resultSet);
+        if (ret == null)
         {
-            addr = InetAddress.getByName(resultSet.getString(INET_ADDRESS));
-        }
-        catch (UnknownHostException unknownHostExc)
-        {
-            throw new DrbdSqlRuntimeException(
-                "SQL-based change to NetInterface's host caused an UnknownHostException",
-                unknownHostExc
+            UUID uuid = UuidUtils.asUUID(resultSet.getBytes(NET_UUID));
+            InetAddress addr;
+            String type = resultSet.getString(INET_TYPE);
+            try
+            {
+                addr = InetAddress.getByName(resultSet.getString(INET_ADDRESS));
+            }
+            catch (UnknownHostException unknownHostExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "SQL-based change to NetInterface's host caused an UnknownHostException",
+                    unknownHostExc
+                );
+            }
+
+            ObjectProtection objProt;
+            {
+                ObjectProtectionDatabaseDriver opDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+                    ObjectProtection.buildPath(node.getName(), netName)
+                );
+                objProt = opDriver.loadObjectProtection(con);
+            }
+            ret = new NetInterfaceData(
+                uuid,
+                objProt,
+                netName,
+                node,
+                addr,
+                NetInterfaceType.byValue(type)
             );
+            cache(ret);
         }
 
-        ObjectProtection objProt;
-        {
-            ObjectProtectionDatabaseDriver opDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                ObjectProtection.buildPath(node.getName(), netName)
-            );
-            objProt = opDriver.loadObjectProtection(con);
-        }
+        return ret;
+    }
 
-        return new NetInterfaceData(
-            uuid,
-            objProt,
-            netName,
-            node,
-            addr,
-            NetInterfaceType.byValue(type)
-        );
+    private static void cache(NetInterfaceData netInterfaceData)
+    {
+        niCache.put(getPk(netInterfaceData), netInterfaceData);
+    }
+
+    private static NetInterfaceData cacheGet(Node node, NetInterfaceName netName)
+    {
+        return niCache.get(new PrimaryKey(node.getName().value, netName.value));
+    }
+
+    private static NetInterfaceData cacheGet(ResultSet resultSet) throws SQLException
+    {
+        return niCache.get(new PrimaryKey(resultSet.getString(NODE_NAME), resultSet.getString(NET_NAME)));
+    }
+
+    private void cacheRemove(NetInterfaceData niData)
+    {
+        niCache.remove(getPk(niData));
+    }
+
+    private static PrimaryKey getPk(NetInterfaceData niData)
+    {
+        return new PrimaryKey(niData.getNode().getName().value, niData.getName().value);
+    }
+
+    /**
+     * this method should only be called by tests or if you want a full-reload from the database
+     */
+    static void clearCache()
+    {
+        niCache.clear();
     }
 
     private class NodeNetInterfaceAddressDriver extends UpdateOnlyDatabaseDriver<InetAddress>

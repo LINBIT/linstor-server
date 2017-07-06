@@ -114,7 +114,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                 // however, only the satellites should have StorageDrivers
                 throw new ImplementationError("Controller should not have an instance of StorageDriver", null);
             }
-            nodeRef.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
             storPoolData = driver.load(transMgr.dbCon, transMgr, serGen);
             if (storPoolData == null && createIfNotExists)
             {
@@ -138,7 +137,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                 // no transMgr means we are satellite, thus a storDriver is needed.
                 throw new ImplementationError("Satellite should have an instance of StorageDriver", null);
             }
-            nodeRef.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
             storPoolData = new StorPoolData(
                 accCtx,
                 storPoolDefRef,
@@ -150,7 +148,10 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             );
         }
 
-        nodeRef.addStorPool(accCtx, storPoolData);
+        if (storPoolData != null)
+        {
+            nodeRef.addStorPool(accCtx, storPoolData);
+        }
         return storPoolData;
     }
 

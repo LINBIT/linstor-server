@@ -46,9 +46,11 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 public class PropsContainer implements Props
 {
     private static final String PATH_SEPARATOR      = "/";
-    private static final String PATH_STOR_POOL_CONF = "/storPoolConf/";
+    private static final String PATH_STOR_POOL = "/storPoolConf/";
     private static final String PATH_NODES = "/nodes/";
+    private static final String PATH_RESOURCE_DEFINITIONS = "/resourcedefinitions/";
     private static final String PATH_RESOURCES = "/resources/";
+    private static final String PATH_VOLUME_DEFINITIONS = "/volumedefinitions/";
     private static final String PATH_VOLUMES = "/volumes/";
 
     public static final int PATH_MAX_LENGTH = 256;
@@ -1028,7 +1030,6 @@ public class PropsContainer implements Props
     {
         if (initialized)
         {
-            Map<String, String> map = rootContainer.cachedPropMap;
             Set<Entry<String,String>> entrySet = rootContainer.entrySet();
             for (Entry<String, String> entry : entrySet)
             {
@@ -2563,7 +2564,7 @@ public class PropsContainer implements Props
 
     public static String buildPath(StorPoolName storPoolName, NodeName nodeName)
     {
-        return PATH_STOR_POOL_CONF + nodeName.value +
+        return PATH_STOR_POOL + nodeName.value +
             PATH_SEPARATOR + storPoolName.value;
     }
 
@@ -2572,10 +2573,21 @@ public class PropsContainer implements Props
         return PATH_NODES + nodeName.value;
     }
 
+    public static String buildPath(ResourceName resName)
+    {
+        return PATH_RESOURCE_DEFINITIONS + resName.value;
+    }
+
     public static String buildPath(NodeName nodeName, ResourceName resName)
     {
         return PATH_RESOURCES + nodeName.value +
             PATH_SEPARATOR + resName.value;
+    }
+
+    public static String buildPath(ResourceName resName, VolumeNumber volNr)
+    {
+        return PATH_VOLUME_DEFINITIONS + resName.value +
+            PATH_SEPARATOR + volNr.value;
     }
 
     public static String buildPath(NodeName nodeName, ResourceName resName, VolumeNumber volNr)

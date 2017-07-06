@@ -2,8 +2,8 @@ package com.linbit.drbdmanage.dbdrivers.interfaces;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 
+import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.VolumeData;
 import com.linbit.drbdmanage.VolumeDefinition;
@@ -16,14 +16,18 @@ public interface VolumeDataDatabaseDriver
 
     public PropsConDatabaseDriver getPropsConDriver(Resource resRef, VolumeDefinition volDfnRef);
 
-    public VolumeData load(Connection dbCon, Resource resRef, VolumeDefinition volDfn, SerialGenerator srlGen)
-        throws SQLException;
-
-    public List<VolumeData> load(Connection dbCon, Resource resRef, SerialGenerator srlGen)
+    public VolumeData load(
+        Connection dbCon,
+        Resource resRef,
+        VolumeDefinition volDfn,
+        TransactionMgr transMgr,
+        SerialGenerator srlGen
+    )
         throws SQLException;
 
     public void create(Connection dbCon, VolumeData vol)
         throws SQLException;
 
-
+    public void delete(Connection con, VolumeData vol)
+        throws SQLException;
 }

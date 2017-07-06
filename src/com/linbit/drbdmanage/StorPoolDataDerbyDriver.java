@@ -5,11 +5,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.StorPoolData;
+import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
@@ -42,6 +44,8 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         "       " + NSP_POOL + " = ?";
 
 
+    private static Hashtable<PrimaryKey, StorPoolData> storPoolCache = new Hashtable<>();
+
     private final Node node;
     private final StorPoolDefinition storPoolDfn;
 
@@ -61,7 +65,10 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         stmt.setString(4, storPoolData.getDriverName());
         stmt.executeUpdate();
         stmt.close();
+
+        cache(node, storPoolData);
     }
+
 
     @Override
     public StorPoolData load(
@@ -76,24 +83,39 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         stmt.setString(2, storPoolDfn.getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        StorPoolData sp = null;
-        if (resultSet.next())
+        StorPoolData sp = cacheGet(node, storPoolDfn);
+        if (sp == null)
         {
-            ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                ObjectProtection.buildPathSP(storPoolDfn.getName())
-            );
-            ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+            if (resultSet.next())
+            {
+                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+                    ObjectProtection.buildPathSP(storPoolDfn.getName())
+                );
+                ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
 
-            sp = new StorPoolData(
-                UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)),
-                objProt,
-                storPoolDfn,
-                transMgr,
-                null,   // storageDriver, has to be null in the controller
-                resultSet.getString(NSP_DRIVER),
-                serGen,
-                node
-            );
+                sp = new StorPoolData(
+                    UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)),
+                    objProt,
+                    storPoolDfn,
+                    transMgr,
+                    null,   // storageDriver, has to be null in the controller
+                    resultSet.getString(NSP_DRIVER),
+                    serGen,
+                    node
+                );
+                cache(node, sp);
+            }
+        }
+        else
+        {
+            // we have a cached storPool
+            if (!resultSet.next())
+            {
+                // but no entry in the db...
+
+                // XXX: user deleted db entry during runtime - throw exception?
+                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+            }
         }
         resultSet.close();
         stmt.close();
@@ -112,29 +134,32 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         {
             while(resultSet.next())
             {
-                StorPoolName storPoolName;
-                    storPoolName = new StorPoolName(resultSet.getString(NSP_POOL));
+                StorPoolName storPoolName = new StorPoolName(resultSet.getString(NSP_POOL));
 
-                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                    ObjectProtection.buildPathSP(storPoolName)
+                StorPoolData storPoolData = cacheGet(node, storPoolName);
+                if (storPoolData == null)
+                {
+                    ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+                        ObjectProtection.buildPathSP(storPoolName)
                     );
-                ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+                    ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
 
-                StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = DrbdManage.getStorPoolDefinitionDataDriver(storPoolName);
-                StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(con);
+                    StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = DrbdManage.getStorPoolDefinitionDataDriver(storPoolName);
+                    StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(con);
 
 
-                StorPoolData storPoolData = new StorPoolData(
-                    UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)),
-                    objProt,
-                    storPoolDef,
-                    transMgr,
-                    null, // controller should not have an instance of storage driver.
-                    resultSet.getString(NSP_DRIVER),
-                    serGen,
-                    node
-                );
-
+                    storPoolData = new StorPoolData(
+                        UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)),
+                        objProt,
+                        storPoolDef,
+                        transMgr,
+                        null, // controller should not have an instance of storage driver.
+                        resultSet.getString(NSP_DRIVER),
+                        serGen,
+                        node
+                    );
+                    cache(node, storPoolData);
+                }
                 storPoolList.add(storPoolData);
             }
         }
@@ -160,6 +185,8 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 
         stmt.executeUpdate();
         stmt.close();
+
+        cacheRemove(node, storPoolName);
     }
 
     @Override
@@ -169,18 +196,22 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         stmt.setString(1, node.getName().value);
         stmt.setString(2, storPoolDfn.getName().value);
         ResultSet resultSet = stmt.executeQuery();
+
+        StorPoolData cachedStorPool = cacheGet(node, storPoolData.getName());
         if (resultSet.next())
         {
-            boolean equals = true;
-            equals &= storPoolData.getUuid().equals(UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)));
-            equals &= storPoolData.getDriverName().equals(resultSet.getString(NSP_DRIVER));
-            if (!equals)
+            if (cachedStorPool != storPoolData)
             {
                 throw new DrbdSqlRuntimeException("A temporary StorPoolData instance is not allowed to override a persisted instance.");
             }
         }
         else
         {
+            if (cachedStorPool != null)
+            {
+                // XXX: user deleted db entry during runtime - throw exception?
+                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+            }
             create(con, storPoolData);
         }
 
@@ -188,4 +219,44 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         stmt.close();
     }
 
+    private static void cache(Node node, StorPoolData storPoolData)
+    {
+        if (storPoolData != null)
+        {
+            storPoolCache.put(getPk(node, storPoolData), storPoolData);
+        }
+    }
+
+    private static StorPoolData cacheGet(Node node, StorPoolDefinition storPoolDfn)
+    {
+        return cacheGet(node, storPoolDfn.getName());
+    }
+
+    private static StorPoolData cacheGet(Node node, StorPoolName storPoolName)
+    {
+        return storPoolCache.get(getPk(node, storPoolName));
+    }
+
+    private static void cacheRemove(Node node, StorPoolName storPoolName)
+    {
+        storPoolCache.remove(getPk(node, storPoolName));
+    }
+
+    private static PrimaryKey getPk(Node node, StorPoolData storPoolData)
+    {
+        return new PrimaryKey(node.getName().value, storPoolData.getName().value);
+    }
+
+    private static PrimaryKey getPk(Node node, StorPoolName poolName)
+    {
+        return new PrimaryKey(node.getName().value, poolName.value);
+    }
+
+    /**
+     * this method should only be called by tests or if you want a full-reload from the database
+     */
+    static void clearCache()
+    {
+        storPoolCache.clear();
+    }
 }

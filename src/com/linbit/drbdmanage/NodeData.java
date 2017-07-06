@@ -181,6 +181,7 @@ public class NodeData extends BaseTransactionObject implements Node
         if (nodeData != null)
         {
             nodeData.objProt.requireAccess(accCtx, AccessType.CONTROL);
+            nodeData.setConnection(transMgr);
         }
         else
         if (createIfNotExists)

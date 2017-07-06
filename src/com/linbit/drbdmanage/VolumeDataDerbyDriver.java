@@ -5,13 +5,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Volume.VlmFlags;
+import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
@@ -34,7 +37,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     private static final String VOL_UUID = DerbyConstants.UUID;
     private static final String VOL_NODE_NAME = DerbyConstants.NODE_NAME;
     private static final String VOL_RES_NAME = DerbyConstants.RESOURCE_NAME;
-    private static final String VOL_ID = DerbyConstants.VLM_ID;
+    private static final String VOL_ID = DerbyConstants.VLM_NR;
     private static final String VOL_PATH = DerbyConstants.BLOCK_DEVICE_PATH;
     private static final String VOL_FLAGS = DerbyConstants.VLM_FLAGS;
 
@@ -48,8 +51,13 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     private static final String VOL_INSERT =
         " INSERT INTO " + TBL_VOL +
         " VALUES (?, ?, ?, ?, ?, ?)";
+    private static final String VOL_DELETE =
+        " DELETE FROM " + TBL_VOL +
+        " WHERE " + VOL_NODE_NAME + " = ? AND " +
+                    VOL_RES_NAME  + " = ? AND " +
+                    VOL_ID        + " = ?";
 
-
+    private static Hashtable<PrimaryKey, VolumeData> volCache = new Hashtable<>();
     private AccessContext dbCtx;
 
     public VolumeDataDerbyDriver(AccessContext privCtx)
@@ -58,24 +66,41 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     }
 
     @Override
-    public VolumeData load(Connection con, Resource res, VolumeDefinition volDfn, SerialGenerator serialGen) throws SQLException
+    public VolumeData load(
+        Connection con,
+        Resource res,
+        VolumeDefinition volDfn,
+        TransactionMgr transMgr,
+        SerialGenerator serialGen
+    )
+        throws SQLException
     {
-        try
+        try(PreparedStatement stmt = con.prepareStatement(VOL_SELECT))
         {
-            PreparedStatement stmt = con.prepareStatement(VOL_SELECT);
             stmt.setString(1, res.getAssignedNode().getName().value);
             stmt.setString(2, res.getDefinition().getName().value);
             stmt.setInt(3, volDfn.getVolumeNumber(dbCtx).value);
             ResultSet resultSet = stmt.executeQuery();
 
-            List<VolumeData> volList = load(con, resultSet, res, serialGen);
+            List<VolumeData> volList = load(con, resultSet, res, transMgr, serialGen);
             resultSet.close();
-            stmt.close();
 
-            VolumeData ret = null;
-            if (!volList.isEmpty())
+            VolumeData ret = cacheGet(res.getAssignedNode(), res.getDefinition(), volDfn.getVolumeNumber(dbCtx));
+
+            if (ret == null)
             {
-                ret = volList.get(0);
+                if (!volList.isEmpty())
+                {
+                    ret = volList.get(0);
+                }
+            }
+            else
+            {
+                if (volList.isEmpty())
+                {
+                    // XXX: user deleted db entry during runtime - throw exception?
+                    // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+                }
             }
             return ret;
         }
@@ -88,15 +113,14 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         }
     }
 
-    @Override
-    public List<VolumeData> load(Connection con, Resource res, SerialGenerator serialGen) throws SQLException
+    public List<VolumeData> load(Connection con, Resource res, TransactionMgr transMgr, SerialGenerator serialGen) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(VOL_SELECT_BY_RES);
         stmt.setString(1, res.getAssignedNode().getName().value);
         stmt.setString(2, res.getDefinition().getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        List<VolumeData> ret = load(con, resultSet, res, serialGen);
+        List<VolumeData> ret = load(con, resultSet, res, transMgr, serialGen);
         resultSet.close();
         stmt.close();
 
@@ -104,7 +128,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     }
 
 
-    private List<VolumeData> load(Connection con, ResultSet resultSet, Resource res, SerialGenerator serialGen) throws SQLException
+    private List<VolumeData> load(Connection con, ResultSet resultSet, Resource res, TransactionMgr transMgr, SerialGenerator serialGen) throws SQLException
     {
         List<VolumeData> volList = new ArrayList<>();
         while (resultSet.next())
@@ -126,81 +150,85 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 res.getDefinition(),
                 volNr
             );
-            volDfn = volDfnDriver.load(con, serialGen);
+            volDfn = volDfnDriver.load(con, transMgr, serialGen);
 
-            VolumeData volData = new VolumeData(
-                UuidUtils.asUUID(resultSet.getBytes(VOL_UUID)),
-                res,
-                volDfn,
-                resultSet.getString(VOL_PATH),
-                serialGen
-            );
-
-            // restore flags
-            StateFlags<VlmFlags> flags = volData.getFlags();
-            long lFlags = resultSet.getLong(VOL_FLAGS);
-            for (VlmFlags flag : VlmFlags.values())
+            VolumeData volData = cacheGet(res.getAssignedNode(), res.getDefinition(), volNr);
+            if (volData == null)
             {
-                if ((lFlags & flag.flagValue) == flag.flagValue)
-                {
-                    try
-                    {
-                        flags.enableFlags(dbCtx, flag);
-                    }
-                    catch (AccessDeniedException accessDeniedExc)
-                    {
-                        throw new ImplementationError(
-                            "Database's access context has no permission to set VolumeDefinition's flags",
-                            accessDeniedExc
-                        );
-                    }
-                }
-            }
-
-            // restore props
-            String instanceName = PropsContainer.buildPath(
-                res.getAssignedNode().getName(),
-                res.getDefinition().getName(),
-                volNr
-            );
-            PropsConDatabaseDriver propsDriver = DrbdManage.getPropConDatabaseDriver(instanceName);
-
-            Map<String, String> propMap = propsDriver.load(con);
-            try
-            {
-                Props props = volData.getProps(dbCtx);
-
-                for (Entry<String, String> entry : propMap.entrySet())
-                {
-                    try
-                    {
-                        props.setProp(entry.getKey(), entry.getValue());
-                    }
-                    catch (InvalidKeyException invalidKeyExc)
-                    {
-                        throw new DrbdSqlRuntimeException(
-                            String.format("Invalid key loaded from PropsCon %s: %s", instanceName, entry.getKey()),
-                            invalidKeyExc
-                        );
-                    }
-                    catch (InvalidValueException invalidValueExc)
-                    {
-                        throw new DrbdSqlRuntimeException(
-                            String.format("Invalid value loaded from PropsCon %s: %s", instanceName, entry.getValue()),
-                            invalidValueExc
-                        );
-                    }
-                }
-
-            }
-            catch (AccessDeniedException accessDeniedExc)
-            {
-                throw new ImplementationError(
-                    "Database's access context has no permission to get Volume's propsContainer",
-                    accessDeniedExc
+                volData = new VolumeData(
+                    UuidUtils.asUUID(resultSet.getBytes(VOL_UUID)),
+                    res,
+                    volDfn,
+                    resultSet.getString(VOL_PATH),
+                    serialGen
                 );
-            }
 
+                // restore flags
+                StateFlags<VlmFlags> flags = volData.getFlags();
+                long lFlags = resultSet.getLong(VOL_FLAGS);
+                for (VlmFlags flag : VlmFlags.values())
+                {
+                    if ((lFlags & flag.flagValue) == flag.flagValue)
+                    {
+                        try
+                        {
+                            flags.enableFlags(dbCtx, flag);
+                        }
+                        catch (AccessDeniedException accessDeniedExc)
+                        {
+                            throw new ImplementationError(
+                                "Database's access context has no permission to set VolumeDefinition's flags",
+                                accessDeniedExc
+                            );
+                        }
+                    }
+                }
+
+                // restore props
+                String instanceName = PropsContainer.buildPath(
+                    res.getAssignedNode().getName(),
+                    res.getDefinition().getName(),
+                    volNr
+                );
+                PropsConDatabaseDriver propsDriver = DrbdManage.getPropConDatabaseDriver(instanceName);
+
+                Map<String, String> propMap = propsDriver.load(con);
+                try
+                {
+                    Props props = volData.getProps(dbCtx);
+
+                    for (Entry<String, String> entry : propMap.entrySet())
+                    {
+                        try
+                        {
+                            props.setProp(entry.getKey(), entry.getValue());
+                        }
+                        catch (InvalidKeyException invalidKeyExc)
+                        {
+                            throw new DrbdSqlRuntimeException(
+                                String.format("Invalid key loaded from PropsCon %s: %s", instanceName, entry.getKey()),
+                                invalidKeyExc
+                            );
+                        }
+                        catch (InvalidValueException invalidValueExc)
+                        {
+                            throw new DrbdSqlRuntimeException(
+                                String.format("Invalid value loaded from PropsCon %s: %s", instanceName, entry.getValue()),
+                                invalidValueExc
+                            );
+                        }
+                    }
+
+                }
+                catch (AccessDeniedException accessDeniedExc)
+                {
+                    throw new ImplementationError(
+                        "Database's access context has no permission to get Volume's propsContainer",
+                        accessDeniedExc
+                    );
+                }
+                cache(volData, dbCtx);
+            }
             volList.add(volData);
         }
         // resultSet should be closed by caller of this method
@@ -210,15 +238,16 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     @Override
     public void create(Connection con, VolumeData vol) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(VOL_INSERT);
-        stmt.setBytes(1, UuidUtils.asByteArray(vol.getUuid()));
-        stmt.setString(2, vol.getResource().getAssignedNode().getName().value);
-        stmt.setString(3, vol.getResourceDfn().getName().value);
-        try
+        try(PreparedStatement stmt = con.prepareStatement(VOL_INSERT))
         {
+            stmt.setBytes(1, UuidUtils.asByteArray(vol.getUuid()));
+            stmt.setString(2, vol.getResource().getAssignedNode().getName().value);
+            stmt.setString(3, vol.getResourceDfn().getName().value);
             stmt.setInt(4, vol.getVolumeDfn().getVolumeNumber(dbCtx).value);
             stmt.setString(5, vol.getBlockDevicePath(dbCtx));
             stmt.setLong(6, vol.getFlags().getFlagsBits(dbCtx));
+            stmt.executeUpdate();
+            cache(vol, dbCtx);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -227,8 +256,26 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 accessDeniedExc
             );
         }
-        stmt.executeUpdate();
-        stmt.close();
+    }
+
+    @Override
+    public void delete(Connection con, VolumeData vol) throws SQLException
+    {
+        try(PreparedStatement stmt = con.prepareStatement(VOL_DELETE))
+        {
+            stmt.setString(1, vol.getResource().getAssignedNode().getName().value);
+            stmt.setString(2, vol.getResourceDfn().getName().value);
+            stmt.setInt(3, vol.getVolumeDfn().getVolumeNumber(dbCtx).value);
+            stmt.executeUpdate();
+            cacheRemove(vol, dbCtx);
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            throw new ImplementationError(
+                "Database's access context has no permission to access Volume",
+                accessDeniedExc
+            );
+        }
     }
 
 
@@ -244,5 +291,60 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    private static void cache(VolumeData vol, AccessContext accCtx)
+    {
+        try
+        {
+            volCache.put(
+                new PrimaryKey(
+                    vol.getResource().getAssignedNode().getName().value,
+                    vol.getResourceDfn().getName().value,
+                    vol.getVolumeDfn().getVolumeNumber(accCtx).value),
+                vol
+            );
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            throw new ImplementationError(
+                "Database's access context has no permission to acces VolumeData's volNumber",
+                accessDeniedExc
+            );
+        }
+    }
+
+    private static VolumeData cacheGet(Node node, ResourceDefinition resDfn, VolumeNumber volNr)
+    {
+        return volCache.get(new PrimaryKey(node.getName().value, resDfn.getName().value, volNr.value));
+    }
+
+    private static void cacheRemove(VolumeData vol, AccessContext accCtx)
+    {
+        try
+        {
+            volCache.remove(
+                new PrimaryKey(
+                    vol.getResource().getAssignedNode().getName().value,
+                    vol.getResourceDfn().getName().value,
+                    vol.getVolumeDfn().getVolumeNumber(accCtx).value
+                )
+            );
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            throw new ImplementationError(
+                "Database's access context has no permission to acces VolumeData's volNumber",
+                accessDeniedExc
+            );
+        }
+    }
+
+    /**
+     * this method should only be called by tests or if you want a full-reload from the database
+     */
+    static void clearCache()
+    {
+        volCache.clear();
     }
 }

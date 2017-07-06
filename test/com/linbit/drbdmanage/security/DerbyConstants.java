@@ -91,13 +91,13 @@ public interface DerbyConstants
     public static final String RES_FLAGS     = "RES_FLAGS";
 
     // VOLUME_DEFINITIONS column names
-    public static final String VLM_ID        = "VLM_ID";
+    public static final String VLM_NR        = "VLM_NR";
     public static final String VLM_SIZE      = "VLM_SIZE";
     public static final String VLM_MINOR_NR  = "VLM_MINOR_NR";
+    public static final String VLM_FLAGS     = "VLM_FLAGS";
 
     // VOLUMES column names
     public static final String BLOCK_DEVICE_PATH = "BLOCK_DEVICE_PATH";
-    public static final String VLM_FLAGS         = "VLM_FLAGS";
 
     // STOR_POOL_DEFINITIONS column names
     public static final String POOL_NAME     = "POOL_NAME";
@@ -131,7 +131,7 @@ public interface DerbyConstants
     public static final int TBL_COL_COUNT_NODE_NET_INTERFACES    = 6;
     public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS   = 3;
     public static final int TBL_COL_COUNT_NODE_RESOURCE          = 5;
-    public static final int TBL_COL_COUNT_VOLUME_DEFINITIONS     = 5;
+    public static final int TBL_COL_COUNT_VOLUME_DEFINITIONS     = 6;
     public static final int TBL_COL_COUNT_VOLUMES                = 6;
     public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS  = 3;
     public static final int TBL_COL_COUNT_NODE_STOR_POOL         = 4;
@@ -298,10 +298,11 @@ public interface DerbyConstants
         "( \n" + 
         "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" + 
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" + 
-        "    VLM_ID INT NOT NULL, \n" + 
+        "    VLM_NR INT NOT NULL, \n" + 
         "    VLM_SIZE BIGINT NOT NULL, \n" + 
         "    VLM_MINOR_NR INT NOT NULL UNIQUE, \n" + 
-        "    PRIMARY KEY (RESOURCE_NAME, VLM_ID), \n" + 
+        "    VLM_FLAGS BIGINT NOT NULL, \n" + 
+        "    PRIMARY KEY (RESOURCE_NAME, VLM_NR), \n" + 
         "    FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) ON DELETE CASCADE \n" + 
         ")";
     public static final String CREATE_TABLE_VOLUMES = 
@@ -310,12 +311,12 @@ public interface DerbyConstants
         "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" + 
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" + 
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" + 
-        "    VLM_ID INT NOT NULL, \n" + 
+        "    VLM_NR INT NOT NULL, \n" + 
         "    BLOCK_DEVICE_PATH VARCHAR(255) NOT NULL, \n" + 
         "    VLM_FLAGS BIGINT NOT NULL, \n" + 
-        "    PRIMARY KEY (NODE_NAME, RESOURCE_NAME, VLM_ID), \n" + 
+        "    PRIMARY KEY (NODE_NAME, RESOURCE_NAME, VLM_NR), \n" + 
         "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" + 
-        "    FOREIGN KEY (RESOURCE_NAME, VLM_ID) REFERENCES VOLUME_DEFINITIONS(RESOURCE_NAME, VLM_ID) ON DELETE CASCADE \n" + 
+        "    FOREIGN KEY (RESOURCE_NAME, VLM_NR) REFERENCES VOLUME_DEFINITIONS(RESOURCE_NAME, VLM_NR) ON DELETE CASCADE \n" + 
         ")";
     public static final String CREATE_TABLE_STOR_POOL_DEFINITIONS = 
         "CREATE TABLE STOR_POOL_DEFINITIONS \n" + 
@@ -545,7 +546,7 @@ public interface DerbyConstants
         " VALUES (?, ?, ?, ?, ?)";
     public static final String INSERT_VOLUME_DEFINITIONS = 
         " INSERT INTO " + TBL_VOLUME_DEFINITIONS + 
-        " VALUES (?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?)";
     public static final String INSERT_VOLUMES = 
         " INSERT INTO " + TBL_VOLUMES + 
         " VALUES (?, ?, ?, ?, ?, ?)";

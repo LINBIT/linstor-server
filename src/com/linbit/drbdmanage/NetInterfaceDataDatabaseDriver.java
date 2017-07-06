@@ -17,7 +17,10 @@ public interface NetInterfaceDataDatabaseDriver
     public NetInterfaceData load(Connection dbCon)
         throws SQLException, AccessDeniedException;
 
-    public void create(Connection dbCon, NetInterfaceData netData)
+    public void create(Connection dbCon, NetInterfaceData netInterfaceData)
+        throws SQLException;
+
+    public void delete(Connection con, NetInterfaceData netInterfaceData)
         throws SQLException;
 
 }

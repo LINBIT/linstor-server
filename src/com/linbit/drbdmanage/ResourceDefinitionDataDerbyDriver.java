@@ -4,10 +4,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Hashtable;
 import java.util.Map;
+
+import org.apache.derby.client.am.SqlException;
 
 import com.linbit.MapDatabaseDriver;
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -31,8 +35,13 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private static final String RD_INSERT =
         " INSERT INTO " + TBL_RES_DEF +
         " VALUES (?, ?, ?)";
+    private static final String RD_DELETE =
+        " DELETE FROM " + TBL_RES_DEF +
+        " WHERE " + RD_RES_NAME + " = ?";
 
     private ResourceName resName;
+
+    private static Hashtable<PrimaryKey, ResourceDefinitionData> resDfnCache = new Hashtable<>();
 
     public ResourceDefinitionDataDerbyDriver(ResourceName resName)
     {
@@ -48,6 +57,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         stmt.setString(3, resName.displayValue);
         stmt.executeUpdate();
         stmt.close();
+
+        cache(resDfn);
     }
 
     @Override
@@ -70,28 +81,49 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         stmt.setString(1, resName.value);
         ResultSet resultSet = stmt.executeQuery();
 
-        ResourceDefinitionData ret = null;
-        if (resultSet.next())
+        ResourceDefinitionData ret = cacheGet(resName);
+        if (ret == null)
         {
-            ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                ObjectProtection.buildPath(resName)
-            );
-            ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
-            if (objProt != null)
+            if (resultSet.next())
             {
-                ret = new ResourceDefinitionData(
-                    objProt,
-                    UuidUtils.asUUID(resultSet.getBytes(RD_UUID)),
-                    resName,
-                    serialGen,
-                    transMgr
+                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+                    ObjectProtection.buildPath(resName)
                 );
+                ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+                if (objProt != null)
+                {
+                    ret = new ResourceDefinitionData(
+                        objProt,
+                        UuidUtils.asUUID(resultSet.getBytes(RD_UUID)),
+                        resName,
+                        serialGen,
+                        transMgr
+                    );
+                }
+            }
+        }
+        else
+        {
+            if (!resultSet.next())
+            {
+                // XXX: user deleted db entry during runtime - throw exception?
+                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
             }
         }
         resultSet.close();
         stmt.close();
 
         return ret;
+    }
+
+    @Override
+    public void delete(Connection con) throws SQLException
+    {
+        PreparedStatement stmt = con.prepareStatement(RD_DELETE);
+        stmt.setString(1, resName.value);
+        stmt.executeUpdate();
+
+        cacheRemove(resName);
     }
 
     @Override
@@ -120,5 +152,28 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    private static void cache(ResourceDefinitionData resDfn)
+    {
+        resDfnCache.put(new PrimaryKey(resDfn.getName().value), resDfn);
+    }
+
+    private static ResourceDefinitionData cacheGet(ResourceName resName)
+    {
+        return resDfnCache.get(new PrimaryKey(resName.value));
+    }
+
+    private static void cacheRemove(ResourceName resName)
+    {
+        resDfnCache.remove(new PrimaryKey(resName.value));
+    }
+
+    /**
+     * this method should only be called by tests or if you want a full-reload from the database
+     */
+    static void clearCache()
+    {
+        resDfnCache.clear();
     }
 }

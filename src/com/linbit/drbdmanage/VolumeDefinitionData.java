@@ -2,6 +2,7 @@ package com.linbit.drbdmanage;
 
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
+import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MaxSizeException;
@@ -19,6 +20,7 @@ import com.linbit.drbdmanage.security.AccessType;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.UUID;
 
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -61,7 +63,9 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         VolumeNumber volNr,
         MinorNumber minor,
         long volSize,
-        SerialGenerator srlGen
+        TransactionMgr transMgr,
+        SerialGenerator srlGen,
+        Set<VlmDfnFlags> initFlags
     )
         throws MdException, AccessDeniedException, SQLException
     {
@@ -111,11 +115,12 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         );
 
         // TODO: do not create new prop, but load existing container
-        vlmDfnProps = SerialPropsContainer.createRootContainer(srlGen);
+        vlmDfnProps = SerialPropsContainer.loadContainer(dbDriver.getPropsDriver(), transMgr, srlGen);
 
         flags = new VlmDfnFlagsImpl(
             resDfnRef.getObjProt(),
-            dbDriver.getStateFlagsPersistence()
+            dbDriver.getStateFlagsPersistence(),
+            initFlags
         );
 
         transObjs = Arrays.asList(
@@ -196,9 +201,18 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     private static final class VlmDfnFlagsImpl extends StateFlagsBits<VlmDfnFlags>
     {
-        VlmDfnFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
+        VlmDfnFlagsImpl(
+            ObjectProtection objProtRef,
+            StateFlagsPersistence persistenceRef,
+            Set<VlmDfnFlags> flags
+        )
         {
-            super(objProtRef, StateFlagsBits.getMask(VlmDfnFlags.values()), persistenceRef);
+            super(
+                objProtRef,
+                StateFlagsBits.getMask(VlmDfnFlags.values()),
+                persistenceRef,
+                StateFlagsBits.getMask(flags.toArray(new VlmDfnFlags[0]))
+            );
         }
     }
 }
