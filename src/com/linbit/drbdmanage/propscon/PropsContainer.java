@@ -1059,7 +1059,10 @@ public class PropsContainer implements Props
         PropsConMap(PropsContainer con)
         {
             container = con;
-            instanceName = con.dbDriver.getInstanceName();
+            if (con.dbDriver != null)
+            {
+                instanceName = con.dbDriver.getInstanceName();
+            }
         }
 
         @Override

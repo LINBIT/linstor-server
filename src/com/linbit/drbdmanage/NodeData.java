@@ -1,8 +1,16 @@
 package com.linbit.drbdmanage;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -14,18 +22,9 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
-
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.TreeMap;
-import java.util.UUID;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
-
-import java.util.Set;
 
 /**
  *
@@ -46,13 +45,13 @@ public class NodeData extends BaseTransactionObject implements Node
     private StateFlags<NodeType> nodeTypeFlags;
 
     // List of resources assigned to this cluster node
-    private TransactionMap<ResourceName, Resource> resourceMap;
+    private Map<ResourceName, Resource> resourceMap;
 
     // List of network interfaces used for replication on this cluster node
-    private TransactionMap<NetInterfaceName, NetInterface> netInterfaceMap;
+    private Map<NetInterfaceName, NetInterface> netInterfaceMap;
 
     // List of storage pools
-    private TransactionMap<StorPoolName, StorPool> storPoolMap;
+    private Map<StorPoolName, StorPool> storPoolMap;
 
     // Access controls for this object
     private ObjectProtection objProt;
@@ -112,22 +111,13 @@ public class NodeData extends BaseTransactionObject implements Node
         objId = uuidRef;
         objProt = objProtRef;
         clNodeName = nameRef;
-        dbDriver = DrbdManage.getNodeDataDatabaseDriver();
+        dbDriver = DrbdManage.getNodeDataDatabaseDriver(nameRef);
 
-        resourceMap = new TransactionMap<>(
-            new TreeMap<ResourceName, Resource>(),
-            dbDriver.getNodeResourceMapDriver(nameRef)
-        );
-        netInterfaceMap = new TransactionMap<>(
-            new TreeMap<NetInterfaceName, NetInterface>(),
-            dbDriver.getNodeNetInterfaceMapDriver(this)
-        );
-        storPoolMap = new TransactionMap<>(
-            new TreeMap<StorPoolName, StorPool>(),
-            dbDriver.getNodeStorPoolMapDriver(this)
-        );
+        resourceMap = new TreeMap<ResourceName, Resource>();
+        netInterfaceMap = new TreeMap<NetInterfaceName, NetInterface>();
+        storPoolMap = new TreeMap<StorPoolName, StorPool>();
 
-        nodeProps = SerialPropsContainer.loadContainer(dbDriver.getPropsConDriver(nameRef), transMgr, srlGen);
+        nodeProps = SerialPropsContainer.loadContainer(dbDriver.getPropsConDriver(), transMgr, srlGen);
 
 
         long initialFlags = 0;
@@ -135,7 +125,7 @@ public class NodeData extends BaseTransactionObject implements Node
         {
             initialFlags = StateFlagsBits.getMask(flagSet.toArray(new NodeFlag[0]));
         }
-        flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence(nameRef), initialFlags);
+        flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence(), initialFlags);
 
         long initialTypes = 0;
         if (types == null || types.isEmpty())
@@ -147,14 +137,11 @@ public class NodeData extends BaseTransactionObject implements Node
         {
             initialTypes = StateFlagsBits.getMask(types.toArray(new NodeType[0]));
         }
-        nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence(nameRef), initialTypes);
+        nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence(), initialTypes);
 
         transObjList = Arrays.<TransactionObject> asList(
             flags,
             nodeTypeFlags,
-            resourceMap,
-            netInterfaceMap,
-            storPoolMap,
             objProt,
             nodeProps
         );
@@ -178,10 +165,10 @@ public class NodeData extends BaseTransactionObject implements Node
     {
         NodeData nodeData = null;
 
-        NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver();
+        NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver(nameRef);
         if (transMgr != null)
         {
-            nodeData = dbDriver.load(transMgr.dbCon, nameRef, srlGen, transMgr);
+            nodeData = dbDriver.load(transMgr.dbCon, srlGen, transMgr);
         }
 
         if (nodeData != null)

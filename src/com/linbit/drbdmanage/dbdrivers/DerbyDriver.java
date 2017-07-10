@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.dbdrivers;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
@@ -10,6 +11,8 @@ import com.linbit.drbdmanage.NetInterfaceDataDerbyDriver;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeDataDerbyDriver;
+import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.ResourceDataDerbyDriver;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceDefinitionDataDerbyDriver;
@@ -18,8 +21,9 @@ import com.linbit.drbdmanage.StorPoolDataDerbyDriver;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolDefinitionDataDerbyDriver;
 import com.linbit.drbdmanage.StorPoolName;
-import com.linbit.drbdmanage.VolumeDefinitionDataDerbyDriver;
 import com.linbit.drbdmanage.VolumeDataDerbyDriver;
+import com.linbit.drbdmanage.VolumeDefinition;
+import com.linbit.drbdmanage.VolumeDefinitionDataDerbyDriver;
 import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
@@ -59,24 +63,22 @@ public class DerbyDriver implements DatabaseDriver
 
     private ErrorReporter errorReporter;
     private final AccessContext dbCtx;
-    private final NodeDataDerbyDriver nodeDriver;
-    private final VolumeDataDerbyDriver volumeDriver;
 
-    private Map<String, PropsConDerbyDriver> propsDriverCache = new HashMap<>();
-    private Map<ResourceName, ResourceDataDerbyDriver> resDriverCache = new HashMap<>();
-    private Map<ResourceName, ResourceDefinitionDataDerbyDriver> resDefDriverCache = new HashMap<>();
-    private Map<Tuple<ResourceDefinition, VolumeNumber>, VolumeDefinitionDataDerbyDriver> volDefDriverCache = new HashMap<>();
-    private Map<StorPoolName, StorPoolDefinitionDataDerbyDriver> storPoolDfnDriverCache = new HashMap<>();
-    private Map<Tuple<Node, StorPoolDefinition>, StorPoolDataDerbyDriver> storPoolDriverCache = new HashMap<>();
-    private Map<Tuple<Node, NetInterfaceName>, NetInterfaceDataDerbyDriver> netInterfaceDriverCache = new HashMap<>();
+    private final Map<PrimaryKey, NodeDataDerbyDriver> nodeDriverCache = new HashMap<>();
+    private final Map<PrimaryKey, PropsConDerbyDriver> propsDriverCache = new HashMap<>();
+    private final Map<PrimaryKey, ResourceDataDerbyDriver> resDriverCache = new HashMap<>();
+    private final Map<PrimaryKey, ResourceDefinitionDataDerbyDriver> resDefDriverCache = new HashMap<>();
+    private final Map<PrimaryKey, VolumeDefinitionDataDerbyDriver> volDefDriverCache = new HashMap<>();
+    private final Map<PrimaryKey, VolumeDataDerbyDriver> volDriverCache = new HashMap<>();
+    private final Map<PrimaryKey, StorPoolDefinitionDataDerbyDriver> storPoolDfnDriverCache = new HashMap<>();
+    private final Map<PrimaryKey, StorPoolDataDerbyDriver> storPoolDriverCache = new HashMap<>();
+    private final Map<PrimaryKey, NetInterfaceDataDerbyDriver> netInterfaceDriverCache = new HashMap<>();
 
 
     public DerbyDriver(ErrorReporter errorReporter, AccessContext privCtx)
     {
         this.errorReporter = errorReporter;
         this.dbCtx = privCtx;
-        nodeDriver = new NodeDataDerbyDriver(privCtx);
-        volumeDriver = new VolumeDataDerbyDriver(privCtx);
     }
 
     @Override
@@ -94,30 +96,39 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public PropsConDatabaseDriver getPropsDatabaseDriver(String instanceName)
     {
-        PropsConDerbyDriver driver = propsDriverCache.get(instanceName);
+        PrimaryKey pk = new PrimaryKey(instanceName);
+        PropsConDerbyDriver driver = propsDriverCache.get(pk);
         if (driver == null)
         {
             driver = new PropsConDerbyDriver(instanceName);
-            propsDriverCache.put(instanceName, driver);
+            propsDriverCache.put(pk, driver);
         }
         return driver;
     }
 
 
     @Override
-    public NodeDataDatabaseDriver getNodeDatabaseDriver()
+    public NodeDataDatabaseDriver getNodeDatabaseDriver(NodeName nodeName)
     {
-        return nodeDriver;
+        PrimaryKey pk = new PrimaryKey(nodeName);
+        NodeDataDerbyDriver driver = nodeDriverCache.get(pk);
+        if (driver == null)
+        {
+            driver = new NodeDataDerbyDriver(dbCtx, nodeName);
+            nodeDriverCache.put(pk, driver);
+        }
+        return driver;
     }
 
     @Override
-    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver(ResourceName resName)
+    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver(NodeName nodeName, ResourceName resName)
     {
-        ResourceDataDerbyDriver driver = resDriverCache.get(resName);
+        PrimaryKey pk = new PrimaryKey(resName, nodeName);
+        ResourceDataDerbyDriver driver = resDriverCache.get(pk);
         if (driver == null)
         {
-            driver = new ResourceDataDerbyDriver(dbCtx, resName);
-            resDriverCache.put(resName, driver);
+            driver = new ResourceDataDerbyDriver(dbCtx, resName, nodeName);
+            resDriverCache.put(pk, driver);
         }
         return driver;
     }
@@ -125,30 +136,38 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName)
     {
-        ResourceDefinitionDataDerbyDriver driver= resDefDriverCache.get(resName);
+        PrimaryKey pk = new PrimaryKey(resName);
+        ResourceDefinitionDataDerbyDriver driver= resDefDriverCache.get(pk);
         if (driver == null)
         {
             driver = new ResourceDefinitionDataDerbyDriver(resName);
-            resDefDriverCache.put(resName, driver);
+            resDefDriverCache.put(pk, driver);
         }
         return driver;
     }
 
     @Override
-    public VolumeDataDatabaseDriver getVolumeDataDatabaseDriver()
-    {
-        return volumeDriver;
-    }
-
-    @Override
     public VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(ResourceDefinition resDfn, VolumeNumber volNr)
     {
-        Tuple<ResourceDefinition, VolumeNumber> key = new Tuple<ResourceDefinition, VolumeNumber>(resDfn, volNr);
-        VolumeDefinitionDataDerbyDriver driver = volDefDriverCache.get(key);
+        PrimaryKey pk = new PrimaryKey(resDfn, volNr);
+        VolumeDefinitionDataDerbyDriver driver = volDefDriverCache.get(pk);
         if (driver == null)
         {
             driver = new VolumeDefinitionDataDerbyDriver(dbCtx, resDfn, volNr);
-            volDefDriverCache.put(key, driver);
+            volDefDriverCache.put(pk, driver);
+        }
+        return driver;
+    }
+
+    @Override
+    public VolumeDataDatabaseDriver getVolumeDataDatabaseDriver(Resource resRef, VolumeDefinition volDfnRef)
+    {
+        PrimaryKey pk = new PrimaryKey(resRef, volDfnRef);
+        VolumeDataDerbyDriver driver= volDriverCache.get(pk);
+        if (driver == null)
+        {
+            driver = new VolumeDataDerbyDriver(dbCtx, resRef, volDfnRef);
+            volDriverCache.put(pk, driver);
         }
         return driver;
     }
@@ -156,11 +175,12 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver(StorPoolName name)
     {
-        StorPoolDefinitionDataDerbyDriver driver = storPoolDfnDriverCache.get(name);
+        PrimaryKey pk = new PrimaryKey(name);
+        StorPoolDefinitionDataDerbyDriver driver = storPoolDfnDriverCache.get(pk);
         if (driver == null)
         {
             driver = new StorPoolDefinitionDataDerbyDriver(name);
-            storPoolDfnDriverCache.put(name, driver);
+            storPoolDfnDriverCache.put(pk, driver);
         }
         return driver;
     }
@@ -168,12 +188,12 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef)
     {
-        Tuple<Node, StorPoolDefinition> key = new Tuple<Node, StorPoolDefinition>(nodeRef, storPoolDfnRef);
-        StorPoolDataDerbyDriver driver = storPoolDriverCache.get(key);
+        PrimaryKey pk = new PrimaryKey(nodeRef, storPoolDfnRef);
+        StorPoolDataDerbyDriver driver = storPoolDriverCache.get(pk);
         if (driver == null)
         {
             driver = new StorPoolDataDerbyDriver(nodeRef, storPoolDfnRef);
-            storPoolDriverCache.put(key, driver);
+            storPoolDriverCache.put(pk, driver);
         }
         return driver;
     }
@@ -181,68 +201,13 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node nodeRef, NetInterfaceName netName)
     {
-        Tuple<Node, NetInterfaceName> key = new Tuple<Node, NetInterfaceName>(nodeRef, netName);
-        NetInterfaceDataDerbyDriver driver = netInterfaceDriverCache.get(key);
+        PrimaryKey pk = new PrimaryKey(nodeRef, netName);
+        NetInterfaceDataDerbyDriver driver = netInterfaceDriverCache.get(pk);
         if (driver == null)
         {
             driver = new NetInterfaceDataDerbyDriver(dbCtx, nodeRef, netName);
-            netInterfaceDriverCache.put(key, driver);
+            netInterfaceDriverCache.put(pk, driver);
         }
         return driver;
     }
-
-
-
-    private static class Tuple<A, B>
-    {
-        public final A a;
-        public final B b;
-
-        public Tuple(A a, B b)
-        {
-            this.a = a;
-            this.b = b;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((a == null) ? 0 : a.hashCode());
-            result = prime * result + ((b == null) ? 0 : b.hashCode());
-            return result;
-        }
-
-        @SuppressWarnings("rawtypes")
-        @Override
-        public boolean equals(Object obj)
-        {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            Tuple other = (Tuple) obj;
-            if (a == null)
-            {
-                if (other.a != null)
-                    return false;
-            }
-            else
-                if (!a.equals(other.a))
-                    return false;
-            if (b == null)
-            {
-                if (other.b != null)
-                    return false;
-            }
-            else
-                if (!b.equals(other.b))
-                    return false;
-            return true;
-        }
-    }
-
 }

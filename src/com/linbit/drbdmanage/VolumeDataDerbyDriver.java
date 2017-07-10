@@ -22,6 +22,7 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDr
 import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.InvalidValueException;
 import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -51,6 +52,12 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     private static final String VOL_INSERT =
         " INSERT INTO " + TBL_VOL +
         " VALUES (?, ?, ?, ?, ?, ?)";
+    private static final String VOL_UPDATE_FLAGS =
+        " UPDATE " + TBL_VOL +
+        " SET " + VOL_FLAGS + " = ? " +
+        " WHERE " + VOL_NODE_NAME + " = ? AND " +
+                    VOL_RES_NAME  + " = ? AND " +
+                    VOL_ID        + " = ?";
     private static final String VOL_DELETE =
         " DELETE FROM " + TBL_VOL +
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
@@ -58,18 +65,42 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     VOL_ID        + " = ?";
 
     private static Hashtable<PrimaryKey, VolumeData> volCache = new Hashtable<>();
+    private PropsConDerbyDriver propsDriver;
+    private StateFlagsPersistence flagPersistenceDriver;
+
     private AccessContext dbCtx;
 
-    public VolumeDataDerbyDriver(AccessContext privCtx)
+    private Resource res;
+    private VolumeDefinition volDfn;
+
+    public VolumeDataDerbyDriver(AccessContext privCtx, Resource resRef, VolumeDefinition volDfnRef)
     {
         dbCtx = privCtx;
+        res = resRef;
+        volDfn = volDfnRef;
+
+        try
+        {
+            propsDriver = new PropsConDerbyDriver(
+                PropsContainer.buildPath(
+                    resRef.getDefinition().getName(),
+                    volDfnRef.getVolumeNumber(dbCtx)
+                )
+            );
+            flagPersistenceDriver = new VolFlagsPersistence();
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            throw new ImplementationError(
+                "Database's access context has no permission to acces VolumeData's volNumber",
+                accessDeniedExc
+            );
+        }
     }
 
     @Override
     public VolumeData load(
         Connection con,
-        Resource res,
-        VolumeDefinition volDfn,
         TransactionMgr transMgr,
         SerialGenerator serialGen
     )
@@ -82,7 +113,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setInt(3, volDfn.getVolumeNumber(dbCtx).value);
             ResultSet resultSet = stmt.executeQuery();
 
-            List<VolumeData> volList = load(con, resultSet, res, transMgr, serialGen);
+            List<VolumeData> volList = load(con, resultSet, transMgr, serialGen);
             resultSet.close();
 
             VolumeData ret = cacheGet(res.getAssignedNode(), res.getDefinition(), volDfn.getVolumeNumber(dbCtx));
@@ -113,14 +144,14 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         }
     }
 
-    public List<VolumeData> load(Connection con, Resource res, TransactionMgr transMgr, SerialGenerator serialGen) throws SQLException
+    public List<VolumeData> loadAllVolumesByResource(Connection con, TransactionMgr transMgr, SerialGenerator serialGen) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(VOL_SELECT_BY_RES);
         stmt.setString(1, res.getAssignedNode().getName().value);
         stmt.setString(2, res.getDefinition().getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        List<VolumeData> ret = load(con, resultSet, res, transMgr, serialGen);
+        List<VolumeData> ret = load(con, resultSet, transMgr, serialGen);
         resultSet.close();
         stmt.close();
 
@@ -128,7 +159,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     }
 
 
-    private List<VolumeData> load(Connection con, ResultSet resultSet, Resource res, TransactionMgr transMgr, SerialGenerator serialGen) throws SQLException
+    private List<VolumeData> load(Connection con, ResultSet resultSet, TransactionMgr transMgr, SerialGenerator serialGen) throws SQLException
     {
         List<VolumeData> volList = new ArrayList<>();
         while (resultSet.next())
@@ -259,15 +290,16 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     }
 
     @Override
-    public void delete(Connection con, VolumeData vol) throws SQLException
+    public void delete(Connection con) throws SQLException
     {
         try(PreparedStatement stmt = con.prepareStatement(VOL_DELETE))
         {
-            stmt.setString(1, vol.getResource().getAssignedNode().getName().value);
-            stmt.setString(2, vol.getResourceDfn().getName().value);
-            stmt.setInt(3, vol.getVolumeDfn().getVolumeNumber(dbCtx).value);
+            stmt.setString(1, res.getAssignedNode().getName().value);
+            stmt.setString(2, res.getDefinition().getName().value);
+            stmt.setInt(3, volDfn.getVolumeNumber(dbCtx).value);
             stmt.executeUpdate();
-            cacheRemove(vol, dbCtx);
+
+            cacheRemove(res, volDfn, dbCtx);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -282,15 +314,13 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     @Override
     public StateFlagsPersistence getStateFlagsPersistence()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return flagPersistenceDriver;
     }
 
     @Override
-    public PropsConDatabaseDriver getPropsConDriver(Resource resRef, VolumeDefinition volDfnRef)
+    public PropsConDatabaseDriver getPropsConDriver()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return propsDriver;
     }
 
     private static void cache(VolumeData vol, AccessContext accCtx)
@@ -319,16 +349,19 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return volCache.get(new PrimaryKey(node.getName().value, resDfn.getName().value, volNr.value));
     }
 
-    private static void cacheRemove(VolumeData vol, AccessContext accCtx)
+    private static void cacheRemove(Resource res, VolumeDefinition volDfn, AccessContext accCtx)
+    {
+        volCache.remove(getPk(res, volDfn, accCtx));
+    }
+
+    private static PrimaryKey getPk(Resource res, VolumeDefinition volDfn, AccessContext accCtx)
     {
         try
         {
-            volCache.remove(
-                new PrimaryKey(
-                    vol.getResource().getAssignedNode().getName().value,
-                    vol.getResourceDfn().getName().value,
-                    vol.getVolumeDfn().getVolumeNumber(accCtx).value
-                )
+            return new PrimaryKey(
+                res.getAssignedNode().getName().value,
+                res.getDefinition().getName().value,
+                volDfn.getVolumeNumber(accCtx).value
             );
         }
         catch (AccessDeniedException accessDeniedExc)
@@ -346,5 +379,31 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     static void clearCache()
     {
         volCache.clear();
+    }
+
+    private class VolFlagsPersistence implements StateFlagsPersistence
+    {
+        private final String nodeName;
+        private final String resName;
+        private final int volNr;
+
+        public VolFlagsPersistence() throws AccessDeniedException
+        {
+            nodeName = res.getAssignedNode().getName().value;
+            resName = res.getDefinition().getName().value;
+            volNr = volDfn.getVolumeNumber(dbCtx).value;
+        }
+
+        @Override
+        public void persist(Connection con, long flags) throws SQLException
+        {
+            PreparedStatement stmt = con.prepareStatement(VOL_UPDATE_FLAGS);
+            stmt.setLong(1, flags);
+            stmt.setString(2, nodeName);
+            stmt.setString(3, resName);
+            stmt.setInt(4, volNr);
+            stmt.executeUpdate();
+            stmt.close();
+        }
     }
 }

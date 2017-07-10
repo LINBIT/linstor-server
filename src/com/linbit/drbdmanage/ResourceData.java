@@ -1,7 +1,14 @@
 package com.linbit.drbdmanage;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+
 import com.linbit.ErrorCheck;
-import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
@@ -12,15 +19,9 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
-import java.util.TreeMap;
-import java.util.UUID;
 
 /**
  * Representation of a resource
@@ -36,7 +37,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     private ResourceDefinition resourceDfn;
 
     // List of volumes of this resource
-    private TransactionMap<VolumeNumber, Volume> volumeMap;
+    private Map<VolumeNumber, Volume> volumeMap;
 
     // Reference to the node this resource is assigned to
     private Node assgNode;
@@ -126,19 +127,15 @@ public class ResourceData extends BaseTransactionObject implements Resource
         assgNode = nodeRef;
         objId = objIdRef;
 
-        dbDriver = DrbdManage.getResourceDataDatabaseDriver(resDfnRef.getName());
+        dbDriver = DrbdManage.getResourceDataDatabaseDriver(nodeRef.getName(), resDfnRef.getName());
 
-        volumeMap = new TransactionMap<>(
-            new TreeMap<VolumeNumber, Volume>(),
-            dbDriver.getVolumeMapDriver()
-        );
+        volumeMap = new TreeMap<VolumeNumber, Volume>();
         resourceProps = SerialPropsContainer.createRootContainer(srlGen);
         objProt = objProtRef;
-        flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence(nodeRef.getName()));
+        flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence());
 
         transObjs = Arrays.asList(
             resourceDfn,
-            volumeMap,
             assgNode,
             flags,
             objProt,
@@ -159,7 +156,10 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         ResourceData resData = null;
 
-        ResourceDataDatabaseDriver driver = DrbdManage.getResourceDataDatabaseDriver(resDfn.getName());
+        ResourceDataDatabaseDriver driver = DrbdManage.getResourceDataDatabaseDriver(
+            node.getName(),
+            resDfn.getName()
+        );
 
         if (transMgr != null)
         {

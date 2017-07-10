@@ -1,7 +1,13 @@
 package com.linbit.drbdmanage;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+
 import com.linbit.ErrorCheck;
-import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
@@ -12,12 +18,6 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
@@ -35,13 +35,13 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     private ResourceName resourceName;
 
     // Connections to the peer resources
-    private TransactionMap<NodeName, Map<Integer, ConnectionDefinition>> connectionMap;
+    private Map<NodeName, Map<Integer, ConnectionDefinition>> connectionMap;
 
     // Volumes of the resource
-    private TransactionMap<VolumeNumber, VolumeDefinition> volumeMap;
+    private Map<VolumeNumber, VolumeDefinition> volumeMap;
 
     // Resources defined by this ResourceDefinition
-    private TransactionMap<NodeName, Resource> resourceMap;
+    private Map<NodeName, Resource> resourceMap;
 
     // State flags
     private StateFlags<RscDfnFlags> flags;
@@ -108,26 +108,14 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
         dbDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(resName);
 
-        connectionMap = new TransactionMap<>(
-            new TreeMap<NodeName, Map<Integer, ConnectionDefinition>>(),
-            dbDriver.getConnectionMapDriver()
-        );
-        volumeMap = new TransactionMap<>(
-            new TreeMap<VolumeNumber, VolumeDefinition>(),
-            dbDriver.getVolumeMapDriver()
-        );
-        resourceMap = new TransactionMap<>(
-            new TreeMap<NodeName, Resource>(),
-            dbDriver.getResourceMapDriver()
-        );
+        connectionMap = new TreeMap<NodeName, Map<Integer, ConnectionDefinition>>();
+        volumeMap = new TreeMap<VolumeNumber, VolumeDefinition>();
+        resourceMap = new TreeMap<NodeName, Resource>();
         rscDfnProps = SerialPropsContainer.createRootContainer(serialGen);
         objProt = objProtRef;
         flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence());
 
         transObjs = Arrays.asList(
-            connectionMap,
-            volumeMap,
-            resourceMap,
             flags,
             objProt,
             rscDfnProps

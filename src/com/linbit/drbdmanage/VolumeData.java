@@ -81,14 +81,14 @@ public class VolumeData extends BaseTransactionObject implements Volume
         volumeDfn = volDfnRef;
         blockDevicePath = blockDevicePathRef;
 
-        VolumeDataDatabaseDriver dbDriver = DrbdManage.getVolumeDataDatabaseDriver();
+        VolumeDataDatabaseDriver dbDriver = DrbdManage.getVolumeDataDatabaseDriver(resRef, volDfnRef);
 
         flags = new VlmFlagsImpl(
             resRef.getObjProt(),
             dbDriver.getStateFlagsPersistence()
         );
 
-        volumeProps = SerialPropsContainer.createRootContainer(srlGen, dbDriver.getPropsConDriver(resRef, volDfnRef));
+        volumeProps = SerialPropsContainer.createRootContainer(srlGen, dbDriver.getPropsConDriver());
 
         transObjs = Arrays.asList(
             resourceRef,
@@ -110,10 +110,10 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         VolumeData vol = null;
 
-        VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver();
+        VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver(resRef, volDfn);
         if (transMgr != null)
         {
-            vol = driver.load(transMgr.dbCon, resRef, volDfn, transMgr, serialGen);
+            vol = driver.load(transMgr.dbCon, transMgr, serialGen);
         }
 
         if (vol == null && createIfNotExists)

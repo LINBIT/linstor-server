@@ -5,9 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Hashtable;
-import java.util.Map;
 
-import com.linbit.MapDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
@@ -23,27 +21,35 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private static final String TBL_RES_DEF = DerbyConstants.TBL_RESOURCE_DEFINITIONS;
 
     private static final String RD_UUID = DerbyConstants.UUID;
-    private static final String RD_RES_NAME = DerbyConstants.RESOURCE_NAME;
-    private static final String RD_RES_DSP_NAME = DerbyConstants.RESOURCE_DSP_NAME;
+    private static final String RD_NAME = DerbyConstants.RESOURCE_NAME;
+    private static final String RD_DSP_NAME = DerbyConstants.RESOURCE_DSP_NAME;
+    private static final String RD_FLAGS = DerbyConstants.RESOURCE_FLAGS;
 
     private static final String RD_SELECT =
-        " SELECT " + RD_UUID + ", " + RD_RES_NAME + ", " + RD_RES_DSP_NAME +
+        " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME +
         " FROM " + TBL_RES_DEF +
-        " WHERE " + RD_RES_NAME + " = ?";
+        " WHERE " + RD_NAME + " = ?";
     private static final String RD_INSERT =
         " INSERT INTO " + TBL_RES_DEF +
         " VALUES (?, ?, ?)";
+    private static final String RD_UPDATE_FLAGS =
+        " UPDATE " + TBL_RES_DEF +
+        " SET " + RD_FLAGS + " = ? " +
+        " WHERE " + RD_NAME + " = ?";
     private static final String RD_DELETE =
         " DELETE FROM " + TBL_RES_DEF +
-        " WHERE " + RD_RES_NAME + " = ?";
+        " WHERE " + RD_NAME + " = ?";
 
     private ResourceName resName;
 
+    private StateFlagsPersistence resDfnFlagPersistence;
+
     private static Hashtable<PrimaryKey, ResourceDefinitionData> resDfnCache = new Hashtable<>();
 
-    public ResourceDefinitionDataDerbyDriver(ResourceName resName)
+    public ResourceDefinitionDataDerbyDriver(ResourceName resNameRef)
     {
-        this.resName = resName;
+        resName = resNameRef;
+        resDfnFlagPersistence = new ResDfnFlagsPersistence();
     }
 
     @Override
@@ -126,31 +132,9 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     }
 
     @Override
-    public MapDatabaseDriver<NodeName, Map<Integer, ConnectionDefinition>> getConnectionMapDriver()
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public MapDatabaseDriver<VolumeNumber, VolumeDefinition> getVolumeMapDriver()
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public MapDatabaseDriver<NodeName, Resource> getResourceMapDriver()
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public StateFlagsPersistence getStateFlagsPersistence()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return resDfnFlagPersistence;
     }
 
     private static void cache(ResourceDefinitionData resDfn)
@@ -174,5 +158,20 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     static void clearCache()
     {
         resDfnCache.clear();
+    }
+
+    private class ResDfnFlagsPersistence implements StateFlagsPersistence
+    {
+
+        @Override
+        public void persist(Connection con, long flags) throws SQLException
+        {
+            PreparedStatement stmt = con.prepareStatement(RD_UPDATE_FLAGS);
+            stmt.setLong(1, flags);
+            stmt.setString(2, resName.value);
+            stmt.executeUpdate();
+
+            stmt.close();
+        }
     }
 }

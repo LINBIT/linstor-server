@@ -21,6 +21,7 @@ import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.NodeId;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.Resource;
+import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.Volume.VlmFlags;
@@ -338,13 +339,19 @@ public abstract class DerbyBase implements DerbyConstants
     }
 
 
-    protected static void insertResDfn(Connection dbCon, java.util.UUID uuid, ResourceName resName)
+    protected static void insertResDfn(
+        Connection dbCon,
+        java.util.UUID uuid,
+        ResourceName resName,
+        RscDfnFlags... flags
+    )
         throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_RESOURCE_DEFINITIONS);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, resName.value);
         stmt.setString(3, resName.displayValue);
+        stmt.setLong(4, StateFlagsBits.getMask(flags));
         stmt.executeUpdate();
         stmt.close();
     }

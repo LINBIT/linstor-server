@@ -562,9 +562,9 @@ public abstract class DrbdManage
         return persistenceDbDriver.getPropsDatabaseDriver(instanceName);
     }
 
-    public static NodeDataDatabaseDriver getNodeDataDatabaseDriver()
+    public static NodeDataDatabaseDriver getNodeDataDatabaseDriver(NodeName nodeName)
     {
-        return persistenceDbDriver.getNodeDatabaseDriver();
+        return persistenceDbDriver.getNodeDatabaseDriver(nodeName);
     }
 
     public static ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objProtPath)
@@ -572,9 +572,9 @@ public abstract class DrbdManage
         return securityDbDriver.getObjectProtectionDatabaseDriver(objProtPath);
     }
 
-    public static ResourceDataDatabaseDriver getResourceDataDatabaseDriver(ResourceName resName)
+    public static ResourceDataDatabaseDriver getResourceDataDatabaseDriver(NodeName nodeName, ResourceName resName)
     {
-        return persistenceDbDriver.getResourceDataDatabaseDriver(resName);
+        return persistenceDbDriver.getResourceDataDatabaseDriver(nodeName, resName);
     }
 
     public static ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName)
@@ -582,9 +582,9 @@ public abstract class DrbdManage
         return persistenceDbDriver.getResourceDefinitionDataDatabaseDriver(resName);
     }
 
-    public static VolumeDataDatabaseDriver getVolumeDataDatabaseDriver()
+    public static VolumeDataDatabaseDriver getVolumeDataDatabaseDriver(Resource res, VolumeDefinition volDfn)
     {
-        return persistenceDbDriver.getVolumeDataDatabaseDriver();
+        return persistenceDbDriver.getVolumeDataDatabaseDriver(res, volDfn);
     }
 
     public static VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(ResourceDefinition resDfn,VolumeNumber volNr)

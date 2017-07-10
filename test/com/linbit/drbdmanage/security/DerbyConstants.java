@@ -85,10 +85,10 @@ public interface DerbyConstants
     // RESOURCE_DEFINITIONS column names
     public static final String RESOURCE_NAME     = "RESOURCE_NAME";
     public static final String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
+    public static final String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
 
     // NODE_RESOURCE column names
-    public static final String NODE_ID       = "NODE_ID";
-    public static final String RES_FLAGS     = "RES_FLAGS";
+    public static final String NODE_ID        = "NODE_ID";
 
     // VOLUME_DEFINITIONS column names
     public static final String VLM_NR        = "VLM_NR";
@@ -129,7 +129,7 @@ public interface DerbyConstants
     public static final int TBL_COL_COUNT_CTRL_CONFIGURATION     = 3;
     public static final int TBL_COL_COUNT_NODES                  = 6;
     public static final int TBL_COL_COUNT_NODE_NET_INTERFACES    = 6;
-    public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS   = 3;
+    public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS   = 4;
     public static final int TBL_COL_COUNT_NODE_RESOURCE          = 5;
     public static final int TBL_COL_COUNT_VOLUME_DEFINITIONS     = 6;
     public static final int TBL_COL_COUNT_VOLUMES                = 6;
@@ -279,6 +279,7 @@ public interface DerbyConstants
         "    RESOURCE_NAME VARCHAR(48) NOT NULL PRIMARY KEY \n" + 
         "        CONSTRAINT RSC_DFN_CHKNAME CHECK (UPPER(RESOURCE_NAME) = RESOURCE_NAME AND LENGTH(RESOURCE_NAME) >= 3), \n" + 
         "    RESOURCE_DSP_NAME VARCHAR(48) NOT NULL, \n" + 
+        "    RESOURCE_FLAGS BIGINT NOT NULL, \n" + 
         "    CONSTRAINT RSC_DFN_CHKDSPNAME CHECK (UPPER(RESOURCE_DSP_NAME) = RESOURCE_NAME) \n" + 
         ")";
     public static final String CREATE_TABLE_NODE_RESOURCE = 
@@ -288,7 +289,7 @@ public interface DerbyConstants
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" + 
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" + 
         "    NODE_ID INT NOT NULL, \n" + 
-        "    RES_FLAGS BIGINT NOT NULL, \n" + 
+        "    RESOURCE_FLAGS BIGINT NOT NULL, \n" + 
         "    PRIMARY KEY (NODE_NAME, RESOURCE_NAME), \n" + 
         "    FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) ON DELETE CASCADE, \n" + 
         "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE \n" + 
@@ -540,7 +541,7 @@ public interface DerbyConstants
         " VALUES (?, ?, ?, ?, ?, ?)";
     public static final String INSERT_RESOURCE_DEFINITIONS = 
         " INSERT INTO " + TBL_RESOURCE_DEFINITIONS + 
-        " VALUES (?, ?, ?)";
+        " VALUES (?, ?, ?, ?)";
     public static final String INSERT_NODE_RESOURCE = 
         " INSERT INTO " + TBL_NODE_RESOURCE + 
         " VALUES (?, ?, ?, ?, ?)";

@@ -15,10 +15,6 @@ import com.linbit.TransactionMgr;
 
 public class DerbyObjectProtectionTest extends DerbyBase
 {
-    public DerbyObjectProtectionTest() throws SQLException
-    {
-    }
-
     private static final String OP_SELECT =
         "SELECT * FROM " + TBL_SEC_OBJECT_PROTECTION;
     private static final String OP_INSERT =
@@ -167,6 +163,9 @@ public class DerbyObjectProtectionTest extends DerbyBase
         assertEquals(AccessType.CHANGE.getAccessMask(), resultSet.getLong(ACCESS_TYPE));
 
         assertFalse("Database contains more data than expected", resultSet.next());
+
+        resultSet.close();
+        stmt.close();
     }
 
     @Test

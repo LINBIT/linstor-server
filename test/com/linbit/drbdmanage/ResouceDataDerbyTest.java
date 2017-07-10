@@ -21,7 +21,7 @@ import com.linbit.utils.UuidUtils;
 public class ResouceDataDerbyTest extends DerbyBase
 {
     private static final String SELECT_ALL_RESOURCES =
-        " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + NODE_ID + ", " + RES_FLAGS +
+        " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + NODE_ID + ", " + RESOURCE_FLAGS +
         " FROM " + TBL_NODE_RESOURCE;
     private static final String SELECT_ALL_VOLUMES =
         " SELEFT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + VLM_NR + ", " +
@@ -65,7 +65,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         objProt = ObjectProtection.getInstance(sysCtx, transMgr, ObjectProtection.buildPath(nodeName, resName), true);
 
         res = new ResourceData(resUuid, objProt, resDfn, node, nodeId, null, transMgr);
-        driver = (ResourceDataDerbyDriver) DrbdManage.getResourceDataDatabaseDriver(resName);
+        driver = (ResourceDataDerbyDriver) DrbdManage.getResourceDataDatabaseDriver(nodeName, resName);
     }
 
     @Test
@@ -81,7 +81,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(nodeId.value, resultSet.getInt(NODE_ID));
-        assertEquals(0, resultSet.getLong(RES_FLAGS));
+        assertEquals(0, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -103,7 +103,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(nodeId.value, resultSet.getInt(NODE_ID));
-        assertEquals(0, resultSet.getLong(RES_FLAGS));
+        assertEquals(0, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -166,14 +166,14 @@ public class ResouceDataDerbyTest extends DerbyBase
     public void testStateFlagPersistence() throws Exception
     {
         driver.create(con, res);
-        StateFlagsPersistence stateFlagPersistence = driver.getStateFlagPersistence(nodeName);
+        StateFlagsPersistence stateFlagPersistence = driver.getStateFlagPersistence();
         stateFlagPersistence.persist(con, StateFlagsBits.getMask(RscFlags.REMOVE));
 
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
-        assertEquals(RscFlags.REMOVE.flagValue, resultSet.getLong(RES_FLAGS));
+        assertEquals(RscFlags.REMOVE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
 
         assertFalse(resultSet.next());
 

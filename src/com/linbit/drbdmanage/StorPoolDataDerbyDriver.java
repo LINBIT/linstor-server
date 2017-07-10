@@ -165,28 +165,31 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         }
         catch (InvalidNameException invalidNameExc)
         {
+            resultSet.close();
+            stmt.close();
             throw new DrbdSqlRuntimeException(
                 String.format("Invalid storage name loaded from Table %s: %s ", TBL_NSP, resultSet.getString(NSP_POOL)),
                 invalidNameExc
             );
         }
 
-
+        resultSet.close();
+        stmt.close();
         return storPoolList;
     }
 
     @Override
-    public void delete(Connection con, StorPoolName storPoolName) throws SQLException
+    public void delete(Connection con) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(NSP_DELETE);
 
         stmt.setString(1, node.getName().value);
-        stmt.setString(2, storPoolName.value);
+        stmt.setString(2, storPoolDfn.getName().value);
 
         stmt.executeUpdate();
         stmt.close();
 
-        cacheRemove(node, storPoolName);
+        cacheRemove(node, storPoolDfn.getName());
     }
 
     @Override
@@ -202,6 +205,8 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         {
             if (cachedStorPool != storPoolData)
             {
+                resultSet.close();
+                stmt.close();
                 throw new DrbdSqlRuntimeException("A temporary StorPoolData instance is not allowed to override a persisted instance.");
             }
         }

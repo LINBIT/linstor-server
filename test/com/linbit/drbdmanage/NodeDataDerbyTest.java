@@ -80,7 +80,7 @@ public class NodeDataDerbyTest extends DerbyBase
         NetInterfaceDataDerbyDriver.clearCache();
         ResourceDataDerbyDriver.clearCache();
 
-        dbDriver = DrbdManage.getNodeDataDatabaseDriver();
+        dbDriver = DrbdManage.getNodeDataDatabaseDriver(nodeName);
         con = getConnection();
         transMgr = new TransactionMgr(con);
 
@@ -198,7 +198,7 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         dbDriver.create(con, node);
 
-        NodeData loaded = dbDriver.load(con, nodeName, null, transMgr);
+        NodeData loaded = dbDriver.load(con, null, transMgr);
 
         assertEquals(nodeName.value, loaded.getName().value);
         assertEquals(nodeName.displayValue, loaded.getName().displayValue);

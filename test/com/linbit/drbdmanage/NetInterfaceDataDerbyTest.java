@@ -103,6 +103,9 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niAddrStr, resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
         assertEquals(niTransportType.name(), resultSet.getString(INET_TRANSPORT_TYPE));
         assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
     }
 
     @Test
@@ -266,8 +269,11 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals(addrStr, resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals("ip6-localhost", resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
         assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
     }
 
     @Test (expected = ImplementationError.class)

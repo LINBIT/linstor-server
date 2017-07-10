@@ -12,8 +12,6 @@ import java.util.Map.Entry;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.MapDatabaseDriver;
-import com.linbit.NoOpMapDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Resource.RscFlags;
@@ -43,7 +41,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private static final String RES_NODE_NAME = DerbyConstants.NODE_NAME;
     private static final String RES_NAME = DerbyConstants.RESOURCE_NAME;
     private static final String RES_NODE_ID = DerbyConstants.NODE_ID;
-    private static final String RES_FLAGS = DerbyConstants.RES_FLAGS;
+    private static final String RES_FLAGS = DerbyConstants.RESOURCE_FLAGS;
 
     private static final String RES_SELECT_BY_NODE =
         " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " + RES_NODE_ID + ", " + RES_FLAGS +
@@ -66,13 +64,18 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
     private AccessContext dbCtx;
     private ResourceName resName;
+    private NodeName nodeName;
+    private FlagDriver flagDriver;
 
     private static Hashtable<PrimaryKey, ResourceData> resCache = new Hashtable<>();
 
-    public ResourceDataDerbyDriver(AccessContext accCtx, ResourceName resName)
+    public ResourceDataDerbyDriver(AccessContext accCtx, ResourceName resNameRef, NodeName nodeNameRef)
     {
-        this.dbCtx = accCtx;
-        this.resName = resName;
+        dbCtx = accCtx;
+        resName = resNameRef;
+        nodeName = nodeNameRef;
+
+        flagDriver = new FlagDriver();
     }
 
     @Override
@@ -262,8 +265,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     }
 
                     // restore volumes
-                    VolumeDataDerbyDriver volDataDriver = (VolumeDataDerbyDriver) DrbdManage.getVolumeDataDatabaseDriver();
-                    List<VolumeData> volList = volDataDriver.load(con, resData, transMgr, serialGen);
+                    VolumeDataDerbyDriver volDataDriver = (VolumeDataDerbyDriver) DrbdManage.getVolumeDataDatabaseDriver(
+                        resData,
+                        null // works only for "loadAllVolumesByResource" method
+                    );
+                    List<VolumeData> volList = volDataDriver.loadAllVolumesByResource(con, transMgr, serialGen);
                     for (VolumeData volData : volList)
                     {
                         resData.setVolume(dbCtx, volData);
@@ -302,17 +308,9 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
 
     @Override
-    public MapDatabaseDriver<VolumeNumber, Volume> getVolumeMapDriver()
+    public StateFlagsPersistence getStateFlagPersistence()
     {
-        // any changes (including create and delete) of volume should be
-        // handled by VolumeDataDerbyDriver anyway. should...
-        return new NoOpMapDatabaseDriver<>(); // TODO: gh - rethink...
-    }
-
-    @Override
-    public StateFlagsPersistence getStateFlagPersistence(NodeName nodeName)
-    {
-        return new FlagDriver(nodeName);
+        return flagDriver;
     }
 
     private static void cache(ResourceData res)
@@ -382,14 +380,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
     private class FlagDriver implements StateFlagsPersistence
     {
-
-        private NodeName nodeName;
-
-        public FlagDriver(NodeName nodeName)
-        {
-            this.nodeName = nodeName;
-        }
-
         @Override
         public void persist(Connection con, long flags) throws SQLException
         {

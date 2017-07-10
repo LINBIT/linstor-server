@@ -37,9 +37,9 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
 
     private static Hashtable<PrimaryKey, StorPoolDefinitionData> spDfnCache = new Hashtable<>();
 
-    public StorPoolDefinitionDataDerbyDriver(StorPoolName name)
+    public StorPoolDefinitionDataDerbyDriver(StorPoolName nameRef)
     {
-        this.name = name;
+        name = nameRef;
     }
 
     @Override

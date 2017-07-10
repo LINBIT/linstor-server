@@ -185,7 +185,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
 
         resultSet.close();
 
-        driver.delete(con, spName);
+        driver.delete(con);
 
         resultSet = stmt.executeQuery();
 

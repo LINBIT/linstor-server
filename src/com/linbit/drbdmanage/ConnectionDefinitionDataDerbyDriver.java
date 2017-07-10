@@ -90,9 +90,10 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
                 );
                 ResourceDefinitionData resDfn = resDriver.load(con, serialGen, transMgr);
 
-                NodeDataDatabaseDriver nodeDriver = DrbdManage.getNodeDataDatabaseDriver();
-                NodeData nodeSrc = nodeDriver.load(con, srcNodeName, serialGen, transMgr);
-                NodeData nodeDst = nodeDriver.load(con, dstNodeName, serialGen, transMgr);
+                NodeDataDatabaseDriver srcNodeDriver = DrbdManage.getNodeDataDatabaseDriver(srcNodeName);
+                NodeData nodeSrc = srcNodeDriver.load(con, serialGen, transMgr);
+                NodeDataDatabaseDriver dstNodeDriver = DrbdManage.getNodeDataDatabaseDriver(dstNodeName);
+                NodeData nodeDst = dstNodeDriver.load(con, serialGen, transMgr);
 
                 ret = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst);
                 cache(ret, dbCtx);
