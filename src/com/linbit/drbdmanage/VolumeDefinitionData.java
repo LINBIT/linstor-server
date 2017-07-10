@@ -58,10 +58,10 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     private VolumeDefinitionDataDatabaseDriver dbDriver;
 
-    /**
-     * Constructor used by getInstance
+    /*
+     * used by getInstance
      */
-    VolumeDefinitionData(
+    private VolumeDefinitionData(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
         VolumeNumber volNr,
@@ -86,8 +86,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         );
     }
 
-    /**
-     * Constructor used by database drivers and tests
+    /*
+     * used by database drivers and tests
      */
     VolumeDefinitionData(
         UUID uuid,
@@ -148,7 +148,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             dbDriver.getVolumeSizeDriver()
         );
 
-        vlmDfnProps = SerialPropsContainer.loadContainer(dbDriver.getPropsDriver(), transMgr, srlGen);
+        vlmDfnProps = SerialPropsContainer.getInstance(dbDriver.getPropsDriver(), transMgr, srlGen);
 
         if (initFlags == null)
         {

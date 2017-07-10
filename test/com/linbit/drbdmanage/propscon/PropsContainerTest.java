@@ -27,7 +27,7 @@ public class PropsContainerTest
     @Before
     public void setUp() throws Throwable
     {
-        root = PropsContainer.createRootContainer();
+        root = PropsContainer.getInstance(null, null);
 
         fillProps(root, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 
@@ -1649,7 +1649,7 @@ public class PropsContainerTest
         clone.remove(FIRST_KEY + "0");
         assertFalse(map.equals(clone));
 
-        PropsContainer container = PropsContainer.createRootContainer();
+        PropsContainer container = PropsContainer.getInstance(null, null);
         fillProps(container, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         assertTrue(map.equals(container.map()));
     }

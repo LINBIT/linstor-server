@@ -130,7 +130,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         dbDriver = DrbdManage.getResourceDataDatabaseDriver(nodeRef.getName(), resDfnRef.getName());
 
         volumeMap = new TreeMap<VolumeNumber, Volume>();
-        resourceProps = SerialPropsContainer.createRootContainer(srlGen);
+        resourceProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
         objProt = objProtRef;
         flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence());
 
@@ -175,7 +175,10 @@ public class ResourceData extends BaseTransactionObject implements Resource
             if (createIfNotExists)
             {
                 resData = new ResourceData(accCtx, resDfn, node, nodeId, srlGen, transMgr);
-                // we do not persist resData here, because node.addResource(...) will also trigger the insert
+                if (transMgr != null)
+                {
+                    driver.create(transMgr.dbCon, resData);
+                }
             }
         }
 

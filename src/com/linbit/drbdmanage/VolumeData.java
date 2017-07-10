@@ -44,7 +44,16 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private String blockDevicePath;
 
-    VolumeData(Resource resRef, VolumeDefinition volDfn, String blockDevicePathRef, SerialGenerator srlGen)
+    /*
+     * used by getInstance
+     */
+    private VolumeData(
+        Resource resRef, 
+        VolumeDefinition volDfn, 
+        String blockDevicePathRef, 
+        SerialGenerator srlGen, 
+        TransactionMgr transMgr
+    )
         throws SQLException
     {
         this(
@@ -52,26 +61,21 @@ public class VolumeData extends BaseTransactionObject implements Volume
             resRef,
             volDfn,
             blockDevicePathRef,
-            srlGen
+            srlGen,
+            transMgr
         );
     }
 
-    /**
-     * Constructor used by database drivers
-     *
-     * @param asUUID
-     * @param res
-     * @param volDfn
-     * @param volumeNumber
-     * @param string
-     * @throws SQLException
+    /*
+     * used by database drivers and tests
      */
     VolumeData(
         UUID uuid,
         Resource resRef,
         VolumeDefinition volDfnRef,
         String blockDevicePathRef,
-        SerialGenerator srlGen
+        SerialGenerator srlGen,
+        TransactionMgr transMgr
     )
         throws SQLException
     {
@@ -88,7 +92,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             dbDriver.getStateFlagsPersistence()
         );
 
-        volumeProps = SerialPropsContainer.createRootContainer(srlGen, dbDriver.getPropsConDriver());
+        volumeProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
 
         transObjs = Arrays.asList(
             resourceRef,
@@ -118,7 +122,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
         if (vol == null && createIfNotExists)
         {
-            vol = new VolumeData(resRef, volDfn, blockDevicePathRef, serialGen);
+            vol = new VolumeData(resRef, volDfn, blockDevicePathRef, serialGen, transMgr);
             if (transMgr != null)
             {
                 driver.create(transMgr.dbCon, vol);

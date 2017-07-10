@@ -28,7 +28,7 @@ public class SerialPropsContainerTest
     @Before
     public void setUp() throws Throwable
     {
-        root = SerialPropsContainer.createRootContainer();
+        root = SerialPropsContainer.getInstance(null, null, null);
         serialGenerator = root.getSerialGenerator();
     }
 

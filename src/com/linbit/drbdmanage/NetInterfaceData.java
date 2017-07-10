@@ -30,7 +30,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     private final NetInterfaceDataDatabaseDriver dbDriver;
 
     // used by getInstance
-    NetInterfaceData(
+    private NetInterfaceData(
         AccessContext accCtx,
         Node node,
         NetInterfaceName name,
@@ -56,6 +56,11 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             addr,
             netType
         );
+        
+        if (transMgr != null)
+        {
+        	setConnection(transMgr);
+        }
     }
 
     // used by db drivers and tests

@@ -111,7 +111,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         connectionMap = new TreeMap<NodeName, Map<Integer, ConnectionDefinition>>();
         volumeMap = new TreeMap<VolumeNumber, VolumeDefinition>();
         resourceMap = new TreeMap<NodeName, Resource>();
-        rscDfnProps = SerialPropsContainer.createRootContainer(serialGen);
+        rscDfnProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, serialGen);
         objProt = objProtRef;
         flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence());
 

@@ -20,7 +20,7 @@ public class DerbySerialPropsConTest extends DerbyPropsConBase
     public void test() throws SQLException, InvalidKeyException, InvalidValueException
     {
         Connection con = getConnection();
-        SerialPropsContainer container = SerialPropsContainer.createRootContainer(dbDriver);
+        SerialPropsContainer container = SerialPropsContainer.getInstance(dbDriver, null, null);
         TransactionMgr transMgr = new TransactionMgr(con);
         container.setConnection(transMgr);
         String expectedKey = "key";
@@ -44,11 +44,12 @@ public class DerbySerialPropsConTest extends DerbyPropsConBase
 
         checkExpectedMap(expectedMap, container);
 
-        SerialPropsContainer container2 = SerialPropsContainer.loadContainer(
+        SerialPropsContainer container2 = SerialPropsContainer.getInstance(
             dbDriver,
             new TransactionMgr(
                 con
-            )
+            ),
+            null
         );
         checkExpectedMap(expectedMap, container2);
     }

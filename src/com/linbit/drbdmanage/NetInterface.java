@@ -48,10 +48,10 @@ public interface NetInterface extends TransactionObject
                     type = IP;
                     break;
                 case "RDMA":
-                    type = IP;
+                    type = RDMA;
                     break;
                 case "ROCE":
-                    type = IP;
+                    type = RoCE;
                     break;
             }
             return type;

@@ -12,6 +12,8 @@ public interface ResourceDefinitionDataDatabaseDriver
 {
     public StateFlagsPersistence getStateFlagsPersistence();
 
+    public PropsConDatabaseDriver getPropsConDriver();
+
     public void create(Connection dbCon, ResourceDefinitionData resDfn)
         throws SQLException;
 
@@ -23,4 +25,5 @@ public interface ResourceDefinitionDataDatabaseDriver
 
     void delete(Connection con)
         throws SQLException;
+
 }

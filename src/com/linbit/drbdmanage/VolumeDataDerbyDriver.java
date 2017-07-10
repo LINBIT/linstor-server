@@ -83,6 +83,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         {
             propsDriver = new PropsConDerbyDriver(
                 PropsContainer.buildPath(
+                    resRef.getAssignedNode().getName(),
                     resRef.getDefinition().getName(),
                     volDfnRef.getVolumeNumber(dbCtx)
                 )
@@ -113,7 +114,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setInt(3, volDfn.getVolumeNumber(dbCtx).value);
             ResultSet resultSet = stmt.executeQuery();
 
-            List<VolumeData> volList = load(con, resultSet, transMgr, serialGen);
+            List<VolumeData> volList = load(con, resultSet, res, transMgr, serialGen, dbCtx);
             resultSet.close();
 
             VolumeData ret = cacheGet(res.getAssignedNode(), res.getDefinition(), volDfn.getVolumeNumber(dbCtx));
@@ -144,14 +145,21 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         }
     }
 
-    public List<VolumeData> loadAllVolumesByResource(Connection con, TransactionMgr transMgr, SerialGenerator serialGen) throws SQLException
+    public static List<VolumeData> loadAllVolumesByResource(
+        Connection con,
+        Resource resRef,
+        TransactionMgr transMgr,
+        SerialGenerator serialGen,
+        AccessContext accCtx
+    )
+        throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(VOL_SELECT_BY_RES);
-        stmt.setString(1, res.getAssignedNode().getName().value);
-        stmt.setString(2, res.getDefinition().getName().value);
+        stmt.setString(1, resRef.getAssignedNode().getName().value);
+        stmt.setString(2, resRef.getDefinition().getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        List<VolumeData> ret = load(con, resultSet, transMgr, serialGen);
+        List<VolumeData> ret = load(con, resultSet, resRef, transMgr, serialGen, accCtx);
         resultSet.close();
         stmt.close();
 
@@ -159,7 +167,15 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     }
 
 
-    private List<VolumeData> load(Connection con, ResultSet resultSet, TransactionMgr transMgr, SerialGenerator serialGen) throws SQLException
+    private static List<VolumeData> load(
+        Connection con,
+        ResultSet resultSet,
+        Resource resRef,
+        TransactionMgr transMgr,
+        SerialGenerator serialGen,
+        AccessContext accCtx
+    )
+        throws SQLException
     {
         List<VolumeData> volList = new ArrayList<>();
         while (resultSet.next())
@@ -178,20 +194,21 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 );
             }
             VolumeDefinitionDataDatabaseDriver volDfnDriver = DrbdManage.getVolumeDefinitionDataDatabaseDriver(
-                res.getDefinition(),
+                resRef.getDefinition(),
                 volNr
             );
             volDfn = volDfnDriver.load(con, transMgr, serialGen);
 
-            VolumeData volData = cacheGet(res.getAssignedNode(), res.getDefinition(), volNr);
+            VolumeData volData = cacheGet(resRef.getAssignedNode(), resRef.getDefinition(), volNr);
             if (volData == null)
             {
                 volData = new VolumeData(
                     UuidUtils.asUUID(resultSet.getBytes(VOL_UUID)),
-                    res,
+                    resRef,
                     volDfn,
                     resultSet.getString(VOL_PATH),
-                    serialGen
+                    serialGen,
+                    transMgr
                 );
 
                 // restore flags
@@ -203,7 +220,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     {
                         try
                         {
-                            flags.enableFlags(dbCtx, flag);
+                            flags.enableFlags(accCtx, flag);
                         }
                         catch (AccessDeniedException accessDeniedExc)
                         {
@@ -217,8 +234,8 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
                 // restore props
                 String instanceName = PropsContainer.buildPath(
-                    res.getAssignedNode().getName(),
-                    res.getDefinition().getName(),
+                    resRef.getAssignedNode().getName(),
+                    resRef.getDefinition().getName(),
                     volNr
                 );
                 PropsConDatabaseDriver propsDriver = DrbdManage.getPropConDatabaseDriver(instanceName);
@@ -226,7 +243,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 Map<String, String> propMap = propsDriver.load(con);
                 try
                 {
-                    Props props = volData.getProps(dbCtx);
+                    Props props = volData.getProps(accCtx);
 
                     for (Entry<String, String> entry : propMap.entrySet())
                     {
@@ -258,7 +275,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         accessDeniedExc
                     );
                 }
-                cache(volData, dbCtx);
+                cache(volData, accCtx);
             }
             volList.add(volData);
         }

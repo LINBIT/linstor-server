@@ -28,8 +28,8 @@ public class DerbyPropsConTest extends DerbyPropsConBase
     {
         truncate();
         Connection con = getConnection();
-        PropsContainer container = PropsContainer.createRootContainer(dbDriver);
-        container.setConnection(new TransactionMgr(con));
+        TransactionMgr transMgr = new TransactionMgr(con);
+        PropsContainer container = PropsContainer.getInstance(dbDriver, transMgr);
 
         String expectedKey = "key";
         String expectedValue = "value";
@@ -54,8 +54,8 @@ public class DerbyPropsConTest extends DerbyPropsConBase
     public void testPersistNested() throws Throwable
     {
         Connection con = getConnection();
-        PropsContainer container = PropsContainer.createRootContainer(dbDriver);
-        container.setConnection(new TransactionMgr(con));
+        TransactionMgr transMgr = new TransactionMgr(con);
+        PropsContainer container = PropsContainer.getInstance(dbDriver, transMgr);
 
         Map<String, String> map = new HashMap<>();
         map.put("a", "c");
@@ -71,8 +71,8 @@ public class DerbyPropsConTest extends DerbyPropsConBase
     public void testPersistUpdate() throws Throwable
     {
         Connection con = getConnection();
-        PropsContainer container = PropsContainer.createRootContainer(dbDriver);
-        container.setConnection(new TransactionMgr(con));
+        TransactionMgr transMgr = new TransactionMgr(con);
+        PropsContainer container = PropsContainer.getInstance(dbDriver, transMgr);
 
         Map<String, String> map = new HashMap<>();
         map.put("a", "c");
@@ -106,11 +106,14 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         PropsConDerbyDriver driver1 = new PropsConDerbyDriver(expectedInstanceName1);
         PropsConDerbyDriver driver2 = new PropsConDerbyDriver(expectedInstanceName2);
 
-        PropsContainer container1 = PropsContainer.createRootContainer(driver1);
-        PropsContainer container2 = PropsContainer.createRootContainer(driver2);
-
-        container1.setConnection(new TransactionMgr(con1));
-        container2.setConnection(new TransactionMgr(con2));
+        PropsContainer container1 = PropsContainer.getInstance(
+            driver1, 
+            new TransactionMgr(con1)
+        );
+        PropsContainer container2 = PropsContainer.getInstance(
+            driver2,
+            new TransactionMgr(con2)
+        );
 
         Map<String, String> map1 = new HashMap<>();
         map1.put("a", "b");
@@ -147,7 +150,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         insert(instanceName, key, value);
 
         Connection con = getConnection();
-        Props props = PropsContainer.loadContainer(dbDriver, new TransactionMgr(con));
+        Props props = PropsContainer.getInstance(dbDriver, new TransactionMgr(con));
 
         Set<Entry<String,String>> entrySet = props.entrySet();
         assertEquals("Unexpected entries in PropsContainer", 1 , entrySet.size());
@@ -166,7 +169,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         insert(instanceName, key1, value1);
         insert(instanceName, key2, value2);
 
-        Props props = PropsContainer.loadContainer(dbDriver, new TransactionMgr(getConnection()));
+        Props props = PropsContainer.getInstance(dbDriver, new TransactionMgr(getConnection()));
         assertEquals("Unexpected entries in PropsContainer", 2 , props.size());
 
         assertTrue("PropsContainer missing key [" + key1 + "]", props.keySet().contains(key1));
@@ -189,19 +192,19 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         insert(instanceName, key1, value1);
         map.put(key1, value1);
 
-        Props props = PropsContainer.loadContainer(dbDriver, new TransactionMgr(getConnection()));
+        Props props = PropsContainer.getInstance(dbDriver, new TransactionMgr(getConnection()));
         checkExpectedMap(map, props);
 
         insert(instanceName, key2, value2);
         map.put(key2, value2);
 
-        props = PropsContainer.loadContainer(dbDriver, new TransactionMgr(getConnection()));
+        props = PropsContainer.getInstance(dbDriver, new TransactionMgr(getConnection()));
         checkExpectedMap(map, props);
 
         delete(instanceName, key2);
         map.remove(key2);
 
-        props = PropsContainer.loadContainer(dbDriver, new TransactionMgr(getConnection()));
+        props = PropsContainer.getInstance(dbDriver, new TransactionMgr(getConnection()));
         checkExpectedMap(map, props);
     }
 
@@ -228,8 +231,8 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         insert(instanceName1, map1);
         insert(instanceName2, map2);
 
-        Props props1 = PropsContainer.loadContainer(driver1, new TransactionMgr(con));
-        Props props2 = PropsContainer.loadContainer(driver2, new TransactionMgr(con));
+        Props props1 = PropsContainer.getInstance(driver1, new TransactionMgr(con));
+        Props props2 = PropsContainer.getInstance(driver2, new TransactionMgr(con));
 
         checkExpectedMap(map1, props1);
         checkExpectedMap(map2, props2);

@@ -76,18 +76,16 @@ public class PropsContainer implements Props
 
     private boolean initialized = false;
 
-    public static PropsContainer createRootContainer() throws SQLException
+    public static PropsContainer getInstance(
+        PropsConDatabaseDriver propsConDbDriver, 
+        TransactionMgr transMgr
+    )
+        throws SQLException
     {
-        return createRootContainer(null);
-    }
-
-    @SuppressWarnings("unused") // for the throw of SQLException - which is needed by SerialPropsContainer
-    public static PropsContainer createRootContainer(PropsConDatabaseDriver dbDriver) throws SQLException
-    {
-        PropsContainer con = null;
+        PropsContainer container;
         try
         {
-            con = new PropsContainer(null, null);
+            container = new PropsContainer(null, null);
         }
         catch (InvalidKeyException keyExc)
         {
@@ -98,37 +96,45 @@ public class PropsContainer implements Props
                 keyExc
             );
         }
-        con.dbDriver = dbDriver;
-        return con;
-    }
-
-
-    public static Props loadContainer(PropsConDatabaseDriver propsConDbDriver, TransactionMgr transMgr) throws SQLException, InvalidKeyException
-    {
-        PropsContainer con = createRootContainer(propsConDbDriver);
-        con.dbCon = transMgr.dbCon;
-        transMgr.register(con);
-
-        Map<String, String> loadedProps = con.dbDriver.load(transMgr.dbCon);
-        for (Entry<String, String> entry : loadedProps.entrySet())
+        
+        container.dbDriver = propsConDbDriver;
+        
+        if (propsConDbDriver != null && transMgr != null)
         {
-            String key = entry.getKey();
-            String value = entry.getValue();
-
-            PropsContainer targetContainer = con;
-            int idx = key.lastIndexOf(PATH_SEPARATOR);
-            if (idx != -1)
+            container.setConnection(transMgr);
+            
+            try
             {
-                targetContainer = con.ensureNamespaceExists(key.substring(0, idx));
+                Map<String, String> loadedProps = container.dbDriver.load(transMgr.dbCon);
+                for (Entry<String, String> entry : loadedProps.entrySet())
+                {
+                    String key = entry.getKey();
+                    String value = entry.getValue();
+    
+                    PropsContainer targetContainer = container;
+                    int idx = key.lastIndexOf(PATH_SEPARATOR);
+                    if (idx != -1)
+                    {
+                        targetContainer = container.ensureNamespaceExists(key.substring(0, idx));
+                    }
+                    String actualKey = key.substring(idx + 1);
+                    String oldValue = targetContainer.propMap.put(actualKey, value);
+                    if (oldValue == null)
+                    {
+                        targetContainer.modifySize(1);
+                    }
+                }
             }
-            String actualKey = key.substring(idx + 1);
-            String oldValue = targetContainer.propMap.put(actualKey, value);
-            if (oldValue == null)
+            catch (InvalidKeyException invalidKeyExc)
             {
-                targetContainer.modifySize(1);
+                throw new DrbdSqlRuntimeException(
+                    "PropsContainer could not be loaded as a persisted key has been changed in the database to an invalid value.",
+                    invalidKeyExc
+                );
             }
         }
-        return con;
+        
+        return container;
     }
 
     PropsContainer(String key, PropsContainer parent) throws InvalidKeyException
@@ -2305,9 +2311,9 @@ public class PropsContainer implements Props
 
     public static void main(String[] args) throws SQLException
     {
-        SerialPropsContainer serialCon = SerialPropsContainer.createRootContainer();
+        SerialPropsContainer serialCon = SerialPropsContainer.getInstance(null, null, null);
         SerialGenerator serialGen = serialCon.getSerialGenerator();
-        Props rootCon = SerialPropsContainer.createRootContainer(serialGen);
+        Props rootCon = SerialPropsContainer.getInstance(null, null, serialGen);
         try
         {
             BufferedReader stdin = new BufferedReader(
@@ -2565,34 +2571,52 @@ public class PropsContainer implements Props
         }
     }
 
+    /**
+     * PropsCon-path for StorPoolData
+     */
     public static String buildPath(StorPoolName storPoolName, NodeName nodeName)
     {
         return PATH_STOR_POOL + nodeName.value +
             PATH_SEPARATOR + storPoolName.value;
     }
 
+    /**
+     * PropsCon-path for NodeData
+     */
     public static String buildPath(NodeName nodeName)
     {
         return PATH_NODES + nodeName.value;
     }
 
+    /**
+     * PropsCon-path for ResourceDefinitionData
+     */
     public static String buildPath(ResourceName resName)
     {
         return PATH_RESOURCE_DEFINITIONS + resName.value;
     }
-
+    
+    /**
+     * PropsCon-path for ResourceData
+     */
     public static String buildPath(NodeName nodeName, ResourceName resName)
     {
         return PATH_RESOURCES + nodeName.value +
             PATH_SEPARATOR + resName.value;
     }
 
+    /**
+     * PropsCon-path for VolumeDefinitionData
+     */
     public static String buildPath(ResourceName resName, VolumeNumber volNr)
     {
         return PATH_VOLUME_DEFINITIONS + resName.value +
             PATH_SEPARATOR + volNr.value;
     }
 
+    /**
+     * PropsCon-path for VolumeData
+     */
     public static String buildPath(NodeName nodeName, ResourceName resName, VolumeNumber volNr)
     {
         return PATH_VOLUMES + nodeName.value +

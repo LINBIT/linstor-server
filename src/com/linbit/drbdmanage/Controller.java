@@ -281,10 +281,12 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
                 transMgr.commit(true);
 
-                ctrlConf = SerialPropsContainer.createRootContainer(
+                ctrlConf = SerialPropsContainer.getInstance(
                     persistenceDbDriver.getPropsDatabaseDriver(
                         DB_CONTROLLER_PROPSCON_INSTANCE_NAME
-                    )
+                    ),
+                    transMgr,
+                    null
                 );
                 ctrlConfProt = ObjectProtection.getInstance(
                     sysCtx,
@@ -576,7 +578,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             PropsConDatabaseDriver propsConDbDriver = persistenceDbDriver.getPropsDatabaseDriver(
                 DB_CONTROLLER_PROPSCON_INSTANCE_NAME
             );
-            config = PropsContainer.loadContainer(propsConDbDriver, transMgr);
+            config = PropsContainer.getInstance(propsConDbDriver, transMgr);
             dbConnPool.returnConnection(transMgr.dbCon);
         }
         catch (SQLException sqlExc)
@@ -589,19 +591,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     null,
                     null,
                     sqlExc
-               )
-            );
-        }
-        catch (InvalidKeyException invalidPropExc)
-        {
-            errorLogRef.reportError(
-                new SystemServiceStartException(
-                    "Failed to load controller's config from the database",
-                    "Failed to load PropsContainer from the database",
-                    invalidPropExc.getLocalizedMessage(),
-                    null,
-                    null,
-                    invalidPropExc
                )
             );
         }

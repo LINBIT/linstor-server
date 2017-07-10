@@ -6,11 +6,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Hashtable;
 
+import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
+import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
+import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
+import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
@@ -31,7 +37,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         " WHERE " + RD_NAME + " = ?";
     private static final String RD_INSERT =
         " INSERT INTO " + TBL_RES_DEF +
-        " VALUES (?, ?, ?)";
+        " VALUES (?, ?, ?, ?)";
     private static final String RD_UPDATE_FLAGS =
         " UPDATE " + TBL_RES_DEF +
         " SET " + RD_FLAGS + " = ? " +
@@ -40,29 +46,45 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         " DELETE FROM " + TBL_RES_DEF +
         " WHERE " + RD_NAME + " = ?";
 
+    private AccessContext dbCtx;
     private ResourceName resName;
 
     private StateFlagsPersistence resDfnFlagPersistence;
+    private PropsConDatabaseDriver propsDriver;
+
 
     private static Hashtable<PrimaryKey, ResourceDefinitionData> resDfnCache = new Hashtable<>();
 
-    public ResourceDefinitionDataDerbyDriver(ResourceName resNameRef)
+    public ResourceDefinitionDataDerbyDriver(AccessContext accCtx, ResourceName resNameRef)
     {
+        dbCtx = accCtx;
         resName = resNameRef;
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
+        propsDriver = new PropsConDerbyDriver(PropsContainer.buildPath(resNameRef));
     }
 
     @Override
     public void create(Connection con, ResourceDefinitionData resDfn) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(RD_INSERT);
-        stmt.setBytes(1, UuidUtils.asByteArray(resDfn.getUuid()));
-        stmt.setString(2, resName.value);
-        stmt.setString(3, resName.displayValue);
-        stmt.executeUpdate();
-        stmt.close();
-
-        cache(resDfn);
+        try
+        {
+            PreparedStatement stmt = con.prepareStatement(RD_INSERT);
+            stmt.setBytes(1, UuidUtils.asByteArray(resDfn.getUuid()));
+            stmt.setString(2, resName.value);
+            stmt.setString(3, resName.displayValue);
+            stmt.setLong(4, resDfn.getFlags().getFlagsBits(dbCtx));
+            stmt.executeUpdate();
+            stmt.close();
+    
+            cache(resDfn);
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            throw new ImplementationError(
+                "Database's access context has no permission to get storPoolDefinition",
+                accessDeniedExc
+            );
+        }
     }
 
     @Override
@@ -135,6 +157,12 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     public StateFlagsPersistence getStateFlagsPersistence()
     {
         return resDfnFlagPersistence;
+    }
+    
+    @Override
+    public PropsConDatabaseDriver getPropsConDriver()
+    {
+        return propsDriver;
     }
 
     private static void cache(ResourceDefinitionData resDfn)

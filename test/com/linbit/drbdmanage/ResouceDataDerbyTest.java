@@ -115,6 +115,8 @@ public class ResouceDataDerbyTest extends DerbyBase
     {
         driver.create(con, res);
 
+        DatabaseUtils.clearCaches();
+        
         ResourceData loadedRes = driver.load(con, node, null, transMgr);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
@@ -134,6 +136,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertNull(loadedRes);
 
         driver.create(con, res);
+        DatabaseUtils.clearCaches();
 
         loadedRes = ResourceData.getInstance(sysCtx, resDfn, node, nodeId, null, transMgr, false);
 
@@ -181,6 +184,8 @@ public class ResouceDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
+    // TODO: gh - testEnsureExists()  - or delete that method 
+    
 //    @Test
 //    public void testVolumeMapDriverInsert() throws Exception
 //    {

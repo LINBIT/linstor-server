@@ -33,7 +33,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
 
     private final String niAddrStr = "127.0.0.1";
     private final InetAddress niAddr;
-    private final NetInterfaceType niTransportType = NetInterfaceType.IP;
+    private final NetInterfaceType niInterfaceType = NetInterfaceType.IP;
 
     private TransactionMgr transMgr;
     private Connection con;
@@ -80,7 +80,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             ObjectProtection.buildPath(nodeName, niName),
             true
         );
-        niData = new NetInterfaceData(niUuid, niObjProt, niName, node, niAddr, niTransportType); // does not persist
+        niData = new NetInterfaceData(niUuid, niObjProt, niName, node, niAddr, niInterfaceType); // does not persist
 
         dbDriver = new NetInterfaceDataDerbyDriver(sysCtx, node, niName);
         niAddrDriver = dbDriver.getNetInterfaceAddressDriver();
@@ -101,7 +101,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.value, resultSet.getString(NODE_NET_NAME));
         assertEquals(niName.displayValue, resultSet.getString(NODE_NET_DSP_NAME));
         assertEquals(niAddrStr, resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
-        assertEquals(niTransportType.name(), resultSet.getString(INET_TRANSPORT_TYPE));
+        assertEquals(niInterfaceType.name(), resultSet.getString(INET_TRANSPORT_TYPE));
         assertFalse(resultSet.next());
 
         resultSet.close();
@@ -147,22 +147,13 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         // thus, we only check if the net interface got persisted
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
         ResultSet resultSet = stmt.executeQuery();
-        if (resultSet.next())
-        {
-            assertEquals(netInterfaceName.value, resultSet.getString(NODE_NET_NAME));
-            assertEquals(netInterfaceName.displayValue, resultSet.getString(NODE_NET_DSP_NAME));
-            assertEquals(host, resultSet.getString(INET_ADDRESS));
-            assertEquals("IP", resultSet.getString(INET_TRANSPORT_TYPE));
-            // transport: IP, RDMA, RoCE
-        }
-        else
-        {
-            fail("Database did not persist netInterface");
-        }
-        if (resultSet.next())
-        {
-            fail("Database persisted too many netInterfaces");
-        }
+        assertTrue("Database did not persist netInterface", resultSet.next());
+        assertEquals(netInterfaceName.value, resultSet.getString(NODE_NET_NAME));
+        assertEquals(netInterfaceName.displayValue, resultSet.getString(NODE_NET_DSP_NAME));
+        assertEquals(host, resultSet.getString(INET_ADDRESS));
+        assertEquals("IP", resultSet.getString(INET_TRANSPORT_TYPE));
+        // transport: IP, RDMA, RoCE
+        assertFalse("Database persisted too many netInterfaces", resultSet.next());
         resultSet.close();
         stmt.close();
     }
@@ -172,6 +163,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(con, niData);
+        DatabaseUtils.clearCaches();        
 
         NetInterfaceData netData = dbDriver.load(con);
 
@@ -181,7 +173,46 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
         assertEquals(niAddrStr, netData.getAddress(sysCtx).getHostAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
-        assertEquals(niTransportType, netData.getNetInterfaceType(sysCtx));
+        assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
+    }
+
+    @Test
+    public void testLoadRestore() throws Exception
+    {
+        niData.initialized();
+        dbDriver.create(con, niData);
+        DatabaseUtils.clearCaches();
+
+        NetInterfaceData netData = dbDriver.load(con);
+
+        assertNotNull(netData);
+        assertEquals(niUuid, netData.getUuid());
+        assertEquals(nodeName.value, netData.getNode().getName().value);
+        assertEquals(niName.value, netData.getName().value);
+        assertEquals(niName.displayValue, netData.getName().displayValue);
+        assertEquals(niAddrStr, netData.getAddress(sysCtx).getHostAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
+    }
+
+    @Test
+    public void testLoadGetInstanceTwice() throws Exception
+    {
+        niData.initialized();
+        dbDriver.create(con, niData);
+        DatabaseUtils.clearCaches();
+
+        NetInterfaceData netData1 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, transMgr, niInterfaceType, false);
+
+        assertNotNull(netData1);
+        assertEquals(niUuid, netData1.getUuid());
+        assertEquals(nodeName.value, netData1.getNode().getName().value);
+        assertEquals(niName.value, netData1.getName().value);
+        assertEquals(niName.displayValue, netData1.getName().displayValue);
+        assertEquals(niAddrStr, netData1.getAddress(sysCtx).getHostAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niInterfaceType, netData1.getNetInterfaceType(sysCtx));
+        
+        NetInterfaceData netData2 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, transMgr, niInterfaceType, false);
+        assertTrue(netData1 == netData2);
     }
 
     @Test
@@ -189,6 +220,8 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(con, niData);
+
+        NetInterfaceDataDerbyDriver.clearCache();
 
         List<NetInterfaceData> niList = NetInterfaceDataDerbyDriver.loadNetInterfaceData(con, node);
         assertEquals(1, niList.size());
@@ -200,10 +233,9 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
         assertEquals(niAddrStr, netData.getAddress(sysCtx).getHostAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
-        assertEquals(niTransportType, netData.getNetInterfaceType(sysCtx));
+        assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
+        assertNotNull(netData.getObjProt());
     }
-
-    // TODO: gh - testLoadGetInstance
 
     @Test
     public void testDeleteSimple() throws Exception
@@ -262,6 +294,30 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(con, niData);
+
+        String addrStr = "::1";
+        InetAddress addr = InetAddress.getByName(addrStr);
+
+        niData.setConnection(transMgr);
+        niData.setAddress(sysCtx, addr);
+        transMgr.commit();
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
+        ResultSet resultSet = stmt.executeQuery();
+        assertTrue(resultSet.next());
+        assertEquals("localhost", resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
+    }
+
+
+    @Test
+    public void testAddrUpdateDriver() throws Exception
+    {
+        niData.initialized();
+        dbDriver.create(con, niData);
         String addrStr = "::1";
         InetAddress addr = InetAddress.getByName(addrStr);
         niAddrDriver.update(con, addr);
@@ -269,7 +325,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals("ip6-localhost", resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals("localhost", resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
         assertFalse(resultSet.next());
 
         resultSet.close();
@@ -281,7 +337,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(con, niData);
-        niTypeDriver.delete(con, niTransportType);
+        niTypeDriver.delete(con, niInterfaceType);
     }
 
     @Test (expected = ImplementationError.class)
@@ -289,11 +345,31 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(con, niData);
-        niTypeDriver.insert(con, niTransportType);
+        niTypeDriver.insert(con, niInterfaceType);
     }
 
     @Test
     public void testTypeUpdate() throws Exception
+    {
+        niData.initialized();
+        dbDriver.create(con, niData);
+
+        niData.setConnection(transMgr);
+        niData.setNetInterfaceType(sysCtx, NetInterfaceType.RDMA);
+        transMgr.commit();
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
+        ResultSet resultSet = stmt.executeQuery();
+        assertTrue(resultSet.next());
+        assertEquals(NetInterfaceType.RDMA.name(), resultSet.getString(INET_TRANSPORT_TYPE));
+        assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testTypeUpdateDriver() throws Exception
     {
         niData.initialized();
         dbDriver.create(con, niData);
@@ -304,6 +380,69 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertTrue(resultSet.next());
         assertEquals(NetInterfaceType.RDMA.name(), resultSet.getString(INET_TRANSPORT_TYPE));
         assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
     }
 
+    @Test
+    public void testGetInstanceSatelliteCreate() throws Exception
+    {
+        NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, null, niInterfaceType, true);
+
+        assertNotNull(netData);
+        assertEquals(niAddr, netData.getAddress(sysCtx));
+        assertEquals(niName, netData.getName());
+        assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
+        assertEquals(node, netData.getNode());
+        assertNotNull(netData.getObjProt());
+        assertNotNull(netData.getUuid());
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
+        ResultSet resultSet = stmt.executeQuery();
+        assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testGetInstanceSatelliteNoCreate() throws Exception
+    {
+        NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, null, niInterfaceType, false);
+
+        assertNull(netData);
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
+        ResultSet resultSet = stmt.executeQuery();
+        assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testEnsureExistsDoublePrimaryKey() throws Exception
+    {
+        niData.initialized();
+        dbDriver.ensureEntryExists(con, niData);
+
+        NetInterfaceData netData = new NetInterfaceData(
+            randomUUID(),
+            null,
+            niName,
+            node,
+            niAddr,
+            niInterfaceType
+        );
+        try
+        {
+            dbDriver.ensureEntryExists(con, netData);
+            fail("dbDriver should have thrown ImplementationError");
+        }
+        catch (ImplementationError implErr)
+        {
+            // expected
+        }
+    }
 }

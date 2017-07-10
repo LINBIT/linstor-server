@@ -127,7 +127,7 @@ public class DerbyDriver implements DatabaseDriver
         ResourceDataDerbyDriver driver = resDriverCache.get(pk);
         if (driver == null)
         {
-            driver = new ResourceDataDerbyDriver(dbCtx, resName, nodeName);
+            driver = new ResourceDataDerbyDriver(dbCtx, nodeName, resName);
             resDriverCache.put(pk, driver);
         }
         return driver;
@@ -140,7 +140,7 @@ public class DerbyDriver implements DatabaseDriver
         ResourceDefinitionDataDerbyDriver driver= resDefDriverCache.get(pk);
         if (driver == null)
         {
-            driver = new ResourceDefinitionDataDerbyDriver(resName);
+            driver = new ResourceDefinitionDataDerbyDriver(dbCtx, resName);
             resDefDriverCache.put(pk, driver);
         }
         return driver;

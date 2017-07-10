@@ -30,9 +30,10 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final String storDriverSimpleClassName;
     private final Props props;
 
-//    private final StorPoolDataDatabaseDriver dbDriver;
-
-    StorPoolData(
+    /*
+     * used only by getInstance
+     */
+    private StorPoolData(
         AccessContext accCtx,
         StorPoolDefinition storPoolDef,
         TransactionMgr transMgr,
@@ -60,6 +61,9 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         );
     }
 
+    /*
+     * used by dbDrivers and tests
+     */
     StorPoolData(
         UUID id,
         ObjectProtection objProtRef,
@@ -79,7 +83,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         objProt = objProtRef;
 
 //        dbDriver = DrbdManage.getStorPoolDataDatabaseDriver(nodeRef, storPoolDefRef);
-        props = SerialPropsContainer.loadContainer(
+        props = SerialPropsContainer.getInstance(
             DrbdManage.getPropConDatabaseDriver(
                 PropsContainer.buildPath(
                     storPoolDefRef.getName(),

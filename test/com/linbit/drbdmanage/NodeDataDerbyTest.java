@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashSet;
 
 import org.junit.Before;
@@ -18,9 +19,11 @@ import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
+import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
+import com.linbit.drbdmanage.propscon.SeqSerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -179,6 +182,7 @@ public class NodeDataDerbyTest extends DerbyBase
         NodeData loaded = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
 
         assertNotNull(loaded);
+        loaded.setConnection(transMgr);
         loaded.getFlags().enableFlags(sysCtx, NodeFlag.REMOVE);
         transMgr.commit();
 
@@ -191,6 +195,9 @@ public class NodeDataDerbyTest extends DerbyBase
         assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
         assertEquals(ObjectProtection.buildPath(nodeName), resultSet.getString(OBJECT_PATH));
         assertFalse("Database contains too many datasets", resultSet.next());
+
+        resultSet.close();
+        stmt.close();
     }
 
     @Test
@@ -198,6 +205,8 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         dbDriver.create(con, node);
 
+        NodeDataDerbyDriver.clearCache();
+        
         NodeData loaded = dbDriver.load(con, null, transMgr);
 
         assertEquals(nodeName.value, loaded.getName().value);
@@ -215,6 +224,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         insertNode(con, uuid, nodeName, 0, NodeType.AUXILIARY);
         con.commit();
+        NodeDataDerbyDriver.clearCache();
 
         loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
 
@@ -307,6 +317,8 @@ public class NodeDataDerbyTest extends DerbyBase
         insertProp(con, storPoolPropsInstance, storPoolTestKey, storPoolTestValue);
         con.commit();
 
+        DatabaseUtils.clearCaches(); // just to be sure
+        
         NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
 
         assertNotNull(loadedNode);
@@ -431,5 +443,57 @@ public class NodeDataDerbyTest extends DerbyBase
             assertEquals(storPoolId, storPool.getUuid());
         }
         assertEquals(nodeUuid, loadedNode.getUuid());
+    }
+
+    @Test
+    public void testDelete() throws Exception
+    {
+        dbDriver.create(con, node);
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
+        ResultSet resultSet = stmt.executeQuery();
+        assertTrue(resultSet.next());
+        resultSet.close();
+
+        dbDriver.delete(con, node);
+        resultSet = stmt.executeQuery();
+
+        assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testGetInstanceSatelliteCreate() throws Exception
+    {
+    	SerialGenerator serGen = new TestSerialGenerator();    			
+        NodeData nodeData = NodeData.getInstance(sysCtx, nodeName, new HashSet<Node.NodeType>(), null, serGen, null, true);
+   	
+    	assertNotNull(nodeData);
+    	
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
+        ResultSet resultSet = stmt.executeQuery();
+        assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
+
+    }
+    
+    
+    @Test
+    public void testGetInstanceSatelliteNoCreate() throws Exception
+    {
+    	SerialGenerator serGen = new TestSerialGenerator();    			
+    	NodeData nodeData = NodeData.getInstance(sysCtx, nodeName, new HashSet<Node.NodeType>(), null, serGen, null, false);
+
+    	assertNull(nodeData);
+    	
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
+        ResultSet resultSet = stmt.executeQuery();
+        assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
     }
 }

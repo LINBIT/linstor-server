@@ -23,6 +23,7 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabase
 import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.InvalidValueException;
 import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -67,15 +68,18 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private NodeName nodeName;
     private FlagDriver flagDriver;
 
+    private PropsConDatabaseDriver propsDriver;
+
     private static Hashtable<PrimaryKey, ResourceData> resCache = new Hashtable<>();
 
-    public ResourceDataDerbyDriver(AccessContext accCtx, ResourceName resNameRef, NodeName nodeNameRef)
+    public ResourceDataDerbyDriver(AccessContext accCtx, NodeName nodeNameRef, ResourceName resNameRef)
     {
         dbCtx = accCtx;
-        resName = resNameRef;
         nodeName = nodeNameRef;
+        resName = resNameRef;
 
         flagDriver = new FlagDriver();
+        propsDriver = new PropsConDerbyDriver(PropsContainer.buildPath(nodeName, resNameRef));
     }
 
     @Override
@@ -265,11 +269,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     }
 
                     // restore volumes
-                    VolumeDataDerbyDriver volDataDriver = (VolumeDataDerbyDriver) DrbdManage.getVolumeDataDatabaseDriver(
-                        resData,
-                        null // works only for "loadAllVolumesByResource" method
-                    );
-                    List<VolumeData> volList = volDataDriver.loadAllVolumesByResource(con, transMgr, serialGen);
+                    List<VolumeData> volList = VolumeDataDerbyDriver.loadAllVolumesByResource(con, resData, transMgr, serialGen, dbCtx);
                     for (VolumeData volData : volList)
                     {
                         resData.setVolume(dbCtx, volData);
@@ -311,6 +311,12 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     public StateFlagsPersistence getStateFlagPersistence()
     {
         return flagDriver;
+    }
+    
+    @Override
+    public PropsConDatabaseDriver getPropsConDriver()
+    {
+        return propsDriver;
     }
 
     private static void cache(ResourceData res)

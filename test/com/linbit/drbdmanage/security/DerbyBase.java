@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.security;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -14,8 +15,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 import com.linbit.InvalidNameException;
-import com.linbit.drbdmanage.DatabaseSetter;
-import com.linbit.drbdmanage.DrbdManageTestUtils;
+import com.linbit.drbdmanage.DatabaseUtils;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.NodeId;
@@ -47,6 +47,7 @@ public abstract class DerbyBase implements DerbyConstants
     protected static final AccessContext sysCtx;
     private static boolean initialized = false;
     private static DbDerbyPersistence secureDbDriver;
+    private static DerbyDriver persistenceDbDriver;
 
     static
     {
@@ -106,13 +107,9 @@ public abstract class DerbyBase implements DerbyConstants
 
             con = dbConnPool.getConnection();
             secureDbDriver = new DbDerbyPersistence(sysCtx);
-            DerbyDriver persistenceDbDriver = new DerbyDriver(
+            persistenceDbDriver = new DerbyDriver(
                 new StdErrorReporter("TESTING"),
                 sysCtx
-            );
-            DatabaseSetter.setDatabaseClasses(
-                secureDbDriver,
-                persistenceDbDriver
             );
         }
     }
@@ -135,7 +132,12 @@ public abstract class DerbyBase implements DerbyConstants
         truncateTables();
         insertDefaults();
         ObjectProtectionDerbyDriver.clearCache();
-        DrbdManageTestUtils.clearCaches();
+        DatabaseUtils.clearCaches();
+
+        DatabaseUtils.setDatabaseClasses(
+            secureDbDriver,
+            persistenceDbDriver
+        );
     }
 
     @After
@@ -264,6 +266,24 @@ public abstract class DerbyBase implements DerbyConstants
         connection.commit();
     }
 
+    protected String debugGetAllProsContent() throws SQLException
+    {
+        Connection connection = getConnection();
+        PreparedStatement stmt = connection.prepareStatement("SELECT * FROM " + DerbyConstants.TBL_PROPS_CONTAINERS);
+        ResultSet allContent = stmt.executeQuery();
+        StringBuilder sb = new StringBuilder();
+        while (allContent.next())
+        {
+            sb.append(allContent.getString(1)).append(": ")
+                .append(allContent.getString(2)).append(" = ")
+                .append(allContent.getString(3)).append("\n");
+        }
+        allContent.close();
+        stmt.close();
+        connection.close();
+        return sb.toString();
+    }
+    
     protected static java.util.UUID randomUUID()
     {
         return java.util.UUID.randomUUID();

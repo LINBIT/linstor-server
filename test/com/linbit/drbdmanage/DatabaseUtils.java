@@ -1,7 +1,16 @@
 package com.linbit.drbdmanage;
 
-public class DrbdManageTestUtils
+import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
+import com.linbit.drbdmanage.security.DbAccessor;
+
+public class DatabaseUtils
 {
+    public static void setDatabaseClasses(DbAccessor secureDbDriver, DatabaseDriver persistenceDbDriver)
+    {
+        DrbdManage.securityDbDriver = secureDbDriver;
+        DrbdManage.persistenceDbDriver = persistenceDbDriver;
+    }
+    
     public static void clearCaches()
     {
         ConnectionDefinitionDataDerbyDriver.clearCache();
