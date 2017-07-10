@@ -21,24 +21,24 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     private static final String COL_VALUE = DerbyConstants.PROP_VALUE;
 
     private static final String SELECT_ENTRY_FOR_UPDATE =
-        "SELECT " + COL_INSTANCE + ", " + COL_KEY + ", " + COL_VALUE + "\n" +
+        " SELECT " + COL_INSTANCE + ", " + COL_KEY + ", " + COL_VALUE + "\n" +
         " FROM " + TBL_PROP + "\n" +
         " WHERE " + COL_INSTANCE + " = ? AND \n" +
         "       " + COL_KEY +      " = ? \n" +
         " FOR UPDATE OF " + COL_INSTANCE + "," + COL_KEY + ", "+ COL_VALUE;
 
     private static final String SELECT_ALL_ENTRIES_BY_INSTANCE =
-        "SELECT " + COL_KEY + ", " + COL_VALUE + "\n" +
+        " SELECT " + COL_KEY + ", " + COL_VALUE + "\n" +
         " FROM " + TBL_PROP + "\n" +
         " WHERE " + COL_INSTANCE + " = ?";
 
     private static final String REMOVE_ENTRY =
-        "DELETE FROM " + TBL_PROP + "\n" +
+        " DELETE FROM " + TBL_PROP + "\n" +
         "    WHERE " + COL_INSTANCE + " = ? \n" +
         "        AND " + COL_KEY + " = ?";
 
     private static final String REMOVE_ALL_ENTRIES =
-        "DELETE FROM " + TBL_PROP + "\n" +
+        " DELETE FROM " + TBL_PROP + "\n" +
         "    WHERE " + COL_INSTANCE + " = ? ";
 
 

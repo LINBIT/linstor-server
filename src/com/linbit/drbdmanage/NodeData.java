@@ -64,7 +64,10 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private final List<TransactionObject> transObjList;
 
-    NodeData(
+    /*
+     * Only used by getInstance method
+     */
+    private NodeData(
         AccessContext accCtx,
         NodeName nameRef,
         Set<NodeType> types,
@@ -90,6 +93,9 @@ public class NodeData extends BaseTransactionObject implements Node
         );
     }
 
+    /*
+     * Used by dbDrivers and tests
+     */
     NodeData(
         UUID uuidRef,
         ObjectProtection objProtRef,

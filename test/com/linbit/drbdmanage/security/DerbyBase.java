@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage.security;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -34,9 +33,7 @@ import com.linbit.utils.UuidUtils;
 
 public abstract class DerbyBase implements DerbyConstants
 {
-    private static final String DB_FOLDER = "/tmp/drbdmanageNG/tests/database/derby";
-
-    private static final String DB_URL = "jdbc:derby:directory:" + DB_FOLDER;
+    private static final String DB_URL = "jdbc:derby:memory:testDB";
     private static final String DB_USER = "drbdmanage";
     private static final String DB_PASSWORD = "linbit";
     private static final Properties DB_PROPS = new Properties();
@@ -98,12 +95,6 @@ public abstract class DerbyBase implements DerbyConstants
     {
         if (dbConnPool == null)
         {
-            File dbFolder = new File(DB_FOLDER);
-            if (dbFolder.exists())
-            {
-                deleteFolder(dbFolder);
-            }
-
             // load the clientDriver...
             DB_PROPS.setProperty("create", "true");
             DB_PROPS.setProperty("user", DB_USER);
@@ -135,26 +126,6 @@ public abstract class DerbyBase implements DerbyConstants
 //        con.close();
 //        dbConnPool.shutdown();
 //        initialized = false;
-    }
-
-    private static void deleteFolder(File folder)
-    {
-        File[] files = folder.listFiles();
-        if (files != null) //some JVMs return null for empty directories
-        {
-            for(File f : files)
-            {
-                if(f.isDirectory())
-                {
-                    deleteFolder(f);
-                }
-                else
-                {
-                    f.delete();
-                }
-            }
-        }
-        folder.delete();
     }
 
     @Before

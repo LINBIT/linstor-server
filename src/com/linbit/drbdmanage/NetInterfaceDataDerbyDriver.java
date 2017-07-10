@@ -145,6 +145,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         {
             if (niCached != netIfData)
             {
+                resultSet.close();
+                stmt.close();
                 throw new ImplementationError("Two different NetInterfaceData share the same primary key", null);
             }
         }
@@ -205,6 +207,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
             }
             catch (InvalidNameException e)
             {
+                resultSet.close();
+                stmt.close();
                 throw new DrbdSqlRuntimeException("NetInterface contains illegal displayName");
             }
             netIfDataList.add(restoreInstance(con, node, netName, resultSet));
@@ -302,7 +306,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return niCache.get(new PrimaryKey(resultSet.getString(NODE_NAME), resultSet.getString(NET_NAME)));
     }
 
-    private void cacheRemove(NetInterfaceData niData)
+    private static void cacheRemove(NetInterfaceData niData)
     {
         niCache.remove(getPk(niData));
     }

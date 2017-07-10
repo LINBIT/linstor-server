@@ -7,8 +7,6 @@ import java.sql.SQLException;
 import java.util.Hashtable;
 import java.util.Map;
 
-import org.apache.derby.client.am.SqlException;
-
 import com.linbit.MapDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
@@ -123,6 +121,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         stmt.setString(1, resName.value);
         stmt.executeUpdate();
 
+        stmt.close();
         cacheRemove(resName);
     }
 
