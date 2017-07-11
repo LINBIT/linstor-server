@@ -211,46 +211,48 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                     PrivilegeSet privLimitSet = new PrivilegeSet(resultSet.getLong(4));
                     AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
                     objProt = new ObjectProtection(accCtx, this);
+
+                    resultSet.close();
+                    stmt.close();
+                    
+                    if (cache(objProt, objPath))
+                    {
+        
+                        // restore ACL
+                        stmt = con.prepareStatement(ACL_LOAD);
+                        stmt.setString(1, objPath);
+                        resultSet = stmt.executeQuery();
+    
+                        while (resultSet.next())
+                        {
+                            role = Role.get(new RoleName(resultSet.getString(1)));
+                            AccessType type = AccessType.get(resultSet.getInt(2));
+    
+                            objProt.addAclEntry(dbCtx, role, type);
+                        }
+                    } 
+                    else
+                    {
+                        objProt = cacheGet(objPath); 
+                    }
                 }
                 catch (InvalidNameException invalidNameExc)
                 {
+                    resultSet.close();
+                    stmt.close();
                     throw new DrbdSqlRuntimeException(
                         "A name has been modified in the database to an illegal string.",
                         invalidNameExc
                     );
                 }
-
-                resultSet.close();
-                stmt.close();
-
-                // restore ACL
-                stmt = con.prepareStatement(ACL_LOAD);
-                stmt.setString(1, objPath);
-                resultSet = stmt.executeQuery();
-
-                while (resultSet.next())
+                catch (AccessDeniedException accessDeniedExc)
                 {
-                    try
-                    {
-                        Role role = Role.get(new RoleName(resultSet.getString(1)));
-                        AccessType type = AccessType.get(resultSet.getInt(2));
-
-                        objProt.addAclEntry(dbCtx, role, type);
-                    }
-                    catch (InvalidNameException invalidNameExc)
-                    {
-                        throw new DrbdSqlRuntimeException(
-                            "A name has been modified in the database to an illegal string.",
-                            invalidNameExc
-                        );
-                    }
-                    catch (AccessDeniedException accessDeniedExc)
-                    {
-                        throw new ImplementationError(
-                            " Database's accessContext has insufficient rights to restore object protection",
-                            accessDeniedExc
-                        );
-                    }
+                    resultSet.close();
+                    stmt.close();
+                    throw new ImplementationError(
+                        " Database's accessContext has insufficient rights to restore object protection",
+                        accessDeniedExc
+                    );
                 }
             }
             else
@@ -261,9 +263,9 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                     // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
                 }
             }
-            resultSet.close();
-            stmt.close();
         }
+        resultSet.close();
+        stmt.close();
 
         return objProt;
     }
@@ -286,9 +288,15 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         return securityTypeDriver;
     }
 
-    private static void cache(ObjectProtection objProt, String objPath)
+    private synchronized static boolean cache(ObjectProtection objProt, String objPath)
     {
-        objProtCache.put(new PrimaryKey(objPath), objProt);
+        PrimaryKey pk = new PrimaryKey(objPath);
+        boolean contains = objProtCache.containsKey(pk);
+        if (!contains)
+        {
+            objProtCache.put(pk, objProt);
+        }
+        return !contains;
     }
 
     private static ObjectProtection cacheGet(String objPath)
@@ -296,12 +304,12 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         return objProtCache.get(new PrimaryKey(objPath));
     }
 
-    private static void cacheRemove(String objPath)
+    private synchronized static void cacheRemove(String objPath)
     {
         objProtCache.remove(new PrimaryKey(objPath));
     }
 
-    static void clearCache()
+    static synchronized void clearCache()
     {
         objProtCache.clear();
     }

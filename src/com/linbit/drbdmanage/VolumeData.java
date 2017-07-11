@@ -1,15 +1,15 @@
 package com.linbit.drbdmanage;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.UUID;
+
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
-
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.UUID;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -50,7 +50,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
     private VolumeData(
         Resource resRef, 
         VolumeDefinition volDfn, 
-        String blockDevicePathRef, 
+        String blockDevicePathRef,
+        long initFlags,
         SerialGenerator srlGen, 
         TransactionMgr transMgr
     )
@@ -61,6 +62,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             resRef,
             volDfn,
             blockDevicePathRef,
+            initFlags,
             srlGen,
             transMgr
         );
@@ -74,6 +76,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         Resource resRef,
         VolumeDefinition volDfnRef,
         String blockDevicePathRef,
+        long initFlags, 
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
@@ -89,7 +92,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
         flags = new VlmFlagsImpl(
             resRef.getObjProt(),
-            dbDriver.getStateFlagsPersistence()
+            dbDriver.getStateFlagsPersistence(),
+            initFlags
         );
 
         volumeProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
@@ -107,6 +111,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         VolumeDefinition volDfn,
         TransactionMgr transMgr,
         String blockDevicePathRef,
+        VlmFlags[] flags,
         boolean createIfNotExists,
         SerialGenerator serialGen
     )
@@ -122,7 +127,9 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
         if (vol == null && createIfNotExists)
         {
-            vol = new VolumeData(resRef, volDfn, blockDevicePathRef, serialGen, transMgr);
+            long initFlags = StateFlagsBits.getMask(flags);
+            
+            vol = new VolumeData(resRef, volDfn, blockDevicePathRef, initFlags, serialGen, transMgr);
             if (transMgr != null)
             {
                 driver.create(transMgr.dbCon, vol);
@@ -176,9 +183,18 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private static final class VlmFlagsImpl extends StateFlagsBits<VlmFlags>
     {
-        VlmFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
+        VlmFlagsImpl(
+            ObjectProtection objProtRef, 
+            StateFlagsPersistence persistenceRef, 
+            long initFlags
+        )
         {
-            super(objProtRef, StateFlagsBits.getMask(VlmFlags.values()), persistenceRef);
+            super(
+                objProtRef, 
+                StateFlagsBits.getMask(VlmFlags.values()), 
+                persistenceRef,
+                initFlags
+            );
         }
     }
 

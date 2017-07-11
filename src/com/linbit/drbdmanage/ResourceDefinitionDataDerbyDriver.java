@@ -5,6 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
@@ -119,12 +122,77 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 if (objProt != null)
                 {
                     ret = new ResourceDefinitionData(
-                        objProt,
                         UuidUtils.asUUID(resultSet.getBytes(RD_UUID)),
+                        objProt,
                         resName,
                         serialGen,
                         transMgr
                     );
+                    if (!cache(ret))
+                    {
+                        ret = cacheGet(resName);
+                    }
+                    else
+                    {
+                        try 
+                        {         
+                            // restore connectionDefinitions
+                            Map<NodeName, Map<Integer, ConnectionDefinition>> cons = 
+                                ConnectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
+                                con, 
+                                resName, 
+                                serialGen, 
+                                transMgr, 
+                                dbCtx
+                            );
+                            for (Entry<NodeName,Map<Integer, ConnectionDefinition>> entry : cons.entrySet())
+                            {
+                                NodeName nodeName = entry.getKey();
+                                for (Entry<Integer, ConnectionDefinition> conDfnEntry : entry.getValue().entrySet())
+                                {
+                                    int conDfnNr = conDfnEntry.getKey();
+                                    ConnectionDefinition conDfn = conDfnEntry.getValue();
+                                    ret.addConnection(dbCtx, nodeName, conDfnNr, conDfn);
+                                }
+                            }
+                      
+                            // restore volumeDefinitions
+                            List<VolumeDefinition> volDfns = 
+                                VolumeDefinitionDataDerbyDriver.loadAllVolumeDefinitionsByResourceDefinition(
+                                con, 
+                                ret, 
+                                serialGen, 
+                                transMgr, 
+                                dbCtx
+                            );
+                            for (VolumeDefinition volDfn : volDfns)
+                            {
+                                ret.putVolumeDefinition(dbCtx, volDfn);
+                            }
+    
+                            // restore resources
+                            List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceDataByResourceDefinition(
+                                con, 
+                                ret, 
+                                serialGen,
+                                transMgr,
+                                dbCtx
+                            );
+                            for (ResourceData res : resList)
+                            {
+                                ret.addResource(dbCtx, res);
+                            }
+                        }
+                        catch (AccessDeniedException accessDeniedExc)
+                        {
+                            resultSet.close();
+                            stmt.close();
+                            throw new ImplementationError(
+                                "Database's access context has no permission to get storPoolDefinition",
+                                accessDeniedExc
+                            );
+                        }
+                    }
                 }
             }
         }
@@ -165,9 +233,15 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         return propsDriver;
     }
 
-    private static void cache(ResourceDefinitionData resDfn)
+    private synchronized static boolean cache(ResourceDefinitionData resDfn)
     {
-        resDfnCache.put(new PrimaryKey(resDfn.getName().value), resDfn);
+        PrimaryKey pk = new PrimaryKey(resDfn.getName().value);
+        boolean contains = resDfnCache.containsKey(pk);
+        if (!contains)
+        {
+            resDfnCache.put(pk, resDfn);
+        }
+        return !contains;
     }
 
     private static ResourceDefinitionData cacheGet(ResourceName resName)
@@ -175,7 +249,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         return resDfnCache.get(new PrimaryKey(resName.value));
     }
 
-    private static void cacheRemove(ResourceName resName)
+    private synchronized static void cacheRemove(ResourceName resName)
     {
         resDfnCache.remove(new PrimaryKey(resName.value));
     }
@@ -183,7 +257,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     /**
      * this method should only be called by tests or if you want a full-reload from the database
      */
-    static void clearCache()
+    static synchronized void clearCache()
     {
         resDfnCache.clear();
     }

@@ -4,8 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Set;
 
 import com.linbit.ImplementationError;
@@ -42,6 +44,11 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         " FROM " + TBL_VOL_DFN +
         " WHERE " + VD_RES_NAME + " = ? AND " +
                     VD_ID       + " = ?";
+    private static final String VD_SELECT_BY_RES_DFN = 
+        " SELECT " +  VD_UUID + ", " + VD_RES_NAME + ", " + VD_ID + ", " + 
+                      VD_SIZE + ", " + VD_MINOR_NR + ", " + VD_FLAGS + 
+        " FROM " + TBL_VOL_DFN +
+        " WHERE " + VD_RES_NAME  + " = ?";
     private static final String VD_INSERT =
         " INSERT INTO " + TBL_VOL_DFN +
         " VALUES (?, ?, ?, ?, ?, ?)";
@@ -105,59 +112,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         {
             if (resultSet.next())
             {
-                try
-                {
-                    long lFlags = resultSet.getLong(VD_FLAGS);
-                    Set<VlmDfnFlags> flags = new HashSet<>();
-
-                    for (VlmDfnFlags flag : VlmDfnFlags.values())
-                    {
-                        if ((lFlags & flag.flagValue) == flag.flagValue)
-                        {
-                            flags.add(flag);
-                        }
-                    }
-
-                    ret = new VolumeDefinitionData(
-                        UuidUtils.asUUID(resultSet.getBytes(VD_UUID)),
-                        dbCtx, // volumeDefinition does not have objProt, but require access to their resource's objProt
-                        resDfn,
-                        volNr,
-                        new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
-                        resultSet.getLong(VD_SIZE),
-                        transMgr,
-                        serialGen,
-                        flags
-                    );
-                    cache(ret, dbCtx);
-                }
-                catch (AccessDeniedException accessDeniedExc)
-                {
-                    resultSet.close();
-                    stmt.close();
-                    throw new ImplementationError(
-                        "Database's access context has no permission to create VolumeDefinition",
-                        accessDeniedExc
-                    );
-                }
-                catch (MdException mdExc)
-                {
-                    resultSet.close();
-                    stmt.close();
-                    throw new DrbdSqlRuntimeException(
-                        "Invalid volume size: " + resultSet.getLong(VD_SIZE),
-                        mdExc
-                    );
-                }
-                catch (ValueOutOfRangeException valueOutOfRangeExc)
-                {
-                    resultSet.close();
-                    stmt.close();
-                    throw new DrbdSqlRuntimeException(
-                        "Invalid minor number: " + resultSet.getInt(VD_MINOR_NR),
-                        valueOutOfRangeExc
-                    );
-                }
+                ret = restoreVolumeDefinition(resultSet, resDfn, volNr, serialGen, transMgr, dbCtx);
             }
         }
         else
@@ -173,6 +128,124 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
         return ret;
     }
+
+    private static VolumeDefinitionData restoreVolumeDefinition(
+        ResultSet resultSet, 
+        ResourceDefinition resDfn,
+        VolumeNumber volNr,
+        SerialGenerator serialGen, 
+        TransactionMgr transMgr,
+        AccessContext accCtx
+    ) 
+        throws SQLException
+    { 
+        VolumeDefinitionData ret = null;
+        try
+        {
+            long lFlags = resultSet.getLong(VD_FLAGS);
+            Set<VlmDfnFlags> flags = new HashSet<>();
+
+            for (VlmDfnFlags flag : VlmDfnFlags.values())
+            {
+                if ((lFlags & flag.flagValue) == flag.flagValue)
+                {
+                    flags.add(flag);
+                }
+            }
+
+            ret = new VolumeDefinitionData(
+                UuidUtils.asUUID(resultSet.getBytes(VD_UUID)),
+                accCtx, // volumeDefinition does not have objProt, but require access to their resource's objProt
+                resDfn,
+                volNr,
+                new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
+                resultSet.getLong(VD_SIZE),
+                transMgr,
+                serialGen,
+                flags
+            );
+            if (!cache(ret, accCtx))
+            {
+                ret = cacheGet(resDfn, volNr);
+            }
+            else
+            {
+                // restore references
+            }
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            resultSet.close();
+            throw new ImplementationError(
+                "Database's access context has no permission to create VolumeDefinition",
+                accessDeniedExc
+            );
+        }
+        catch (MdException mdExc)
+        {
+            resultSet.close();
+            throw new DrbdSqlRuntimeException(
+                "Invalid volume size: " + resultSet.getLong(VD_SIZE),
+                mdExc
+            );
+        }
+        catch (ValueOutOfRangeException valueOutOfRangeExc)
+        {
+            resultSet.close();
+            throw new DrbdSqlRuntimeException(
+                "Invalid minor number: " + resultSet.getInt(VD_MINOR_NR),
+                valueOutOfRangeExc
+            );
+        }
+        return ret;
+    }
+    
+
+    public static List<VolumeDefinition> loadAllVolumeDefinitionsByResourceDefinition(
+            Connection con, 
+            ResourceDefinition resDfn, 
+            SerialGenerator serialGen, 
+            TransactionMgr transMgr, 
+            AccessContext accCtx
+    )
+        throws SQLException
+    {
+        PreparedStatement stmt = con.prepareStatement(VD_SELECT_BY_RES_DFN);
+        stmt.setString(1, resDfn.getName().value);
+        ResultSet resultSet = stmt.executeQuery();
+        List<VolumeDefinition> ret = new ArrayList<>();
+        while (resultSet.next())
+        {
+            VolumeNumber volNr;
+            try
+            {
+                volNr = new VolumeNumber(resultSet.getInt(VD_ID));
+            }
+            catch (ValueOutOfRangeException valueOutOfRangeExc)
+            {
+                resultSet.close();
+                stmt.close();
+                throw new DrbdSqlRuntimeException(
+                    "Invalid volume number: " + resultSet.getInt(VD_ID),
+                    valueOutOfRangeExc
+                );
+            }
+            
+            VolumeDefinition volDfn = restoreVolumeDefinition(
+                resultSet, 
+                resDfn, 
+                volNr,
+                serialGen, 
+                transMgr, 
+                accCtx
+            );
+            
+            ret.add(volDfn);
+        }
+        resultSet.close();
+        stmt.close();
+        return ret;
+    }        
 
     @Override
     public void delete(Connection con) throws SQLException
@@ -208,9 +281,15 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         return null;
     }
 
-    private static void cache(VolumeDefinitionData vdd, AccessContext dbCtx) throws AccessDeniedException
+    private synchronized static boolean cache(VolumeDefinitionData vdd, AccessContext dbCtx) throws AccessDeniedException
     {
-        volDfnCache.put(new PrimaryKey(vdd.getResourceDfn().getName().value, vdd.getVolumeNumber(dbCtx).value), vdd);
+        PrimaryKey pk = new PrimaryKey(vdd.getResourceDfn().getName().value, vdd.getVolumeNumber(dbCtx).value);
+        boolean contains = volDfnCache.containsKey(pk);
+        if (!contains)
+        {
+            volDfnCache.put(pk, vdd);
+        }
+        return !contains;
     }
 
     private static VolumeDefinitionData cacheGet(ResourceDefinition resDfn, VolumeNumber volNr)
@@ -218,7 +297,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         return volDfnCache.get(new PrimaryKey(resDfn.getName().value, volNr.value));
     }
 
-    private static void cacheRemove(ResourceDefinition resDfn, VolumeNumber volNr)
+    private synchronized static void cacheRemove(ResourceDefinition resDfn, VolumeNumber volNr)
     {
         volDfnCache.remove(new PrimaryKey(resDfn.getName().value, volNr.value));
     }
@@ -226,7 +305,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     /**
      * this method should only be called by tests or if you want a full-reload from the database
      */
-    static void clearCache()
+    static synchronized void clearCache()
     {
         volDfnCache.clear();
     }

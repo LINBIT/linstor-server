@@ -27,7 +27,17 @@ public class ConnectionDefinitionData implements ConnectionDefinition
 
     private Node targetNode;
 
-    ConnectionDefinitionData(AccessContext accCtx, ResourceDefinition resDfn, Node node1, Node node2, TransactionMgr transMgr) throws SQLException, AccessDeniedException
+    /*
+     * used by getInstance
+     */
+    private ConnectionDefinitionData(
+        AccessContext accCtx,
+        ResourceDefinition resDfn, 
+        Node node1, 
+        Node node2, 
+        TransactionMgr transMgr
+    )
+        throws SQLException, AccessDeniedException
     {
         this(
             UUID.randomUUID(),
@@ -43,7 +53,16 @@ public class ConnectionDefinitionData implements ConnectionDefinition
         );
     }
 
-    ConnectionDefinitionData(UUID uuid, ObjectProtection objProtRef, ResourceDefinition resDfnRef, Node node1, Node node2)
+    /*
+     * used by dbDrivers and tests
+     */
+    ConnectionDefinitionData(
+        UUID uuid, 
+        ObjectProtection objProtRef, 
+        ResourceDefinition resDfnRef, 
+        Node node1, 
+        Node node2
+    )
     {
         objId = uuid;
         objProt = objProtRef;
@@ -61,6 +80,12 @@ public class ConnectionDefinitionData implements ConnectionDefinition
         }
     }
 
+    public static ConnectionDefinitionData getInstance()
+    {
+        // TODO: gh - implement
+        return null;
+    }
+    
     @Override
     public UUID getUuid()
     {

@@ -82,7 +82,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         storDriverSimpleClassName = storDriverSimpleClassNameRef;
         objProt = objProtRef;
 
-//        dbDriver = DrbdManage.getStorPoolDataDatabaseDriver(nodeRef, storPoolDefRef);
         props = SerialPropsContainer.getInstance(
             DrbdManage.getPropConDatabaseDriver(
                 PropsContainer.buildPath(

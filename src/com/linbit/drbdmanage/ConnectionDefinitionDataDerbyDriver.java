@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
@@ -37,6 +38,11 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         " WHERE "+ CON_RES_NAME + " = ? AND " +
                    CON_NODE_SRC + " = ? AND " +
                    CON_NODE_DST + " = ?";
+    private static final String CON_SELECT_BY_RES_DFN = 
+        " SELECT " + CON_UUID + ", " + CON_RES_NAME + ", " +
+                     CON_NODE_SRC + ", " + CON_NODE_DST +
+        " FROM " + TBL_CON_DFN +
+        " WHERE "+ CON_RES_NAME + " = ?";
 
     private static final String CON_INSERT =
         " INSERT INTO " + TBL_CON_DFN +
@@ -79,24 +85,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         {
             if (resultSet.next())
             {
-                UUID uuid = UuidUtils.asUUID(resultSet.getBytes(CON_UUID));
-                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                    ObjectProtection.buildPath(resName, srcNodeName, dstNodeName)
-                );
-                ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
-
-                ResourceDefinitionDataDatabaseDriver resDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(
-                    resName
-                );
-                ResourceDefinitionData resDfn = resDriver.load(con, serialGen, transMgr);
-
-                NodeDataDatabaseDriver srcNodeDriver = DrbdManage.getNodeDataDatabaseDriver(srcNodeName);
-                NodeData nodeSrc = srcNodeDriver.load(con, serialGen, transMgr);
-                NodeDataDatabaseDriver dstNodeDriver = DrbdManage.getNodeDataDatabaseDriver(dstNodeName);
-                NodeData nodeDst = dstNodeDriver.load(con, serialGen, transMgr);
-
-                ret = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst);
-                cache(ret, dbCtx);
+                ret = restoreConnectionDefinition(con, resultSet, serialGen, transMgr, dbCtx);
             }
         }
         else
@@ -108,9 +97,111 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
             }
         }
 
+        resultSet.close();
+        stmt.close();
+        
         return ret;
     }
 
+    private static ConnectionDefinitionData restoreConnectionDefinition(
+        Connection con, 
+        ResultSet resultSet, 
+        SerialGenerator serialGen,
+        TransactionMgr transMgr, 
+        AccessContext accCtx
+    ) 
+        throws SQLException
+    {
+        UUID uuid = UuidUtils.asUUID(resultSet.getBytes(CON_UUID));
+        ResourceName resName;
+        NodeName srcNodeName;
+        NodeName dstNodeName;
+        
+        try
+        {
+            resName = new ResourceName(resultSet.getString(CON_RES_NAME));
+            srcNodeName = new NodeName(resultSet.getString(CON_NODE_SRC));
+            dstNodeName = new NodeName(resultSet.getString(CON_NODE_DST));
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new DrbdSqlRuntimeException(
+                "A resource or node name in the table " + TBL_CON_DFN + 
+                    " has been modified in the database to an illegal string.",
+                invalidNameExc
+            );
+        }
+        
+        ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+            ObjectProtection.buildPath(resName, srcNodeName, dstNodeName)
+        );
+        ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+
+        ResourceDefinitionDataDatabaseDriver resDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(
+            resName
+        );
+        ResourceDefinitionData resDfn = resDriver.load(con, serialGen, transMgr);
+
+        NodeDataDatabaseDriver srcNodeDriver = DrbdManage.getNodeDataDatabaseDriver(srcNodeName);
+        NodeData nodeSrc = srcNodeDriver.load(con, serialGen, transMgr);
+        NodeDataDatabaseDriver dstNodeDriver = DrbdManage.getNodeDataDatabaseDriver(dstNodeName);
+        NodeData nodeDst = dstNodeDriver.load(con, serialGen, transMgr);
+
+        ConnectionDefinitionData conData = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst);
+        cache(conData, accCtx);
+        return conData;
+    }
+
+    public static Map<NodeName, Map<Integer, ConnectionDefinition>> loadAllConnectionsByResourceDefinition(
+        Connection con, 
+        ResourceName resName, 
+        SerialGenerator serialGen, 
+        TransactionMgr transMgr,
+        AccessContext accCtx
+    )
+        throws SQLException
+    {
+        PreparedStatement stmt = con.prepareStatement(CON_SELECT_BY_RES_DFN);
+        stmt.setString(1, resName.value);
+        ResultSet resultSet = stmt.executeQuery();
+        Map<NodeName, Map<Integer, ConnectionDefinition>> ret = new HashMap<>();
+        try
+        {
+            while (resultSet.next() && false) // TODO: gh - method not fully implemented yet
+            {
+                ConnectionDefinitionData conDfn = restoreConnectionDefinition(con, resultSet, serialGen, transMgr, accCtx);
+                
+                NodeName srcNodeName = conDfn.getSourceNode(accCtx).getName();
+                NodeName dstNodeName = conDfn.getTargetNode(accCtx).getName();
+                if (!cache(conDfn, accCtx))
+                {
+                    conDfn = cacheGet(resName, srcNodeName, dstNodeName);
+                }
+                else
+                {
+                    // restore references
+                }
+                
+                Map<Integer, ConnectionDefinition> conMap = new HashMap<>();
+                // TODO: gh - connection number is missing?
+                ret.put(srcNodeName, conMap);
+                ret.put(dstNodeName, conMap); // TODO: put the same map?
+            }
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            resultSet.close();
+            stmt.close();
+            throw new ImplementationError(
+                "Database's access context has no permission to get storPoolDefinition",
+                accessDeniedExc
+            );
+        }
+        resultSet.close();
+        stmt.close();
+        return ret;
+    }
+    
     @Override
     public void create(Connection con, ConnectionDefinitionData conDfnData) throws SQLException
     {
@@ -154,9 +245,15 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         }
     }
 
-    private static void cache(ConnectionDefinitionData con, AccessContext accCtx)
+    private static synchronized boolean cache(ConnectionDefinitionData con, AccessContext accCtx)
     {
-        conDfnCache.put(getPk(con, accCtx), con);
+        PrimaryKey pk = getPk(con, accCtx);
+        boolean contains = conDfnCache.containsKey(pk);
+        if (!contains) 
+        {
+            conDfnCache.put(getPk(con, accCtx), con);
+        }
+        return !contains;
     }
 
     private static ConnectionDefinitionData cacheGet(
@@ -171,12 +268,12 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     /**
      * this method should only be called by tests or if you want a full-reload from the database
      */
-    static void clearCache()
+    static synchronized void clearCache()
     {
         conDfnCache.clear();
     }
 
-    private static void cacheRemove(ConnectionDefinitionData con, AccessContext accCtx)
+    private static synchronized void cacheRemove(ConnectionDefinitionData con, AccessContext accCtx)
     {
         conDfnCache.remove(getPk(con, accCtx));
     }
@@ -199,6 +296,4 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
             );
         }
     }
-
-
 }

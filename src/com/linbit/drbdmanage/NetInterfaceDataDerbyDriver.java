@@ -41,8 +41,12 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                       INET_ADDRESS + ", " + INET_TYPE +
         " FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ?";
-    private static final String NNI_SELECT_BY_NODE_AND_NET = NNI_SELECT_BY_NODE +
-        " AND "   + NET_NAME  + " = ?";
+    private static final String NNI_SELECT_BY_NODE_AND_NET = 
+        " SELECT "  + NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
+                      INET_ADDRESS + ", " + INET_TYPE +
+        " FROM " + TBL_NODE_NET +
+        " WHERE " + NODE_NAME + " = ? AND " +
+                    NET_NAME  + " = ?";
 
     private static final String NNI_INSERT =
         " INSERT INTO " + TBL_NODE_NET +
@@ -285,15 +289,27 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                 addr,
                 NetInterfaceType.byValue(type)
             );
-            cache(ret);
+            if (cache(ret))
+            {
+                // restore references
+            }
+            else {
+                ret = cacheGet(resultSet);
+            }
         }
 
         return ret;
     }
 
-    private static void cache(NetInterfaceData netInterfaceData)
+    private synchronized static boolean cache(NetInterfaceData netInterfaceData)
     {
-        niCache.put(getPk(netInterfaceData), netInterfaceData);
+        PrimaryKey pk = getPk(netInterfaceData);
+        boolean contains = niCache.containsKey(pk);
+        if (!contains)
+        {
+            niCache.put(pk, netInterfaceData);
+        }
+        return !contains;
     }
 
     private static NetInterfaceData cacheGet(Node node, NetInterfaceName netName)
@@ -306,7 +322,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return niCache.get(new PrimaryKey(resultSet.getString(NODE_NAME), resultSet.getString(NET_NAME)));
     }
 
-    private static void cacheRemove(NetInterfaceData niData)
+    private synchronized static void cacheRemove(NetInterfaceData niData)
     {
         niCache.remove(getPk(niData));
     }
@@ -319,7 +335,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     /**
      * this method should only be called by tests or if you want a full-reload from the database
      */
-    static void clearCache()
+    static synchronized void clearCache()
     {
         niCache.clear();
     }

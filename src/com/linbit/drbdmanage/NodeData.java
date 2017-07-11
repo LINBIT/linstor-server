@@ -69,8 +69,8 @@ public class NodeData extends BaseTransactionObject implements Node
     private NodeData(
         AccessContext accCtx,
         NodeName nameRef,
-        Set<NodeType> types,
-        Set<NodeFlag> flagSet,
+        long initialTypes,
+        long initialFlags,
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
@@ -85,8 +85,8 @@ public class NodeData extends BaseTransactionObject implements Node
                 true
             ),
             nameRef,
-            types,
-            flagSet,
+            initialTypes,
+            initialFlags,
             srlGen,
             transMgr
         );
@@ -99,8 +99,8 @@ public class NodeData extends BaseTransactionObject implements Node
         UUID uuidRef,
         ObjectProtection objProtRef,
         NodeName nameRef,
-        Set<NodeType> types,
-        Set<NodeFlag> flagSet,
+        long initialTypes,
+        long initialFlags,
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
@@ -113,28 +113,17 @@ public class NodeData extends BaseTransactionObject implements Node
         clNodeName = nameRef;
         dbDriver = DrbdManage.getNodeDataDatabaseDriver(nameRef);
 
-        resourceMap = new TreeMap<ResourceName, Resource>();
-        netInterfaceMap = new TreeMap<NetInterfaceName, NetInterface>();
-        storPoolMap = new TreeMap<StorPoolName, StorPool>();
+        resourceMap = new TreeMap<>();
+        netInterfaceMap = new TreeMap<>();
+        storPoolMap = new TreeMap<>();
 
         nodeProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
 
-        long initialFlags = 0;
-        if (flagSet != null)
-        {
-            initialFlags = StateFlagsBits.getMask(flagSet.toArray(new NodeFlag[0]));
-        }
         flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence(), initialFlags);
-
-        long initialTypes = 0;
-        if (types == null || types.isEmpty())
+        if (initialTypes == 0)
         {
             // Default to creating an AUXILIARY type node
             initialTypes = NodeType.AUXILIARY.getFlagValue();
-        }
-        else
-        {
-            initialTypes = StateFlagsBits.getMask(types.toArray(new NodeType[0]));
         }
         nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence(), initialTypes);
 
@@ -154,8 +143,8 @@ public class NodeData extends BaseTransactionObject implements Node
     public static NodeData getInstance(
         AccessContext accCtx,
         NodeName nameRef,
-        Set<NodeType> types,
-        Set<NodeFlag> flags,
+        NodeType[] types,
+        NodeFlag[] flags,
         SerialGenerator srlGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
@@ -178,7 +167,14 @@ public class NodeData extends BaseTransactionObject implements Node
         else
         if (createIfNotExists)
         {
-            nodeData = new NodeData(accCtx, nameRef, types, flags, srlGen, transMgr);
+            nodeData = new NodeData(
+                accCtx, 
+                nameRef, 
+                StateFlagsBits.getMask(types), 
+                StateFlagsBits.getMask(flags), 
+                srlGen, 
+                transMgr
+            );
             if (transMgr != null)
             {
                 dbDriver.create(transMgr.dbCon, nodeData);

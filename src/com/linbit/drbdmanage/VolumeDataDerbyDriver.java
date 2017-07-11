@@ -7,8 +7,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
@@ -19,9 +17,6 @@ import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
-import com.linbit.drbdmanage.propscon.InvalidKeyException;
-import com.linbit.drbdmanage.propscon.InvalidValueException;
-import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -207,75 +202,37 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     resRef,
                     volDfn,
                     resultSet.getString(VOL_PATH),
+                    resultSet.getLong(VOL_FLAGS),
                     serialGen,
                     transMgr
                 );
-
-                // restore flags
-                StateFlags<VlmFlags> flags = volData.getFlags();
-                long lFlags = resultSet.getLong(VOL_FLAGS);
-                for (VlmFlags flag : VlmFlags.values())
+                if (!cache(volData, accCtx))
                 {
-                    if ((lFlags & flag.flagValue) == flag.flagValue)
+                    volData = cacheGet(resRef.getAssignedNode(), resRef.getDefinition(), volNr);
+                }
+                else
+                {
+                    // restore flags
+                    StateFlags<VlmFlags> flags = volData.getFlags();
+                    long lFlags = resultSet.getLong(VOL_FLAGS);
+                    for (VlmFlags flag : VlmFlags.values())
                     {
-                        try
+                        if ((lFlags & flag.flagValue) == flag.flagValue)
                         {
-                            flags.enableFlags(accCtx, flag);
-                        }
-                        catch (AccessDeniedException accessDeniedExc)
-                        {
-                            throw new ImplementationError(
-                                "Database's access context has no permission to set VolumeDefinition's flags",
-                                accessDeniedExc
-                            );
+                            try
+                            {
+                                flags.enableFlags(accCtx, flag);
+                            }
+                            catch (AccessDeniedException accessDeniedExc)
+                            {
+                                throw new ImplementationError(
+                                    "Database's access context has no permission to set VolumeDefinition's flags",
+                                    accessDeniedExc
+                                );
+                            }
                         }
                     }
                 }
-
-                // restore props
-                String instanceName = PropsContainer.buildPath(
-                    resRef.getAssignedNode().getName(),
-                    resRef.getDefinition().getName(),
-                    volNr
-                );
-                PropsConDatabaseDriver propsDriver = DrbdManage.getPropConDatabaseDriver(instanceName);
-
-                Map<String, String> propMap = propsDriver.load(con);
-                try
-                {
-                    Props props = volData.getProps(accCtx);
-
-                    for (Entry<String, String> entry : propMap.entrySet())
-                    {
-                        try
-                        {
-                            props.setProp(entry.getKey(), entry.getValue());
-                        }
-                        catch (InvalidKeyException invalidKeyExc)
-                        {
-                            throw new DrbdSqlRuntimeException(
-                                String.format("Invalid key loaded from PropsCon %s: %s", instanceName, entry.getKey()),
-                                invalidKeyExc
-                            );
-                        }
-                        catch (InvalidValueException invalidValueExc)
-                        {
-                            throw new DrbdSqlRuntimeException(
-                                String.format("Invalid value loaded from PropsCon %s: %s", instanceName, entry.getValue()),
-                                invalidValueExc
-                            );
-                        }
-                    }
-
-                }
-                catch (AccessDeniedException accessDeniedExc)
-                {
-                    throw new ImplementationError(
-                        "Database's access context has no permission to get Volume's propsContainer",
-                        accessDeniedExc
-                    );
-                }
-                cache(volData, accCtx);
             }
             volList.add(volData);
         }
@@ -340,17 +297,20 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return propsDriver;
     }
 
-    private static void cache(VolumeData vol, AccessContext accCtx)
+    private synchronized static boolean cache(VolumeData vol, AccessContext accCtx)
     {
         try
         {
-            volCache.put(
-                new PrimaryKey(
-                    vol.getResource().getAssignedNode().getName().value,
-                    vol.getResourceDfn().getName().value,
-                    vol.getVolumeDfn().getVolumeNumber(accCtx).value),
-                vol
-            );
+            PrimaryKey pk = new PrimaryKey(
+                vol.getResource().getAssignedNode().getName().value,
+                vol.getResourceDfn().getName().value,
+                vol.getVolumeDfn().getVolumeNumber(accCtx).value);
+            boolean contains = volCache.containsKey(pk);
+            if (!contains)
+            {
+                volCache.put(pk, vol);
+            }
+            return !contains;
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -366,7 +326,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return volCache.get(new PrimaryKey(node.getName().value, resDfn.getName().value, volNr.value));
     }
 
-    private static void cacheRemove(Resource res, VolumeDefinition volDfn, AccessContext accCtx)
+    private synchronized static void cacheRemove(Resource res, VolumeDefinition volDfn, AccessContext accCtx)
     {
         volCache.remove(getPk(res, volDfn, accCtx));
     }
@@ -393,7 +353,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     /**
      * this method should only be called by tests or if you want a full-reload from the database
      */
-    static void clearCache()
+    static synchronized void clearCache()
     {
         volCache.clear();
     }

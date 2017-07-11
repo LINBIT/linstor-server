@@ -4,23 +4,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.Node.NodeFlag;
-import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
-import com.linbit.drbdmanage.propscon.InvalidKeyException;
-import com.linbit.drbdmanage.propscon.InvalidValueException;
-import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -125,78 +117,43 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     );
                     ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
 
-                    Set<NodeType> types = new HashSet<>();
-                    long typeBits = resultSet.getLong(NODE_TYPE);
-                    for (NodeType type : NodeType.values())
-                    {
-                        if ((typeBits & type.getFlagValue()) == type.getFlagValue())
-                        {
-                            types.add(type);
-                        }
-                    }
-                    Set<NodeFlag> flags = new HashSet<>();
-                    long flagBits = resultSet.getLong(NODE_FLAGS);
-                    for (NodeFlag flag : NodeFlag.values())
-                    {
-                        if ((flagBits & flag.flagValue) == flag.flagValue)
-                        {
-                            flags.add(flag);
-                        }
-                    }
-
                     node = new NodeData(
                         UuidUtils.asUUID(resultSet.getBytes(NODE_UUID)),
                         objProt,
                         nodeName,
-                        types,
-                        flags,
+                        resultSet.getLong(NODE_TYPE),
+                        resultSet.getLong(NODE_FLAGS),
                         serialGen,
                         transMgr
                     );
-
-                    // restore netInterfaces
-                    List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadNetInterfaceData(con, node);
-                    for (NetInterfaceData netIf : netIfaces)
+                    if (cache(node))
                     {
-                        node.addNetInterface(dbCtx, netIf);
-                    }
 
-
-                    // restore props
-                    PropsConDatabaseDriver propDriver = DrbdManage.getPropConDatabaseDriver(PropsContainer.buildPath(nodeName));
-                    Props props = node.getProps(dbCtx);
-                    Map<String, String> loadedProps = propDriver.load(con);
-                    for (Entry<String, String> entry : loadedProps.entrySet())
-                    {
-                        try
+                        // restore netInterfaces
+                        List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadNetInterfaceData(con, node);
+                        for (NetInterfaceData netIf : netIfaces)
                         {
-                            props.setProp(entry.getKey(), entry.getValue());
+                            node.addNetInterface(dbCtx, netIf);
                         }
-                        catch (InvalidKeyException | InvalidValueException invalidException)
+    
+                        // restore resources
+                        List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceData(con, dbCtx, node, serialGen, transMgr);
+                        for (ResourceData res : resList)
                         {
-                            resultSet.close();
-                            stmt.close();
-                            throw new DrbdSqlRuntimeException(
-                                "Invalid property loaded from instance: " + PropsContainer.buildPath(nodeName),
-                                invalidException
-                            );
+                            node.addResource(dbCtx, res);
+                        }
+    
+                        // restore storPools
+                        List<StorPoolData> storPoolList = StorPoolDataDerbyDriver.loadStorPools(con, node, transMgr, serialGen);
+                        for (StorPoolData storPool : storPoolList)
+                        {
+                            node.addStorPool(dbCtx, storPool);
                         }
                     }
-
-                    // restore resources
-                    List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceData(con, dbCtx, node, serialGen, transMgr);
-                    for (ResourceData res : resList)
+                    else
                     {
-                        node.addResource(dbCtx, res);
+                        node = cacheGet(nodeName);
                     }
-
-                    // restore storPools
-                    List<StorPoolData> storPoolList = StorPoolDataDerbyDriver.loadStorPools(con, node, transMgr, serialGen);
-                    for (StorPoolData storPool : storPoolList)
-                    {
-                        node.addStorPool(dbCtx, storPool);
-                    }
-                    cache(node);
                 }
             }
             else
@@ -240,15 +197,23 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         cacheRemove(node);
     }
 
-    private static void cache(NodeData node)
+    private synchronized static boolean cache(NodeData node)
     {
+        boolean ret = false;
         if (node != null)
         {
-            nodeCache.put(getPk(node), node);
+            PrimaryKey pk = getPk(node);
+            boolean contains = nodeCache.containsKey(pk);
+            if (!contains)
+            {
+                nodeCache.put(pk, node);
+                ret = true;
+            }
         }
+        return ret;
     }
 
-    private static void cacheRemove(NodeData node)
+    private synchronized static void cacheRemove(NodeData node)
     {
         if (node != null)
         {
@@ -274,7 +239,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     /**
      * this method should only be called by tests or if you want a full-resync with the database
      */
-    static void clearCache()
+    static synchronized void clearCache()
     {
         nodeCache.clear();
     }

@@ -21,10 +21,16 @@ public interface ResourceDefinition extends TransactionObject
     public ObjectProtection getObjProt();
 
     public ResourceName getName();
-
+    
+    public void addConnection(AccessContext accCtx, NodeName nodeName, int conDfnNr, ConnectionDefinition conDfn)
+        throws AccessDeniedException;
+   
     public ConnectionDefinition getConnectionDfn(AccessContext accCtx, NodeName clNodeName, Integer connNr)
         throws AccessDeniedException;
 
+    public void putVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn) 
+        throws AccessDeniedException;
+    
     public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
         throws AccessDeniedException;
 
@@ -62,4 +68,7 @@ public interface ResourceDefinition extends TransactionObject
             return flagValue;
         }
     }
+
+
+
 }

@@ -33,13 +33,13 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         " DELETE FROM " + TBL_SPD +
         " WHERE " + SPD_NAME + " = ?";
 
-    private final StorPoolName name;
+    private final StorPoolName spddName;
 
     private static Hashtable<PrimaryKey, StorPoolDefinitionData> spDfnCache = new Hashtable<>();
 
     public StorPoolDefinitionDataDerbyDriver(StorPoolName nameRef)
     {
-        name = nameRef;
+        spddName = nameRef;
     }
 
     @Override
@@ -59,10 +59,10 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     public StorPoolDefinitionData load(Connection con) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(SPD_SELECT);
-        stmt.setString(1, name.value);
+        stmt.setString(1, spddName.value);
         ResultSet resultSet = stmt.executeQuery();
 
-        StorPoolDefinitionData spdd = cacheGet(name);
+        StorPoolDefinitionData spdd = cacheGet(spddName);
         if (spdd == null)
         {
             if (resultSet.next())
@@ -70,12 +70,19 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
                 UUID id = UuidUtils.asUUID(resultSet.getBytes(SPD_UUID));
 
                 ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                    ObjectProtection.buildPathSPD(name)
+                    ObjectProtection.buildPathSPD(spddName)
                 );
                 ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
 
-                spdd = new StorPoolDefinitionData(id, objProt, name);
-                cache(spdd);
+                spdd = new StorPoolDefinitionData(id, objProt, spddName);
+                if (!cache(spdd))
+                {
+                    spdd = cacheGet(spddName);
+                }
+                else
+                {
+                    // restore references
+                }
             }
         }
         else
@@ -95,16 +102,22 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     public void delete(Connection con) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(SPD_DELETE);
-        stmt.setString(1, name.value);
+        stmt.setString(1, spddName.value);
         stmt.executeUpdate();
         stmt.close();
 
-        cacheRemove(name);
+        cacheRemove(spddName);
     }
 
-    private static void cache(StorPoolDefinitionData spdd)
+    private synchronized static boolean cache(StorPoolDefinitionData spdd)
     {
-        spDfnCache.put(new PrimaryKey(spdd.getName().value), spdd);
+        PrimaryKey pk = new PrimaryKey(spdd.getName().value);
+        boolean contains = spDfnCache.containsKey(pk);
+        if (!contains)
+        {
+            spDfnCache.put(pk, spdd);
+        }
+        return !contains;
     }
 
     private static StorPoolDefinitionData cacheGet(StorPoolName sName)
@@ -112,7 +125,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         return spDfnCache.get(new PrimaryKey(sName.value));
     }
 
-    private static void cacheRemove(StorPoolName sName)
+    private synchronized static void cacheRemove(StorPoolName sName)
     {
         spDfnCache.remove(new PrimaryKey(sName.value));
     }
@@ -120,7 +133,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     /**
      * this method should only be called by tests or if you want a full-reload from the database
      */
-    static void clearCache()
+    static synchronized void clearCache()
     {
         spDfnCache.clear();
     }

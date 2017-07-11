@@ -7,22 +7,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
-import com.linbit.drbdmanage.propscon.InvalidKeyException;
-import com.linbit.drbdmanage.propscon.InvalidValueException;
-import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -30,7 +25,6 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
-import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 import com.linbit.utils.UuidUtils;
 
@@ -44,13 +38,20 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private static final String RES_NODE_ID = DerbyConstants.NODE_ID;
     private static final String RES_FLAGS = DerbyConstants.RESOURCE_FLAGS;
 
+    private static final String RES_SELECT = 
+        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " + RES_NODE_ID + ", " + RES_FLAGS +
+        " FROM " + TBL_RES +
+        " WHERE " + RES_NODE_NAME + " = ? AND " + 
+        RES_NAME      + " = ?";
     private static final String RES_SELECT_BY_NODE =
         " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " + RES_NODE_ID + ", " + RES_FLAGS +
         " FROM " + TBL_RES +
         " WHERE " + RES_NODE_NAME + " = ?";
-    private static final String RES_SELECT = RES_SELECT_BY_NODE +
-        " AND " + RES_NAME + " = ?";
-
+    private static final String RES_SELECT_BY_RES_DFN = 
+        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " + RES_NODE_ID + ", " + RES_FLAGS +
+        " FROM " + TBL_RES +
+        " WHERE " + RES_NAME + " = ?";
+    
     private static final String RES_INSERT =
         " INSERT INTO " + TBL_RES + " VALUES (?, ?, ?, ?, ?)";
     private static final String RES_DELETE =
@@ -165,6 +166,137 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         }
         return ret;
     }
+    
+
+    public static List<ResourceData> loadResourceDataByResourceDefinition(
+        Connection con, 
+        ResourceDefinitionData resDfn, 
+        SerialGenerator serialGen,
+        TransactionMgr transMgr, 
+        AccessContext accCtx
+    ) 
+        throws SQLException
+    {
+        PreparedStatement stmt = con.prepareStatement(RES_SELECT_BY_RES_DFN);
+        stmt.setString(1, resDfn.getName().value);
+        ResultSet resultSet = stmt.executeQuery();
+        
+        List<ResourceData> resList = load(con, resultSet, accCtx, null, serialGen, transMgr);
+        
+        resultSet.close();
+        stmt.close();
+        return resList;
+    }
+    
+    public static List<ResourceData> loadResourceData(Connection con, AccessContext dbCtx, NodeData node, SerialGenerator serialGen, TransactionMgr transMgr)
+        throws SQLException
+    {
+        PreparedStatement stmt = con.prepareStatement(RES_SELECT_BY_NODE);
+        stmt.setString(1, node.getName().value);
+        ResultSet resultSet = stmt.executeQuery();
+
+        List<ResourceData> ret = load(con, resultSet, dbCtx, node, serialGen, transMgr);
+        resultSet.close();
+        stmt.close();
+
+        return ret;
+    }
+
+    private static List<ResourceData> load(
+        Connection con,
+        ResultSet resultSet,
+        AccessContext dbCtx,
+        Node globalNode,
+        SerialGenerator serialGen,
+        TransactionMgr transMgr
+    )
+        throws SQLException
+    {
+        List<ResourceData> resList = new ArrayList<>();
+        while (resultSet.next())
+        {
+            try
+            {
+                Node node;
+                if (globalNode != null)
+                {
+                    node = globalNode;
+                }
+                else
+                {
+                    NodeDataDatabaseDriver nodeDriver = DrbdManage.getNodeDataDatabaseDriver(
+                        new NodeName(
+                            resultSet.getString(RES_NODE_NAME)
+                        )
+                    );
+                    node = nodeDriver.load(con, serialGen, transMgr);
+                }
+                
+                ResourceData resData = cacheGet(resultSet);
+                if (resData == null)
+                {
+                    ResourceName resName = new ResourceName(resultSet.getString(RES_NAME));
+                    ResourceDefinitionDataDatabaseDriver resDfnDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(resName);
+                    ResourceDefinition resDfn = resDfnDriver.load(con, serialGen, transMgr);
+
+                    ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
+                        ObjectProtection.buildPath(resName)
+                    );
+                    ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+
+                    NodeId nodeId = new NodeId(resultSet.getInt(RES_NODE_ID));
+                    resData = new ResourceData(
+                        UuidUtils.asUUID(resultSet.getBytes(RES_UUID)),
+                        objProt,
+                        resDfn,
+                        node,
+                        nodeId,
+                        resultSet.getLong(RES_FLAGS),
+                        serialGen,
+                        transMgr
+                    );
+                    if (!cache(resData))
+                    {
+                        resData = cacheGet(resData); // looks strange but it works :)
+                    }
+                    else
+                    {
+                        // restore volumes
+                        List<VolumeData> volList = VolumeDataDerbyDriver.loadAllVolumesByResource(con, resData, transMgr, serialGen, dbCtx);
+                        for (VolumeData volData : volList)
+                        {
+                            resData.setVolume(dbCtx, volData);
+                        }
+                        
+                        // TODO: gh - restore connections
+                    }
+                }
+                resList.add(resData);
+            }
+            catch (InvalidNameException invalidNameExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "A resource or node name in the table " + TBL_RES + " has been modified in the database to an illegal string.",
+                    invalidNameExc
+                );
+            }
+            catch (ValueOutOfRangeException valueOutOfRangeExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    "A node id in the table " + TBL_RES + " has been modified in the database to an illegal value.",
+                    valueOutOfRangeExc
+                );
+            }
+            catch (AccessDeniedException accessDeniedExc)
+            {
+                throw new ImplementationError(
+                    "Database's access context has no permission to get storPoolDefinition",
+                    accessDeniedExc
+                );
+            }
+        }
+        return resList;
+    }
 
     @Override
     public void delete(Connection con, ResourceData res) throws SQLException
@@ -185,128 +317,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         cacheRemove(res);
     }
 
-
-    public static List<ResourceData> loadResourceData(Connection con, AccessContext dbCtx, NodeData node, SerialGenerator serialGen, TransactionMgr transMgr)
-        throws SQLException
-    {
-        PreparedStatement stmt = con.prepareStatement(RES_SELECT_BY_NODE);
-        stmt.setString(1, node.getName().value);
-        ResultSet resultSet = stmt.executeQuery();
-
-        List<ResourceData> ret = load(con, resultSet, dbCtx, node, serialGen, transMgr);
-        resultSet.close();
-        stmt.close();
-
-        return ret;
-    }
-
-    private static List<ResourceData> load(
-        Connection con,
-        ResultSet resultSet,
-        AccessContext dbCtx,
-        Node node,
-        SerialGenerator serialGen,
-        TransactionMgr transMgr
-    )
-        throws SQLException
-    {
-        List<ResourceData> resList = new ArrayList<>();
-        while (resultSet.next())
-        {
-            try
-            {
-                ResourceData resData = cacheGet(resultSet);
-                if (resData == null)
-                {
-                    ResourceName resName = new ResourceName(resultSet.getString(RES_NAME));
-                    ResourceDefinitionDataDatabaseDriver resDfnDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(resName);
-                    ResourceDefinition resDfn = resDfnDriver.load(con, serialGen, transMgr);
-
-                    ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                        ObjectProtection.buildPath(resName)
-                    );
-                    ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
-
-                    NodeId nodeId = new NodeId(resultSet.getInt(RES_NODE_ID));
-                    resData = new ResourceData(
-                        UuidUtils.asUUID(resultSet.getBytes(RES_UUID)),
-                        objProt,
-                        resDfn,
-                        node,
-                        nodeId,
-                        serialGen,
-                        transMgr
-                    );
-
-                    // restore props
-                    PropsConDatabaseDriver propDriver = DrbdManage.getPropConDatabaseDriver(PropsContainer.buildPath(node.getName(), resName));
-                    Props props = resData.getProps(dbCtx);
-                    Map<String, String> loadedProps = propDriver.load(con);
-                    for (Entry<String, String> entry : loadedProps.entrySet())
-                    {
-                        try
-                        {
-                            props.setProp(entry.getKey(), entry.getValue());
-                        }
-                        catch (InvalidKeyException | InvalidValueException invalidException)
-                        {
-                            throw new DrbdSqlRuntimeException(
-                                "Invalid property loaded from instance: " + PropsContainer.buildPath(node.getName(), resName),
-                                invalidException
-                            );
-                        }
-                    }
-
-                    // restore flags
-                    long lFlags = resultSet.getLong(RES_FLAGS);
-                    StateFlags<RscFlags> stateFlags = resData.getStateFlags();
-                    for (RscFlags flag : RscFlags.values())
-                    {
-                        if ((lFlags & flag.flagValue) == flag.flagValue)
-                        {
-                            stateFlags.enableFlags(dbCtx, flag);
-                        }
-                    }
-
-                    // restore volumes
-                    List<VolumeData> volList = VolumeDataDerbyDriver.loadAllVolumesByResource(con, resData, transMgr, serialGen, dbCtx);
-                    for (VolumeData volData : volList)
-                    {
-                        resData.setVolume(dbCtx, volData);
-                    }
-
-                    // TODO: gh - restore connections
-
-                    cache(resData);
-                }
-                resList.add(resData);
-            }
-            catch (InvalidNameException invalidNameExc)
-            {
-                throw new DrbdSqlRuntimeException(
-                    "A resource name in the table " + TBL_RES + " has been modified in the database to an illegal string.",
-                    invalidNameExc
-                );
-            }
-            catch (ValueOutOfRangeException valueOutOfRangeExc)
-            {
-                throw new DrbdSqlRuntimeException(
-                    "A node id in the table " + TBL_RES + " has been modified in the database to an illegal value.",
-                    valueOutOfRangeExc
-                );
-            }
-            catch (AccessDeniedException accessDeniedExc)
-            {
-                throw new ImplementationError(
-                    "Database's access context is not permitted to access resource.props",
-                    accessDeniedExc
-                );
-            }
-        }
-        return resList;
-    }
-
-
     @Override
     public StateFlagsPersistence getStateFlagPersistence()
     {
@@ -319,12 +329,20 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return propsDriver;
     }
 
-    private static void cache(ResourceData res)
+    private synchronized static boolean cache(ResourceData res)
     {
+        boolean ret = false;
         if (res != null)
         {
-            resCache.put(getPk(res), res);
-       }
+            PrimaryKey pk = getPk(res);
+            boolean contains = resCache.containsKey(pk);
+            if (!contains)
+            {
+                resCache.put(pk, res);
+                ret = true;
+            }
+        }
+        return ret;
     }
 
     private static ResourceData cacheGet(ResourceData value)
@@ -347,7 +365,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return resCache.get(getPk(node, resName));
     }
 
-    private static void cacheRemove(ResourceData res)
+    private synchronized static void cacheRemove(ResourceData res)
     {
         resCache.remove(getPk(res));
     }
@@ -355,7 +373,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     /**
      * this method should only be called by tests or if you want a full-reload from the database
      */
-    static void clearCache()
+    static synchronized void clearCache()
     {
         resCache.clear();
     }

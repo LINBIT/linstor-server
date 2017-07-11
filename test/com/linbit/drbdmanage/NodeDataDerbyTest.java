@@ -1,13 +1,15 @@
 package com.linbit.drbdmanage;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashSet;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -19,11 +21,9 @@ import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
-import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
-import com.linbit.drbdmanage.propscon.SeqSerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -64,6 +64,8 @@ public class NodeDataDerbyTest extends DerbyBase
     private TransactionMgr transMgr;
     private java.util.UUID uuid;
     private ObjectProtection objProt;
+    private long initialFlags;
+    private long initialTypes;
     private NodeData node;
 
     // TODO: bunch of tests for constraint checks
@@ -89,7 +91,17 @@ public class NodeDataDerbyTest extends DerbyBase
 
         uuid = randomUUID();
         objProt = ObjectProtection.getInstance(sysCtx, transMgr, ObjectProtection.buildPath(nodeName), true);
-        node = new NodeData(uuid, objProt, nodeName, null, null, null, transMgr);
+        initialFlags = NodeFlag.QIGNORE.flagValue;
+        initialTypes = NodeType.AUXILIARY.getFlagValue();
+        node = new NodeData(
+            uuid, 
+            objProt, 
+            nodeName, 
+            initialTypes, 
+            initialFlags, 
+            null, 
+            transMgr
+        );
     }
 
     @Test
@@ -104,7 +116,7 @@ public class NodeDataDerbyTest extends DerbyBase
         assertTrue(resultSet.next());
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(nodeName.displayValue, resultSet.getString(NODE_DSP_NAME));
-        assertEquals(0, resultSet.getLong(NODE_FLAGS));
+        assertEquals(NodeFlag.QIGNORE.flagValue, resultSet.getLong(NODE_FLAGS));
         assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
         assertEquals(ObjectProtection.buildPath(nodeName), resultSet.getString(OBJECT_PATH));
 
@@ -117,7 +129,15 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        NodeData.getInstance(sysCtx, nodeName, new HashSet<Node.NodeType>(), null, null, transMgr, true);
+        NodeData.getInstance(
+            sysCtx, 
+            nodeName, 
+            null, 
+            null, 
+            null, 
+            transMgr, 
+            true
+        );
         con.commit();
         transMgr.commit();
 
@@ -211,7 +231,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         assertEquals(nodeName.value, loaded.getName().value);
         assertEquals(nodeName.displayValue, loaded.getName().displayValue);
-        assertEquals(0, loaded.getFlags().getFlagsBits(sysCtx));
+        assertEquals(NodeFlag.QIGNORE.flagValue, loaded.getFlags().getFlagsBits(sysCtx));
         assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), loaded.getNodeTypes(sysCtx));
 
     };
@@ -467,7 +487,15 @@ public class NodeDataDerbyTest extends DerbyBase
     public void testGetInstanceSatelliteCreate() throws Exception
     {
     	SerialGenerator serGen = new TestSerialGenerator();    			
-        NodeData nodeData = NodeData.getInstance(sysCtx, nodeName, new HashSet<Node.NodeType>(), null, serGen, null, true);
+        NodeData nodeData = NodeData.getInstance(
+            sysCtx, 
+            nodeName, 
+            null, 
+            null, 
+            serGen, 
+            null, 
+            true
+        );
    	
     	assertNotNull(nodeData);
     	
@@ -485,7 +513,15 @@ public class NodeDataDerbyTest extends DerbyBase
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
     	SerialGenerator serGen = new TestSerialGenerator();    			
-    	NodeData nodeData = NodeData.getInstance(sysCtx, nodeName, new HashSet<Node.NodeType>(), null, serGen, null, false);
+    	NodeData nodeData = NodeData.getInstance(
+    	    sysCtx, 
+    	    nodeName, 
+    	    null, 
+    	    null, 
+    	    serGen, 
+    	    null, 
+    	    false
+	    );
 
     	assertNull(nodeData);
     	

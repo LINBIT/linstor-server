@@ -1,10 +1,16 @@
 package com.linbit.drbdmanage;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,6 +45,7 @@ public class ResouceDataDerbyTest extends DerbyBase
 
     private java.util.UUID resUuid;
     private ObjectProtection objProt;
+    private long initFlags;
     private ResourceData res;
 
     private ResourceDataDerbyDriver driver;
@@ -64,7 +71,9 @@ public class ResouceDataDerbyTest extends DerbyBase
         resUuid = randomUUID();
         objProt = ObjectProtection.getInstance(sysCtx, transMgr, ObjectProtection.buildPath(nodeName, resName), true);
 
-        res = new ResourceData(resUuid, objProt, resDfn, node, nodeId, null, transMgr);
+        initFlags = RscFlags.CLEAN.flagValue;
+        
+        res = new ResourceData(resUuid, objProt, resDfn, node, nodeId, initFlags, null, transMgr);
         driver = (ResourceDataDerbyDriver) DrbdManage.getResourceDataDatabaseDriver(nodeName, resName);
     }
 
@@ -81,7 +90,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(nodeId.value, resultSet.getInt(NODE_ID));
-        assertEquals(0, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(RscFlags.CLEAN.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -91,7 +100,16 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        ResourceData.getInstance(sysCtx, resDfn, node, nodeId, null, transMgr, true);
+        ResourceData.getInstance(
+            sysCtx, 
+            resDfn, 
+            node, 
+            nodeId, 
+            null, 
+            new RscFlags[] { RscFlags.REMOVE },
+            transMgr,
+            true
+        );
 
         transMgr.commit();
 
@@ -103,7 +121,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(nodeId.value, resultSet.getInt(NODE_ID));
-        assertEquals(0, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(RscFlags.REMOVE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -126,19 +144,37 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertNotNull(loadedRes.getDefinition());
         assertEquals(resName, loadedRes.getDefinition().getName());
         assertEquals(nodeId, loadedRes.getNodeId());
-        assertEquals(0, loadedRes.getStateFlags().getFlagsBits(sysCtx));
+        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(sysCtx));
     }
 
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        ResourceData loadedRes = ResourceData.getInstance(sysCtx, resDfn, node, nodeId, null, transMgr, false);
+        ResourceData loadedRes = ResourceData.getInstance(
+            sysCtx,
+            resDfn, 
+            node, 
+            nodeId, 
+            null, 
+            null, 
+            transMgr, 
+            false
+        );
         assertNull(loadedRes);
 
         driver.create(con, res);
         DatabaseUtils.clearCaches();
 
-        loadedRes = ResourceData.getInstance(sysCtx, resDfn, node, nodeId, null, transMgr, false);
+        loadedRes = ResourceData.getInstance(
+            sysCtx, 
+            resDfn,
+            node, 
+            nodeId, 
+            null, 
+            null, 
+            transMgr, 
+            false
+        );
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
         assertEquals(resUuid, loadedRes.getUuid());
@@ -147,9 +183,30 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertNotNull(loadedRes.getDefinition());
         assertEquals(resName, loadedRes.getDefinition().getName());
         assertEquals(nodeId, loadedRes.getNodeId());
-        assertEquals(0, loadedRes.getStateFlags().getFlagsBits(sysCtx));
+        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(sysCtx));
     }
 
+    @Test
+    public void testLoadStatic() throws Exception
+    {
+        driver.create(con, res);
+        DatabaseUtils.clearCaches();
+
+        List<ResourceData> resList= ResourceDataDerbyDriver.loadResourceData(con, sysCtx, node, null, transMgr);
+        
+        assertNotNull(resList);
+        assertEquals(1, resList.size());
+        ResourceData resData = resList.get(0);
+        assertNotNull(resData);
+        assertEquals(resUuid, resData.getUuid());
+        assertNotNull(resData.getAssignedNode());
+        assertEquals(nodeName, resData.getAssignedNode().getName());
+        assertNotNull(resData.getDefinition());
+        assertEquals(resName, resData.getDefinition().getName());
+        assertEquals(nodeId, resData.getNodeId());
+        assertEquals(RscFlags.CLEAN.flagValue, resData.getStateFlags().getFlagsBits(sysCtx));
+    }
+    
     @Test
     public void testDelete() throws Exception
     {
@@ -184,103 +241,82 @@ public class ResouceDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    // TODO: gh - testEnsureExists()  - or delete that method 
-    
-//    @Test
-//    public void testVolumeMapDriverInsert() throws Exception
-//    {
-//        driver.create(con, res);
-//        MapDatabaseDriver<VolumeNumber, Volume> volumeMapDriver = driver.getVolumeMapDriver();
-//
-//        VolumeNumber volNr = new VolumeNumber(13);
-//        MinorNumber minor = new MinorNumber(42);
-//        long volSize = 9001;
-//        Set<VlmDfnFlags> initFlags = null;
-//        VolumeDefinitionData volDfnRef = VolumeDefinitionData.getInstance(
-//            resDfn,
-//            volNr,
-//            transMgr,
-//            null,
-//            sysCtx,
-//            minor ,
-//            volSize ,
-//            initFlags ,
-//            true
-//        );
-//
-//        java.util.UUID volUuid = randomUUID();
-//        String volBlock = "testBlock";
-//        VolumeData vol = new VolumeData(volUuid, res, volDfnRef, volBlock, null);
-//
-//        volumeMapDriver.insert(con, volNr, vol);
-//
-//        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_VOLUMES);
-//        ResultSet resultSet = stmt.executeQuery();
-//
-//        assertTrue(resultSet.next());
-//        assertEquals(volUuid, UuidUtils.asUUID(resultSet.getBytes(UUID)));
-//        assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
-//        assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
-//        assertEquals(volNr.value, resultSet.getInt(VLM_NR));
-//        assertEquals(volBlock, resultSet.getString(BLOCK_DEVICE_PATH));
-//        assertEquals(0, resultSet.getLong(VLM_FLAGS));
-//
-//        assertFalse(resultSet.next());
-//
-//        resultSet.close();
-//        stmt.close();
-//    }
-//
-//    @Test
-//    public void testVolumeMapDriverUpdate() throws Exception
-//    {
-//        driver.create(con, res);
-//        MapDatabaseDriver<VolumeNumber, Volume> volumeMapDriver = driver.getVolumeMapDriver();
-//
-//        VolumeNumber volNr = new VolumeNumber(13);
-//        MinorNumber minor = new MinorNumber(42);
-//        long volSize = 9001;
-//        Set<VlmDfnFlags> initFlags = null;
-//        VolumeDefinitionData volDfnRef = VolumeDefinitionData.getInstance(
-//            resDfn,
-//            volNr,
-//            transMgr,
-//            null,
-//            sysCtx,
-//            minor ,
-//            volSize ,
-//            initFlags ,
-//            true
-//        );
-//
-//        java.util.UUID volUuid = randomUUID();
-//        String volBlock = "testBlock";
-//        VolumeData vol = new VolumeData(volUuid, res, volDfnRef, volBlock, null);
-//
-//        volumeMapDriver.insert(con, volNr, vol);
-//
-//        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_VOLUMES);
-//        ResultSet resultSet = stmt.executeQuery();
-//
-//        assertTrue(resultSet.next());
-//        assertEquals(volUuid, UuidUtils.asUUID(resultSet.getBytes(UUID)));
-//        assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
-//        assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
-//        assertEquals(volNr.value, resultSet.getInt(VLM_NR));
-//        assertEquals(volBlock, resultSet.getString(BLOCK_DEVICE_PATH));
-//        assertEquals(0, resultSet.getLong(VLM_FLAGS));
-//
-//        assertFalse(resultSet.next());
-//
-//        resultSet.close();
-//        stmt.close();
-//    }
-//
-//    @Test
-//    public void testVolumeMapDriverDelete() throws Exception
-//    {
-//        MapDatabaseDriver<VolumeNumber, Volume> volumeMapDriver = driver.getVolumeMapDriver();
-//        fail("Test not implemented yet");
-//    }
+    @Test
+    public void testEnsureExists() throws Exception
+    {
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
+        ResultSet resultSet = stmt.executeQuery();
 
+        assertFalse(resultSet.next());
+        resultSet.close();
+        
+        ResourceDataDerbyDriver.ensureResExists(con, res, sysCtx);
+        
+        resultSet = stmt.executeQuery();
+
+        assertTrue(resultSet.next());
+        assertFalse(resultSet.next());
+        resultSet.close();
+        
+        ResourceDataDerbyDriver.ensureResExists(con, res, sysCtx);
+        
+        resultSet = stmt.executeQuery();
+
+        assertTrue(resultSet.next());
+        assertFalse(resultSet.next());
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testGetInstanceSatelliteCreate() throws Exception
+    {
+        ResourceData resData = ResourceData.getInstance(
+            sysCtx, 
+            resDfn,
+            node, 
+            nodeId,
+            null, 
+            new RscFlags[] { RscFlags.CLEAN }, 
+            null, 
+            true
+        );
+   
+        assertEquals(node, resData.getAssignedNode());
+        assertEquals(resDfn, resData.getDefinition());
+        assertEquals(nodeId, resData.getNodeId());
+        assertNotNull(resData.getObjProt());
+        assertNotNull(resData.getProps(sysCtx));
+        assertTrue(resData.getStateFlags().isSet(sysCtx, RscFlags.CLEAN));
+        assertNotNull(resData.getUuid());
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
+        ResultSet resultSet = stmt.executeQuery();
+        assertFalse(resultSet.next());
+        resultSet.close();
+        stmt.close();
+    }
+    
+    @Test
+    public void testGetInstanceSatelliteNoCreate() throws Exception
+    {
+        ResourceData resData = ResourceData.getInstance(
+            sysCtx, 
+            resDfn, 
+            node, 
+            nodeId, 
+            null, 
+            new RscFlags[] { RscFlags.CLEAN }, 
+            null, 
+            false
+        );
+   
+        assertNull(resData);
+        
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
+        ResultSet resultSet = stmt.executeQuery();
+        assertFalse(resultSet.next());
+        resultSet.close();
+        stmt.close();
+    }
 }

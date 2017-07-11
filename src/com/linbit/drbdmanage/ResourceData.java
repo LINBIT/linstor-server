@@ -4,7 +4,9 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -56,24 +58,15 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     private ResourceDataDatabaseDriver dbDriver;
 
-    /**
-     * Constructor used by getInstance
-     *
-     * @param accCtx
-     * @param resDfnRef
-     * @param nodeRef
-     * @param nodeIdRef
-     * @param srlGen
-     * @param transMgr
-     *
-     * @throws SQLException
-     * @throws AccessDeniedException
+    /*
+     * used by getInstance
      */
-    ResourceData(
+    private ResourceData(
         AccessContext accCtx,
         ResourceDefinition resDfnRef,
         Node nodeRef,
         NodeId nodeIdRef,
+        long initFlags,
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
@@ -93,21 +86,14 @@ public class ResourceData extends BaseTransactionObject implements Resource
             resDfnRef,
             nodeRef,
             nodeIdRef,
+            initFlags,
             srlGen,
             transMgr
         );
     }
 
     /**
-     * Constructor used by database drivers and tests
-     *
-     * @param objProt
-     * @param resDfnRef
-     * @param nodeRef
-     * @param nodeIdRef
-     * @param srlGen
-     * @param transMgr
-     * @throws SQLException
+     * used by database drivers and tests
      */
     ResourceData(
         UUID objIdRef,
@@ -115,6 +101,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         ResourceDefinition resDfnRef,
         Node nodeRef,
         NodeId nodeIdRef,
+        long initFlags,
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
@@ -129,10 +116,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         dbDriver = DrbdManage.getResourceDataDatabaseDriver(nodeRef.getName(), resDfnRef.getName());
 
-        volumeMap = new TreeMap<VolumeNumber, Volume>();
+        volumeMap = new TreeMap<>();
         resourceProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
         objProt = objProtRef;
-        flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence());
+        
+        flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence(), initFlags);
 
         transObjs = Arrays.asList(
             resourceDfn,
@@ -149,6 +137,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         Node node,
         NodeId nodeId,
         SerialGenerator srlGen,
+        RscFlags[] initFlags,
         TransactionMgr transMgr,
         boolean createIfNotExists
     )
@@ -174,7 +163,15 @@ public class ResourceData extends BaseTransactionObject implements Resource
         {
             if (createIfNotExists)
             {
-                resData = new ResourceData(accCtx, resDfn, node, nodeId, srlGen, transMgr);
+                resData = new ResourceData(
+                    accCtx, 
+                    resDfn, 
+                    node, 
+                    nodeId, 
+                    StateFlagsBits.getMask(initFlags), 
+                    srlGen, 
+                    transMgr
+                );
                 if (transMgr != null)
                 {
                     driver.create(transMgr.dbCon, resData);
@@ -272,9 +269,9 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     private static final class RscFlagsImpl extends StateFlagsBits<RscFlags>
     {
-        RscFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
+        RscFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef, long initMask)
         {
-            super(objProtRef, StateFlagsBits.getMask(RscFlags.values()), persistenceRef);
+            super(objProtRef, StateFlagsBits.getMask(RscFlags.values()), persistenceRef, initMask);
         }
     }
 }

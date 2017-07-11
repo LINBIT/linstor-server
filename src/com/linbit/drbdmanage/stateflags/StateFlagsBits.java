@@ -1,13 +1,16 @@
 package com.linbit.drbdmanage.stateflags;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 /**
  * State flags for drbdmanage core objects
@@ -215,9 +218,12 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     public static final long getMask(final Flags... flags)
     {
         long bitMask = 0L;
-        for (Flags curFlag : flags)
+        if (flags != null)
         {
-            bitMask |= curFlag.getFlagValue();
+            for (Flags curFlag : flags)
+            {
+                bitMask |= curFlag.getFlagValue();
+            }
         }
         return bitMask;
     }
@@ -236,5 +242,18 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         {
             commit();
         }
+    }
+
+    public static <E extends Flags> Set<E> restoreFlags(E[] values, long mask)
+    {
+        Set<E> restoredFlags = new HashSet<>();
+        for (E flag : values)
+        {
+            if ((mask & flag.getFlagValue()) == flag.getFlagValue())
+            {
+                restoredFlags.add(flag);
+            }
+        }
+        return restoredFlags;
     }
 }

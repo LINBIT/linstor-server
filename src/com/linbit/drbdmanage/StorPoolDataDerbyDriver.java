@@ -103,7 +103,14 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                     serGen,
                     node
                 );
-                cache(node, sp);
+                if (!cache(node, sp))
+                {
+                    sp = cacheGet(node, storPoolDfn);
+                }
+                else
+                {
+                    // restore references
+                }
             }
         }
         else
@@ -158,7 +165,14 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                         serGen,
                         node
                     );
-                    cache(node, storPoolData);
+                    if (!cache(node, storPoolData))
+                    {
+                        storPoolData = cacheGet(node, storPoolDef);
+                    }
+                    else
+                    {
+                        // restore references
+                    }
                 }
                 storPoolList.add(storPoolData);
             }
@@ -224,12 +238,20 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         stmt.close();
     }
 
-    private static void cache(Node node, StorPoolData storPoolData)
+    private synchronized static boolean cache(Node node, StorPoolData storPoolData)
     {
+        boolean ret = false;
         if (storPoolData != null)
         {
-            storPoolCache.put(getPk(node, storPoolData), storPoolData);
+            PrimaryKey pk = getPk(node, storPoolData);
+            boolean contains = storPoolCache.containsKey(pk);
+            if (!contains)
+            {
+                storPoolCache.put(pk, storPoolData);
+                ret = true;
+            }
         }
+        return ret;
     }
 
     private static StorPoolData cacheGet(Node node, StorPoolDefinition storPoolDfn)
@@ -242,7 +264,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         return storPoolCache.get(getPk(node, storPoolName));
     }
 
-    private static void cacheRemove(Node node, StorPoolName storPoolName)
+    private synchronized static void cacheRemove(Node node, StorPoolName storPoolName)
     {
         storPoolCache.remove(getPk(node, storPoolName));
     }
@@ -260,7 +282,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     /**
      * this method should only be called by tests or if you want a full-reload from the database
      */
-    static void clearCache()
+    static synchronized void clearCache()
     {
         storPoolCache.clear();
     }

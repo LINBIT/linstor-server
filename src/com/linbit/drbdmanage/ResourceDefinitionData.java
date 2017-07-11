@@ -2,6 +2,8 @@ package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -54,18 +56,10 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     private ResourceDefinitionDataDatabaseDriver dbDriver;
 
-    /**
-     * Constructor used by getInstance
-     *
-     * @param accCtx
-     * @param resName
-     * @param srlGen
-     * @param transMgr
-     *
-     * @throws SQLException
-     * @throws AccessDeniedException
+    /*
+     * used by getInstance
      */
-    ResourceDefinitionData(
+    private ResourceDefinitionData(
         AccessContext accCtx,
         ResourceName resName,
         SerialGenerator srlGen,
@@ -74,45 +68,44 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         throws SQLException, AccessDeniedException
     {
         this(
+            UUID.randomUUID(),
             ObjectProtection.getInstance(
                 accCtx,
                 transMgr,
                 ObjectProtection.buildPath(resName),
                 true
             ),
-            UUID.randomUUID(),
             resName,
             srlGen,
             transMgr
         );
     }
 
-    /**
-     * Constructor used by database drivers
-     *
-     * @param objProt
-     * @param resName
-     * @param serialGen
-     * @param transMgr
-     * @throws SQLException
+    /*
+     * used by database drivers
      */
     ResourceDefinitionData(
-        ObjectProtection objProtRef, UUID objIdRef, ResourceName resName, SerialGenerator serialGen, TransactionMgr transMgr
+        UUID objIdRef,
+        ObjectProtection objProtRef, 
+        ResourceName resName, 
+        SerialGenerator serialGen, 
+        TransactionMgr transMgr
     )
         throws SQLException
     {
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceName.class, resName);
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ObjectProtection.class, objProtRef);
         objId = objIdRef;
+        objProt = objProtRef;
         resourceName = resName;
 
         dbDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(resName);
 
-        connectionMap = new TreeMap<NodeName, Map<Integer, ConnectionDefinition>>();
-        volumeMap = new TreeMap<VolumeNumber, VolumeDefinition>();
-        resourceMap = new TreeMap<NodeName, Resource>();
+        connectionMap = new TreeMap<>();
+        volumeMap = new TreeMap<>();
+        resourceMap = new TreeMap<>();
+        
         rscDfnProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, serialGen);
-        objProt = objProtRef;
         flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence());
 
         transObjs = Arrays.asList(
@@ -178,6 +171,26 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public void addConnection(
+        AccessContext accCtx, 
+        NodeName nodeName, 
+        int conDfnNr,
+        ConnectionDefinition conDfn
+    )
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.USE);
+            
+        Map<Integer, ConnectionDefinition> nodeConnMap = connectionMap.get(nodeName);
+        if (nodeConnMap == null)
+        {
+            nodeConnMap = new HashMap<>();
+            connectionMap.put(nodeName, nodeConnMap);
+        }
+        nodeConnMap.put(conDfnNr, conDfn);        
+    }
+    
+    @Override
     public ConnectionDefinition getConnectionDfn(AccessContext accCtx, NodeName clNodeName, Integer connNr)
         throws AccessDeniedException
     {
@@ -191,6 +204,14 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         return connDfn;
     }
 
+    @Override
+    public void putVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn) 
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.USE);
+        volumeMap.put(volDfn.getVolumeNumber(accCtx), volDfn);
+    }
+    
     @Override
     public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
         throws AccessDeniedException

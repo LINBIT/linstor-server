@@ -139,11 +139,11 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         dbDriver = DrbdManage.getVolumeDefinitionDataDatabaseDriver(resDfnRef, volNr);
 
         volumeNr = volNr;
-        minorNr = new TransactionSimpleObject<MinorNumber>(
+        minorNr = new TransactionSimpleObject<>(
             minor,
             dbDriver.getMinorNumberDriver()
         );
-        volumeSize = new TransactionSimpleObject<Long>(
+        volumeSize = new TransactionSimpleObject<>(
             volSize,
             dbDriver.getVolumeSizeDriver()
         );

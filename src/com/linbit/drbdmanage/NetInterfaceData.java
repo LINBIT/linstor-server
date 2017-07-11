@@ -80,11 +80,11 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         dbDriver = DrbdManage.getNetInterfaceDataDatabaseDriver(node, netName);
 
-        niAddress = new TransactionSimpleObject<InetAddress>(
+        niAddress = new TransactionSimpleObject<>(
             addr,
             dbDriver.getNetInterfaceAddressDriver()
         );
-        niType = new TransactionSimpleObject<NetInterfaceType>(
+        niType = new TransactionSimpleObject<>(
             netType,
             dbDriver.getNetInterfaceTypeDriver()
         );
