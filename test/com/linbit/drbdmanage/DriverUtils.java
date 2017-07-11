@@ -3,7 +3,7 @@ package com.linbit.drbdmanage;
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
 import com.linbit.drbdmanage.security.DbAccessor;
 
-public class DatabaseUtils
+public class DriverUtils
 {
     public static void setDatabaseClasses(DbAccessor secureDbDriver, DatabaseDriver persistenceDbDriver)
     {

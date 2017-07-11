@@ -2,7 +2,6 @@ package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -62,6 +61,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     private ResourceDefinitionData(
         AccessContext accCtx,
         ResourceName resName,
+        long initialFlags,
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
@@ -76,6 +76,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                 true
             ),
             resName,
+            initialFlags,
             srlGen,
             transMgr
         );
@@ -88,6 +89,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         UUID objIdRef,
         ObjectProtection objProtRef, 
         ResourceName resName, 
+        long initialFlags,
         SerialGenerator serialGen, 
         TransactionMgr transMgr
     )
@@ -106,7 +108,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         resourceMap = new TreeMap<>();
         
         rscDfnProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, serialGen);
-        flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence());
+        flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence(), initialFlags);
 
         transObjs = Arrays.asList(
             flags,
@@ -118,6 +120,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     public static ResourceDefinitionData getInstance(
         AccessContext accCtx,
         ResourceName resName,
+        RscDfnFlags[] flags,
         SerialGenerator serialGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
@@ -136,7 +139,13 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         {
             if (createIfNotExists)
             {
-                resDfn = new ResourceDefinitionData(accCtx, resName, serialGen, transMgr);
+                resDfn = new ResourceDefinitionData(
+                    accCtx, 
+                    resName, 
+                    StateFlagsBits.getMask(flags),
+                    serialGen, 
+                    transMgr
+                );
                 if (transMgr != null)
                 {
                     driver.create(transMgr.dbCon, resDfn);
@@ -266,9 +275,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     private static final class RscDfnFlagsImpl extends StateFlagsBits<RscDfnFlags>
     {
-        RscDfnFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef)
+        RscDfnFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef, long initialFlags)
         {
-            super(objProtRef, StateFlagsBits.getMask(RscDfnFlags.values()), persistenceRef);
+            super(objProtRef, StateFlagsBits.getMask(RscDfnFlags.values()), persistenceRef, initialFlags);
         }
     }
 }

@@ -29,10 +29,6 @@ public class ResouceDataDerbyTest extends DerbyBase
     private static final String SELECT_ALL_RESOURCES =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + NODE_ID + ", " + RESOURCE_FLAGS +
         " FROM " + TBL_NODE_RESOURCE;
-    private static final String SELECT_ALL_VOLUMES =
-        " SELEFT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + VLM_NR + ", " +
-                     BLOCK_DEVICE_PATH + ", " + VLM_FLAGS +
-        " FROM " + TBL_VOLUMES;
 
     private final NodeName nodeName;
     private final ResourceName resName;
@@ -66,7 +62,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(con);
 
         node = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, true);
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, null, transMgr, true);
 
         resUuid = randomUUID();
         objProt = ObjectProtection.getInstance(sysCtx, transMgr, ObjectProtection.buildPath(nodeName, resName), true);
@@ -105,8 +101,8 @@ public class ResouceDataDerbyTest extends DerbyBase
             resDfn, 
             node, 
             nodeId, 
-            null, 
             new RscFlags[] { RscFlags.REMOVE },
+            null, 
             transMgr,
             true
         );
@@ -133,7 +129,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     {
         driver.create(con, res);
 
-        DatabaseUtils.clearCaches();
+        DriverUtils.clearCaches();
         
         ResourceData loadedRes = driver.load(con, node, null, transMgr);
 
@@ -163,7 +159,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertNull(loadedRes);
 
         driver.create(con, res);
-        DatabaseUtils.clearCaches();
+        DriverUtils.clearCaches();
 
         loadedRes = ResourceData.getInstance(
             sysCtx, 
@@ -190,7 +186,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     public void testLoadStatic() throws Exception
     {
         driver.create(con, res);
-        DatabaseUtils.clearCaches();
+        DriverUtils.clearCaches();
 
         List<ResourceData> resList= ResourceDataDerbyDriver.loadResourceData(con, sysCtx, node, null, transMgr);
         
@@ -276,8 +272,8 @@ public class ResouceDataDerbyTest extends DerbyBase
             resDfn,
             node, 
             nodeId,
-            null, 
             new RscFlags[] { RscFlags.CLEAN }, 
+            null, 
             null, 
             true
         );
@@ -305,8 +301,8 @@ public class ResouceDataDerbyTest extends DerbyBase
             resDfn, 
             node, 
             nodeId, 
-            null, 
             new RscFlags[] { RscFlags.CLEAN }, 
+            null, 
             null, 
             false
         );

@@ -136,8 +136,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
         ResourceDefinition resDfn,
         Node node,
         NodeId nodeId,
-        SerialGenerator srlGen,
         RscFlags[] initFlags,
+        SerialGenerator srlGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
     )

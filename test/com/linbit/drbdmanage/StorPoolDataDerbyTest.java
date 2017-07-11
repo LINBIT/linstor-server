@@ -117,7 +117,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertNull(loadedStorPool);
 
         driver.create(con, storPool);
-        DatabaseUtils.clearCaches();
+        DriverUtils.clearCaches();
 
         loadedStorPool = driver.load(con, transMgr, null);
         assertEquals(uuid, loadedStorPool.getUuid());
@@ -145,7 +145,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertNull(loadedStorPool);
 
         driver.create(con, storPool);
-        DatabaseUtils.clearCaches();
+        DriverUtils.clearCaches();
         loadedStorPool = StorPoolData.getInstance(
             sysCtx,
             spdd,

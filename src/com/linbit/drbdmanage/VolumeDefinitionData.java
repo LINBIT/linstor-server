@@ -1,5 +1,9 @@
 package com.linbit.drbdmanage;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.UUID;
+
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
 import com.linbit.TransactionMgr;
@@ -17,13 +21,6 @@ import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
-
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
@@ -67,9 +64,9 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         VolumeNumber volNr,
         MinorNumber minor,
         long volSize,
-        TransactionMgr transMgr,
+        long initFlags,
         SerialGenerator srlGen,
-        Set<VlmDfnFlags> initFlags
+        TransactionMgr transMgr
     )
         throws MdException, AccessDeniedException, SQLException
     {
@@ -80,9 +77,9 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             volNr,
             minor,
             volSize,
-            transMgr,
+            initFlags,
             srlGen,
-            initFlags
+            transMgr
         );
     }
 
@@ -96,9 +93,9 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         VolumeNumber volNr,
         MinorNumber minor,
         long volSize,
-        TransactionMgr transMgr,
+        long initFlags,
         SerialGenerator srlGen,
-        Set<VlmDfnFlags> initFlags
+        TransactionMgr transMgr
     )
         throws MdException, AccessDeniedException, SQLException
     {
@@ -150,11 +147,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
         vlmDfnProps = SerialPropsContainer.getInstance(dbDriver.getPropsDriver(), transMgr, srlGen);
 
-        if (initFlags == null)
-        {
-            initFlags = new HashSet<>();
-        }
-
         flags = new VlmDfnFlagsImpl(
             resDfnRef.getObjProt(),
             dbDriver.getStateFlagsPersistence(),
@@ -171,14 +163,14 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
     public static VolumeDefinitionData getInstance(
+        AccessContext accCtx,
         ResourceDefinition resDfn,
         VolumeNumber volNr,
-        TransactionMgr transMgr,
-        SerialGenerator serialGen,
-        AccessContext accCtx,
         MinorNumber minor,
         long volSize,
-        Set<VlmDfnFlags> initFlags,
+        VlmDfnFlags[] initFlags,
+        SerialGenerator serialGen,
+        TransactionMgr transMgr,
         boolean createIfNotExists
     )
         throws SQLException, AccessDeniedException, MdException
@@ -201,9 +193,9 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
                     volNr,
                     minor,
                     volSize,
-                    transMgr,
+                    StateFlagsBits.getMask(initFlags),
                     serialGen,
-                    initFlags
+                    transMgr
                 );
                 if (transMgr != null)
                 {
@@ -291,14 +283,14 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         VlmDfnFlagsImpl(
             ObjectProtection objProtRef,
             StateFlagsPersistence persistenceRef,
-            Set<VlmDfnFlags> flags
+            long initFlags
         )
         {
             super(
                 objProtRef,
                 StateFlagsBits.getMask(VlmDfnFlags.values()),
                 persistenceRef,
-                StateFlagsBits.getMask(flags.toArray(new VlmDfnFlags[0]))
+                initFlags
             );
         }
     }

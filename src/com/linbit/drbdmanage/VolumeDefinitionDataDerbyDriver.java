@@ -5,17 +5,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Set;
 
 import com.linbit.ImplementationError;
 import com.linbit.ObjectDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
-import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
@@ -142,17 +139,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         VolumeDefinitionData ret = null;
         try
         {
-            long lFlags = resultSet.getLong(VD_FLAGS);
-            Set<VlmDfnFlags> flags = new HashSet<>();
-
-            for (VlmDfnFlags flag : VlmDfnFlags.values())
-            {
-                if ((lFlags & flag.flagValue) == flag.flagValue)
-                {
-                    flags.add(flag);
-                }
-            }
-
             ret = new VolumeDefinitionData(
                 UuidUtils.asUUID(resultSet.getBytes(VD_UUID)),
                 accCtx, // volumeDefinition does not have objProt, but require access to their resource's objProt
@@ -160,9 +146,9 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 volNr,
                 new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
                 resultSet.getLong(VD_SIZE),
-                transMgr,
+                resultSet.getLong(VD_FLAGS),
                 serialGen,
-                flags
+                transMgr
             );
             if (!cache(ret, accCtx))
             {

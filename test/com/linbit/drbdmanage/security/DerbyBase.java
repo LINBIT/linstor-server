@@ -15,7 +15,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 import com.linbit.InvalidNameException;
-import com.linbit.drbdmanage.DatabaseUtils;
+import com.linbit.drbdmanage.DriverUtils;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.NodeId;
@@ -34,6 +34,11 @@ import com.linbit.utils.UuidUtils;
 
 public abstract class DerbyBase implements DerbyConstants
 {
+    protected static final String SELECT_PROPS_BY_INSTANCE = 
+        " SELECT " + PROPS_INSTANCE + ", " + PROP_KEY + ", " + PROP_VALUE +
+        " FROM " + TBL_PROPS_CONTAINERS + 
+        " WHERE " + PROPS_INSTANCE + " = ?";
+    
     private static final String DB_URL = "jdbc:derby:memory:testDB";
     private static final String DB_USER = "drbdmanage";
     private static final String DB_PASSWORD = "linbit";
@@ -132,9 +137,9 @@ public abstract class DerbyBase implements DerbyConstants
         truncateTables();
         insertDefaults();
         ObjectProtectionDerbyDriver.clearCache();
-        DatabaseUtils.clearCaches();
+        DriverUtils.clearCaches();
 
-        DatabaseUtils.setDatabaseClasses(
+        DriverUtils.setDatabaseClasses(
             secureDbDriver,
             persistenceDbDriver
         );
@@ -289,6 +294,13 @@ public abstract class DerbyBase implements DerbyConstants
         return java.util.UUID.randomUUID();
     }
 
+    protected static PreparedStatement selectProps(Connection con, String instanceName) throws SQLException
+    {
+        PreparedStatement stmt = con.prepareStatement(SELECT_PROPS_BY_INSTANCE);
+        stmt.setString(1, instanceName.toUpperCase());
+        return stmt;
+    }
+    
     protected static void insertObjProt(Connection dbCon, String objPath, AccessContext accCtx) throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_SEC_OBJECT_PROTECTION);

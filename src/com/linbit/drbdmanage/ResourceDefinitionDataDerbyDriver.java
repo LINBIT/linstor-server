@@ -35,7 +35,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private static final String RD_FLAGS = DerbyConstants.RESOURCE_FLAGS;
 
     private static final String RD_SELECT =
-        " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME +
+        " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " + RD_FLAGS +
         " FROM " + TBL_RES_DEF +
         " WHERE " + RD_NAME + " = ?";
     private static final String RD_INSERT =
@@ -125,6 +125,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                         UuidUtils.asUUID(resultSet.getBytes(RD_UUID)),
                         objProt,
                         resName,
+                        resultSet.getLong(RD_FLAGS),
                         serialGen,
                         transMgr
                     );

@@ -427,6 +427,9 @@ public final class ObjectProtection extends BaseTransactionObject
         }
     }
 
+    /**
+     * ObjProt-Path for Resources
+     */
     public static String buildPath(NodeName nodeName, ResourceName resDefName)
     {
         return PATH_RESOURCES +
@@ -434,14 +437,16 @@ public final class ObjectProtection extends BaseTransactionObject
             resDefName.value;
     }
 
+    /**
+     * ObjProt-Path for ResourceDefinitions
+     */
     public static String buildPath(ResourceName resDfnName)
     {
         return PATH_RESOURCE_DEFINITIONS + resDfnName.value;
     }
 
     /**
-     * @param controller
-     * @param subPath
+     * ObjProt-Path for Controller
      */
     public static String buildPath(Controller controller, String subPath)
     {
@@ -449,14 +454,16 @@ public final class ObjectProtection extends BaseTransactionObject
     }
 
     /**
-     * @param satellite
-     * @param subPath
+     * ObjProt-Path for satellite
      */
     public static String buildPath(Satellite satellite, String subPath)
     {
         return PATH_SATELLITE + subPath;
     }
 
+    /**
+     * ObjProt-Path for NetInterfaces
+     */
     public static String buildPath(NodeName nodeName, NetInterfaceName netName)
     {
         return PATH_NET_INTERFACES +
@@ -464,21 +471,33 @@ public final class ObjectProtection extends BaseTransactionObject
             netName.value;
     }
 
+    /**
+     * ObjProt-Path for Nodes
+     */
     public static String buildPath(NodeName nodeName)
     {
         return PATH_NODES + nodeName.value;
     }
 
+    /**
+     * ObjProt-Path for StorPoolDefinitions
+     */
     public static String buildPathSPD(StorPoolName storPoolName)
     {
         return PATH_STOR_POOL_DEFINITIONS + storPoolName.value;
     }
 
+    /**
+     * ObjProt-Path for StorPools
+     */
     public static String buildPathSP(StorPoolName storPoolName)
     {
         return PATH_STOR_POOLS + storPoolName.value;
     }
 
+    /**
+     * ObjProt-Path for ConnectionDefinitions
+     */
     public static String buildPath(ResourceName resName, NodeName sourceName, NodeName targetName)
     {
         NodeName source;

@@ -163,7 +163,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(con, niData);
-        DatabaseUtils.clearCaches();        
+        DriverUtils.clearCaches();        
 
         NetInterfaceData netData = dbDriver.load(con);
 
@@ -181,7 +181,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(con, niData);
-        DatabaseUtils.clearCaches();
+        DriverUtils.clearCaches();
 
         NetInterfaceData netData = dbDriver.load(con);
 
@@ -199,7 +199,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(con, niData);
-        DatabaseUtils.clearCaches();
+        DriverUtils.clearCaches();
 
         NetInterfaceData netData1 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, transMgr, niInterfaceType, false);
 

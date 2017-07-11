@@ -337,7 +337,7 @@ public class NodeDataDerbyTest extends DerbyBase
         insertProp(con, storPoolPropsInstance, storPoolTestKey, storPoolTestValue);
         con.commit();
 
-        DatabaseUtils.clearCaches(); // just to be sure
+        DriverUtils.clearCaches(); // just to be sure
         
         NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
 
