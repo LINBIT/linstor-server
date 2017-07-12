@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -12,6 +13,7 @@ import org.junit.Test;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.storage.LvmDriver;
@@ -54,11 +56,11 @@ public class StorPoolDataDerbyTest extends DerbyBase
         node = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, true);
         spdd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, true);
 
-        driver = DrbdManage.getStorPoolDataDatabaseDriver(node, spdd);
+        driver = new StorPoolDataDerbyDriver(node, spdd);
 
         uuid = randomUUID();
         objProt = ObjectProtection.getInstance(sysCtx, transMgr, ObjectProtection.buildPathSP(spName), true);
-        storPool = new StorPoolData(uuid, objProt, spdd, transMgr, null, LvmDriver.class.getSimpleName(), null, node);
+        storPool = new StorPoolData(uuid, objProt, node, spdd, null, LvmDriver.class.getSimpleName(), null, transMgr);
     }
 
     @Test
@@ -84,12 +86,11 @@ public class StorPoolDataDerbyTest extends DerbyBase
     {
         StorPool pool = StorPoolData.getInstance(
             sysCtx,
+            node,
             spdd,
-            transMgr,
-            null, // storageDriver
             LvmDriver.class.getSimpleName(),
             null, // serialGen
-            node,
+            transMgr,
             true // create
         );
         con.commit();
@@ -129,16 +130,46 @@ public class StorPoolDataDerbyTest extends DerbyBase
     }
 
     @Test
+    public void testLoadStatic() throws Exception
+    {
+        driver.create(con, storPool);
+        DriverUtils.clearCaches();
+
+        List<StorPoolData> storPools = StorPoolDataDerbyDriver.loadStorPools(con, node, transMgr, null);
+
+        assertNotNull(storPools);
+        assertEquals(1, storPools.size());
+        StorPoolData storPoolData = storPools.get(0);
+        assertNotNull(storPoolData);
+        assertNotNull(storPoolData.getConfiguration(sysCtx));
+        StorPoolDefinition spDfn = storPoolData.getDefinition(sysCtx);
+        assertNotNull(spDfn);
+        assertEquals(spName, spDfn.getName());
+        assertNull(storPoolData.getDriver(sysCtx));
+        assertEquals(LvmDriver.class.getSimpleName(), storPoolData.getDriverName());
+        assertEquals(spName, storPoolData.getName());
+    }
+
+    @Test
+    public void testLoadProps() throws Exception
+    {
+        driver.create(con, storPool);
+        String testKey = "TestKey";
+        String testValue = "TestValue";
+        insertProp(con, PropsContainer.buildPath(spName, nodeName), testKey, testValue);
+
+    }
+
+    @Test
     public void testLoadGetInstance() throws Exception
     {
         StorPoolData loadedStorPool = StorPoolData.getInstance(
             sysCtx,
+            node,
             spdd,
-            transMgr,
-            null,
             LvmDriver.class.getSimpleName(),
             null,
-            node,
+            transMgr,
             false
         );
 
@@ -148,12 +179,11 @@ public class StorPoolDataDerbyTest extends DerbyBase
         DriverUtils.clearCaches();
         loadedStorPool = StorPoolData.getInstance(
             sysCtx,
+            node,
             spdd,
-            transMgr,
-            null,
             LvmDriver.class.getSimpleName(),
             null,
-            node,
+            transMgr,
             false
         );
 
@@ -170,12 +200,11 @@ public class StorPoolDataDerbyTest extends DerbyBase
     {
         StorPoolData.getInstance(
             sysCtx,
+            node,
             spdd,
-            transMgr,
-            null, // storageDriver
             LvmDriver.class.getSimpleName(),
             null, // serialGen
-            node,
+            transMgr,
             true // create
         );
         con.commit();
@@ -196,4 +225,85 @@ public class StorPoolDataDerbyTest extends DerbyBase
         resultSet.close();
         stmt.close();
     }
+
+    @Test
+    public void testEnsureExist() throws Exception
+    {
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
+        ResultSet resultSet = stmt.executeQuery();
+        assertFalse(resultSet.next());
+        resultSet.close();
+
+        driver.ensureEntryExists(con, storPool);
+
+        resultSet = stmt.executeQuery();
+        assertTrue(resultSet.next());
+        resultSet.close();
+
+        driver.ensureEntryExists(con, storPool);
+
+        resultSet = stmt.executeQuery();
+        assertTrue(resultSet.next());
+        resultSet.close();
+
+        stmt.close();
+    }
+
+    @Test
+    public void testGetInstanceSatelliteCreate() throws Exception
+    {
+        DriverUtils.satelliteMode();
+
+        StorPoolData storPoolData = StorPoolData.getInstance(
+            sysCtx,
+            node,
+            spdd,
+            LvmDriver.class.getSimpleName(),
+            null,
+            null,
+            true
+        );
+
+        assertNotNull(storPoolData);
+
+        assertNotNull(storPoolData.getConfiguration(sysCtx));
+        assertEquals(spdd, storPoolData.getDefinition(sysCtx));
+        assertNotNull(storPoolData.getDriver(sysCtx));
+        assertTrue(storPoolData.getDriver(sysCtx) instanceof LvmDriver);
+        assertEquals(LvmDriver.class.getSimpleName(), storPoolData.getDriverName());
+        assertEquals(spName, storPoolData.getName());
+        assertNotNull(storPoolData.getObjProt());
+        assertNotNull(storPoolData.getUuid());
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
+        ResultSet resultSet = stmt.executeQuery();
+        assertFalse(resultSet.next());
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testGetInstanceSatelliteNoCreate() throws Exception
+    {
+        DriverUtils.satelliteMode();
+
+        StorPoolData storPoolData = StorPoolData.getInstance(
+            sysCtx,
+            node,
+            spdd,
+            LvmDriver.class.getSimpleName(),
+            null,
+            null,
+            false
+        );
+
+        assertNull(storPoolData);
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
+        ResultSet resultSet = stmt.executeQuery();
+        assertFalse(resultSet.next());
+        resultSet.close();
+        stmt.close();
+    }
+
 }

@@ -48,11 +48,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
      * used by getInstance
      */
     private VolumeData(
-        Resource resRef, 
-        VolumeDefinition volDfn, 
+        Resource resRef,
+        VolumeDefinition volDfn,
         String blockDevicePathRef,
         long initFlags,
-        SerialGenerator srlGen, 
+        SerialGenerator srlGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -76,7 +76,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         Resource resRef,
         VolumeDefinition volDfnRef,
         String blockDevicePathRef,
-        long initFlags, 
+        long initFlags,
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
@@ -109,11 +109,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
     public static VolumeData getInstance(
         Resource resRef,
         VolumeDefinition volDfn,
-        TransactionMgr transMgr,
         String blockDevicePathRef,
         VlmFlags[] flags,
-        boolean createIfNotExists,
-        SerialGenerator serialGen
+        SerialGenerator serialGen,
+        TransactionMgr transMgr,
+        boolean createIfNotExists
     )
         throws SQLException
     {
@@ -128,7 +128,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         if (vol == null && createIfNotExists)
         {
             long initFlags = StateFlagsBits.getMask(flags);
-            
+
             vol = new VolumeData(resRef, volDfn, blockDevicePathRef, initFlags, serialGen, transMgr);
             if (transMgr != null)
             {
@@ -184,14 +184,14 @@ public class VolumeData extends BaseTransactionObject implements Volume
     private static final class VlmFlagsImpl extends StateFlagsBits<VlmFlags>
     {
         VlmFlagsImpl(
-            ObjectProtection objProtRef, 
-            StateFlagsPersistence persistenceRef, 
+            ObjectProtection objProtRef,
+            StateFlagsPersistence persistenceRef,
             long initFlags
         )
         {
             super(
-                objProtRef, 
-                StateFlagsBits.getMask(VlmFlags.values()), 
+                objProtRef,
+                StateFlagsBits.getMask(VlmFlags.values()),
                 persistenceRef,
                 initFlags
             );

@@ -68,9 +68,9 @@ public class ResouceDataDerbyTest extends DerbyBase
         objProt = ObjectProtection.getInstance(sysCtx, transMgr, ObjectProtection.buildPath(nodeName, resName), true);
 
         initFlags = RscFlags.CLEAN.flagValue;
-        
+
         res = new ResourceData(resUuid, objProt, resDfn, node, nodeId, initFlags, null, transMgr);
-        driver = (ResourceDataDerbyDriver) DrbdManage.getResourceDataDatabaseDriver(nodeName, resName);
+        driver = new ResourceDataDerbyDriver(sysCtx, nodeName, resName);
     }
 
     @Test
@@ -97,12 +97,12 @@ public class ResouceDataDerbyTest extends DerbyBase
     public void testPersistGetInstance() throws Exception
     {
         ResourceData.getInstance(
-            sysCtx, 
-            resDfn, 
-            node, 
-            nodeId, 
+            sysCtx,
+            resDfn,
+            node,
+            nodeId,
             new RscFlags[] { RscFlags.REMOVE },
-            null, 
+            null,
             transMgr,
             true
         );
@@ -130,7 +130,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         driver.create(con, res);
 
         DriverUtils.clearCaches();
-        
+
         ResourceData loadedRes = driver.load(con, node, null, transMgr);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
@@ -148,12 +148,12 @@ public class ResouceDataDerbyTest extends DerbyBase
     {
         ResourceData loadedRes = ResourceData.getInstance(
             sysCtx,
-            resDfn, 
-            node, 
-            nodeId, 
-            null, 
-            null, 
-            transMgr, 
+            resDfn,
+            node,
+            nodeId,
+            null,
+            null,
+            transMgr,
             false
         );
         assertNull(loadedRes);
@@ -162,13 +162,13 @@ public class ResouceDataDerbyTest extends DerbyBase
         DriverUtils.clearCaches();
 
         loadedRes = ResourceData.getInstance(
-            sysCtx, 
+            sysCtx,
             resDfn,
-            node, 
-            nodeId, 
-            null, 
-            null, 
-            transMgr, 
+            node,
+            nodeId,
+            null,
+            null,
+            transMgr,
             false
         );
 
@@ -189,7 +189,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         DriverUtils.clearCaches();
 
         List<ResourceData> resList= ResourceDataDerbyDriver.loadResourceData(con, sysCtx, node, null, transMgr);
-        
+
         assertNotNull(resList);
         assertEquals(1, resList.size());
         ResourceData resData = resList.get(0);
@@ -202,7 +202,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertEquals(nodeId, resData.getNodeId());
         assertEquals(RscFlags.CLEAN.flagValue, resData.getStateFlags().getFlagsBits(sysCtx));
     }
-    
+
     @Test
     public void testDelete() throws Exception
     {
@@ -245,17 +245,17 @@ public class ResouceDataDerbyTest extends DerbyBase
 
         assertFalse(resultSet.next());
         resultSet.close();
-        
+
         ResourceDataDerbyDriver.ensureResExists(con, res, sysCtx);
-        
+
         resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
         assertFalse(resultSet.next());
         resultSet.close();
-        
+
         ResourceDataDerbyDriver.ensureResExists(con, res, sysCtx);
-        
+
         resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -267,17 +267,19 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
+        DriverUtils.satelliteMode();
+
         ResourceData resData = ResourceData.getInstance(
-            sysCtx, 
+            sysCtx,
             resDfn,
-            node, 
+            node,
             nodeId,
-            new RscFlags[] { RscFlags.CLEAN }, 
-            null, 
-            null, 
+            new RscFlags[] { RscFlags.CLEAN },
+            null,
+            null,
             true
         );
-   
+
         assertEquals(node, resData.getAssignedNode());
         assertEquals(resDfn, resData.getDefinition());
         assertEquals(nodeId, resData.getNodeId());
@@ -292,23 +294,25 @@ public class ResouceDataDerbyTest extends DerbyBase
         resultSet.close();
         stmt.close();
     }
-    
+
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
+        DriverUtils.satelliteMode();
+
         ResourceData resData = ResourceData.getInstance(
-            sysCtx, 
-            resDfn, 
-            node, 
-            nodeId, 
-            new RscFlags[] { RscFlags.CLEAN }, 
-            null, 
-            null, 
+            sysCtx,
+            resDfn,
+            node,
+            nodeId,
+            new RscFlags[] { RscFlags.CLEAN },
+            null,
+            null,
             false
         );
-   
+
         assertNull(resData);
-        
+
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());

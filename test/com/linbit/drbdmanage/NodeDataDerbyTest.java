@@ -85,7 +85,7 @@ public class NodeDataDerbyTest extends DerbyBase
         NetInterfaceDataDerbyDriver.clearCache();
         ResourceDataDerbyDriver.clearCache();
 
-        dbDriver = DrbdManage.getNodeDataDatabaseDriver(nodeName);
+        dbDriver = new NodeDataDerbyDriver(sysCtx, nodeName);
         con = getConnection();
         transMgr = new TransactionMgr(con);
 
@@ -94,12 +94,12 @@ public class NodeDataDerbyTest extends DerbyBase
         initialFlags = NodeFlag.QIGNORE.flagValue;
         initialTypes = NodeType.AUXILIARY.getFlagValue();
         node = new NodeData(
-            uuid, 
-            objProt, 
-            nodeName, 
-            initialTypes, 
-            initialFlags, 
-            null, 
+            uuid,
+            objProt,
+            nodeName,
+            initialTypes,
+            initialFlags,
+            null,
             transMgr
         );
     }
@@ -130,12 +130,12 @@ public class NodeDataDerbyTest extends DerbyBase
     public void testPersistGetInstance() throws Exception
     {
         NodeData.getInstance(
-            sysCtx, 
-            nodeName, 
-            null, 
-            null, 
-            null, 
-            transMgr, 
+            sysCtx,
+            nodeName,
+            null,
+            null,
+            null,
+            transMgr,
             true
         );
         con.commit();
@@ -226,7 +226,7 @@ public class NodeDataDerbyTest extends DerbyBase
         dbDriver.create(con, node);
 
         NodeDataDerbyDriver.clearCache();
-        
+
         NodeData loaded = dbDriver.load(con, null, transMgr);
 
         assertEquals(nodeName.value, loaded.getName().value);
@@ -338,7 +338,7 @@ public class NodeDataDerbyTest extends DerbyBase
         con.commit();
 
         DriverUtils.clearCaches(); // just to be sure
-        
+
         NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
 
         assertNotNull(loadedNode);
@@ -486,19 +486,21 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
-    	SerialGenerator serGen = new TestSerialGenerator();    			
+        DriverUtils.satelliteMode();
+
+    	SerialGenerator serGen = new TestSerialGenerator();
         NodeData nodeData = NodeData.getInstance(
-            sysCtx, 
-            nodeName, 
-            null, 
-            null, 
-            serGen, 
-            null, 
+            sysCtx,
+            nodeName,
+            null,
+            null,
+            serGen,
+            null,
             true
         );
-   	
+
     	assertNotNull(nodeData);
-    	
+
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());
@@ -507,24 +509,26 @@ public class NodeDataDerbyTest extends DerbyBase
         stmt.close();
 
     }
-    
-    
+
+
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
-    	SerialGenerator serGen = new TestSerialGenerator();    			
+        DriverUtils.satelliteMode();
+
+    	SerialGenerator serGen = new TestSerialGenerator();
     	NodeData nodeData = NodeData.getInstance(
-    	    sysCtx, 
-    	    nodeName, 
-    	    null, 
-    	    null, 
-    	    serGen, 
-    	    null, 
+    	    sysCtx,
+    	    nodeName,
+    	    null,
+    	    null,
+    	    serGen,
+    	    null,
     	    false
 	    );
 
     	assertNull(nodeData);
-    	
+
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());

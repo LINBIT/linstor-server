@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.util.Hashtable;
 import java.util.UUID;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
@@ -33,9 +35,10 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         " DELETE FROM " + TBL_SPD +
         " WHERE " + SPD_NAME + " = ?";
 
-    private final StorPoolName spddName;
-
     private static Hashtable<PrimaryKey, StorPoolDefinitionData> spDfnCache = new Hashtable<>();
+
+    private StorPoolName spddName;
+    private boolean spddNameLoaded = false;
 
     public StorPoolDefinitionDataDerbyDriver(StorPoolName nameRef)
     {
@@ -67,6 +70,24 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         {
             if (resultSet.next())
             {
+                if (!spddNameLoaded)
+                {
+                    try
+                    {
+                        spddName = new StorPoolName(resultSet.getString(SPD_DSP_NAME));
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        resultSet.close();
+                        stmt.close();
+                        throw new ImplementationError(
+                            "The display name of a valid StorPoolName could not be restored",
+                            invalidNameExc
+                        );
+                    }
+                }
+
+
                 UUID id = UuidUtils.asUUID(resultSet.getBytes(SPD_UUID));
 
                 ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(

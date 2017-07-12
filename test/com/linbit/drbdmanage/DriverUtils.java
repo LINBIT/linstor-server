@@ -1,7 +1,9 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.NoOpDriver;
 import com.linbit.drbdmanage.security.DbAccessor;
+import com.linbit.drbdmanage.security.NoOpSecurityDriver;
 
 public class DriverUtils
 {
@@ -10,7 +12,7 @@ public class DriverUtils
         DrbdManage.securityDbDriver = secureDbDriver;
         DrbdManage.persistenceDbDriver = persistenceDbDriver;
     }
-    
+
     public static void clearCaches()
     {
         ConnectionDefinitionDataDerbyDriver.clearCache();
@@ -22,5 +24,11 @@ public class DriverUtils
         StorPoolDefinitionDataDerbyDriver.clearCache();
         VolumeDataDerbyDriver.clearCache();
         VolumeDefinitionDataDerbyDriver.clearCache();
+    }
+
+    public static void satelliteMode()
+    {
+        DrbdManage.securityDbDriver = new NoOpSecurityDriver();
+        DrbdManage.persistenceDbDriver = new NoOpDriver();
     }
 }

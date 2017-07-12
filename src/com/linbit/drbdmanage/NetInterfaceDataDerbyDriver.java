@@ -41,7 +41,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                       INET_ADDRESS + ", " + INET_TYPE +
         " FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ?";
-    private static final String NNI_SELECT_BY_NODE_AND_NET = 
+    private static final String NNI_SELECT_BY_NODE_AND_NET =
         " SELECT "  + NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
                       INET_ADDRESS + ", " + INET_TYPE +
         " FROM " + TBL_NODE_NET +
@@ -67,7 +67,6 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         "       " + NET_NAME  + " = ?";
 
     private final Node node;
-    private final NetInterfaceName netName;
 
     private final ObjectDatabaseDriver<InetAddress> netIfAddressDriver;
     private final ObjectDatabaseDriver<NetInterfaceType> netIfTypeDriver;
@@ -75,6 +74,9 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     private final AccessContext dbCtx;
 
     private static Hashtable<PrimaryKey, NetInterfaceData> niCache = new Hashtable<>();
+
+    private NetInterfaceName netName;
+    private boolean netNameLoaded = false;
 
     public NetInterfaceDataDerbyDriver(AccessContext ctx, Node nodeRef, NetInterfaceName nameRef)
     {
@@ -99,6 +101,24 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         {
             if (resultSet.next())
             {
+                if (!netNameLoaded)
+                {
+                    try
+                    {
+                        netName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
+                        netNameLoaded = true;
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        resultSet.close();
+                        stmt.close();
+                        throw new ImplementationError(
+                            "The display name of a valid NetInterfaceName could not be restored",
+                            invalidNameExc
+                        );
+                    }
+                }
+
                 netIfData = restoreInstance(con, node, netName, resultSet);
             }
         }

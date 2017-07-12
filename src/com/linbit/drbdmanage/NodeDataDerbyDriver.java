@@ -8,6 +8,7 @@ import java.util.Hashtable;
 import java.util.List;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
@@ -56,11 +57,13 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 
     private static final Hashtable<PrimaryKey, NodeData> nodeCache = new Hashtable<>();
     private final AccessContext dbCtx;
-    private final NodeName nodeName;
 
     private final StateFlagsPersistence flagDriver;
     private final StateFlagsPersistence typeFlagDriver;
     private final PropsConDatabaseDriver propsDriver;
+
+    private NodeName nodeName;
+    private boolean nodeNameLoaded = false;
 
     public NodeDataDerbyDriver(AccessContext privCtx, NodeName nodeNameRef)
     {
@@ -112,6 +115,23 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             {
                 if (resultSet.next())
                 {
+                    if (!nodeNameLoaded)
+                    {
+                        try
+                        {
+                            nodeName = new NodeName(resultSet.getString(NODE_DSP_NAME));
+                            nodeNameLoaded = true;
+                        }
+                        catch (InvalidNameException invalidNameExc)
+                        {
+                            resultSet.close();
+                            stmt.close();
+                            throw new ImplementationError(
+                                "The display name of a valid NodeName could not be restored",
+                                invalidNameExc
+                            );
+                        }
+                    }
                     ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
                         ObjectProtection.buildPath(nodeName)
                     );
@@ -135,14 +155,14 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                         {
                             node.addNetInterface(dbCtx, netIf);
                         }
-    
+
                         // restore resources
                         List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceData(con, dbCtx, node, serialGen, transMgr);
                         for (ResourceData res : resList)
                         {
                             node.addResource(dbCtx, res);
                         }
-    
+
                         // restore storPools
                         List<StorPoolData> storPoolList = StorPoolDataDerbyDriver.loadStorPools(con, node, transMgr, serialGen);
                         for (StorPoolData storPool : storPoolList)

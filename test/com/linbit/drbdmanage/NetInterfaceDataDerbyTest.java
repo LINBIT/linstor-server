@@ -163,7 +163,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(con, niData);
-        DriverUtils.clearCaches();        
+        DriverUtils.clearCaches();
 
         NetInterfaceData netData = dbDriver.load(con);
 
@@ -210,7 +210,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.displayValue, netData1.getName().displayValue);
         assertEquals(niAddrStr, netData1.getAddress(sysCtx).getHostAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
         assertEquals(niInterfaceType, netData1.getNetInterfaceType(sysCtx));
-        
+
         NetInterfaceData netData2 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, transMgr, niInterfaceType, false);
         assertTrue(netData1 == netData2);
     }
@@ -388,6 +388,8 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
+        DriverUtils.satelliteMode();
+
         NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, null, niInterfaceType, true);
 
         assertNotNull(netData);
@@ -409,6 +411,8 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
+        DriverUtils.satelliteMode();
+
         NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, null, niInterfaceType, false);
 
         assertNull(netData);

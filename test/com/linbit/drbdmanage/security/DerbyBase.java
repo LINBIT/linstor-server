@@ -1,5 +1,8 @@
 package com.linbit.drbdmanage.security;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,7 +10,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -29,16 +34,18 @@ import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
+import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.utils.UuidUtils;
 
 public abstract class DerbyBase implements DerbyConstants
 {
-    protected static final String SELECT_PROPS_BY_INSTANCE = 
+    protected static final String SELECT_PROPS_BY_INSTANCE =
         " SELECT " + PROPS_INSTANCE + ", " + PROP_KEY + ", " + PROP_VALUE +
-        " FROM " + TBL_PROPS_CONTAINERS + 
-        " WHERE " + PROPS_INSTANCE + " = ?";
-    
+        " FROM " + TBL_PROPS_CONTAINERS +
+        " WHERE " + PROPS_INSTANCE + " = ? " +
+        " ORDER BY " + PROP_KEY;
+
     private static final String DB_URL = "jdbc:derby:memory:testDB";
     private static final String DB_USER = "drbdmanage";
     private static final String DB_PASSWORD = "linbit";
@@ -288,19 +295,50 @@ public abstract class DerbyBase implements DerbyConstants
         connection.close();
         return sb.toString();
     }
-    
+
     protected static java.util.UUID randomUUID()
     {
         return java.util.UUID.randomUUID();
     }
 
-    protected static PreparedStatement selectProps(Connection con, String instanceName) throws SQLException
+    protected static void testProps(
+        Connection dbCon,
+        String instanceName,
+        Map<String, String> testMap,
+        boolean serialCheck
+    )
+        throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(SELECT_PROPS_BY_INSTANCE);
+        TreeMap<String, String> map = new TreeMap<>(testMap);
+        PreparedStatement stmt = dbCon.prepareStatement(SELECT_PROPS_BY_INSTANCE);
         stmt.setString(1, instanceName.toUpperCase());
-        return stmt;
+        ResultSet resultSet = stmt.executeQuery();
+
+        if (serialCheck)
+        {
+            map.put(SerialGenerator.KEY_SERIAL, "ignore");
+        }
+
+        while (resultSet.next())
+        {
+            String key = resultSet.getString(PROP_KEY);
+            String value = resultSet.getString(PROP_VALUE);
+
+            if (serialCheck && key.equals(SerialGenerator.KEY_SERIAL))
+            {
+                map.remove(key); // ignore its value
+            }
+            else
+            {
+                assertEquals(map.remove(key), value);
+            }
+        }
+        assertTrue(map.isEmpty());
+
+        resultSet.close();
+        stmt.close();
     }
-    
+
     protected static void insertObjProt(Connection dbCon, String objPath, AccessContext accCtx) throws SQLException
     {
         PreparedStatement stmt = dbCon.prepareStatement(INSERT_SEC_OBJECT_PROTECTION);

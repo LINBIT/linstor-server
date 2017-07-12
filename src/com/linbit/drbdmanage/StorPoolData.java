@@ -19,6 +19,7 @@ import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.storage.StorageDriver;
+import com.linbit.drbdmanage.storage.StorageDriverUtils;
 import com.linbit.drbdmanage.storage.StorageException;
 
 public class StorPoolData extends BaseTransactionObject implements StorPool
@@ -35,12 +36,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
      */
     private StorPoolData(
         AccessContext accCtx,
+        Node nodeRef,
         StorPoolDefinition storPoolDef,
-        TransactionMgr transMgr,
         StorageDriver storDriver,
         String storDriverSimpleClassName,
         SerialGenerator serGen,
-        Node nodeRef
+        TransactionMgr transMgr
     )
         throws AccessDeniedException, SQLException
     {
@@ -52,12 +53,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                 ObjectProtection.buildPathSP(storPoolDef.getName()),
                 true
             ),
+            nodeRef,
             storPoolDef,
-            transMgr,
             storDriver,
             storDriverSimpleClassName,
             serGen,
-            nodeRef
+            transMgr
         );
     }
 
@@ -67,12 +68,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     StorPoolData(
         UUID id,
         ObjectProtection objProtRef,
+        Node nodeRef,
         StorPoolDefinition storPoolDefRef,
-        TransactionMgr transMgr,
         StorageDriver storDriverRef,
         String storDriverSimpleClassNameRef,
         SerialGenerator serGen,
-        Node nodeRef
+        TransactionMgr transMgr
     )
         throws SQLException
     {
@@ -96,38 +97,32 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         transObjs = Arrays.<TransactionObject>asList(props);
     }
 
-    public static StorPoolData getInstance(AccessContext accCtx,
+    public static StorPoolData getInstance(
+        AccessContext accCtx,
+        Node nodeRef,
         StorPoolDefinition storPoolDefRef,
-        TransactionMgr transMgr,
-        StorageDriver storDriverRef,
         String storDriverSimpleClassNameRef,
         SerialGenerator serGen,
-        Node nodeRef,
+        TransactionMgr transMgr,
         boolean createIfNotExists
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException, AccessDeniedException, ClassNotFoundException, InstantiationException, IllegalAccessException
     {
         StorPoolData storPoolData = null;
         StorPoolDataDatabaseDriver driver = DrbdManage.getStorPoolDataDatabaseDriver(nodeRef, storPoolDefRef);
         if (transMgr != null)
         {
-            if (storDriverRef != null)
-            {
-                // as transMgr is not null, we are called by the controller.
-                // however, only the satellites should have StorageDrivers
-                throw new ImplementationError("Controller should not have an instance of StorageDriver", null);
-            }
             storPoolData = driver.load(transMgr.dbCon, transMgr, serGen);
             if (storPoolData == null && createIfNotExists)
             {
                 storPoolData = new StorPoolData(
                     accCtx,
+                    nodeRef,
                     storPoolDefRef,
-                    transMgr,
-                    storDriverRef,
+                    null,
                     storDriverSimpleClassNameRef,
                     serGen,
-                    nodeRef
+                    transMgr
                 );
                 driver.create(transMgr.dbCon, storPoolData);
             }
@@ -135,19 +130,15 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         else
         if (createIfNotExists)
         {
-            if (storDriverRef == null)
-            {
-                // no transMgr means we are satellite, thus a storDriver is needed.
-                throw new ImplementationError("Satellite should have an instance of StorageDriver", null);
-            }
             storPoolData = new StorPoolData(
                 accCtx,
+                nodeRef,
                 storPoolDefRef,
-                transMgr,
-                storDriverRef,
+                // TODO: should every StorPool create a new storDriver instance?
+                StorageDriverUtils.createInstance(storDriverSimpleClassNameRef),
                 storDriverSimpleClassNameRef,
                 serGen,
-                nodeRef
+                transMgr
             );
         }
 

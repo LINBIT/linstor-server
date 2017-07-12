@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
@@ -51,6 +52,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
 
     private AccessContext dbCtx;
     private ResourceName resName;
+    private boolean resNameLoaded = false;
 
     private StateFlagsPersistence resDfnFlagPersistence;
     private PropsConDatabaseDriver propsDriver;
@@ -69,6 +71,13 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     @Override
     public void create(Connection con, ResourceDefinitionData resDfn) throws SQLException
     {
+        if (!resDfn.getName().equals(resName))
+        {
+            throw new DrbdSqlRuntimeException(
+                "Driver with fixed PrimaryKey received a not matching object to persist"
+            );
+        }
+
         try
         {
             PreparedStatement stmt = con.prepareStatement(RD_INSERT);
@@ -78,7 +87,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
             stmt.setLong(4, resDfn.getFlags().getFlagsBits(dbCtx));
             stmt.executeUpdate();
             stmt.close();
-    
+
             cache(resDfn);
         }
         catch (AccessDeniedException accessDeniedExc)
@@ -115,6 +124,29 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         {
             if (resultSet.next())
             {
+                if (!resNameLoaded)
+                {
+                    // we could have been called with a half-valid resourceName.
+                    // that means that someone stored "test"/"TEST" as dsp/name
+                    // but another driver saw only the "TEST" reference.
+                    // hence we will update the resourceName accordingly
+                    try
+                    {
+                        resName = new ResourceName(resultSet.getString(RD_DSP_NAME));
+                        resNameLoaded = true;
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        resultSet.close();
+                        stmt.close();
+                        throw new ImplementationError(
+                            "The display name of a valid ResourceName could not be restored",
+                            invalidNameExc
+                        );
+                    }
+                }
+
+
                 ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
                     ObjectProtection.buildPath(resName)
                 );
@@ -135,15 +167,15 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     }
                     else
                     {
-                        try 
-                        {         
+                        try
+                        {
                             // restore connectionDefinitions
-                            Map<NodeName, Map<Integer, ConnectionDefinition>> cons = 
+                            Map<NodeName, Map<Integer, ConnectionDefinition>> cons =
                                 ConnectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
-                                con, 
-                                resName, 
-                                serialGen, 
-                                transMgr, 
+                                con,
+                                resName,
+                                serialGen,
+                                transMgr,
                                 dbCtx
                             );
                             for (Entry<NodeName,Map<Integer, ConnectionDefinition>> entry : cons.entrySet())
@@ -156,25 +188,25 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                                     ret.addConnection(dbCtx, nodeName, conDfnNr, conDfn);
                                 }
                             }
-                      
+
                             // restore volumeDefinitions
-                            List<VolumeDefinition> volDfns = 
+                            List<VolumeDefinition> volDfns =
                                 VolumeDefinitionDataDerbyDriver.loadAllVolumeDefinitionsByResourceDefinition(
-                                con, 
-                                ret, 
-                                serialGen, 
-                                transMgr, 
+                                con,
+                                ret,
+                                serialGen,
+                                transMgr,
                                 dbCtx
                             );
                             for (VolumeDefinition volDfn : volDfns)
                             {
                                 ret.putVolumeDefinition(dbCtx, volDfn);
                             }
-    
+
                             // restore resources
                             List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceDataByResourceDefinition(
-                                con, 
-                                ret, 
+                                con,
+                                ret,
                                 serialGen,
                                 transMgr,
                                 dbCtx
@@ -227,7 +259,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     {
         return resDfnFlagPersistence;
     }
-    
+
     @Override
     public PropsConDatabaseDriver getPropsConDriver()
     {

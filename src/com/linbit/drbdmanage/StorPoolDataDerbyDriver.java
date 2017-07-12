@@ -96,12 +96,12 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 sp = new StorPoolData(
                     UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)),
                     objProt,
+                    node,
                     storPoolDfn,
-                    transMgr,
                     null,   // storageDriver, has to be null in the controller
                     resultSet.getString(NSP_DRIVER),
                     serGen,
-                    node
+                    transMgr
                 );
                 if (!cache(node, sp))
                 {
@@ -158,12 +158,12 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                     storPoolData = new StorPoolData(
                         UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)),
                         objProt,
+                        node,
                         storPoolDef,
-                        transMgr,
                         null, // controller should not have an instance of storage driver.
                         resultSet.getString(NSP_DRIVER),
                         serGen,
-                        node
+                        transMgr
                     );
                     if (!cache(node, storPoolData))
                     {
