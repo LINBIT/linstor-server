@@ -449,4 +449,20 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             // expected
         }
     }
+
+    @Test
+    public void testHalfValidName() throws Exception
+    {
+        dbDriver.create(con, niData);
+        DriverUtils.clearCaches();
+
+        NetInterfaceName halfValidNiName = new NetInterfaceName(niData.getName().value);
+        NetInterfaceDataDerbyDriver driver = new NetInterfaceDataDerbyDriver(sysCtx, node, halfValidNiName);
+
+        NetInterfaceData loadedNi = driver.load(con);
+
+        assertNotNull(loadedNi);
+        assertEquals(niData.getName(), loadedNi.getName());
+        assertEquals(niData.getUuid(), loadedNi.getUuid());
+    }
 }

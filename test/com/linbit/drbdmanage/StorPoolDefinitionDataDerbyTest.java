@@ -197,6 +197,21 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         resultSet.close();
         stmt.close();
-
 	}
+
+    @Test
+    public void testHalfValidName() throws Exception
+    {
+        driver.create(con, spdd);
+        DriverUtils.clearCaches();
+
+        StorPoolName halfValidName = new StorPoolName(spdd.getName().value);
+        StorPoolDefinitionDataDerbyDriver driver2 = new StorPoolDefinitionDataDerbyDriver(halfValidName);
+
+        StorPoolDefinitionData loadedSpdd = driver2.load(con);
+
+        assertNotNull(loadedSpdd);
+        assertEquals(spdd.getName(), loadedSpdd.getName());
+        assertEquals(spdd.getUuid(), loadedSpdd.getUuid());
+    }
 }

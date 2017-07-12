@@ -1,10 +1,6 @@
 package com.linbit.drbdmanage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -366,4 +362,20 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         resultSet.close();
         stmt.close();
 	}
+
+    @Test
+    public void testHalfValidName() throws Exception
+    {
+        driver.create(con, resDfn);
+        DriverUtils.clearCaches();
+
+        ResourceName halfValidResName = new ResourceName(resDfn.getName().value);
+        ResourceDefinitionDataDerbyDriver driver2 = new ResourceDefinitionDataDerbyDriver(sysCtx, halfValidResName);
+
+        ResourceDefinitionData loadedResDfn = driver2.load(con, null, transMgr);
+
+        assertNotNull(loadedResDfn);
+        assertEquals(resDfn.getName(), loadedResDfn.getName());
+        assertEquals(resDfn.getUuid(), loadedResDfn.getUuid());
+    }
 }

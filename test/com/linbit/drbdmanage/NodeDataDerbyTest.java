@@ -1,10 +1,6 @@
 package com.linbit.drbdmanage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.net.InetAddress;
 import java.sql.Connection;
@@ -510,7 +506,6 @@ public class NodeDataDerbyTest extends DerbyBase
 
     }
 
-
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
@@ -535,5 +530,20 @@ public class NodeDataDerbyTest extends DerbyBase
 
         resultSet.close();
         stmt.close();
+    }
+
+    @Test
+    public void testHalfValidName() throws Exception
+    {
+        dbDriver.create(con, node);
+        DriverUtils.clearCaches();
+
+        NodeName halfValidName = new NodeName(node.getName().value);
+        NodeDataDerbyDriver driver = new NodeDataDerbyDriver(sysCtx, halfValidName);
+        NodeData loadedNode = driver.load(con, null, transMgr);
+
+        assertNotNull(loadedNode);
+        assertEquals(node.getName(), loadedNode.getName());
+        assertEquals(node.getUuid(), loadedNode.getUuid());
     }
 }
