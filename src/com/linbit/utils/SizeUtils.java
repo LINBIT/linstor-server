@@ -35,7 +35,7 @@ public class SizeUtils
 
         BigDecimal kibDec = new BigDecimal(kib);
         float sizeUnit = kibDec.divide(new BigDecimal(magnitude), 2, RoundingMode.CEILING).floatValue();
-        String sizeStr = String.format("%3.2f %s", sizeUnit, units[unitIdx]);
+        String sizeStr = String.format("%4.2f %s", sizeUnit, units[unitIdx]);
 
         return sizeStr;
     }
