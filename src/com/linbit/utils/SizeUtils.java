@@ -6,7 +6,7 @@ import java.math.RoundingMode;
 
 public class SizeUtils
 {
-    public static final String[] units =
+    public static final String[] UNITS =
     {
         "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"
     };
@@ -21,7 +21,7 @@ public class SizeUtils
         final BigInteger maxRemainder = BigInteger.valueOf(1 << 10);
         BigInteger magnitude = BigInteger.valueOf(1);
         int unitIdx = 0;
-        while (unitIdx < units.length)
+        while (unitIdx < UNITS.length)
         {
             // If the size value in the current unit is less than 1024, then
             // use the current unit
@@ -35,7 +35,7 @@ public class SizeUtils
 
         BigDecimal kibDec = new BigDecimal(kib);
         float sizeUnit = kibDec.divide(new BigDecimal(magnitude), 2, RoundingMode.CEILING).floatValue();
-        String sizeStr = String.format("%4.2f %s", sizeUnit, units[unitIdx]);
+        String sizeStr = String.format("%4.2f %s", sizeUnit, UNITS[unitIdx]);
 
         return sizeStr;
     }

@@ -12,7 +12,7 @@ public class SizeUtilsTest
     public void testApproxSizeAllSupportedMagnitutes()
     {
         BigInteger kib = BigInteger.valueOf(1);
-        for (String magnitute : SizeUtils.units)
+        for (String magnitute : SizeUtils.UNITS)
         {
             assertEquals("1.00 " + magnitute, SizeUtils.approximateSizeString(kib));
             kib = kib.shiftLeft(9);
