@@ -126,7 +126,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 if (volList.isEmpty())
                 {
                     // XXX: user deleted db entry during runtime - throw exception?
-                    // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+                    // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
                 }
             }
             return ret;

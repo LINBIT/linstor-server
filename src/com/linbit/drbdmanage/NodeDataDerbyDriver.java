@@ -184,7 +184,8 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     // but no entry in the db..
 
                     // XXX: user deleted db entry during runtime - throw exception?
-                    // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user to not do that again otherwise we will format all devices?
+                    // or just remove the item from the cache + node.removeRes(cachedRes) + warn
+                    // the user to not do that again otherwise we will format all devices?
                 }
             }
 

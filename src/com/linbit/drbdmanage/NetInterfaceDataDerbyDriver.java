@@ -127,7 +127,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
             if (!resultSet.next())
             {
                 // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
         }
         resultSet.close();
@@ -179,7 +179,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
             if (niCached != null)
             {
                 // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
             create(con, netIfData);
         }

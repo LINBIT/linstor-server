@@ -40,7 +40,7 @@ import com.linbit.utils.UuidUtils;
 
 public abstract class DerbyBase implements DerbyConstants
 {
-    protected static final String SELECT_PROPS_BY_INSTANCE =
+    private static final String SELECT_PROPS_BY_INSTANCE =
         " SELECT " + PROPS_INSTANCE + ", " + PROP_KEY + ", " + PROP_VALUE +
         " FROM " + TBL_PROPS_CONTAINERS +
         " WHERE " + PROPS_INSTANCE + " = ? " +

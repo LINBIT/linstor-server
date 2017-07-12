@@ -121,7 +121,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 // but no entry in the db...
 
                 // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
         }
         resultSet.close();
@@ -229,7 +229,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             if (cachedStorPool != null)
             {
                 // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
             create(con, storPoolData);
         }

@@ -3,14 +3,11 @@ package com.linbit.drbdmanage;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -60,8 +57,6 @@ public class NodeData extends BaseTransactionObject implements Node
     private Props nodeProps;
 
     private NodeDataDatabaseDriver dbDriver;
-
-    private final List<TransactionObject> transObjList;
 
     /*
      * Only used by getInstance method
@@ -127,7 +122,7 @@ public class NodeData extends BaseTransactionObject implements Node
         }
         nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence(), initialTypes);
 
-        transObjList = Arrays.<TransactionObject> asList(
+        transObjs = Arrays.<TransactionObject> asList(
             flags,
             nodeTypeFlags,
             objProt,
@@ -168,11 +163,11 @@ public class NodeData extends BaseTransactionObject implements Node
         if (createIfNotExists)
         {
             nodeData = new NodeData(
-                accCtx, 
-                nameRef, 
-                StateFlagsBits.getMask(types), 
-                StateFlagsBits.getMask(flags), 
-                srlGen, 
+                accCtx,
+                nameRef,
+                StateFlagsBits.getMask(types),
+                StateFlagsBits.getMask(flags),
+                srlGen,
                 transMgr
             );
             if (transMgr != null)
@@ -235,7 +230,7 @@ public class NodeData extends BaseTransactionObject implements Node
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.remove(resRef.getDefinition().getName());
-        // TODO: gh - if a resource is removed from the map, should we "invalidate" the resource? 
+        // TODO: gh - if a resource is removed from the map, should we "invalidate" the resource?
         // should we also update the database to remove the resource from the db?
     }
 
@@ -341,61 +336,6 @@ public class NodeData extends BaseTransactionObject implements Node
     public StateFlags<NodeFlag> getFlags()
     {
         return flags;
-    }
-
-    @Override
-    public void initialized()
-    {
-        for (TransactionObject transObj : transObjList)
-        {
-            transObj.initialized();
-        }
-    }
-
-    @Override
-    public void setConnection(TransactionMgr transMgr) throws ImplementationError
-    {
-        if (transMgr != null)
-        {
-            transMgr.register(this);
-        }
-        for (TransactionObject transObj : transObjList)
-        {
-            transObj.setConnection(transMgr);
-        }
-    }
-
-    @Override
-    public void commit()
-    {
-        for (TransactionObject transObj : transObjList)
-        {
-            transObj.commit();
-        }
-    }
-
-    @Override
-    public void rollback()
-    {
-        for (TransactionObject transObj : transObjList)
-        {
-            transObj.rollback();
-        }
-    }
-
-     @Override
-    public boolean isDirty()
-    {
-        boolean dirty = false;
-        for (TransactionObject transObj : transObjList)
-        {
-            if (transObj.isDirty())
-            {
-                dirty = true;
-                break;
-            }
-        }
-        return dirty;
     }
 
     private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlag>

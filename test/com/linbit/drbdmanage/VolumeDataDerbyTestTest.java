@@ -53,6 +53,11 @@ public class VolumeDataDerbyTestTest extends DerbyBase
     @Before
     public void startUp() throws Exception
     {
+        assertEquals(TBL_VOLUMES + " table's column count has changed. Update tests accordingly!",
+            6,
+            TBL_COL_COUNT_VOLUMES
+        );
+
         con = getConnection();
         transMgr = new TransactionMgr(con);
 

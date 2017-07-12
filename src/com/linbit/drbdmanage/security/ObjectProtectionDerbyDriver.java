@@ -214,26 +214,26 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
                     resultSet.close();
                     stmt.close();
-                    
+
                     if (cache(objProt, objPath))
                     {
-        
+
                         // restore ACL
                         stmt = con.prepareStatement(ACL_LOAD);
                         stmt.setString(1, objPath);
                         resultSet = stmt.executeQuery();
-    
+
                         while (resultSet.next())
                         {
                             role = Role.get(new RoleName(resultSet.getString(1)));
                             AccessType type = AccessType.get(resultSet.getInt(2));
-    
+
                             objProt.addAclEntry(dbCtx, role, type);
                         }
-                    } 
+                    }
                     else
                     {
-                        objProt = cacheGet(objPath); 
+                        objProt = cacheGet(objPath);
                     }
                 }
                 catch (InvalidNameException invalidNameExc)
@@ -260,7 +260,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                 if (!resultSet.next())
                 {
                     // XXX: user deleted db entry during runtime - throw exception?
-                    // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+                    // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
                 }
             }
         }

@@ -14,6 +14,7 @@ import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
+import com.linbit.drbdmanage.dbdrivers.UpdateOnlyDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
@@ -41,14 +42,29 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         " FROM " + TBL_VOL_DFN +
         " WHERE " + VD_RES_NAME + " = ? AND " +
                     VD_ID       + " = ?";
-    private static final String VD_SELECT_BY_RES_DFN = 
-        " SELECT " +  VD_UUID + ", " + VD_RES_NAME + ", " + VD_ID + ", " + 
-                      VD_SIZE + ", " + VD_MINOR_NR + ", " + VD_FLAGS + 
+    private static final String VD_SELECT_BY_RES_DFN =
+        " SELECT " +  VD_UUID + ", " + VD_RES_NAME + ", " + VD_ID + ", " +
+                      VD_SIZE + ", " + VD_MINOR_NR + ", " + VD_FLAGS +
         " FROM " + TBL_VOL_DFN +
         " WHERE " + VD_RES_NAME  + " = ?";
     private static final String VD_INSERT =
         " INSERT INTO " + TBL_VOL_DFN +
         " VALUES (?, ?, ?, ?, ?, ?)";
+    private static final String VD_UPDATE_FLAGS =
+        " UPDATE " + TBL_VOL_DFN +
+        " SET " + VD_FLAGS + " = ? " +
+        " WHERE " + VD_RES_NAME + " = ? AND " +
+                    VD_ID       + " = ?";
+    private static final String VD_UPDATE_MINOR_NR =
+        " UPDATE " + TBL_VOL_DFN +
+        " SET " + VD_MINOR_NR + " = ? " +
+        " WHERE " + VD_RES_NAME + " = ? AND " +
+                    VD_ID       + " = ?";
+    private static final String VD_UPDATE_SIZE =
+        " UPDATE " + TBL_VOL_DFN +
+        " SET " + VD_SIZE + " = ? " +
+        " WHERE " + VD_RES_NAME + " = ? AND " +
+                    VD_ID       + " = ?";
     private static final String VD_DELETE =
         " DELETE FROM " + TBL_VOL_DFN +
         " WHERE " + VD_RES_NAME + " = ? AND " +
@@ -59,6 +75,9 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     private VolumeNumber volNr;
 
     private PropsConDatabaseDriver propsDriver;
+    private final FlagDriver flagsDriver;
+    private final MinorNumberDriver minorNumberDriver;
+    private final SizeDriver sizeDriver;
 
     private static Hashtable<PrimaryKey, VolumeDefinitionData> volDfnCache = new Hashtable<>();
 
@@ -68,6 +87,9 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         resDfn = resDfnRef;
         volNr = volNrRef;
         propsDriver = new PropsConDerbyDriver(PropsContainer.buildPath(resDfnRef.getName(), volNrRef));
+        flagsDriver = new FlagDriver();
+        minorNumberDriver = new MinorNumberDriver();
+        sizeDriver = new SizeDriver();
     }
 
     @Override
@@ -117,7 +139,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             if (!resultSet.next())
             {
                 // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
         }
         resultSet.close();
@@ -127,15 +149,15 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     }
 
     private static VolumeDefinitionData restoreVolumeDefinition(
-        ResultSet resultSet, 
+        ResultSet resultSet,
         ResourceDefinition resDfn,
         VolumeNumber volNr,
-        SerialGenerator serialGen, 
+        SerialGenerator serialGen,
         TransactionMgr transMgr,
         AccessContext accCtx
-    ) 
+    )
         throws SQLException
-    { 
+    {
         VolumeDefinitionData ret = null;
         try
         {
@@ -185,13 +207,13 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         }
         return ret;
     }
-    
+
 
     public static List<VolumeDefinition> loadAllVolumeDefinitionsByResourceDefinition(
-            Connection con, 
-            ResourceDefinition resDfn, 
-            SerialGenerator serialGen, 
-            TransactionMgr transMgr, 
+            Connection con,
+            ResourceDefinition resDfn,
+            SerialGenerator serialGen,
+            TransactionMgr transMgr,
             AccessContext accCtx
     )
         throws SQLException
@@ -216,22 +238,22 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     valueOutOfRangeExc
                 );
             }
-            
+
             VolumeDefinition volDfn = restoreVolumeDefinition(
-                resultSet, 
-                resDfn, 
+                resultSet,
+                resDfn,
                 volNr,
-                serialGen, 
-                transMgr, 
+                serialGen,
+                transMgr,
                 accCtx
             );
-            
+
             ret.add(volDfn);
         }
         resultSet.close();
         stmt.close();
         return ret;
-    }        
+    }
 
     @Override
     public void delete(Connection con) throws SQLException
@@ -249,22 +271,19 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     @Override
     public StateFlagsPersistence getStateFlagsPersistence()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return flagsDriver;
     }
 
     @Override
     public ObjectDatabaseDriver<MinorNumber> getMinorNumberDriver()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return minorNumberDriver;
     }
 
     @Override
     public ObjectDatabaseDriver<Long> getVolumeSizeDriver()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return sizeDriver;
     }
 
     private synchronized static boolean cache(VolumeDefinitionData vdd, AccessContext dbCtx) throws AccessDeniedException
@@ -300,5 +319,57 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     public PropsConDatabaseDriver getPropsDriver()
     {
         return propsDriver;
+    }
+
+    private class FlagDriver implements StateFlagsPersistence
+    {
+        @Override
+        public void persist(Connection con, long flags) throws SQLException
+        {
+            PreparedStatement stmt = con.prepareStatement(VD_UPDATE_FLAGS);
+            stmt.setLong(1, flags);
+            stmt.setString(2, resDfn.getName().value);
+            stmt.setInt(3, volNr.value);
+            stmt.executeUpdate();
+            stmt.close();
+        }
+    }
+
+    private class MinorNumberDriver extends UpdateOnlyDatabaseDriver<MinorNumber>
+    {
+        public MinorNumberDriver()
+        {
+            super(VD_MINOR_NR);
+        }
+
+        @Override
+        public void update(Connection con, MinorNumber minorNr) throws SQLException
+        {
+            PreparedStatement stmt = con.prepareStatement(VD_UPDATE_MINOR_NR);
+            stmt.setInt(1, minorNr.value);
+            stmt.setString(2, resDfn.getName().value);
+            stmt.setInt(3, volNr.value);
+            stmt.executeUpdate();
+            stmt.close();
+        }
+    }
+
+    private class SizeDriver extends UpdateOnlyDatabaseDriver<Long>
+    {
+        public SizeDriver()
+        {
+            super(VD_SIZE);
+        }
+
+        @Override
+        public void update(Connection con, Long size) throws SQLException
+        {
+            PreparedStatement stmt = con.prepareStatement(VD_UPDATE_SIZE);
+            stmt.setLong(1, size);
+            stmt.setString(2, resDfn.getName().value);
+            stmt.setInt(3, volNr.value);
+            stmt.executeUpdate();
+            stmt.close();
+        }
     }
 }

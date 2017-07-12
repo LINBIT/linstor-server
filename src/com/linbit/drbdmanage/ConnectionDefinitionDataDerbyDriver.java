@@ -38,7 +38,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         " WHERE "+ CON_RES_NAME + " = ? AND " +
                    CON_NODE_SRC + " = ? AND " +
                    CON_NODE_DST + " = ?";
-    private static final String CON_SELECT_BY_RES_DFN = 
+    private static final String CON_SELECT_BY_RES_DFN =
         " SELECT " + CON_UUID + ", " + CON_RES_NAME + ", " +
                      CON_NODE_SRC + ", " + CON_NODE_DST +
         " FROM " + TBL_CON_DFN +
@@ -93,30 +93,30 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
             if (!resultSet.next())
             {
                 // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
         }
 
         resultSet.close();
         stmt.close();
-        
+
         return ret;
     }
 
     private static ConnectionDefinitionData restoreConnectionDefinition(
-        Connection con, 
-        ResultSet resultSet, 
+        Connection con,
+        ResultSet resultSet,
         SerialGenerator serialGen,
-        TransactionMgr transMgr, 
+        TransactionMgr transMgr,
         AccessContext accCtx
-    ) 
+    )
         throws SQLException
     {
         UUID uuid = UuidUtils.asUUID(resultSet.getBytes(CON_UUID));
         ResourceName resName;
         NodeName srcNodeName;
         NodeName dstNodeName;
-        
+
         try
         {
             resName = new ResourceName(resultSet.getString(CON_RES_NAME));
@@ -126,12 +126,12 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         catch (InvalidNameException invalidNameExc)
         {
             throw new DrbdSqlRuntimeException(
-                "A resource or node name in the table " + TBL_CON_DFN + 
+                "A resource or node name in the table " + TBL_CON_DFN +
                     " has been modified in the database to an illegal string.",
                 invalidNameExc
             );
         }
-        
+
         ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
             ObjectProtection.buildPath(resName, srcNodeName, dstNodeName)
         );
@@ -153,9 +153,9 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     }
 
     public static Map<NodeName, Map<Integer, ConnectionDefinition>> loadAllConnectionsByResourceDefinition(
-        Connection con, 
-        ResourceName resName, 
-        SerialGenerator serialGen, 
+        Connection con,
+        ResourceName resName,
+        SerialGenerator serialGen,
         TransactionMgr transMgr,
         AccessContext accCtx
     )
@@ -170,7 +170,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
             while (resultSet.next() && false) // TODO: gh - method not fully implemented yet
             {
                 ConnectionDefinitionData conDfn = restoreConnectionDefinition(con, resultSet, serialGen, transMgr, accCtx);
-                
+
                 NodeName srcNodeName = conDfn.getSourceNode(accCtx).getName();
                 NodeName dstNodeName = conDfn.getTargetNode(accCtx).getName();
                 if (!cache(conDfn, accCtx))
@@ -181,7 +181,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
                 {
                     // restore references
                 }
-                
+
                 Map<Integer, ConnectionDefinition> conMap = new HashMap<>();
                 // TODO: gh - connection number is missing?
                 ret.put(srcNodeName, conMap);
@@ -201,7 +201,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         stmt.close();
         return ret;
     }
-    
+
     @Override
     public void create(Connection con, ConnectionDefinitionData conDfnData) throws SQLException
     {
@@ -249,7 +249,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     {
         PrimaryKey pk = getPk(con, accCtx);
         boolean contains = conDfnCache.containsKey(pk);
-        if (!contains) 
+        if (!contains)
         {
             conDfnCache.put(getPk(con, accCtx), con);
         }

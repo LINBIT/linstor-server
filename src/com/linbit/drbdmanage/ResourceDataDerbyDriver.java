@@ -38,20 +38,20 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private static final String RES_NODE_ID = DerbyConstants.NODE_ID;
     private static final String RES_FLAGS = DerbyConstants.RESOURCE_FLAGS;
 
-    private static final String RES_SELECT = 
+    private static final String RES_SELECT =
         " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " + RES_NODE_ID + ", " + RES_FLAGS +
         " FROM " + TBL_RES +
-        " WHERE " + RES_NODE_NAME + " = ? AND " + 
+        " WHERE " + RES_NODE_NAME + " = ? AND " +
         RES_NAME      + " = ?";
     private static final String RES_SELECT_BY_NODE =
         " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " + RES_NODE_ID + ", " + RES_FLAGS +
         " FROM " + TBL_RES +
         " WHERE " + RES_NODE_NAME + " = ?";
-    private static final String RES_SELECT_BY_RES_DFN = 
+    private static final String RES_SELECT_BY_RES_DFN =
         " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " + RES_NODE_ID + ", " + RES_FLAGS +
         " FROM " + TBL_RES +
         " WHERE " + RES_NAME + " = ?";
-    
+
     private static final String RES_INSERT =
         " INSERT INTO " + TBL_RES + " VALUES (?, ?, ?, ?, ?)";
     private static final String RES_DELETE =
@@ -161,33 +161,33 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 // resCache knows the pk, so it was loaded or created by the db...
 
                 // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + node.removeRes(cachedRes) + warn the user?
+                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
         }
         return ret;
     }
-    
+
 
     public static List<ResourceData> loadResourceDataByResourceDefinition(
-        Connection con, 
-        ResourceDefinitionData resDfn, 
+        Connection con,
+        ResourceDefinitionData resDfn,
         SerialGenerator serialGen,
-        TransactionMgr transMgr, 
+        TransactionMgr transMgr,
         AccessContext accCtx
-    ) 
+    )
         throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(RES_SELECT_BY_RES_DFN);
         stmt.setString(1, resDfn.getName().value);
         ResultSet resultSet = stmt.executeQuery();
-        
+
         List<ResourceData> resList = load(con, resultSet, accCtx, null, serialGen, transMgr);
-        
+
         resultSet.close();
         stmt.close();
         return resList;
     }
-    
+
     public static List<ResourceData> loadResourceData(Connection con, AccessContext dbCtx, NodeData node, SerialGenerator serialGen, TransactionMgr transMgr)
         throws SQLException
     {
@@ -231,7 +231,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     );
                     node = nodeDriver.load(con, serialGen, transMgr);
                 }
-                
+
                 ResourceData resData = cacheGet(resultSet);
                 if (resData == null)
                 {
@@ -267,7 +267,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         {
                             resData.setVolume(dbCtx, volData);
                         }
-                        
+
                         // TODO: gh - restore connections
                     }
                 }
@@ -322,7 +322,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     {
         return flagDriver;
     }
-    
+
     @Override
     public PropsConDatabaseDriver getPropsConDriver()
     {

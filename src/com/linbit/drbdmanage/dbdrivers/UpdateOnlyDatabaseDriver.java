@@ -8,8 +8,8 @@ import com.linbit.ObjectDatabaseDriver;
 
 public abstract class UpdateOnlyDatabaseDriver<T> implements ObjectDatabaseDriver<T>
 {
-    protected String errorFormatInsert = "The %s can only be updated, not (newly) inserted!";
-    protected String errorFormatDelete = "The %s can only be updated, not deleted!";
+    protected String errorFormatInsert = "Column %s can only be updated, not (newly) inserted!";
+    protected String errorFormatDelete = "Column %s can only be updated, not deleted!";
 
     protected String columnName;
 
