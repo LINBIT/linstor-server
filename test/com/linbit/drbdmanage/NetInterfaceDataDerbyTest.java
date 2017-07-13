@@ -238,6 +238,15 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     }
 
     @Test
+    public void testCache() throws Exception
+    {
+        dbDriver.create(con, niData);
+
+        // no clearCaches
+        assertEquals(niData, dbDriver.load(con));
+    }
+
+    @Test
     public void testDeleteSimple() throws Exception
     {
         niData.initialized();

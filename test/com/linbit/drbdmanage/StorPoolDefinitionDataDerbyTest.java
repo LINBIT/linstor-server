@@ -130,7 +130,6 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         driver.create(con, spdd);
 
         // no clearCaches
-
         assertEquals(spdd, StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, false));
     }
 
@@ -214,4 +213,5 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         assertEquals(spdd.getName(), loadedSpdd.getName());
         assertEquals(spdd.getUuid(), loadedSpdd.getUuid());
     }
+
 }

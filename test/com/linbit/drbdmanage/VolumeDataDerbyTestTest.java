@@ -221,6 +221,16 @@ public class VolumeDataDerbyTestTest extends DerbyBase
     }
 
     @Test
+    public void testCache() throws Exception
+    {
+        driver.create(con, vol);
+
+        // no clearCaches
+
+        assertEquals(vol, driver.load(con, transMgr, null));
+    }
+
+    @Test
     public void testDelete() throws Exception
     {
         driver.create(con, vol);

@@ -13,7 +13,6 @@ import org.junit.Test;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
-import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.storage.LvmDriver;
@@ -151,13 +150,13 @@ public class StorPoolDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testLoadProps() throws Exception
+    public void testCache() throws Exception
     {
         driver.create(con, storPool);
-        String testKey = "TestKey";
-        String testValue = "TestValue";
-        insertProp(con, PropsContainer.buildPath(spName, nodeName), testKey, testValue);
 
+        // no clearCaches
+
+        assertEquals(storPool, driver.load(con, transMgr, null));
     }
 
     @Test

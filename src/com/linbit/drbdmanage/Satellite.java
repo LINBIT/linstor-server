@@ -62,6 +62,11 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     // System module information
     public static final String MODULE = "Satellite";
 
+    public static final String NET_COM_DEFAULT_TYPE = "plain";
+    public static final String NET_COM_DEFAULT_ADDR = "0.0.0.0";
+    public static final String NET_COM_DEFAULT_PORT = "6996";
+
+
     // TCP Service configuration file
     public static final String NET_COM_CONF_FILE = "satellite_netcom.cfg";
     // Plain TCP Service configuration keys
@@ -382,15 +387,22 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 netComProps.loadFromXML(propsIn);
             }
 
-            // TODO: gh - add default values for netcom (plain)
-            InetAddress addr = InetAddress.getByName(netComProps.getProperty(NET_COM_CONF_BIND_ADDR_KEY));
-            String portProp = netComProps.getProperty(NET_COM_CONF_PORT_KEY);
+            InetAddress addr = InetAddress.getByName(
+                netComProps.getProperty(
+                    NET_COM_CONF_BIND_ADDR_KEY,
+                    NET_COM_DEFAULT_ADDR
+                )
+            );
+            String portProp = netComProps.getProperty(
+                NET_COM_CONF_PORT_KEY,
+                NET_COM_DEFAULT_PORT
+            );
             int port = Integer.parseInt(portProp);
             SocketAddress bindAddress = new InetSocketAddress(addr, port);
 
             TcpConnector netComSvc = null;
 
-            String type = netComProps.getProperty(NET_COM_CONF_TYPE_KEY, "");
+            String type = netComProps.getProperty(NET_COM_CONF_TYPE_KEY, NET_COM_DEFAULT_TYPE);
             if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_PLAIN))
             {
                 netComSvc = new TcpConnectorService(

@@ -13,6 +13,9 @@ public abstract class BaseTransactionObject implements TransactionObject
     protected List<TransactionObject> transObjs;
     protected Connection dbCon;
 
+    private boolean inCommit = false;
+    private boolean inRollback = false;
+
     @Override
     public void initialized()
     {
@@ -47,24 +50,34 @@ public abstract class BaseTransactionObject implements TransactionObject
     @Override
     public void commit()
     {
-        for (TransactionObject transObj : transObjs)
+        if (!inCommit)
         {
-            if (transObj.isDirty())
+            inCommit = true;
+            for (TransactionObject transObj : transObjs)
             {
-                transObj.commit();
+                if (transObj.isDirty())
+                {
+                    transObj.commit();
+                }
             }
+            inCommit = false;
         }
     }
 
     @Override
     public void rollback()
     {
-        for (TransactionObject transObj : transObjs)
+        if (!inRollback)
         {
-            if (transObj.isDirty())
+            inRollback = true;
+            for (TransactionObject transObj : transObjs)
             {
-                transObj.rollback();
+                if (transObj.isDirty())
+                {
+                    transObj.rollback();
+                }
             }
+            inRollback = false;
         }
     }
 

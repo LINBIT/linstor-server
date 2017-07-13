@@ -1,5 +1,11 @@
 package com.linbit;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Universal validity checks
  *
@@ -7,12 +13,20 @@ package com.linbit;
  */
 public class Checks
 {
+    private static final Pattern IPv4_PATTERN = Pattern.compile(
+        "^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$"
+    );
+    
     public static final int HOSTNAME_MIN_LENGTH = 2;
     public static final int HOSTNAME_MAX_LENGTH = 255;
     public static final int HOSTNAME_LABEL_MAX_LENGTH = 63;
 
     private static final String RANGE_EXC_FORMAT =
         "Value %d is out of range [%d - %d]";
+
+    private Checks()
+    {
+    }
 
     /**
      * Universal name check
@@ -308,7 +322,119 @@ public class Checks
         }
     }
 
-    private Checks()
+    public static void ipAddrCheck(String addr) throws InvalidIpAddressException
     {
+    	if (!isIpV4(addr) && !isIpV6(addr))
+    	{
+    		throw new InvalidIpAddressException(addr);
+    	}
+    }
+    
+    private static boolean isIpV4(String addr) 
+    {
+        Matcher matcher = IPv4_PATTERN.matcher(addr.trim());
+        boolean ret = false;
+        if (matcher.find())
+        {
+            ret = true;
+            for (int idx = 1; idx <= 4; ++idx)
+            {
+                String stringVal = matcher.group(idx);
+                int val = Integer.parseInt(stringVal);
+                if (
+                    (stringVal.length() > 1 && stringVal.startsWith("0")) || 
+                    val < 0 ||
+                    val > 255
+                )
+                {
+                    ret = false;
+                    break;
+                }
+            }
+        }
+        return ret;
+	}
+
+	private static boolean isIpV6(String addr) throws InvalidIpAddressException 
+	{
+	    boolean ret = true;
+	    String[] compressedParts = addr.split("::");
+	    if (compressedParts.length > 2)
+	    {
+	        throw new InvalidIpAddressException("IPv6 must not contain multiple '::'. Address: " + addr);
+	    }
+	    if (compressedParts[0].startsWith(":"))
+	    {
+	        throw new InvalidIpAddressException("IPv6 must not start with single ':'. Address: " + addr);
+	    }
+	    if (compressedParts[compressedParts.length - 1].endsWith(":"))
+	    {
+            throw new InvalidIpAddressException("IPv6 must not end with single ':'. Address: " + addr);
+	    }
+
+	    String[] leftParts = compressedParts[0].split(":");
+	    String[] rightParts = compressedParts.length == 1 ? new String[0] : compressedParts[1].split(":");
+	    
+	    String[] parts;
+	    int ipV6Count;
+	    if (rightParts.length > 0 && rightParts[rightParts.length - 1].contains("."))
+	    {
+	        // last part might be ipv4
+	        if (!isIpV4(rightParts[rightParts.length - 1]))
+            {
+                throw new InvalidIpAddressException(addr);
+            }
+	        parts = new String[7];
+	        ipV6Count = 6;
+	        fill(parts, leftParts, rightParts);
+	    }
+	    else
+	    {
+	        if (leftParts[leftParts.length - 1].contains("."))
+	        {
+	         // last part might be ipv4
+	            if (!isIpV4(leftParts[leftParts.length - 1]))
+	            {
+	                throw new InvalidIpAddressException(addr);
+	            }
+	            parts = new String[7];
+	            ipV6Count = 6;
+	            fill(parts, leftParts, rightParts);
+	        }
+	        else
+	        {
+                parts = new String[8];
+                ipV6Count = 8;
+                fill(parts, leftParts, rightParts);
+	        }
+	    }
+
+	    try
+	    {
+    	    for (int idx = 0; idx < ipV6Count; ++idx)
+    	    {
+    	        String part = parts[idx];
+    	        int val = Integer.parseInt(part, 16);
+    	        if (val < 0 || val > 0xFFFF)
+    	        {
+    	            throw new InvalidIpAddressException(addr);
+    	        }
+    	    }	    
+	    }
+	    catch (NumberFormatException nfExc)
+	    {
+	        ret = false;
+	    }
+        return ret;
+	}
+
+    private static void fill(String[] parts, String[] leftParts, String[] rightParts)
+    {
+        Arrays.fill(parts, "0");
+        if (leftParts.length > 1 || !leftParts[0].equals(""))
+        {
+            System.arraycopy(leftParts, 0, parts, 0, leftParts.length);
+        }
+        System.arraycopy(rightParts, 0, parts, parts.length - rightParts.length, rightParts.length);
     }
 }

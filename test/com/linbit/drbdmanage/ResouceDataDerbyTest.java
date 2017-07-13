@@ -204,6 +204,16 @@ public class ResouceDataDerbyTest extends DerbyBase
     }
 
     @Test
+    public void testCache() throws Exception
+    {
+        driver.create(con, res);
+
+        // no clearCaches
+
+        assertEquals(res, driver.load(con, node, null, transMgr));
+    }
+
+    @Test
     public void testDelete() throws Exception
     {
         driver.create(con, res);

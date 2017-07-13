@@ -187,8 +187,6 @@ public class NodeDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    // TODO test if X is created without transMgr, and added to the node (should be persisted)
-
     @Test
     public void testUpdateFlags() throws Exception
     {
@@ -459,6 +457,16 @@ public class NodeDataDerbyTest extends DerbyBase
             assertEquals(storPoolId, storPool.getUuid());
         }
         assertEquals(nodeUuid, loadedNode.getUuid());
+    }
+
+    @Test
+    public void testCache() throws Exception
+    {
+        dbDriver.create(con, node);
+
+        // no clearCaches
+
+        assertEquals(node, dbDriver.load(con, null, transMgr));
     }
 
     @Test
