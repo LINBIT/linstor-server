@@ -77,7 +77,7 @@ public class PropsContainer implements Props
     private boolean initialized = false;
 
     public static PropsContainer getInstance(
-        PropsConDatabaseDriver propsConDbDriver, 
+        PropsConDatabaseDriver propsConDbDriver,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -96,13 +96,13 @@ public class PropsContainer implements Props
                 keyExc
             );
         }
-        
+
         container.dbDriver = propsConDbDriver;
-        
-        if (propsConDbDriver != null && transMgr != null)
+
+        if (transMgr != null)
         {
             container.setConnection(transMgr);
-            
+
             try
             {
                 Map<String, String> loadedProps = container.dbDriver.load(transMgr.dbCon);
@@ -110,7 +110,7 @@ public class PropsContainer implements Props
                 {
                     String key = entry.getKey();
                     String value = entry.getValue();
-    
+
                     PropsContainer targetContainer = container;
                     int idx = key.lastIndexOf(PATH_SEPARATOR);
                     if (idx != -1)
@@ -133,7 +133,7 @@ public class PropsContainer implements Props
                 );
             }
         }
-        
+
         return container;
     }
 
@@ -2595,7 +2595,7 @@ public class PropsContainer implements Props
     {
         return PATH_RESOURCE_DEFINITIONS + resName.value;
     }
-    
+
     /**
      * PropsCon-path for ResourceData
      */

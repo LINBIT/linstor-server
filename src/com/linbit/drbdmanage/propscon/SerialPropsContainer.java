@@ -20,14 +20,14 @@ public class SerialPropsContainer extends PropsContainer
     private SerialGenerator serialGen;
 
 	public static SerialPropsContainer getInstance(
-		PropsConDatabaseDriver propsConDriver, // null on satellite 
+		PropsConDatabaseDriver propsConDriver, // noop driver on satellite
 		TransactionMgr transMgr, // null on satellite
 		SerialGenerator srlGen // can be null on both
-	) 
+	)
 	    throws SQLException
-	{ 
+	{
 		SerialPropsContainer container;
-		
+
 		try
 		{
 			container = new SerialPropsContainer(srlGen);
@@ -41,14 +41,12 @@ public class SerialPropsContainer extends PropsContainer
                 keyExc
             );
         }
-		
+
 		container.dbDriver = propsConDriver;
-		
-		if (propsConDriver != null && transMgr != null)
+
+		if (transMgr != null)
 		{
 	        Map<String, String> loadedProps = propsConDriver.load(transMgr.dbCon);
-
-	        // first, restore the properties
 
 	        // we should skip the .setAllProps method as that triggers a db re-persist
 	        try
@@ -79,10 +77,10 @@ public class SerialPropsContainer extends PropsContainer
 	            );
 	        }
 		}
-		
+
 		return container;
 	}
-	
+
     SerialPropsContainer(SerialGenerator sGen)
         throws InvalidKeyException, SQLException
     {
