@@ -31,23 +31,24 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     private static final String CON_RES_NAME = DerbyConstants.RESOURCE_NAME;
     private static final String CON_NODE_SRC = DerbyConstants.NODE_NAME_SRC;
     private static final String CON_NODE_DST = DerbyConstants.NODE_NAME_DST;
+    private static final String CON_NR = DerbyConstants.CON_NR;
 
     private static final String CON_SELECT =
         " SELECT " + CON_UUID + ", " + CON_RES_NAME + ", " +
-                     CON_NODE_SRC + ", " + CON_NODE_DST +
+                     CON_NODE_SRC + ", " + CON_NODE_DST + ", " + CON_NR +
         " FROM " + TBL_CON_DFN +
         " WHERE "+ CON_RES_NAME + " = ? AND " +
                    CON_NODE_SRC + " = ? AND " +
                    CON_NODE_DST + " = ?";
     private static final String CON_SELECT_BY_RES_DFN =
         " SELECT " + CON_UUID + ", " + CON_RES_NAME + ", " +
-                     CON_NODE_SRC + ", " + CON_NODE_DST +
+                     CON_NODE_SRC + ", " + CON_NODE_DST + ", " + CON_NR +
         " FROM " + TBL_CON_DFN +
         " WHERE "+ CON_RES_NAME + " = ?";
 
     private static final String CON_INSERT =
         " INSERT INTO " + TBL_CON_DFN +
-        " VALUES (?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?)";
     private static final String CON_DELETE =
         " DELETE FROM " + TBL_CON_DFN +
         " WHERE "+ CON_RES_NAME + " = ? AND " +
@@ -125,6 +126,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         ResourceName resName;
         NodeName srcNodeName;
         NodeName dstNodeName;
+        int conNr = resultSet.getInt(CON_NR);
 
         try
         {
@@ -156,7 +158,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         NodeDataDatabaseDriver dstNodeDriver = DrbdManage.getNodeDataDatabaseDriver(dstNodeName);
         NodeData nodeDst = dstNodeDriver.load(con, serialGen, transMgr);
 
-        ConnectionDefinitionData conData = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst);
+        ConnectionDefinitionData conData = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst, conNr);
         cache(conData, accCtx);
         return conData;
     }
@@ -173,10 +175,10 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         PreparedStatement stmt = con.prepareStatement(CON_SELECT_BY_RES_DFN);
         stmt.setString(1, resName.value);
         ResultSet resultSet = stmt.executeQuery();
-        Map<NodeName, Map<Integer, ConnectionDefinition>> ret = new HashMap<>();
+        Map<NodeName, Map<Integer, ConnectionDefinition>> resultMap = new HashMap<>();
         try
         {
-            while (resultSet.next() && false) // TODO: gh - method not fully implemented yet
+            while (resultSet.next())
             {
                 ConnectionDefinitionData conDfn = restoreConnectionDefinition(con, resultSet, serialGen, transMgr, accCtx);
 
@@ -192,9 +194,9 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
                 }
 
                 Map<Integer, ConnectionDefinition> conMap = new HashMap<>();
-                // TODO: gh - connection number is missing?
-                ret.put(srcNodeName, conMap);
-                ret.put(dstNodeName, conMap); // TODO: put the same map?
+                conMap.put(conDfn.getConnectionNumber(accCtx), conDfn);
+                resultMap.put(srcNodeName, conMap);
+                resultMap.put(dstNodeName, conMap); // TODO: put the same map?
             }
         }
         catch (AccessDeniedException accessDeniedExc)
@@ -208,7 +210,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         }
         resultSet.close();
         stmt.close();
-        return ret;
+        return resultMap;
     }
 
     @Override
@@ -220,9 +222,17 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
             stmt.setString(2, resName.value);
             stmt.setString(3, srcNodeName.value);
             stmt.setString(4, dstNodeName.value);
+            stmt.setInt(5, conDfnData.getConnectionNumber(dbCtx));
 
             stmt.executeUpdate();
             cache(conDfnData, dbCtx);
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            throw new ImplementationError(
+                "Database's access context has no permission to get storPoolDefinition",
+                accessDeniedExc
+            );
         }
     }
 

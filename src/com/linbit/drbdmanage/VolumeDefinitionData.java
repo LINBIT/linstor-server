@@ -209,6 +209,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
         if (volDfn != null)
         {
+            ((ResourceDefinitionData) resDfn).putVolumeDefinition(accCtx, volDfn);
+
             volDfn.initialized();
         }
 

@@ -395,7 +395,8 @@ public abstract class DerbyBase implements DerbyConstants
         java.util.UUID uuid,
         ResourceName resName,
         NodeName srcNode,
-        NodeName dstNode
+        NodeName dstNode,
+        int conNr
     )
         throws SQLException
     {
@@ -404,6 +405,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.setString(2, resName.value);
         stmt.setString(3, srcNode.value);
         stmt.setString(4, dstNode.value);
+        stmt.setInt(5, conNr);
         stmt.executeUpdate();
         stmt.close();
     }

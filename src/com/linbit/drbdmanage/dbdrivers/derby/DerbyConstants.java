@@ -109,6 +109,7 @@ public class DerbyConstants
     // CONNECTION_DEFINITIONS column names
     public static final String NODE_NAME_SRC = "NODE_NAME_SRC";
     public static final String NODE_NAME_DST = "NODE_NAME_DST";
+    public static final String CON_NR        = "CON_NR";
 
     // PROPS_CONTAINERS column names
     public static final String PROPS_INSTANCE = "PROPS_INSTANCE";

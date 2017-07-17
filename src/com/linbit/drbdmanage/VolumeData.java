@@ -112,6 +112,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     public static VolumeData getInstance(
+        AccessContext accCtx,
         Resource resRef,
         VolumeDefinition volDfn,
         String blockDevicePathRef,
@@ -120,7 +121,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         TransactionMgr transMgr,
         boolean createIfNotExists
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         VolumeData vol = null;
 
@@ -143,6 +144,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
         if (vol != null)
         {
+            ((ResourceData) resRef).setVolume(accCtx, vol);
+
             vol.initialized();
         }
         return vol;

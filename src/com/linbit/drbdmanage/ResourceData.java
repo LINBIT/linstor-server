@@ -187,7 +187,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
                 synchronized (resDfn)
                 {
                     NodeData nodeData = (NodeData) node;
-                    // TODO: gh - maybe insert instanceof checks here?
                     nodeData.addResource(accCtx, resData);
                     try
                     {
@@ -197,6 +196,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
                     {
                         // Rollback adding the resource to the node
                         nodeData.removeResource(accCtx, resData);
+                        throw accExc;
                     }
                 }
             }

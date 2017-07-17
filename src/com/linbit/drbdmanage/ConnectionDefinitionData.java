@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -32,6 +33,8 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
 
     private final ConnectionDefinitionDataDatabaseDriver dbDriver;
 
+    private final int conNr;
+
     private boolean deleted = false;
 
     /*
@@ -42,6 +45,7 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
         ResourceDefinition resDfn,
         Node node1,
         Node node2,
+        int conNrRef,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -56,7 +60,8 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
             ),
             resDfn,
             node1,
-            node2
+            node2,
+            conNrRef
         );
     }
 
@@ -68,7 +73,8 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
         ObjectProtection objProtRef,
         ResourceDefinition resDfnRef,
         Node node1,
-        Node node2
+        Node node2,
+        int conNrRef
     )
     {
         objId = uuid;
@@ -85,10 +91,20 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
             sourceNode = node2;
             targetNode = node1;
         }
+        conNr = conNrRef;
+
+
         dbDriver = DrbdManage.getConnectionDefinitionDatabaseDriver(
             resDfn.getName(),
             sourceNode.getName(),
             targetNode.getName()
+        );
+
+        transObjs = Arrays.asList(
+            objProt,
+            resDfn,
+            sourceNode,
+            targetNode
         );
     }
 
@@ -97,6 +113,7 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
         ResourceDefinition resDfn,
         Node node1,
         Node node2,
+        int conNr,
         SerialGenerator srlGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
@@ -145,6 +162,7 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
                 resDfn,
                 source,
                 target,
+                conNr,
                 transMgr
             );
             if (transMgr != null)
@@ -155,6 +173,8 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
 
         if (conDfnData != null)
         {
+            ((ResourceDefinitionData) resDfn).addConnection(accCtx, source.getName(), conNr, conDfnData);
+            ((ResourceDefinitionData) resDfn).addConnection(accCtx, target.getName(), conNr, conDfnData);
             conDfnData.initialized();
         }
         return conDfnData;
@@ -189,6 +209,13 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return targetNode;
+    }
+
+    @Override
+    public int getConnectionNumber(AccessContext accCtx) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return conNr;
     }
 
     @Override

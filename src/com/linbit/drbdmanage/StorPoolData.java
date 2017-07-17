@@ -150,6 +150,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         if (storPoolData != null)
         {
             ((NodeData) nodeRef).addStorPool(accCtx, storPoolData);
+
+            storPoolData.initialized();
         }
         return storPoolData;
     }

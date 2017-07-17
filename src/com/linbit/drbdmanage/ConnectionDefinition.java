@@ -21,4 +21,6 @@ public interface ConnectionDefinition
     public Node getTargetNode(AccessContext accCtx) throws AccessDeniedException;
 
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
+
+    public int getConnectionNumber(AccessContext accCtx) throws AccessDeniedException;
 }

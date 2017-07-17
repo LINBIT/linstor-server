@@ -150,6 +150,7 @@ public class VolumeDataDerbyTestTest extends DerbyBase
     public void testPersistGetInstance() throws Exception
     {
         VolumeData volData = VolumeData.getInstance(
+            sysCtx,
             res,
             volDfn,
             blockDevicePath,
@@ -216,7 +217,7 @@ public class VolumeDataDerbyTestTest extends DerbyBase
         driver.create(con, vol);
         DriverUtils.clearCaches();
 
-        VolumeData loadedVol = VolumeData.getInstance(res, volDfn, blockDevicePath, null, null, transMgr, false);
+        VolumeData loadedVol = VolumeData.getInstance(sysCtx, res, volDfn, blockDevicePath, null, null, transMgr, false);
         checkLoaded(loadedVol, uuid);
     }
 
@@ -318,6 +319,7 @@ public class VolumeDataDerbyTestTest extends DerbyBase
         DriverUtils.satelliteMode();
 
         VolumeData volData = VolumeData.getInstance(
+            sysCtx,
             res,
             volDfn,
             blockDevicePath,
@@ -343,6 +345,7 @@ public class VolumeDataDerbyTestTest extends DerbyBase
     {
         DriverUtils.satelliteMode();
         VolumeData volData = VolumeData.getInstance(
+            sysCtx,
             res,
             volDfn,
             blockDevicePath,

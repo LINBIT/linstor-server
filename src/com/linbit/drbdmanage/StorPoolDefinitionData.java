@@ -94,6 +94,11 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
             storPoolDfn = new StorPoolDefinitionData(accCtx, nameRef, transMgr);
         }
 
+        if (storPoolDfn != null)
+        {
+            storPoolDfn.initialized();
+        }
+
         return storPoolDfn;
     }
 

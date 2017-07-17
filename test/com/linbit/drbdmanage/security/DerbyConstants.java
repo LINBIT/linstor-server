@@ -109,6 +109,7 @@ public interface DerbyConstants
     // CONNECTION_DEFINITIONS column names
     public static final String NODE_NAME_SRC = "NODE_NAME_SRC";
     public static final String NODE_NAME_DST = "NODE_NAME_DST";
+    public static final String CON_NR        = "CON_NR";
 
     // PROPS_CONTAINERS column names
     public static final String PROPS_INSTANCE = "PROPS_INSTANCE";
@@ -135,7 +136,7 @@ public interface DerbyConstants
     public static final int TBL_COL_COUNT_VOLUMES                = 6;
     public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS  = 3;
     public static final int TBL_COL_COUNT_NODE_STOR_POOL         = 4;
-    public static final int TBL_COL_COUNT_CONNECTION_DEFINITIONS = 4;
+    public static final int TBL_COL_COUNT_CONNECTION_DEFINITIONS = 5;
     public static final int TBL_COL_COUNT_PROPS_CONTAINERS       = 3;
 
     // create statements
@@ -267,7 +268,7 @@ public interface DerbyConstants
         "    NODE_NAME VARCHAR(255) NOT NULL,  \n" + 
         "    NODE_NET_NAME VARCHAR(255) NOT NULL, \n" + 
         "    NODE_NET_DSP_NAME VARCHAR(255) NOT NULL, \n" + 
-        "    INET_ADDRESS VARCHAR(270) NOT NULL, \n" + 
+        "    INET_ADDRESS VARCHAR(45) NOT NULL, \n" + 
         "    INET_TRANSPORT_TYPE VARCHAR(40) NOT NULL, \n" + 
         "    PRIMARY KEY (NODE_NAME, NODE_NET_NAME), \n" + 
         "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE \n" + 
@@ -346,6 +347,7 @@ public interface DerbyConstants
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" + 
         "    NODE_NAME_SRC VARCHAR(255) NOT NULL, \n" + 
         "    NODE_NAME_DST VARCHAR(255) NOT NULL, \n" + 
+        "    CON_NR INT NOT NULL, \n" + 
         "    PRIMARY KEY (RESOURCE_NAME, NODE_NAME_SRC, NODE_NAME_DST), \n" + 
         "    FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) ON DELETE CASCADE, \n" + 
         "    FOREIGN KEY (NODE_NAME_SRC) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" + 
@@ -559,7 +561,7 @@ public interface DerbyConstants
         " VALUES (?, ?, ?, ?)";
     public static final String INSERT_CONNECTION_DEFINITIONS = 
         " INSERT INTO " + TBL_CONNECTION_DEFINITIONS + 
-        " VALUES (?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?)";
     public static final String INSERT_PROPS_CONTAINERS = 
         " INSERT INTO " + TBL_PROPS_CONTAINERS + 
         " VALUES (?, ?, ?)";
