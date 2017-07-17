@@ -9,6 +9,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
@@ -30,30 +31,32 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 public class ResourceDefinitionData extends BaseTransactionObject implements ResourceDefinition
 {
     // Object identifier
-    private UUID objId;
+    private final UUID objId;
 
     // Resource name
-    private ResourceName resourceName;
+    private final ResourceName resourceName;
 
     // Connections to the peer resources
-    private Map<NodeName, Map<Integer, ConnectionDefinition>> connectionMap;
+    private final Map<NodeName, Map<Integer, ConnectionDefinition>> connectionMap;
 
     // Volumes of the resource
-    private Map<VolumeNumber, VolumeDefinition> volumeMap;
+    private final Map<VolumeNumber, VolumeDefinition> volumeMap;
 
     // Resources defined by this ResourceDefinition
-    private Map<NodeName, Resource> resourceMap;
+    private final Map<NodeName, Resource> resourceMap;
 
     // State flags
-    private StateFlags<RscDfnFlags> flags;
+    private final StateFlags<RscDfnFlags> flags;
 
     // Object access controls
-    private ObjectProtection objProt;
+    private final ObjectProtection objProt;
 
     // Properties container for this resource definition
-    private Props rscDfnProps;
+    private final Props rscDfnProps;
 
-    private ResourceDefinitionDataDatabaseDriver dbDriver;
+    private final ResourceDefinitionDataDatabaseDriver dbDriver;
+
+    private boolean deleted = false;
 
     /*
      * used by getInstance
@@ -87,10 +90,10 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
      */
     ResourceDefinitionData(
         UUID objIdRef,
-        ObjectProtection objProtRef, 
-        ResourceName resName, 
+        ObjectProtection objProtRef,
+        ResourceName resName,
         long initialFlags,
-        SerialGenerator serialGen, 
+        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -106,7 +109,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         connectionMap = new TreeMap<>();
         volumeMap = new TreeMap<>();
         resourceMap = new TreeMap<>();
-        
+
         rscDfnProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, serialGen);
         flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence(), initialFlags);
 
@@ -140,10 +143,10 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             if (createIfNotExists)
             {
                 resDfn = new ResourceDefinitionData(
-                    accCtx, 
-                    resName, 
+                    accCtx,
+                    resName,
                     StateFlagsBits.getMask(flags),
-                    serialGen, 
+                    serialGen,
                     transMgr
                 );
                 if (transMgr != null)
@@ -163,12 +166,14 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     @Override
     public UUID getUuid()
     {
+        checkDeleted();
         return objId;
     }
 
     @Override
     public ResourceName getName()
     {
+        checkDeleted();
         return resourceName;
     }
 
@@ -176,33 +181,35 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         return PropsAccess.secureGetProps(accCtx, objProt, rscDfnProps);
     }
 
-    @Override
-    public void addConnection(
-        AccessContext accCtx, 
-        NodeName nodeName, 
+    void addConnection(
+        AccessContext accCtx,
+        NodeName nodeName,
         int conDfnNr,
         ConnectionDefinition conDfn
     )
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-            
+
         Map<Integer, ConnectionDefinition> nodeConnMap = connectionMap.get(nodeName);
         if (nodeConnMap == null)
         {
             nodeConnMap = new HashMap<>();
             connectionMap.put(nodeName, nodeConnMap);
         }
-        nodeConnMap.put(conDfnNr, conDfn);        
+        nodeConnMap.put(conDfnNr, conDfn);
     }
-    
+
     @Override
     public ConnectionDefinition getConnectionDfn(AccessContext accCtx, NodeName clNodeName, Integer connNr)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         ConnectionDefinition connDfn = null;
         Map<Integer, ConnectionDefinition> nodeConnMap = connectionMap.get(clNodeName);
@@ -213,18 +220,19 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         return connDfn;
     }
 
-    @Override
-    public void putVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn) 
+    void putVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
         volumeMap.put(volDfn.getVolumeNumber(accCtx), volDfn);
     }
-    
+
     @Override
     public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return volumeMap.get(volNr);
     }
@@ -233,6 +241,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     public Iterator<VolumeDefinition> iterateVolumeDfn(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return volumeMap.values().iterator();
     }
@@ -240,6 +249,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     @Override
     public ObjectProtection getObjProt()
     {
+        checkDeleted();
         return objProt;
     }
 
@@ -247,21 +257,22 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     public Resource getResource(AccessContext accCtx, NodeName clNodeName)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return resourceMap.get(clNodeName);
     }
 
-    @Override
-    public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.put(resRef.getAssignedNode().getName(), resRef);
     }
 
-    @Override
-    public void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.remove(resRef.getAssignedNode().getName());
@@ -270,7 +281,27 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     @Override
     public StateFlags<RscDfnFlags> getFlags()
     {
+        checkDeleted();
         return flags;
+    }
+
+    @Override
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+        dbDriver.delete(dbCon);
+        deleted = true;
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted)
+        {
+            throw new ImplementationError("Access to deleted node", null);
+        }
     }
 
     private static final class RscDfnFlagsImpl extends StateFlagsBits<RscDfnFlags>

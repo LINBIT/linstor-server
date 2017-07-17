@@ -40,6 +40,9 @@ public interface VolumeDefinition extends TransactionObject
 
     public StateFlags<VlmDfnFlags> getFlags();
 
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
     public enum VlmDfnFlags implements Flags
     {
         REMOVE(1L);

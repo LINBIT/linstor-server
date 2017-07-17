@@ -4,13 +4,12 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
@@ -33,30 +32,32 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 public class ResourceData extends BaseTransactionObject implements Resource
 {
     // Object identifier
-    private UUID objId;
+    private final UUID objId;
 
     // Reference to the resource definition
-    private ResourceDefinition resourceDfn;
+    private final ResourceDefinition resourceDfn;
 
     // List of volumes of this resource
-    private Map<VolumeNumber, Volume> volumeMap;
+    private final Map<VolumeNumber, Volume> volumeMap;
 
     // Reference to the node this resource is assigned to
-    private Node assgNode;
+    private final Node assgNode;
 
     // State flags
-    private StateFlags<RscFlags> flags;
+    private final StateFlags<RscFlags> flags;
 
     // Access control for this resource
-    private ObjectProtection objProt;
+    private final ObjectProtection objProt;
 
     // DRBD node id for this resource
-    private NodeId resNodeId;
+    private final NodeId resNodeId;
 
     // Properties container for this resource
-    private Props resourceProps;
+    private final Props resourceProps;
 
-    private ResourceDataDatabaseDriver dbDriver;
+    private final ResourceDataDatabaseDriver dbDriver;
+
+    private boolean deleted = false;
 
     /*
      * used by getInstance
@@ -119,7 +120,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         volumeMap = new TreeMap<>();
         resourceProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
         objProt = objProtRef;
-        
+
         flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence(), initFlags);
 
         transObjs = Arrays.asList(
@@ -164,12 +165,12 @@ public class ResourceData extends BaseTransactionObject implements Resource
             if (createIfNotExists)
             {
                 resData = new ResourceData(
-                    accCtx, 
-                    resDfn, 
-                    node, 
-                    nodeId, 
-                    StateFlagsBits.getMask(initFlags), 
-                    srlGen, 
+                    accCtx,
+                    resDfn,
+                    node,
+                    nodeId,
+                    StateFlagsBits.getMask(initFlags),
+                    srlGen,
                     transMgr
                 );
                 if (transMgr != null)
@@ -185,15 +186,17 @@ public class ResourceData extends BaseTransactionObject implements Resource
             {
                 synchronized (resDfn)
                 {
-                    node.addResource(accCtx, resData);
+                    NodeData nodeData = (NodeData) node;
+                    // TODO: gh - maybe insert instanceof checks here?
+                    nodeData.addResource(accCtx, resData);
                     try
                     {
-                        resDfn.addResource(accCtx, resData);
+                        ((ResourceDefinitionData) resDfn).addResource(accCtx, resData);
                     }
                     catch (AccessDeniedException accExc)
                     {
                         // Rollback adding the resource to the node
-                        node.removeResource(accCtx, resData);
+                        nodeData.removeResource(accCtx, resData);
                     }
                 }
             }
@@ -206,12 +209,14 @@ public class ResourceData extends BaseTransactionObject implements Resource
     @Override
     public UUID getUuid()
     {
+        checkDeleted();
         return objId;
     }
 
     @Override
     public ObjectProtection getObjProt()
     {
+        checkDeleted();
         return objProt;
     }
 
@@ -219,25 +224,28 @@ public class ResourceData extends BaseTransactionObject implements Resource
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         return PropsAccess.secureGetProps(accCtx, objProt, resourceProps);
     }
 
     @Override
     public ResourceDefinition getDefinition()
     {
+        checkDeleted();
         return resourceDfn;
     }
 
     @Override
     public Volume getVolume(VolumeNumber volNr)
     {
+        checkDeleted();
         return volumeMap.get(volNr);
     }
 
-    @Override
-    public Volume setVolume(AccessContext accCtx, Volume vol)
+    Volume setVolume(AccessContext accCtx, Volume vol)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         return volumeMap.put(vol.getVolumeDfn().getVolumeNumber(accCtx), vol);
@@ -246,25 +254,48 @@ public class ResourceData extends BaseTransactionObject implements Resource
     @Override
     public Iterator<Volume> iterateVolumes()
     {
+        checkDeleted();
         return Collections.unmodifiableCollection(volumeMap.values()).iterator();
     }
 
     @Override
     public Node getAssignedNode()
     {
+        checkDeleted();
         return assgNode;
     }
 
     @Override
     public NodeId getNodeId()
     {
+        checkDeleted();
         return resNodeId;
     }
 
     @Override
     public StateFlags<RscFlags> getStateFlags()
     {
+        checkDeleted();
         return flags;
+    }
+
+    @Override
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+        dbDriver.delete(dbCon);
+        deleted = true;
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted)
+        {
+            throw new ImplementationError("Access to deleted node", null);
+        }
     }
 
     private static final class RscFlagsImpl extends StateFlagsBits<RscFlags>

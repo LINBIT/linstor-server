@@ -6,6 +6,8 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
+
+import java.sql.SQLException;
 import java.util.UUID;
 
 /**
@@ -26,6 +28,9 @@ public interface Volume extends TransactionObject
         throws AccessDeniedException;
 
     public StateFlags<VlmFlags> getFlags();
+
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
 
     public enum VlmFlags implements Flags
     {

@@ -252,7 +252,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertTrue(resultSet.next());
         resultSet.close();
 
-        dbDriver.delete(con, niData);
+        dbDriver.delete(con);
 
         resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());
@@ -309,7 +309,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals("localhost", resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(addrStr, resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
         assertFalse(resultSet.next());
 
         resultSet.close();
@@ -329,7 +329,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals("localhost", resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(addrStr, resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
         assertFalse(resultSet.next());
 
         resultSet.close();

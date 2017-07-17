@@ -217,7 +217,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     public void testDelete() throws Exception
     {
         driver.create(con, res);
-        driver.delete(con, res);
+        driver.delete(con);
 
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();

@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
 
+import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
@@ -25,24 +26,28 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 public class VolumeData extends BaseTransactionObject implements Volume
 {
     // Object identifier
-    private UUID objId;
+    private final UUID objId;
 
     // Reference to the resource this volume belongs to
-    private Resource resourceRef;
+    private final Resource resourceRef;
 
     // Reference to the resource definition that defines the resource this volume belongs to
-    private ResourceDefinition resourceDfn;
+    private final ResourceDefinition resourceDfn;
 
     // Reference to the volume definition that defines this volume
-    private VolumeDefinition volumeDfn;
+    private final VolumeDefinition volumeDfn;
 
     // Properties container for this volume
-    private Props volumeProps;
+    private final Props volumeProps;
 
     // State flags
-    private StateFlags<VlmFlags> flags;
+    private final StateFlags<VlmFlags> flags;
 
-    private String blockDevicePath;
+    private final String blockDevicePath;
+
+    private final VolumeDataDatabaseDriver dbDriver;
+
+    private boolean deleted = false;
 
     /*
      * used by getInstance
@@ -88,7 +93,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         volumeDfn = volDfnRef;
         blockDevicePath = blockDevicePathRef;
 
-        VolumeDataDatabaseDriver dbDriver = DrbdManage.getVolumeDataDatabaseDriver(resRef, volDfnRef);
+        dbDriver = DrbdManage.getVolumeDataDatabaseDriver(resRef, volDfnRef);
 
         flags = new VlmFlagsImpl(
             resRef.getObjProt(),
@@ -147,6 +152,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     @Override
     public UUID getUuid()
     {
+        checkDeleted();
         return objId;
     }
 
@@ -154,31 +160,63 @@ public class VolumeData extends BaseTransactionObject implements Volume
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         return PropsAccess.secureGetProps(accCtx, resourceRef.getObjProt(), volumeProps);
     }
 
     @Override
     public Resource getResource()
     {
+        checkDeleted();
         return resourceRef;
     }
 
     @Override
     public ResourceDefinition getResourceDfn()
     {
+        checkDeleted();
         return resourceDfn;
     }
 
     @Override
     public VolumeDefinition getVolumeDfn()
     {
+        checkDeleted();
         return volumeDfn;
     }
 
     @Override
     public StateFlags<VlmFlags> getFlags()
     {
+        checkDeleted();
         return flags;
+    }
+
+    public String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return blockDevicePath;
+    }
+
+    @Override
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        // TODO: still a good idea that volume does not have its own objProt?
+        resourceRef.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        dbDriver.delete(dbCon);
+        deleted = true;
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted)
+        {
+            throw new ImplementationError("Access to deleted node", null);
+        }
     }
 
     private static final class VlmFlagsImpl extends StateFlagsBits<VlmFlags>
@@ -196,11 +234,5 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 initFlags
             );
         }
-    }
-
-    public String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException
-    {
-        resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return blockDevicePath;
     }
 }

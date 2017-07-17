@@ -22,6 +22,6 @@ public interface NodeDataDatabaseDriver
     public NodeData load(Connection con, SerialGenerator serialGen, TransactionMgr transMgr)
         throws SQLException;
 
-    void delete(Connection con, NodeData node)
+    void delete(Connection con)
         throws SQLException;
 }

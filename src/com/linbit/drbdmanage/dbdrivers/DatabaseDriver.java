@@ -3,7 +3,6 @@ package com.linbit.drbdmanage.dbdrivers;
 import java.sql.SQLException;
 
 import com.linbit.ServiceName;
-import com.linbit.drbdmanage.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeData;
@@ -18,6 +17,8 @@ import com.linbit.drbdmanage.VolumeData;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.VolumeNumber;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
@@ -75,7 +76,10 @@ public interface DatabaseDriver
     /**
      * Returns the database driver specific implementation for {@link VolumeDefinitionData}-IO
      */
-    VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(ResourceDefinition resDef, VolumeNumber volNr);
+    VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(
+        ResourceDefinition resDef,
+        VolumeNumber volNr
+    );
 
     /**
      * Returns the database driver specific implementation for {@link StorPoolDefinitionData}-IO
@@ -91,4 +95,10 @@ public interface DatabaseDriver
      * Returns the database driver specific implementation for {@link NetInterfaceDataDatabaseDriver}-IO
      */
     NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node node, NetInterfaceName name);
+
+    ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver(
+        ResourceName resName,
+        NodeName sourceNodeName,
+        NodeName targetNodeName
+    );
 }

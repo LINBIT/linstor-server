@@ -205,17 +205,16 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public void delete(Connection con, NodeData node) throws SQLException
+    public void delete(Connection con) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(NODE_DELETE);
 
-        stmt.setString(1, node.getName().value);
+        stmt.setString(1, nodeName.value);
 
         stmt.executeUpdate();
         stmt.close();
 
-        // TODO: gh - also delete all its resources, and other sub-objects?
-        cacheRemove(node);
+        cacheRemove(nodeName);
     }
 
     private synchronized static boolean cache(NodeData node)
@@ -234,11 +233,11 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         return ret;
     }
 
-    private synchronized static void cacheRemove(NodeData node)
+    private synchronized static void cacheRemove(NodeName nodeName)
     {
-        if (node != null)
+        if (nodeName != null)
         {
-            nodeCache.remove(getPk(node));
+            nodeCache.remove(getPk(nodeName));
         }
     }
 

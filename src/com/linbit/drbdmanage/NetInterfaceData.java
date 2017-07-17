@@ -1,13 +1,14 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
-import java.net.InetAddress;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.UUID;
@@ -19,15 +20,16 @@ import java.util.UUID;
  */
 public class NetInterfaceData extends BaseTransactionObject implements NetInterface
 {
-    private UUID niUuid;
-    private Node niNode;
-    private NetInterfaceName niName;
+    private final UUID niUuid;
+    private final Node niNode;
+    private final NetInterfaceName niName;
 
-    private ObjectProtection objProt;
-    private TransactionSimpleObject<DmIpAddress> niAddress;
-    private TransactionSimpleObject<NetInterfaceType> niType;
+    private final ObjectProtection objProt;
+    private final TransactionSimpleObject<DmIpAddress> niAddress;
+    private final TransactionSimpleObject<NetInterfaceType> niType;
 
     private final NetInterfaceDataDatabaseDriver dbDriver;
+    private boolean deleted = false;
 
     // used by getInstance
     private NetInterfaceData(
@@ -126,7 +128,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         if (netData != null)
         {
-            node.addNetInterface(accCtx, netData);
+            // TODO: gh - maybe insert an instanceof check here?
+            ((NodeData) node).addNetInterface(accCtx, netData);
 
             netData.initialized();
         }
@@ -137,24 +140,28 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     @Override
     public UUID getUuid()
     {
+        checkDeleted();
         return niUuid;
     }
 
     @Override
     public ObjectProtection getObjProt()
     {
+        checkDeleted();
         return objProt;
     }
 
     @Override
     public NetInterfaceName getName()
     {
+        checkDeleted();
         return niName;
     }
 
     @Override
     public Node getNode()
     {
+        checkDeleted();
         return niNode;
     }
 
@@ -162,6 +169,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     public DmIpAddress getAddress(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return niAddress.get();
     }
@@ -170,6 +178,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     public void setAddress(AccessContext accCtx, DmIpAddress newAddress)
         throws AccessDeniedException, SQLException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         niAddress.set(newAddress);
     }
@@ -178,6 +187,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     public NetInterfaceType getNetInterfaceType(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return niType.get();
     }
@@ -186,7 +196,26 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     public void setNetInterfaceType(AccessContext accCtx, NetInterfaceType type)
         throws AccessDeniedException, SQLException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         niType.set(type);
+    }
+
+    @Override
+    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+        dbDriver.delete(dbCon);
+        deleted = true;
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted)
+        {
+            throw new ImplementationError("Access to deleted connectionDefinition", null);
+        }
     }
 }

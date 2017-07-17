@@ -34,6 +34,9 @@ public interface NetInterface extends TransactionObject
     public void setNetInterfaceType(AccessContext accCtx, NetInterfaceType type)
         throws AccessDeniedException, SQLException;
 
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
     public static enum NetInterfaceType
     {
         IP, RDMA, RoCE;

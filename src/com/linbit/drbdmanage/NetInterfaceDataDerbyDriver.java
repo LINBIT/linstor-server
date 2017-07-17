@@ -17,6 +17,7 @@ import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.UpdateOnlyDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -187,17 +188,17 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     @Override
-    public void delete(Connection con, NetInterfaceData niData) throws SQLException
+    public void delete(Connection con) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(NNI_DELETE);
 
         stmt.setString(1, node.getName().value);
-        stmt.setString(2, niData.getName().value);
+        stmt.setString(2, netName.value);
 
         stmt.executeUpdate();
         stmt.close();
 
-        cacheRemove(niData);
+        cacheRemove(node.getName(), netName);
     }
 
     @Override
@@ -340,9 +341,9 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return niCache.get(new PrimaryKey(resultSet.getString(NODE_NAME), resultSet.getString(NET_NAME)));
     }
 
-    private synchronized static void cacheRemove(NetInterfaceData niData)
+    private synchronized static void cacheRemove(NodeName nodeName, NetInterfaceName netName)
     {
-        niCache.remove(getPk(niData));
+        niCache.remove(new PrimaryKey(nodeName.value, netName.value));
     }
 
     private static PrimaryKey getPk(NetInterfaceData niData)

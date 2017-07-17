@@ -13,6 +13,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -56,20 +57,28 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     private static Map<PrimaryKey, ConnectionDefinitionData> conDfnCache = new HashMap<>();
 
     private final AccessContext dbCtx;
+    private final ResourceName resName;
+    private final NodeName srcNodeName;
+    private final NodeName dstNodeName;
 
-    public ConnectionDefinitionDataDerbyDriver(AccessContext accCtx)
+    public ConnectionDefinitionDataDerbyDriver(
+        AccessContext accCtx,
+        ResourceName resNameRef,
+        NodeName srcNodeNameRef,
+        NodeName dstsrcNodeNameRef
+    )
     {
         dbCtx = accCtx;
+        resName = resNameRef;
+        srcNodeName = srcNodeNameRef;
+        dstNodeName = dstsrcNodeNameRef;
     }
 
     @Override
     public ConnectionDefinitionData load(
         Connection con,
-        ResourceName resName,
-        NodeName srcNodeName,
-        NodeName dstNodeName,
-        TransactionMgr transMgr,
-        SerialGenerator serialGen
+        SerialGenerator serialGen,
+        TransactionMgr transMgr
     )
         throws SQLException
     {
@@ -208,40 +217,26 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         try (PreparedStatement stmt = con.prepareStatement(CON_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(conDfnData.getUuid()));
-            stmt.setString(2, conDfnData.getResourceDefinition(dbCtx).getName().value);
-            stmt.setString(3, conDfnData.getSourceNode(dbCtx).getName().value);
-            stmt.setString(4, conDfnData.getTargetNode(dbCtx).getName().value);
+            stmt.setString(2, resName.value);
+            stmt.setString(3, srcNodeName.value);
+            stmt.setString(4, dstNodeName.value);
 
             stmt.executeUpdate();
             cache(conDfnData, dbCtx);
         }
-        catch (AccessDeniedException accessDeniedExc)
-        {
-            throw new ImplementationError(
-                "Database's access context has no permission to access ConnectionDefinitionData",
-                accessDeniedExc
-            );
-        }
     }
 
     @Override
-    public void delete(Connection con, ConnectionDefinitionData conDfnData) throws SQLException
+    public void delete(Connection con) throws SQLException
     {
         try (PreparedStatement stmt = con.prepareStatement(CON_DELETE))
         {
-            stmt.setString(1, conDfnData.getResourceDefinition(dbCtx).getName().value);
-            stmt.setString(2, conDfnData.getSourceNode(dbCtx).getName().value);
-            stmt.setString(3, conDfnData.getTargetNode(dbCtx).getName().value);
+            stmt.setString(1, resName.value);
+            stmt.setString(2, srcNodeName.value);
+            stmt.setString(3, dstNodeName.value);
 
             stmt.executeUpdate();
-            cacheRemove(conDfnData, dbCtx);
-        }
-        catch (AccessDeniedException accessDeniedExc)
-        {
-            throw new ImplementationError(
-                "Database's access context has no permission to access ConnectionDefinitionData",
-                accessDeniedExc
-            );
+            cacheRemove(resName, srcNodeName, dstNodeName);
         }
     }
 
@@ -251,7 +246,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         boolean contains = conDfnCache.containsKey(pk);
         if (!contains)
         {
-            conDfnCache.put(getPk(con, accCtx), con);
+            conDfnCache.put(pk, con);
         }
         return !contains;
     }
@@ -273,9 +268,13 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         conDfnCache.clear();
     }
 
-    private static synchronized void cacheRemove(ConnectionDefinitionData con, AccessContext accCtx)
+    private static synchronized void cacheRemove(
+        ResourceName resName,
+        NodeName srcNodeName,
+        NodeName dstNodeName
+    )
     {
-        conDfnCache.remove(getPk(con, accCtx));
+        conDfnCache.remove(new PrimaryKey(resName.value, srcNodeName.value, dstNodeName.value));
     }
 
     private static PrimaryKey getPk(ConnectionDefinitionData con, AccessContext accCtx)

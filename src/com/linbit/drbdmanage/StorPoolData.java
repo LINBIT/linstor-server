@@ -30,6 +30,9 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final StorageDriver storDriver;
     private final String storDriverSimpleClassName;
     private final Props props;
+    private final StorPoolDataDatabaseDriver dbDriver;
+
+    private boolean deleted = false;
 
     /*
      * used only by getInstance
@@ -94,6 +97,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             serGen
         );
 
+        dbDriver = DrbdManage.getStorPoolDataDatabaseDriver(nodeRef, storPoolDefRef);
+
         transObjs = Arrays.<TransactionObject>asList(props);
     }
 
@@ -144,7 +149,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
         if (storPoolData != null)
         {
-            nodeRef.addStorPool(accCtx, storPoolData);
+            ((NodeData) nodeRef).addStorPool(accCtx, storPoolData);
         }
         return storPoolData;
     }
@@ -152,24 +157,28 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     @Override
     public UUID getUuid()
     {
+        checkDeleted();
         return uuid;
     }
 
     @Override
     public StorPoolName getName()
     {
+        checkDeleted();
         return storPoolDef.getName();
     }
 
     @Override
     public ObjectProtection getObjProt()
     {
+        checkDeleted();
         return objProt;
     }
 
     @Override
     public StorPoolDefinition getDefinition(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         return storPoolDef;
     }
@@ -177,6 +186,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     @Override
     public StorageDriver getDriver(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         return storDriver;
     }
@@ -184,6 +194,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     @Override
     public Props getConfiguration(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         return props;
     }
@@ -191,6 +202,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     @Override
     public void reconfigureStorageDriver() throws StorageException
     {
+        checkDeleted();
         try
         {
             Map<String, String> map = props.getNamespace(STORAGE_DRIVER_PROP_NAMESPACE).map();
@@ -207,6 +219,27 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     @Override
     public String getDriverName()
     {
+        checkDeleted();
         return storDriverSimpleClassName;
     }
+
+    @Override
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+        dbDriver.delete(dbCon);
+        deleted = true;
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted)
+        {
+            throw new ImplementationError("Access to deleted node", null);
+        }
+    }
+
 }

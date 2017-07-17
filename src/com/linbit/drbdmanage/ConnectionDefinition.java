@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage;
 
+import java.sql.SQLException;
 import java.util.UUID;
 
 import com.linbit.drbdmanage.security.AccessContext;
@@ -18,4 +19,6 @@ public interface ConnectionDefinition
     public Node getSourceNode(AccessContext accCtx) throws AccessDeniedException;
 
     public Node getTargetNode(AccessContext accCtx) throws AccessDeniedException;
+
+    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 }

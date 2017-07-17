@@ -5,6 +5,8 @@ import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
+
+import java.sql.SQLException;
 import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
@@ -21,16 +23,10 @@ public interface ResourceDefinition extends TransactionObject
     public ObjectProtection getObjProt();
 
     public ResourceName getName();
-    
-    public void addConnection(AccessContext accCtx, NodeName nodeName, int conDfnNr, ConnectionDefinition conDfn)
-        throws AccessDeniedException;
-   
+
     public ConnectionDefinition getConnectionDfn(AccessContext accCtx, NodeName clNodeName, Integer connNr)
         throws AccessDeniedException;
 
-    public void putVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn) 
-        throws AccessDeniedException;
-    
     public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
         throws AccessDeniedException;
 
@@ -40,16 +36,13 @@ public interface ResourceDefinition extends TransactionObject
     public Resource getResource(AccessContext accCtx, NodeName clNodeName)
         throws AccessDeniedException;
 
-    public void addResource(AccessContext accCtx, Resource resRef)
-        throws AccessDeniedException;
-
-    public void removeResource(AccessContext accCtx, Resource resRef)
-        throws AccessDeniedException;
-
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
     public StateFlags<RscDfnFlags> getFlags();
+
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
 
     public enum RscDfnFlags implements Flags
     {

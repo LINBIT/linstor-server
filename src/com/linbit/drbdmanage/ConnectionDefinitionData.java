@@ -3,7 +3,10 @@ package com.linbit.drbdmanage;
 import java.sql.SQLException;
 import java.util.UUID;
 
+import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -14,27 +17,31 @@ import com.linbit.drbdmanage.security.ObjectProtection;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class ConnectionDefinitionData implements ConnectionDefinition
+public class ConnectionDefinitionData extends BaseTransactionObject implements ConnectionDefinition
 {
     // Object identifier
-    private UUID objId;
+    private final UUID objId;
 
-    private ObjectProtection objProt;
+    private final ObjectProtection objProt;
 
-    private ResourceDefinition resDfn;
+    private final ResourceDefinition resDfn;
 
-    private Node sourceNode;
+    private final Node sourceNode;
 
-    private Node targetNode;
+    private final Node targetNode;
+
+    private final ConnectionDefinitionDataDatabaseDriver dbDriver;
+
+    private boolean deleted = false;
 
     /*
      * used by getInstance
      */
     private ConnectionDefinitionData(
         AccessContext accCtx,
-        ResourceDefinition resDfn, 
-        Node node1, 
-        Node node2, 
+        ResourceDefinition resDfn,
+        Node node1,
+        Node node2,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -57,10 +64,10 @@ public class ConnectionDefinitionData implements ConnectionDefinition
      * used by dbDrivers and tests
      */
     ConnectionDefinitionData(
-        UUID uuid, 
-        ObjectProtection objProtRef, 
-        ResourceDefinition resDfnRef, 
-        Node node1, 
+        UUID uuid,
+        ObjectProtection objProtRef,
+        ResourceDefinition resDfnRef,
+        Node node1,
         Node node2
     )
     {
@@ -78,23 +85,92 @@ public class ConnectionDefinitionData implements ConnectionDefinition
             sourceNode = node2;
             targetNode = node1;
         }
+        dbDriver = DrbdManage.getConnectionDefinitionDatabaseDriver(
+            resDfn.getName(),
+            sourceNode.getName(),
+            targetNode.getName()
+        );
     }
 
-    public static ConnectionDefinitionData getInstance()
+    public static ConnectionDefinitionData getInstance(
+        AccessContext accCtx,
+        ResourceDefinition resDfn,
+        Node node1,
+        Node node2,
+        SerialGenerator srlGen,
+        TransactionMgr transMgr,
+        boolean createIfNotExists
+    )
+        throws AccessDeniedException, SQLException
     {
-        // TODO: gh - implement
-        return null;
+        ConnectionDefinitionData conDfnData = null;
+
+        Node source;
+        Node target;
+        if (node1.getName().compareTo(node2.getName()) < 0)
+        {
+            source = node1;
+            target = node2;
+        }
+        else
+        {
+            source = node2;
+            target = node1;
+        }
+
+        ConnectionDefinitionDataDatabaseDriver dbDriver = DrbdManage.getConnectionDefinitionDatabaseDriver(
+            resDfn.getName(),
+            source.getName(),
+            target.getName()
+        );
+        if (transMgr != null)
+        {
+            conDfnData = dbDriver.load(
+                transMgr.dbCon,
+                srlGen,
+                transMgr
+            );
+        }
+
+        if (conDfnData != null)
+        {
+            conDfnData.objProt.requireAccess(accCtx, AccessType.CONTROL);
+            conDfnData.setConnection(transMgr);
+        }
+        else
+        if (createIfNotExists)
+        {
+            conDfnData = new ConnectionDefinitionData(
+                accCtx,
+                resDfn,
+                source,
+                target,
+                transMgr
+            );
+            if (transMgr != null)
+            {
+                dbDriver.create(transMgr.dbCon, conDfnData);
+            }
+        }
+
+        if (conDfnData != null)
+        {
+            conDfnData.initialized();
+        }
+        return conDfnData;
     }
-    
+
     @Override
     public UUID getUuid()
     {
+        checkDeleted();
         return objId;
     }
 
     @Override
     public ResourceDefinition getResourceDefinition(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return resDfn;
     }
@@ -102,6 +178,7 @@ public class ConnectionDefinitionData implements ConnectionDefinition
     @Override
     public Node getSourceNode(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return sourceNode;
     }
@@ -109,7 +186,26 @@ public class ConnectionDefinitionData implements ConnectionDefinition
     @Override
     public Node getTargetNode(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return targetNode;
+    }
+
+    @Override
+    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+        dbDriver.delete(dbCon);
+        deleted = true;
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted)
+        {
+            throw new ImplementationError("Access to deleted connectionDefinition", null);
+        }
     }
 }

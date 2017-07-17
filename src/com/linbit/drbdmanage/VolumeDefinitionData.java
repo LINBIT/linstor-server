@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.ValueOutOfRangeException;
@@ -36,24 +37,26 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     private final UUID objId;
 
     // Resource definition this VolumeDefinition belongs to
-    private ResourceDefinition resourceDfn;
+    private final ResourceDefinition resourceDfn;
 
     // DRBD volume number
     private final VolumeNumber volumeNr;
 
     // DRBD device minor number
-    private TransactionSimpleObject<MinorNumber> minorNr;
+    private final TransactionSimpleObject<MinorNumber> minorNr;
 
     // Net volume size in kiB
-    private TransactionSimpleObject<Long> volumeSize;
+    private final TransactionSimpleObject<Long> volumeSize;
 
     // Properties container for this volume definition
-    private Props vlmDfnProps;
+    private final Props vlmDfnProps;
 
     // State flags
-    private StateFlags<VlmDfnFlags> flags;
+    private final StateFlags<VlmDfnFlags> flags;
 
-    private VolumeDefinitionDataDatabaseDriver dbDriver;
+    private final VolumeDefinitionDataDatabaseDriver dbDriver;
+
+    private boolean deleted = false;
 
     /*
      * used by getInstance
@@ -216,6 +219,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     @Override
     public UUID getUuid()
     {
+        checkDeleted();
         return objId;
     }
 
@@ -223,12 +227,14 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         return PropsAccess.secureGetProps(accCtx, resourceDfn.getObjProt(), vlmDfnProps);
     }
 
     @Override
     public ResourceDefinition getResourceDfn()
     {
+        checkDeleted();
         return resourceDfn;
     }
 
@@ -236,6 +242,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     public VolumeNumber getVolumeNumber(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumeNr;
     }
@@ -244,6 +251,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     public MinorNumber getMinorNr(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return minorNr.get();
     }
@@ -252,6 +260,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     public void setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
         throws AccessDeniedException, SQLException
     {
+        checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         minorNr.set(newMinorNr);
     }
@@ -260,6 +269,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     public long getVolumeSize(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumeSize.get();
     }
@@ -268,6 +278,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     public void setVolumeSize(AccessContext accCtx, long newVolumeSize)
         throws AccessDeniedException, SQLException
     {
+        checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         volumeSize.set(newVolumeSize);
     }
@@ -275,7 +286,27 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     @Override
     public StateFlags<VlmDfnFlags> getFlags()
     {
+        checkDeleted();
         return flags;
+    }
+
+    @Override
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        dbDriver.delete(dbCon);
+        deleted = true;
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted)
+        {
+            throw new ImplementationError("Access to deleted node", null);
+        }
     }
 
     private static final class VlmDfnFlagsImpl extends StateFlagsBits<VlmDfnFlags>

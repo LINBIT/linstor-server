@@ -6,6 +6,7 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 
+import java.sql.SQLException;
 import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
@@ -25,8 +26,6 @@ public interface Resource extends TransactionObject
 
     public Volume getVolume(VolumeNumber volNr);
 
-    public Volume setVolume(AccessContext accCtx, Volume vol) throws AccessDeniedException;
-
     public Iterator<Volume> iterateVolumes();
 
     public Node getAssignedNode();
@@ -37,6 +36,9 @@ public interface Resource extends TransactionObject
         throws AccessDeniedException;
 
     public StateFlags<RscFlags> getStateFlags();
+
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
 
     public enum RscFlags implements Flags
     {

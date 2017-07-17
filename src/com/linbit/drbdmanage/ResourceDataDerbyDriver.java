@@ -299,22 +299,17 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     }
 
     @Override
-    public void delete(Connection con, ResourceData res) throws SQLException
-    {
-        deleteRes(con, res);
-    }
-
-    public static void deleteRes(Connection con, ResourceData res) throws SQLException
+    public void delete(Connection con) throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(RES_DELETE);
 
-        stmt.setString(1, res.getAssignedNode().getName().value);
-        stmt.setString(2, res.getDefinition().getName().value);
+        stmt.setString(1, nodeName.value);
+        stmt.setString(2, resName.value);
 
         stmt.executeUpdate();
         stmt.close();
 
-        cacheRemove(res);
+        cacheRemove(nodeName, resName);
     }
 
     @Override
@@ -362,12 +357,12 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
     private static ResourceData cacheGet(Node node, ResourceName resName)
     {
-        return resCache.get(getPk(node, resName));
+        return resCache.get(getPk(node.getName(), resName));
     }
 
-    private synchronized static void cacheRemove(ResourceData res)
+    private synchronized static void cacheRemove(NodeName nodeName, ResourceName resName)
     {
-        resCache.remove(getPk(res));
+        resCache.remove(getPk(nodeName, resName));
     }
 
     /**
@@ -394,10 +389,10 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         );
     }
 
-    private static PrimaryKey getPk(Node node, ResourceName resName)
+    private static PrimaryKey getPk(NodeName nodeName, ResourceName resName)
     {
         return new PrimaryKey(
-            node.getName().value,
+            nodeName.value,
             resName.value
         );
     }

@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage;
 
+import java.sql.SQLException;
 import java.util.UUID;
 
 import com.linbit.TransactionObject;
@@ -64,4 +65,6 @@ public interface StorPool extends TransactionObject
      */
     public void reconfigureStorageDriver() throws StorageException;
 
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
 }

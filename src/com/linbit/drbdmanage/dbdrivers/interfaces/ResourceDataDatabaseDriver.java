@@ -12,7 +12,7 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 public interface ResourceDataDatabaseDriver
 {
     public StateFlagsPersistence getStateFlagPersistence();
-    
+
     public PropsConDatabaseDriver getPropsConDriver();
 
     public void create(Connection dbCon, ResourceData resData)
@@ -21,7 +21,6 @@ public interface ResourceDataDatabaseDriver
     public ResourceData load(Connection con, Node node, SerialGenerator serialGen, TransactionMgr transMgr)
         throws SQLException;
 
-    public void delete(Connection con, ResourceData res)
+    public void delete(Connection con)
         throws SQLException;
-
 }

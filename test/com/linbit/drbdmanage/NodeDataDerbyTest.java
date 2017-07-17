@@ -477,7 +477,7 @@ public class NodeDataDerbyTest extends DerbyBase
         assertTrue(resultSet.next());
         resultSet.close();
 
-        dbDriver.delete(con, node);
+        dbDriver.delete(con);
         resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());

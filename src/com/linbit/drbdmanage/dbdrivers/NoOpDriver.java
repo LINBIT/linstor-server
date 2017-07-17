@@ -10,12 +10,11 @@ import com.linbit.InvalidNameException;
 import com.linbit.ObjectDatabaseDriver;
 import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.ConnectionDefinitionData;
 import com.linbit.drbdmanage.DmIpAddress;
-import com.linbit.drbdmanage.DrbdSqlRuntimeException;
 import com.linbit.drbdmanage.MinorNumber;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.NetInterfaceData;
-import com.linbit.drbdmanage.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeData;
@@ -33,6 +32,8 @@ import com.linbit.drbdmanage.VolumeData;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.VolumeNumber;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
@@ -73,6 +74,7 @@ public class NoOpDriver implements DatabaseDriver
     private static final StorPoolDefinitionDataDatabaseDriver NO_OP_SP_DRIVER = new NoOpSpDriver();
     private static final StorPoolDataDatabaseDriver NO_OP_SPD_DRIVER = new NoOpSpdDriver();
     private static final NetInterfaceDataDatabaseDriver NO_OP_NI_DRIVER = new NoOpNiDriver();
+    private static final ConnectionDefinitionDataDatabaseDriver NO_OP_CON_DFN_DRIVER = new NoOpConDfnDriver();
 
     private static final StateFlagsPersistence NO_OP_FLAG_DRIVER = new NoOpFlagDriver();
     private static final ObjectDatabaseDriver<?> NO_OP_OBJ_DB_DRIVER = new NoOpObjDbDriver<>();
@@ -145,48 +147,58 @@ public class NoOpDriver implements DatabaseDriver
         return NO_OP_NI_DRIVER;
     }
 
+    @Override
+    public ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver(
+        ResourceName resName,
+        NodeName sourceNodeName,
+        NodeName targetNodeName
+    )
+    {
+        return NO_OP_CON_DFN_DRIVER;
+    }
+
     private static class NoOpPropDriver implements PropsConDatabaseDriver
     {
         @Override
         public String getInstanceName()
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return null;
         }
 
         @Override
         public Map<String, String> load(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return null;
         }
 
         @Override
         public void persist(Connection con, String key, String value) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public void persist(Connection con, Map<String, String> props) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public void remove(Connection con, String key) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public void remove(Connection con, Set<String> keys) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public void removeAll(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
     }
 
@@ -213,19 +225,19 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public void create(Connection con, NodeData nodeData) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public NodeData load(Connection con, SerialGenerator serialGen, TransactionMgr transMgr) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return null;
         }
 
         @Override
-        public void delete(Connection con, NodeData node) throws SQLException
+        public void delete(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
     }
 
@@ -246,20 +258,20 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public void create(Connection dbCon, ResourceData resData) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public ResourceData load(Connection con, Node node, SerialGenerator serialGen, TransactionMgr transMgr)
             throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return null;
         }
 
         @Override
-        public void delete(Connection con, ResourceData res) throws SQLException
+        public void delete(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
     }
 
@@ -280,26 +292,26 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public void create(Connection dbCon, ResourceDefinitionData resDfn) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public boolean exists(Connection dbCon) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return false;
         }
 
         @Override
         public ResourceDefinitionData load(Connection dbCon, SerialGenerator serialGen, TransactionMgr transMgr)
             throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return null;
         }
 
         @Override
         public void delete(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
     }
 
@@ -320,19 +332,19 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public VolumeData load(Connection dbCon, TransactionMgr transMgr, SerialGenerator srlGen) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return null;
         }
 
         @Override
         public void create(Connection dbCon, VolumeData vol) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public void delete(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
     }
 
@@ -367,20 +379,20 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public void create(Connection con, VolumeDefinitionData volDfnData) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public VolumeDefinitionData load(Connection con, TransactionMgr transMgr, SerialGenerator serialGen)
             throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return null;
         }
 
         @Override
         public void delete(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
     }
 
@@ -389,19 +401,19 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public void create(Connection con, StorPoolDefinitionData storPoolDefinitionData) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public StorPoolDefinitionData load(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return null;
         }
 
         @Override
         public void delete(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
     }
 
@@ -410,25 +422,25 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public StorPoolData load(Connection con, TransactionMgr transMgr, SerialGenerator serGen) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return null;
         }
 
         @Override
         public void create(Connection dbCon, StorPoolData storPoolData) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public void delete(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public void ensureEntryExists(Connection con, StorPoolData storPoolData) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
     }
 
@@ -451,19 +463,19 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public NetInterfaceData load(Connection dbCon) throws SQLException, AccessDeniedException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            return null;
         }
 
         @Override
         public void create(Connection dbCon, NetInterfaceData netInterfaceData) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
-        public void delete(Connection con, NetInterfaceData netInterfaceData) throws SQLException
+        public void delete(Connection con) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
     }
 
@@ -472,7 +484,7 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public void persist(Connection dbConn, long flags) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
     }
 
@@ -481,19 +493,43 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public void insert(Connection con, NOOP element) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public void update(Connection con, NOOP element) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
 
         @Override
         public void delete(Connection con, NOOP element) throws SQLException
         {
-            throw new DrbdSqlRuntimeException("No-Op-Driver method called");
+            // no-op
         }
+    }
+
+    private static class NoOpConDfnDriver implements ConnectionDefinitionDataDatabaseDriver
+    {
+
+        @Override
+        public ConnectionDefinitionData load(Connection con, SerialGenerator serialGen, TransactionMgr transMgr)
+            throws SQLException
+        {
+            return null;
+        }
+
+        @Override
+        public void create(Connection con, ConnectionDefinitionData conDfnData) throws SQLException
+        {
+            // no-op
+        }
+
+        @Override
+        public void delete(Connection con) throws SQLException
+        {
+            // no-op
+        }
+
     }
 }

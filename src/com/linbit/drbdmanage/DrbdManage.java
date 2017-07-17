@@ -2,6 +2,8 @@ package com.linbit.drbdmanage;
 
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
@@ -605,5 +607,14 @@ public abstract class DrbdManage
     public static NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node node, NetInterfaceName name)
     {
         return persistenceDbDriver.getNetInterfaceDataDatabaseDriver(node, name);
+    }
+
+    public static ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver(
+        ResourceName resName,
+        NodeName sourceNodeName,
+        NodeName targetNodeName
+    )
+    {
+        return persistenceDbDriver.getConnectionDefinitionDatabaseDriver(resName, sourceNodeName, targetNodeName);
     }
 }

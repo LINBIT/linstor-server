@@ -8,6 +8,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -30,33 +31,35 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 public class NodeData extends BaseTransactionObject implements Node
 {
     // Object identifier
-    private UUID objId;
+    private final UUID objId;
 
     // Node name
-    private NodeName clNodeName;
+    private final NodeName clNodeName;
 
     // State flags
-    private StateFlags<NodeFlag> flags;
+    private final StateFlags<NodeFlag> flags;
 
     // Node type
-    private StateFlags<NodeType> nodeTypeFlags;
+    private final StateFlags<NodeType> nodeTypeFlags;
 
     // List of resources assigned to this cluster node
-    private Map<ResourceName, Resource> resourceMap;
+    private final Map<ResourceName, Resource> resourceMap;
 
     // List of network interfaces used for replication on this cluster node
-    private Map<NetInterfaceName, NetInterface> netInterfaceMap;
+    private final Map<NetInterfaceName, NetInterface> netInterfaceMap;
 
     // List of storage pools
-    private Map<StorPoolName, StorPool> storPoolMap;
+    private final Map<StorPoolName, StorPool> storPoolMap;
 
     // Access controls for this object
-    private ObjectProtection objProt;
+    private final ObjectProtection objProt;
 
     // Properties container for this node
-    private Props nodeProps;
+    private final Props nodeProps;
 
-    private NodeDataDatabaseDriver dbDriver;
+    private final NodeDataDatabaseDriver dbDriver;
+
+    private boolean deleted = false;
 
     /*
      * Only used by getInstance method
@@ -186,12 +189,14 @@ public class NodeData extends BaseTransactionObject implements Node
     @Override
     public UUID getUuid()
     {
+        checkDeleted();
         return objId;
     }
 
     @Override
     public NodeName getName()
     {
+        checkDeleted();
         return clNodeName;
     }
 
@@ -199,6 +204,7 @@ public class NodeData extends BaseTransactionObject implements Node
     public Resource getResource(AccessContext accCtx, ResourceName resName)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return resourceMap.get(resName);
     }
@@ -206,6 +212,7 @@ public class NodeData extends BaseTransactionObject implements Node
     @Override
     public ObjectProtection getObjProt()
     {
+        checkDeleted();
         return objProt;
     }
 
@@ -213,20 +220,21 @@ public class NodeData extends BaseTransactionObject implements Node
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         return PropsAccess.secureGetProps(accCtx, objProt, nodeProps);
     }
 
-    @Override
-    public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.put(resRef.getDefinition().getName(), resRef);
     }
 
-    @Override
-    public void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.remove(resRef.getDefinition().getName());
@@ -238,6 +246,7 @@ public class NodeData extends BaseTransactionObject implements Node
     public Iterator<Resource> iterateResources(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return resourceMap.values().iterator();
@@ -246,24 +255,23 @@ public class NodeData extends BaseTransactionObject implements Node
     @Override
     public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return netInterfaceMap.get(niName);
     }
 
-    // TODO: instead of addNetInterface, what about a createNetInterface (which creates a netInterface
-    // + passes it a node-specific db-driver to persist the address)
-    @Override
-    public void addNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
+    void addNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         netInterfaceMap.put(niRef.getName(), niRef);
     }
 
-    @Override
-    public void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
+    void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         netInterfaceMap.remove(niRef.getName());
@@ -273,6 +281,7 @@ public class NodeData extends BaseTransactionObject implements Node
     public Iterator<NetInterface> iterateNetInterfaces(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return netInterfaceMap.values().iterator();
@@ -282,24 +291,25 @@ public class NodeData extends BaseTransactionObject implements Node
     public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return storPoolMap.get(poolName);
     }
 
-    @Override
-    public void addStorPool(AccessContext accCtx, StorPool pool)
+    void addStorPool(AccessContext accCtx, StorPool pool)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         storPoolMap.put(pool.getName(), pool);
     }
 
-    @Override
-    public void removeStorPool(AccessContext accCtx, StorPool pool)
+    void removeStorPool(AccessContext accCtx, StorPool pool)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         storPoolMap.remove(pool.getName());
@@ -309,6 +319,7 @@ public class NodeData extends BaseTransactionObject implements Node
     public Iterator<StorPool> iterateStorPools(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return storPoolMap.values().iterator();
@@ -318,6 +329,7 @@ public class NodeData extends BaseTransactionObject implements Node
     public long getNodeTypes(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return nodeTypeFlags.getFlagsBits(accCtx);
@@ -327,6 +339,7 @@ public class NodeData extends BaseTransactionObject implements Node
     public boolean hasNodeType(AccessContext accCtx, NodeType reqType)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return nodeTypeFlags.isSet(accCtx, reqType);
@@ -335,7 +348,27 @@ public class NodeData extends BaseTransactionObject implements Node
     @Override
     public StateFlags<NodeFlag> getFlags()
     {
+        checkDeleted();
         return flags;
+    }
+
+    @Override
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+        dbDriver.delete(dbCon);
+        deleted = true;
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted)
+        {
+            throw new ImplementationError("Access to deleted node", null);
+        }
     }
 
     private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlag>

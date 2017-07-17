@@ -6,7 +6,7 @@ import java.util.Map;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.drbdmanage.NetInterfaceDataDatabaseDriver;
+import com.linbit.drbdmanage.ConnectionDefinitionDataDerbyDriver;
 import com.linbit.drbdmanage.NetInterfaceDataDerbyDriver;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
@@ -25,6 +25,8 @@ import com.linbit.drbdmanage.VolumeDataDerbyDriver;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinitionDataDerbyDriver;
 import com.linbit.drbdmanage.VolumeNumber;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
@@ -73,6 +75,7 @@ public class DerbyDriver implements DatabaseDriver
     private final Map<PrimaryKey, StorPoolDefinitionDataDerbyDriver> storPoolDfnDriverCache = new HashMap<>();
     private final Map<PrimaryKey, StorPoolDataDerbyDriver> storPoolDriverCache = new HashMap<>();
     private final Map<PrimaryKey, NetInterfaceDataDerbyDriver> netInterfaceDriverCache = new HashMap<>();
+    private final Map<PrimaryKey, ConnectionDefinitionDataDerbyDriver> conDfnDriverCache = new HashMap<>();
 
 
     public DerbyDriver(ErrorReporter errorReporter, AccessContext privCtx)
@@ -207,6 +210,23 @@ public class DerbyDriver implements DatabaseDriver
         {
             driver = new NetInterfaceDataDerbyDriver(dbCtx, nodeRef, netName);
             netInterfaceDriverCache.put(pk, driver);
+        }
+        return driver;
+    }
+
+    @Override
+    public ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver(
+        ResourceName resName,
+        NodeName sourceNodeName,
+        NodeName targetNodeName
+    )
+    {
+        PrimaryKey pk = new PrimaryKey(resName, sourceNodeName, targetNodeName);
+        ConnectionDefinitionDataDerbyDriver driver = conDfnDriverCache.get(pk);
+        if (driver == null)
+        {
+            driver = new ConnectionDefinitionDataDerbyDriver(dbCtx, resName, sourceNodeName, targetNodeName);
+            conDfnDriverCache.put(pk, driver);
         }
         return driver;
     }
