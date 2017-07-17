@@ -386,7 +386,7 @@ public class Checks
             }
 	        parts = new String[7];
 	        ipV6Count = 6;
-	        fill(parts, leftParts, rightParts);
+	        fillIpv6(parts, leftParts, rightParts);
 	    }
 	    else
 	    {
@@ -399,13 +399,13 @@ public class Checks
 	            }
 	            parts = new String[7];
 	            ipV6Count = 6;
-	            fill(parts, leftParts, rightParts);
+	            fillIpv6(parts, leftParts, rightParts);
 	        }
 	        else
 	        {
                 parts = new String[8];
                 ipV6Count = 8;
-                fill(parts, leftParts, rightParts);
+                fillIpv6(parts, leftParts, rightParts);
 	        }
 	    }
 
@@ -428,7 +428,7 @@ public class Checks
         return ret;
 	}
 
-    private static void fill(String[] parts, String[] leftParts, String[] rightParts)
+    private static void fillIpv6(String[] parts, String[] leftParts, String[] rightParts)
     {
         Arrays.fill(parts, "0");
         if (leftParts.length > 1 || !leftParts[0].equals(""))

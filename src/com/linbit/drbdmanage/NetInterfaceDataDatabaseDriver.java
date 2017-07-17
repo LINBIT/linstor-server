@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage;
 
-import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -10,7 +9,7 @@ import com.linbit.drbdmanage.security.AccessDeniedException;
 
 public interface NetInterfaceDataDatabaseDriver
 {
-    public ObjectDatabaseDriver<InetAddress> getNetInterfaceAddressDriver();
+    public ObjectDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver();
 
     public ObjectDatabaseDriver<NetInterfaceType> getNetInterfaceTypeDriver();
 

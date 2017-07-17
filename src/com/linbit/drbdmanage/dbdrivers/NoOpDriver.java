@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage.dbdrivers;
 
-import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
@@ -11,6 +10,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ObjectDatabaseDriver;
 import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.DmIpAddress;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
 import com.linbit.drbdmanage.MinorNumber;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
@@ -436,9 +436,9 @@ public class NoOpDriver implements DatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
-        public ObjectDatabaseDriver<InetAddress> getNetInterfaceAddressDriver()
+        public ObjectDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver()
         {
-            return (ObjectDatabaseDriver<InetAddress>) NO_OP_OBJ_DB_DRIVER;
+            return (ObjectDatabaseDriver<DmIpAddress>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @SuppressWarnings("unchecked")

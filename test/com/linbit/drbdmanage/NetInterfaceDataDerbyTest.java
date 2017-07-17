@@ -2,8 +2,6 @@ package com.linbit.drbdmanage;
 
 import static org.junit.Assert.*;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,7 +30,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     private final NodeName nodeName;
 
     private final String niAddrStr = "127.0.0.1";
-    private final InetAddress niAddr;
+    private final DmIpAddress niAddr;
     private final NetInterfaceType niInterfaceType = NetInterfaceType.IP;
 
     private TransactionMgr transMgr;
@@ -45,14 +43,14 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     private java.util.UUID niUuid;
     private ObjectProtection niObjProt;
     private NetInterfaceData niData;
-    private ObjectDatabaseDriver<InetAddress> niAddrDriver;
+    private ObjectDatabaseDriver<DmIpAddress> niAddrDriver;
     private ObjectDatabaseDriver<NetInterfaceType> niTypeDriver;
 
     public NetInterfaceDataDerbyTest() throws Exception
     {
         nodeName = new NodeName("TestNodeName");
         niName = new NetInterfaceName("TestNetInterfaceName");
-        niAddr = InetAddress.getByName(niAddrStr);
+        niAddr = new DmIpAddress(niAddrStr);
     }
 
     @Before
@@ -128,14 +126,11 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     public void testPersistGetInstance() throws Exception
     {
         NetInterfaceName netInterfaceName = new NetInterfaceName("TestNetIface");
-        String host = "127.0.0.1";
-        int port = 1234;
-        InetAddress inetAddress = new InetSocketAddress(host, port).getAddress();
         NetInterfaceData.getInstance(
             sysCtx,
             node,
             netInterfaceName,
-            inetAddress,
+            niAddr,
             transMgr,
             NetInterfaceType.IP,
             true
@@ -150,7 +145,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertTrue("Database did not persist netInterface", resultSet.next());
         assertEquals(netInterfaceName.value, resultSet.getString(NODE_NET_NAME));
         assertEquals(netInterfaceName.displayValue, resultSet.getString(NODE_NET_DSP_NAME));
-        assertEquals(host, resultSet.getString(INET_ADDRESS));
+        assertEquals(niAddr.getAddress(), resultSet.getString(INET_ADDRESS));
         assertEquals("IP", resultSet.getString(INET_TRANSPORT_TYPE));
         // transport: IP, RDMA, RoCE
         assertFalse("Database persisted too many netInterfaces", resultSet.next());
@@ -172,7 +167,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData.getNode().getName().value);
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
-        assertEquals(niAddrStr, netData.getAddress(sysCtx).getHostAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
         assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
     }
 
@@ -190,7 +185,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData.getNode().getName().value);
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
-        assertEquals(niAddrStr, netData.getAddress(sysCtx).getHostAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
         assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
     }
 
@@ -208,7 +203,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData1.getNode().getName().value);
         assertEquals(niName.value, netData1.getName().value);
         assertEquals(niName.displayValue, netData1.getName().displayValue);
-        assertEquals(niAddrStr, netData1.getAddress(sysCtx).getHostAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niAddrStr, netData1.getAddress(sysCtx).getAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
         assertEquals(niInterfaceType, netData1.getNetInterfaceType(sysCtx));
 
         NetInterfaceData netData2 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, transMgr, niInterfaceType, false);
@@ -232,7 +227,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData.getNode().getName().value);
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
-        assertEquals(niAddrStr, netData.getAddress(sysCtx).getHostAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
         assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
         assertNotNull(netData.getObjProt());
     }
@@ -305,7 +300,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         dbDriver.create(con, niData);
 
         String addrStr = "::1";
-        InetAddress addr = InetAddress.getByName(addrStr);
+        DmIpAddress addr = new DmIpAddress(addrStr);
 
         niData.setConnection(transMgr);
         niData.setAddress(sysCtx, addr);
@@ -328,7 +323,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         niData.initialized();
         dbDriver.create(con, niData);
         String addrStr = "::1";
-        InetAddress addr = InetAddress.getByName(addrStr);
+        DmIpAddress addr = new DmIpAddress(addrStr);
         niAddrDriver.update(con, addr);
 
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);

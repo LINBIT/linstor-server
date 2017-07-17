@@ -2,7 +2,6 @@ package com.linbit.drbdmanage;
 
 import static org.junit.Assert.*;
 
-import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -343,9 +342,9 @@ public class NodeDataDerbyTest extends DerbyBase
             NetInterface netIf = loadedNode.getNetInterface(sysCtx, netName);
             assertNotNull(netIf);
             {
-                InetAddress address = netIf.getAddress(sysCtx);
+                DmIpAddress address = netIf.getAddress(sysCtx);
                 assertNotNull(address);
-                assertEquals(netHost, address.getHostAddress());
+                assertEquals(netHost, address.getAddress());
             }
             assertEquals(netName, netIf.getName());
             assertEquals(NetInterfaceType.byValue(netType), netIf.getNetInterfaceType(sysCtx));

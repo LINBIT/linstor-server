@@ -24,7 +24,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     private NetInterfaceName niName;
 
     private ObjectProtection objProt;
-    private TransactionSimpleObject<InetAddress> niAddress;
+    private TransactionSimpleObject<DmIpAddress> niAddress;
     private TransactionSimpleObject<NetInterfaceType> niType;
 
     private final NetInterfaceDataDatabaseDriver dbDriver;
@@ -34,7 +34,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         AccessContext accCtx,
         Node node,
         NetInterfaceName name,
-        InetAddress addr,
+        DmIpAddress addr,
         TransactionMgr transMgr,
         NetInterfaceType netType
     )
@@ -56,7 +56,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             addr,
             netType
         );
-        
+
         if (transMgr != null)
         {
         	setConnection(transMgr);
@@ -69,7 +69,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         ObjectProtection objectProtection,
         NetInterfaceName netName,
         Node node,
-        InetAddress addr,
+        DmIpAddress addr,
         NetInterfaceType netType
     )
     {
@@ -100,7 +100,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         AccessContext accCtx,
         Node node,
         NetInterfaceName name,
-        InetAddress addr,
+        DmIpAddress addr,
         TransactionMgr transMgr,
         NetInterfaceType netType,
         boolean createIfNotExists
@@ -159,7 +159,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     }
 
     @Override
-    public InetAddress getAddress(AccessContext accCtx)
+    public DmIpAddress getAddress(AccessContext accCtx)
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -167,7 +167,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     }
 
     @Override
-    public void setAddress(AccessContext accCtx, InetAddress newAddress)
+    public void setAddress(AccessContext accCtx, DmIpAddress newAddress)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);

@@ -4,7 +4,6 @@ import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
-import java.net.InetAddress;
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -23,10 +22,10 @@ public interface NetInterface extends TransactionObject
 
     public Node getNode();
 
-    public InetAddress getAddress(AccessContext accCtx)
+    public DmIpAddress getAddress(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public void setAddress(AccessContext accCtx, InetAddress newAddress)
+    public void setAddress(AccessContext accCtx, DmIpAddress newAddress)
         throws AccessDeniedException, SQLException;
 
     public NetInterfaceType getNetInterfaceType(AccessContext accCtx)

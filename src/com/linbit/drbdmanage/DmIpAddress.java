@@ -18,7 +18,7 @@ public class DmIpAddress
         this.addr = addr.toUpperCase();
     }
 
-    public String getAddr()
+    public String getAddress()
     {
         return addr;
     }

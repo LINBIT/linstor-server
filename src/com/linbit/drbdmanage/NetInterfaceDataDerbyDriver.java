@@ -1,7 +1,5 @@
 package com.linbit.drbdmanage;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ObjectDatabaseDriver;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
@@ -68,7 +67,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
     private final Node node;
 
-    private final ObjectDatabaseDriver<InetAddress> netIfAddressDriver;
+    private final ObjectDatabaseDriver<DmIpAddress> netIfAddressDriver;
     private final ObjectDatabaseDriver<NetInterfaceType> netIfTypeDriver;
 
     private final AccessContext dbCtx;
@@ -141,14 +140,14 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     {
         PreparedStatement stmt = con.prepareStatement(NNI_INSERT);
 
-        InetAddress inetAddress = getAddress(netInterfaceData);
+        DmIpAddress inetAddress = getAddress(netInterfaceData);
         NetInterfaceType type = getNetInterfaceType(netInterfaceData);
 
         stmt.setBytes(1, UuidUtils.asByteArray(netInterfaceData.getUuid()));
         stmt.setString(2, node.getName().value);
         stmt.setString(3, netInterfaceData.getName().value);
         stmt.setString(4, netInterfaceData.getName().displayValue);
-        stmt.setString(5, inetAddress.getHostAddress());
+        stmt.setString(5, inetAddress.getAddress());
         stmt.setString(6, type.name());
 
         stmt.executeUpdate();
@@ -202,7 +201,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     @Override
-    public ObjectDatabaseDriver<InetAddress> getNetInterfaceAddressDriver()
+    public ObjectDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver()
     {
         return netIfAddressDriver;
     }
@@ -244,7 +243,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return netIfDataList;
     }
 
-    private InetAddress getAddress(NetInterface value)
+    private DmIpAddress getAddress(NetInterface value)
     {
         try
         {
@@ -280,20 +279,19 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         if (ret == null)
         {
             UUID uuid = UuidUtils.asUUID(resultSet.getBytes(NET_UUID));
-            InetAddress addr;
+            DmIpAddress addr;
             String type = resultSet.getString(INET_TYPE);
             try
             {
-                addr = InetAddress.getByName(resultSet.getString(INET_ADDRESS));
+                addr = new DmIpAddress(resultSet.getString(INET_ADDRESS));
             }
-            catch (UnknownHostException unknownHostExc)
+            catch (InvalidIpAddressException invalidIpAddressExc)
             {
                 throw new DrbdSqlRuntimeException(
                     "SQL-based change to NetInterface's host caused an UnknownHostException",
-                    unknownHostExc
+                    invalidIpAddressExc
                 );
             }
-
             ObjectProtection objProt;
             {
                 ObjectProtectionDatabaseDriver opDriver = DrbdManage.getObjectProtectionDatabaseDriver(
@@ -360,7 +358,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         niCache.clear();
     }
 
-    private class NodeNetInterfaceAddressDriver extends UpdateOnlyDatabaseDriver<InetAddress>
+    private class NodeNetInterfaceAddressDriver extends UpdateOnlyDatabaseDriver<DmIpAddress>
     {
         public NodeNetInterfaceAddressDriver()
         {
@@ -368,11 +366,11 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         }
 
         @Override
-        public void update(Connection con, InetAddress inetAddress) throws SQLException
+        public void update(Connection con, DmIpAddress inetAddress) throws SQLException
         {
             PreparedStatement stmt = con.prepareStatement(NNI_UPDATE_ADR);
 
-            stmt.setString(1, inetAddress.getHostName());
+            stmt.setString(1, inetAddress.getAddress());
             stmt.setString(2, node.getName().value);
             stmt.setString(3, netName.value);
 
