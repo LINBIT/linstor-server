@@ -127,10 +127,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             {
                 throw new MinSizeException(excMessage);
             }
-            else
-            {
-                throw new MaxSizeException(excMessage);
-            }
+            throw new MaxSizeException(excMessage);
         }
 
         objId = uuid;
@@ -299,6 +296,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
+        ((ResourceDefinitionData) resourceDfn).removeVolumeDefinition(accCtx, this);
         dbDriver.delete(dbCon);
         deleted = true;
     }

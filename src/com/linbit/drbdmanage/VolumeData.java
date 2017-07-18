@@ -210,6 +210,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         // TODO: still a good idea that volume does not have its own objProt?
         resourceRef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
+        ((ResourceData) resourceRef).removeVolume(accCtx, this);
         dbDriver.delete(dbCon);
         deleted = true;
     }

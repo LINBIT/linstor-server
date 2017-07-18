@@ -1,6 +1,11 @@
 package com.linbit.drbdmanage;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -98,7 +103,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(niName.value, resultSet.getString(NODE_NET_NAME));
         assertEquals(niName.displayValue, resultSet.getString(NODE_NET_DSP_NAME));
-        assertEquals(niAddrStr, resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niAddrStr, resultSet.getString(INET_ADDRESS));
         assertEquals(niInterfaceType.name(), resultSet.getString(INET_TRANSPORT_TYPE));
         assertFalse(resultSet.next());
 
@@ -167,7 +172,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData.getNode().getName().value);
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
-        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress());
         assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
     }
 
@@ -185,7 +190,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData.getNode().getName().value);
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
-        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress());
         assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
     }
 
@@ -203,7 +208,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData1.getNode().getName().value);
         assertEquals(niName.value, netData1.getName().value);
         assertEquals(niName.displayValue, netData1.getName().displayValue);
-        assertEquals(niAddrStr, netData1.getAddress(sysCtx).getAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niAddrStr, netData1.getAddress(sysCtx).getAddress());
         assertEquals(niInterfaceType, netData1.getNetInterfaceType(sysCtx));
 
         NetInterfaceData netData2 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, transMgr, niInterfaceType, false);
@@ -227,7 +232,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData.getNode().getName().value);
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
-        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress()); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress());
         assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
         assertNotNull(netData.getObjProt());
     }
@@ -309,7 +314,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals(addrStr, resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(addrStr, resultSet.getString(INET_ADDRESS));
         assertFalse(resultSet.next());
 
         resultSet.close();
@@ -329,7 +334,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals(addrStr, resultSet.getString(INET_ADDRESS)); // TODO: gh - inetAddress does NOT contain port - implement and test
+        assertEquals(addrStr, resultSet.getString(INET_ADDRESS));
         assertFalse(resultSet.next());
 
         resultSet.close();

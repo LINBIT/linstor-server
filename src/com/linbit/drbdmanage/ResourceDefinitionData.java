@@ -185,9 +185,10 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         return PropsAccess.secureGetProps(accCtx, objProt, rscDfnProps);
     }
 
-    void addConnection(
+    synchronized void addConnection(
         AccessContext accCtx,
-        NodeName nodeName,
+        NodeName srcNodeName,
+        NodeName dstNodeName,
         int conDfnNr,
         ConnectionDefinition conDfn
     )
@@ -196,6 +197,12 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
+        addConnection0(conDfnNr, conDfn, srcNodeName);
+        addConnection0(conDfnNr, conDfn, dstNodeName);
+    }
+
+    private void addConnection0(int conDfnNr, ConnectionDefinition conDfn, NodeName nodeName)
+    {
         Map<Integer, ConnectionDefinition> nodeConnMap = connectionMap.get(nodeName);
         if (nodeConnMap == null)
         {
@@ -203,6 +210,29 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             connectionMap.put(nodeName, nodeConnMap);
         }
         nodeConnMap.put(conDfnNr, conDfn);
+    }
+
+    synchronized void removeConnection(
+        AccessContext accCtx,
+        NodeName srcNodeName,
+        NodeName dstNodeName,
+        int conDfnNr
+    )
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        removeConnection0(conDfnNr, srcNodeName);
+        removeConnection0(conDfnNr, dstNodeName);
+    }
+
+    private void removeConnection0(int conDfnNr, NodeName nodeName)
+    {
+        Map<Integer, ConnectionDefinition> nodeConnMap = connectionMap.get(nodeName);
+        if (nodeConnMap != null)
+        {
+            nodeConnMap.remove(conDfnNr);
+        }
     }
 
     @Override
@@ -220,12 +250,20 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         return connDfn;
     }
 
-    void putVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn)
+    synchronized void putVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn)
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
         volumeMap.put(volDfn.getVolumeNumber(accCtx), volDfn);
+    }
+
+    synchronized void removeVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        volumeMap.remove(volDfn.getVolumeNumber(accCtx));
     }
 
     @Override

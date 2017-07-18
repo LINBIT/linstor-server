@@ -267,8 +267,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         {
                             resData.setVolume(dbCtx, volData);
                         }
-
-                        // TODO: gh - restore connections
                     }
                 }
                 resList.add(resData);

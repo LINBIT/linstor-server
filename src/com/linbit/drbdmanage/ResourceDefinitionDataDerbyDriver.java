@@ -180,12 +180,17 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                             );
                             for (Entry<NodeName,Map<Integer, ConnectionDefinition>> entry : cons.entrySet())
                             {
-                                NodeName nodeName = entry.getKey();
                                 for (Entry<Integer, ConnectionDefinition> conDfnEntry : entry.getValue().entrySet())
                                 {
                                     int conDfnNr = conDfnEntry.getKey();
                                     ConnectionDefinition conDfn = conDfnEntry.getValue();
-                                    ret.addConnection(dbCtx, nodeName, conDfnNr, conDfn);
+                                    ret.addConnection(
+                                        dbCtx,
+                                        conDfn.getSourceNode(dbCtx).getName(),
+                                        conDfn.getTargetNode(dbCtx).getName(),
+                                        conDfnNr,
+                                        conDfn
+                                    );
                                 }
                             }
 

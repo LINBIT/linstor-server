@@ -30,6 +30,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final StorageDriver storDriver;
     private final String storDriverSimpleClassName;
     private final Props props;
+    private final Node node;
     private final StorPoolDataDatabaseDriver dbDriver;
 
     private boolean deleted = false;
@@ -85,6 +86,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         storDriver = storDriverRef;
         storDriverSimpleClassName = storDriverSimpleClassNameRef;
         objProt = objProtRef;
+        node = nodeRef;
 
         props = SerialPropsContainer.getInstance(
             DrbdManage.getPropConDatabaseDriver(
@@ -232,6 +234,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
+        ((NodeData) node).removeStorPool(accCtx, this);
         dbDriver.delete(dbCon);
         deleted = true;
     }

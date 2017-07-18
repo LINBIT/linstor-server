@@ -242,13 +242,22 @@ public class ResourceData extends BaseTransactionObject implements Resource
         return volumeMap.get(volNr);
     }
 
-    Volume setVolume(AccessContext accCtx, Volume vol)
+    synchronized Volume setVolume(AccessContext accCtx, Volume vol)
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         return volumeMap.put(vol.getVolumeDfn().getVolumeNumber(accCtx), vol);
+    }
+
+    synchronized void removeVolume(AccessContext accCtx, Volume vol)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        volumeMap.remove(vol.getVolumeDfn().getVolumeNumber(accCtx));
     }
 
     @Override
@@ -286,6 +295,22 @@ public class ResourceData extends BaseTransactionObject implements Resource
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
+        synchronized (assgNode)
+        {
+            ((NodeData) assgNode).removeResource(accCtx, this);
+            synchronized (resourceDfn)
+            {
+                try
+                {
+                    ((ResourceDefinitionData) resourceDfn).removeResource(accCtx, this);
+                }
+                catch (AccessDeniedException accessDeniedExc)
+                {
+                    ((NodeData) assgNode).addResource(accCtx, this);
+                    throw accessDeniedExc;
+                }
+            }
+        }
         dbDriver.delete(dbCon);
         deleted = true;
     }

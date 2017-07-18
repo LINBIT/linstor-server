@@ -173,8 +173,8 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
 
         if (conDfnData != null)
         {
-            ((ResourceDefinitionData) resDfn).addConnection(accCtx, source.getName(), conNr, conDfnData);
-            ((ResourceDefinitionData) resDfn).addConnection(accCtx, target.getName(), conNr, conDfnData);
+            ((ResourceDefinitionData) resDfn).addConnection(accCtx, source.getName(), target.getName(), conNr, conDfnData);
+
             conDfnData.initialized();
         }
         return conDfnData;
@@ -224,6 +224,12 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
+        ((ResourceDefinitionData) resDfn).removeConnection(
+            accCtx,
+            sourceNode.getName(),
+            targetNode.getName(),
+            conNr
+        );
         dbDriver.delete(dbCon);
         deleted = true;
     }

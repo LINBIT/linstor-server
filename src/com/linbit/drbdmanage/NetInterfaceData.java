@@ -206,6 +206,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
+        ((NodeData) niNode).removeNetInterface(accCtx, this);
         dbDriver.delete(dbCon);
         deleted = true;
     }
