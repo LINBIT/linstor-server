@@ -47,26 +47,26 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-	public void testPersist() throws Exception
-	{
+    public void testPersist() throws Exception
+    {
         driver.create(con, spdd);
 
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOL_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
-        assertEquals(uuid, UuidUtils.asUUID(resultSet.getBytes(UUID)));
+        assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(spName.value, resultSet.getString(POOL_NAME));
         assertEquals(spName.displayValue, resultSet.getString(POOL_DSP_NAME));
         assertFalse(resultSet.next());
 
         resultSet.close();
         stmt.close();
-	}
+    }
 
     @Test
-	public void testPersistGetInstance() throws Exception
-	{
+    public void testPersistGetInstance() throws Exception
+    {
         StorPoolDefinitionData spd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, true);
 
         assertNotNull(spd);
@@ -78,18 +78,18 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
-        assertEquals(spd.getUuid(), UuidUtils.asUUID(resultSet.getBytes(UUID)));
+        assertEquals(spd.getUuid(), UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(spName.value, resultSet.getString(POOL_NAME));
         assertEquals(spName.displayValue, resultSet.getString(POOL_DSP_NAME));
         assertFalse(resultSet.next());
 
         resultSet.close();
         stmt.close();
-	}
+    }
 
     @Test
-	public void testLoad() throws Exception
-	{
+    public void testLoad() throws Exception
+    {
         driver.create(con, spdd);
         DriverUtils.clearCaches();
 
@@ -99,11 +99,11 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         assertEquals(uuid, loadedSpdd.getUuid());
         assertEquals(spName, loadedSpdd.getName());
         assertNotNull(loadedSpdd.getObjProt());
-	}
+    }
 
     @Test
-	public void testLoadGetInstance() throws Exception
-	{
+    public void testLoadGetInstance() throws Exception
+    {
         driver.create(con, spdd);
         DriverUtils.clearCaches();
 
@@ -112,7 +112,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         assertEquals(uuid, loadedSpdd.getUuid());
         assertEquals(spName, loadedSpdd.getName());
         assertNotNull(loadedSpdd.getObjProt());
-	}
+    }
 
     @Test
     public void testCache() throws Exception
@@ -134,8 +134,8 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-	public void testDelete() throws Exception
-	{
+    public void testDelete() throws Exception
+    {
         driver.create(con, spdd);
         DriverUtils.clearCaches();
 
@@ -157,11 +157,11 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         resultSet.close();
 
         stmt.close();
-	}
+    }
 
     @Test
-	public void testGetInstanceSatelliteCreate() throws Exception
-	{
+    public void testGetInstanceSatelliteCreate() throws Exception
+    {
         DriverUtils.satelliteMode();
 
         StorPoolDefinitionData spddSat = StorPoolDefinitionData.getInstance(sysCtx, spName, null, true);
@@ -178,11 +178,11 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         resultSet.close();
         stmt.close();
-	}
+    }
 
     @Test
-	public void testGetInstanceSatelliteNoCreate() throws Exception
-	{
+    public void testGetInstanceSatelliteNoCreate() throws Exception
+    {
         DriverUtils.satelliteMode();
 
         StorPoolDefinitionData spddSat = StorPoolDefinitionData.getInstance(sysCtx, spName, null, false);
@@ -196,7 +196,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         resultSet.close();
         stmt.close();
-	}
+    }
 
     @Test
     public void testHalfValidName() throws Exception

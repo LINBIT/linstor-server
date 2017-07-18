@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import com.linbit.ObjectDatabaseDriver;
+import com.linbit.SingleColumnDatabaseDriver;
 
 public class EmptySecurityDbDriver implements DbAccessor
 {
@@ -113,21 +113,21 @@ public class EmptySecurityDbDriver implements DbAccessor
         }
 
         @Override
-        public ObjectDatabaseDriver<Identity> getIdentityDatabaseDrier()
+        public SingleColumnDatabaseDriver<Identity> getIdentityDatabaseDrier()
         {
             // no-op
             return null;
         }
 
         @Override
-        public ObjectDatabaseDriver<Role> getRoleDatabaseDriver()
+        public SingleColumnDatabaseDriver<Role> getRoleDatabaseDriver()
         {
             // no-op
             return null;
         }
 
         @Override
-        public ObjectDatabaseDriver<SecurityType> getSecurityTypeDriver()
+        public SingleColumnDatabaseDriver<SecurityType> getSecurityTypeDriver()
         {
             // no-op
             return null;

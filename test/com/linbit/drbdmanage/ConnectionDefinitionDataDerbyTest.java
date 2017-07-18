@@ -1,6 +1,10 @@
 package com.linbit.drbdmanage;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.InvalidNameException;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -43,6 +48,8 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
     private ConnectionDefinitionData conDfn;
 
     private ConnectionDefinitionDataDatabaseDriver driver;
+    private SingleColumnDatabaseDriver<Integer> conNrDriver;
+
 
     public ConnectionDefinitionDataDerbyTest() throws InvalidNameException
     {
@@ -76,23 +83,24 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
 
         conDfn = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst, conNr);
         driver = DrbdManage.getConnectionDefinitionDatabaseDriver(resName, sourceName, targetName);
+        conNrDriver = driver.getConnectionNumberDriver();
     }
 
     @Test
-	public void testPersist() throws Exception
-	{
+    public void testPersist() throws Exception
+    {
         driver.create(con, conDfn);
 
         checkDbPersist(true);
-	}
+    }
 
     @Test
-	public void testPersistGetInstance() throws Exception
-	{
+    public void testPersistGetInstance() throws Exception
+    {
         ConnectionDefinitionData.getInstance(sysCtx, resDfn, nodeSrc, nodeDst, conNr, null, transMgr, true);
 
         checkDbPersist(false);
-	}
+    }
 
     private void checkDbPersist(boolean checkUuid) throws SQLException
     {
@@ -102,7 +110,7 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
         assertTrue(resultSet.next());
         if (checkUuid)
         {
-            assertEquals(uuid, UuidUtils.asUUID(resultSet.getBytes(UUID)));
+            assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         }
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(sourceName.value, resultSet.getString(NODE_NAME_SRC));
@@ -116,20 +124,20 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-	public void testLoad() throws Exception
-	{
+    public void testLoad() throws Exception
+    {
         driver.create(con, conDfn);
         DriverUtils.clearCaches();
 
         ConnectionDefinitionData loadedConDfn = driver.load(con, null, transMgr);
 
         checkLoadedConDfn(loadedConDfn, true);
-	}
+    }
 
 
     @Test
-	public void testLoadStatic() throws Exception
-	{
+    public void testLoadStatic() throws Exception
+    {
         driver.create(con, conDfn);
         DriverUtils.clearCaches();
 
@@ -153,11 +161,11 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
         assertEquals(1, nodeConMap.size());
 
         assertEquals(2, conMap.size());
-	}
+    }
 
     @Test
-	public void testLoadGetInstance() throws Exception
-	{
+    public void testLoadGetInstance() throws Exception
+    {
         driver.create(con, conDfn);
         DriverUtils.clearCaches();
 
@@ -173,7 +181,7 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
         );
 
         checkLoadedConDfn(loadedConDfn, true);
-	}
+    }
 
     private void checkLoadedConDfn(ConnectionDefinition loadedConDfn, boolean checkUuid) throws AccessDeniedException
     {
@@ -189,18 +197,18 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-	public void testCache() throws Exception
-	{
+    public void testCache() throws Exception
+    {
         driver.create(con, conDfn);
 
         // no clear-cache
 
         assertEquals(conDfn, driver.load(con, null, transMgr));
-	}
+    }
 
     @Test
-	public void testDelete() throws Exception
-	{
+    public void testDelete() throws Exception
+    {
         driver.create(con, conDfn);
         DriverUtils.clearCaches();
 
@@ -219,11 +227,50 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
         resultSet.close();
 
         stmt.close();
-	}
+    }
 
     @Test
-	public void testSatelliteCreate() throws Exception
-	{
+    public void testConNrDriverUpdate() throws Exception
+    {
+        driver.create(con, conDfn);
+
+        int newConNr = 42;
+        conNrDriver.update(con, newConNr);
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_CON_DFNS);
+        ResultSet resultSet = stmt.executeQuery();
+
+        assertTrue(resultSet.next());
+
+        assertEquals(newConNr, resultSet.getInt(CON_NR));
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testConNrInstanceUpdate() throws Exception
+    {
+        driver.create(con, conDfn);
+
+        conDfn.initialized();
+        conDfn.setConnection(transMgr);
+        conDfn.setConnectionNr(sysCtx, 42);
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_CON_DFNS);
+        ResultSet resultSet = stmt.executeQuery();
+
+        assertTrue(resultSet.next());
+
+        assertEquals(conNr, resultSet.getInt(CON_NR));
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testSatelliteCreate() throws Exception
+    {
         ConnectionDefinitionData satelliteConDfn = ConnectionDefinitionData.getInstance(
             sysCtx,
             resDfn,
@@ -243,11 +290,11 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
         stmt.close();
-	}
+    }
 
     @Test
-	public void testSatelliteNoCreate() throws Exception
-	{
+    public void testSatelliteNoCreate() throws Exception
+    {
         ConnectionDefinitionData satelliteConDfn = ConnectionDefinitionData.getInstance(
             sysCtx,
             resDfn,
@@ -267,5 +314,5 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
         stmt.close();
-	}
+    }
 }

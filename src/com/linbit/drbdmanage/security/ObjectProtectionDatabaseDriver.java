@@ -3,7 +3,7 @@ package com.linbit.drbdmanage.security;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import com.linbit.ObjectDatabaseDriver;
+import com.linbit.SingleColumnDatabaseDriver;
 
 public interface ObjectProtectionDatabaseDriver
 {
@@ -21,9 +21,9 @@ public interface ObjectProtectionDatabaseDriver
 
     ObjectProtection loadObjectProtection(Connection con) throws SQLException;
 
-    ObjectDatabaseDriver<Identity> getIdentityDatabaseDrier();
+    SingleColumnDatabaseDriver<Identity> getIdentityDatabaseDrier();
 
-    ObjectDatabaseDriver<Role> getRoleDatabaseDriver();
+    SingleColumnDatabaseDriver<Role> getRoleDatabaseDriver();
 
-    ObjectDatabaseDriver<SecurityType> getSecurityTypeDriver();
+    SingleColumnDatabaseDriver<SecurityType> getSecurityTypeDriver();
 }

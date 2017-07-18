@@ -31,7 +31,7 @@ public class UuidUtilsTest
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0D,
             0x00, 0x00, 0x00, 0x00, (byte) 0x02, (byte) 0x80, (byte) 0xDE, (byte) 0x80
         };
-        UUID id = UuidUtils.asUUID(arr);
+        UUID id = UuidUtils.asUuid(arr);
         assertEquals(13, id.getMostSignificantBits());
         assertEquals(42_000_000, id.getLeastSignificantBits());
     }

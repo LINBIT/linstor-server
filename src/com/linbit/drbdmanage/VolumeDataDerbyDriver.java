@@ -97,8 +97,8 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     @Override
     public VolumeData load(
         Connection con,
-        TransactionMgr transMgr,
-        SerialGenerator serialGen
+        SerialGenerator serialGen,
+        TransactionMgr transMgr
     )
         throws SQLException
     {
@@ -192,13 +192,13 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 resRef.getDefinition(),
                 volNr
             );
-            volDfn = volDfnDriver.load(con, transMgr, serialGen);
+            volDfn = volDfnDriver.load(con, serialGen, transMgr);
 
             VolumeData volData = cacheGet(resRef.getAssignedNode(), resRef.getDefinition(), volNr);
             if (volData == null)
             {
                 volData = new VolumeData(
-                    UuidUtils.asUUID(resultSet.getBytes(VOL_UUID)),
+                    UuidUtils.asUuid(resultSet.getBytes(VOL_UUID)),
                     resRef,
                     volDfn,
                     resultSet.getString(VOL_PATH),

@@ -119,7 +119,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDataDatabaseDriver driver = DrbdManage.getStorPoolDataDatabaseDriver(nodeRef, storPoolDefRef);
         if (transMgr != null)
         {
-            storPoolData = driver.load(transMgr.dbCon, transMgr, serGen);
+            storPoolData = driver.load(transMgr.dbCon, serGen, transMgr);
             if (storPoolData == null && createIfNotExists)
             {
                 storPoolData = new StorPoolData(

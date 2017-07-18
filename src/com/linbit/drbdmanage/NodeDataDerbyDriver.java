@@ -138,7 +138,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
 
                     node = new NodeData(
-                        UuidUtils.asUUID(resultSet.getBytes(NODE_UUID)),
+                        UuidUtils.asUuid(resultSet.getBytes(NODE_UUID)),
                         objProt,
                         nodeName,
                         resultSet.getLong(NODE_TYPE),

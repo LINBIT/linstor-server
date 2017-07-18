@@ -9,7 +9,7 @@ import java.util.Map;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ObjectDatabaseDriver;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 
@@ -95,9 +95,9 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     private static Map<PrimaryKey, ObjectProtection> objProtCache = new Hashtable<>();
 
     private String objPath;
-    private ObjectDatabaseDriver<Identity> identityDriver;
-    private ObjectDatabaseDriver<Role> roleDriver;
-    private ObjectDatabaseDriver<SecurityType> securityTypeDriver;
+    private SingleColumnDatabaseDriver<Identity> identityDriver;
+    private SingleColumnDatabaseDriver<Role> roleDriver;
+    private SingleColumnDatabaseDriver<SecurityType> securityTypeDriver;
     private AccessContext dbCtx;
 
     public ObjectProtectionDerbyDriver(AccessContext accCtx, String objectPath)
@@ -217,7 +217,6 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
                     if (cache(objProt, objPath))
                     {
-
                         // restore ACL
                         stmt = con.prepareStatement(ACL_LOAD);
                         stmt.setString(1, objPath);
@@ -271,19 +270,19 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     }
 
     @Override
-    public ObjectDatabaseDriver<Identity> getIdentityDatabaseDrier()
+    public SingleColumnDatabaseDriver<Identity> getIdentityDatabaseDrier()
     {
         return identityDriver;
     }
 
     @Override
-    public ObjectDatabaseDriver<Role> getRoleDatabaseDriver()
+    public SingleColumnDatabaseDriver<Role> getRoleDatabaseDriver()
     {
         return roleDriver;
     }
 
     @Override
-    public ObjectDatabaseDriver<SecurityType> getSecurityTypeDriver()
+    public SingleColumnDatabaseDriver<SecurityType> getSecurityTypeDriver()
     {
         return securityTypeDriver;
     }
@@ -314,14 +313,8 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         objProtCache.clear();
     }
 
-    private class IdentityDerbyDriver implements ObjectDatabaseDriver<Identity>
+    private class IdentityDerbyDriver implements SingleColumnDatabaseDriver<Identity>
     {
-        @Override
-        public void insert(Connection con, Identity element) throws SQLException
-        {
-            update(con, element);
-        }
-
         @Override
         public void update(Connection con, Identity element) throws SQLException
         {
@@ -333,22 +326,10 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
             stmt.executeUpdate();
             stmt.close();
         }
-
-        @Override
-        public void delete(Connection con, Identity element) throws SQLException
-        {
-            throw new DrbdSqlRuntimeException("ObjectProtection's identity must not be set to null");
-        }
     }
 
-    private class RoleDerbyDriver implements ObjectDatabaseDriver<Role>
+    private class RoleDerbyDriver implements SingleColumnDatabaseDriver<Role>
     {
-        @Override
-        public void insert(Connection con, Role element) throws SQLException
-        {
-            update(con, element);
-        }
-
         @Override
         public void update(Connection con, Role element) throws SQLException
         {
@@ -360,22 +341,10 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
             stmt.executeUpdate();
             stmt.close();
         }
-
-        @Override
-        public void delete(Connection con, Role element) throws SQLException
-        {
-            throw new DrbdSqlRuntimeException("ObjectProtection's identity must not be set to null");
-        }
     }
 
-    private class SecurityTypeDerbyDriver implements ObjectDatabaseDriver<SecurityType>
+    private class SecurityTypeDerbyDriver implements SingleColumnDatabaseDriver<SecurityType>
     {
-        @Override
-        public void insert(Connection con, SecurityType element) throws SQLException
-        {
-            update(con, element);
-        }
-
         @Override
         public void update(Connection con, SecurityType element) throws SQLException
         {
@@ -386,12 +355,6 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
             stmt.executeUpdate();
             stmt.close();
-        }
-
-        @Override
-        public void delete(Connection con, SecurityType element) throws SQLException
-        {
-            throw new DrbdSqlRuntimeException("ObjectProtection's identity must not be set to null");
         }
     }
 }

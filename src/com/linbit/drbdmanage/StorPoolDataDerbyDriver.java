@@ -10,7 +10,6 @@ import java.util.List;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.StorPoolData;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
@@ -73,8 +72,8 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     @Override
     public StorPoolData load(
         Connection con,
-        TransactionMgr transMgr,
-        SerialGenerator serGen
+        SerialGenerator serGen,
+        TransactionMgr transMgr
     )
         throws SQLException
     {
@@ -94,7 +93,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
 
                 sp = new StorPoolData(
-                    UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)),
+                    UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
                     objProt,
                     node,
                     storPoolDfn,
@@ -156,7 +155,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 
 
                     storPoolData = new StorPoolData(
-                        UuidUtils.asUUID(resultSet.getBytes(NSP_UUID)),
+                        UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
                         objProt,
                         node,
                         storPoolDef,
@@ -217,6 +216,11 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         StorPoolData cachedStorPool = cacheGet(node, storPoolData.getName());
         if (resultSet.next())
         {
+            if (cachedStorPool == null)
+            {
+                cache(node, storPoolData);
+            }
+            else
             if (cachedStorPool != storPoolData)
             {
                 resultSet.close();

@@ -1,6 +1,10 @@
 package com.linbit.drbdmanage;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -70,7 +74,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database did not persist storPool", resultSet.next());
-        assertEquals(uuid, UuidUtils.asUUID(resultSet.getBytes(UUID)));
+        assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(spName.value, resultSet.getString(POOL_NAME));
         assertEquals(LvmDriver.class.getSimpleName(), resultSet.getString(DRIVER_NAME));
@@ -100,7 +104,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database did not persist storPool", resultSet.next());
-        assertEquals(pool.getUuid(), UuidUtils.asUUID(resultSet.getBytes(UUID)));
+        assertEquals(pool.getUuid(), UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(pool.getName().value, resultSet.getString(POOL_NAME));
         assertEquals(LvmDriver.class.getSimpleName(), resultSet.getString(DRIVER_NAME));
@@ -113,13 +117,13 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        StorPoolData loadedStorPool = driver.load(con, transMgr, null);
+        StorPoolData loadedStorPool = driver.load(con, null, transMgr);
         assertNull(loadedStorPool);
 
         driver.create(con, storPool);
         DriverUtils.clearCaches();
 
-        loadedStorPool = driver.load(con, transMgr, null);
+        loadedStorPool = driver.load(con, null, transMgr);
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(sysCtx).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(sysCtx));
@@ -156,7 +160,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(storPool, driver.load(con, transMgr, null));
+        assertEquals(storPool, driver.load(con, null, transMgr));
     }
 
     @Test

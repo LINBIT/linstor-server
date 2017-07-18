@@ -5,8 +5,14 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
 
+import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 
+/**
+ * Database driver for {@link Props}.
+ *
+ * @author Gabor Hernadi <gabor.hernadi@linbit.com>
+ */
 public interface PropsConDatabaseDriver
 {
     /**

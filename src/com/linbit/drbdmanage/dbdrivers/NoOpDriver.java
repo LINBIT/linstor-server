@@ -7,8 +7,8 @@ import java.util.Set;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.ObjectDatabaseDriver;
 import com.linbit.ServiceName;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.ConnectionDefinitionData;
 import com.linbit.drbdmanage.DmIpAddress;
@@ -43,7 +43,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabase
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
 public class NoOpDriver implements DatabaseDriver
@@ -77,7 +76,7 @@ public class NoOpDriver implements DatabaseDriver
     private static final ConnectionDefinitionDataDatabaseDriver NO_OP_CON_DFN_DRIVER = new NoOpConDfnDriver();
 
     private static final StateFlagsPersistence NO_OP_FLAG_DRIVER = new NoOpFlagDriver();
-    private static final ObjectDatabaseDriver<?> NO_OP_OBJ_DB_DRIVER = new NoOpObjDbDriver<>();
+    private static final SingleColumnDatabaseDriver<?> NO_OP_OBJ_DB_DRIVER = new NoOpObjDbDriver<>();
 
     private static final String NO_OP_STRING = "NO_OP";
 
@@ -330,7 +329,7 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public VolumeData load(Connection dbCon, TransactionMgr transMgr, SerialGenerator srlGen) throws SQLException
+        public VolumeData load(Connection dbCon, SerialGenerator srlGen, TransactionMgr transMgr) throws SQLException
         {
             return null;
         }
@@ -358,16 +357,16 @@ public class NoOpDriver implements DatabaseDriver
 
         @SuppressWarnings("unchecked")
         @Override
-        public ObjectDatabaseDriver<MinorNumber> getMinorNumberDriver()
+        public SingleColumnDatabaseDriver<MinorNumber> getMinorNumberDriver()
         {
-            return (ObjectDatabaseDriver<MinorNumber>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<MinorNumber>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public ObjectDatabaseDriver<Long> getVolumeSizeDriver()
+        public SingleColumnDatabaseDriver<Long> getVolumeSizeDriver()
         {
-            return (ObjectDatabaseDriver<Long>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<Long>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @Override
@@ -383,7 +382,7 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public VolumeDefinitionData load(Connection con, TransactionMgr transMgr, SerialGenerator serialGen)
+        public VolumeDefinitionData load(Connection con, SerialGenerator serialGen, TransactionMgr transMgr)
             throws SQLException
         {
             return null;
@@ -420,7 +419,7 @@ public class NoOpDriver implements DatabaseDriver
     private static class NoOpSpdDriver implements StorPoolDataDatabaseDriver
     {
         @Override
-        public StorPoolData load(Connection con, TransactionMgr transMgr, SerialGenerator serGen) throws SQLException
+        public StorPoolData load(Connection con, SerialGenerator serGen, TransactionMgr transMgr) throws SQLException
         {
             return null;
         }
@@ -448,20 +447,20 @@ public class NoOpDriver implements DatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
-        public ObjectDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver()
+        public SingleColumnDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver()
         {
-            return (ObjectDatabaseDriver<DmIpAddress>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<DmIpAddress>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public ObjectDatabaseDriver<NetInterfaceType> getNetInterfaceTypeDriver()
+        public SingleColumnDatabaseDriver<NetInterfaceType> getNetInterfaceTypeDriver()
         {
-            return (ObjectDatabaseDriver<NetInterfaceType>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<NetInterfaceType>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @Override
-        public NetInterfaceData load(Connection dbCon) throws SQLException, AccessDeniedException
+        public NetInterfaceData load(Connection dbCon) throws SQLException
         {
             return null;
         }
@@ -488,22 +487,10 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpObjDbDriver<NOOP> implements ObjectDatabaseDriver<NOOP>
+    private static class NoOpObjDbDriver<NOOP> implements SingleColumnDatabaseDriver<NOOP>
     {
         @Override
-        public void insert(Connection con, NOOP element) throws SQLException
-        {
-            // no-op
-        }
-
-        @Override
         public void update(Connection con, NOOP element) throws SQLException
-        {
-            // no-op
-        }
-
-        @Override
-        public void delete(Connection con, NOOP element) throws SQLException
         {
             // no-op
         }
@@ -511,6 +498,12 @@ public class NoOpDriver implements DatabaseDriver
 
     private static class NoOpConDfnDriver implements ConnectionDefinitionDataDatabaseDriver
     {
+        @SuppressWarnings("unchecked")
+        @Override
+        public SingleColumnDatabaseDriver<Integer> getConnectionNumberDriver()
+        {
+            return (SingleColumnDatabaseDriver<Integer>) NO_OP_OBJ_DB_DRIVER;
+        }
 
         @Override
         public ConnectionDefinitionData load(Connection con, SerialGenerator serialGen, TransactionMgr transMgr)
@@ -530,6 +523,5 @@ public class NoOpDriver implements DatabaseDriver
         {
             // no-op
         }
-
     }
 }

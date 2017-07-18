@@ -1,18 +1,13 @@
 package com.linbit.drbdmanage.dbdrivers.interfaces;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import com.linbit.drbdmanage.StorPoolDefinitionData;
+import com.linbit.drbdmanage.dbdrivers.interfaces.BaseDatabaseDriver.BaseSimpleDatabaseDriver;
 
-public interface StorPoolDefinitionDataDatabaseDriver
+/**
+ * Database driver for {@link StorPoolDefinitionData}.
+ *
+ * @author Gabor Hernadi <gabor.hernadi@linbit.com>
+ */
+public interface StorPoolDefinitionDataDatabaseDriver extends BaseSimpleDatabaseDriver<StorPoolDefinitionData>
 {
-    public void create(Connection con, StorPoolDefinitionData storPoolDefinitionData)
-        throws SQLException;
-
-    public StorPoolDefinitionData load(Connection con)
-        throws SQLException;
-
-    public void delete(Connection con)
-        throws SQLException;
 }

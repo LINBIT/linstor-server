@@ -22,18 +22,13 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
 {
     // Object identifier
     private final UUID objId;
-
     private final ObjectProtection objProt;
-
     private final ResourceDefinition resDfn;
-
     private final Node sourceNode;
-
     private final Node targetNode;
-
     private final ConnectionDefinitionDataDatabaseDriver dbDriver;
 
-    private final int conNr;
+    private int conNr;
 
     private boolean deleted = false;
 
@@ -219,6 +214,15 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
     }
 
     @Override
+    public void setConnectionNr(AccessContext accCtx, int newConNr)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        conNr = newConNr;
+    }
+
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
         checkDeleted();
@@ -241,4 +245,5 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
             throw new ImplementationError("Access to deleted connectionDefinition", null);
         }
     }
+
 }

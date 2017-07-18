@@ -8,7 +8,7 @@ import java.util.Map.Entry;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.ObjectDatabaseDriver;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
@@ -138,9 +138,9 @@ public final class ObjectProtection extends BaseTransactionObject
 
         dbDriver = driver;
 
-        ObjectDatabaseDriver<Identity> idDriver = null;
-        ObjectDatabaseDriver<Role> roleDriver = null;
-        ObjectDatabaseDriver<SecurityType> secTypeDriver = null;
+        SingleColumnDatabaseDriver<Identity> idDriver = null;
+        SingleColumnDatabaseDriver<Role> roleDriver = null;
+        SingleColumnDatabaseDriver<SecurityType> secTypeDriver = null;
 
         if (driver != null)
         {
@@ -149,9 +149,9 @@ public final class ObjectProtection extends BaseTransactionObject
             secTypeDriver = driver.getSecurityTypeDriver();
         }
 
-        objectCreator = new TransactionSimpleObject<Identity>(accCtx.subjectId, idDriver);
-        objectOwner = new TransactionSimpleObject<Role>(accCtx.subjectRole, roleDriver);
-        objectType = new TransactionSimpleObject<SecurityType>(accCtx.subjectDomain, secTypeDriver);
+        objectCreator = new TransactionSimpleObject<>(accCtx.subjectId, idDriver);
+        objectOwner = new TransactionSimpleObject<>(accCtx.subjectRole, roleDriver);
+        objectType = new TransactionSimpleObject<>(accCtx.subjectDomain, secTypeDriver);
         objectAcl = new AccessControlList();
         cachedAcl = new HashMap<>();
 
@@ -429,6 +429,10 @@ public final class ObjectProtection extends BaseTransactionObject
 
     /**
      * ObjProt-Path for Resources
+     *
+     * @param nodeName
+     * @param resDefName
+     * @return
      */
     public static String buildPath(NodeName nodeName, ResourceName resDefName)
     {
@@ -439,6 +443,9 @@ public final class ObjectProtection extends BaseTransactionObject
 
     /**
      * ObjProt-Path for ResourceDefinitions
+     *
+     * @param resDfnName
+     * @return
      */
     public static String buildPath(ResourceName resDfnName)
     {
@@ -447,6 +454,10 @@ public final class ObjectProtection extends BaseTransactionObject
 
     /**
      * ObjProt-Path for Controller
+     *
+     * @param controller
+     * @param subPath
+     * @return
      */
     public static String buildPath(Controller controller, String subPath)
     {
@@ -455,6 +466,10 @@ public final class ObjectProtection extends BaseTransactionObject
 
     /**
      * ObjProt-Path for satellite
+     *
+     * @param satellite
+     * @param subPath
+     * @return
      */
     public static String buildPath(Satellite satellite, String subPath)
     {
@@ -463,6 +478,10 @@ public final class ObjectProtection extends BaseTransactionObject
 
     /**
      * ObjProt-Path for NetInterfaces
+     *
+     * @param nodeName
+     * @param netName
+     * @return
      */
     public static String buildPath(NodeName nodeName, NetInterfaceName netName)
     {
@@ -473,6 +492,9 @@ public final class ObjectProtection extends BaseTransactionObject
 
     /**
      * ObjProt-Path for Nodes
+     *
+     * @param nodeName
+     * @return
      */
     public static String buildPath(NodeName nodeName)
     {
@@ -481,6 +503,9 @@ public final class ObjectProtection extends BaseTransactionObject
 
     /**
      * ObjProt-Path for StorPoolDefinitions
+     *
+     * @param storPoolName
+     * @return
      */
     public static String buildPathSPD(StorPoolName storPoolName)
     {
@@ -489,6 +514,9 @@ public final class ObjectProtection extends BaseTransactionObject
 
     /**
      * ObjProt-Path for StorPools
+     *
+     * @param storPoolName
+     * @return
      */
     public static String buildPathSP(StorPoolName storPoolName)
     {
@@ -497,6 +525,11 @@ public final class ObjectProtection extends BaseTransactionObject
 
     /**
      * ObjProt-Path for ConnectionDefinitions
+     *
+     * @param resName
+     * @param sourceName
+     * @param targetName
+     * @return
      */
     public static String buildPath(ResourceName resName, NodeName sourceName, NodeName targetName)
     {

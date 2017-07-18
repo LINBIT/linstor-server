@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,11 +17,7 @@ import com.linbit.TransactionMgr;
 
 public class DerbyPropsConTest extends DerbyPropsConBase
 {
-    public DerbyPropsConTest() throws SQLException
-    {
-        super();
-    }
-
+    @SuppressWarnings("resource")
     @Test
     public void testPersistSimple() throws Throwable
     {
@@ -36,7 +31,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         container.setProp(expectedKey, expectedValue);
         con.commit();
 
-        ResultSet resultSet = getAllContent();
+        ResultSet resultSet = getAllProps();
 
         assertTrue("No entries found in the database", resultSet.next());
         String instanceName = resultSet.getString(1);
@@ -48,8 +43,10 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         assertEquals(expectedValue, value);
 
         assertFalse("Unknown entries found in the database", resultSet.next());
+        resultSet.close();
     }
 
+    @SuppressWarnings("resource")
     @Test
     public void testPersistNested() throws Throwable
     {
@@ -67,6 +64,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         checkIfPresent(map, DEFAULT_INSTANCE_NAME);
     }
 
+    @SuppressWarnings("resource")
     @Test
     public void testPersistUpdate() throws Throwable
     {
@@ -95,6 +93,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         checkIfPresent(map, DEFAULT_INSTANCE_NAME);
     }
 
+    @SuppressWarnings("resource")
     @Test
     public void testPersistMultipleContainer() throws Throwable
     {
@@ -107,7 +106,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         PropsConDerbyDriver driver2 = new PropsConDerbyDriver(expectedInstanceName2);
 
         PropsContainer container1 = PropsContainer.getInstance(
-            driver1, 
+            driver1,
             new TransactionMgr(con1)
         );
         PropsContainer container2 = PropsContainer.getInstance(
@@ -141,6 +140,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         checkIfPresent(map2, expectedInstanceName2);
     }
 
+    @SuppressWarnings("resource")
     @Test
     public void testLoadSimple() throws Throwable
     {
@@ -208,6 +208,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         checkExpectedMap(map, props);
     }
 
+    @SuppressWarnings("resource")
     @Test
     public void testLoadMultiple() throws Throwable
     {

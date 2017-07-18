@@ -140,7 +140,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(RES_SELECT);
-        stmt.setString(1, node.getName().value);
+        stmt.setString(1, nodeName.value);
         stmt.setString(2, resName.value);
         ResultSet resultSet = stmt.executeQuery();
 
@@ -246,7 +246,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
                     NodeId nodeId = new NodeId(resultSet.getInt(RES_NODE_ID));
                     resData = new ResourceData(
-                        UuidUtils.asUUID(resultSet.getBytes(RES_UUID)),
+                        UuidUtils.asUuid(resultSet.getBytes(RES_UUID)),
                         objProt,
                         resDfn,
                         node,

@@ -154,7 +154,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 if (objProt != null)
                 {
                     ret = new ResourceDefinitionData(
-                        UuidUtils.asUUID(resultSet.getBytes(RD_UUID)),
+                        UuidUtils.asUuid(resultSet.getBytes(RD_UUID)),
                         objProt,
                         resName,
                         resultSet.getLong(RD_FLAGS),

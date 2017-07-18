@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
@@ -49,11 +50,19 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     private static final String CON_INSERT =
         " INSERT INTO " + TBL_CON_DFN +
         " VALUES (?, ?, ?, ?, ?)";
+
     private static final String CON_DELETE =
         " DELETE FROM " + TBL_CON_DFN +
         " WHERE "+ CON_RES_NAME + " = ? AND " +
                    CON_NODE_SRC + " = ? AND " +
                    CON_NODE_DST + " = ?";
+
+    private static final String CON_UPDATE_CON_NR =
+        " UPDATE " + TBL_CON_DFN +
+        " SET " + CON_NR + " = ?" +
+        " WHERE " + CON_RES_NAME + " = ? AND " +
+                    CON_NODE_SRC + " = ? AND " +
+                    CON_NODE_DST + " = ?";
 
     private static Map<PrimaryKey, ConnectionDefinitionData> conDfnCache = new HashMap<>();
 
@@ -61,6 +70,8 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     private final ResourceName resName;
     private final NodeName srcNodeName;
     private final NodeName dstNodeName;
+
+    private final SingleColumnDatabaseDriver<Integer> conNrDriver;
 
     public ConnectionDefinitionDataDerbyDriver(
         AccessContext accCtx,
@@ -73,6 +84,8 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         resName = resNameRef;
         srcNodeName = srcNodeNameRef;
         dstNodeName = dstsrcNodeNameRef;
+
+        conNrDriver = new ConnectionNumberDriver();
     }
 
     @Override
@@ -122,7 +135,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     )
         throws SQLException
     {
-        UUID uuid = UuidUtils.asUUID(resultSet.getBytes(CON_UUID));
+        UUID uuid = UuidUtils.asUuid(resultSet.getBytes(CON_UUID));
         ResourceName resName;
         NodeName srcNodeName;
         NodeName dstNodeName;
@@ -250,6 +263,12 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         }
     }
 
+    @Override
+    public SingleColumnDatabaseDriver<Integer> getConnectionNumberDriver()
+    {
+        return conNrDriver;
+    }
+
     private static synchronized boolean cache(ConnectionDefinitionData con, AccessContext accCtx)
     {
         PrimaryKey pk = getPk(con, accCtx);
@@ -303,6 +322,21 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
                 "Database's access context has no permission to access ConnectionDefinitionData",
                 accessDeniedExc
             );
+        }
+    }
+
+    private class ConnectionNumberDriver implements SingleColumnDatabaseDriver<Integer>
+    {
+        @Override
+        public void update(Connection con, Integer newConNr) throws SQLException
+        {
+            PreparedStatement stmt = con.prepareStatement(CON_UPDATE_CON_NR);
+            stmt.setInt(1, newConNr);
+            stmt.setString(2, resName.value);
+            stmt.setString(3, srcNodeName.value);
+            stmt.setString(4, dstNodeName.value);
+            stmt.executeUpdate();
+            stmt.close();
         }
     }
 }

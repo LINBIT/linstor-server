@@ -10,17 +10,17 @@ public class TransactionSimpleObject<T> implements TransactionObject
 
     private T object;
     private T cachedObject;
-    private ObjectDatabaseDriver<T> dbDriver;
+    private SingleColumnDatabaseDriver<T> dbDriver;
 
     private Connection con;
 
-    public TransactionSimpleObject(T obj, ObjectDatabaseDriver<T> driver)
+    public TransactionSimpleObject(T obj, SingleColumnDatabaseDriver<T> driver)
     {
         object = obj;
         cachedObject = obj;
         if (driver == null)
         {
-            dbDriver = new NoOpObjectDatabaseDriver<T>();
+            dbDriver = new NoOpObjectDatabaseDriver<>();
         }
         else
         {
@@ -34,21 +34,7 @@ public class TransactionSimpleObject<T> implements TransactionObject
         {
             if (con != null && !Objects.equals(obj, cachedObject))
             {
-                if (obj == null)
-                {
-                    dbDriver.delete(con, object);
-                }
-                else
-                {
-                    if (object == null)
-                    {
-                        dbDriver.insert(con, obj);
-                    }
-                    else
-                    {
-                        dbDriver.update(con, obj);
-                    }
-                }
+                dbDriver.update(con, obj);
             }
         }
         else

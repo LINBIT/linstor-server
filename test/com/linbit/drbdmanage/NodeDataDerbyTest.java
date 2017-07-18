@@ -520,7 +520,7 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         DriverUtils.satelliteMode();
 
-    	SerialGenerator serGen = new TestSerialGenerator();
+        SerialGenerator serGen = new TestSerialGenerator();
         NodeData nodeData = NodeData.getInstance(
             sysCtx,
             nodeName,
@@ -531,7 +531,7 @@ public class NodeDataDerbyTest extends DerbyBase
             true
         );
 
-    	assertNotNull(nodeData);
+        assertNotNull(nodeData);
 
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
@@ -547,18 +547,18 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         DriverUtils.satelliteMode();
 
-    	SerialGenerator serGen = new TestSerialGenerator();
-    	NodeData nodeData = NodeData.getInstance(
-    	    sysCtx,
-    	    nodeName,
-    	    null,
-    	    null,
-    	    serGen,
-    	    null,
-    	    false
-	    );
+        SerialGenerator serGen = new TestSerialGenerator();
+        NodeData nodeData = NodeData.getInstance(
+            sysCtx,
+            nodeName,
+            null,
+            null,
+            serGen,
+            null,
+            false
+        );
 
-    	assertNull(nodeData);
+        assertNull(nodeData);
 
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();

@@ -1,6 +1,10 @@
 package com.linbit.drbdmanage;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -133,7 +137,7 @@ public class VolumeDataDerbyTestTest extends DerbyBase
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
-        assertEquals(uuid, UuidUtils.asUUID(resultSet.getBytes(UUID)));
+        assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
@@ -192,7 +196,7 @@ public class VolumeDataDerbyTestTest extends DerbyBase
         driver.create(con, vol);
         DriverUtils.clearCaches();
 
-        VolumeData loadedVol = driver.load(con, transMgr, null);
+        VolumeData loadedVol = driver.load(con, null, transMgr);
 
         checkLoaded(loadedVol, uuid);
     }
@@ -228,7 +232,7 @@ public class VolumeDataDerbyTestTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(vol, driver.load(con, transMgr, null));
+        assertEquals(vol, driver.load(con, null, transMgr));
     }
 
     @Test
@@ -281,7 +285,7 @@ public class VolumeDataDerbyTestTest extends DerbyBase
         String testValue = "TestValue";
         insertProp(con, driver.getPropsConDriver().getInstanceName(), testKey, testValue);
 
-        VolumeData loadedVol = driver.load(con, transMgr, null);
+        VolumeData loadedVol = driver.load(con, null, transMgr);
 
         assertNotNull(loadedVol);
         Props props = loadedVol.getProps(sysCtx);

@@ -82,7 +82,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue("Database did not persist resource / resourceDefinition", resultSet.next());
-        assertEquals(resUuid, UuidUtils.asUUID(resultSet.getBytes(UUID)));
+        assertEquals(resUuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(nodeId.value, resultSet.getInt(NODE_ID));

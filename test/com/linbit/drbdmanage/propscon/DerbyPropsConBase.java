@@ -2,14 +2,15 @@ package com.linbit.drbdmanage.propscon;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.junit.Before;
 
@@ -17,8 +18,7 @@ import com.linbit.drbdmanage.security.DerbyBase;
 
 public class DerbyPropsConBase extends DerbyBase
 {
-
-    private static final String SELECT_ALL =
+    private static final String SELECT_ALL_PROPS =
         "SELECT * FROM " + TBL_PROPS_CONTAINERS;
     private static final String INSERT =
         "INSERT INTO " + TBL_PROPS_CONTAINERS + " VALUES (?, ?, ?)";
@@ -32,10 +32,6 @@ public class DerbyPropsConBase extends DerbyBase
 
     protected PropsConDerbyDriver dbDriver;
 
-    public DerbyPropsConBase() throws SQLException
-    {
-    }
-
     @Override
     @Before
     public void setUp() throws SQLException
@@ -44,10 +40,10 @@ public class DerbyPropsConBase extends DerbyBase
         dbDriver = new PropsConDerbyDriver(DEFAULT_INSTANCE_NAME);
     }
 
-    protected String debugGetAllContent() throws SQLException
+    protected String debugGetAllProps() throws SQLException
     {
         Connection connection = getConnection();
-        PreparedStatement stmt = connection.prepareStatement(SELECT_ALL);
+        PreparedStatement stmt = connection.prepareStatement(SELECT_ALL_PROPS);
         ResultSet allContent = stmt.executeQuery();
         StringBuilder sb = new StringBuilder();
         while (allContent.next())
@@ -62,17 +58,18 @@ public class DerbyPropsConBase extends DerbyBase
         return sb.toString();
     }
 
-    protected ResultSet getAllContent() throws SQLException
+    @SuppressWarnings("resource")
+    protected ResultSet getAllProps() throws SQLException
     {
-        PreparedStatement preparedStatement = getConnection().prepareStatement(SELECT_ALL);
-        add(preparedStatement);
+        PreparedStatement preparedStatement = getConnection().prepareStatement(SELECT_ALL_PROPS);
+        add(preparedStatement); // will be closed later in DerbyBase#tearDown()
         return preparedStatement.executeQuery();
     }
 
     protected void checkIfPresent(Map<String, String> origMap, String expectedInstanceName) throws SQLException
     {
         Map<String, String> map = new HashMap<>(origMap);
-        ResultSet resultSet = getAllContent();
+        ResultSet resultSet = getAllProps();
         while (resultSet.next())
         {
             String instanceName = resultSet.getString(1);
@@ -87,6 +84,7 @@ public class DerbyPropsConBase extends DerbyBase
             }
         }
 
+        resultSet.close();
         assertTrue("Database does not contain all expected entries", map.isEmpty());
     }
 

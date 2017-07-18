@@ -1,6 +1,10 @@
 package com.linbit.drbdmanage;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -87,7 +91,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals(uuid, UuidUtils.asUUID(resultSet.getBytes(UUID)));
+        assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));
@@ -141,7 +145,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         driver.create(con, volDfn);
         DriverUtils.clearCaches();
 
-        VolumeDefinitionData loadedVd = driver.load(con, transMgr, null);
+        VolumeDefinitionData loadedVd = driver.load(con, null, transMgr);
         assertNotNull(loadedVd);
         assertEquals(uuid, loadedVd.getUuid());
         assertEquals(resName, loadedVd.getResourceDfn().getName());
@@ -210,7 +214,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(volDfn, driver.load(con, transMgr, null));
+        assertEquals(volDfn, driver.load(con, null, transMgr));
     }
 
     @Test
@@ -264,7 +268,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         DriverUtils.clearCaches();
 
-        VolumeDefinitionData loadedVd = driver.load(con, transMgr, null);
+        VolumeDefinitionData loadedVd = driver.load(con, null, transMgr);
         Props props = loadedVd.getProps(sysCtx);
 
         assertEquals(testValue, props.getProp(testKey));
@@ -273,7 +277,25 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testUpdateMinorNr() throws Exception
+    public void testMinorNrDriverUpdate() throws Exception
+    {
+        driver.create(con, volDfn);
+        MinorNumber newMinorNr = new MinorNumber(32);
+        driver.getMinorNumberDriver().update(con, newMinorNr);
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_VOL_DFN);
+        ResultSet resultSet = stmt.executeQuery();
+
+        assertTrue(resultSet.next());
+        assertEquals(newMinorNr.value, resultSet.getInt(VLM_MINOR_NR));
+        assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testMinorNrInstanceUpdate() throws Exception
     {
         driver.create(con, volDfn);
         volDfn.initialized();
@@ -296,7 +318,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testUpdateFlags() throws Exception
+    public void testFlagsUpdateInstance() throws Exception
     {
         driver.create(con, volDfn);
         volDfn.initialized();
@@ -318,15 +340,51 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testUpdateVolSize() throws Exception
+    public void testFlagsUpdateDriver() throws Exception
+    {
+        driver.create(con, volDfn);
+        long newFlagMask = 0;
+        driver.getStateFlagsPersistence().persist(con, newFlagMask);
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_VOL_DFN);
+        ResultSet resultSet = stmt.executeQuery();
+
+        assertTrue(resultSet.next());
+        assertEquals(newFlagMask, resultSet.getLong(VLM_FLAGS));
+        assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testVolSizeUpdateInstance() throws Exception
     {
         driver.create(con, volDfn);
 
         volDfn.initialized();
         volDfn.setConnection(transMgr);
 
-        int size = 9001;
+        long size = 9001;
         volDfn.setVolumeSize(sysCtx, size);
+
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_VOL_DFN);
+        ResultSet resultSet = stmt.executeQuery();
+
+        assertTrue(resultSet.next());
+        assertEquals(size, resultSet.getLong(VLM_SIZE));
+        assertFalse(resultSet.next());
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
+    public void testVolSizeUpdateDriver() throws Exception
+    {
+        driver.create(con, volDfn);
+        long size = 9001;
+        driver.getVolumeSizeDriver().update(con, size);
 
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();

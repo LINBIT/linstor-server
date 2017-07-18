@@ -12,10 +12,9 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
-import com.linbit.ObjectDatabaseDriver;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
-import com.linbit.drbdmanage.dbdrivers.UpdateOnlyDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -68,8 +67,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
     private final Node node;
 
-    private final ObjectDatabaseDriver<DmIpAddress> netIfAddressDriver;
-    private final ObjectDatabaseDriver<NetInterfaceType> netIfTypeDriver;
+    private final SingleColumnDatabaseDriver<DmIpAddress> netIfAddressDriver;
+    private final SingleColumnDatabaseDriver<NetInterfaceType> netIfTypeDriver;
 
     private final AccessContext dbCtx;
 
@@ -90,7 +89,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
     @Override
     public NetInterfaceData load(Connection con)
-        throws SQLException, AccessDeniedException
+        throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(NNI_SELECT_BY_NODE_AND_NET);
         stmt.setString(1, node.getName().value);
@@ -202,13 +201,13 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     @Override
-    public ObjectDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver()
+    public SingleColumnDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver()
     {
         return netIfAddressDriver;
     }
 
     @Override
-    public ObjectDatabaseDriver<NetInterfaceType> getNetInterfaceTypeDriver()
+    public SingleColumnDatabaseDriver<NetInterfaceType> getNetInterfaceTypeDriver()
     {
         return netIfTypeDriver;
     }
@@ -279,7 +278,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         NetInterfaceData ret = cacheGet(resultSet);
         if (ret == null)
         {
-            UUID uuid = UuidUtils.asUUID(resultSet.getBytes(NET_UUID));
+            UUID uuid = UuidUtils.asUuid(resultSet.getBytes(NET_UUID));
             DmIpAddress addr;
             String type = resultSet.getString(INET_TYPE);
             try
@@ -359,13 +358,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         niCache.clear();
     }
 
-    private class NodeNetInterfaceAddressDriver extends UpdateOnlyDatabaseDriver<DmIpAddress>
+    private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<DmIpAddress>
     {
-        public NodeNetInterfaceAddressDriver()
-        {
-            super(TBL_NODE_NET + "." + INET_ADDRESS);
-        }
-
         @Override
         public void update(Connection con, DmIpAddress inetAddress) throws SQLException
         {
@@ -380,13 +374,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         }
     }
 
-    private class NodeNetInterfaceTypeDriver extends UpdateOnlyDatabaseDriver<NetInterfaceType>
+    private class NodeNetInterfaceTypeDriver implements SingleColumnDatabaseDriver<NetInterfaceType>
     {
-        public NodeNetInterfaceTypeDriver()
-        {
-            super(TBL_NODE_NET + "." + INET_TYPE);
-        }
-
         @Override
         public void update(Connection con, NetInterfaceType type) throws SQLException
         {

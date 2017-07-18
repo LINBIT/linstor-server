@@ -1,5 +1,9 @@
 package com.linbit.drbdmanage;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.UUID;
+
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
@@ -9,9 +13,6 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.UUID;
 
 /**
  * Implementation of a network interface
@@ -61,7 +62,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         if (transMgr != null)
         {
-        	setConnection(transMgr);
+            setConnection(transMgr);
         }
     }
 

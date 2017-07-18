@@ -13,7 +13,7 @@ public class UuidUtils
         return buffer.array();
     }
 
-    public static UUID asUUID(byte[] arr)
+    public static UUID asUuid(byte[] arr)
     {
         ByteBuffer buffer = ByteBuffer.wrap(arr);
         long mostSig = buffer.getLong();

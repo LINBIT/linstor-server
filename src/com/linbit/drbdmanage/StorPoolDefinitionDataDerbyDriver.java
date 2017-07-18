@@ -88,7 +88,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
                 }
 
 
-                UUID id = UuidUtils.asUUID(resultSet.getBytes(SPD_UUID));
+                UUID id = UuidUtils.asUuid(resultSet.getBytes(SPD_UUID));
 
                 ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
                     ObjectProtection.buildPathSPD(spddName)

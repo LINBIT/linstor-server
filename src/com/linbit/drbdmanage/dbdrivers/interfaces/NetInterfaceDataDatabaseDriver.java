@@ -1,27 +1,31 @@
 package com.linbit.drbdmanage.dbdrivers.interfaces;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import com.linbit.ObjectDatabaseDriver;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.drbdmanage.DmIpAddress;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.NetInterfaceData;
-import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.dbdrivers.interfaces.BaseDatabaseDriver.BaseSimpleDatabaseDriver;
 
-public interface NetInterfaceDataDatabaseDriver
+/**
+ * Database driver for {@link NetInterfaceData}.
+ *
+ * @author Gabor Hernadi <gabor.hernadi@linbit.com>
+ */
+public interface NetInterfaceDataDatabaseDriver extends BaseSimpleDatabaseDriver<NetInterfaceData>
 {
-    public ObjectDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver();
+    /**
+     * A special sub-driver to update the persisted ipAddress. The data record
+     * is specified by the primary key stored as instance variables.
+     *
+     * @return
+     */
+    public SingleColumnDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver();
 
-    public ObjectDatabaseDriver<NetInterfaceType> getNetInterfaceTypeDriver();
-
-    public void create(Connection dbCon, NetInterfaceData netInterfaceData)
-        throws SQLException;
-
-    public NetInterfaceData load(Connection dbCon)
-        throws SQLException, AccessDeniedException;
-
-    public void delete(Connection con)
-        throws SQLException;
-
+    /**
+     * A special sub-driver to update the persisted transportType. The data record
+     * is specified by the primary key stored as instance variables.
+     *
+     * @return
+     */
+    public SingleColumnDatabaseDriver<NetInterfaceType> getNetInterfaceTypeDriver();
 }

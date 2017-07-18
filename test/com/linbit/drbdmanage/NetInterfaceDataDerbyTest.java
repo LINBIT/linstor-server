@@ -17,7 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.ImplementationError;
-import com.linbit.ObjectDatabaseDriver;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.security.DerbyBase;
@@ -48,8 +48,8 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     private java.util.UUID niUuid;
     private ObjectProtection niObjProt;
     private NetInterfaceData niData;
-    private ObjectDatabaseDriver<DmIpAddress> niAddrDriver;
-    private ObjectDatabaseDriver<NetInterfaceType> niTypeDriver;
+    private SingleColumnDatabaseDriver<DmIpAddress> niAddrDriver;
+    private SingleColumnDatabaseDriver<NetInterfaceType> niTypeDriver;
 
     public NetInterfaceDataDerbyTest() throws Exception
     {
@@ -99,7 +99,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
 
         ResultSet resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals(niUuid, UuidUtils.asUUID(resultSet.getBytes(UUID)));
+        assertEquals(niUuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(niName.value, resultSet.getString(NODE_NET_NAME));
         assertEquals(niName.displayValue, resultSet.getString(NODE_NET_DSP_NAME));
@@ -282,24 +282,8 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    @Test (expected = ImplementationError.class)
-    public void testAddrDelete() throws Exception
-    {
-        niData.initialized();
-        dbDriver.create(con, niData);
-        niAddrDriver.delete(con, niAddr);
-    }
-
-    @Test (expected = ImplementationError.class)
-    public void testAddrInsert() throws Exception
-    {
-        niData.initialized();
-        dbDriver.create(con, niData);
-        niAddrDriver.insert(con, niAddr);
-    }
-
     @Test
-    public void testAddrUpdate() throws Exception
+    public void testAddrUpdateInstance() throws Exception
     {
         niData.initialized();
         dbDriver.create(con, niData);
@@ -339,22 +323,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
 
         resultSet.close();
         stmt.close();
-    }
-
-    @Test (expected = ImplementationError.class)
-    public void testTypeDelete() throws Exception
-    {
-        niData.initialized();
-        dbDriver.create(con, niData);
-        niTypeDriver.delete(con, niInterfaceType);
-    }
-
-    @Test (expected = ImplementationError.class)
-    public void testTypeInsert() throws Exception
-    {
-        niData.initialized();
-        dbDriver.create(con, niData);
-        niTypeDriver.insert(con, niInterfaceType);
     }
 
     @Test

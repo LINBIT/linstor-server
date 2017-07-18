@@ -1,8 +1,6 @@
 package com.linbit;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +14,7 @@ public class Checks
     private static final Pattern IPv4_PATTERN = Pattern.compile(
         "^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$"
     );
-    
+
     public static final int HOSTNAME_MIN_LENGTH = 2;
     public static final int HOSTNAME_MAX_LENGTH = 255;
     public static final int HOSTNAME_LABEL_MAX_LENGTH = 63;
@@ -324,13 +322,13 @@ public class Checks
 
     public static void ipAddrCheck(String addr) throws InvalidIpAddressException
     {
-    	if (!isIpV4(addr) && !isIpV6(addr))
-    	{
-    		throw new InvalidIpAddressException(addr);
-    	}
+        if (!isIpV4(addr) && !isIpV6(addr))
+        {
+            throw new InvalidIpAddressException(addr);
+        }
     }
-    
-    private static boolean isIpV4(String addr) 
+
+    private static boolean isIpV4(String addr)
     {
         Matcher matcher = IPv4_PATTERN.matcher(addr.trim());
         boolean ret = false;
@@ -342,7 +340,7 @@ public class Checks
                 String stringVal = matcher.group(idx);
                 int val = Integer.parseInt(stringVal);
                 if (
-                    (stringVal.length() > 1 && stringVal.startsWith("0")) || 
+                    (stringVal.length() > 1 && stringVal.startsWith("0")) ||
                     val < 0 ||
                     val > 255
                 )
@@ -353,80 +351,80 @@ public class Checks
             }
         }
         return ret;
-	}
+    }
 
-	private static boolean isIpV6(String addr) throws InvalidIpAddressException 
-	{
-	    boolean ret = true;
-	    String[] compressedParts = addr.split("::");
-	    if (compressedParts.length > 2)
-	    {
-	        throw new InvalidIpAddressException("IPv6 must not contain multiple '::'. Address: " + addr);
-	    }
-	    if (compressedParts[0].startsWith(":"))
-	    {
-	        throw new InvalidIpAddressException("IPv6 must not start with single ':'. Address: " + addr);
-	    }
-	    if (compressedParts[compressedParts.length - 1].endsWith(":"))
-	    {
+    private static boolean isIpV6(String addr) throws InvalidIpAddressException
+    {
+        boolean ret = true;
+        String[] compressedParts = addr.split("::");
+        if (compressedParts.length > 2)
+        {
+            throw new InvalidIpAddressException("IPv6 must not contain multiple '::'. Address: " + addr);
+        }
+        if (compressedParts[0].startsWith(":"))
+        {
+            throw new InvalidIpAddressException("IPv6 must not start with single ':'. Address: " + addr);
+        }
+        if (compressedParts[compressedParts.length - 1].endsWith(":"))
+        {
             throw new InvalidIpAddressException("IPv6 must not end with single ':'. Address: " + addr);
-	    }
+        }
 
-	    String[] leftParts = compressedParts[0].split(":");
-	    String[] rightParts = compressedParts.length == 1 ? new String[0] : compressedParts[1].split(":");
-	    
-	    String[] parts;
-	    int ipV6Count;
-	    if (rightParts.length > 0 && rightParts[rightParts.length - 1].contains("."))
-	    {
-	        // last part might be ipv4
-	        if (!isIpV4(rightParts[rightParts.length - 1]))
+        String[] leftParts = compressedParts[0].split(":");
+        String[] rightParts = compressedParts.length == 1 ? new String[0] : compressedParts[1].split(":");
+
+        String[] parts;
+        int ipV6Count;
+        if (rightParts.length > 0 && rightParts[rightParts.length - 1].contains("."))
+        {
+            // last part might be ipv4
+            if (!isIpV4(rightParts[rightParts.length - 1]))
             {
                 throw new InvalidIpAddressException(addr);
             }
-	        parts = new String[7];
-	        ipV6Count = 6;
-	        fillIpv6(parts, leftParts, rightParts);
-	    }
-	    else
-	    {
-	        if (leftParts[leftParts.length - 1].contains("."))
-	        {
-	         // last part might be ipv4
-	            if (!isIpV4(leftParts[leftParts.length - 1]))
-	            {
-	                throw new InvalidIpAddressException(addr);
-	            }
-	            parts = new String[7];
-	            ipV6Count = 6;
-	            fillIpv6(parts, leftParts, rightParts);
-	        }
-	        else
-	        {
+            parts = new String[7];
+            ipV6Count = 6;
+            fillIpv6(parts, leftParts, rightParts);
+        }
+        else
+        {
+            if (leftParts[leftParts.length - 1].contains("."))
+            {
+             // last part might be ipv4
+                if (!isIpV4(leftParts[leftParts.length - 1]))
+                {
+                    throw new InvalidIpAddressException(addr);
+                }
+                parts = new String[7];
+                ipV6Count = 6;
+                fillIpv6(parts, leftParts, rightParts);
+            }
+            else
+            {
                 parts = new String[8];
                 ipV6Count = 8;
                 fillIpv6(parts, leftParts, rightParts);
-	        }
-	    }
+            }
+        }
 
-	    try
-	    {
-    	    for (int idx = 0; idx < ipV6Count; ++idx)
-    	    {
-    	        String part = parts[idx];
-    	        int val = Integer.parseInt(part, 16);
-    	        if (val < 0 || val > 0xFFFF)
-    	        {
-    	            throw new InvalidIpAddressException(addr);
-    	        }
-    	    }	    
-	    }
-	    catch (NumberFormatException nfExc)
-	    {
-	        ret = false;
-	    }
+        try
+        {
+            for (int idx = 0; idx < ipV6Count; ++idx)
+            {
+                String part = parts[idx];
+                int val = Integer.parseInt(part, 16);
+                if (val < 0 || val > 0xFFFF)
+                {
+                    throw new InvalidIpAddressException(addr);
+                }
+            }
+        }
+        catch (NumberFormatException nfExc)
+        {
+            ret = false;
+        }
         return ret;
-	}
+    }
 
     private static void fillIpv6(String[] parts, String[] leftParts, String[] rightParts)
     {

@@ -9,12 +9,11 @@ import java.util.Hashtable;
 import java.util.List;
 
 import com.linbit.ImplementationError;
-import com.linbit.ObjectDatabaseDriver;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
-import com.linbit.drbdmanage.dbdrivers.UpdateOnlyDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
@@ -118,7 +117,12 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     }
 
     @Override
-    public VolumeDefinitionData load(Connection con, TransactionMgr transMgr, SerialGenerator serialGen) throws SQLException
+    public VolumeDefinitionData load(
+        Connection con,
+        SerialGenerator serialGen,
+        TransactionMgr transMgr
+    )
+        throws SQLException
     {
         PreparedStatement stmt = con.prepareStatement(VD_SELECT);
         stmt.setString(1, resDfn.getName().value);
@@ -162,7 +166,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         try
         {
             ret = new VolumeDefinitionData(
-                UuidUtils.asUUID(resultSet.getBytes(VD_UUID)),
+                UuidUtils.asUuid(resultSet.getBytes(VD_UUID)),
                 accCtx, // volumeDefinition does not have objProt, but require access to their resource's objProt
                 resDfn,
                 volNr,
@@ -275,13 +279,13 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     }
 
     @Override
-    public ObjectDatabaseDriver<MinorNumber> getMinorNumberDriver()
+    public SingleColumnDatabaseDriver<MinorNumber> getMinorNumberDriver()
     {
         return minorNumberDriver;
     }
 
     @Override
-    public ObjectDatabaseDriver<Long> getVolumeSizeDriver()
+    public SingleColumnDatabaseDriver<Long> getVolumeSizeDriver()
     {
         return sizeDriver;
     }
@@ -335,13 +339,8 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         }
     }
 
-    private class MinorNumberDriver extends UpdateOnlyDatabaseDriver<MinorNumber>
+    private class MinorNumberDriver implements SingleColumnDatabaseDriver<MinorNumber>
     {
-        public MinorNumberDriver()
-        {
-            super(VD_MINOR_NR);
-        }
-
         @Override
         public void update(Connection con, MinorNumber minorNr) throws SQLException
         {
@@ -354,13 +353,8 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         }
     }
 
-    private class SizeDriver extends UpdateOnlyDatabaseDriver<Long>
+    private class SizeDriver implements SingleColumnDatabaseDriver<Long>
     {
-        public SizeDriver()
-        {
-            super(VD_SIZE);
-        }
-
         @Override
         public void update(Connection con, Long size) throws SQLException
         {

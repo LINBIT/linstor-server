@@ -79,7 +79,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue("Database did not persist resourceDefinition", resultSet.next());
-        assertEquals(resDfnUuid, UuidUtils.asUUID(resultSet.getBytes(UUID)));
+        assertEquals(resDfnUuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
         assertEquals(RscDfnFlags.REMOVE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
@@ -90,8 +90,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-	public void testPersistGetInstance() throws Exception
-	{
+    public void testPersistGetInstance() throws Exception
+    {
         ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
@@ -116,11 +116,11 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         resultSet.close();
         stmt.close();
 
-	}
+    }
 
     @Test
-	public void testLoad() throws Exception
-	{
+    public void testLoad() throws Exception
+    {
         driver.create(con, resDfn);
 
         DriverUtils.clearCaches();
@@ -131,11 +131,11 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
         assertEquals(RscDfnFlags.REMOVE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
-	}
+    }
 
     @Test
-	public void testLoadGetInstance() throws Exception
-	{
+    public void testLoadGetInstance() throws Exception
+    {
         ResourceDefinitionData loadedResDfn = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
@@ -163,7 +163,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
         assertEquals(RscDfnFlags.REMOVE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
-	}
+    }
 
     @Test
     public void testCache() throws Exception
@@ -176,8 +176,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-	public void testDelete() throws Exception
-	{
+    public void testDelete() throws Exception
+    {
         driver.create(con, resDfn);
 
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
@@ -193,7 +193,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         resultSet.close();
         stmt.close();
-	}
+    }
 
     @Test
     public void testLoadConnectionDefinition() throws Exception
@@ -298,17 +298,17 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-	public void testStateFlagPersistence() throws Exception
-	{
-		driver.create(con, resDfn);
-		resDfn.initialized();
-		resDfn.setConnection(transMgr);
+    public void testStateFlagPersistence() throws Exception
+    {
+        driver.create(con, resDfn);
+        resDfn.initialized();
+        resDfn.setConnection(transMgr);
 
-		resDfn.getFlags().disableAllFlags(sysCtx);
+        resDfn.getFlags().disableAllFlags(sysCtx);
 
-		transMgr.commit();
+        transMgr.commit();
 
-		PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
+        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -316,7 +316,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         resultSet.close();
         stmt.close();
-	}
+    }
 
     @Test
     public void testExists() throws Exception
@@ -327,8 +327,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-	public void testGetInstanceSatelliteCreate() throws Exception
-	{
+    public void testGetInstanceSatelliteCreate() throws Exception
+    {
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
@@ -348,11 +348,11 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         resultSet.close();
         stmt.close();
-	}
+    }
 
     @Test
-	public void testGetInstanceSatelliteNoCreate() throws Exception
-	{
+    public void testGetInstanceSatelliteNoCreate() throws Exception
+    {
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
@@ -371,7 +371,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         resultSet.close();
         stmt.close();
-	}
+    }
 
     @Test
     public void testHalfValidName() throws Exception
