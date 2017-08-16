@@ -70,14 +70,27 @@ public class ZfsDriver extends AbsStorageDriver
         {
             return ZfsVolumeInfo.getInfo(extCommand, zfsCommand, pool, identifier);
         }
-        catch (ChildProcessTimeoutException | IOException e)
+        catch (ChildProcessTimeoutException | IOException exc)
         {
             throw new StorageException(
-                String.format("Could not get Volume info for pool [%s] and identifier [%s]",
-                    pool,
-                    identifier
+                "Failed to get volume information",
+                String.format("Failed to get information for volume: %s", identifier),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format(
+                    "External command: %s",
+                    glue(
+                        ZfsVolumeInfo.getZfsVolumeInfoCommand(
+                            zfsCommand,
+                            pool,
+                            identifier
+                        ),
+                        " "
+                    )
                 ),
-                e
+                exc
             );
         }
     }
@@ -106,9 +119,13 @@ public class ZfsDriver extends AbsStorageDriver
         catch (ChildProcessTimeoutException | IOException exc)
         {
             throw new StorageException(
-                String.format("Could not determine block size. Command: %s",
-                    glue(command, " ")
-                ),
+                "Failed to get the extent size (zfs 'recordsize')",
+                String.format("Failed to get the extent size for volume: %s", pool),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
                 exc
             );
         }
@@ -207,16 +224,26 @@ public class ZfsDriver extends AbsStorageDriver
                 String[] lines = new String(originData.stdoutData).split("\n");
                 if (lines.length > 1)
                 {
-                    throw new StorageException(String.format("Zfs snapshot [%s] has unexpectedly multiple origins...", snapshotSource));
+                    throw new StorageException(
+                        "Failed to clone snapshot",
+                        String.format("Failed to query snapshot's zfs identifier for snapshot: %s", snapshotSource),
+                        String.format("Zfs snapshot [%s] has multiple origins", snapshotSource),
+                        null,
+                        String.format("External command: %s", glue(getSnapshotsOriginCommand, " "))
+                    );
                 }
                 origin = lines[0];
             }
             catch (ChildProcessTimeoutException | IOException exc)
             {
                 throw new StorageException(
-                    String.format("Could not determine snapshots origin. Command: %s",
-                        glue(getSnapshotsOriginCommand, " ")
-                    ),
+                    "Failed to clone snapshot",
+                    String.format("Failed to query snapshot's zfs identifier for snapshot: %s", snapshotSource),
+                    (exc instanceof ChildProcessTimeoutException) ?
+                        "External command timed out" :
+                        "External command threw an IOException",
+                    null,
+                    String.format("External command: %s", glue(getSnapshotsOriginCommand, " ")),
                     exc
                 );
             }
@@ -244,15 +271,13 @@ public class ZfsDriver extends AbsStorageDriver
 
     protected void checkPool(Map<String, String> config) throws StorageException
     {
-        String value = config.get(StorageConstants.CONFIG_ZFS_POOL_KEY);
-        if (value != null)
+        String newPool = config.get(StorageConstants.CONFIG_ZFS_POOL_KEY).trim();
+        if (newPool != null)
         {
-            final String pool = value.trim();
-
             try
             {
                 Checks.nameCheck(
-                    pool,
+                    newPool,
                     1,
                     Integer.MAX_VALUE,
                     VALID_CHARS,
@@ -261,37 +286,48 @@ public class ZfsDriver extends AbsStorageDriver
             }
             catch (InvalidNameException ine)
             {
-                // TODO: Detailed error reporting
                 throw new StorageException(
-                    String.format("Invalid volumeName [%s]", pool),
-                    ine
+                    "Invalid configuration",
+                    null,
+                    String.format("Invalid pool name: %s", newPool),
+                    "Specify a valid and existing pool name",
+                    null
                 );
             }
-            try
-            {
-                final String[] volumeGroupCheckCommand = new String[]
+
+            final String[] poolCheckCommand = new String[]
                 {
                     zfsCommand,
                     "list",
                     "-H", // no headers
                     "-o", "name", // name column only
-                    pool
+                    newPool
                 };
+            try
+            {
 
-                final OutputData output = extCommand.exec(volumeGroupCheckCommand);
+                final OutputData output = extCommand.exec(poolCheckCommand);
                 if (output.exitCode != 0)
                 {
-                    // TODO: Detailed error reporting
                     throw new StorageException(
-                        String.format("Zfs pool [%s] not found.", pool)
+                        "Invalid configuration",
+                        "Unknown pool",
+                        String.format("pool [%s] not found.", newPool),
+                        "Specify a valid and existing pool name or create the desired pool manually",
+                        null
                     );
                 }
             }
             catch (ChildProcessTimeoutException | IOException exc)
             {
-                // TODO: Detailed error reporting
                 throw new StorageException(
-                    String.format("Could not run zfs list %s", pool),
+                    "Failed to verify pool name",
+                    null,
+                    (exc instanceof ChildProcessTimeoutException) ?
+                        "External command timed out" :
+                        "External command threw an IOException",
+                    null,
+                    String.format("External command: %s", glue(poolCheckCommand, " ")),
                     exc
                 );
             }

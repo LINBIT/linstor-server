@@ -68,7 +68,7 @@ public class LvsInfo extends VolumeInfo
             final long size = Long.parseLong(rawSizeLong);
 
             final LvsInfo info = new LvsInfo(size, identifier, path);
-            infoByIdentifier.put(info.identifier, info);
+            infoByIdentifier.put(info.getIdentifier(), info);
         }
 
         return infoByIdentifier;

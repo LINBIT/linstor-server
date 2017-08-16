@@ -108,7 +108,7 @@ public class LvmDriver extends AbsStorageDriver
 
     /**
      * Runs an <code>lvs</code> command, fetches the results and returns
-     * the {@link LvsInfo} of the specified identifier.
+     * the {@link LvsInfo} of the specified identifier. <br />
      *
      * If the identifier could not be found in the list, a
      * {@link StorageException}
@@ -131,19 +131,35 @@ public class LvmDriver extends AbsStorageDriver
 
             if (info == null)
             {
-                // TODO: Detailed error reporting
                 throw new StorageException(
-                    String.format("Volume [%s] not found", identifier)
+                    "Volume not found",
+                    String.format("The volume [%s] was not found", identifier),
+                    null,
+                    null,
+                    String.format("External command for querying (all) volumes: %s",
+                        glue(
+                            LvsInfo.getCommand(lvmLvsCommand, volumeGroup),
+                            " "
+                        )
+                    )
                 );
             }
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
-                String.format("Could not run [%s] for volume group [%s]",
-                    lvmLvsCommand,
-                    volumeGroup
+                "Failed to query volume information",
+                null,
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format(
+                    "External command: %s",
+                    glue (
+                        LvsInfo.getCommand(lvmLvsCommand, volumeGroup),
+                        " "
+                    )
                 ),
                 exc
             );
@@ -186,11 +202,18 @@ public class LvmDriver extends AbsStorageDriver
             rawOut = rawOut.substring(0, indexOf);
             extentSize = Long.parseLong(rawOut.trim());
         }
+
         catch (ChildProcessTimeoutException | IOException exc)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
-                String.format("Could determine extent size. Command: %s", glue(command, " ")), exc
+                "Failed to query volume's extent size",
+                String.format("Failed to query the extent size of volume: %s", volumeGroup),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
             );
         }
         return extentSize;
@@ -220,7 +243,7 @@ public class LvmDriver extends AbsStorageDriver
         checkCommand(config, StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY);
         checkCommand(config, StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY);
         checkCommand(config, StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY);
-        checkVolumeGroupEntry(config, volumeGroup);
+        checkVolumeGroupEntry(config);
         checkToleranceFactor(config);
     }
 
@@ -270,39 +293,40 @@ public class LvmDriver extends AbsStorageDriver
      * @param config
      * @throws StorageException
      */
-    protected void checkVolumeGroupEntry(final Map<String, String> config, final String defaultReturn) throws StorageException
+    protected void checkVolumeGroupEntry(final Map<String, String> config) throws StorageException
     {
-        final String value = config.get(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
-        if (value != null)
+        final String newVolumeGroup = config.get(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY).trim();
+        if (newVolumeGroup != null)
         {
-            final String volumeGroup = value.trim();
-
             try
             {
                 Checks.nameCheck(
-                    volumeGroup,
+                    newVolumeGroup,
                     1,
                     Integer.MAX_VALUE,
                     VALID_CHARS,
                     VALID_INNER_CHARS
                 );
             }
-            catch (InvalidNameException ine)
+            catch (InvalidNameException invalidNameExc)
             {
-                // TODO: Detailed error reporting
                 throw new StorageException(
-                    String.format("Invalid volumeName [%s]", volumeGroup),
-                    ine
+                    "Invalid configuration",
+                    null,
+                    String.format("Invalid name for volume group: %s", newVolumeGroup),
+                    "Specify a valid and existing volume group name",
+                    null
                 );
             }
-            try
-            {
-                final String[] volumeGroupCheckCommand = new String[]
+
+            final String[] volumeGroupCheckCommand = new String[]
                 {
                     lvmVgsCommand,
                     "-o", "vg_name",
                     "--noheadings"
                 };
+            try
+            {
 
                 final OutputData output = extCommand.exec(volumeGroupCheckCommand);
                 final String stdOut = new String(output.stdoutData);
@@ -310,7 +334,7 @@ public class LvmDriver extends AbsStorageDriver
                 boolean found = false;
                 for (String line : lines)
                 {
-                    if (line.trim().equals(volumeGroup))
+                    if (line.trim().equals(newVolumeGroup))
                     {
                         found = true;
                         break;
@@ -318,17 +342,25 @@ public class LvmDriver extends AbsStorageDriver
                 }
                 if (!found)
                 {
-                    // TODO: Detailed error reporting
                     throw new StorageException(
-                        String.format("Volume group [%s] not found.", volumeGroup)
+                        "Invalid configuration",
+                        "Unknown volume group",
+                        String.format("Volume group [%s] not found.", newVolumeGroup),
+                        "Specify a valid and existing volume group name or create the desired volume group manually",
+                        null
                     );
                 }
             }
             catch (ChildProcessTimeoutException | IOException exc)
             {
-                // TODO: Detailed error reporting
                 throw new StorageException(
-                    String.format("Could not run [%s]", lvmVgsCommand),
+                    "Failed to verify volume group name",
+                    null,
+                    (exc instanceof ChildProcessTimeoutException) ?
+                        "External command timed out" :
+                        "External command threw an IOException",
+                    null,
+                    String.format("External command: %s", glue(volumeGroupCheckCommand, " ")),
                     exc
                 );
             }
