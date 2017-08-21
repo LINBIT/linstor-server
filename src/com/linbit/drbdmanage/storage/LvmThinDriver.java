@@ -25,6 +25,8 @@ public class LvmThinDriver extends LvmDriver
 
     public static final String LVM_CONVERT_DEFAULT = "lvconvert";
 
+    private static final String ID_SNAP_DELIMITER = "_";
+
     protected String lvmConvertCommand = LVM_CONVERT_DEFAULT;
 
     protected String baseVolumeGroup = LVM_VOLUME_GROUP_DEFAULT;
@@ -178,36 +180,43 @@ public class LvmThinDriver extends LvmDriver
         {
             lvmCreateCommand,
             "--snapshot",           // -s
-            "--name", snapshotName, // -n
+            "--name", identifier + ID_SNAP_DELIMITER + snapshotName, // -n
             qualifiedIdentifier
         };
         return command;
     }
 
     @Override
-    protected String[] getRestoreSnapshotCommand(String snapshotName, String targetIdentifier)
+    protected String[] getRestoreSnapshotCommand(String sourceIdentifier, String snapshotName, String targetIdentifier)
     {
-        return getCreateSnapshotCommand(snapshotName, targetIdentifier);
+        final String[] command = new String[]
+        {
+            lvmCreateCommand,
+            "--snapshot",           // -s
+            "--name", targetIdentifier, // -n
+            volumeGroup + File.separator + sourceIdentifier + ID_SNAP_DELIMITER + snapshotName
+        };
+        return command;
     }
 
     @Override
-    protected String[] getDeleteSnapshotCommand(String identifier)
+    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
     {
-        return getDeleteCommand(identifier);
+        return getDeleteCommand(identifier + ID_SNAP_DELIMITER + snapshotName);
     }
 
     @Override
     public void createSnapshot(String identifier, String snapshotName) throws StorageException
     {
         super.createSnapshot(identifier, snapshotName);
-        startVolume(snapshotName);
+        startVolume(identifier + ID_SNAP_DELIMITER + snapshotName);
     }
 
     @Override
-    public void restoreSnapshot(String snapshotName1, String snapshotName2) throws StorageException
+    public void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier) throws StorageException
     {
-        super.restoreSnapshot(snapshotName1, snapshotName2);
-        startVolume(snapshotName2);
+        super.restoreSnapshot(sourceIdentifier, snapshotName, targetIdentifier);
+        startVolume(targetIdentifier);
     }
 
     private void checkThinPoolEntry(Map<String, String> config) throws StorageException

@@ -183,13 +183,13 @@ public class ZfsDriver extends AbsStorageDriver
     public void createSnapshot(String identifier, String snapshotName) throws StorageException
     {
         super.createSnapshot(identifier, snapshotName);
-        super.restoreSnapshot(identifier + "@" + snapshotName, snapshotName);
+//        super.restoreSnapshot(getQualifiedSnapshotPath(identifier, snapshotName),, snapshotName);
     }
 
     @Override
     protected String[] getCreateSnapshotCommand(String identifier, String snapshotName)
     {
-        final String zfsSnapName = pool + File.separator + identifier + "@" + snapshotName;
+        final String zfsSnapName = getQualifiedSnapshotPath(identifier, snapshotName);
         final String[] command = new String[]
         {
             zfsCommand,
@@ -200,77 +200,26 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    protected String[] getRestoreSnapshotCommand(String snapshotSource, String identifierTarget) throws StorageException
+    protected String[] getRestoreSnapshotCommand(String sourceIdentifier, String snapshotName, String targetIdentifier) throws StorageException
     {
         return new String[]
         {
             zfsCommand,
             "clone",
-            getSnapshotOrigin(snapshotSource),
-            pool + File.separator + identifierTarget
+            getQualifiedSnapshotPath(sourceIdentifier, snapshotName),
+            pool + File.separator + targetIdentifier
         };
     }
 
-    private String getSnapshotOrigin(String snapshotName) throws StorageException
-    {
-        String origin;
-        if (snapshotName.contains("@"))
-        {
-            origin = pool + File.separator + snapshotName;
-        }
-        else
-        {
-            final String[] getSnapshotsOriginCommand = new String[]
-            {
-                zfsCommand,
-                "get", "origin",
-                pool + File.separator + snapshotName,
-                "-o", "value",
-                "-H"
-            };
-
-            try
-            {
-                OutputData originData = extCommand.exec(getSnapshotsOriginCommand);
-                checkExitCode(originData, getSnapshotsOriginCommand);
-                String[] lines = new String(originData.stdoutData).split("\n");
-                if (lines.length > 1)
-                {
-                    throw new StorageException(
-                        "Failed to clone snapshot",
-                        String.format("Failed to query snapshot's zfs identifier for snapshot: %s", snapshotName),
-                        String.format("Zfs snapshot [%s] has multiple origins", snapshotName),
-                        null,
-                        String.format("External command: %s", glue(getSnapshotsOriginCommand, " "))
-                    );
-                }
-                origin = lines[0];
-            }
-            catch (ChildProcessTimeoutException | IOException exc)
-            {
-                throw new StorageException(
-                    "Failed to clone snapshot",
-                    String.format("Failed to query snapshot's zfs identifier for snapshot: %s", snapshotName),
-                    (exc instanceof ChildProcessTimeoutException) ?
-                        "External command timed out" :
-                        "External command threw an IOException",
-                    null,
-                    String.format("External command: %s", glue(getSnapshotsOriginCommand, " ")),
-                    exc
-                );
-            }
-        }
-        return origin;
-    }
 
     @Override
-    protected String[] getDeleteSnapshotCommand(String snapshotName)
+    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
     {
         return new String[]
         {
             zfsCommand,
             "destroy",
-            pool + File.separator + snapshotName
+            getQualifiedSnapshotPath(identifier, snapshotName)
         };
     }
 
@@ -338,5 +287,10 @@ public class ZfsDriver extends AbsStorageDriver
                 );
             }
         }
+    }
+
+    private String getQualifiedSnapshotPath(String identifier, String snapshotName)
+    {
+        return pool + File.separator + identifier + "@" + snapshotName;
     }
 }

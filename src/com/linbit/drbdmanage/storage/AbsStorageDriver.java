@@ -400,24 +400,37 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void restoreSnapshot(String snapshotName, String targetIdentifier) throws StorageException
+    public void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier)
+        throws StorageException
     {
         if (!isSnapshotSupported())
         {
             throw new UnsupportedOperationException("Snapshots are not supported by "+ getClass());
         }
-        final String[] command = getRestoreSnapshotCommand(snapshotName, targetIdentifier);
+        final String[] command = getRestoreSnapshotCommand(sourceIdentifier, snapshotName, targetIdentifier);
 
         try
         {
             final OutputData outputData = extCommand.exec(command);
-            checkExitCode(outputData, command, "Failed to restore snapshot [%s]. ", snapshotName);
+            checkExitCode(
+                outputData,
+                command,
+                "Failed to restore snapshot [%s] from volume [%s] to volume [%s] ",
+                snapshotName,
+                sourceIdentifier,
+                targetIdentifier
+            );
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
             throw new StorageException(
                 "Failed to restore a snapshot",
-                String.format("Failed to restore snapshot [%s]", snapshotName),
+                String.format(
+                    "Failed to restore snapshot [%s] from volume [%s] to volume [%s]",
+                    snapshotName,
+                    sourceIdentifier,
+                    targetIdentifier
+                ),
                 (exc instanceof ChildProcessTimeoutException) ?
                     "External command timed out" :
                     "External command threw an IOException",
@@ -429,24 +442,24 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void deleteSnapshot(String snapshotName) throws StorageException
+    public void deleteSnapshot(String identifier, String snapshotName) throws StorageException
     {
         if (!isSnapshotSupported())
         {
             throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }
 
-        final String[] command = getDeleteSnapshotCommand(snapshotName);
+        final String[] command = getDeleteSnapshotCommand(identifier, snapshotName);
         try
         {
             final OutputData outputData = extCommand.exec(command);
-            checkExitCode(outputData, command, "Failed to delete snapshot [%s]. ", snapshotName);
+            checkExitCode(outputData, command, "Failed to delete snapshot [%s] of volume [%s]. ", snapshotName, identifier);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
             throw new StorageException(
                 "Deleting a snapshot failed",
-                String.format("Failed to delete the snapshot [%s]", snapshotName),
+                String.format("Failed to delete the snapshot [%s] of volume [%s]", snapshotName, identifier),
                 (exc instanceof ChildProcessTimeoutException) ?
                     "External command timed out" :
                     "External command threw an IOException",
@@ -783,7 +796,8 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected abstract String[] getCreateSnapshotCommand(String identifier, String snapshotName);
 
-    protected abstract String[] getRestoreSnapshotCommand(String snapshotName, String identifier) throws StorageException;
+    protected abstract String[] getRestoreSnapshotCommand(String sourceIdentifier, String snapshotName, String identifier)
+        throws StorageException;
 
-    protected abstract String[] getDeleteSnapshotCommand(String snapshotName);
+    protected abstract String[] getDeleteSnapshotCommand(String identifier, String snapshotName);
 }

@@ -288,8 +288,8 @@ public abstract class NoSimDriverTest
             // test4 - not created
 
             String restName = getUnusedIdentifier("", "_rest");
-            log("   restoring [%s] to [%s]", snapName, restName);
-            driver.restoreSnapshot(snapName, restName);
+            log("   restoring [%s] from volume [%s] to [%s]", snapName, identifier, restName);
+            driver.restoreSnapshot(identifier, snapName, restName);
             log(" done%n");
 
             // file status orig:
@@ -362,7 +362,7 @@ public abstract class NoSimDriverTest
             unmount(origMountPath, "   unmounting [%s]...");
 
             deleteVolume(restName, "   tryping to delete restored volume [%s]...");
-            deleteSnapshot(snapName, "   trying to delete snapshot [%s]...");
+            deleteSnapshot(identifier, snapName, "   trying to delete snapshot [%s]...");
 
             if (!baseMountPathExisted)
             {
@@ -634,11 +634,11 @@ public abstract class NoSimDriverTest
         log(" done %n");
     }
 
-    private void deleteSnapshot(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    private void deleteSnapshot(String identifier, String snapshotName, String format) throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.deleteSnapshot(identifier);
-        failIf(volumeExists(identifier), "Failed to delete snapshot [%s]", identifier);
+        driver.deleteSnapshot(identifier, snapshotName);
+        failIf(volumeExists(identifier, snapshotName), "Failed to delete snapshot [%s]", identifier);
         log (" done%n");
     }
 
@@ -670,13 +670,6 @@ public abstract class NoSimDriverTest
         log(" done%n");
     }
 
-    private void cloneSnapshot(String snapshotName1, String snapshotName2, String format) throws StorageException
-    {
-        log(format, snapshotName1, snapshotName2);
-        driver.restoreSnapshot(snapshotName1, snapshotName2);
-        log(" done%n");
-    }
-
     protected void cleanUp() throws ChildProcessTimeoutException, IOException
     {
         if (!inCleanUp)
@@ -695,12 +688,12 @@ public abstract class NoSimDriverTest
                     OutputData mountOutput = callChecked("mount");
                     String std = new String(mountOutput.stdoutData);
                     String[] lines = std.split("\n");
-                    String baseMountPath = this.baseMountPath.toAbsolutePath().toString();
+                    String baseMountString = this.baseMountPath.toAbsolutePath().toString();
                     for (String line : lines)
                     {
                         String[] mountInfo = line.split(" ");
                         String mountPoint = mountInfo[2];
-                        if (mountPoint.startsWith(baseMountPath))
+                        if (mountPoint.startsWith(baseMountString))
                         {
                             log("      unmounting %s %n", mountPoint);
                             callChecked("umount", mountPoint);
@@ -709,7 +702,6 @@ public abstract class NoSimDriverTest
                     log("         done%n");
                     // all mounts should have been unmounted
 
-                    String baseMountString = baseMountPath;
                     // just to be sure that we are not executing "rm -rf /" or /*
                     if (baseMountString.startsWith("/mnt/"))
                     {
@@ -719,8 +711,6 @@ public abstract class NoSimDriverTest
                         }
                         callChecked("rm", "-rf", baseMountString);
                     }
-
-
                 }
                 cleanUpDriver();
 
@@ -827,7 +817,7 @@ public abstract class NoSimDriverTest
         driver.setConfiguration(config);
     }
 
-    protected Map<String, String> getPoolConfigMap(String poolName)
+    protected static Map<String, String> getPoolConfigMap(String poolName)
     {
         Map<String, String> config = new HashMap<>();
         config.put(StorageConstants.CONFIG_ZFS_POOL_KEY, poolName);
@@ -865,7 +855,12 @@ public abstract class NoSimDriverTest
 
     protected abstract long getPoolSizeInKiB() throws ChildProcessTimeoutException, IOException;
 
-    protected abstract boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException;
+    protected boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException
+    {
+        return volumeExists(identifier, null);
+    }
+
+    protected abstract boolean volumeExists(String identifier, String snapName) throws ChildProcessTimeoutException, IOException;
 
     protected abstract String getVolumePathImpl(String identifier) throws ChildProcessTimeoutException, IOException;
 

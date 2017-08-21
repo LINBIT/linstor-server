@@ -131,21 +131,22 @@ public interface StorageDriver
     void createSnapshot(String identifier, String snapshotName) throws StorageException;
 
     /**
-     * Clones a given snapshot ({@code snapshotName}) into a resource ({@code targetIdentifier})
+     * Clones a given snapshot (@code{identifier} which is the volume name and {@code snapshotName})
+     * into a new volume ({@code targetIdentifier})
      *
      * @param snapshotName
      * @param targetIdentifier
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
      */
-    void restoreSnapshot(String snapshotName, String targetIdentifier) throws StorageException;
+    void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier) throws StorageException;
 
     /**
      * Deletes the given snapshot
+     * @param identifier
      * @param snapshotName
      * @throws StorageException
      * @throws UnsupportedOperationException if snapshots are not supported
      */
-    void deleteSnapshot(String snapshotName) throws StorageException;
-
+    void deleteSnapshot(String identifier, String snapshotName) throws StorageException;
 }

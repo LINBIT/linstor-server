@@ -83,16 +83,22 @@ public class NoSimZfsDriverTest extends NoSimDriverTest
     }
 
     @Override
-    protected boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException
+    protected boolean volumeExists(String identifier, String snapName) throws ChildProcessTimeoutException, IOException
     {
         OutputData zfsList = callChecked("zfs", "list", "-o", "name", "-H");
         String zfsOut = new String(zfsList.stdoutData);
         String[] lines = zfsOut.split("\n");
 
+        String targetId = poolName + File.separator + identifier;
+        if (snapName != null)
+        {
+            targetId += "@" + snapName;
+        }
+
         boolean exists = false;
         for (String line : lines)
         {
-            if (line.equals(poolName + File.separator + identifier))
+            if (line.equals(targetId))
             {
                 exists = true;
                 break;

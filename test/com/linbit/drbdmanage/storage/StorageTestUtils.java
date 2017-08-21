@@ -109,7 +109,7 @@ public class StorageTestUtils
         }
     }
 
-    protected Map<String, String> createMap(String... strings)
+    protected static Map<String, String> createMap(String... strings)
     {
         HashMap<String, String> map = new HashMap<>();
         int idx = 0;
@@ -121,7 +121,7 @@ public class StorageTestUtils
         return map;
     }
 
-    protected Path findCommand(String command)
+    protected static Path findCommand(String command)
     {
         Path[] pathFolders = getPathFolders();
         Path path = null;
@@ -141,7 +141,7 @@ public class StorageTestUtils
         return path;
     }
 
-    protected Path[] getPathFolders()
+    protected static Path[] getPathFolders()
     {
         String path = System.getenv("PATH");
         if (path == null)
@@ -166,7 +166,7 @@ public class StorageTestUtils
         return folders;
     }
 
-    protected <T> T getInstance(Class<T> clazz, Object... parameters) throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
+    protected static <T> T getInstance(Class<T> clazz, Object... parameters) throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
         Class<?>[] parameterClasses = new Class[parameters.length];
         for (int i = 0; i < parameters.length; i++)
@@ -181,7 +181,7 @@ public class StorageTestUtils
         return ret;
     }
 
-    protected FileEntryGroupBuilder getTestFileEntryGroupBuilder(final String expectedFilePath, final Event expectedEvent, final FileEntryGroup testFileEntryGroup)
+    protected static FileEntryGroupBuilder getTestFileEntryGroupBuilder(final String expectedFilePath, final Event expectedEvent, final FileEntryGroup testFileEntryGroup)
     {
         return new FileEntryGroupBuilder()
         {

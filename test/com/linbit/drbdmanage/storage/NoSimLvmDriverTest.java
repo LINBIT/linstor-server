@@ -75,14 +75,21 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
     }
 
     @Override
-    protected boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException
+    protected boolean volumeExists(String identifier, String snapName) throws ChildProcessTimeoutException, IOException
     {
         boolean exists = false;
         OutputData lvs = callChecked("lvs", "-o", "lv_name", "--noheading");
         String[] lines = new String(lvs.stdoutData).split("\n");
+
+        String targetId = identifier;
+        if (snapName != null)
+        {
+            targetId += "_" + snapName;
+        }
+
         for (String line : lines)
         {
-            if (identifier.equals(line.trim()))
+            if (targetId.equals(line.trim()))
             {
                 exists = true;
                 break;
