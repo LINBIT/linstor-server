@@ -10,8 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
-
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -141,7 +140,7 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
         driver.create(con, conDfn);
         DriverUtils.clearCaches();
 
-        Map<NodeName, Map<Integer, ConnectionDefinition>> conMap =
+        List<ConnectionDefinition> cons =
             ConnectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
                 con,
                 resName,
@@ -150,17 +149,21 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
                 sysCtx
         );
 
-        assertNotNull(conMap);
-        Map<Integer, ConnectionDefinition> nodeConMap = conMap.get(sourceName);
-        assertNotNull(nodeConMap);
-        assertEquals(nodeConMap, conMap.get(targetName));
+        assertNotNull(cons);
 
-        ConnectionDefinition loadedConDfn = nodeConMap.get(conNr);
+        ConnectionDefinition loadedConDfn = null;
+        for (ConnectionDefinition con : cons)
+        {
+            if (con.getConnectionNumber(sysCtx) == conNr)
+            {
+                loadedConDfn = con;
+            }
+        }
+        assertNotNull(loadedConDfn);
+
         checkLoadedConDfn(loadedConDfn, true);
 
-        assertEquals(1, nodeConMap.size());
-
-        assertEquals(2, conMap.size());
+        assertEquals(1, cons.size());
     }
 
     @Test
@@ -255,7 +258,7 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
 
         conDfn.initialized();
         conDfn.setConnection(transMgr);
-        conDfn.setConnectionNr(sysCtx, 42);
+        conDfn.setConnectionNumber(sysCtx, 42);
 
         PreparedStatement stmt = con.prepareStatement(SELECT_ALL_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();

@@ -47,7 +47,7 @@ public class SslTcpConnectorService extends TcpConnectorService
     {
         super(coreSvcsRef, msgProcessorRef, peerAccCtxRef, connObserverRef);
         sslCtx = SSLContext.getInstance(sslProtocol);
-        initialize(sslProtocol, keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
+        initialize(keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
     }
 
     public SslTcpConnectorService(
@@ -68,11 +68,10 @@ public class SslTcpConnectorService extends TcpConnectorService
     {
         super(coreSvcsRef, msgProcessorRef, bindAddress, peerAccCtxRef, connObserverRef);
         sslCtx = SSLContext.getInstance(sslProtocol);
-        initialize(sslProtocol, keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
+        initialize(keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
     }
 
     private void initialize(
-        final String sslProtocol,
         final String keyStoreFile,
         final char[] keyStorePasswd,
         final char[] keyPasswd,
@@ -129,7 +128,9 @@ public class SslTcpConnectorService extends TcpConnectorService
             InetSocketAddress address = null;
             if (outgoing)
             {
+                @SuppressWarnings("resource")
                 SocketChannel channel = (SocketChannel) connKey.channel();
+                @SuppressWarnings("resource")
                 Socket socket = channel.socket();
                 String host = socket.getInetAddress().getHostAddress();
                 int port = socket.getPort();

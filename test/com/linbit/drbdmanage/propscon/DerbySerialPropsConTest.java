@@ -11,14 +11,10 @@ import com.linbit.TransactionMgr;
 
 public class DerbySerialPropsConTest extends DerbyPropsConBase
 {
-    public DerbySerialPropsConTest() throws SQLException
-    {
-        super();
-    }
-
     @Test
     public void test() throws SQLException, InvalidKeyException, InvalidValueException
     {
+        @SuppressWarnings("resource")
         Connection con = getConnection();
         SerialPropsContainer container = SerialPropsContainer.getInstance(dbDriver, null, null);
         TransactionMgr transMgr = new TransactionMgr(con);

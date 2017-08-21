@@ -267,6 +267,7 @@ public class TcpConnectorPeer implements Peer
         InetSocketAddress peerAddr = null;
         try
         {
+            @SuppressWarnings("resource")
             SelectableChannel channel = selKey.channel();
             if (channel != null && channel instanceof SocketChannel)
             {

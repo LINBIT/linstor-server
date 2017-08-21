@@ -64,9 +64,6 @@ public class NodeDataDerbyTest extends DerbyBase
     private long initialTypes;
     private NodeData node;
 
-    // TODO: bunch of tests for constraint checks
-    // TODO: VolumeDefinitionsTest
-
     public NodeDataDerbyTest() throws Exception
     {
         nodeName = new NodeName("TestNodeName");

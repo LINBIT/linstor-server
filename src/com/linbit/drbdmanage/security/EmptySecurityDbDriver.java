@@ -65,6 +65,9 @@ public class EmptySecurityDbDriver implements DbAccessor
 
     private static class EmptyObjectProtectionDatabaseDriver implements ObjectProtectionDatabaseDriver
     {
+        /**
+         * @param objectPath
+         */
         public EmptyObjectProtectionDatabaseDriver(String objectPath)
         {
         }

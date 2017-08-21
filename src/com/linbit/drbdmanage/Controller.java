@@ -210,7 +210,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     AccessContext privCtx = sysCtx.clone();
                     privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
                     securityDbDriver = new DbDerbyPersistence(privCtx);
-                    persistenceDbDriver = new DerbyDriver(errorLogRef, privCtx);
+                    persistenceDbDriver = new DerbyDriver(privCtx);
 
                     String connectionUrl = dbProps.getProperty(
                         DB_CONN_URL,

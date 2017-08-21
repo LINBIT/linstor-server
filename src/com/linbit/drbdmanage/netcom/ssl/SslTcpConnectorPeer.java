@@ -36,7 +36,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
 
     private boolean needsHandshake = true;
     private HandshakeState state = HandshakeState.START;
-    private boolean clientMode;
+    private final boolean clientMode;
 
     public SslTcpConnectorPeer(
         final String peerId,
@@ -95,12 +95,11 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     }
 
     // Only SSL-Clients should call this method
-    public void encryptConnection(final SocketChannel channel) throws IOException
+    public void encryptConnection() throws IOException
     {
         sslEngine.beginHandshake();
         needsHandshake = true;
         selKey.interestOps(SelectionKey.OP_WRITE);
-//        doHandshake(channel, sslEngine);
     }
 
     /**

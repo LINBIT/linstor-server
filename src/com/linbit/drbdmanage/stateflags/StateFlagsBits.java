@@ -175,6 +175,12 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     }
 
     @Override
+    public boolean isInitialized()
+    {
+        return initialized;
+    }
+
+    @Override
     public void commit()
     {
         stateFlags = changedStateFlags;

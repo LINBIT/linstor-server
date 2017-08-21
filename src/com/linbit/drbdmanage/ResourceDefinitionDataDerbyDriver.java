@@ -6,9 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
@@ -119,8 +116,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         stmt.setString(1, resName.value);
         ResultSet resultSet = stmt.executeQuery();
 
-        ResourceDefinitionData ret = cacheGet(resName);
-        if (ret == null)
+        ResourceDefinitionData resDfn = cacheGet(resName);
+        if (resDfn == null)
         {
             if (resultSet.next())
             {
@@ -153,7 +150,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
                 if (objProt != null)
                 {
-                    ret = new ResourceDefinitionData(
+                    resDfn = new ResourceDefinitionData(
                         UuidUtils.asUuid(resultSet.getBytes(RD_UUID)),
                         objProt,
                         resName,
@@ -161,16 +158,16 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                         serialGen,
                         transMgr
                     );
-                    if (!cache(ret))
+                    if (!cache(resDfn))
                     {
-                        ret = cacheGet(resName);
+                        resDfn = cacheGet(resName);
                     }
                     else
                     {
                         try
                         {
                             // restore connectionDefinitions
-                            Map<NodeName, Map<Integer, ConnectionDefinition>> cons =
+                            List<ConnectionDefinition> cons =
                                 ConnectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
                                 con,
                                 resName,
@@ -178,47 +175,43 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                                 transMgr,
                                 dbCtx
                             );
-                            for (Entry<NodeName,Map<Integer, ConnectionDefinition>> entry : cons.entrySet())
+                            for (ConnectionDefinition conDfn : cons)
                             {
-                                for (Entry<Integer, ConnectionDefinition> conDfnEntry : entry.getValue().entrySet())
-                                {
-                                    int conDfnNr = conDfnEntry.getKey();
-                                    ConnectionDefinition conDfn = conDfnEntry.getValue();
-                                    ret.addConnection(
-                                        dbCtx,
-                                        conDfn.getSourceNode(dbCtx).getName(),
-                                        conDfn.getTargetNode(dbCtx).getName(),
-                                        conDfnNr,
-                                        conDfn
-                                    );
-                                }
+                                int conDfnNr = conDfn.getConnectionNumber(dbCtx);
+                                resDfn.addConnection(
+                                    dbCtx,
+                                    conDfn.getSourceNode(dbCtx).getName(),
+                                    conDfn.getTargetNode(dbCtx).getName(),
+                                    conDfnNr,
+                                    conDfn
+                                );
                             }
 
                             // restore volumeDefinitions
                             List<VolumeDefinition> volDfns =
                                 VolumeDefinitionDataDerbyDriver.loadAllVolumeDefinitionsByResourceDefinition(
                                 con,
-                                ret,
+                                resDfn,
                                 serialGen,
                                 transMgr,
                                 dbCtx
                             );
                             for (VolumeDefinition volDfn : volDfns)
                             {
-                                ret.putVolumeDefinition(dbCtx, volDfn);
+                                resDfn.putVolumeDefinition(dbCtx, volDfn);
                             }
 
                             // restore resources
                             List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceDataByResourceDefinition(
                                 con,
-                                ret,
+                                resDfn,
                                 serialGen,
                                 transMgr,
                                 dbCtx
                             );
                             for (ResourceData res : resList)
                             {
-                                ret.addResource(dbCtx, res);
+                                resDfn.addResource(dbCtx, res);
                             }
                         }
                         catch (AccessDeniedException accessDeniedExc)
@@ -245,7 +238,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         resultSet.close();
         stmt.close();
 
-        return ret;
+        return resDfn;
     }
 
     @Override

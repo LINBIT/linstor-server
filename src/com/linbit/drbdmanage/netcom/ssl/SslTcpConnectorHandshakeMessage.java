@@ -55,9 +55,4 @@ public class SslTcpConnectorHandshakeMessage extends TcpConnectorMessage
     {
         throw new ImplementationError("This method should never be called", new IllegalStateException());
     }
-
-    private boolean needsHandshaking(SocketChannel channel) throws IOException
-    {
-        return !peer.doHandshake(channel, sslEngine);
-    }
 }

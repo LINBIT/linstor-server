@@ -665,6 +665,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     protected void establishConnection(SelectionKey currentKey)
         throws IOException
     {
+        @SuppressWarnings("resource")
         SocketChannel channel = (SocketChannel) currentKey.channel();
         channel.finishConnect();
         currentKey.interestOps(0); // when controller wants to send a message, this will be changed to

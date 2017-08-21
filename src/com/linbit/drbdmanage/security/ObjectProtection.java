@@ -67,8 +67,6 @@ public final class ObjectProtection extends BaseTransactionObject
     // Is this object already persisted or not
     private boolean persisted;
 
-    private boolean initialized;
-
     /**
      * Loads an ObjectProtection instance from the database.
      *
@@ -120,6 +118,8 @@ public final class ObjectProtection extends BaseTransactionObject
                 objProt.dbCon = transMgr.dbCon;
                 objProt.persisted = true;
             }
+
+            objProt.initialized();
         }
 
         return objProt;
@@ -366,7 +366,7 @@ public final class ObjectProtection extends BaseTransactionObject
 
     private void updateOp() throws SQLException
     {
-        if (initialized && dbCon != null)
+        if (isInitialized() && dbCon != null)
         {
             if (!persisted)
             {
@@ -382,7 +382,7 @@ public final class ObjectProtection extends BaseTransactionObject
 
     private void setAcl(Role entryRole, AccessType grantedAccess, AccessControlEntry oldEntry) throws SQLException
     {
-        if (initialized)
+        if (isInitialized())
         {
             if (dbCon != null)
             {
@@ -409,7 +409,7 @@ public final class ObjectProtection extends BaseTransactionObject
 
     private void delAcl(Role entryRole, AccessControlEntry oldEntry) throws SQLException
     {
-        if (initialized)
+        if (isInitialized())
         {
             if (dbCon != null)
             {

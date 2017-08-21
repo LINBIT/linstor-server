@@ -134,6 +134,8 @@ public class PropsContainer implements Props
             }
         }
 
+        container.initialized();
+
         return container;
     }
 
@@ -911,6 +913,12 @@ public class PropsContainer implements Props
     }
 
     @Override
+    public boolean isInitialized()
+    {
+        return initialized;
+    }
+
+    @Override
     public void setConnection(TransactionMgr transMgr)
     {
         if (transMgr != null)
@@ -1340,7 +1348,10 @@ public class PropsContainer implements Props
         BaseSet(PropsContainer con)
         {
             container = con;
-            instanceName = con.dbDriver.getInstanceName();
+            if (con.dbDriver != null)
+            {
+                instanceName = con.dbDriver.getInstanceName();
+            }
         }
 
         @Override
@@ -1845,7 +1856,10 @@ public class PropsContainer implements Props
         ValuesCollection(PropsContainer con)
         {
             container = con;
-            instanceName = con.dbDriver.getInstanceName();
+            if (con.dbDriver != null)
+            {
+                instanceName = con.dbDriver.getInstanceName();
+            }
         }
 
         @Override
@@ -2247,12 +2261,6 @@ public class PropsContainer implements Props
             return entryValue;
         }
 
-        /**
-         * TODO: javadoc
-         *
-         * @param value
-         * @return
-         */
         @Override
         public String setValue(String value)
         {

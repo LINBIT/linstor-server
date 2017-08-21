@@ -78,6 +78,8 @@ public class SerialPropsContainer extends PropsContainer
             }
         }
 
+        container.initialized();
+
         return container;
     }
 

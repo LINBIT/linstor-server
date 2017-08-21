@@ -24,6 +24,11 @@ public interface TransactionObject
     void initialized();
 
     /**
+     * Returns true if {@link #initialized()} was called
+     */
+    boolean isInitialized();
+
+    /**
      * Sets the database connection for persisting the data to the database
      *
      * If the object was manipulated prior to this method-call

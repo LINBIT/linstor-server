@@ -170,6 +170,12 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
+    public boolean isInitialized()
+    {
+        return propsMap.isInitialized();
+    }
+
+    @Override
     public void setConnection(TransactionMgr transMgr)
     {
         // ignore - ReadOnlyProps cannot be changed
@@ -184,15 +190,15 @@ public class ReadOnlyProps implements Props
     @Override
     public void commit()
     {
-        // TODO: should we call propsMap.commit() here?
-        // ignore - ReadOnlyProps cannot be changed
+        // ignore - ReadOnlyProps cannot be changed. If the changes should be persisted,
+        // the modifiable propsCon.commit() should be called, not this
     }
 
     @Override
     public void rollback()
     {
-        // TODO: should we call propsMap.rollback() here?
-        // ignore - ReadOnlyProps cannot be changed
+        // ignore - ReadOnlyProps cannot be changed. If the changes should be rolled back,
+        // the modifiable propsCon.rollback() should be called, not this
     }
 
     @Override

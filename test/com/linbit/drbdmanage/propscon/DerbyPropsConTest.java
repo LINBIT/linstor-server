@@ -59,7 +59,7 @@ public class DerbyPropsConTest extends DerbyPropsConBase
         map.put("a/b", "d");
 
         container.setAllProps(map, null);
-        con.commit();
+        transMgr.commit();
 
         checkIfPresent(map, DEFAULT_INSTANCE_NAME);
     }

@@ -4,7 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -176,7 +178,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         return conData;
     }
 
-    public static Map<NodeName, Map<Integer, ConnectionDefinition>> loadAllConnectionsByResourceDefinition(
+    public static List<ConnectionDefinition> loadAllConnectionsByResourceDefinition(
         Connection con,
         ResourceName resName,
         SerialGenerator serialGen,
@@ -188,42 +190,15 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         PreparedStatement stmt = con.prepareStatement(CON_SELECT_BY_RES_DFN);
         stmt.setString(1, resName.value);
         ResultSet resultSet = stmt.executeQuery();
-        Map<NodeName, Map<Integer, ConnectionDefinition>> resultMap = new HashMap<>();
-        try
+        List<ConnectionDefinition> connections = new ArrayList<>();
+        while (resultSet.next())
         {
-            while (resultSet.next())
-            {
-                ConnectionDefinitionData conDfn = restoreConnectionDefinition(con, resultSet, serialGen, transMgr, accCtx);
-
-                NodeName srcNodeName = conDfn.getSourceNode(accCtx).getName();
-                NodeName dstNodeName = conDfn.getTargetNode(accCtx).getName();
-                if (!cache(conDfn, accCtx))
-                {
-                    conDfn = cacheGet(resName, srcNodeName, dstNodeName);
-                }
-                else
-                {
-                    // restore references
-                }
-
-                Map<Integer, ConnectionDefinition> conMap = new HashMap<>();
-                conMap.put(conDfn.getConnectionNumber(accCtx), conDfn);
-                resultMap.put(srcNodeName, conMap);
-                resultMap.put(dstNodeName, conMap); // TODO: put the same map?
-            }
-        }
-        catch (AccessDeniedException accessDeniedExc)
-        {
-            resultSet.close();
-            stmt.close();
-            throw new ImplementationError(
-                "Database's access context has no permission to get storPoolDefinition",
-                accessDeniedExc
-            );
+            ConnectionDefinitionData conDfn = restoreConnectionDefinition(con, resultSet, serialGen, transMgr, accCtx);
+            connections.add(conDfn);
         }
         resultSet.close();
         stmt.close();
-        return resultMap;
+        return connections;
     }
 
     @Override

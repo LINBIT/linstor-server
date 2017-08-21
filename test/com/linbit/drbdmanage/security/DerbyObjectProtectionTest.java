@@ -31,6 +31,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
     @Test
     public void testCreateSimpleObjProt() throws SQLException, AccessDeniedException
     {
+        @SuppressWarnings("resource")
         final Connection con = getConnection();
         final TransactionMgr transMgr = new TransactionMgr(con);
 
@@ -48,11 +49,15 @@ public class DerbyObjectProtectionTest extends DerbyBase
         assertEquals(sysCtx.subjectDomain.name.value, resultSet.getString(SECURITY_TYPE_NAME));
 
         assertFalse("Database contains more data than expected", resultSet.next());
+
+        resultSet.close();
+        stmt.close();
     }
 
     @Test (expected = DerbySQLIntegrityConstraintViolationException.class)
     public void testCreateUnknownIdObjProt() throws Exception
     {
+        @SuppressWarnings("resource")
         final Connection con = getConnection();
         final TransactionMgr transMgr = new TransactionMgr(con);
 
@@ -71,6 +76,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
     @Test (expected = DerbySQLIntegrityConstraintViolationException.class)
     public void testCreateUnknownRoleObjProt() throws Exception
     {
+        @SuppressWarnings("resource")
         final Connection con = getConnection();
         final TransactionMgr transMgr = new TransactionMgr(con);
 
@@ -89,6 +95,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
     @Test (expected = DerbySQLIntegrityConstraintViolationException.class)
     public void testCreateUnknownSecTypeObjProt() throws Exception
     {
+        @SuppressWarnings("resource")
         final Connection con = getConnection();
         final TransactionMgr transMgr = new TransactionMgr(con);
 
@@ -104,6 +111,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         fail("Creating an ObjectProtection with an unknown identity should have failed");
     }
 
+    @SuppressWarnings("resource")
     @Test
     public void testLoadSimpleObjProt() throws SQLException, AccessDeniedException
     {
@@ -133,6 +141,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
     @Test
     public void testAddAcl() throws SQLException, AccessDeniedException, InvalidNameException
     {
+        @SuppressWarnings("resource")
         Connection con = getConnection();
         TransactionMgr transMgr = new TransactionMgr(con);
 
@@ -152,6 +161,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         stmt.close();
 
         objProt.addAclEntry(sysCtx, testRole, AccessType.CHANGE);
+        transMgr.commit();
 
         stmt = con.prepareStatement(ACL_SELECT);
         ResultSet resultSet = stmt.executeQuery();
@@ -171,6 +181,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
     @Test
     public void testRemoveAcl() throws Exception
     {
+        @SuppressWarnings("resource")
         Connection con = getConnection();
         TransactionMgr transMgr = new TransactionMgr(con);
 
@@ -184,8 +195,12 @@ public class DerbyObjectProtectionTest extends DerbyBase
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse("Database did not remove acl entry", resultSet.next());
+
+        resultSet.close();
+        stmt.close();
     }
 
+    @SuppressWarnings("resource")
     @Test
     public void testLoadObjProtWithAcl() throws Exception
     {

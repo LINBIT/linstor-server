@@ -192,40 +192,49 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     @Override
     public ObjectProtection loadObjectProtection(Connection con) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(OP_LOAD);
+        PreparedStatement opLoadStmt = con.prepareStatement(OP_LOAD);
 
-        stmt.setString(1, objPath);
+        opLoadStmt.setString(1, objPath);
 
-        ResultSet resultSet = stmt.executeQuery();
+        ResultSet opResultSet = opLoadStmt.executeQuery();
 
         ObjectProtection objProt = cacheGet(objPath);
         if (objProt == null)
         {
-            if (resultSet.next())
+            if (opResultSet.next())
             {
                 try
                 {
-                    Identity identity = Identity.get(new IdentityName(resultSet.getString(1)));
-                    Role role = Role.get(new RoleName(resultSet.getString(2)));
-                    SecurityType secType = SecurityType.get(new SecTypeName(resultSet.getString(3)));
-                    PrivilegeSet privLimitSet = new PrivilegeSet(resultSet.getLong(4));
+                    Identity identity = Identity.get(new IdentityName(opResultSet.getString(1)));
+                    Role role = Role.get(new RoleName(opResultSet.getString(2)));
+                    SecurityType secType = SecurityType.get(new SecTypeName(opResultSet.getString(3)));
+                    PrivilegeSet privLimitSet = new PrivilegeSet(opResultSet.getLong(4));
                     AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
                     objProt = new ObjectProtection(accCtx, this);
-
-                    resultSet.close();
-                    stmt.close();
-
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    opResultSet.close();
+                    opLoadStmt.close();
+                    throw new DrbdSqlRuntimeException(
+                        "A name has been modified in the database to an illegal string.",
+                        invalidNameExc
+                    );
+                }
+                opResultSet.close();
+                opLoadStmt.close();
+                // restore ACL
+                PreparedStatement aclLoadStmt = con.prepareStatement(ACL_LOAD);
+                aclLoadStmt.setString(1, objPath);
+                ResultSet aclResultSet = aclLoadStmt.executeQuery();
+                try
+                {
                     if (cache(objProt, objPath))
                     {
-                        // restore ACL
-                        stmt = con.prepareStatement(ACL_LOAD);
-                        stmt.setString(1, objPath);
-                        resultSet = stmt.executeQuery();
-
-                        while (resultSet.next())
+                        while (aclResultSet.next())
                         {
-                            role = Role.get(new RoleName(resultSet.getString(1)));
-                            AccessType type = AccessType.get(resultSet.getInt(2));
+                            Role role = Role.get(new RoleName(aclResultSet.getString(1)));
+                            AccessType type = AccessType.get(aclResultSet.getInt(2));
 
                             objProt.addAclEntry(dbCtx, role, type);
                         }
@@ -234,11 +243,13 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                     {
                         objProt = cacheGet(objPath);
                     }
+                    aclResultSet.close();
+                    aclLoadStmt.close();
                 }
                 catch (InvalidNameException invalidNameExc)
                 {
-                    resultSet.close();
-                    stmt.close();
+                    aclLoadStmt.close();
+                    aclResultSet.close();
                     throw new DrbdSqlRuntimeException(
                         "A name has been modified in the database to an illegal string.",
                         invalidNameExc
@@ -246,8 +257,8 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                 }
                 catch (AccessDeniedException accessDeniedExc)
                 {
-                    resultSet.close();
-                    stmt.close();
+                    aclLoadStmt.close();
+                    aclResultSet.close();
                     throw new ImplementationError(
                         " Database's accessContext has insufficient rights to restore object protection",
                         accessDeniedExc
@@ -256,15 +267,15 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
             }
             else
             {
-                if (!resultSet.next())
+                if (!opResultSet.next())
                 {
                     // XXX: user deleted db entry during runtime - throw exception?
                     // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
                 }
             }
         }
-        resultSet.close();
-        stmt.close();
+        opResultSet.close();
+        opLoadStmt.close();
 
         return objProt;
     }

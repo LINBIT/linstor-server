@@ -734,6 +734,7 @@ public class PropsContainerTest
         assertEquals(expectedEntry, actualEntry);
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetRemoveFromProps()
         throws Throwable
@@ -747,6 +748,7 @@ public class PropsContainerTest
         assertFalse(entrySet.contains(removedKey));
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetSize() throws Throwable
     {
@@ -787,6 +789,7 @@ public class PropsContainerTest
         assertFalse(entrySet.isEmpty());
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetContains()
     {
@@ -942,6 +945,7 @@ public class PropsContainerTest
         assertEquals(expectedEntries, entrySet);
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetContainsAll()
     {
@@ -1045,6 +1049,7 @@ public class PropsContainerTest
         }
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetRetainAll()
     {

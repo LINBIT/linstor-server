@@ -56,6 +56,12 @@ public class TransactionSimpleObject<T> implements TransactionObject
     }
 
     @Override
+    public boolean isInitialized()
+    {
+        return initialized;
+    }
+
+    @Override
     public void setConnection(TransactionMgr transMgr) throws ImplementationError
     {
         if (transMgr != null)

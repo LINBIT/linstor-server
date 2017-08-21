@@ -35,7 +35,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
-import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
 import com.linbit.drbdmanage.security.AccessContext;
 
@@ -63,7 +62,6 @@ public class DerbyDriver implements DatabaseDriver
         }
     }
 
-    private ErrorReporter errorReporter;
     private final AccessContext dbCtx;
 
     private final Map<PrimaryKey, NodeDataDerbyDriver> nodeDriverCache = new HashMap<>();
@@ -78,9 +76,8 @@ public class DerbyDriver implements DatabaseDriver
     private final Map<PrimaryKey, ConnectionDefinitionDataDerbyDriver> conDfnDriverCache = new HashMap<>();
 
 
-    public DerbyDriver(ErrorReporter errorReporter, AccessContext privCtx)
+    public DerbyDriver(AccessContext privCtx)
     {
-        this.errorReporter = errorReporter;
         this.dbCtx = privCtx;
     }
 

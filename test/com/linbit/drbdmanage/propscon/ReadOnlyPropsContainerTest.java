@@ -333,6 +333,7 @@ public class ReadOnlyPropsContainerTest
         assertEquals(expectedEntry, actualEntry);
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetRemoveFromProps() throws Throwable
     {
@@ -377,6 +378,7 @@ public class ReadOnlyPropsContainerTest
         assertFalse(roEntrySet.isEmpty());
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetContains()
     {
@@ -462,6 +464,7 @@ public class ReadOnlyPropsContainerTest
         roEntrySet.remove(entryToRemove);
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetContainsAll()
     {
@@ -487,6 +490,7 @@ public class ReadOnlyPropsContainerTest
         roEntrySet.addAll(entriesToAdd);
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetRetainAll()
     {

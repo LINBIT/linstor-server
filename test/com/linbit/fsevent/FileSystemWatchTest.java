@@ -570,7 +570,7 @@ public class FileSystemWatchTest
                     try
                     {
                         entryGroup.waitGroup();
-                        System.out.println("multiFileConcurrentTest(): waitGroup() returned");
+//                        System.out.println("multiFileConcurrentTest(): waitGroup() returned");
                         flag.set(true);
                     }
                     catch (InterruptedException ignored)

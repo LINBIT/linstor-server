@@ -47,8 +47,15 @@ public class DaemonHandler
     {
         outProxy.expectShutdown();
         errProxy.expectShutdown();
-        // if force is set, and migrated to java 8, call process.destroyForcibly()
-        process.destroy();
+        if (force)
+        {
+            // FIXME: if migrated to java 8, call process.destroyForcibly()
+            process.destroy();
+        }
+        else
+        {
+            process.destroy();
+        }
         outThread.interrupt();
         errThread.interrupt();
         process = null;

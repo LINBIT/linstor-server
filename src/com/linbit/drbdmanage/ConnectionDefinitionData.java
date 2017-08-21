@@ -214,7 +214,7 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
     }
 
     @Override
-    public void setConnectionNr(AccessContext accCtx, int newConNr)
+    public void setConnectionNumber(AccessContext accCtx, int newConNr)
         throws AccessDeniedException
     {
         checkDeleted();

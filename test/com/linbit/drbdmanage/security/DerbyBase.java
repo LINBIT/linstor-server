@@ -33,7 +33,6 @@ import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
-import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.utils.UuidUtils;
@@ -119,10 +118,7 @@ public abstract class DerbyBase implements DerbyConstants
 
             con = dbConnPool.getConnection();
             secureDbDriver = new DbDerbyPersistence(sysCtx);
-            persistenceDbDriver = new DerbyDriver(
-                new StdErrorReporter("TESTING"),
-                sysCtx
-            );
+            persistenceDbDriver = new DerbyDriver(sysCtx);
         }
     }
 
