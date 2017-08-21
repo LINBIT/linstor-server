@@ -29,7 +29,8 @@ public class NoSimZfsDriverTest extends NoSimDriverTest
     public NoSimZfsDriverTest(ZfsDriver driver) throws IOException, StorageException
     {
         super(driver);
-        poolName = "drbdManageZfsDriverTestPool-REMOVE-ME";
+//      poolName = "drbdManageZfsDriverTestPool-REMOVE-ME";
+        poolName = "testPool";
     }
 
     public static void main(String[] args) throws IOException, StorageException, ChildProcessTimeoutException

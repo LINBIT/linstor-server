@@ -185,40 +185,9 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    protected String[] getCloneSnapshotCommand(String snapshotName1, String snapshotName2)
+    protected String[] getRestoreSnapshotCommand(String snapshotName, String targetIdentifier)
     {
-        return getCreateSnapshotCommand(snapshotName1, snapshotName2);
-    }
-
-    @Override
-    public void restoreSnapshot(String snapshotName) throws StorageException
-    {
-        final String qualifiedIdentifier = volumeGroup + File.separator + snapshotName;
-        final String[] command = new String[]
-        {
-            lvmConvertCommand,
-            "--merge", snapshotName
-        };
-
-        try
-        {
-            // FIXME: might take a long time. timeout may happen
-            final OutputData outputData = extCommand.exec(command);
-            checkExitCode(outputData, command, "Failed to restore snapshot [%s]. ", qualifiedIdentifier);
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            throw new StorageException(
-                "Failed to restore a snapshot",
-                String.format("Failed to restore snapshot [%s]", qualifiedIdentifier),
-                (exc instanceof ChildProcessTimeoutException) ?
-                    "External command timed out" :
-                    "External command threw an IOException",
-                null,
-                String.format("External command: %s", glue(command, " ")),
-                exc
-            );
-        }
+        return getCreateSnapshotCommand(snapshotName, targetIdentifier);
     }
 
     @Override
@@ -235,17 +204,18 @@ public class LvmThinDriver extends LvmDriver
     }
 
     @Override
-    public void cloneSnapshot(String snapshotName1, String snapshotName2) throws StorageException
+    public void restoreSnapshot(String snapshotName1, String snapshotName2) throws StorageException
     {
-        super.cloneSnapshot(snapshotName1, snapshotName2);
+        super.restoreSnapshot(snapshotName1, snapshotName2);
         startVolume(snapshotName2);
     }
 
     private void checkThinPoolEntry(Map<String, String> config) throws StorageException
     {
-        final String newThinPoolName = config.get(StorageConstants.CONFIG_LVM_THIN_POOL_KEY).trim();
+        String newThinPoolName = config.get(StorageConstants.CONFIG_LVM_THIN_POOL_KEY);
         if (newThinPoolName != null)
         {
+            newThinPoolName = newThinPoolName.trim();
             try
             {
                 Checks.nameCheck(

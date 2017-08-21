@@ -273,10 +273,11 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    protected String[] getCloneSnapshotCommand(String snapshotName1, String snapshotName2)
+    protected String[] getRestoreSnapshotCommand(String snapshotName, String identifier)
     {
         throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
     }
+
 
     @Override
     protected String[] getDeleteSnapshotCommand(String snapshotName)
@@ -295,9 +296,10 @@ public class LvmDriver extends AbsStorageDriver
      */
     protected void checkVolumeGroupEntry(final Map<String, String> config) throws StorageException
     {
-        final String newVolumeGroup = config.get(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY).trim();
+        String newVolumeGroup = config.get(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
         if (newVolumeGroup != null)
         {
+            newVolumeGroup = newVolumeGroup.trim();
             try
             {
                 Checks.nameCheck(

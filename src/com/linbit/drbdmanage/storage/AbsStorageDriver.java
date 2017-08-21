@@ -74,7 +74,7 @@ public abstract class AbsStorageDriver implements StorageDriver
             size = ((size / extent) + 1) * extent; // rounding up needed for zfs
             errorReporter.logInfo(
                 String.format(
-                    "Aligning size from %d to %d to be a multiple of extent size %d",
+                    "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
                     origSize,
                     size,
                     extent
@@ -400,40 +400,32 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
     @Override
-    public void cloneSnapshot(String snapshotName1, String snapshotName2) throws StorageException
+    public void restoreSnapshot(String snapshotName, String targetIdentifier) throws StorageException
     {
         if (!isSnapshotSupported())
         {
-            throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
+            throw new UnsupportedOperationException("Snapshots are not supported by "+ getClass());
         }
+        final String[] command = getRestoreSnapshotCommand(snapshotName, targetIdentifier);
 
-        final String[] command = getCloneSnapshotCommand(snapshotName1, snapshotName2);
         try
         {
             final OutputData outputData = extCommand.exec(command);
-            checkExitCode(outputData, command, "Failed to clone snapshot [%s] into [%s]. ", snapshotName1, snapshotName2);
+            checkExitCode(outputData, command, "Failed to restore snapshot [%s]. ", snapshotName);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
             throw new StorageException(
-                "Cloning a snapshot failed",
-                String.format("Failed to clone the snapshot [%s]", snapshotName1),
+                "Failed to restore a snapshot",
+                String.format("Failed to restore snapshot [%s]", snapshotName),
                 (exc instanceof ChildProcessTimeoutException) ?
                     "External command timed out" :
                     "External command threw an IOException",
                 null,
-                String.format("External command [%s] timed out ", glue (command, " ")),
+                String.format("External command: %s", glue(command, " ")),
                 exc
             );
         }
-    }
-
-    // TODO add JavaDoc
-    // TODO extract to interface
-    @SuppressWarnings("unused")
-    public void restoreSnapshot(String snapshotName) throws StorageException
-    {
-        throw new UnsupportedOperationException("Snapshots are not supported by "+ getClass());
     }
 
     @Override
@@ -791,7 +783,7 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected abstract String[] getCreateSnapshotCommand(String identifier, String snapshotName);
 
-    protected abstract String[] getCloneSnapshotCommand(String snapshotName1, String snapshotName2) throws StorageException;
+    protected abstract String[] getRestoreSnapshotCommand(String snapshotName, String identifier) throws StorageException;
 
     protected abstract String[] getDeleteSnapshotCommand(String snapshotName);
 }

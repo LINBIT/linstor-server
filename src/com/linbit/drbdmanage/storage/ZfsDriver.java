@@ -183,7 +183,7 @@ public class ZfsDriver extends AbsStorageDriver
     public void createSnapshot(String identifier, String snapshotName) throws StorageException
     {
         super.createSnapshot(identifier, snapshotName);
-        super.cloneSnapshot(identifier + "@" + snapshotName, snapshotName);
+        super.restoreSnapshot(identifier + "@" + snapshotName, snapshotName);
     }
 
     @Override
@@ -193,18 +193,30 @@ public class ZfsDriver extends AbsStorageDriver
         final String[] command = new String[]
         {
             zfsCommand,
-            "snapshot", zfsSnapName
+            "snapshot",
+            zfsSnapName
         };
         return command;
     }
 
     @Override
-    protected String[] getCloneSnapshotCommand(String snapshotSource, String snapshotTarget) throws StorageException
+    protected String[] getRestoreSnapshotCommand(String snapshotSource, String identifierTarget) throws StorageException
+    {
+        return new String[]
+        {
+            zfsCommand,
+            "clone",
+            getSnapshotOrigin(snapshotSource),
+            pool + File.separator + identifierTarget
+        };
+    }
+
+    private String getSnapshotOrigin(String snapshotName) throws StorageException
     {
         String origin;
-        if (snapshotSource.contains("@"))
+        if (snapshotName.contains("@"))
         {
-            origin = pool + File.separator + snapshotSource;
+            origin = pool + File.separator + snapshotName;
         }
         else
         {
@@ -212,7 +224,7 @@ public class ZfsDriver extends AbsStorageDriver
             {
                 zfsCommand,
                 "get", "origin",
-                pool + File.separator + snapshotSource,
+                pool + File.separator + snapshotName,
                 "-o", "value",
                 "-H"
             };
@@ -226,8 +238,8 @@ public class ZfsDriver extends AbsStorageDriver
                 {
                     throw new StorageException(
                         "Failed to clone snapshot",
-                        String.format("Failed to query snapshot's zfs identifier for snapshot: %s", snapshotSource),
-                        String.format("Zfs snapshot [%s] has multiple origins", snapshotSource),
+                        String.format("Failed to query snapshot's zfs identifier for snapshot: %s", snapshotName),
+                        String.format("Zfs snapshot [%s] has multiple origins", snapshotName),
                         null,
                         String.format("External command: %s", glue(getSnapshotsOriginCommand, " "))
                     );
@@ -238,7 +250,7 @@ public class ZfsDriver extends AbsStorageDriver
             {
                 throw new StorageException(
                     "Failed to clone snapshot",
-                    String.format("Failed to query snapshot's zfs identifier for snapshot: %s", snapshotSource),
+                    String.format("Failed to query snapshot's zfs identifier for snapshot: %s", snapshotName),
                     (exc instanceof ChildProcessTimeoutException) ?
                         "External command timed out" :
                         "External command threw an IOException",
@@ -248,14 +260,7 @@ public class ZfsDriver extends AbsStorageDriver
                 );
             }
         }
-
-        return new String[]
-        {
-            zfsCommand,
-            "clone",
-            origin,
-            pool + File.separator + snapshotTarget
-        };
+        return origin;
     }
 
     @Override
@@ -271,9 +276,10 @@ public class ZfsDriver extends AbsStorageDriver
 
     protected void checkPool(Map<String, String> config) throws StorageException
     {
-        String newPool = config.get(StorageConstants.CONFIG_ZFS_POOL_KEY).trim();
+        String newPool = config.get(StorageConstants.CONFIG_ZFS_POOL_KEY);
         if (newPool != null)
         {
+            newPool = newPool.trim();
             try
             {
                 Checks.nameCheck(
