@@ -76,6 +76,11 @@ public interface Peer
     void closeConnection();
 
     /**
+     * Returns true if the connection has been established. False otherwise.
+     */
+    boolean isConnected();
+
+    /**
      * Returns the capacity of the queue for outbound messages
      *
      * @return Capacity of the outbound messages queue

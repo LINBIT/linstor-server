@@ -19,6 +19,7 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.netcom.ReconnectorService;
 import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
@@ -54,7 +55,9 @@ import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -127,6 +130,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // Database connection pool service
     private final DbConnectionPool dbConnPool;
 
+    // Satellite reconnector service
+    private ReconnectorService reconnectorService;
+
     // Map of connected peers
     private final Map<String, Peer> peerMap;
 
@@ -143,6 +149,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // Controller configuration properties
     private Props ctrlConf;
     private ObjectProtection ctrlConfProt;
+
 
     public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
     {
@@ -164,6 +171,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         }
         dbConnPool = new DbConnectionPool();
         systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
+
+        reconnectorService = new ReconnectorService(this);
+        systemServicesMap.put(reconnectorService.getInstanceName(), reconnectorService);
 
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
@@ -268,7 +278,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 TransactionMgr transMgr = new TransactionMgr(dbConnPool);
 
                 shutdownProt = ObjectProtection.getInstance(
-                    sysCtx,
+                    initCtx,
                     transMgr,
                     ObjectProtection.buildPath(this, "shutdown"),
                     true
@@ -277,7 +287,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
                 shutdownProt.setConnection(transMgr);
                 // Set CONTROL access for the SYSTEM role on shutdown
-                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+                shutdownProt.addAclEntry(initCtx, initCtx.getRole(), AccessType.CONTROL);
 
                 transMgr.commit(true);
 
@@ -289,7 +299,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     null
                 );
                 ctrlConfProt = ObjectProtection.getInstance(
-                    sysCtx,
+                    initCtx,
                     transMgr,
                     ObjectProtection.buildPath(this, "conf"),
                     true
@@ -317,14 +327,8 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
                 errorLogRef.logInfo("Initializing test APIs");
                 DrbdManage.loadApiCalls(msgProc, this, this);
-//                {
-//                    msgProc.addApiCall(new Ping(this, this));
-//                    msgProc.addApiCall(new CreateDebugConsole(this, this));
-//                    msgProc.addApiCall(new DestroyDebugConsole(this, this));
-//                    msgProc.addApiCall(new DebugCommand(this, this));
-//                    msgProc.addApiCall(new DebugMakeSuperuser(this, this));
-//                }
 
+                // Initialize the network communications service
                 Props config = loadPropsCon(errorLogRef);
                 if (config == null)
                 {
@@ -338,7 +342,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     errorLogRef.logInfo("Initializing network communications services");
                     try
                     {
-                        initNetComServices(config.getNamespace(PROPSCON_KEY_NETCOM), errorLogRef);
+                        initNetComServices(
+                            config.getNamespace(PROPSCON_KEY_NETCOM),
+                            errorLogRef
+                        );
                     }
                     catch (InvalidKeyException e)
                     {
@@ -350,11 +357,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                         );
                     }
                 }
-                // Initialize the network communications service
-
-
-
-
                 // Initialize system services
                 startSystemServices(systemServicesMap.values());
             }
@@ -597,8 +599,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         return config;
     }
 
-    private void initNetComServices(Props netComProps, ErrorReporter errorLog)
+    private List<TcpConnector> initNetComServices(Props netComProps, ErrorReporter errorLog)
     {
+        List<TcpConnector> tcpCons = new ArrayList<>();
         if (netComProps == null)
         {
             String errorMsg = "The controller configuration does not define any network communication services";
@@ -751,6 +754,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                                 serviceName.displayValue, bindAddressStr, port
                             )
                         );
+                        tcpCons.add(netComSvc);
                     }
                 }
             }
@@ -759,6 +763,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 errorLog.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
             }
         }
+        return tcpCons;
     }
 
     private String loadPropChecked(Props props, String key) throws SystemServiceStartException
@@ -789,6 +794,47 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         }
 
         return value;
+    }
+
+    public void connectSatellite(
+        final InetSocketAddress satelliteAddress,
+        final TcpConnector tcpConnector
+    )
+    {
+        Runnable connectRunnable = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    Peer peer = tcpConnector.connect(satelliteAddress);
+                    if (!peer.isConnected())
+                    {
+                        reconnectorService.addReconnect(satelliteAddress, tcpConnector, peer);
+                    }
+                }
+                catch (IOException ioExc)
+                {
+                    getErrorReporter().reportError(
+                        new DrbdManageException(
+                            "Cannot connect to satellite",
+                            String.format(
+                                "Establishing connection to satellite (%s:%d) failed",
+                                satelliteAddress.getAddress().getHostAddress(),
+                                satelliteAddress.getPort()
+                            ),
+                            "IOException occured. See cause for further details",
+                            null,
+                            null,
+                            ioExc
+                        )
+                    );
+                }
+            }
+        };
+
+        workerThrPool.submit(connectRunnable);
     }
 
     /**

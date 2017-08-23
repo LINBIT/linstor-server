@@ -38,6 +38,8 @@ import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -148,12 +150,19 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         // Initialize connected peers map
         peerMap = new TreeMap<>();
 
+        // initialize noop databases drivers (needed for shutdownProt)
+        securityDbDriver = new EmptySecurityDbDriver();
+        persistenceDbDriver = new NoOpDriver();
+
         // Initialize shutdown controls
         shutdownFinished = false;
         try
         {
+            AccessContext initCtx = sysCtx.clone();
+            initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
             shutdownProt = ObjectProtection.getInstance(
-                sysCtx,
+                initCtx,
                 null,
                 ObjectProtection.buildPath(this, "shutdown"),
                 true
@@ -205,9 +214,6 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                         sqlExc
                     );
                 }
-
-                securityDbDriver = new EmptySecurityDbDriver();
-                persistenceDbDriver = new NoOpDriver();
 
                 // Initialize the worker thread pool
                 errorLogRef.logInfo("Starting worker thread pool");
@@ -382,11 +388,18 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         try
         {
             Properties netComProps = new Properties();
-            try (InputStream propsIn = new FileInputStream(NET_COM_CONF_FILE))
+            if (Files.exists(Paths.get(NET_COM_CONF_FILE)))
             {
-                netComProps.loadFromXML(propsIn);
+                try (InputStream propsIn = new FileInputStream(NET_COM_CONF_FILE))
+                {
+                    netComProps.loadFromXML(propsIn);
+                }
+                catch (FileNotFoundException fileExc)
+                {
+                    // this should never happen due to the if (Files.exists(...)), but if it
+                    // still happens it can be ignored, as every property has a default-value
+                }
             }
-
             InetAddress addr = InetAddress.getByName(
                 netComProps.getProperty(
                     NET_COM_CONF_BIND_ADDR_KEY,
@@ -599,30 +612,6 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                     null
                 );
             }
-        }
-        catch (FileNotFoundException fileExc)
-        {
-            String errorMsg = "The configuration file for the initial network communications service could " +
-                "not be opened.";
-            String fileExcMsg = fileExc.getMessage();
-            getErrorReporter().reportProblem(
-                Level.ERROR,
-                new DrbdManageException(
-                    fileExcMsg != null ?
-                        "Can not open configuration file: " + fileExc.getMessage() :
-                        errorMsg + " The system did not provide any error description.",
-                    "The configuration file for the initial network communications service could not be opened.",
-                    fileExcMsg != null ?
-                        "The system returned the following error description:\n" +
-                        fileExc.getMessage() :
-                        "The system did not provide any error description.",
-                    "Make sure that the file exists and can be accessed by this process.",
-                    null
-                ),
-                null, // No access context
-                null, // No client connection
-                null // No context information
-            );
         }
         catch (IOException ioExc)
         {

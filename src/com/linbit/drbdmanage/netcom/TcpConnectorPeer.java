@@ -64,12 +64,14 @@ public class TcpConnectorPeer implements Peer
         peerId = peerIdRef;
         connector = connectorRef;
         msgOutQueue = new LinkedList<>();
+
         // Do not use createMessage() here!
-        // The SslTcpConnectorPeer has no intialized SSLEngine instance yet,
+        // The SslTcpConnectorPeer has no initialized SSLEngine instance yet,
         // so a NullPointerException would be thrown in createMessage().
         // After initialization of the sslEngine, msgIn will be overwritten with
         // a reference to a valid instance.
         msgIn = new TcpConnectorMessage(false);
+
         selKey = key;
         peerAccCtx = accCtx;
         attachment = null;
@@ -176,6 +178,13 @@ public class TcpConnectorPeer implements Peer
     public void closeConnection()
     {
         connector.closeConnection(this);
+        connected = false;
+    }
+
+    @Override
+    public boolean isConnected()
+    {
+        return connected;
     }
 
     protected void nextInMessage()
