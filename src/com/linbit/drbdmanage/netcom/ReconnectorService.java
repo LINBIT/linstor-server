@@ -143,16 +143,19 @@ public class ReconnectorService implements SystemService
     )
     {
         list.add(new ReconnectorActionData(satelliteAddress, tcpConnector, pendingPeer));
-        System.out.println("added to queue..");
+        ensureQueued();
+    }
+
+    private void ensureQueued() throws ImplementationError
+    {
         synchronized (action)
         {
             if (!action.isQueued())
             {
-                System.out.println("action is not queued");
                 try
                 {
                     controller.getTimer().addDelayedAction(10_000L, action);
-                    System.out.println("queued action");
+                    action.setQueued(true);
                 }
                 catch (NegativeTimeException negativeTimeExc)
                 {
@@ -168,7 +171,6 @@ public class ReconnectorService implements SystemService
                         valOORangeExc
                     );
                 }
-                action.setQueued(true);
             }
         }
     }
@@ -217,7 +219,6 @@ public class ReconnectorService implements SystemService
                     );
                 }
                 setQueued(false);
-                System.out.println("action triggered reconnect worker - unqueued");
             }
         }
 
@@ -253,16 +254,22 @@ public class ReconnectorService implements SystemService
                         ReconnectorActionData data = workingList.get(idx);
                         if (data.peer.isConnected())
                         {
-                            System.out.println("peer has connected, removing from list");
+                            controller.getErrorReporter().logInfo(
+                                "peer " + data.satelliteAddress + " has connected. Removing from reconnect-watchlist");
                             workingList.remove(idx);
                             --idx;
                         }
                         else
                         {
-                            System.out.println("peer has not connected yet - retrying connect");
+                            controller.getErrorReporter().logInfo(
+                                "peer " + data.satelliteAddress + " has not connected yet - retrying connect");
                             data.peer.closeConnection();
                             data.peer = data.tcpConnector.connect(data.satelliteAddress);
                         }
+                    }
+                    if (!workingList.isEmpty())
+                    {
+                        ensureQueued();
                     }
                 }
                 catch (InterruptedException e)

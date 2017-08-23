@@ -84,7 +84,7 @@ public class SslTcpConnectorService extends TcpConnectorService
     {
         try
         {
-            serviceInstanceName = new ServiceName("SSL"+serviceInstanceName.value);
+            serviceInstanceName = new ServiceName("SSL"+serviceInstanceName.displayValue);
         }
         catch (InvalidNameException nameExc)
         {
@@ -102,18 +102,6 @@ public class SslTcpConnectorService extends TcpConnectorService
             SslTcpCommons.createTrustManagers(trustStoreFile, trustStorePasswd),
             new SecureRandom()
         );
-    }
-
-    @Override
-    protected void establishConnection(final SelectionKey key) throws IOException
-    {
-        super.establishConnection(key);
-        // this method should only be called for outgoing connections
-        // thus, we have to be currently in client mode
-        key.interestOps(SelectionKey.OP_WRITE);
-        // SocketChannel channel = (SocketChannel) key.channel();
-        // SslTcpConnectorPeer peer = (SslTcpConnectorPeer) key.attachment();
-        // peer.encryptConnection(channel);
     }
 
     @Override

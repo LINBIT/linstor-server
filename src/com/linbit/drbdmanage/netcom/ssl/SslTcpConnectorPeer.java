@@ -49,7 +49,6 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     {
         super(peerId, sslConnectorService, connKey, peerAccCtx);
 
-        int ops = selKey.interestOps(); // could be set to OP_CONNECT
         clientMode = address != null;
         if (clientMode)
         {
@@ -58,7 +57,6 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             int port = address.getPort();
             sslEngine = sslCtx.createSSLEngine(host, port);
             sslEngine.setUseClientMode(true);
-            ops |= SelectionKey.OP_WRITE; // client starts handshake
         }
         else
         {
@@ -66,7 +64,6 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             sslEngine = sslCtx.createSSLEngine();
             sslEngine.setNeedClientAuth(false);
             sslEngine.setUseClientMode(false);
-            ops |= SelectionKey.OP_READ;
         }
 
         SSLSession session = sslEngine.getSession();
@@ -85,13 +82,26 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         msgIn = handshakeMessage;
         // also set the msgOut, as we will need it for sending handshake messages
         msgOut = handshakeMessage;
-        selKey.interestOps(ops);
     }
 
     @Override
     protected TcpConnectorMessage createMessage(boolean forSend)
     {
         return new SslTcpConnectorMessage(forSend, sslEngine, this);
+    }
+
+    @Override
+    public void connectionEstablished()
+    {
+        super.connectionEstablished();
+        if (clientMode)
+        {
+            selKey.interestOps(SelectionKey.OP_WRITE); // client starts handshake
+        }
+        else
+        {
+            selKey.interestOps(SelectionKey.OP_READ);
+        }
     }
 
     // Only SSL-Clients should call this method
@@ -135,64 +145,81 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                 switch (handshakeStatus)
                 {
                     case NEED_UNWRAP:
-                        int read = socketChannel.read(peerNetData);
-                        if (read < 0)
                         {
-                            if (!engine.isInboundDone() || !engine.isOutboundDone())
+                            boolean retry;
+                            do
                             {
-                                engine.closeInbound();
-                                engine.closeOutbound();
-                                handshakeStatus = engine.getHandshakeStatus();
-                            }
-                        }
-                        else
-                        {
-                            peerNetData.flip();
-                            SSLEngineResult result = null;
-                            try
-                            {
-                                result = engine.unwrap(peerNetData, peerAppData);
-                                peerNetData.compact();
-                                handshakeStatus = result.getHandshakeStatus();
-                            }
-                            catch (SSLException sslExc)
-                            {
-                                // FIXME: Error reporting required
-                                sslExc.printStackTrace();
-                                engine.closeOutbound();
-                                handshakeStatus = engine.getHandshakeStatus();
-                                result = null;
-                            }
-
-                            if (result != null)
-                            {
-                                switch (result.getStatus())
+                                retry = false;
+                                int read = socketChannel.read(peerNetData);
+                                if (read < 0)
                                 {
-                                    case OK:
-                                        break;
-                                    case BUFFER_OVERFLOW:
-                                        peerAppData = enlargeApplicationBuffer(engine, peerAppData);
-                                        break;
-                                    case BUFFER_UNDERFLOW:
-                                        peerNetData = handleBufferUnderflow(engine, peerNetData);
-                                        break;
-                                    case CLOSED:
-                                        if (engine.isOutboundDone())
-                                        {
-                                            throw new SSLException("Handshaking failed");
-                                            // handshakeSuccess = false;
-                                            // handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
-                                        }
-                                        else
-                                        {
-                                            engine.closeOutbound();
-                                            handshakeStatus = engine.getHandshakeStatus();
-                                        }
-                                        break;
-                                    default:
-                                        throw new IllegalStateException("Unknown SSL state: " + result.getStatus());
+                                    if (!engine.isInboundDone() || !engine.isOutboundDone())
+                                    {
+                                        engine.closeInbound();
+                                        engine.closeOutbound();
+                                        handshakeStatus = engine.getHandshakeStatus();
+                                    }
                                 }
-                            }
+                                else
+                                {
+                                    peerNetData.flip();
+                                    SSLEngineResult result = null;
+
+                                    try
+                                    {
+                                        result = engine.unwrap(peerNetData, peerAppData);
+                                        // after an unwrap the data is flipped again, thus we can immediately read + flip + unwrap again
+                                    }
+                                    catch (SSLException sslExc)
+                                    {
+                                        // FIXME: Error reporting required
+                                        sslExc.printStackTrace();
+                                        engine.closeOutbound();
+                                        handshakeStatus = engine.getHandshakeStatus();
+                                    }
+
+                                    if (result != null)
+                                    {
+                                        peerNetData.compact();
+                                        handshakeStatus = result.getHandshakeStatus();
+
+                                        switch (result.getStatus())
+                                        {
+                                            case OK:
+                                                break;
+                                            case BUFFER_OVERFLOW:
+                                                peerAppData = enlargeApplicationBuffer(engine, peerAppData);
+                                                retry = true;
+                                                break;
+                                            case BUFFER_UNDERFLOW:
+                                                peerNetData = handleBufferUnderflow(engine, peerNetData);
+                                                retry = true;
+                                                break;
+                                            case CLOSED:
+                                                if (engine.isOutboundDone())
+                                                {
+                                                    throw new SSLException("Handshaking failed");
+                                                    // handshakeSuccess = false;
+                                                    // handshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
+                                                }
+                                                else
+                                                {
+                                                    engine.closeOutbound();
+                                                    handshakeStatus = engine.getHandshakeStatus();
+                                                }
+                                                break;
+                                            default:
+                                                throw new IllegalStateException("Unknown SSL state: " + result.getStatus());
+                                        }
+                                        if (result.bytesConsumed() < peerNetData.remaining() &&
+                                            result.getHandshakeStatus().equals(HandshakeStatus.NEED_UNWRAP)
+                                        )
+                                        {
+                                            retry = true;
+                                        }
+                                    }
+                                }
+                            } while (retry);
                         }
                         break;
                     case NEED_WRAP:
@@ -282,6 +309,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
 
             if (state == HandshakeState.FAILED)
             {
+                closeConnection();
                 throw new SSLException("Handshaking failed");
             }
 
@@ -306,6 +334,8 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                     selKey.interestOps(SelectionKey.OP_WRITE);
                     break;
                 case NOT_HANDSHAKING:
+                    closeConnection();
+                    // TODO: report error
                     // FIXME: maybe throw exception here?
                     break;
                 default:

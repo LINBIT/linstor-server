@@ -359,6 +359,14 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 }
                 // Initialize system services
                 startSystemServices(systemServicesMap.values());
+
+//                for(Entry<ServiceName, TcpConnector> entry : netComConnectors.entrySet())
+//                {
+//                    if (entry.getKey().value.contains("SSL"))
+//                    {
+//                        connectSatellite(new InetSocketAddress("localhost", 9978), entry.getValue());
+//                    }
+//                }
             }
             catch (AccessDeniedException accessExc)
             {
