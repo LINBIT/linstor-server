@@ -50,7 +50,6 @@ public class Ping extends BaseApiCall
     {
         try
         {
-
             Message pongMsg = client.createMessage();
             ByteArrayOutputStream dataOut = new ByteArrayOutputStream();
             writeMsgHeader(dataOut, msgId, "Pong");

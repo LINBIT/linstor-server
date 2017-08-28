@@ -5,8 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
-
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage;
@@ -18,22 +16,30 @@ public class SslTcpConnectorHandshakeMessage extends TcpConnectorMessage
 
     protected SslTcpConnectorHandshakeMessage(
         final boolean forSend,
-        final SSLEngine sslEngine,
         final SslTcpConnectorPeer peer
     )
-        throws SSLException
     {
         super(forSend);
-        this.sslEngine = sslEngine;
         this.peer = peer;
+    }
 
-        this.sslEngine.beginHandshake();
+    void setSslEngine(SSLEngine sslEngine)
+    {
+        this.sslEngine = sslEngine;
     }
 
     @Override
     protected ReadState read(SocketChannel inChannel) throws IllegalMessageStateException, IOException
     {
         peer.doHandshake(inChannel, sslEngine);
+        /*
+         *  we must not return FINISHED here, as the message would then get processed (causing an
+         *  IllegalMessageStateException as this ssl-handshaking message is not valid for the
+         *  MessageProcessor).
+         *  However, when handshaking is finished, it creates a new (not-handshaking, but ssl-decrypting)
+         *  message which then can be marked as FINISHED and passed to the MessageProcessor (see class
+         *  SslTcpConnectorMessage)
+         */
         return ReadState.UNFINISHED;
     }
 
@@ -41,6 +47,11 @@ public class SslTcpConnectorHandshakeMessage extends TcpConnectorMessage
     protected WriteState write(SocketChannel outChannel) throws IllegalMessageStateException, IOException
     {
         peer.doHandshake(outChannel, sslEngine);
+
+        /*
+         *  we do not have to return FINISHED here, as when handshaking is finished, it creates a new
+         *  (not-handshaking, but ssl-encrypting) message (see class SslTcpConnectorMessage)
+         */
         return WriteState.UNFINISHED;
     }
 

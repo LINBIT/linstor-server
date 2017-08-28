@@ -19,7 +19,7 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.netcom.ReconnectorService;
+import com.linbit.drbdmanage.netcom.TcpReconnectorService;
 import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
@@ -59,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
@@ -131,7 +132,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private final DbConnectionPool dbConnPool;
 
     // Satellite reconnector service
-    private ReconnectorService reconnectorService;
+    private TcpReconnectorService reconnectorService;
 
     // Map of connected peers
     private final Map<String, Peer> peerMap;
@@ -172,7 +173,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         dbConnPool = new DbConnectionPool();
         systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
 
-        reconnectorService = new ReconnectorService(this);
+        reconnectorService = new TcpReconnectorService(this);
         systemServicesMap.put(reconnectorService.getInstanceName(), reconnectorService);
 
         // Initialize network communications connectors map
@@ -367,6 +368,13 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 //                        connectSatellite(new InetSocketAddress("localhost", 9978), entry.getValue());
 //                    }
 //                }
+                for(Entry<ServiceName, TcpConnector> entry : netComConnectors.entrySet())
+                {
+                    if (!entry.getKey().value.contains("SSL"))
+                    {
+                        connectSatellite(new InetSocketAddress("localhost", 9977), entry.getValue());
+                    }
+                }
             }
             catch (AccessDeniedException accessExc)
             {
@@ -819,7 +827,11 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     Peer peer = tcpConnector.connect(satelliteAddress);
                     if (!peer.isConnected())
                     {
-                        reconnectorService.addReconnect(satelliteAddress, tcpConnector, peer);
+                        reconnectorService.addReconnect(peer);
+                    }
+                    else
+                    {
+                        reconnectorService.addPing(peer);
                     }
                 }
                 catch (IOException ioExc)

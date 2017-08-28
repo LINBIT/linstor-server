@@ -1,9 +1,11 @@
 package com.linbit.drbdmanage.netcom;
 
+import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.Privilege;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -12,6 +14,8 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.Deque;
 import java.util.LinkedList;
+
+import javax.net.ssl.SSLException;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -24,6 +28,8 @@ import java.nio.channels.SocketChannel;
  */
 public class TcpConnectorPeer implements Peer
 {
+    protected static final Message PING_MSG = new TcpPingMessage();
+
     private String peerId;
 
     private TcpConnector connector;
@@ -53,6 +59,9 @@ public class TcpConnectorPeer implements Peer
     // therefore requiring atomic read and write
     private volatile long msgSentCtr = 0;
     private volatile long msgRecvCtr = 0;
+
+    protected long lastPingSent = -1;
+    private long lastPingReceived = -1;
 
     protected TcpConnectorPeer(
         String peerIdRef,
@@ -110,9 +119,10 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public void connectionEstablished()
+    public void connectionEstablished() throws SSLException
     {
         connected = true;
+        pongReceived();
         synchronized (this)
         {
             this.notifyAll();
@@ -171,8 +181,15 @@ public class TcpConnectorPeer implements Peer
         }
     }
 
+    @Override
+    public TcpConnector getConnector()
+    {
+        return connector;
+    }
+
     /**
      * Closes the connection to the peer
+     * @throws SSLException
      */
     @Override
     public void closeConnection()
@@ -196,6 +213,11 @@ public class TcpConnectorPeer implements Peer
     SelectionKey getSelectionKey()
     {
         return selKey;
+    }
+
+    void setSelectionKey(SelectionKey selKey)
+    {
+        this.selKey = selKey;
     }
 
     protected void nextOutMessage()
@@ -294,5 +316,37 @@ public class TcpConnectorPeer implements Peer
             // No-op; method returns null
         }
         return peerAddr;
+    }
+
+    @Override
+    public void sendPing()
+    {
+        try
+        {
+            sendMessage(PING_MSG);
+        }
+        catch (IllegalMessageStateException illegalMsgStateExc)
+        {
+            throw new ImplementationError(illegalMsgStateExc);
+        }
+        lastPingSent = System.currentTimeMillis();
+    }
+
+    @Override
+    public void pongReceived()
+    {
+        lastPingReceived = System.currentTimeMillis();
+    }
+
+    @Override
+    public long getLastPingSent()
+    {
+        return lastPingSent;
+    }
+
+    @Override
+    public long getLastPingReceived()
+    {
+        return lastPingReceived;
     }
 }
