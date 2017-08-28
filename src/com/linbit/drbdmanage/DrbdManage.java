@@ -447,13 +447,20 @@ public abstract class DrbdManage
                     {
                         Class<?>[] parameterTypes = declaredConstructor.getParameterTypes();
 
-                        if (Modifier.isPublic(declaredConstructor.getModifiers()) &&
-                            parameterTypes.length == 2 &&
-                            parameterTypes[0].isAssignableFrom(componentRef.getClass()) &&
-                            parameterTypes[1].isAssignableFrom(CoreServices.class))
+                        if (Modifier.isPublic(declaredConstructor.getModifiers()))
                         {
-                            ctor = declaredConstructor;
-                            break;
+                            if ((parameterTypes.length == 2 &&
+                                parameterTypes[0].isAssignableFrom(componentRef.getClass()) &&
+                                parameterTypes[1].isAssignableFrom(CoreServices.class)) ||
+
+                                parameterTypes.length == 1 &&
+                                parameterTypes[0].isAssignableFrom(componentRef.getClass()) ||
+
+                                parameterTypes.length == 0)
+                            {
+                                ctor = declaredConstructor;
+                                break;
+                            }
                         }
                     }
                     if (ctor == null)
@@ -481,7 +488,24 @@ public abstract class DrbdManage
                         Object instance = null;
                         try
                         {
-                            instance = ctor.newInstance(componentRef, coreService);
+                            if (ctor.getParameterCount() == 2)
+                            {
+                                instance = ctor.newInstance(componentRef, coreService);
+                            }
+                            else if (ctor.getParameterCount() == 1)
+                            {
+                                instance = ctor.newInstance(componentRef);
+                            }
+                            else if (ctor.getParameterCount() == 0)
+                            {
+                                instance = ctor.newInstance();
+                            }
+                            else
+                            {
+                                componentRef.errorLog.reportError(
+                                    new ImplementationError("Unexpected API class constructor", null)
+                                );
+                            }
                         }
                         catch (
                             InstantiationException | IllegalAccessException |
