@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.netcom;
 
+import java.io.IOException;
+
 /**
  * Interface for classes that track the connection status of peers
  *
@@ -11,8 +13,9 @@ public interface ConnectionObserver
      * Called when an outbound connection is established
      *
      * @param connPeer The connected peer
+     * @throws IOException
      */
-    void outboundConnectionEstablished(Peer connPeer);
+    void outboundConnectionEstablished(Peer connPeer) throws IOException;
 
     /**
      * Called when an inbound connection is established

@@ -12,7 +12,6 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.drbdmanage.Controller;
-import com.linbit.drbdmanage.DrbdManageException;
 
 /**
  * Holds a list of all peers and checks their connectivity.
@@ -60,7 +59,7 @@ public class TcpReconnectorService implements SystemService
     private final List<Peer> pingList;
 
     private final Thread workerThread;
-    private final Runnable workerRunnable;
+    private final ReconnectorRunnable workerRunnable;
 
     private ServiceName serviceInstanceName;
     private boolean running = false;
@@ -131,7 +130,13 @@ public class TcpReconnectorService implements SystemService
     @Override
     public void shutdown()
     {
-        running = false;
+        synchronized (workerRunnable)
+        {
+            running = false;
+            workerRunnable.nextPingCheck = -1;
+            workerRunnable.nextReconnectCheck = -1;
+            workerRunnable.notify();
+        }
     }
 
     @Override
@@ -148,6 +153,21 @@ public class TcpReconnectorService implements SystemService
     public void addPing(Peer peer)
     {
         pingList.add(peer);
+    }
+
+
+    public void peerConnected(Peer peer) throws IOException
+    {
+        synchronized (workerRunnable)
+        {
+            // it could happen that the reconnector just noticed itself that the peer is already connected
+            // if so, the peer is no longer in the reconnectList
+            int idx = reconnectList.indexOf(peer);
+            if (idx != -1)
+            {
+                workerRunnable.checkConnected(idx, peer);
+            }
+        }
     }
 
     private class ReconnectorRunnable implements Runnable
@@ -173,22 +193,12 @@ public class TcpReconnectorService implements SystemService
                     if (nextReconnectCheck < now)
                     {
                         nextReconnectCheck = now + RECONNECT_WORKER_SLEEP;
-                        for (int idx = 0; idx < reconnectList.size(); ++idx)
+                        synchronized (reconnectList)
                         {
-                            final Peer peer = reconnectList.get(idx);
-                            if (peer.isConnected())
+                            for (int idx = 0; idx < reconnectList.size(); ++idx)
                             {
-                                controller.getErrorReporter().logInfo(
-                                    "peer " + peer.getId() + " has connected. -reconnectList, +pingList");
-                                reconnectList.remove(idx);
-                                --idx;
-                                pingList.add(peer);
-                            }
-                            else
-                            {
-                                controller.getErrorReporter().logInfo(
-                                    "peer " + peer.getId() + " has not connected yet - retrying connect");
-                                peer.getConnector().reconnect(peer);
+                                final Peer peer = reconnectList.get(idx);
+                                idx = checkConnected(idx, peer);
                             }
                         }
                     }
@@ -199,39 +209,22 @@ public class TcpReconnectorService implements SystemService
                         for (int idx = 0; idx < pingList.size(); ++idx)
                         {
                             final Peer peer = pingList.get(idx);
-                            final long lastPingReceived = peer.getLastPingReceived();
-                            final long lastPingSent = peer.getLastPingSent();
-                            if (lastPingReceived + PING_TIMEOUT < lastPingSent)
-                            {
-                                controller.getErrorReporter().logWarning(
-                                    "lost connection to peer " + peer.getId() + ". -pingList, +reconnectList"
-                                );
-                                pingList.remove(peer);
-                                --idx;
-                                reconnectList.add(peer);
-                                peer.getConnector().reconnect(peer);
-                            }
-                            else
-                            {
-                                peer.sendPing();
-                            }
+                            idx = checkPing(idx, peer);
                         }
                     }
 
-                    final long sleepMs = Math.min(nextPingCheck, nextReconnectCheck) - now + 200;
-                    Thread.sleep(sleepMs);
+                    synchronized (this)
+                    {
+                        if (running)
+                        {
+                            final long sleepMs = Math.min(nextPingCheck, nextReconnectCheck) - now + 200;
+                            wait(sleepMs);
+                        }
+                    }
                 }
                 catch (InterruptedException e)
                 {
-                    if (running)
-                    {
-                        controller.getErrorReporter().reportError(
-                            new DrbdManageException(
-                                "Interrupted exception catched"
-                                // TODO: detailed error reporting
-                            )
-                        );
-                    }
+                    // ignore
                 }
                 catch (IOException ioExc)
                 {
@@ -239,6 +232,47 @@ public class TcpReconnectorService implements SystemService
                     controller.getErrorReporter().reportError(ioExc);
                 }
             }
+        }
+
+        private int checkConnected(int idx, final Peer peer) throws IOException
+        {
+            if (peer.isConnected())
+            {
+                controller.getErrorReporter().logInfo(
+                    "peer " + peer.getId() + " has connected. -reconnectList, +pingList");
+                reconnectList.remove(idx);
+                --idx;
+                pingList.add(peer);
+            }
+            else
+            {
+                controller.getErrorReporter().logInfo(
+                    "peer " + peer.getId() + " has not connected yet - retrying connect");
+                peer.getConnector().reconnect(peer);
+            }
+            return idx;
+        }
+
+
+        private int checkPing(int idx, final Peer peer) throws IOException
+        {
+            final long lastPingReceived = peer.getLastPingReceived();
+            final long lastPingSent = peer.getLastPingSent();
+            if (lastPingReceived + PING_TIMEOUT < lastPingSent)
+            {
+                controller.getErrorReporter().logWarning(
+                    "lost connection to peer " + peer.getId() + ". -pingList, +reconnectList"
+                );
+                pingList.remove(peer);
+                --idx;
+                reconnectList.add(peer);
+                peer.getConnector().reconnect(peer);
+            }
+            else
+            {
+                peer.sendPing();
+            }
+            return idx;
         }
     }
 }

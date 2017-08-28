@@ -59,7 +59,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
@@ -368,13 +367,13 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 //                        connectSatellite(new InetSocketAddress("localhost", 9978), entry.getValue());
 //                    }
 //                }
-                for(Entry<ServiceName, TcpConnector> entry : netComConnectors.entrySet())
-                {
-                    if (!entry.getKey().value.contains("SSL"))
-                    {
-                        connectSatellite(new InetSocketAddress("localhost", 9977), entry.getValue());
-                    }
-                }
+//                for(Entry<ServiceName, TcpConnector> entry : netComConnectors.entrySet())
+//                {
+//                    if (!entry.getKey().value.contains("SSL"))
+//                    {
+//                        connectSatellite(new InetSocketAddress("localhost", 9977), entry.getValue());
+//                    }
+//                }
             }
             catch (AccessDeniedException accessExc)
             {
@@ -880,7 +879,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         }
 
         @Override
-        public void outboundConnectionEstablished(Peer connPeer)
+        public void outboundConnectionEstablished(Peer connPeer) throws IOException
         {
             if (connPeer != null)
             {
@@ -894,6 +893,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 {
                     controller.peerMap.put(connPeer.getId(), connPeer);
                 }
+                controller.reconnectorService.peerConnected(connPeer);
             }
             // TODO: If a satellite has been connected, schedule any necessary actions
         }
