@@ -14,6 +14,8 @@ import com.linbit.drbdmanage.debug.BaseDebugConsole;
 import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.ControllerDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
+import com.linbit.drbdmanage.ApiCallRc.RcEntry;
+import com.linbit.drbdmanage.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
@@ -27,6 +29,7 @@ import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.propscon.PropsContainer;
+import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -64,8 +67,6 @@ import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.slf4j.event.Level;
-
 import org.slf4j.event.Level;
 
 /**
@@ -151,6 +152,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // Controller configuration properties
     private Props ctrlConf;
     private ObjectProtection ctrlConfProt;
+    private SerialGenerator rootSerialGen;
 
     // ============================================================
     // DrbdManage objects
@@ -166,6 +168,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // Map of all storage pools
     private Map<StorPoolName, StorPoolDefinition> storPoolMap;
     private ObjectProtection storPoolMapProt;
+
 
     public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
     {
@@ -299,6 +302,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
                 ctrlConf = SerialPropsContainer.createRootContainer(
                     persistenceDbDriver.getPropsConDatabaseDriver(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, dbConnPool));
+                rootSerialGen = ((SerialPropsContainer) ctrlConf).getSerialGenerator();
                 ctrlConfProt = new ObjectProtection(sysCtx);
 
                 // Initialize the worker thread pool
@@ -478,82 +482,41 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         List<VolumeDefinition.CreationData> volDescrMap
     )
     {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        ResourceDefinition rscDfn = null;
         try
         {
             rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE);
-            ResourceDefinition rscDfn = new ResourceDefinitionData(
+            rscDfn = new ResourceDefinitionData(
                 accCtx,
                 new ResourceName(resourceName),
-                null // FIXME: SerialGenerator from root properties container
+                rootSerialGen
             );
             // TODO: Read optional ConnectionDefinitions from the properties map
             // TODO: Read optional TcpPortNumbers for ConnectionDefinitions
             //       from the properties map, or allocate a free TcpPortNumber
-            for (VolumeDefinition.CreationData volCrtData : volDescrMap)
-            {
-                VolumeNumber volNr = null;
-                try
-                {
-                    volNr = new VolumeNumber(volCrtData.getId());
-                }
-                catch (ValueOutOfRangeException volNrExc)
-                {
-                    // TODO: Generate a problem report with less debug information
-                    // TODO: Add a return code describing the problem
-                    getErrorReporter().reportError(volNrExc);
-                }
-
-                MinorNumber minorNr = null;
-                try
-                {
-                    minorNr = new MinorNumber(volCrtData.getMinorNr());
-                }
-                catch (ValueOutOfRangeException minorNrExc)
-                {
-                    // TODO: Generate a problem report with less debug information
-                    // TODO: Add a return code describing the problem
-                    getErrorReporter().reportError(minorNrExc);
-                }
-
-                long size = volCrtData.getSize();
-                // TODO: Calculate gross size using meta data calculation and check
-                //       whether that size is valid or not
-
-                if (volNr != null && minorNr != null)
-                {
-                    try
-                    {
-                        VolumeDefinition volDfn = new VolumeDefinitionData(
-                            accCtx,
-                            rscDfn,
-                            volNr,
-                            minorNr,
-                            size,
-                            null // FIXME: SerialGenerator from root properties container
-                        );
-                    }
-                    catch (MdException metaDataExc)
-                    {
-                        // TODO: Generate a problem report with less debug information
-                        // TODO: Add a return code describing the problem
-                        getErrorReporter().reportError(metaDataExc);
-                    }
-                }
-            }
         }
         catch (AccessDeniedException accExc)
         {
             // TODO: Generate a problem report with less debug information
-            // TODO: Add a return code describing the problem
             getErrorReporter().reportProblem(
                 Level.ERROR, accExc, accCtx, client,
                 "createResourceDefinition" // TOOD: Provide useful context information
             );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
+            // TODO: set additional bits for further describing the problem
+            entry.setCauseFormat("The given access-context has insucuffient rights");
+            entry.setDetailsFormat("The access-context (user: ${acUser}, role: ${acRole}) "
+                + "requires more rights to create a new resource definition ");
+            entry.putVariable("acUser", accCtx.subjectId.name.displayValue);
+            entry.putVariable("acRole", accCtx.subjectRole.name.displayValue);
+
+            apiCallRc.addEntry(entry);
         }
         catch (InvalidNameException nameExc)
         {
             // TODO: Generate a problem report with less debug information
-            // TODO: Add a return code describing the problem
             String nameExcMsg = nameExc.getMessage();
             String causeText = "The specified name is not valid for use as a resource name.";
             if (nameExcMsg != null)
@@ -575,8 +538,18 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             );
             getErrorReporter().reportProblem(
                 Level.ERROR, resNameExc, accCtx, client,
-                "createResourceDefinition" // TOOD: Provide useful context information
+                "createResourceDefinition" // TODO: Provide useful context information
             );
+
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
+            // TODO: set additional bits for further describing the problem
+            entry.setMessageFormat(nameExcMsg);
+            entry.setCauseFormat("The given resource name is invalid");
+            entry.setDetailsFormat("The access-context (user: ${acUser}, role: ${acRole}) "
+                + "requires more rights to create a new resource definition ");
+
+            apiCallRc.addEntry(entry);
         }
         catch (SQLException sqlExc)
         {
@@ -586,8 +559,153 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 null,
                 "A database error occured while trying to create a new resource definition."
             );
+
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
+            // TODO: set additional bits for further describing the problem
+            entry.setMessageFormat(sqlExc.getMessage());
+            entry.setCauseFormat("Persisting the resource definition resulted in an SQL Exception");
+
+            apiCallRc.addEntry(entry);
         }
-        return null; // FIXME: return an ApiCallRc subclass object
+
+        if (rscDfn != null)
+        {
+            try
+            {
+                for (VolumeDefinition.CreationData volCrtData : volDescrMap)
+                {
+                    VolumeNumber volNr = null;
+                    try
+                    {
+                        volNr = new VolumeNumber(volCrtData.getId());
+                    }
+                    catch (ValueOutOfRangeException volNrExc)
+                    {
+                        // TODO: Generate a problem report with less debug information
+                        getErrorReporter().reportError(volNrExc);
+
+                        ApiCallRcEntry invalidVolNum = new ApiCallRcEntry();
+                        invalidVolNum.setReturnCodeBit(ApiCallRc.MASK_ERROR);
+                        // TODO: Additionally set further bitflags as return code describing the problem
+
+                        invalidVolNum.setCorrectionFormat("Specify a valid volume number");
+                        invalidVolNum.setDetailsFormat("Given volume number ${volNr} was invalid");
+                        invalidVolNum.putVariable("volNr", Integer.toString(volCrtData.getId()));
+                        apiCallRc.addEntry(invalidVolNum);
+                    }
+
+                    MinorNumber minorNr = null;
+                    try
+                    {
+                        minorNr = new MinorNumber(volCrtData.getMinorNr());
+                    }
+                    catch (ValueOutOfRangeException minorNrExc)
+                    {
+                        // TODO: Generate a problem report with less debug information
+                        getErrorReporter().reportError(minorNrExc);
+
+                        ApiCallRcEntry invalidMinorNum = new ApiCallRcEntry();
+                        invalidMinorNum.setReturnCodeBit(ApiCallRc.MASK_ERROR);
+                        // TODO: Additionally set further bitflags as return code describing the problem
+
+                        invalidMinorNum.setCorrectionFormat("Specify a valid minor number");
+                        invalidMinorNum.setDetailsFormat("Given minor number ${minorNr} was invalid");
+                        invalidMinorNum.putVariable("volNr", Integer.toString(volCrtData.getMinorNr()));
+                        apiCallRc.addEntry(invalidMinorNum);
+                    }
+
+                    long size = volCrtData.getSize();
+                    // TODO: Calculate gross size using meta data calculation and check
+                    //       whether that size is valid or not
+
+                    if (volNr != null && minorNr != null)
+                    {
+                        try
+                        {
+                            VolumeDefinition volDfn = new VolumeDefinitionData(
+                                accCtx,
+                                rscDfn,
+                                volNr,
+                                minorNr,
+                                size,
+                                rootSerialGen
+                            );
+                        }
+                        catch (MdException metaDataExc)
+                        {
+                            // TODO: Generate a problem report with less debug information
+                            getErrorReporter().reportError(metaDataExc);
+
+                            ApiCallRcEntry entry = new ApiCallRcEntry();
+                            entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
+                            // TODO: set additional bits for further describing the problem
+                            entry.setMessageFormat(metaDataExc.getMessage());
+
+                            apiCallRc.addEntry(entry);
+                        }
+                    }
+                }
+
+                List<RcEntry> entries = apiCallRc.getEntries();
+                boolean errorFound = false;
+                for (RcEntry entry : entries)
+                {
+                    if ((entry.getReturnCode() & ApiCallRc.MASK_ERROR ) == ApiCallRc.MASK_ERROR)
+                    {
+                        errorFound = true;
+                        // TODO: if already persisted, remove from db
+                        break;
+                    }
+                }
+                if (!errorFound)
+                {
+                    rscDfnMap.put(rscDfn.getName(), rscDfn);
+
+                    ApiCallRcEntry successEntry = new ApiCallRcEntry();
+                    successEntry.setReturnCodeBit(0); // TODO: create an ApiCallRc.MASK_SUCCESS ?
+
+                    successEntry.setMessageFormat("Resource definition '${resName}' successfully created");
+                    successEntry.putVariable("resName", resourceName);
+                }
+            }
+            catch (AccessDeniedException accExc)
+            {
+                // TODO: Generate a problem report with less debug information
+                getErrorReporter().reportProblem(
+                    Level.ERROR, accExc, accCtx, client,
+                    "createResourceDefinition" // TOOD: Provide useful context information
+                );
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+
+                entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
+                // TODO: set additional bits for further describing the problem
+                entry.setMessageFormat(accExc.getMessage());
+                entry.setCauseFormat("The given access-context has insucuffient rights");
+                entry.setDetailsFormat("The access-context (user: ${acUser}, role: ${acRole}) "
+                    + "requires more rights to create a new volume definition ");
+
+                apiCallRc.addEntry(entry);
+            }
+            catch (SQLException sqlExc)
+            {
+                getErrorReporter().reportError(
+                    sqlExc,
+                    null,
+                    null,
+                    "A database error occured while trying to create a new resource definition."
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
+                // TODO: set additional bits for further describing the problem
+                entry.setMessageFormat(sqlExc.getMessage());
+                entry.setCauseFormat("Persisting the volume definition resulted in an SQL Exception");
+
+                apiCallRc.addEntry(entry);
+            }
+        }
+        return apiCallRc;
     }
 
     /**
