@@ -135,7 +135,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ResourceDefinitionData resDfn = null;
         if (transMgr != null)
         {
-            resDfn = driver.load(transMgr.dbCon, serialGen, transMgr);
+            resDfn = driver.load(serialGen, transMgr);
         }
 
         if (resDfn == null)

@@ -145,7 +145,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         driver.create(con, volDfn);
         DriverUtils.clearCaches();
 
-        VolumeDefinitionData loadedVd = driver.load(con, null, transMgr);
+        VolumeDefinitionData loadedVd = driver.load(null, transMgr);
         assertNotNull(loadedVd);
         assertEquals(uuid, loadedVd.getUuid());
         assertEquals(resName, loadedVd.getResourceDfn().getName());
@@ -188,7 +188,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         DriverUtils.clearCaches();
 
         List<VolumeDefinition> volDfnList = VolumeDefinitionDataDerbyDriver.loadAllVolumeDefinitionsByResourceDefinition(
-            con,
             resDfn,
             null,
             transMgr,
@@ -214,7 +213,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(volDfn, driver.load(con, null, transMgr));
+        assertEquals(volDfn, driver.load(null, transMgr));
     }
 
     @Test
@@ -268,7 +267,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         DriverUtils.clearCaches();
 
-        VolumeDefinitionData loadedVd = driver.load(con, null, transMgr);
+        VolumeDefinitionData loadedVd = driver.load(null, transMgr);
         Props props = loadedVd.getProps(sysCtx);
 
         assertEquals(testValue, props.getProp(testKey));

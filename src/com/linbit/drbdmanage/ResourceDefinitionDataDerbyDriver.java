@@ -110,9 +110,9 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     }
 
     @Override
-    public ResourceDefinitionData load(Connection con, SerialGenerator serialGen, TransactionMgr transMgr) throws SQLException
+    public ResourceDefinitionData load(SerialGenerator serialGen, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(RD_SELECT);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_SELECT);
         stmt.setString(1, resName.value);
         ResultSet resultSet = stmt.executeQuery();
 
@@ -147,7 +147,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
                     ObjectProtection.buildPath(resName)
                 );
-                ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+                ObjectProtection objProt = objProtDriver.loadObjectProtection(transMgr.dbCon);
                 if (objProt != null)
                 {
                     resDfn = new ResourceDefinitionData(
@@ -169,7 +169,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                             // restore connectionDefinitions
                             List<ConnectionDefinition> cons =
                                 ConnectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
-                                con,
                                 resName,
                                 serialGen,
                                 transMgr,
@@ -190,7 +189,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                             // restore volumeDefinitions
                             List<VolumeDefinition> volDfns =
                                 VolumeDefinitionDataDerbyDriver.loadAllVolumeDefinitionsByResourceDefinition(
-                                con,
                                 resDfn,
                                 serialGen,
                                 transMgr,
@@ -203,7 +201,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
 
                             // restore resources
                             List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceDataByResourceDefinition(
-                                con,
                                 resDfn,
                                 serialGen,
                                 transMgr,

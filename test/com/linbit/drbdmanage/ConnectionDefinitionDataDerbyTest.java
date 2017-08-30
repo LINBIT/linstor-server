@@ -128,7 +128,7 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
         driver.create(con, conDfn);
         DriverUtils.clearCaches();
 
-        ConnectionDefinitionData loadedConDfn = driver.load(con, null, transMgr);
+        ConnectionDefinitionData loadedConDfn = driver.load(null, transMgr);
 
         checkLoadedConDfn(loadedConDfn, true);
     }
@@ -142,7 +142,6 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
 
         List<ConnectionDefinition> cons =
             ConnectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
-                con,
                 resName,
                 null,
                 transMgr,
@@ -206,7 +205,7 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
 
         // no clear-cache
 
-        assertEquals(conDfn, driver.load(con, null, transMgr));
+        assertEquals(conDfn, driver.load(null, transMgr));
     }
 
     @Test

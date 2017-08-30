@@ -71,13 +71,12 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 
     @Override
     public StorPoolData load(
-        Connection con,
         SerialGenerator serGen,
         TransactionMgr transMgr
     )
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NSP_SELECT);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT);
         stmt.setString(1, node.getName().value);
         stmt.setString(2, storPoolDfn.getName().value);
         ResultSet resultSet = stmt.executeQuery();
@@ -90,7 +89,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
                     ObjectProtection.buildPathSP(storPoolDfn.getName())
                 );
-                ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+                ObjectProtection objProt = objProtDriver.loadObjectProtection(transMgr.dbCon);
 
                 sp = new StorPoolData(
                     UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
@@ -129,9 +128,14 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         return sp;
     }
 
-    public static List<StorPoolData> loadStorPools(Connection con, NodeData node, TransactionMgr transMgr, SerialGenerator serGen) throws SQLException
+    public static List<StorPoolData> loadStorPools(
+        NodeData node,
+        TransactionMgr transMgr,
+        SerialGenerator serGen
+    )
+        throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NSP_SELECT_BY_NODE);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT_BY_NODE);
         stmt.setString(1, node.getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
@@ -148,11 +152,10 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                     ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
                         ObjectProtection.buildPathSP(storPoolName)
                     );
-                    ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+                    ObjectProtection objProt = objProtDriver.loadObjectProtection(transMgr.dbCon);
 
                     StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = DrbdManage.getStorPoolDefinitionDataDriver(storPoolName);
-                    StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(con);
-
+                    StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(transMgr.dbCon);
 
                     storPoolData = new StorPoolData(
                         UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),

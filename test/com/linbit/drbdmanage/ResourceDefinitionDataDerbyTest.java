@@ -179,7 +179,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         DriverUtils.clearCaches();
 
-        ResourceDefinitionData loadedResDfn = driver.load(con, null, transMgr);
+        ResourceDefinitionData loadedResDfn = driver.load(null, transMgr);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
@@ -271,7 +271,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(resDfn, driver.load(con, null, transMgr));
+        assertEquals(resDfn, driver.load(null, transMgr));
     }
 
     @Test
@@ -323,7 +323,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         DriverUtils.clearCaches();
 
-        ResourceDefinitionData loadedResDfn = driver.load(con, null, transMgr);
+        ResourceDefinitionData loadedResDfn = driver.load(null, transMgr);
 
         Props props = loadedResDfn.getProps(sysCtx);
 
@@ -353,7 +353,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         DriverUtils.clearCaches();
 
-        ResourceDefinitionData loadedResDfn = driver.load(con, null, transMgr);
+        ResourceDefinitionData loadedResDfn = driver.load(null, transMgr);
         Resource loadedRes = loadedResDfn.getResource(sysCtx, nodeName);
 
         assertNotNull(loadedRes);
@@ -378,7 +378,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         DriverUtils.clearCaches();
 
-        ResourceDefinitionData loadedResDfn = driver.load(con, null, transMgr);
+        ResourceDefinitionData loadedResDfn = driver.load(null, transMgr);
         VolumeDefinition loadedVolDfn = loadedResDfn.getVolumeDfn(sysCtx, volNr);
 
         assertNotNull(loadedVolDfn);
@@ -475,7 +475,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceName halfValidResName = new ResourceName(resDfn.getName().value);
         ResourceDefinitionDataDerbyDriver driver2 = new ResourceDefinitionDataDerbyDriver(sysCtx, halfValidResName);
 
-        ResourceDefinitionData loadedResDfn = driver2.load(con, null, transMgr);
+        ResourceDefinitionData loadedResDfn = driver2.load(null, transMgr);
 
         assertNotNull(loadedResDfn);
         assertEquals(resDfn.getName(), loadedResDfn.getName());

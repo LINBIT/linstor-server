@@ -67,8 +67,10 @@ public class ConfFile
             conf.append("    on %s\n", peerResource.getAssignedNode().getName().value);
             conf.append("    {\n");
             conf.append("        node-id     %s;\n", peerResource.getNodeId().value);
-            conf.append("        address     %s;\n");
-            // TODO: implement "multi-connection / path magic"
+            conf.append("        address     %s;\n"); // TODO: insert node's address here
+            // if a node may have multiple addresses / connections... which one to choose here?
+
+            // TODO: implement "multi-connection / path magic" (nodeMeshes + singleConnections vars)
             // sb.append(peerResource.co)
         }
         conf.append("    }\n");

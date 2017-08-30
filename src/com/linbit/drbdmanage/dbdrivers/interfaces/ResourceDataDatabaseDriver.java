@@ -41,7 +41,6 @@ public interface ResourceDataDatabaseDriver extends BaseDatabaseDriver<ResourceD
      * @throws SQLException
      */
     public ResourceData load(
-        Connection con,
         Node node,
         SerialGenerator serialGen,
         TransactionMgr transMgr

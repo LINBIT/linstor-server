@@ -135,7 +135,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver(resRef, volDfn);
         if (transMgr != null)
         {
-            vol = driver.load(transMgr.dbCon, serialGen, transMgr);
+            vol = driver.load(serialGen, transMgr);
         }
 
         if (vol == null && createIfNotExists)

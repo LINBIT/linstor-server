@@ -102,11 +102,11 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public NodeData load(Connection con, SerialGenerator serialGen, TransactionMgr transMgr) throws SQLException
+    public NodeData load(SerialGenerator serialGen, TransactionMgr transMgr) throws SQLException
     {
         try
         {
-            PreparedStatement stmt = con.prepareStatement(NODE_SELECT);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_SELECT);
             stmt.setString(1, nodeName.value);
             ResultSet resultSet = stmt.executeQuery();
 
@@ -135,7 +135,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
                         ObjectProtection.buildPath(nodeName)
                     );
-                    ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+                    ObjectProtection objProt = objProtDriver.loadObjectProtection(transMgr.dbCon);
 
                     node = new NodeData(
                         UuidUtils.asUuid(resultSet.getBytes(NODE_UUID)),
@@ -150,21 +150,21 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     {
 
                         // restore netInterfaces
-                        List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadNetInterfaceData(con, node);
+                        List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadNetInterfaceData(transMgr.dbCon, node);
                         for (NetInterfaceData netIf : netIfaces)
                         {
                             node.addNetInterface(dbCtx, netIf);
                         }
 
                         // restore resources
-                        List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceData(con, dbCtx, node, serialGen, transMgr);
+                        List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceData(dbCtx, node, serialGen, transMgr);
                         for (ResourceData res : resList)
                         {
                             node.addResource(dbCtx, res);
                         }
 
                         // restore storPools
-                        List<StorPoolData> storPoolList = StorPoolDataDerbyDriver.loadStorPools(con, node, transMgr, serialGen);
+                        List<StorPoolData> storPoolList = StorPoolDataDerbyDriver.loadStorPools(node, transMgr, serialGen);
                         for (StorPoolData storPool : storPoolList)
                         {
                             node.addStorPool(dbCtx, storPool);

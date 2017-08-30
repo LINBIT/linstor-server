@@ -180,7 +180,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         VolumeDefinitionDataDatabaseDriver driver = DrbdManage.getVolumeDefinitionDataDatabaseDriver(resDfn, volNr);
         if (transMgr != null)
         {
-            volDfn = driver.load(transMgr.dbCon, serialGen, transMgr);
+            volDfn = driver.load(serialGen, transMgr);
         }
 
         if (volDfn == null)

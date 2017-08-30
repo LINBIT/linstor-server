@@ -218,7 +218,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         NodeDataDerbyDriver.clearCache();
 
-        NodeData loaded = dbDriver.load(con, null, transMgr);
+        NodeData loaded = dbDriver.load(null, transMgr);
 
         assertEquals(nodeName.value, loaded.getName().value);
         assertEquals(nodeName.displayValue, loaded.getName().displayValue);
@@ -284,6 +284,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         java.util.UUID volUuid = randomUUID();
         String volTestBlockDev = "/dev/do/not/use/me";
+        String volTestMetaDisk = "/dev/do/not/use/me/neither";
         String volTestKey = "volTestKey";
         String volTestValue = "volTestValue";
 
@@ -324,7 +325,7 @@ public class NodeDataDerbyTest extends DerbyBase
         insertVolDfn(con, volDfnUuid, resName, volDfnNr, volDfnSize, volDfnMinorNr, VlmDfnFlags.REMOVE.flagValue);
         insertProp(con, PropsContainer.buildPath(resName, volDfnNr), volDfnTestKey, volDfnTestValue);
 
-        insertVol(con, volUuid, nodeName, resName, volDfnNr, volTestBlockDev, Volume.VlmFlags.CLEAN);
+        insertVol(con, volUuid, nodeName, resName, volDfnNr, volTestBlockDev, volTestMetaDisk, Volume.VlmFlags.CLEAN);
         insertProp(con, PropsContainer.buildPath(nodeName, resName, volDfnNr), volTestKey, volTestValue);
 
         insertObjProt(con, ObjectProtection.buildPathSPD(poolName), sysCtx);
@@ -491,7 +492,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(node, dbDriver.load(con, null, transMgr));
+        assertEquals(node, dbDriver.load(null, transMgr));
     }
 
     @Test
@@ -573,7 +574,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         NodeName halfValidName = new NodeName(node.getName().value);
         NodeDataDerbyDriver driver = new NodeDataDerbyDriver(sysCtx, halfValidName);
-        NodeData loadedNode = driver.load(con, null, transMgr);
+        NodeData loadedNode = driver.load(null, transMgr);
 
         assertNotNull(loadedNode);
         assertEquals(node.getName(), loadedNode.getName());

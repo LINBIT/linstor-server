@@ -131,7 +131,7 @@ public class ResouceDataDerbyTest extends DerbyBase
 
         DriverUtils.clearCaches();
 
-        ResourceData loadedRes = driver.load(con, node, null, transMgr);
+        ResourceData loadedRes = driver.load(node, null, transMgr);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
         assertEquals(resUuid, loadedRes.getUuid());
@@ -188,7 +188,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         driver.create(con, res);
         DriverUtils.clearCaches();
 
-        List<ResourceData> resList= ResourceDataDerbyDriver.loadResourceData(con, sysCtx, node, null, transMgr);
+        List<ResourceData> resList= ResourceDataDerbyDriver.loadResourceData(sysCtx, node, null, transMgr);
 
         assertNotNull(resList);
         assertEquals(1, resList.size());
@@ -210,7 +210,7 @@ public class ResouceDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(res, driver.load(con, node, null, transMgr));
+        assertEquals(res, driver.load(node, null, transMgr));
     }
 
     @Test

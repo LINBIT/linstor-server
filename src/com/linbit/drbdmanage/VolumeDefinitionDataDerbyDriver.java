@@ -118,13 +118,12 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
     @Override
     public VolumeDefinitionData load(
-        Connection con,
         SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(VD_SELECT);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT);
         stmt.setString(1, resDfn.getName().value);
         stmt.setInt(2, volNr.value);
         ResultSet resultSet = stmt.executeQuery();
@@ -214,7 +213,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
 
     public static List<VolumeDefinition> loadAllVolumeDefinitionsByResourceDefinition(
-            Connection con,
             ResourceDefinition resDfn,
             SerialGenerator serialGen,
             TransactionMgr transMgr,
@@ -222,7 +220,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     )
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(VD_SELECT_BY_RES_DFN);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT_BY_RES_DFN);
         stmt.setString(1, resDfn.getName().value);
         ResultSet resultSet = stmt.executeQuery();
         List<VolumeDefinition> ret = new ArrayList<>();

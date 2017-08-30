@@ -136,15 +136,15 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     }
 
     @Override
-    public ResourceData load(Connection con, Node node, SerialGenerator serialGen, TransactionMgr transMgr)
+    public ResourceData load(Node node, SerialGenerator serialGen, TransactionMgr transMgr)
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(RES_SELECT);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT);
         stmt.setString(1, nodeName.value);
         stmt.setString(2, resName.value);
         ResultSet resultSet = stmt.executeQuery();
 
-        List<ResourceData> list = load(con, resultSet, dbCtx, node, serialGen, transMgr);
+        List<ResourceData> list = load(resultSet, dbCtx, node, serialGen, transMgr);
         resultSet.close();
         stmt.close();
 
@@ -169,7 +169,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
 
     public static List<ResourceData> loadResourceDataByResourceDefinition(
-        Connection con,
         ResourceDefinitionData resDfn,
         SerialGenerator serialGen,
         TransactionMgr transMgr,
@@ -177,25 +176,25 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     )
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(RES_SELECT_BY_RES_DFN);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT_BY_RES_DFN);
         stmt.setString(1, resDfn.getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        List<ResourceData> resList = load(con, resultSet, accCtx, null, serialGen, transMgr);
+        List<ResourceData> resList = load(resultSet, accCtx, null, serialGen, transMgr);
 
         resultSet.close();
         stmt.close();
         return resList;
     }
 
-    public static List<ResourceData> loadResourceData(Connection con, AccessContext dbCtx, NodeData node, SerialGenerator serialGen, TransactionMgr transMgr)
+    public static List<ResourceData> loadResourceData(AccessContext dbCtx, NodeData node, SerialGenerator serialGen, TransactionMgr transMgr)
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(RES_SELECT_BY_NODE);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT_BY_NODE);
         stmt.setString(1, node.getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        List<ResourceData> ret = load(con, resultSet, dbCtx, node, serialGen, transMgr);
+        List<ResourceData> ret = load(resultSet, dbCtx, node, serialGen, transMgr);
         resultSet.close();
         stmt.close();
 
@@ -203,7 +202,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     }
 
     private static List<ResourceData> load(
-        Connection con,
         ResultSet resultSet,
         AccessContext dbCtx,
         Node globalNode,
@@ -229,7 +227,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                             resultSet.getString(RES_NODE_NAME)
                         )
                     );
-                    node = nodeDriver.load(con, serialGen, transMgr);
+                    node = nodeDriver.load(serialGen, transMgr);
                 }
 
                 ResourceData resData = cacheGet(resultSet);
@@ -237,12 +235,12 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 {
                     ResourceName resName = new ResourceName(resultSet.getString(RES_NAME));
                     ResourceDefinitionDataDatabaseDriver resDfnDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(resName);
-                    ResourceDefinition resDfn = resDfnDriver.load(con, serialGen, transMgr);
+                    ResourceDefinition resDfn = resDfnDriver.load(serialGen, transMgr);
 
                     ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
                         ObjectProtection.buildPath(resName)
                     );
-                    ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+                    ObjectProtection objProt = objProtDriver.loadObjectProtection(transMgr.dbCon);
 
                     NodeId nodeId = new NodeId(resultSet.getInt(RES_NODE_ID));
                     resData = new ResourceData(
@@ -262,7 +260,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     else
                     {
                         // restore volumes
-                        List<VolumeData> volList = VolumeDataDerbyDriver.loadAllVolumesByResource(con, resData, transMgr, serialGen, dbCtx);
+                        List<VolumeData> volList = VolumeDataDerbyDriver.loadAllVolumesByResource(resData, transMgr, serialGen, dbCtx);
                         for (VolumeData volData : volList)
                         {
                             resData.setVolume(dbCtx, volData);

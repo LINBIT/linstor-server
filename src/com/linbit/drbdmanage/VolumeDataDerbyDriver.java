@@ -98,20 +98,19 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
     @Override
     public VolumeData load(
-        Connection con,
         SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
     {
-        try(PreparedStatement stmt = con.prepareStatement(VOL_SELECT))
+        try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(VOL_SELECT))
         {
             stmt.setString(1, res.getAssignedNode().getName().value);
             stmt.setString(2, res.getDefinition().getName().value);
             stmt.setInt(3, volDfn.getVolumeNumber(dbCtx).value);
             ResultSet resultSet = stmt.executeQuery();
 
-            List<VolumeData> volList = load(con, resultSet, res, transMgr, serialGen, dbCtx);
+            List<VolumeData> volList = load(resultSet, res, transMgr, serialGen, dbCtx);
             resultSet.close();
 
             VolumeData ret = cacheGet(res.getAssignedNode(), res.getDefinition(), volDfn.getVolumeNumber(dbCtx));
@@ -143,7 +142,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     }
 
     public static List<VolumeData> loadAllVolumesByResource(
-        Connection con,
         Resource resRef,
         TransactionMgr transMgr,
         SerialGenerator serialGen,
@@ -151,12 +149,12 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     )
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(VOL_SELECT_BY_RES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(VOL_SELECT_BY_RES);
         stmt.setString(1, resRef.getAssignedNode().getName().value);
         stmt.setString(2, resRef.getDefinition().getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        List<VolumeData> ret = load(con, resultSet, resRef, transMgr, serialGen, accCtx);
+        List<VolumeData> ret = load(resultSet, resRef, transMgr, serialGen, accCtx);
         resultSet.close();
         stmt.close();
 
@@ -165,7 +163,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
 
     private static List<VolumeData> load(
-        Connection con,
         ResultSet resultSet,
         Resource resRef,
         TransactionMgr transMgr,
@@ -194,7 +191,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 resRef.getDefinition(),
                 volNr
             );
-            volDfn = volDfnDriver.load(con, serialGen, transMgr);
+            volDfn = volDfnDriver.load(serialGen, transMgr);
 
             VolumeData volData = cacheGet(resRef.getAssignedNode(), resRef.getDefinition(), volNr);
             if (volData == null)

@@ -228,7 +228,7 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public NodeData load(Connection con, SerialGenerator serialGen, TransactionMgr transMgr) throws SQLException
+        public NodeData load(SerialGenerator serialGen, TransactionMgr transMgr) throws SQLException
         {
             return null;
         }
@@ -261,7 +261,7 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public ResourceData load(Connection con, Node node, SerialGenerator serialGen, TransactionMgr transMgr)
+        public ResourceData load(Node node, SerialGenerator serialGen, TransactionMgr transMgr)
             throws SQLException
         {
             return null;
@@ -301,7 +301,7 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public ResourceDefinitionData load(Connection dbCon, SerialGenerator serialGen, TransactionMgr transMgr)
+        public ResourceDefinitionData load(SerialGenerator serialGen, TransactionMgr transMgr)
             throws SQLException
         {
             return null;
@@ -329,7 +329,7 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public VolumeData load(Connection dbCon, SerialGenerator srlGen, TransactionMgr transMgr) throws SQLException
+        public VolumeData load(SerialGenerator srlGen, TransactionMgr transMgr) throws SQLException
         {
             return null;
         }
@@ -382,7 +382,7 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public VolumeDefinitionData load(Connection con, SerialGenerator serialGen, TransactionMgr transMgr)
+        public VolumeDefinitionData load(SerialGenerator serialGen, TransactionMgr transMgr)
             throws SQLException
         {
             return null;
@@ -419,7 +419,7 @@ public class NoOpDriver implements DatabaseDriver
     private static class NoOpSpdDriver implements StorPoolDataDatabaseDriver
     {
         @Override
-        public StorPoolData load(Connection con, SerialGenerator serGen, TransactionMgr transMgr) throws SQLException
+        public StorPoolData load(SerialGenerator serGen, TransactionMgr transMgr) throws SQLException
         {
             return null;
         }
@@ -506,7 +506,7 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public ConnectionDefinitionData load(Connection con, SerialGenerator serialGen, TransactionMgr transMgr)
+        public ConnectionDefinitionData load(SerialGenerator serialGen, TransactionMgr transMgr)
             throws SQLException
         {
             return null;

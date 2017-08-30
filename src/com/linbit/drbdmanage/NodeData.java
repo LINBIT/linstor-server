@@ -154,7 +154,7 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver(nameRef);
         if (transMgr != null)
         {
-            nodeData = dbDriver.load(transMgr.dbCon, srlGen, transMgr);
+            nodeData = dbDriver.load(srlGen, transMgr);
         }
 
         if (nodeData != null)

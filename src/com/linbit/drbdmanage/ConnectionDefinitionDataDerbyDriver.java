@@ -92,13 +92,12 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
 
     @Override
     public ConnectionDefinitionData load(
-        Connection con,
         SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(CON_SELECT);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_SELECT);
         stmt.setString(1, resName.value);
         stmt.setString(2, srcNodeName.value);
         stmt.setString(3, dstNodeName.value);
@@ -110,7 +109,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         {
             if (resultSet.next())
             {
-                ret = restoreConnectionDefinition(con, resultSet, serialGen, transMgr, dbCtx);
+                ret = restoreConnectionDefinition(resultSet, serialGen, transMgr, dbCtx);
             }
         }
         else
@@ -129,7 +128,6 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     }
 
     private static ConnectionDefinitionData restoreConnectionDefinition(
-        Connection con,
         ResultSet resultSet,
         SerialGenerator serialGen,
         TransactionMgr transMgr,
@@ -161,17 +159,17 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
             ObjectProtection.buildPath(resName, srcNodeName, dstNodeName)
         );
-        ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+        ObjectProtection objProt = objProtDriver.loadObjectProtection(transMgr.dbCon);
 
         ResourceDefinitionDataDatabaseDriver resDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(
             resName
         );
-        ResourceDefinitionData resDfn = resDriver.load(con, serialGen, transMgr);
+        ResourceDefinitionData resDfn = resDriver.load(serialGen, transMgr);
 
         NodeDataDatabaseDriver srcNodeDriver = DrbdManage.getNodeDataDatabaseDriver(srcNodeName);
-        NodeData nodeSrc = srcNodeDriver.load(con, serialGen, transMgr);
+        NodeData nodeSrc = srcNodeDriver.load(serialGen, transMgr);
         NodeDataDatabaseDriver dstNodeDriver = DrbdManage.getNodeDataDatabaseDriver(dstNodeName);
-        NodeData nodeDst = dstNodeDriver.load(con, serialGen, transMgr);
+        NodeData nodeDst = dstNodeDriver.load(serialGen, transMgr);
 
         ConnectionDefinitionData conData = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst, conNr);
         cache(conData, accCtx);
@@ -179,7 +177,6 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     }
 
     public static List<ConnectionDefinition> loadAllConnectionsByResourceDefinition(
-        Connection con,
         ResourceName resName,
         SerialGenerator serialGen,
         TransactionMgr transMgr,
@@ -187,13 +184,13 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     )
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(CON_SELECT_BY_RES_DFN);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_SELECT_BY_RES_DFN);
         stmt.setString(1, resName.value);
         ResultSet resultSet = stmt.executeQuery();
         List<ConnectionDefinition> connections = new ArrayList<>();
         while (resultSet.next())
         {
-            ConnectionDefinitionData conDfn = restoreConnectionDefinition(con, resultSet, serialGen, transMgr, accCtx);
+            ConnectionDefinitionData conDfn = restoreConnectionDefinition(resultSet, serialGen, transMgr, accCtx);
             connections.add(conDfn);
         }
         resultSet.close();

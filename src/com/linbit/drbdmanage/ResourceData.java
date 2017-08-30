@@ -153,7 +153,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         if (transMgr != null)
         {
-            resData = driver.load(transMgr.dbCon, node, srlGen, transMgr);
+            resData = driver.load(node, srlGen, transMgr);
         }
 
         if (resData != null)

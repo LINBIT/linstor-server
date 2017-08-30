@@ -117,13 +117,13 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        StorPoolData loadedStorPool = driver.load(con, null, transMgr);
+        StorPoolData loadedStorPool = driver.load(null, transMgr);
         assertNull(loadedStorPool);
 
         driver.create(con, storPool);
         DriverUtils.clearCaches();
 
-        loadedStorPool = driver.load(con, null, transMgr);
+        loadedStorPool = driver.load(null, transMgr);
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(sysCtx).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(sysCtx));
@@ -138,7 +138,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         driver.create(con, storPool);
         DriverUtils.clearCaches();
 
-        List<StorPoolData> storPools = StorPoolDataDerbyDriver.loadStorPools(con, node, transMgr, null);
+        List<StorPoolData> storPools = StorPoolDataDerbyDriver.loadStorPools(node, transMgr, null);
 
         assertNotNull(storPools);
         assertEquals(1, storPools.size());
@@ -160,7 +160,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(storPool, driver.load(con, null, transMgr));
+        assertEquals(storPool, driver.load(null, transMgr));
     }
 
     @Test

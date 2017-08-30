@@ -473,6 +473,7 @@ public abstract class DerbyBase implements DerbyConstants
         ResourceName resName,
         VolumeNumber volNr,
         String blockDev,
+        String metaDisk,
         VlmFlags... flags
     )
         throws SQLException
@@ -483,7 +484,8 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.setString(3, resName.value);
         stmt.setInt(4, volNr.value);
         stmt.setString(5, blockDev);
-        stmt.setLong(6, StateFlagsBits.getMask(flags));
+        stmt.setString(6, metaDisk);
+        stmt.setLong(7, StateFlagsBits.getMask(flags));
         stmt.executeUpdate();
         stmt.close();
     }

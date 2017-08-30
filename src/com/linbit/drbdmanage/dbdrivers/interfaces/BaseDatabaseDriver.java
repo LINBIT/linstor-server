@@ -65,7 +65,6 @@ public interface BaseDatabaseDriver<DATA>
          * @throws SQLException
          */
         public DATA load(
-            Connection dbCon,
             SerialGenerator serialGen,
             TransactionMgr transMgr
         )
