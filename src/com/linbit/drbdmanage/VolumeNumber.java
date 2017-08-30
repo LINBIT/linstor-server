@@ -53,9 +53,12 @@ public class VolumeNumber implements Comparable<VolumeNumber>
         return result;
     }
 
-    public boolean equals(VolumeNumber other)
+    @Override
+    public boolean equals(Object other)
     {
-        return other != null && other.value == this.value;
+        return other != null &&
+            (other instanceof VolumeNumber) &&
+            ((VolumeNumber) other).value == this.value;
     }
 
     @Override

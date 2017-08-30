@@ -4,15 +4,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.linbit.Checks;
+import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.Node.NodeFlags;
+import com.linbit.drbdmanage.Node.NodeFlag;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.StateFlags;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.TreeSet;
 
@@ -58,10 +58,10 @@ public class Quorum
         {
             if (node != null)
             {
-                StateFlags<NodeFlags> nodeFlags = node.getFlags();
+                StateFlags<NodeFlag> nodeFlags = node.getFlags();
                 if (node.hasNodeType(accCtx, Node.NodeType.CONTROLLER))
                 {
-                    if (nodeFlags.isSet(accCtx, NodeFlags.QIGNORE))
+                    if (nodeFlags.isSet(accCtx, NodeFlag.QIGNORE))
                     {
                         changeFlag = true;
                     }
@@ -183,10 +183,10 @@ public class Quorum
 
         for (Node node : nodes)
         {
-            StateFlags<NodeFlags> nodeFlags = node.getFlags();
+            StateFlags<NodeFlag> nodeFlags = node.getFlags();
             if (node != controlNode &&
                 node.hasNodeType(accCtx, Node.NodeType.CONTROLLER) &&
-                !nodeFlags.isSet(accCtx, NodeFlags.QIGNORE))
+                !nodeFlags.isSet(accCtx, NodeFlag.QIGNORE))
             {
                 fullCount++;
             }
@@ -210,16 +210,18 @@ public class Quorum
     }
 
     /**
-     * Clears {@link NodeFlags#QIGNORE} on each connected node
+     * Clears {@link NodeFlag#QIGNORE} on each connected node
      * @param accCtx
      * @throws AccessDeniedException
      */
-    public void readjustQignoreFlags(AccessContext accCtx, Connection dbConn)
+    public void readjustQignoreFlags(AccessContext accCtx, TransactionMgr transMgr)
         throws AccessDeniedException, SQLException
     {
         for (Node node : quorumNodes)
         {
-            node.getFlags().disableFlags(accCtx, dbConn, NodeFlags.QIGNORE);
+            StateFlags<NodeFlag> flags = node.getFlags();
+            flags.setConnection(transMgr);
+            flags.disableFlags(accCtx, NodeFlag.QIGNORE);
         }
     }
 }

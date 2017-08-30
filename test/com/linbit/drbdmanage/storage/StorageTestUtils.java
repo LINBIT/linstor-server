@@ -18,7 +18,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.event.Level;
 
+import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.drbdmanage.SatelliteCoreServices;
+import com.linbit.drbdmanage.logging.ErrorReporter;
+import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.utils.TestExtCmd;
 import com.linbit.extproc.utils.TestExtCmd.Command;
@@ -29,6 +35,9 @@ import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import com.linbit.timer.Action;
+import com.linbit.timer.GenericTimer;
+import com.linbit.timer.Timer;
 
 public class StorageTestUtils
 {
@@ -64,6 +73,11 @@ public class StorageTestUtils
     {
         ec = new TestExtCmd();
         driver = driverFactory.createDriver(ec);
+        driver.initialize(new DummySatelliteCoreServices());
+        if (driver instanceof AbsStorageDriver)
+        {
+            ((AbsStorageDriver) driver).extCommand = ec;
+        }
     }
 
     @After
@@ -95,7 +109,7 @@ public class StorageTestUtils
         }
     }
 
-    protected Map<String, String> createMap(String... strings)
+    protected static Map<String, String> createMap(String... strings)
     {
         HashMap<String, String> map = new HashMap<>();
         int idx = 0;
@@ -107,7 +121,7 @@ public class StorageTestUtils
         return map;
     }
 
-    protected Path findCommand(String command)
+    protected static Path findCommand(String command)
     {
         Path[] pathFolders = getPathFolders();
         Path path = null;
@@ -127,7 +141,7 @@ public class StorageTestUtils
         return path;
     }
 
-    protected Path[] getPathFolders()
+    protected static Path[] getPathFolders()
     {
         String path = System.getenv("PATH");
         if (path == null)
@@ -152,7 +166,7 @@ public class StorageTestUtils
         return folders;
     }
 
-    protected <T> T getInstance(Class<T> clazz, Object... parameters) throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
+    protected static <T> T getInstance(Class<T> clazz, Object... parameters) throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
     {
         Class<?>[] parameterClasses = new Class[parameters.length];
         for (int i = 0; i < parameters.length; i++)
@@ -167,7 +181,7 @@ public class StorageTestUtils
         return ret;
     }
 
-    protected FileEntryGroupBuilder getTestFileEntryGroupBuilder(final String expectedFilePath, final Event expectedEvent, final FileEntryGroup testFileEntryGroup)
+    protected static FileEntryGroupBuilder getTestFileEntryGroupBuilder(final String expectedFilePath, final Event expectedEvent, final FileEntryGroup testFileEntryGroup)
     {
         return new FileEntryGroupBuilder()
         {
@@ -184,5 +198,75 @@ public class StorageTestUtils
                 return testFileEntryGroup;
             }
         };
+    }
+
+    private class DummySatelliteCoreServices implements SatelliteCoreServices
+    {
+        private ErrorReporter errRep = new EmptyErrorReporter();
+        private Timer<String, Action<String>> timer = new GenericTimer<>();
+
+        @Override
+        public ErrorReporter getErrorReporter()
+        {
+            return errRep;
+        }
+
+        @Override
+        public Timer<String, Action<String>> getTimer()
+        {
+            return timer;
+        }
+
+        @Override
+        public FileSystemWatch getFsWatch()
+        {
+            return null;
+        }
+    }
+
+    private class EmptyErrorReporter implements ErrorReporter
+    {
+
+        @Override
+        public void logTrace(String message)
+        {
+        }
+
+        @Override
+        public void logDebug(String message)
+        {
+        }
+
+        @Override
+        public void logInfo(String message)
+        {
+        }
+
+        @Override
+        public void logWarning(String message)
+        {
+        }
+
+        @Override
+        public void logError(String message)
+        {
+        }
+
+        @Override
+        public void reportError(Throwable errorInfo)
+        {
+        }
+
+        @Override
+        public void reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+        {
+        }
+
+        @Override
+        public void reportProblem(
+            Level logLevel, DrbdManageException errorInfo, AccessContext accCtx, Peer client, String contextInfo
+        )
+        {
+        }
     }
 }

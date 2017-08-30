@@ -9,8 +9,7 @@ import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_IDENTITIES;
 import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ROLES;
 import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ID_ROLE_MAP;
 import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_DFLT_ROLES;
-import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_OBJ_PROT;
-import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ACL_ENTRIES;
+import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ACL_MAP;
 
 import static com.linbit.drbdmanage.security.SecurityDbFields.VW_IDENTITIES_LOAD;
 import static com.linbit.drbdmanage.security.SecurityDbFields.VW_ROLES_LOAD;
@@ -18,23 +17,19 @@ import static com.linbit.drbdmanage.security.SecurityDbFields.VW_TYPES_LOAD;
 import static com.linbit.drbdmanage.security.SecurityDbFields.VW_TYPE_RULES_LOAD;
 
 import static com.linbit.drbdmanage.security.SecurityDbFields.IDENTITY_NAME;
-import static com.linbit.drbdmanage.security.SecurityDbFields.CRT_IDENTITY_NAME;
-import static com.linbit.drbdmanage.security.SecurityDbFields.OWNER_ROLE_NAME;
-import static com.linbit.drbdmanage.security.SecurityDbFields.SEC_TYPE_NAME;
-import static com.linbit.drbdmanage.security.SecurityDbFields.OBJECT_PATH;
 import static com.linbit.drbdmanage.security.SecurityDbFields.ID_ENABLED;
 import static com.linbit.drbdmanage.security.SecurityDbFields.ID_LOCKED;
 import static com.linbit.drbdmanage.security.SecurityDbFields.PASS_SALT;
 import static com.linbit.drbdmanage.security.SecurityDbFields.PASS_HASH;
 import static com.linbit.drbdmanage.security.SecurityDbFields.ROLE_NAME;
 import static com.linbit.drbdmanage.security.SecurityDbFields.DOMAIN_NAME;
-import static com.linbit.drbdmanage.security.SecurityDbFields.ACCESS_TYPE;
-
 import static com.linbit.drbdmanage.security.SecurityDbFields.CONF_KEY;
 import static com.linbit.drbdmanage.security.SecurityDbFields.CONF_VALUE;
 
 import static com.linbit.drbdmanage.security.SecurityDbFields.KEY_SEC_LEVEL;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -77,22 +72,19 @@ public class DbDerbyPersistence implements DbAccessor
     private static final String SLCT_TE_RULES =
         "SELECT * FROM " + VW_TYPE_RULES_LOAD;
 
-    private static final String SLCT_OBJ_PROT =
-        "SELECT " + OBJECT_PATH + ", " + CRT_IDENTITY_NAME + ", " + OWNER_ROLE_NAME +
-        ", " + SEC_TYPE_NAME +
-        " FROM " + TBL_OBJ_PROT +
-        " WHERE OBJECT_PATH = ?";
-
-    private static final String SLCT_ACL_ENTRIES =
-        "SELECT " + OBJECT_PATH + ", " + ROLE_NAME + ", " + ACCESS_TYPE +
-        " FROM " + TBL_ACL_ENTRIES +
-        " WHERE " + OBJECT_PATH + " = ?";
-
-
     private static final String SLCT_SEC_LEVEL =
         "SELECT " + CONF_KEY + ", " + CONF_VALUE +
-        " FROM " + TBL_ACL_ENTRIES +
+        " FROM " + TBL_ACL_MAP +
         " WHERE " + CONF_KEY + " = " + KEY_SEC_LEVEL;
+
+    private final Map<String, ObjectProtectionDatabaseDriver> objProtDriverCache = new HashMap<>();
+
+    private AccessContext dbCtx;
+
+    public DbDerbyPersistence(AccessContext privCtx)
+    {
+        dbCtx = privCtx;
+    }
 
     @Override
     public ResultSet getSignInEntry(Connection dbConn, IdentityName idName) throws SQLException
@@ -146,21 +138,21 @@ public class DbDerbyPersistence implements DbAccessor
     }
 
     @Override
-    public ResultSet loadObjectProtection(Connection dbConn, String objectPath) throws SQLException
-    {
-        return dbQuery(dbConn, SLCT_OBJ_PROT, new String[] { objectPath });
-    }
-
-    @Override
-    public ResultSet loadAclEntries(Connection dbConn, String objectPath) throws SQLException
-    {
-        return dbQuery(dbConn, SLCT_ACL_ENTRIES, new String[] { objectPath });
-    }
-
-    @Override
     public ResultSet loadSecurityLevel(Connection dbConn) throws SQLException
     {
         return dbQuery(dbConn, SLCT_SEC_LEVEL);
+    }
+
+    @Override
+    public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objectPath)
+    {
+        ObjectProtectionDatabaseDriver driver = objProtDriverCache.get(objectPath);
+        if (driver == null)
+        {
+            driver = new ObjectProtectionDerbyDriver(dbCtx, objectPath);
+            objProtDriverCache.put(objectPath, driver);
+        }
+        return driver;
     }
 
     private ResultSet dbQuery(Connection dbConn, String sqlQuery) throws SQLException

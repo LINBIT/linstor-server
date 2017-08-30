@@ -1,6 +1,17 @@
 package com.linbit.drbdmanage;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.TransactionMgr;
+import com.linbit.TransactionObject;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -9,88 +20,183 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
-import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-import com.linbit.drbdmanage.stateflags.FlagsPersistenceBase;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
-import java.sql.Connection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class NodeData implements Node
+public class NodeData extends BaseTransactionObject implements Node
 {
     // Object identifier
-    private UUID objId;
+    private final UUID objId;
 
     // Node name
-    private NodeName clNodeName;
-
-    // Node type
-    private Set<NodeType> nodeTypeList;
-
-    // List of resources assigned to this cluster node
-    private Map<ResourceName, Resource> resourceMap;
-
-    // List of network interfaces used for replication on this cluster node
-    private Map<NetInterfaceName, NetInterface> netInterfaceMap;
-
-    // List of storage pools
-    private Map<StorPoolName, StorPool> storPoolMap;
+    private final NodeName clNodeName;
 
     // State flags
-    private StateFlags<NodeFlags> flags;
+    private final StateFlags<NodeFlag> flags;
+
+    // Node type
+    private final StateFlags<NodeType> nodeTypeFlags;
+
+    // List of resources assigned to this cluster node
+    private final Map<ResourceName, Resource> resourceMap;
+
+    // List of network interfaces used for replication on this cluster node
+    private final Map<NetInterfaceName, NetInterface> netInterfaceMap;
+
+    // List of storage pools
+    private final Map<StorPoolName, StorPool> storPoolMap;
 
     // Access controls for this object
-    private ObjectProtection objProt;
+    private final ObjectProtection objProt;
 
     // Properties container for this node
-    private Props nodeProps;
+    private final Props nodeProps;
 
-    NodeData(AccessContext accCtx, NodeName nameRef, Set<NodeType> types, SerialGenerator srlGen)
+    private final NodeDataDatabaseDriver dbDriver;
+
+    private boolean deleted = false;
+
+    /*
+     * Only used by getInstance method
+     */
+    private NodeData(
+        AccessContext accCtx,
+        NodeName nameRef,
+        long initialTypes,
+        long initialFlags,
+        SerialGenerator srlGen,
+        TransactionMgr transMgr
+    )
+        throws SQLException, AccessDeniedException
+    {
+        this(
+            UUID.randomUUID(),
+            ObjectProtection.getInstance(
+                accCtx,
+                transMgr,
+                ObjectProtection.buildPath(nameRef),
+                true
+            ),
+            nameRef,
+            initialTypes,
+            initialFlags,
+            srlGen,
+            transMgr
+        );
+    }
+
+    /*
+     * Used by dbDrivers and tests
+     */
+    NodeData(
+        UUID uuidRef,
+        ObjectProtection objProtRef,
+        NodeName nameRef,
+        long initialTypes,
+        long initialFlags,
+        SerialGenerator srlGen,
+        TransactionMgr transMgr
+    )
         throws SQLException
     {
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
-        ErrorCheck.ctorNotNull(NodeData.class, NodeType.class, types);
-        objId = UUID.randomUUID();
+
+        objId = uuidRef;
+        objProt = objProtRef;
         clNodeName = nameRef;
-        nodeTypeList = new TreeSet<>();
-        nodeTypeList.addAll(types);
-        // Default to creating an AUXILIARY type node
-        if (nodeTypeList.isEmpty())
-        {
-            nodeTypeList.add(NodeType.AUXILIARY);
-        }
+        dbDriver = DrbdManage.getNodeDataDatabaseDriver(nameRef);
+
         resourceMap = new TreeMap<>();
         netInterfaceMap = new TreeMap<>();
         storPoolMap = new TreeMap<>();
-        nodeProps = SerialPropsContainer.createRootContainer(srlGen);
-        objProt = new ObjectProtection(accCtx);
+
+        nodeProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
+
+        flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence(), initialFlags);
+        if (initialTypes == 0)
         {
-            NodeFlagsPersistence flagsPersistence = new NodeFlagsPersistence();
-            flags = new NodeFlagsImpl(objProt, flagsPersistence);
-            flagsPersistence.setStateFlagsRef(flags);
+            // Default to creating an AUXILIARY type node
+            initialTypes = NodeType.AUXILIARY.getFlagValue();
         }
+        nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence(), initialTypes);
+
+        transObjs = Arrays.<TransactionObject> asList(
+            flags,
+            nodeTypeFlags,
+            objProt,
+            nodeProps
+        );
+
+        if (transMgr != null)
+        {
+            setConnection(transMgr);
+        }
+    }
+
+    public static NodeData getInstance(
+        AccessContext accCtx,
+        NodeName nameRef,
+        NodeType[] types,
+        NodeFlag[] flags,
+        SerialGenerator srlGen,
+        TransactionMgr transMgr,
+        boolean createIfNotExists
+    )
+        throws SQLException, AccessDeniedException
+    {
+        NodeData nodeData = null;
+
+        NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver(nameRef);
+        if (transMgr != null)
+        {
+            nodeData = dbDriver.load(transMgr.dbCon, srlGen, transMgr);
+        }
+
+        if (nodeData != null)
+        {
+            nodeData.objProt.requireAccess(accCtx, AccessType.CONTROL);
+            nodeData.setConnection(transMgr);
+        }
+        else
+        if (createIfNotExists)
+        {
+            nodeData = new NodeData(
+                accCtx,
+                nameRef,
+                StateFlagsBits.getMask(types),
+                StateFlagsBits.getMask(flags),
+                srlGen,
+                transMgr
+            );
+            if (transMgr != null)
+            {
+                dbDriver.create(transMgr.dbCon, nodeData);
+            }
+        }
+
+        if (nodeData != null)
+        {
+            nodeData.initialized();
+        }
+        return nodeData;
     }
 
     @Override
     public UUID getUuid()
     {
+        checkDeleted();
         return objId;
     }
 
     @Override
     public NodeName getName()
     {
+        checkDeleted();
         return clNodeName;
     }
 
@@ -98,6 +204,7 @@ public class NodeData implements Node
     public Resource getResource(AccessContext accCtx, ResourceName resName)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return resourceMap.get(resName);
     }
@@ -105,6 +212,7 @@ public class NodeData implements Node
     @Override
     public ObjectProtection getObjProt()
     {
+        checkDeleted();
         return objProt;
     }
 
@@ -112,29 +220,33 @@ public class NodeData implements Node
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         return PropsAccess.secureGetProps(accCtx, objProt, nodeProps);
     }
 
-    @Override
-    public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.put(resRef.getDefinition().getName(), resRef);
     }
 
-    @Override
-    public void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.remove(resRef.getDefinition().getName());
+        // TODO: gh - if a resource is removed from the map, should we "invalidate" the resource?
+        // should we also update the database to remove the resource from the db?
     }
 
     @Override
     public Iterator<Resource> iterateResources(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return resourceMap.values().iterator();
@@ -143,22 +255,23 @@ public class NodeData implements Node
     @Override
     public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return netInterfaceMap.get(niName);
     }
 
-    @Override
-    public void addNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
+    void addNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         netInterfaceMap.put(niRef.getName(), niRef);
     }
 
-    @Override
-    public void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
+    void removeNetInterface(AccessContext accCtx, NetInterface niRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         netInterfaceMap.remove(niRef.getName());
@@ -168,6 +281,7 @@ public class NodeData implements Node
     public Iterator<NetInterface> iterateNetInterfaces(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return netInterfaceMap.values().iterator();
@@ -177,24 +291,25 @@ public class NodeData implements Node
     public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return storPoolMap.get(poolName);
     }
 
-    @Override
-    public void addStorPool(AccessContext accCtx, StorPool pool)
+    void addStorPool(AccessContext accCtx, StorPool pool)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         storPoolMap.put(pool.getName(), pool);
     }
 
-    @Override
-    public void removeStorPool(AccessContext accCtx, StorPool pool)
+    void removeStorPool(AccessContext accCtx, StorPool pool)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         storPoolMap.remove(pool.getName());
@@ -204,49 +319,71 @@ public class NodeData implements Node
     public Iterator<StorPool> iterateStorPools(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         return storPoolMap.values().iterator();
     }
 
     @Override
-    public Iterator<NodeType> iterateNodeTypes(AccessContext accCtx)
+    public long getNodeTypes(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        return Collections.unmodifiableSet(nodeTypeList).iterator();
+        return nodeTypeFlags.getFlagsBits(accCtx);
     }
 
     @Override
     public boolean hasNodeType(AccessContext accCtx, NodeType reqType)
         throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        return (nodeTypeList.contains(reqType));
+        return nodeTypeFlags.isSet(accCtx, reqType);
     }
 
     @Override
-    public StateFlags<NodeFlags> getFlags()
+    public StateFlags<NodeFlag> getFlags()
     {
+        checkDeleted();
         return flags;
     }
 
-    private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlags>
+    @Override
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
     {
-        NodeFlagsImpl(ObjectProtection objProtRef, NodeFlagsPersistence persistenceRef)
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+        dbDriver.delete(dbCon);
+        deleted = true;
+    }
+
+    private void checkDeleted()
+    {
+        if (deleted)
         {
-            super(objProtRef, StateFlagsBits.getMask(NodeFlags.ALL_FLAGS), persistenceRef);
+            throw new ImplementationError("Access to deleted node", null);
         }
     }
 
-    private static final class NodeFlagsPersistence extends FlagsPersistenceBase implements StateFlagsPersistence
+    private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlag>
     {
-        @Override
-        public void persist(Connection dbConn) throws SQLException
+        NodeFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef, long initialFlags)
         {
-            // TODO: Update the state flags in the database
+            super(objProtRef, StateFlagsBits.getMask(NodeFlag.values()), persistenceRef, initialFlags);
+        }
+    }
+
+    private static final class NodeTypesFlagsImpl extends StateFlagsBits<NodeType>
+    {
+        NodeTypesFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef, long initialFlags)
+        {
+            super(objProtRef, StateFlagsBits.getMask(NodeType.values()), persistenceRef, initialFlags);
         }
     }
 }

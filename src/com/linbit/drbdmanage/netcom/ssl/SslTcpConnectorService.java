@@ -47,7 +47,7 @@ public class SslTcpConnectorService extends TcpConnectorService
     {
         super(coreSvcsRef, msgProcessorRef, peerAccCtxRef, connObserverRef);
         sslCtx = SSLContext.getInstance(sslProtocol);
-        initialize(sslProtocol, keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
+        initialize(keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
     }
 
     public SslTcpConnectorService(
@@ -68,11 +68,10 @@ public class SslTcpConnectorService extends TcpConnectorService
     {
         super(coreSvcsRef, msgProcessorRef, bindAddress, peerAccCtxRef, connObserverRef);
         sslCtx = SSLContext.getInstance(sslProtocol);
-        initialize(sslProtocol, keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
+        initialize(keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
     }
 
     private void initialize(
-        final String sslProtocol,
         final String keyStoreFile,
         final char[] keyStorePasswd,
         final char[] keyPasswd,
@@ -85,7 +84,7 @@ public class SslTcpConnectorService extends TcpConnectorService
     {
         try
         {
-            serviceInstanceName = new ServiceName("SSL"+serviceInstanceName.value);
+            serviceInstanceName = new ServiceName("SSL"+serviceInstanceName.displayValue);
         }
         catch (InvalidNameException nameExc)
         {
@@ -106,18 +105,6 @@ public class SslTcpConnectorService extends TcpConnectorService
     }
 
     @Override
-    protected void establishConnection(final SelectionKey key) throws IOException
-    {
-        super.establishConnection(key);
-        // this method should only be called for outgoing connections
-        // thus, we have to be currently in client mode
-        key.interestOps(SelectionKey.OP_WRITE);
-        // SocketChannel channel = (SocketChannel) key.channel();
-        // SslTcpConnectorPeer peer = (SslTcpConnectorPeer) key.attachment();
-        // peer.encryptConnection(channel);
-    }
-
-    @Override
     protected SslTcpConnectorPeer createTcpConnectorPeer(
         final String peerId,
         final SelectionKey connKey,
@@ -129,7 +116,9 @@ public class SslTcpConnectorService extends TcpConnectorService
             InetSocketAddress address = null;
             if (outgoing)
             {
+                @SuppressWarnings("resource")
                 SocketChannel channel = (SocketChannel) connKey.channel();
+                @SuppressWarnings("resource")
                 Socket socket = channel.socket();
                 String host = socket.getInetAddress().getHostAddress();
                 int port = socket.getPort();

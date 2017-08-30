@@ -115,7 +115,7 @@ public final class StdErrorReporter implements ErrorReporter
                 }
 
 
-                reportExceptionDetails(output, errorInfo, loopCtr == 0 ? contextInfo : null);
+                reportExceptionDetails(output, curErrorInfo, loopCtr == 0 ? contextInfo : null);
 
                 ++loopCtr;
             }

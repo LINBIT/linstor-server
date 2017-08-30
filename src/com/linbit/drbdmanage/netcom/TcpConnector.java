@@ -16,6 +16,8 @@ public interface TcpConnector extends SystemService
     //       be created by the TcpConnector implementation
     Peer connect(InetSocketAddress address) throws IOException;
 
+    void reconnect(Peer peer) throws IOException;
+
     void closeConnection(TcpConnectorPeer peerObj);
 
     /**

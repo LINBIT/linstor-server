@@ -254,11 +254,12 @@ public class SecurityTypeTest
                     { true, false },                            // has PRIV_MAC_OVRD
                     { userSecDomain, someOtherUserSecDomain },  // source domain
                     { userSecDomain, someOtherUserSecDomain },  // target domain
-                    { null, VIEW, USE, CHANGE, CONTROL },       // requested access types
+                    { VIEW, USE, CHANGE, CONTROL },             // requested access types
                     { null, VIEW, USE, CHANGE, CONTROL }        // granted access types
                 },
                 iterateSecLevel,
-                rootCtx, skipColumns
+                rootCtx,
+                skipColumns
             );
         }
 

@@ -27,6 +27,8 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "TCP/IP network communications service";
 
+    private static final Object syncObj = new Object();
+
     protected ServiceName serviceInstanceName;
 
     private static final long REINIT_THROTTLE_TIME = 3000L;
@@ -163,8 +165,6 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         bindAddress = bindAddressRef;
     }
 
-    Object syncObj = new Object();
-
     @Override
     public Peer connect(InetSocketAddress address) throws IOException
     {
@@ -203,6 +203,37 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     }
 
     @Override
+    public void reconnect(Peer peer) throws IOException
+    {
+        peer.closeConnection();
+        final String[] split = peer.getId().split(":");
+        final String host = split[0];
+        final int port = Integer.parseInt(split[1]);
+
+        final InetSocketAddress address = new InetSocketAddress(host, port);
+
+        final SocketChannel socketChannel = SocketChannel.open();
+        socketChannel.configureBlocking(false);
+        final SelectionKey connKey;
+        synchronized (syncObj)
+        {
+            serverSelector.wakeup();
+            final boolean connected = socketChannel.connect(address);
+            if (connected)
+            {
+                connKey = socketChannel.register(serverSelector, 0);
+                peer.connectionEstablished();
+            }
+            else
+            {
+                connKey = socketChannel.register(serverSelector, OP_CONNECT);
+            }
+            connKey.attach(peer);
+            ((TcpConnectorPeer) peer).setSelectionKey(connKey);
+        }
+    }
+
+    @Override
     public synchronized void start()
         throws SystemServiceStartException
     {
@@ -216,7 +247,8 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
             {
                 String descriptionText = String.format(
                     "Initialization of the %s service instance '%s' failed.",
-                    TcpConnectorService.class.getName(), serviceInstanceName
+                    TcpConnectorService.class.getName(),
+                    serviceInstanceName.displayValue
                 );
                 throw new SystemServiceStartException(
                     descriptionText,
@@ -291,11 +323,13 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                 }
 
                 Iterator<SelectionKey> keysIter = serverSelector.selectedKeys().iterator();
+
                 while (keysIter.hasNext())
                 {
                     SelectionKey currentKey = keysIter.next();
                     keysIter.remove();
                     int ops = currentKey.readyOps();
+
                     if ((ops & OP_READ) != 0)
                     {
                         try
@@ -332,7 +366,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                             // Anyway, the reason would be an implementation flaw of some
                             // kind, therefore, log this error and then treat the connection's
                             // state as a protocol error and close the connection.
-                            coreSvcs.getErrorReporter().reportError(connExc);
+                            coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
                             closeConnection(currentKey);
                         }
                         catch (IllegalMessageStateException msgStateExc)
@@ -350,6 +384,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                         {
                             // Protocol error - I/O error while reading a message
                             // Close the connection
+                            coreSvcs.getErrorReporter().reportError(ioExc);
                             closeConnection(currentKey);
                         }
                     }
@@ -430,7 +465,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                             // Anyway, the reason would be an implementation flaw of some
                             // kind, therefore, log this error and then treat the connection's
                             // state as a protocol error and close the connection.
-                            coreSvcs.getErrorReporter().reportError(connExc);
+                            coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
                             closeConnection(currentKey);
                         }
                         catch (IllegalMessageStateException msgStateExc)
@@ -494,7 +529,6 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                 break;
             }
         }
-
         uninitialize();
 
         synchronized (this)
@@ -665,15 +699,29 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     protected void establishConnection(SelectionKey currentKey)
         throws IOException
     {
-        SocketChannel channel = (SocketChannel) currentKey.channel();
-        channel.finishConnect();
+        // first, remove OP_Connect interest (fixes an immediate return of selector.select()
+        // with no ready keys bug)
         currentKey.interestOps(0); // when controller wants to send a message, this will be changed to
         // OP_WRITE automatically
-        Peer peer = (Peer) currentKey.attachment();
-        peer.connectionEstablished();
-        if (connObserver != null)
+
+        @SuppressWarnings("resource")
+        SocketChannel channel = (SocketChannel) currentKey.channel();
+        try
         {
-            connObserver.outboundConnectionEstablished(peer);
+            channel.finishConnect();
+            Peer peer = (Peer) currentKey.attachment();
+            peer.connectionEstablished();
+            if (connObserver != null)
+            {
+                connObserver.outboundConnectionEstablished(peer);
+            }
+        }
+        catch (ConnectException conExc)
+        {
+            if (conExc.getMessage().equals("Connection refused"))
+            {
+                // ignore, Reconnector will retry later
+            }
         }
     }
 

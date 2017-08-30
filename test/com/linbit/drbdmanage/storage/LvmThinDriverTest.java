@@ -9,12 +9,10 @@ import static org.junit.Assert.assertTrue;
 import java.util.HashSet;
 import java.util.Map;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.extproc.utils.TestExtCmd;
 import com.linbit.extproc.utils.TestExtCmd.Command;
 import com.linbit.extproc.utils.TestExtCmd.TestOutputData;
 
@@ -35,14 +33,6 @@ public class LvmThinDriverTest extends LvmDriverTest
     public LvmThinDriverTest(DriverFactory driverFactory)
     {
         super(driverFactory);
-    }
-
-    @Override
-    @Before
-    public void setUp() throws Exception
-    {
-        ec = new TestExtCmd();
-        driver = new LvmThinDriver(ec);
     }
 
     @Override

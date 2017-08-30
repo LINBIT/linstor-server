@@ -1,6 +1,9 @@
 package com.linbit.drbdmanage.propscon;
 
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.DrbdSqlRuntimeException;
+import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -16,35 +19,18 @@ public class SerialPropsContainer extends PropsContainer
 {
     private SerialGenerator serialGen;
 
-    public static SerialPropsContainer createRootContainer() throws SQLException
-    {
-        return createRootContainer((SerialGenerator) null, null);
-    }
-
-    public static SerialPropsContainer createRootContainer(PropsConDatabaseDriver dbDriver) throws SQLException
-    {
-        return createRootContainer(null, dbDriver);
-    }
-
-    public static SerialPropsContainer createRootContainer(SerialGenerator sGen) throws SQLException
-    {
-        return createRootContainer(sGen, null);
-    }
-
-    public static SerialPropsContainer createRootContainer(SerialGenerator sGen, PropsConDatabaseDriver dbDriver)
+    public static SerialPropsContainer getInstance(
+        PropsConDatabaseDriver propsConDriver, // noop driver on satellite
+        TransactionMgr transMgr, // null on satellite
+        SerialGenerator srlGen // can be null on both
+    )
         throws SQLException
     {
-        SerialPropsContainer con = null;
+        SerialPropsContainer container;
+
         try
         {
-            if (sGen == null)
-            {
-                con = new SerialPropsContainer();
-            }
-            else
-            {
-                con = new SerialPropsContainer(sGen);
-            }
+            container = new SerialPropsContainer(srlGen);
         }
         catch (InvalidKeyException keyExc)
         {
@@ -55,48 +41,46 @@ public class SerialPropsContainer extends PropsContainer
                 keyExc
             );
         }
-        con.dbDriver = dbDriver;
-        return con;
-    }
 
-    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver) throws SQLException, InvalidKeyException
-    {
-        return loadContainer(dbDriver, null);
-    }
+        container.dbDriver = propsConDriver;
 
-    public static SerialPropsContainer loadContainer(PropsConDatabaseDriver dbDriver, SerialGenerator sGen) throws SQLException, InvalidKeyException
-    {
-        SerialPropsContainer container = createRootContainer(sGen);
-        container.dbDriver = dbDriver;
-        Map<String, String> loadedProps = dbDriver.load();
-
-        // first, restore the properties
-
-        // we should skip the .setAllProps method as that triggers a db re-persist
-        for (Entry<String, String> entry : loadedProps.entrySet())
+        if (transMgr != null)
         {
-            String key = entry.getKey();
-            String value = entry.getValue();
+            Map<String, String> loadedProps = propsConDriver.load(transMgr.dbCon);
 
-            SerialPropsContainer targetContainer = container;
-            int idx = key.lastIndexOf("/");
-            if (idx != -1)
+            // we should skip the .setAllProps method as that triggers a db re-persist
+            try
             {
-                targetContainer = (SerialPropsContainer) container.ensureNamespaceExists(key.substring(0, idx));
+                for (Entry<String, String> entry : loadedProps.entrySet())
+                {
+                    String key = entry.getKey();
+                    String value = entry.getValue();
+
+                    SerialPropsContainer targetContainer = container;
+                    int idx = key.lastIndexOf("/");
+                    if (idx != -1)
+                    {
+                        targetContainer = (SerialPropsContainer) container.ensureNamespaceExists(key.substring(0, idx));
+                    }
+                    String oldValue = targetContainer.getRawPropMap().put(key, value);
+                    if (oldValue == null)
+                    {
+                        targetContainer.modifySize(1);
+                    }
+                }
             }
-            String oldValue = targetContainer.getRawPropMap().put(key, value);
-            if (oldValue == null)
+            catch (InvalidKeyException invalidKeyExc)
             {
-                targetContainer.modifySize(1);
+                throw new DrbdSqlRuntimeException(
+                    "SerialPropsContainer could not be loaded as a persisted key has been changed in the database to an invalid value.",
+                    invalidKeyExc
+                );
             }
         }
-        return container;
-    }
 
-    SerialPropsContainer()
-        throws InvalidKeyException, SQLException
-    {
-        this(null, null, null);
+        container.initialized();
+
+        return container;
     }
 
     SerialPropsContainer(SerialGenerator sGen)

@@ -1,47 +1,167 @@
 package com.linbit.drbdmanage.security;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.TransactionMgr;
+import com.linbit.TransactionObject;
+import com.linbit.TransactionSimpleObject;
+import com.linbit.drbdmanage.BaseTransactionObject;
+import com.linbit.drbdmanage.Controller;
+import com.linbit.drbdmanage.DrbdManage;
+import com.linbit.drbdmanage.NetInterfaceName;
+import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.Satellite;
+import com.linbit.drbdmanage.StorPoolName;
 
 /**
  * Security protection for drbdmanageNG object
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class ObjectProtection
+public final class ObjectProtection extends BaseTransactionObject
 {
+    private static final String PATH_SEPARATOR               = "/";
+    private static final String PATH_RESOURCES               = "/resources/";
+    private static final String PATH_RESOURCE_DEFINITIONS    = "/resourcedefinitions/";
+    private static final String PATH_NODES                   = "/nodes/";
+    private static final String PATH_NET_INTERFACES          = "/netinterfaces/";
+    private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
+    private static final String PATH_STOR_POOLS              = "/storpools/";
+    private static final String PATH_CONNECTION_DEFINITIONS  = "/connectiondefinitions/";
+
+    private static final String PATH_SYS                     = "/sys/";
+    private static final String PATH_CONTROLLER              = PATH_SYS + "controller/";
+    private static final String PATH_SATELLITE               = PATH_SYS + "satellite/";
+
     public static final String DEFAULT_SECTYPE_NAME = "default";
+
 
     // Identity that created the object
     //
     // The creator's identity may change if the
     // account that was used to create the object
     // is deleted
-    private Identity objectCreator;
+    private TransactionSimpleObject<Identity> objectCreator;
 
     // Role that has owner rights on the object
-    private Role objectOwner;
+    private TransactionSimpleObject<Role> objectOwner;
 
     // Access control list for the object
     private final AccessControlList objectAcl;
+    private Map<Role, AccessControlEntry> cachedAcl;
 
     // Security type for the object
-    private SecurityType objectType;
+    private TransactionSimpleObject<SecurityType> objectType;
+
+    // Database driver
+    private ObjectProtectionDatabaseDriver dbDriver;
+
+    // Is this object already persisted or not
+    private boolean persisted;
+
+    /**
+     * Loads an ObjectProtection instance from the database.
+     *
+     * The {@code accCtx} parameter is only used when no ObjectProtection was found in the
+     * database and the {@code createIfNotExists} parameter is set to true
+     *
+     * @param accCtx
+     * @param transMgr
+     * @param objPath
+     * @param createIfNotExists
+     * @return
+     * @throws SQLException
+     * @throws AccessDeniedException
+     */
+    public static ObjectProtection getInstance(AccessContext accCtx, TransactionMgr transMgr, String objPath, boolean createIfNotExists)
+        throws SQLException, AccessDeniedException
+    {
+        ObjectProtectionDatabaseDriver dbDriver = DrbdManage.getObjectProtectionDatabaseDriver(objPath);
+        ObjectProtection objProt = null;
+
+        if (transMgr != null)
+        {
+            objProt = dbDriver.loadObjectProtection(transMgr.dbCon);
+        }
+
+        if (objProt == null && createIfNotExists)
+        {
+            objProt = new ObjectProtection(accCtx, dbDriver);
+            if (transMgr != null)
+            {
+                dbDriver.insertOp(transMgr.dbCon, objProt);
+            }
+        }
+
+        if (objProt != null)
+        {
+            objProt.requireAccess(accCtx, AccessType.CONTROL);
+            objProt.dbDriver = dbDriver;
+
+            if (transMgr == null)
+            {
+                // satellite
+                objProt.persisted = false;
+                objProt.dbCon = null;
+            }
+            else
+            {
+                transMgr.register(objProt);
+                objProt.dbCon = transMgr.dbCon;
+                objProt.persisted = true;
+            }
+
+            objProt.initialized();
+        }
+
+        return objProt;
+    }
 
     /**
      * Creates an ObjectProtection instance for a newly created object
      *
      * @param accCtx The object creator's access context
+     * @param driver The DatabaseDriver. Can be null for temporary objects
+     * @throws SQLException
      */
-    public ObjectProtection(AccessContext accCtx)
+    ObjectProtection(AccessContext accCtx, ObjectProtectionDatabaseDriver driver)
     {
         ErrorCheck.ctorNotNull(ObjectProtection.class, AccessContext.class, accCtx);
 
-        objectCreator = accCtx.subjectId;
-        objectOwner = accCtx.subjectRole;
+        dbDriver = driver;
+
+        SingleColumnDatabaseDriver<Identity> idDriver = null;
+        SingleColumnDatabaseDriver<Role> roleDriver = null;
+        SingleColumnDatabaseDriver<SecurityType> secTypeDriver = null;
+
+        if (driver != null)
+        {
+            idDriver = driver.getIdentityDatabaseDrier();
+            roleDriver = driver.getRoleDatabaseDriver();
+            secTypeDriver = driver.getSecurityTypeDriver();
+        }
+
+        objectCreator = new TransactionSimpleObject<>(accCtx.subjectId, idDriver);
+        objectOwner = new TransactionSimpleObject<>(accCtx.subjectRole, roleDriver);
+        objectType = new TransactionSimpleObject<>(accCtx.subjectDomain, secTypeDriver);
         objectAcl = new AccessControlList();
-        objectType = accCtx.subjectDomain;
+        cachedAcl = new HashMap<>();
+
+        transObjs = Arrays.<TransactionObject>asList(
+            objectCreator,
+            objectOwner,
+            objectType
+        );
     }
+
 
     /**
      * Check whether a subject can be granted the requested level of access
@@ -54,7 +174,7 @@ public final class ObjectProtection
     public void requireAccess(AccessContext context, AccessType requested)
         throws AccessDeniedException
     {
-        objectType.requireAccess(context, requested);
+        objectType.get().requireAccess(context, requested);
         objectAcl.requireAccess(context, requested);
     }
 
@@ -69,7 +189,7 @@ public final class ObjectProtection
     {
         AccessType result = null;
         {
-            AccessType macAccess = objectType.queryAccess(context);
+            AccessType macAccess = objectType.get().queryAccess(context);
             AccessType rbacAccess = objectAcl.queryAccess(context);
 
             // Determine the level of access that is allowed by both security components
@@ -80,28 +200,32 @@ public final class ObjectProtection
 
     public Identity getCreator()
     {
-        return objectCreator;
+        return objectCreator.get();
     }
 
     public void resetCreator(AccessContext context)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         PrivilegeSet privs = context.getEffectivePrivs();
         privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
-        objectCreator = Identity.SYSTEM_ID;
+        objectCreator.set(Identity.SYSTEM_ID);
+
+        updateOp();
     }
 
     public Role getOwner()
     {
-        return objectOwner;
+        return objectOwner.get();
     }
 
     public void setOwner(AccessContext context, Role newOwner)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         PrivilegeSet privs = context.getEffectivePrivs();
         privs.requirePrivileges(Privilege.PRIV_OBJ_OWNER);
-        objectOwner = newOwner;
+        objectOwner.set(newOwner);
+
+        updateOp();
     }
 
     public AccessControlList getAcl()
@@ -111,11 +235,11 @@ public final class ObjectProtection
 
     public SecurityType getSecurityType()
     {
-        return objectType;
+        return objectType.get();
     }
 
     public void setSecurityType(AccessContext context, SecurityType newSecType)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         SecurityLevel globalSecLevel = SecurityLevel.get();
         switch (globalSecLevel)
@@ -134,14 +258,16 @@ public final class ObjectProtection
                     null
                 );
         }
-        objectType = newSecType;
+        objectType.set(newSecType);
+
+        updateOp();
     }
 
     public void addAclEntry(AccessContext context, Role entryRole, AccessType grantedAccess)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
-        objectType.requireAccess(context, AccessType.CONTROL);
-        if (context.subjectRole != objectOwner)
+        objectType.get().requireAccess(context, AccessType.CONTROL);
+        if (context.subjectRole != objectOwner.get())
         {
             objectAcl.requireAccess(context, AccessType.CONTROL);
             // Only object owners or privileged users may change the access controls for the
@@ -168,14 +294,16 @@ public final class ObjectProtection
                 );
             }
         }
-        objectAcl.addEntry(entryRole, grantedAccess);
+        AccessControlEntry oldValue = objectAcl.addEntry(entryRole, grantedAccess);
+
+        setAcl(entryRole, grantedAccess, oldValue);
     }
 
     public void delAclEntry(AccessContext context, Role entryRole)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
-        objectType.requireAccess(context, AccessType.CONTROL);
-        if (context.subjectRole != objectOwner)
+        objectType.get().requireAccess(context, AccessType.CONTROL);
+        if (context.subjectRole != objectOwner.get())
         {
             objectAcl.requireAccess(context, AccessType.CONTROL);
             if (context.subjectRole == entryRole &&
@@ -200,6 +328,228 @@ public final class ObjectProtection
                 );
             }
         }
-        objectAcl.delEntry(entryRole);
+        AccessControlEntry oldEntry = objectAcl.delEntry(entryRole);
+        delAcl(entryRole, oldEntry);
+    }
+
+    @Override
+    public boolean isDirty()
+    {
+        return super.isDirty() || !cachedAcl.isEmpty();
+    }
+
+    @Override
+    public void commit()
+    {
+        super.commit();
+        cachedAcl.clear();
+    }
+
+    @Override
+    public void rollback()
+    {
+        super.rollback();
+
+        for (Entry<Role, AccessControlEntry> entry : cachedAcl.entrySet())
+        {
+            if (entry.getValue() == null)
+            {
+                objectAcl.delEntry(entry.getKey());
+            }
+            else
+            {
+                objectAcl.addEntry(entry.getKey(), entry.getValue().access);
+            }
+        }
+        cachedAcl.clear();
+    }
+
+    private void updateOp() throws SQLException
+    {
+        if (isInitialized() && dbCon != null)
+        {
+            if (!persisted)
+            {
+                dbDriver.insertOp(dbCon, this);
+                persisted = true;
+            }
+            else
+            {
+                dbDriver.updateOp(dbCon, this);
+            }
+        }
+    }
+
+    private void setAcl(Role entryRole, AccessType grantedAccess, AccessControlEntry oldEntry) throws SQLException
+    {
+        if (isInitialized())
+        {
+            if (dbCon != null)
+            {
+                if (!persisted)
+                {
+                    updateOp();
+                }
+
+                if (oldEntry == null)
+                {
+                    dbDriver.insertAcl(dbCon, entryRole, grantedAccess);
+                }
+                else
+                {
+                    dbDriver.updateAcl(dbCon, entryRole, grantedAccess);
+                }
+            }
+            if (!cachedAcl.containsKey(entryRole))
+            {
+                cachedAcl.put(entryRole, oldEntry);
+            }
+        }
+    }
+
+    private void delAcl(Role entryRole, AccessControlEntry oldEntry) throws SQLException
+    {
+        if (isInitialized())
+        {
+            if (dbCon != null)
+            {
+                if (!persisted)
+                {
+                    updateOp();
+                }
+
+                dbDriver.deleteAcl(dbCon, entryRole);
+            }
+            if (!cachedAcl.containsKey(entryRole))
+            {
+                cachedAcl.put(entryRole, oldEntry);
+            }
+        }
+    }
+
+    /**
+     * ObjProt-Path for Resources
+     *
+     * @param nodeName
+     * @param resDefName
+     * @return
+     */
+    public static String buildPath(NodeName nodeName, ResourceName resDefName)
+    {
+        return PATH_RESOURCES +
+            nodeName.value + PATH_SEPARATOR +
+            resDefName.value;
+    }
+
+    /**
+     * ObjProt-Path for ResourceDefinitions
+     *
+     * @param resDfnName
+     * @return
+     */
+    public static String buildPath(ResourceName resDfnName)
+    {
+        return PATH_RESOURCE_DEFINITIONS + resDfnName.value;
+    }
+
+    /**
+     * ObjProt-Path for Controller
+     *
+     * @param controller
+     * @param subPath
+     * @return
+     */
+    public static String buildPath(Controller controller, String subPath)
+    {
+        return PATH_CONTROLLER + subPath;
+    }
+
+    /**
+     * ObjProt-Path for satellite
+     *
+     * @param satellite
+     * @param subPath
+     * @return
+     */
+    public static String buildPath(Satellite satellite, String subPath)
+    {
+        return PATH_SATELLITE + subPath;
+    }
+
+    /**
+     * ObjProt-Path for NetInterfaces
+     *
+     * @param nodeName
+     * @param netName
+     * @return
+     */
+    public static String buildPath(NodeName nodeName, NetInterfaceName netName)
+    {
+        return PATH_NET_INTERFACES +
+            nodeName.value + PATH_SEPARATOR +
+            netName.value;
+    }
+
+    /**
+     * ObjProt-Path for Nodes
+     *
+     * @param nodeName
+     * @return
+     */
+    public static String buildPath(NodeName nodeName)
+    {
+        return PATH_NODES + nodeName.value;
+    }
+
+    /**
+     * ObjProt-Path for StorPoolDefinitions
+     *
+     * @param storPoolName
+     * @return
+     */
+    public static String buildPathSPD(StorPoolName storPoolName)
+    {
+        return PATH_STOR_POOL_DEFINITIONS + storPoolName.value;
+    }
+
+    /**
+     * ObjProt-Path for StorPools
+     *
+     * @param storPoolName
+     * @return
+     */
+    public static String buildPathSP(StorPoolName storPoolName)
+    {
+        return PATH_STOR_POOLS + storPoolName.value;
+    }
+
+    /**
+     * ObjProt-Path for ConnectionDefinitions
+     *
+     * @param resName
+     * @param sourceName
+     * @param targetName
+     * @return
+     */
+    public static String buildPath(ResourceName resName, NodeName sourceName, NodeName targetName)
+    {
+        NodeName source;
+        NodeName target;
+
+        if (sourceName.compareTo(targetName) < 0)
+        {
+            source = sourceName;
+            target = targetName;
+        }
+        else
+        {
+            source = targetName;
+            target = sourceName;
+        }
+
+        return PATH_CONNECTION_DEFINITIONS +
+            resName.value + PATH_SEPARATOR +
+            source.value + PATH_SEPARATOR +
+            target.value;
     }
 }

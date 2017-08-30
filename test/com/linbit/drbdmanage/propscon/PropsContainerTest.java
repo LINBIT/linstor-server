@@ -27,7 +27,7 @@ public class PropsContainerTest
     @Before
     public void setUp() throws Throwable
     {
-        root = PropsContainer.createRootContainer();
+        root = PropsContainer.getInstance(null, null);
 
         fillProps(root, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 
@@ -277,6 +277,8 @@ public class PropsContainerTest
         map.put("a/a2", "aa2");
         map.put("", "root");
         root.setAllProps(map, null);
+
+        root.commit();
 
         final Map<String, String> overrideMap = new HashMap<>();
         overrideMap.put("a", "overriddenA");
@@ -732,6 +734,7 @@ public class PropsContainerTest
         assertEquals(expectedEntry, actualEntry);
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetRemoveFromProps()
         throws Throwable
@@ -745,6 +748,7 @@ public class PropsContainerTest
         assertFalse(entrySet.contains(removedKey));
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetSize() throws Throwable
     {
@@ -785,6 +789,7 @@ public class PropsContainerTest
         assertFalse(entrySet.isEmpty());
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetContains()
     {
@@ -940,6 +945,7 @@ public class PropsContainerTest
         assertEquals(expectedEntries, entrySet);
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetContainsAll()
     {
@@ -1043,6 +1049,7 @@ public class PropsContainerTest
         }
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetRetainAll()
     {
@@ -1647,7 +1654,7 @@ public class PropsContainerTest
         clone.remove(FIRST_KEY + "0");
         assertFalse(map.equals(clone));
 
-        PropsContainer container = PropsContainer.createRootContainer();
+        PropsContainer container = PropsContainer.getInstance(null, null);
         fillProps(container, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         assertTrue(map.equals(container.map()));
     }

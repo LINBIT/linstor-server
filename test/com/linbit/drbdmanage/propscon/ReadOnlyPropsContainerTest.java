@@ -30,7 +30,7 @@ public class ReadOnlyPropsContainerTest
     @Before
     public void setUp() throws Throwable
     {
-        writableProp = PropsContainer.createRootContainer();
+        writableProp = PropsContainer.getInstance(null, null);
         roProp = new ReadOnlyProps(writableProp);
 
         fillProps(writableProp, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
@@ -333,6 +333,7 @@ public class ReadOnlyPropsContainerTest
         assertEquals(expectedEntry, actualEntry);
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetRemoveFromProps() throws Throwable
     {
@@ -377,6 +378,7 @@ public class ReadOnlyPropsContainerTest
         assertFalse(roEntrySet.isEmpty());
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetContains()
     {
@@ -462,6 +464,7 @@ public class ReadOnlyPropsContainerTest
         roEntrySet.remove(entryToRemove);
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEntrySetContainsAll()
     {
@@ -487,6 +490,7 @@ public class ReadOnlyPropsContainerTest
         roEntrySet.addAll(entriesToAdd);
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test(expected = UnsupportedOperationException.class)
     public void testEntrySetRetainAll()
     {
@@ -950,7 +954,7 @@ public class ReadOnlyPropsContainerTest
         clone.remove(FIRST_KEY+"0");
         assertFalse(roMap.equals(clone));
 
-        PropsContainer container = PropsContainer.createRootContainer();
+        PropsContainer container = PropsContainer.getInstance(null, null);
         fillProps(container, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         assertTrue(roMap.equals(container.map()));
     }

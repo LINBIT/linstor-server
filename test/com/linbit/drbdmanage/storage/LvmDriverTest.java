@@ -4,7 +4,6 @@ import static com.linbit.drbdmanage.storage.StorageConstants.*;
 import static com.linbit.drbdmanage.storage.LvmDriver.LVM_VGS_DEFAULT;
 import static com.linbit.drbdmanage.storage.LvmDriver.LVM_LVS_DEFAULT;
 import static com.linbit.drbdmanage.storage.LvmDriver.LVM_VOLUME_GROUP_DEFAULT;
-import static com.linbit.drbdmanage.storage.LvmDriver.LVM_CHANGE_DEFAULT;
 import static com.linbit.drbdmanage.storage.LvmDriver.LVM_CREATE_DEFAULT;
 import static com.linbit.drbdmanage.storage.LvmDriver.LVM_REMOVE_DEFAULT;
 import static com.linbit.extproc.utils.TestExtCmd.Command;
@@ -448,10 +447,10 @@ public class LvmDriverTest extends StorageTestUtils
         final boolean volumeExists)
     {
         final Command command = new Command(
-            LVM_CHANGE_DEFAULT,
+            lvmChangeDefault,
             "-ay",
             "-kn", "-K",
-            LVM_VOLUME_GROUP_DEFAULT + "/" + identifier);
+            lvmVolumeGroupDefault + "/" + identifier);
 
         final OutputData outData;
         if (volumeExists)
@@ -475,9 +474,9 @@ public class LvmDriverTest extends StorageTestUtils
         final boolean volumeExists)
     {
         final Command command = new Command(
-            LVM_CHANGE_DEFAULT,
+            lvmChangeDefault,
             "-an",
-            LVM_VOLUME_GROUP_DEFAULT + "/" + identifier);
+            lvmVolumeGroupDefault + "/" + identifier);
 
         final OutputData outData;
         if (volumeExists)

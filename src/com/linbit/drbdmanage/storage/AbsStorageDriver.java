@@ -10,19 +10,21 @@ import java.util.Map;
 
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ImplementationError;
 import com.linbit.NegativeTimeException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.drbdmanage.SatelliteCoreServices;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.fsevent.FsWatchTimeoutException;
 import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
+import com.linbit.fsevent.FsWatchTimeoutException;
 
 public abstract class AbsStorageDriver implements StorageDriver
 {
@@ -34,6 +36,7 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected ExtCmd extCommand;
     protected FileSystemWatch fileSystemWatch;
+    protected ErrorReporter errorReporter;
     protected long fileEventTimeout = FILE_EVENT_TIMEOUT_DEFAULT;
 
     protected int sizeAlignmentToleranceFactor = EXTENT_SIZE_ALIGN_TOLERANCE_DEFAULT;
@@ -43,6 +46,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     {
         extCommand = new ExtCmd(coreSvc.getTimer());
         fileSystemWatch = coreSvc.getFsWatch();
+        errorReporter = coreSvc.getErrorReporter();
     }
 
     @Override
@@ -66,8 +70,16 @@ public abstract class AbsStorageDriver implements StorageDriver
         final long extent = getExtentSize();
         if (size % extent != 0)
         {
-            // TODO: log that we are aligning the size
+            long origSize = size;
             size = ((size / extent) + 1) * extent; // rounding up needed for zfs
+            errorReporter.logInfo(
+                String.format(
+                    "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
+                    origSize,
+                    size,
+                    extent
+                )
+            );
         }
 
         MetaData.checkMinDrbdSizeNet(size);
@@ -75,10 +87,27 @@ public abstract class AbsStorageDriver implements StorageDriver
 
         String volumePath = null;
 
+        String[] command = getCreateCommand(identifier, size);
         try
         {
-            String[] command = getCreateCommand(identifier, size);
-            final OutputData output = extCommand.exec(command);
+            final OutputData output;
+            try
+            {
+                output = extCommand.exec(command);
+            }
+            catch (ChildProcessTimeoutException | IOException exc)
+            {
+                throw new StorageException(
+                    "Failed to create volume",
+                    String.format("Failed to create volume [%s] with size %d", identifier, size),
+                    (exc instanceof ChildProcessTimeoutException) ?
+                        "External command timed out" :
+                        "External command threw an IOException",
+                    null,
+                    String.format("External command: %s", glue(command, " ")),
+                    exc
+                );
+            }
 
             checkExitCode(output, command);
 
@@ -88,17 +117,62 @@ public abstract class AbsStorageDriver implements StorageDriver
             entryGroup.waitGroup(fileEventTimeout);
 
             final VolumeInfo info = getVolumeInfo(identifier);
-            volumePath = info.path;
+            volumePath = info.getPath();
         }
-        catch (ChildProcessTimeoutException | IOException | FsWatchTimeoutException |
-            NegativeTimeException | ValueOutOfRangeException | InterruptedException exc)
+        catch (NegativeTimeException negTimeExc)
         {
-            // TODO: Detailed error reporting
+            throw new ImplementationError(
+                "Negative waiting time was configured. " +
+                "The setConfiguration method should have rejected such a value",
+                negTimeExc
+            );
+        }
+        catch (ValueOutOfRangeException valRangeExc)
+        {
+            throw new ImplementationError(
+                "setConfigure method should have rejected a waiting time exceeding long-range (17. Aug. 292278994)",
+                valRangeExc
+            );
+        }
+        catch (InterruptedException interExc)
+        {
             throw new StorageException(
-                String.format("Could not create volume [%s] with size %d (kiB)",
-                    identifier,
-                    size
+                "Failed to verify volume creation",
+                String.format("Failed to verify the creation of volume [%s] with size %d", identifier, size),
+                "Verification of volume creation interrupted",
+                null,
+                String.format(
+                    "External command for creating volume executed, file watch listener registered for device [%s] to show up, " +
+                        "waiting for device to show up was interrupted",
+                    getExpectedVolumePath(identifier)
                 ),
+                interExc
+            );
+        }
+        catch (FsWatchTimeoutException exc)
+        {
+            throw new StorageException(
+                "Failed to verify volume creation",
+                String.format("Failed to verify the creation of volume [%s] with size %d", identifier, size),
+                "The volume didn't show up in the expected path",
+                null,
+                String.format(
+                    "External command for creating volume executed, file watch listener for device [%s] to show up timed out " +
+                        "after %d ms",
+                    getExpectedVolumePath(identifier),
+                    fileEventTimeout
+                ),
+                exc
+            );
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException(
+                "Failed to verify volume creation",
+                String.format("Failed to verify the creation of volume [%s] with size %d", identifier, size),
+                "IOException occured during registering a file watch listener",
+                null,
+                String.format("Could not watch path: %s", getExpectedVolumePath(identifier)),
                 exc
             );
         }
@@ -109,11 +183,29 @@ public abstract class AbsStorageDriver implements StorageDriver
     @Override
     public void deleteVolume(final String identifier) throws StorageException
     {
+        final String[] command = getDeleteCommand(identifier);
         try
         {
-            final String[] command = getDeleteCommand(identifier);
 
-            final OutputData output = extCommand.exec(command);
+            final OutputData output;
+
+            try
+            {
+                output = extCommand.exec(command);
+            }
+            catch (ChildProcessTimeoutException | IOException exc)
+            {
+                throw new StorageException(
+                    "Failed to delete volume",
+                    String.format("Failed to delete volume [%s]", identifier),
+                    (exc instanceof ChildProcessTimeoutException) ?
+                        "External command timed out" :
+                        "External command threw an IOException",
+                    null,
+                    String.format("External command: %s", glue(command, " ")),
+                    exc
+                );
+            }
 
             checkExitCode(output, command);
 
@@ -125,21 +217,69 @@ public abstract class AbsStorageDriver implements StorageDriver
         catch (NoSuchFileException noSuchFileExc)
         {
             // FIXME fileSystemWatch should be able to register on non-existent directories
+
             // following happend:
             // we successfully executed "lvremove -f pool/volume"
-            // however, the removed volume was the last volume in pool, thus lvm seems to
+            // however, if the removed volume was the last volume in pool, lvm seems to
             // remove /dev/pool also.
             // if we try to register to that (now non-existent) /dev/pool directory our DELETE event
             // we get a NoSuchFileException /dev/pool
             // however, as we tried, and succeeded in removing the volume, we can ignore this
             // exception for now
         }
-        catch (ChildProcessTimeoutException | IOException | FsWatchTimeoutException | NegativeTimeException |
-               ValueOutOfRangeException | InterruptedException exc)
+        catch (IOException exc)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
-                String.format("Could not remove volume [%s]", identifier), exc
+                "Failed to verify volume deletion",
+                String.format("Failed to verify deletion of volume [%s]", identifier),
+                "IOException occured during registering file watch event listener",
+                null,
+                String.format("Could not watch path: %s", getExpectedVolumePath(identifier)),
+                exc
+            );
+        }
+        catch (FsWatchTimeoutException exc)
+        {
+            throw new StorageException(
+                "Failed to verify volume deletion",
+                String.format("Failed to verify deletion of volume [%s]", identifier),
+                "Registerd file watch event listener timed out",
+                null,
+                String.format("External command executed and returned, but the device [%s] was " +
+                    "not removed after %d ms.",
+                    getExpectedVolumePath(identifier),
+                    fileEventTimeout
+                ),
+                exc
+            );
+        }
+        catch (NegativeTimeException exc)
+        {
+            throw new ImplementationError(
+                "Negative waiting time was configured. " +
+                "The setConfiguration method should have rejected such a value",
+                exc
+            );
+        }
+        catch (ValueOutOfRangeException exc)
+        {
+            throw new ImplementationError(
+                "setConfigure method should have rejected a waiting time exceeding long-range (17. Aug. 292278994)",
+                exc
+            );
+        }
+        catch (InterruptedException exc)
+        {
+            throw new StorageException(
+                "Failed to verify volume deletion",
+                String.format("Failed to verify deletion of volume [%s]", identifier),
+                "Waiting for device deletion interrupted",
+                null,
+                String.format("External command executed and returned, but the device [%s] was " +
+                    "not removed at the time of the interruption",
+                    getExpectedVolumePath(identifier)
+                ),
+                exc
             );
         }
     }
@@ -153,21 +293,32 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
         catch (MaxSizeException exc)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
-                String.format("Range to check [%d] is invalid", size), exc
+                "CheckVolume failed",
+                null,
+                String.format("The size to check [%d] exceeds the current maximum device size: %d KiB",
+                    size,
+                    MetaData.DRBD_MAX_kiB
+                ),
+                "Specify a valid size for check",
+                null
             );
         }
 
         final VolumeInfo info = getVolumeInfo(identifier);
 
-        if (info.size < size)
+        if (info.getSize() < size)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
+                "CheckVolume failed",
+                String.format("CheckVolume failed for volume [%s]", identifier),
+                "Volume does not have the required size",
+                null,
                 String.format(
-                    "Volume [%s] has less [%d] than specified [%d] size",
-                    identifier, info.size, size
+                    "Volume [%s] has size %d (KiB) but check required at least %d (KiB)",
+                    identifier,
+                    info.getSize(),
+                    size
                 )
             );
         }
@@ -176,13 +327,20 @@ public abstract class AbsStorageDriver implements StorageDriver
         final long floorSize = (size / extentSize) * extentSize;
 
         final long toleratedSize = floorSize + extentSize * sizeAlignmentToleranceFactor;
-        if (info.size > toleratedSize)
+        if (info.getSize() > toleratedSize)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
-                String.format("Volume [%s] is larger [%d] than tolerated [%d]",
+                "CheckVolume failed",
+                String.format("CheckVolume failed for volume [%s]", identifier),
+                "Volume is larger than tolerated",
+                String.format(
+                    "Note: it is possible to increase the tolerance factor. Configuration key: %s",
+                    StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY
+                ),
+                String.format(
+                    "Volume [%s] is larger size [%d] than tolerated [%d]",
                     identifier,
-                    info.size,
+                    info.getSize(),
                     toleratedSize
                 )
             );
@@ -193,14 +351,14 @@ public abstract class AbsStorageDriver implements StorageDriver
     public String getVolumePath(String identifier) throws StorageException
     {
         VolumeInfo info = getVolumeInfo(identifier);
-        return info.path;
+        return info.getPath();
     }
 
     @Override
     public long getSize(String identifier) throws StorageException
     {
         VolumeInfo info = getVolumeInfo(identifier);
-        return info.size;
+        return info.getSize();
     }
 
     @Override
@@ -224,68 +382,89 @@ public abstract class AbsStorageDriver implements StorageDriver
         try
         {
             final OutputData outputData = extCommand.exec(command);
-            checkExitCode(outputData, command, "Failed to create snapshot [%s] for volume [%s]. ", snapshotName, identifier);
+            checkExitCode(outputData, command, "Failed to create snapshot [%s] for volume [%s]", snapshotName, identifier);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
-                String.format("Failed to create snapshot [%s] for volume [%s]. ", snapshotName, identifier),
+                "Snapshot creation failed",
+                String.format("Failed to create snapshot \"%s\" of volume \"%s\"", snapshotName, identifier),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
                 exc
             );
         }
     }
+
     @Override
-    public void cloneSnapshot(String snapshotName1, String snapshotName2) throws StorageException
+    public void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier)
+        throws StorageException
+    {
+        if (!isSnapshotSupported())
+        {
+            throw new UnsupportedOperationException("Snapshots are not supported by "+ getClass());
+        }
+        final String[] command = getRestoreSnapshotCommand(sourceIdentifier, snapshotName, targetIdentifier);
+
+        try
+        {
+            final OutputData outputData = extCommand.exec(command);
+            checkExitCode(
+                outputData,
+                command,
+                "Failed to restore snapshot [%s] from volume [%s] to volume [%s] ",
+                snapshotName,
+                sourceIdentifier,
+                targetIdentifier
+            );
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to restore a snapshot",
+                String.format(
+                    "Failed to restore snapshot [%s] from volume [%s] to volume [%s]",
+                    snapshotName,
+                    sourceIdentifier,
+                    targetIdentifier
+                ),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
+            );
+        }
+    }
+
+    @Override
+    public void deleteSnapshot(String identifier, String snapshotName) throws StorageException
     {
         if (!isSnapshotSupported())
         {
             throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }
 
-        final String[] command = getCloneSnapshotCommand(snapshotName1, snapshotName2);
+        final String[] command = getDeleteSnapshotCommand(identifier, snapshotName);
         try
         {
             final OutputData outputData = extCommand.exec(command);
-            checkExitCode(outputData, command, "Failed to clone snapshot [%s] into [%s]. ", snapshotName1, snapshotName2);
+            checkExitCode(outputData, command, "Failed to delete snapshot [%s] of volume [%s]. ", snapshotName, identifier);
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
-                String.format("Failed to clone snapshot [%s] into [%s]. ", snapshotName1, snapshotName2),
-                exc
-            );
-        }
-    }
-
-    // TODO add JavaDoc
-    // TODO extract to interface
-    @SuppressWarnings("unused")
-    public void restoreSnapshot(String snapshotName) throws StorageException
-    {
-        throw new UnsupportedOperationException("Snapshots are not supported by "+ getClass());
-    }
-
-    @Override
-    public void deleteSnapshot(String snapshotName) throws StorageException
-    {
-        if (!isSnapshotSupported())
-        {
-            throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
-        }
-
-        final String[] command = getDeleteSnapshotCommand(snapshotName);
-        try
-        {
-            final OutputData outputData = extCommand.exec(command);
-            checkExitCode(outputData, command, "Failed to delete snapshot [%s]. ", snapshotName);
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format("Failed to delete snapshot [%s]. ", snapshotName),
+                "Deleting a snapshot failed",
+                String.format("Failed to delete the snapshot [%s] of volume [%s]", snapshotName, identifier),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command [%s] timed out ", glue (command, " ")),
                 exc
             );
         }
@@ -401,8 +580,14 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
         catch (NumberFormatException numberFormatExc)
         {
-            // TODO: Detailed error reporting
-            throw new StorageException("expected int value", numberFormatExc);
+            throw new StorageException(
+                "Invalid configuration",
+                String.format("Key [%s] was expected to contain an int value, but was [%s]", key, map.get(key)),
+                String.format("Failed to parse [%s] as an int value", map.get(key)),
+                "Specify a valid value for the key",
+                null,
+                numberFormatExc
+            );
         }
     }
 
@@ -448,8 +633,14 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
         catch (NumberFormatException numberFormatExc)
         {
-            // TODO: Detailed error reporting
-            throw new StorageException("expected long value", numberFormatExc);
+            throw new StorageException(
+                "Invalid configuration",
+                String.format("Key [%s] was expected to contain an long value, but was [%s]", key, map.get(key)),
+                String.format("Failed to parse [%s] as an long value", map.get(key)),
+                "Specify a valid value for the key",
+                null,
+                numberFormatExc
+            );
         }
     }
 
@@ -508,8 +699,26 @@ public abstract class AbsStorageDriver implements StorageDriver
             }
             if (!commandFound)
             {
-                // TODO: Detailed error reporting
-                throw new StorageException(String.format("Executable for [%s] not found: %s", key, command));
+                String[] pathStrings = new String[pathFolders.length];
+                for (int idx = 0; idx < pathStrings.length; ++idx)
+                {
+                    pathStrings[idx] = pathFolders[idx].toAbsolutePath().toString();
+                }
+                throw new StorageException(
+                    "Command not found",
+                    String.format(
+                        "Executable for command with key [%s] and value [%s] was not found",
+                        key,
+                        command
+                    ),
+                    String.format(
+                        "The command [%s] was not found in following directories: %s",
+                        command,
+                        glue(pathStrings, ", ")
+                    ),
+                    "Specify an existing command or extend the PATH variable",
+                    null
+                );
             }
         }
     }
@@ -527,8 +736,13 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
         if (path == null)
         {
-            // TODO: Detailed error reporting
-            throw new StorageException("Could not load PATH environment (needed to validate configured commands)");
+            throw new StorageException(
+                "PATH environment variable not found",
+                "No environment variable called 'PATH', 'path' or 'Path' was found",
+                null,
+                "Set any of the following environment variables accordingly: 'PATH', 'path' or 'Path'",
+                "The PATH variable is needed to verify the existence of the configured commands"
+            );
         }
 
         String[] split = path.split(File.pathSeparator);
@@ -542,7 +756,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     }
 
 
-    protected int checkToleranceFactor(Map<String, String> config) throws StorageException
+    protected void checkToleranceFactor(Map<String, String> config) throws StorageException
     {
         int toleranceFactor = checkedGetAsInt(config, StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY,sizeAlignmentToleranceFactor);
         try
@@ -551,16 +765,19 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
         catch (ValueOutOfRangeException rangeExc)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
+                "Tolerance factor is out of range",
                 String.format(
                     "Tolerance factor has to be in range of 1 - %d, but was %d",
-                    Integer.MAX_VALUE, toleranceFactor
+                    Integer.MAX_VALUE,
+                    toleranceFactor
                 ),
+                null,
+                "Specify a tolerance factor within the range of 1 - " + Integer.MAX_VALUE,
+                null,
                 rangeExc
             );
         }
-        return toleranceFactor;
     }
 
     protected abstract String getExpectedVolumePath(String identifier);
@@ -579,7 +796,8 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected abstract String[] getCreateSnapshotCommand(String identifier, String snapshotName);
 
-    protected abstract String[] getCloneSnapshotCommand(String snapshotName1, String snapshotName2) throws StorageException;
+    protected abstract String[] getRestoreSnapshotCommand(String sourceIdentifier, String snapshotName, String identifier)
+        throws StorageException;
 
-    protected abstract String[] getDeleteSnapshotCommand(String snapshotName);
+    protected abstract String[] getDeleteSnapshotCommand(String identifier, String snapshotName);
 }

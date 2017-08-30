@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,12 +38,14 @@ import com.linbit.timer.Timer;
  */
 public abstract class NoSimDriverTest
 {
-    protected final String baseIdentifier = "drbdManageDriverTest-REMOVE-ME-Vol-";
+//    protected final String baseIdentifier = "drbdManageDriverTest-REMOVE-ME-Vol-";
+    protected final String baseIdentifier = "testVol";
 
     protected boolean poolExisted;
     protected String poolName;
 
     protected boolean log = true;
+    protected boolean logCommands = false;
 
     protected StorageDriver driver;
     protected ExtCmd extCommand;
@@ -58,8 +61,13 @@ public abstract class NoSimDriverTest
     {
         this.driver = driver;
         SatelliteCoreServices coreSvc = new TestCoreServices();
-        extCommand = new ExtCmd(coreSvc.getTimer());
+        extCommand = new DebugExtCmd(coreSvc.getTimer());
         driver.initialize(coreSvc);
+
+        if (driver instanceof AbsStorageDriver)
+        {
+            ((AbsStorageDriver) driver).extCommand = extCommand;
+        }
     }
 
     protected void runTest() throws StorageException, MaxSizeException, MinSizeException, ChildProcessTimeoutException, IOException, InterruptedException
@@ -181,7 +189,6 @@ public abstract class NoSimDriverTest
             log("testing snapshot create   %n");
 
             log("   checking if [%s] exists...", baseMountPath.toString());
-            baseMountPathExisted = true;
             if (!Files.exists(baseMountPath))
             {
                 log(" no - creating [%s]...", baseMountPath.toString());
@@ -200,7 +207,6 @@ public abstract class NoSimDriverTest
             String testFile1 = "test1";
             String testFile2 = "test2";
             String testFile3 = "test3";
-            String testFile4 = "test4";
 
             String origTestFile1 = origMountPath + File.separator + testFile1;
             String origTestFile2 = origMountPath + File.separator + testFile2;
@@ -212,7 +218,7 @@ public abstract class NoSimDriverTest
 
             log("   creating test data in [%s]...", origMountPath);
             callChecked("touch", origTestFile1);
-            callChecked("/bin/sh", "-c","echo 'test' > " + origTestFile2);
+            callChecked("/bin/sh", "-c", "echo 'test' > " + origTestFile2);
             // file status:
             // test1 - touched
             // test2 - "test"
@@ -220,105 +226,126 @@ public abstract class NoSimDriverTest
             // test4 - not created
             log(" done%n");
 
-            unmount(origMountPath, "   unmounting (force flush) [%s]...");
+            // we need to unmount the device to make sure all data are written to the disk,
+            // before we make a snapshot (otherwise the snapshot might not contain those files)
+            unmount(origMountPath, "   unmounting [%s] (force flush)... ");
+            String snapName = getUnusedIdentifier("", "_snap");
+            createSnapshot(identifier, snapName, "   creating snapshot [%s] from volume [%s]...");
+            mount(origBlockDevice, origMountPath, "   mounting [%s] to mountpoint [%s]...");
 
-            String snapName1 = getUnusedIdentifier("", "_snap");
-            createSnapshot(identifier, snapName1, "   creating snapshot [%s] from volume [%s]...");
 
-            mount(origBlockDevice, origMountPath, "   remounting [%s] to mountpoint [%s]...");
-
-            String snap1BlockDevice = getVolumePathImpl(snapName1);
-            String snap1MountPath = getUnusedMountPath(snapName1);
-            String snap1TestFile1 = snap1MountPath + File.separator + testFile1;
-            String snap1TestFile2 = snap1MountPath + File.separator + testFile2;
-            String snap1TestFile3 = snap1MountPath + File.separator + testFile3;
-            String snap1TestFile4 = snap1MountPath + File.separator + testFile4;
-
-            createMountPoint(snap1MountPath, "   creating mountpoint [%s]...");
-            mount(snap1BlockDevice, snap1MountPath, "   mounting [%s] to mountpoint [%s]...");
-
-            log("   modifying test data...");
+            log("   modifying original data...");
             callChecked("/bin/sh", "-c","echo 'overridden Test' > " + origTestFile2);
             callChecked("touch", origTestFile3);
             callChecked("rm", origTestFile1);
-            // file status:
+            // file status orig:
             // test1 - removed
             // test2 - "overridden Test"
             // test3 - touched
             // test4 - not created
+
+            // file status snap1:
+            // test1 - touched
+            // test2 - "test"
+            // test3 - not created
+            // test4 - not created
             log(" done%n");
 
-            log("   checking existence of files...");
-            checkFileExists(true, snap1TestFile1, "\n      ", 10, 1000);
-            checkFileExists(true, snap1TestFile2, "\n      ", 10, 1000);
-            checkFileExists(false, snap1TestFile3, "\n      ", 10, 1000);
-            checkFileExists(false, snap1TestFile4, "\n      ", 10, 1000);
+            log("   checking existence of original files...");
+            checkFileExists(false, origTestFile1, "\n      ", 10, 200);
+            checkFileExists(true, origTestFile2, "\n      ", 10, 200);
+            checkFileExists(true, origTestFile3, "\n      ", 10, 200);
             log (" done%n");
 
-            log("   checking content of modified files...");
-            OutputData catOut = callChecked("cat", snap1TestFile2);
+            log("   checking content of original files...");
+            OutputData catOut = callChecked("cat", origTestFile2);
             String cat = new String(catOut.stdoutData).trim();
-            if (!cat.equals("test"))
+            if (!cat.equals("overridden Test"))
             {
                 log("   error: content of file [%s] %n      expected: [%s]%n      received: [%s]",
-                    snap1TestFile2,
-                    "test",
+                    origTestFile2,
+                    "overridden Test",
                     cat
                 );
                 fail("Snapshot contains modified content in file %s", testFile2);
             }
             log(" done%n");
 
-            log("testing snapshot clone   %n");
+            log("testing restore snapshots%n");
 
-            // file status:
+            unmount(origMountPath,  "   unmounting [%s]...");
+
+            // file status orig:
             // test1 - removed
             // test2 - "overridden Test"
             // test3 - touched
             // test4 - not created
 
-            unmount(snap1MountPath, "   unmounting (force flush) [%s]...");
+            // file status snap:
+            // test1 - touched
+            // test2 - "test"
+            // test3 - not created
+            // test4 - not created
 
-            String snapName2 = getUnusedIdentifier("", "_snap2");
-            cloneSnapshot(snapName1, snapName2, "   cloning snapshot [%s] from [%s]...");
-
-            mount(snap1BlockDevice, snap1MountPath, "   remounting snapshot from [%s] to [%s]...");
-
-            log("   modifying data of the first snapshot [%s]...", snapName1);
-            callChecked("/bin/sh", "-c","echo 'another overridden Test' > " + origTestFile2);
-            callChecked("touch", snap1TestFile4);
-            callChecked("rm", snap1TestFile1);
-            // file status:
-            // test1 - removed
-            // test2 - "another overridden Test"
-            // test3 - removed
-            // test4 - touched
+            String restName = getUnusedIdentifier("", "_rest");
+            log("   restoring [%s] from volume [%s] to [%s]", snapName, identifier, restName);
+            driver.restoreSnapshot(identifier, snapName, restName);
             log(" done%n");
 
-            String snap2MountPath = getUnusedMountPath(snapName2);
-            String snap2BlockDevice = getVolumePathImpl(snapName2);
-            String snap2TestFile1 = snap2MountPath + File.separator + testFile1;
-            String snap2TestFile2 = snap2MountPath + File.separator + testFile2;
-            String snap2TestFile3 = snap2MountPath + File.separator + testFile3;
-            String snap2TestFile4 = snap2MountPath + File.separator + testFile4;
+            // file status orig:
+            // test1 - removed
+            // test2 - "overridden Test"
+            // test3 - touched
+            // test4 - not created
 
-            createMountPoint(snap2MountPath, "   creating mountpoint [%s]...");
-            mount(snap2BlockDevice, snap2MountPath,"   mounting [%s] to mountpoint [%s]...");
+            // file status _rest:
+            // test1 - touched
+            // test2 - "test"
+            // test3 - not created
+            // test4 - not created
 
-            log("   checking existence of files...");
-            checkFileExists(true, snap2TestFile1, "\n      ", 10, 1000);
-            checkFileExists(true, snap2TestFile2, "\n      ", 10, 1000);
-            checkFileExists(false, snap2TestFile3, "\n      ", 10, 1000);
-            checkFileExists(false, snap2TestFile4, "\n      ", 10, 1000);
+            String restMountPath = getUnusedMountPath(restName);
+            String restBlockDevice = getVolumePathImpl(restName);
+            String restTestFile1 = restMountPath + File.separator + testFile1;
+            String restTestFile2 = restMountPath + File.separator + testFile2;
+            String restTestFile3 = restMountPath + File.separator + testFile3;
+            createMountPoint(restMountPath, "   creating mountpoint [%s]...");
+
+            mount(origBlockDevice, origMountPath,"   mounting [%s] to mountpoint [%s]...");
+            mount(restBlockDevice, restMountPath,"   mounting [%s] to mountpoint [%s]...");
+
+            log("   checking existence of original files...");
+            checkFileExists(false, origTestFile1, "\n      ", 10, 200);
+            checkFileExists(true, origTestFile2, "\n      ", 10, 200);
+            checkFileExists(true, origTestFile3, "\n      ", 10, 200);
             log (" done%n");
 
-            log("   checking content of modified files...");
-            catOut = callChecked("cat", snap2TestFile2);
+            log("   checking existence of restored files...");
+            checkFileExists(true, restTestFile1, "\n      ", 10, 200);
+            checkFileExists(true, restTestFile2, "\n      ", 10, 200);
+            checkFileExists(false, restTestFile3, "\n      ", 10, 200);
+            log (" done%n");
+
+            log("   checking content of original files...");
+            catOut = callChecked("cat", origTestFile2);
+            cat = new String(catOut.stdoutData).trim();
+            if (!cat.equals("overridden Test"))
+            {
+                log("   error: content of file [%s] %n      expected: [%s]%n      received: [%s]",
+                    origTestFile2,
+                    "overridden Test",
+                    cat
+                );
+                fail("Snapshot contains modified content in file %s", testFile2);
+            }
+            log(" done%n");
+            log("   checking content of files of restored files [%s]...", restName);
+            catOut = callChecked("cat", restTestFile2);
             cat = new String(catOut.stdoutData).trim();
             if (!cat.equals("test"))
             {
                 log("   error: content of file [%s] %n      expected: [%s]%n      received: [%s]",
-                    snap2TestFile2,
+                    restTestFile2,
                     "test",
                     cat
                 );
@@ -327,26 +354,19 @@ public abstract class NoSimDriverTest
             log(" done%n");
 
 
-            // TODO test restore
 
-            // restore snapshot may take very long (depending on the size of the modified data)
-            // which could cause the extCmd to cause a timeout
-
-            // driver.restoreSnapshot(snapName1);
 
             log("testing snapshot delete   %n");
 
-            unmount(snap1MountPath, "   unmounting [%s]...");
-            unmount(snap2MountPath, "   unmounting [%s]...");
+            unmount(restMountPath, "   unmounting [%s]...");
             unmount(origMountPath, "   unmounting [%s]...");
 
-            deleteSnapshot(snapName2, "   trying to delete second snapshot [%s]...");
-            deleteSnapshot(snapName1, "   trying to delete first snapshot [%s]...");
+            deleteVolume(restName, "   tryping to delete restored volume [%s]...");
+            deleteSnapshot(identifier, snapName, "   trying to delete snapshot [%s]...");
 
             if (!baseMountPathExisted)
             {
-                Files.delete(Paths.get(snap2MountPath));
-                Files.delete(Paths.get(snap1MountPath));
+                Files.delete(Paths.get(restMountPath));
                 Files.delete(Paths.get(origMountPath));
                 Files.delete(baseMountPath);
             }
@@ -488,7 +508,10 @@ public abstract class NoSimDriverTest
     {
         if (log)
         {
-            System.out.format(format, args);
+            if (!logCommands || !format.trim().equals("done%n"))
+            {
+                System.out.format(format, args);
+            }
         }
     }
 
@@ -611,11 +634,11 @@ public abstract class NoSimDriverTest
         log(" done %n");
     }
 
-    private void deleteSnapshot(String identifier, String format) throws StorageException, ChildProcessTimeoutException, IOException
+    private void deleteSnapshot(String identifier, String snapshotName, String format) throws StorageException, ChildProcessTimeoutException, IOException
     {
         log(format, identifier);
-        driver.deleteSnapshot(identifier);
-        failIf(volumeExists(identifier), "Failed to delete snapshot [%s]", identifier);
+        driver.deleteSnapshot(identifier, snapshotName);
+        failIf(volumeExists(identifier, snapshotName), "Failed to delete snapshot [%s]", identifier);
         log (" done%n");
     }
 
@@ -647,13 +670,6 @@ public abstract class NoSimDriverTest
         log(" done%n");
     }
 
-    private void cloneSnapshot(String snapshotName1, String snapshotName2, String format) throws StorageException
-    {
-        log(format, snapshotName1, snapshotName2);
-        driver.cloneSnapshot(snapshotName1, snapshotName2);
-        log(" done%n");
-    }
-
     protected void cleanUp() throws ChildProcessTimeoutException, IOException
     {
         if (!inCleanUp)
@@ -672,12 +688,12 @@ public abstract class NoSimDriverTest
                     OutputData mountOutput = callChecked("mount");
                     String std = new String(mountOutput.stdoutData);
                     String[] lines = std.split("\n");
-                    String baseMountPath = this.baseMountPath.toAbsolutePath().toString();
+                    String baseMountString = this.baseMountPath.toAbsolutePath().toString();
                     for (String line : lines)
                     {
                         String[] mountInfo = line.split(" ");
                         String mountPoint = mountInfo[2];
-                        if (mountPoint.startsWith(baseMountPath))
+                        if (mountPoint.startsWith(baseMountString))
                         {
                             log("      unmounting %s %n", mountPoint);
                             callChecked("umount", mountPoint);
@@ -686,7 +702,6 @@ public abstract class NoSimDriverTest
                     log("         done%n");
                     // all mounts should have been unmounted
 
-                    String baseMountString = baseMountPath;
                     // just to be sure that we are not executing "rm -rf /" or /*
                     if (baseMountString.startsWith("/mnt/"))
                     {
@@ -696,8 +711,6 @@ public abstract class NoSimDriverTest
                         }
                         callChecked("rm", "-rf", baseMountString);
                     }
-
-
                 }
                 cleanUpDriver();
 
@@ -804,7 +817,7 @@ public abstract class NoSimDriverTest
         driver.setConfiguration(config);
     }
 
-    protected Map<String, String> getPoolConfigMap(String poolName)
+    protected static Map<String, String> getPoolConfigMap(String poolName)
     {
         Map<String, String> config = new HashMap<>();
         config.put(StorageConstants.CONFIG_ZFS_POOL_KEY, poolName);
@@ -842,7 +855,12 @@ public abstract class NoSimDriverTest
 
     protected abstract long getPoolSizeInKiB() throws ChildProcessTimeoutException, IOException;
 
-    protected abstract boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException;
+    protected boolean volumeExists(String identifier) throws ChildProcessTimeoutException, IOException
+    {
+        return volumeExists(identifier, null);
+    }
+
+    protected abstract boolean volumeExists(String identifier, String snapName) throws ChildProcessTimeoutException, IOException;
 
     protected abstract String getVolumePathImpl(String identifier) throws ChildProcessTimeoutException, IOException;
 
@@ -860,7 +878,7 @@ public abstract class NoSimDriverTest
 
     protected abstract String[] getListPoolNamesCommand();
 
-    private static class TestCoreServices implements SatelliteCoreServices
+    private class TestCoreServices implements SatelliteCoreServices
     {
         private final GenericTimer<String, Action<String>> timerEventSvc ;
         private final FileSystemWatch fsEventSvc;
@@ -892,7 +910,7 @@ public abstract class NoSimDriverTest
         }
     }
 
-    protected static class TestFailedException extends RuntimeException
+    protected class TestFailedException extends RuntimeException
     {
         private static final long serialVersionUID = 1L;
 
@@ -914,6 +932,58 @@ public abstract class NoSimDriverTest
         TestFailedException(Throwable cause)
         {
             super(cause);
+        }
+    }
+
+    protected class DebugExtCmd extends ExtCmd
+    {
+        public DebugExtCmd(Timer<String, Action<String>> timer)
+        {
+            super(timer);
+        }
+
+        @Override
+        public void asyncExec(String... command)
+            throws IOException
+        {
+            if (logCommands)
+            {
+                System.out.println(Arrays.toString(command));
+            }
+            super.asyncExec(command);
+        }
+
+        @Override
+        public void pipeAsyncExec(ProcessBuilder.Redirect stdinRedirect, String... command)
+            throws IOException
+        {
+            if (logCommands)
+            {
+                System.out.println(Arrays.toString(command));
+            }
+            super.pipeAsyncExec(stdinRedirect, command);
+        }
+
+        @Override
+        public OutputData exec(String... command)
+            throws IOException, ChildProcessTimeoutException
+        {
+            if (logCommands)
+            {
+                System.out.println(Arrays.toString(command));
+            }
+            return super.exec(command);
+        }
+
+        @Override
+        public OutputData pipeExec(ProcessBuilder.Redirect stdinRedirect, String... command)
+            throws IOException, ChildProcessTimeoutException
+        {
+            if (logCommands)
+            {
+                System.out.println(Arrays.toString(command));
+            }
+            return super.pipeExec(stdinRedirect, command);
         }
     }
 

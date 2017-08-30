@@ -1,6 +1,17 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.drbdmanage.api.BaseApiCall;
+import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.ImplementationError;
 import com.linbit.SystemService;
@@ -9,6 +20,8 @@ import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.DbAccessor;
+import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.drbdmanage.security.Privilege;
 import com.linbit.drbdmanage.timer.CoreTimer;
 import com.linbit.drbdmanage.timer.CoreTimerImpl;
@@ -63,6 +76,10 @@ public abstract class DrbdManage
     // Core system services
     //
     private CoreTimer timerEventSvc;
+
+    // Database drivers
+    protected static DbAccessor securityDbDriver;
+    protected static DatabaseDriver persistenceDbDriver;
 
     // Error & exception logging facility
     private ErrorReporter errorLog;
@@ -249,7 +266,7 @@ public abstract class DrbdManage
 
     public void printField(PrintStream out, String title, String text)
     {
-        System.out.printf("    %-24s %s\n", title, text);
+        out.printf("    %-24s %s\n", title, text);
     }
 
     /**
@@ -430,13 +447,20 @@ public abstract class DrbdManage
                     {
                         Class<?>[] parameterTypes = declaredConstructor.getParameterTypes();
 
-                        if (Modifier.isPublic(declaredConstructor.getModifiers()) &&
-                            parameterTypes.length == 2 &&
-                            parameterTypes[0].isAssignableFrom(componentRef.getClass()) &&
-                            parameterTypes[1].isAssignableFrom(CoreServices.class))
+                        if (Modifier.isPublic(declaredConstructor.getModifiers()))
                         {
-                            ctor = declaredConstructor;
-                            break;
+                            if ((parameterTypes.length == 2 &&
+                                parameterTypes[0].isAssignableFrom(componentRef.getClass()) &&
+                                parameterTypes[1].isAssignableFrom(CoreServices.class)) ||
+
+                                parameterTypes.length == 1 &&
+                                parameterTypes[0].isAssignableFrom(componentRef.getClass()) ||
+
+                                parameterTypes.length == 0)
+                            {
+                                ctor = declaredConstructor;
+                                break;
+                            }
                         }
                     }
                     if (ctor == null)
@@ -464,7 +488,24 @@ public abstract class DrbdManage
                         Object instance = null;
                         try
                         {
-                            instance = ctor.newInstance(componentRef, coreService);
+                            if (ctor.getParameterCount() == 2)
+                            {
+                                instance = ctor.newInstance(componentRef, coreService);
+                            }
+                            else if (ctor.getParameterCount() == 1)
+                            {
+                                instance = ctor.newInstance(componentRef);
+                            }
+                            else if (ctor.getParameterCount() == 0)
+                            {
+                                instance = ctor.newInstance();
+                            }
+                            else
+                            {
+                                componentRef.errorLog.reportError(
+                                    new ImplementationError("Unexpected API class constructor", null)
+                                );
+                            }
                         }
                         catch (
                             InstantiationException | IllegalAccessException |
@@ -538,5 +579,66 @@ public abstract class DrbdManage
         System.out.println();
 
         System.out.println("System components initialization in progress\n");
+    }
+
+    // static Database reference getters
+
+    public static PropsConDatabaseDriver getPropConDatabaseDriver(String instanceName)
+    {
+        return persistenceDbDriver.getPropsDatabaseDriver(instanceName);
+    }
+
+    public static NodeDataDatabaseDriver getNodeDataDatabaseDriver(NodeName nodeName)
+    {
+        return persistenceDbDriver.getNodeDatabaseDriver(nodeName);
+    }
+
+    public static ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objProtPath)
+    {
+        return securityDbDriver.getObjectProtectionDatabaseDriver(objProtPath);
+    }
+
+    public static ResourceDataDatabaseDriver getResourceDataDatabaseDriver(NodeName nodeName, ResourceName resName)
+    {
+        return persistenceDbDriver.getResourceDataDatabaseDriver(nodeName, resName);
+    }
+
+    public static ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName)
+    {
+        return persistenceDbDriver.getResourceDefinitionDataDatabaseDriver(resName);
+    }
+
+    public static VolumeDataDatabaseDriver getVolumeDataDatabaseDriver(Resource res, VolumeDefinition volDfn)
+    {
+        return persistenceDbDriver.getVolumeDataDatabaseDriver(res, volDfn);
+    }
+
+    public static VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(ResourceDefinition resDfn,VolumeNumber volNr)
+    {
+        return persistenceDbDriver.getVolumeDefinitionDataDatabaseDriver(resDfn, volNr);
+    }
+
+    public static StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef)
+    {
+        return persistenceDbDriver.getStorPoolDataDatabaseDriver(nodeRef, storPoolDfnRef);
+    }
+
+    public static StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDriver(StorPoolName name)
+    {
+        return persistenceDbDriver.getStorPoolDefinitionDataDatabaseDriver(name);
+    }
+
+    public static NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node node, NetInterfaceName name)
+    {
+        return persistenceDbDriver.getNetInterfaceDataDatabaseDriver(node, name);
+    }
+
+    public static ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver(
+        ResourceName resName,
+        NodeName sourceNodeName,
+        NodeName targetNodeName
+    )
+    {
+        return persistenceDbDriver.getConnectionDefinitionDatabaseDriver(resName, sourceNodeName, targetNodeName);
     }
 }

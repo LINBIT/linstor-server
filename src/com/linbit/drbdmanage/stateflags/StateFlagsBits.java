@@ -1,11 +1,16 @@
 package com.linbit.drbdmanage.stateflags;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.linbit.ImplementationError;
+import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.ObjectProtection;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 /**
  * State flags for drbdmanage core objects
@@ -20,6 +25,10 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     private long changedStateFlags;
     private final long mask;
     private final StateFlagsPersistence persistence;
+
+    private Connection con;
+
+    private boolean initialized = false;
 
     public StateFlagsBits(
         final ObjectProtection objProtRef,
@@ -45,68 +54,68 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     }
 
     @Override
-    public void enableAllFlags(final AccessContext accCtx, final Connection dbConn)
+    public void enableAllFlags(final AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        changedStateFlags |= mask;
-
-        if (persistence != null)
-        {
-            persistence.persist(dbConn);
-        }
+        setFlags(changedStateFlags | mask);
     }
 
     @Override
-    public void disableAllFlags(final AccessContext accCtx, final Connection dbConn)
+    public void disableAllFlags(final AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        changedStateFlags = 0L;
+        setFlags(0L);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void enableFlags(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    public void enableFlags(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
-        changedStateFlags = (changedStateFlags | flagsBits) & mask;
+        setFlags((changedStateFlags | flagsBits) & mask);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void disableFlags(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    public void disableFlags(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
-        changedStateFlags &= ~flagsBits;
+        setFlags(changedStateFlags & ~flagsBits);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void enableFlagsExcept(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    public void enableFlagsExcept(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
-        changedStateFlags |= (mask & ~flagsBits);
+        setFlags(changedStateFlags | (mask & ~flagsBits));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void disableFlagsExcept(final AccessContext accCtx, final Connection dbConn, final T... flags)
+    public void disableFlagsExcept(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         final long flagsBits = getMask(flags);
-        changedStateFlags &= flagsBits;
+        setFlags(changedStateFlags & flagsBits);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean isSet(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException
@@ -117,6 +126,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         return (changedStateFlags & flagsBits) == flagsBits;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean isUnset(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException
@@ -127,6 +137,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         return (changedStateFlags & flagsBits) == 0L;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean isSomeSet(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException
@@ -137,6 +148,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         return (changedStateFlags & flagsBits) != 0L;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean isSomeUnset(final AccessContext accCtx, final T... flags)
         throws AccessDeniedException
@@ -157,6 +169,18 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     }
 
     @Override
+    public void initialized()
+    {
+        initialized = true;
+    }
+
+    @Override
+    public boolean isInitialized()
+    {
+        return initialized;
+    }
+
+    @Override
     public void commit()
     {
         stateFlags = changedStateFlags;
@@ -166,6 +190,26 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     public void rollback()
     {
         changedStateFlags = stateFlags;
+    }
+
+    @Override
+    public boolean isDirty()
+    {
+        return changedStateFlags != stateFlags;
+    }
+
+    @Override
+    public void setConnection(TransactionMgr transMgr) throws ImplementationError
+    {
+        if (transMgr != null)
+        {
+            transMgr.register(this);
+            con = transMgr.dbCon;
+        }
+        else
+        {
+            con = null;
+        }
     }
 
     @Override
@@ -180,10 +224,42 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     public static final long getMask(final Flags... flags)
     {
         long bitMask = 0L;
-        for (Flags curFlag : flags)
+        if (flags != null)
         {
-            bitMask |= curFlag.getFlagValue();
+            for (Flags curFlag : flags)
+            {
+                bitMask |= curFlag.getFlagValue();
+            }
         }
         return bitMask;
+    }
+
+    private void setFlags(final long bits) throws SQLException
+    {
+        changedStateFlags = bits;
+        if (initialized)
+        {
+            if (persistence != null && con != null)
+            {
+                persistence.persist(con, changedStateFlags);
+            }
+        }
+        else
+        {
+            commit();
+        }
+    }
+
+    public static <E extends Flags> Set<E> restoreFlags(E[] values, long mask)
+    {
+        Set<E> restoredFlags = new HashSet<>();
+        for (E flag : values)
+        {
+            if ((mask & flag.getFlagValue()) == flag.getFlagValue())
+            {
+                restoredFlags.add(flag);
+            }
+        }
+        return restoredFlags;
     }
 }

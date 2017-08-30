@@ -5,6 +5,7 @@ import com.linbit.SystemService;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Common debug methods of the Controller and Satellite modules
@@ -13,11 +14,13 @@ import java.util.Map;
  */
 public interface CommonDebugControl
 {
+    DrbdManage getInstance();
     String getProgramName();
     String getModuleType();
     String getVersion();
     Map<ServiceName, SystemService> getSystemServiceMap();
     Peer getPeer(String peerId);
     Map<String, Peer> getAllPeers();
+    Set<String> getApiCallNames();
     void shutdown(AccessContext accCtx);
 }

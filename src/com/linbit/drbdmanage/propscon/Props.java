@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.propscon;
 
+import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 
 import java.sql.SQLException;
@@ -13,7 +14,7 @@ import java.util.Set;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Props
+public interface Props extends TransactionObject
 {
     public String getProp(String key)
         throws InvalidKeyException;

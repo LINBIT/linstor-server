@@ -1,8 +1,12 @@
 package com.linbit.drbdmanage.netcom;
 
+import com.linbit.ServiceName;
+import com.linbit.drbdmanage.api.common.Ping;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import java.net.InetSocketAddress;
+
+import javax.net.ssl.SSLException;
 
 /**
  * Represents the peer of a connection
@@ -17,6 +21,13 @@ public interface Peer
      * @return Unique peer identifier
      */
     String getId();
+
+    /**
+     * Returns the service instance name of the connector associated with this peer object
+     *
+     * @return Connector service instance name
+     */
+    ServiceName getConnectorInstanceName();
 
     /**
      * Returns the security context of the connected peer
@@ -64,8 +75,14 @@ public interface Peer
 
     /**
      * Closes the connection to the peer
+     * @throws SSLException
      */
     void closeConnection();
+
+    /**
+     * Returns true if the connection has been established. False otherwise.
+     */
+    boolean isConnected();
 
     /**
      * Returns the capacity of the queue for outbound messages
@@ -104,12 +121,44 @@ public interface Peer
 
     /**
      * Called when the connection is established
+     * @throws SSLException
      */
-    void connectionEstablished();
+    void connectionEstablished() throws SSLException;
 
     /**
      * Waits until someone calls the {@link Peer#connectionEstablished()} method
      * @throws InterruptedException
      */
     void waitUntilConnectionEstablished() throws InterruptedException;
+
+    /**
+     * Returns the {@link TcpConnector} handling this peer
+     *
+     * @return
+     */
+    TcpConnector getConnector();
+
+    /**
+     * Tries to send a ping packet
+     */
+    void sendPing();
+
+    /**
+     * This method should only be called by {@link Ping}, in order to calculate the latency
+     */
+    void pongReceived();
+
+    /**
+     * Returns a timestamp in milliseconds when the last ping message was sent (e.g. {@link #sendPing()} was called)
+     *
+     * @return
+     */
+    long getLastPingSent();
+
+    /**
+     * Returns a timestamp in milliseconds when the last ping message was received (e.g. {@link #pongReceived()} was called)
+     *
+     * @return
+     */
+    long getLastPingReceived();
 }

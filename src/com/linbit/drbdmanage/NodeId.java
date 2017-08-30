@@ -35,9 +35,12 @@ public class NodeId implements Comparable<NodeId>
         return result;
     }
 
-    public boolean equals(NodeId other)
+    @Override
+    public boolean equals(Object other)
     {
-        return other != null && other.value == this.value;
+        return other != null &&
+            (other instanceof NodeId) &&
+            ((NodeId) other).value == this.value;
     }
 
     @Override

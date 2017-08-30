@@ -1,7 +1,7 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.propscon.Props;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -16,17 +16,8 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Resource
+public interface Resource extends TransactionObject
 {
-    public Resource create(
-        AccessContext accCtx,
-        ResourceDefinition resDfnRef,
-        Node nodeRef,
-        NodeId nodeId,
-        SerialGenerator srlGen
-    )
-        throws AccessDeniedException, SQLException;
-
     public UUID getUuid();
 
     public ObjectProtection getObjProt();
@@ -46,16 +37,13 @@ public interface Resource
 
     public StateFlags<RscFlags> getStateFlags();
 
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
     public enum RscFlags implements Flags
     {
         CLEAN(1L),
         REMOVE(2L);
-
-        public static final RscFlags[] ALL_FLAGS =
-        {
-            CLEAN,
-            REMOVE
-        };
 
         public final long flagValue;
 
@@ -70,4 +58,5 @@ public interface Resource
             return flagValue;
         }
     }
+
 }

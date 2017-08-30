@@ -3,11 +3,11 @@ package com.linbit.drbdmanage;
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
+import com.linbit.drbdmanage.dbdrivers.NoOpDriver;
 import com.linbit.drbdmanage.debug.BaseDebugConsole;
 import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
@@ -22,6 +22,7 @@ import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
+import com.linbit.drbdmanage.security.EmptySecurityDbDriver;
 import com.linbit.drbdmanage.security.Initializer;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.Privilege;
@@ -36,17 +37,20 @@ import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.slf4j.event.Level;
 
 /**
  * drbdmanageNG satellite prototype
@@ -57,6 +61,11 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 {
     // System module information
     public static final String MODULE = "Satellite";
+
+    public static final String NET_COM_DEFAULT_TYPE = "plain";
+    public static final String NET_COM_DEFAULT_ADDR = "0.0.0.0";
+    public static final String NET_COM_DEFAULT_PORT = "6996";
+
 
     // TCP Service configuration file
     public static final String NET_COM_CONF_FILE = "satellite_netcom.cfg";
@@ -72,7 +81,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     public static final String NET_COM_CONF_SSL_KEY_PASS_KEY = "key-passwd";
     public static final String NET_COM_CONF_SSL_KEYSTORE_PASS_KEY = "keystore-passwd";
     public static final String NET_COM_CONF_SSL_TRUST_PASS_KEY = "truststore-passwd";
-    public static final String NET_COM_CONF_SSL_CONTEXT_TYPE_KEY = "ssl-context-type";
+    public static final String NET_COM_CONF_SSL_PROTOCOL_KEY = "ssl-protocol";
 
     // System security context
     private AccessContext sysCtx;
@@ -139,9 +148,40 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         // Initialize connected peers map
         peerMap = new TreeMap<>();
 
+        // initialize noop databases drivers (needed for shutdownProt)
+        securityDbDriver = new EmptySecurityDbDriver();
+        persistenceDbDriver = new NoOpDriver();
+
         // Initialize shutdown controls
         shutdownFinished = false;
-        shutdownProt = new ObjectProtection(sysCtx);
+        try
+        {
+            AccessContext initCtx = sysCtx.clone();
+            initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+            shutdownProt = ObjectProtection.getInstance(
+                initCtx,
+                null,
+                ObjectProtection.buildPath(this, "shutdown"),
+                true
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            // cannot happen
+            throw new ImplementationError(
+                "Creating an ObjectProtection without TransactionManager threw an SQLException",
+                sqlExc
+            );
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            // cannot happen as the objProt cannot be loaded
+            throw new ImplementationError(
+                "ObjectProtection instance which should not even exist rejected system's access context. Panic.",
+                accessDeniedExc
+            );
+        }
     }
 
     public void initialize(ErrorReporter errorLogRef)
@@ -160,7 +200,18 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 setErrorLog(initCtx, errorLogRef);
 
                 // Set CONTROL access for the SYSTEM role on shutdown
-                shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+                try
+                {
+                    shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+                }
+                catch (SQLException sqlExc)
+                {
+                    // cannot happen
+                    throw new ImplementationError(
+                        "ObjectProtection without TransactionManager threw an SQLException",
+                        sqlExc
+                    );
+                }
 
                 // Initialize the worker thread pool
                 errorLogRef.logInfo("Starting worker thread pool");
@@ -335,19 +386,34 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         try
         {
             Properties netComProps = new Properties();
-            try (InputStream propsIn = new FileInputStream(NET_COM_CONF_FILE))
+            if (Files.exists(Paths.get(NET_COM_CONF_FILE)))
             {
-                netComProps.loadFromXML(propsIn);
+                try (InputStream propsIn = new FileInputStream(NET_COM_CONF_FILE))
+                {
+                    netComProps.loadFromXML(propsIn);
+                }
+                catch (FileNotFoundException fileExc)
+                {
+                    // this should never happen due to the if (Files.exists(...)), but if it
+                    // still happens it can be ignored, as every property has a default-value
+                }
             }
-
-            InetAddress addr = InetAddress.getByName(netComProps.getProperty(NET_COM_CONF_BIND_ADDR_KEY));
-            String portProp = netComProps.getProperty(NET_COM_CONF_PORT_KEY);
+            InetAddress addr = InetAddress.getByName(
+                netComProps.getProperty(
+                    NET_COM_CONF_BIND_ADDR_KEY,
+                    NET_COM_DEFAULT_ADDR
+                )
+            );
+            String portProp = netComProps.getProperty(
+                NET_COM_CONF_PORT_KEY,
+                NET_COM_DEFAULT_PORT
+            );
             int port = Integer.parseInt(portProp);
             SocketAddress bindAddress = new InetSocketAddress(addr, port);
 
             TcpConnector netComSvc = null;
 
-            String type = netComProps.getProperty(NET_COM_CONF_TYPE_KEY, "");
+            String type = netComProps.getProperty(NET_COM_CONF_TYPE_KEY, NET_COM_DEFAULT_TYPE);
             if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_PLAIN))
             {
                 netComSvc = new TcpConnectorService(
@@ -361,7 +427,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             else
             if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_SSL))
             {
-                String sslProtocol = netComProps.getProperty(NET_COM_CONF_SSL_CONTEXT_TYPE_KEY);
+                String sslProtocol = netComProps.getProperty(NET_COM_CONF_SSL_PROTOCOL_KEY);
                 String keyStoreFile = netComProps.getProperty(NET_COM_CONF_SSL_SERVER_CERT_KEY);
                 String trustStoreFile = netComProps.getProperty(NET_COM_CONF_SSL_TRUST_CERT_KEY);
                 char[] keyPasswd = netComProps.getProperty(NET_COM_CONF_SSL_KEY_PASS_KEY).toCharArray();
@@ -386,39 +452,31 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 }
                 catch (KeyManagementException keyMgmtExc)
                 {
-                    getErrorReporter().reportProblem(
-                        Level.ERROR,
+                    getErrorReporter().reportError(
                         new DrbdManageException(
                             "Initialization of the SSLContext failed. See cause for details",
                             keyMgmtExc
-                        ),
-                        null, // accCtx
-                        null, // client
-                        null  // contextInfo
+                        )
                     );
                 }
                 catch (UnrecoverableKeyException unrecoverableKeyExc)
                 {
                     String errorMsg = "A private or public key for the initialization of SSL encryption could " +
                         "not be loaded";
-                    getErrorReporter().reportProblem(
-                        Level.ERROR,
+                    getErrorReporter().reportError(
                         new DrbdManageException(
                             errorMsg,
                             errorMsg,
                             null,
                             "Check whether the password for the SSL keystores is correct.",
                             null,
-                            unrecoverableKeyExc),
-                        null, // accCtx
-                        null, // client
-                        null  // contextInfo
+                            unrecoverableKeyExc
+                        )
                     );
                 }
                 catch (NoSuchAlgorithmException exc)
                 {
-                    getErrorReporter().reportProblem(
-                        Level.ERROR,
+                    getErrorReporter().reportError(
                         new DrbdManageException(
                             String.format(
                                 "SSL initialization failed: " +
@@ -435,10 +493,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                             "- Enable support for the currently selected SSL/TLS protocol on this system",
                             null,
                             exc
-                        ),
-                        null, // accCtx
-                        null, // client
-                        null  //contextInfo
+                        )
                     );
                 }
                 catch (KeyStoreException keyStoreExc)
@@ -450,8 +505,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 }
                 catch (CertificateException exc)
                 {
-                    getErrorReporter().reportProblem(
-                        Level.ERROR,
+                    getErrorReporter().reportError(
                         new DrbdManageException(
                             "A required SSL certificate could not be loaded",
                             "A required SSL certificate could not be loaded from the keystore files",
@@ -460,10 +514,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                             "Refer to documentation for information on how to setup SSL encryption.",
                             null,
                             exc
-                        ),
-                        null, // accCtx
-                        null, // client
-                        null  // contextInfo
+                        )
                     );
                 }
             }
@@ -472,10 +523,16 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             {
                 try
                 {
-                    netComSvc.setServiceInstanceName(new ServiceName("InitialConnector"));
                     netComConnectors.put(netComSvc.getInstanceName(), netComSvc);
                     systemServicesMap.put(netComSvc.getInstanceName(), netComSvc);
                     netComSvc.start();
+                    getErrorReporter().logInfo(
+                        String.format(
+                            "%s started on port %d",
+                            netComSvc.getInstanceName().displayValue,
+                            port
+                        )
+                    );
                 }
                 catch (SystemServiceStartException sysSvcStartExc )
                 {
@@ -484,8 +541,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                     {
                         errorMsg = "The initial network communications service failed to start.";
                     }
-                    getErrorReporter().reportProblem(
-                        Level.ERROR,
+                    getErrorReporter().reportError(
                         new DrbdManageException(
                             errorMsg,
                             errorMsg, // description
@@ -493,81 +549,45 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                             null, // correction
                             null, // details
                             sysSvcStartExc // Nested throwable
-                        ),
-                        null, // accessContext
-                        null, // client
-                        null  // contextInfo
+                        )
                     );
 
-                }
-                catch (InvalidNameException invalidNameExc)
-                {
-                    throw new ImplementationError(
-                        "Hardcoded ServiceInstanceName for netComSvc is invalid",
-                        invalidNameExc
-                    );
                 }
             }
             else
             {
-                getErrorReporter().reportProblem(
-                    Level.ERROR,
-                    new DrbdManageException(
-                        // Message
-                        String.format(
-                            "The property '%s' in configuration file '%s' is misconfigured",
-                            NET_COM_CONF_TYPE_KEY, NET_COM_CONF_FILE
-                        ),
-                        // Description
-                        "The initial network communication service can not be started.",
-                        // Cause
-                        String.format(
-                            "The service type is misconfigured.\n" +
-                            "The property '%s' must be either '%s' or '%s",
-                            NET_COM_CONF_TYPE_KEY,
-                            NET_COM_CONF_TYPE_PLAIN,
-                            NET_COM_CONF_TYPE_SSL
-                        ),
-                        // Error details
-                        String.format(
-                            "The network communication service configuration file is:\n%s",
-                            NET_COM_CONF_FILE
-                        ),
-                        // No nested exception
-                        null
-                    ),
-                    // No access context
-                    null,
-                    // Not initiated by a connected client
-                    null,
-                    // No context information
-                    null
-                );
+                if (!NET_COM_CONF_TYPE_PLAIN.equalsIgnoreCase(type) &&
+                    !NET_COM_CONF_TYPE_SSL.equalsIgnoreCase(type))
+                {
+                    getErrorReporter().reportError(
+                        new DrbdManageException(
+                            // Message
+                            String.format(
+                                "The property '%s' in configuration file '%s' is misconfigured",
+                                NET_COM_CONF_TYPE_KEY, NET_COM_CONF_FILE
+                            ),
+                            // Description
+                            "The initial network communication service can not be started.",
+                            // Cause
+                            String.format(
+                                "The service type is misconfigured.\n" +
+                                "The property '%s' must be either '%s' or '%s', but was '%s'",
+                                NET_COM_CONF_TYPE_KEY,
+                                NET_COM_CONF_TYPE_PLAIN,
+                                NET_COM_CONF_TYPE_SSL,
+                                type
+                            ),
+                            // Error details
+                            String.format(
+                                "The network communication service configuration file is:\n%s",
+                                NET_COM_CONF_FILE
+                            ),
+                            // No nested exception
+                            null
+                        )
+                    );
+                }
             }
-        }
-        catch (FileNotFoundException fileExc)
-        {
-            String errorMsg = "The configuration file for the initial network communications service could " +
-                "not be opened.";
-            String fileExcMsg = fileExc.getMessage();
-            getErrorReporter().reportProblem(
-                Level.ERROR,
-                new DrbdManageException(
-                    fileExcMsg != null ?
-                        "Can not open configuration file: " + fileExc.getMessage() :
-                        errorMsg + " The system did not provide any error description.",
-                    "The configuration file for the initial network communications service could not be opened.",
-                    fileExcMsg != null ?
-                        "The system returned the following error description:\n" +
-                        fileExc.getMessage() :
-                        "The system did not provide any error description.",
-                    "Make sure that the file exists and can be accessed by this process.",
-                    null
-                ),
-                null, // No access context
-                null, // No client connection
-                null // No context information
-            );
         }
         catch (IOException ioExc)
         {
@@ -693,6 +713,8 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             "CmdEndService",
             "CmdDisplayConnections",
             "CmdCloseConnection",
+            "CmdDisplaySystemStatus",
+            "CmdDisplayApis",
             "CmdTestErrorLog",
             "CmdShutdown"
         };
@@ -786,6 +808,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
     public static interface DebugControl extends CommonDebugControl
     {
+        Satellite getModuleInstance();
     }
 
     private static class DebugControlImpl implements DebugControl
@@ -795,6 +818,18 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         DebugControlImpl(Satellite satelliteRef)
         {
             satellite = satelliteRef;
+        }
+
+        @Override
+        public DrbdManage getInstance()
+        {
+            return satellite;
+        }
+
+        @Override
+        public Satellite getModuleInstance()
+        {
+            return satellite;
         }
 
         @Override
@@ -843,6 +878,12 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 peerMapCpy.putAll(satellite.peerMap);
             }
             return peerMapCpy;
+        }
+
+        @Override
+        public Set<String> getApiCallNames()
+        {
+            return satellite.msgProc.getApiCallNames();
         }
 
         @Override

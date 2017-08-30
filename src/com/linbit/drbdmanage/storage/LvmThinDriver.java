@@ -25,6 +25,8 @@ public class LvmThinDriver extends LvmDriver
 
     public static final String LVM_CONVERT_DEFAULT = "lvconvert";
 
+    private static final String ID_SNAP_DELIMITER = "_";
+
     protected String lvmConvertCommand = LVM_CONVERT_DEFAULT;
 
     protected String baseVolumeGroup = LVM_VOLUME_GROUP_DEFAULT;
@@ -59,9 +61,15 @@ public class LvmThinDriver extends LvmDriver
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
-                String.format("Failed to start volume [%s]", qualifiedIdentifier), exc
+                "Failed to start volume",
+                String.format("Failed to start volume [%s]", qualifiedIdentifier),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
             );
         }
     }
@@ -83,9 +91,14 @@ public class LvmThinDriver extends LvmDriver
         }
         catch (ChildProcessTimeoutException | IOException exc)
         {
-            // TODO: Detailed error reporting
             throw new StorageException(
+                "Failed to stop volume",
                 String.format("Failed to stop volume [%s]", qualifiedIdentifier),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
                 exc
             );
         }
@@ -167,106 +180,88 @@ public class LvmThinDriver extends LvmDriver
         {
             lvmCreateCommand,
             "--snapshot",           // -s
-            "--name", snapshotName, // -n
+            "--name", identifier + ID_SNAP_DELIMITER + snapshotName, // -n
             qualifiedIdentifier
         };
         return command;
     }
 
     @Override
-    protected String[] getCloneSnapshotCommand(String snapshotName1, String snapshotName2)
+    protected String[] getRestoreSnapshotCommand(String sourceIdentifier, String snapshotName, String targetIdentifier)
     {
-        return getCreateSnapshotCommand(snapshotName1, snapshotName2);
-    }
-
-    @Override
-    public void restoreSnapshot(String snapshotName) throws StorageException
-    {
-        final String qualifiedIdentifier = volumeGroup + File.separator + snapshotName;
         final String[] command = new String[]
         {
-            lvmConvertCommand,
-            "--merge", snapshotName
+            lvmCreateCommand,
+            "--snapshot",           // -s
+            "--name", targetIdentifier, // -n
+            volumeGroup + File.separator + sourceIdentifier + ID_SNAP_DELIMITER + snapshotName
         };
-
-        try
-        {
-            // FIXME: might take a long time. timeout may happen
-            final OutputData outputData = extCommand.exec(command);
-            checkExitCode(outputData, command, "Failed to restore snapshot [%s]. ", qualifiedIdentifier);
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            // TODO: Detailed error reporting
-            throw new StorageException(
-                String.format("Failed to stop volume [%s]", qualifiedIdentifier),
-                exc
-            );
-        }
+        return command;
     }
 
     @Override
-    protected String[] getDeleteSnapshotCommand(String identifier)
+    protected String[] getDeleteSnapshotCommand(String identifier, String snapshotName)
     {
-        return getDeleteCommand(identifier);
+        return getDeleteCommand(identifier + ID_SNAP_DELIMITER + snapshotName);
     }
 
     @Override
     public void createSnapshot(String identifier, String snapshotName) throws StorageException
     {
         super.createSnapshot(identifier, snapshotName);
-        startVolume(snapshotName);
+        startVolume(identifier + ID_SNAP_DELIMITER + snapshotName);
     }
 
     @Override
-    public void cloneSnapshot(String snapshotName1, String snapshotName2) throws StorageException
+    public void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier) throws StorageException
     {
-        super.cloneSnapshot(snapshotName1, snapshotName2);
-        startVolume(snapshotName2);
+        super.restoreSnapshot(sourceIdentifier, snapshotName, targetIdentifier);
+        startVolume(targetIdentifier);
     }
 
     private void checkThinPoolEntry(Map<String, String> config) throws StorageException
     {
-        final String value = config.get(StorageConstants.CONFIG_LVM_THIN_POOL_KEY);
-        if (value != null)
+        String newThinPoolName = config.get(StorageConstants.CONFIG_LVM_THIN_POOL_KEY);
+        if (newThinPoolName != null)
         {
-            final String thinPoolName = value.trim();
-
+            newThinPoolName = newThinPoolName.trim();
             try
             {
                 Checks.nameCheck(
-                    thinPoolName,
+                    newThinPoolName,
                     1,
                     Integer.MAX_VALUE,
                     VALID_CHARS,
                     VALID_INNER_CHARS
                 );
             }
-            catch (InvalidNameException ine)
+            catch (InvalidNameException invalidNameExc)
             {
-                // TODO: Detailed error reporting
                 throw new StorageException(
-                    String.format("Invalid thin pool name [%s]", thinPoolName),
-                    ine
+                    "Invalid configuration",
+                    null,
+                    String.format("Invalid name for thin pool: %s", newThinPoolName),
+                    "Specify a valid and existing thin pool name",
+                    null
                 );
             }
-            try
-            {
-                final String[] volumeGroupCheckCommand = new String[]
+            final String[] thinPoolCheckCommand = new String[]
                 {
                     lvmVgsCommand,
                     "-o", "vg_name",
                     "--noheadings"
                 };
+            try
+            {
 
-                final OutputData output = extCommand.exec(volumeGroupCheckCommand);
+                final OutputData output = extCommand.exec(thinPoolCheckCommand);
                 final String stdOut = new String(output.stdoutData);
                 final String[] lines = stdOut.split("\n");
 
                 boolean found = false;
                 for (String line : lines)
                 {
-                    if (line.trim().equals(thinPoolName))
+                    if (line.trim().equals(newThinPoolName))
                     {
                         found = true;
                         break;
@@ -274,17 +269,25 @@ public class LvmThinDriver extends LvmDriver
                 }
                 if (!found)
                 {
-                    // TODO: Detailed error reporting
                     throw new StorageException(
-                        String.format("Volume group [%s] not found.", thinPoolName)
+                        "Invalid configuration",
+                        "Unknown thin pool",
+                        String.format("Thin pool [%s] not found.", newThinPoolName),
+                        "Specify a valid and existing thin pool name or create the desired thin pool manually",
+                        null
                     );
                 }
             }
             catch (ChildProcessTimeoutException | IOException exc)
             {
-                // TODO: Detailed error reporting
                 throw new StorageException(
-                    String.format("Could not run [%s]", lvmVgsCommand),
+                    "Failed to verify thin pool name",
+                    null,
+                    (exc instanceof ChildProcessTimeoutException) ?
+                        "External command timed out" :
+                        "External command threw an IOException",
+                    null,
+                    String.format("External command: %s", glue(thinPoolCheckCommand, " ")),
                     exc
                 );
             }

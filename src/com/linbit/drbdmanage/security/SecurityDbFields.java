@@ -14,7 +14,7 @@ public class SecurityDbFields
     static final String TBL_ID_ROLE_MAP     = "SEC_ID_ROLE_MAP";
     static final String TBL_DFLT_ROLES      = "SEC_DFLT_ROLES";
     static final String TBL_OBJ_PROT        = "SEC_OBJECT_PROTECTION";
-    static final String TBL_ACL_ENTRIES     = "SEC_ACL_ENTRIES";
+    static final String TBL_ACL_MAP         = "SEC_ACL_MAP";
 
     static final String VW_IDENTITIES_LOAD  = "SEC_IDENTITIES_LOAD";
     static final String VW_ROLES_LOAD       = "SEC_ROLES_LOAD";

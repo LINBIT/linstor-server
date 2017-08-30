@@ -1,10 +1,13 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
+
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -12,7 +15,7 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface VolumeDefinition
+public interface VolumeDefinition extends TransactionObject
 {
     public UUID getUuid();
 
@@ -25,27 +28,25 @@ public interface VolumeDefinition
         throws AccessDeniedException;
 
     public void setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
-        throws AccessDeniedException;
+        throws AccessDeniedException, SQLException;
 
     public long getVolumeSize(AccessContext accCtx)
         throws AccessDeniedException;
 
     public void setVolumeSize(AccessContext accCtx, long newVolumeSize)
-        throws AccessDeniedException;
+        throws AccessDeniedException, SQLException;
 
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
     public StateFlags<VlmDfnFlags> getFlags();
 
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
     public enum VlmDfnFlags implements Flags
     {
         REMOVE(1L);
-
-        public static final VlmDfnFlags[] ALL_FLAGS =
-        {
-            REMOVE
-        };
 
         public final long flagValue;
 

@@ -1,17 +1,20 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
+
+import java.sql.SQLException;
 import java.util.UUID;
 
 /**
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Volume
+public interface Volume extends TransactionObject
 {
     public UUID getUuid();
 
@@ -26,14 +29,12 @@ public interface Volume
 
     public StateFlags<VlmFlags> getFlags();
 
+    public void delete(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
     public enum VlmFlags implements Flags
     {
         CLEAN(1L);
-
-        public static final VlmFlags[] ALL_FLAGS =
-        {
-            CLEAN
-        };
 
         public final long flagValue;
 

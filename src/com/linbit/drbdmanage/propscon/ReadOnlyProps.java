@@ -1,6 +1,8 @@
 package com.linbit.drbdmanage.propscon;
 
+import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -159,6 +161,44 @@ public class ReadOnlyProps implements Props
     public Iterator<String> iterateNamespaces()
     {
         return propsMap.iterateNamespaces();
+    }
+
+    @Override
+    public void initialized()
+    {
+        propsMap.initialized();
+    }
+
+    @Override
+    public boolean isInitialized()
+    {
+        return propsMap.isInitialized();
+    }
+
+    @Override
+    public void setConnection(TransactionMgr transMgr)
+    {
+        // ignore - ReadOnlyProps cannot be changed
+    }
+
+    @Override
+    public boolean isDirty()
+    {
+        return propsMap.isDirty();
+    }
+
+    @Override
+    public void commit()
+    {
+        // ignore - ReadOnlyProps cannot be changed. If the changes should be persisted,
+        // the modifiable propsCon.commit() should be called, not this
+    }
+
+    @Override
+    public void rollback()
+    {
+        // ignore - ReadOnlyProps cannot be changed. If the changes should be rolled back,
+        // the modifiable propsCon.rollback() should be called, not this
     }
 
     @Override

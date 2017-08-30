@@ -14,15 +14,15 @@ import java.util.Arrays;
 public class TcpConnectorMessage implements Message
 {
     // 16 bytes (128 bits) message header
-    private static final int HEADER_SIZE = 16;
+    protected static final int HEADER_SIZE = 16;
 
     // Header field for message type: 4 bytes (32 bits)
-    private static final int TYPE_FIELD_SIZE = 4;
-    private static final int TYPE_FIELD_OFFSET = 0;
+    protected static final int TYPE_FIELD_SIZE = 4;
+    protected static final int TYPE_FIELD_OFFSET = 0;
 
     // Header field for message length: 4 bytes (32 bits)
-    private static final int LENGTH_FIELD_SIZE = 4;
-    private static final int LENGTH_FIELD_OFFSET = 4;
+    protected static final int LENGTH_FIELD_SIZE = 4;
+    protected static final int LENGTH_FIELD_OFFSET = 4;
 
     // Maximum data size of a message
     // 16 MiB == 0x1000000

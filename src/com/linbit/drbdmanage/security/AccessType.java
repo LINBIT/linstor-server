@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.security;
 
 import com.linbit.InvalidNameException;
+import com.linbit.drbdmanage.DrbdManageRuntimeException;
 
 /**
  * Access types
@@ -11,16 +12,21 @@ import com.linbit.InvalidNameException;
  */
 public enum AccessType
 {
-    VIEW(0x1L),
-    USE(0x3L),
-    CHANGE(0x7L),
-    CONTROL(0xFL);
+    VIEW((short) 0x1),
+    USE((short) 0x3),
+    CHANGE((short) 0x7),
+    CONTROL((short) 0xF);
 
-    private final long accessMask;
+    private final short accessMask;
 
-    private AccessType(long mask)
+    private AccessType(short mask)
     {
         accessMask = mask;
+    }
+
+    public short getAccessMask()
+    {
+        return accessMask;
     }
 
     public boolean hasAccess(AccessType requested)
@@ -100,6 +106,35 @@ public enum AccessType
                         "The name '%s' requested in an AccessType lookup does not match any " +
                         "known access type names",
                         upperName
+                    )
+                );
+        }
+        return accType;
+    }
+
+    public static AccessType get(int flag)
+    {
+        AccessType accType;
+        switch(flag)
+        {
+            case 1:
+                accType = VIEW;
+                break;
+            case 3:
+                accType = USE;
+                break;
+            case 7:
+                accType = CHANGE;
+                break;
+            case 15:
+                accType = CONTROL;
+                break;
+            default:
+                throw new DrbdManageRuntimeException(
+                    String.format(
+                        "The value %d requested in an AccessType lookup does not match any " +
+                        "known access type values",
+                        flag
                     )
                 );
         }
