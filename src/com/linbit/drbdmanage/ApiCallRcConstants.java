@@ -35,13 +35,16 @@ public class ApiCallRcConstants
     /*
      * Node return codes
      */
+    public static final long RC_NODE_CREATED = 1 | MASK_RESOURCE_DEFINITION;
+
+    public static final long RC_NODE_CREATION_FAILED = RC_NODE_CREATED | ApiCallRc.MASK_ERROR;
 
     /*
      * ResourceDefinition return codes
      */
     public static final long RC_RESOURCE_DEFINITION_CREATED = 1 | MASK_RESOURCE_DEFINITION;
 
-    public static final long RC_RESOURCE_DEFINITION_FAILED = RC_RESOURCE_DEFINITION_CREATED | ApiCallRc.MASK_ERROR;
+    public static final long RC_RESOURCE_DEFINITION_CREATION_FAILED = RC_RESOURCE_DEFINITION_CREATED | ApiCallRc.MASK_ERROR;
 
     /*
      * Resource return codes

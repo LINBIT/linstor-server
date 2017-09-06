@@ -4,8 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.event.Level;
-
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
@@ -13,7 +12,6 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.ApiCallRcConstants;
 import com.linbit.drbdmanage.ApiCallRcImpl;
-import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.MinorNumber;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.Node.NodeFlag;
@@ -36,9 +34,23 @@ import com.linbit.drbdmanage.security.ObjectProtection;
 
 class CtrlApiCallHandler
 {
-    private static final String RESOURCE_DEFINITION_PEER_COUNT_KEY = "rscDfnPeerCountKey";
-    private static final String RESOURCE_DEFINITION_AL_SIZE_KEY = "rscDfnAlSizeKey";
-    private static final String RESOURCE_DEFINITION_AL_STRIPES_KEY = "rscDfnAlStripesKey";
+    public static final String PROPS_NODE_TYPE_KEY = "nodeType";
+    public static final String PROPS_NODE_FLAGS_KEY = "nodeFlags";
+
+    public static final String PROPS_RESOURCE_DEFINITION_PEER_COUNT_KEY = "rscDfnPeerCountKey";
+    public static final String PROPS_RESOURCE_DEFINITION_AL_SIZE_KEY = "rscDfnAlSizeKey";
+    public static final String PROPS_RESOURCE_DEFINITION_AL_STRIPES_KEY = "rscDfnAlStripesKey";
+
+    public static final String API_RC_VAR_NODE_NAME_KEY = "nodeName";
+    public static final String API_RC_VAR_RESOURCE_NAME_KEY = "resName";
+    public static final String API_RC_VAR_VOlUME_NUMBER_KEY = "volNr";
+    public static final String API_RC_VAR_VOlUME_MINOR_KEY = "volMinor";
+    public static final String API_RC_VAR_VOlUME_SIZE_KEY = "volSize";
+    public static final String API_RC_VAR_RESOURCE_PEER_COUNT_KEY = "peerCount";
+    public static final String API_RC_VAR_RESOURCE_AL_STRIPES_KEY = "alStripes";
+    public static final String API_RC_VAR_RESOURCE_AL_SIZE_KEY = "alSize";
+    public static final String API_RC_VAR_ACC_CTX_ID_KEY = "accCtxId";
+    public static final String API_RC_VAR_ACC_CTX_ROLE_KEY = "accCtxRole";
 
     private final Controller controller;
     private final DbConnectionPool dbConnPool;
@@ -57,6 +69,7 @@ class CtrlApiCallHandler
         rscDfnMapProt = rscDfnMapProtRef;
         rscDfnMap = rscDfnMapRef;
     }
+
 
 
     public ApiCallRc createNode(
@@ -85,10 +98,8 @@ class CtrlApiCallHandler
             transMgr = new TransactionMgr(dbConnPool.getConnection()); // sqlExc1
             NodeName nodeName = new NodeName(nodeNameStr); // invalidNameExc1
 
-            NodeType type = null;
-            // TODO: parse types from props
-            NodeFlag[] flags = null;
-            // TODO: parse flags from props
+            NodeType type = NodeType.valueOfIgnoreCase(props.get(PROPS_NODE_TYPE_KEY));
+            NodeFlag[] flags = NodeFlag.valuesOfIgnoreCase(props.get(PROPS_NODE_FLAGS_KEY));
             node = NodeData.getInstance( // sqlExc2, accDeniedExc1
                 accCtx,
                 nodeName,
@@ -98,6 +109,15 @@ class CtrlApiCallHandler
                 transMgr,
                 true
             );
+
+            transMgr.commit(); // sqlExc3
+
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATED);
+            entry.setMessageFormat("Node ${" + API_RC_VAR_NODE_NAME_KEY + "} successfully created");
+            entry.putVariable(API_RC_VAR_NODE_NAME_KEY, nodeNameStr);
+
+            apiCallRc.addEntry(entry);
         }
         catch (SQLException sqlExc)
         {
@@ -111,20 +131,52 @@ class CtrlApiCallHandler
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
-                // TODO: set additional bits for further describing the problem
-                entry.setMessageFormat(sqlExc.getMessage());
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+                entry.setMessageFormat("Failed to create database transaction");
+                entry.setCauseFormat(sqlExc.getMessage());
 
                 apiCallRc.addEntry(entry);
             }
             else
             if (node == null)
             { // handle sqlExc2
-                // TODO implement error reporting
+                controller.getErrorReporter().reportError(
+                    sqlExc,
+                    null,
+                    null,
+                    "A database error occured while trying to persist the node."
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+                entry.setMessageFormat("Failed to persist node.");
+                entry.setCauseFormat(sqlExc.getMessage());
+
+                apiCallRc.addEntry(entry);
+            }
+            else
+            {
+                // handle sqlExc3
+
+                controller.getErrorReporter().reportError(
+                    sqlExc,
+                    null,
+                    null,
+                    "A database error occured while trying to commit the transaction."
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+                entry.setMessageFormat("Failed to commit transaction");
+                entry.setCauseFormat(sqlExc.getMessage());
+
+                apiCallRc.addEntry(entry);
             }
         }
         catch (InvalidNameException invalidNameExc)
         {
+            // handle invalidNameExc1
+
             controller.getErrorReporter().reportError(
                 invalidNameExc,
                 accCtx,
@@ -133,9 +185,11 @@ class CtrlApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
-            // TODO: set additional bits for further describing the problem
-            entry.setMessageFormat(invalidNameExc.getMessage());
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+            entry.setMessageFormat("The given name '${" + API_RC_VAR_NODE_NAME_KEY + "}' is invalid");
+            entry.setCauseFormat(invalidNameExc.getMessage());
+
+            entry.putVariable(API_RC_VAR_NODE_NAME_KEY, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -143,8 +197,46 @@ class CtrlApiCallHandler
         {
             // handle accDeniedExc1
 
-            // TODO implement error reporting
+            controller.getErrorReporter().reportError(
+                accDeniedExc,
+                accCtx,
+                client,
+                "The given access context has no permission to create a new node"
+            );
+
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+            entry.setMessageFormat("The given access context has no permission to create a new node");
+            entry.setCauseFormat(accDeniedExc.getMessage());
+
+            apiCallRc.addEntry(entry);
         }
+
+        if (transMgr != null && transMgr.isDirty())
+        {
+            try
+            {
+                transMgr.rollback();
+            }
+            catch (SQLException sqlExc)
+            {
+                controller.getErrorReporter().reportError(
+                    sqlExc,
+                    null,
+                    null,
+                    "A database error occured while trying to rollback the transaction."
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+                entry.setMessageFormat("Failed to rollback database transaction");
+                entry.setCauseFormat(sqlExc.getMessage());
+
+                apiCallRc.addEntry(entry);
+            }
+        }
+
+
         return apiCallRc;
     }
 
@@ -175,9 +267,9 @@ class CtrlApiCallHandler
         VolumeDefinition.CreationData currentVolCrtData = null;
         VolumeDefinition lastVolDfn = null;
 
-        short peerCount = getAsShort(props, RESOURCE_DEFINITION_PEER_COUNT_KEY, controller.getDefaultPeerCount());
-        int alStripes = getAsInt(props, RESOURCE_DEFINITION_AL_STRIPES_KEY, controller.getDefaultAlStripes());
-        long alStripeSize = getAsLong(props, RESOURCE_DEFINITION_AL_SIZE_KEY, controller.getDefaultAlSize());
+        short peerCount = getAsShort(props, PROPS_RESOURCE_DEFINITION_PEER_COUNT_KEY, controller.getDefaultPeerCount());
+        int alStripes = getAsInt(props, PROPS_RESOURCE_DEFINITION_AL_STRIPES_KEY, controller.getDefaultAlStripes());
+        long alStripeSize = getAsLong(props, PROPS_RESOURCE_DEFINITION_AL_SIZE_KEY, controller.getDefaultAlSize());
 
         try
         {
@@ -211,9 +303,9 @@ class CtrlApiCallHandler
 
                 // getGrossSize performs check and throws exception when something is invalid
                 controller.getMetaDataApi().getGrossSize(size, peerCount, alStripes, alStripeSize);
-                // mdExc2
+                // mdExc1
 
-                lastVolDfn = VolumeDefinitionData.getInstance( // mdExc1, sqlExc3, accDeniedExc2
+                lastVolDfn = VolumeDefinitionData.getInstance( // mdExc2, sqlExc3, accDeniedExc2
                     accCtx,
                     rscDfn,
                     volNr,
@@ -234,9 +326,15 @@ class CtrlApiCallHandler
             {
                 ApiCallRcEntry volSuccessEntry = new ApiCallRcEntry();
                 volSuccessEntry.setReturnCode(ApiCallRcConstants.RC_VOLUME_DEFINITION_CREATED);
-                volSuccessEntry.setMessageFormat("Volume Definition with number ${volNr} and minor number ${minorNr} successfully created");
-                volSuccessEntry.putVariable("volNr", Integer.toString(volCrtData.getId()));
-                volSuccessEntry.putVariable("minorNr", Integer.toString(volCrtData.getMinorNr()));
+                volSuccessEntry.setMessageFormat(
+                    String.format(
+                        "Volume Definition with number ${%s} and minor number ${%s} successfully created",
+                        API_RC_VAR_VOlUME_NUMBER_KEY,
+                        API_RC_VAR_VOlUME_MINOR_KEY
+                    )
+                );
+                volSuccessEntry.putVariable(API_RC_VAR_VOlUME_NUMBER_KEY, Integer.toString(volCrtData.getId()));
+                volSuccessEntry.putVariable(API_RC_VAR_VOlUME_MINOR_KEY, Integer.toString(volCrtData.getMinorNr()));
 
                 apiCallRc.addEntry(volSuccessEntry);
             }
@@ -244,8 +342,11 @@ class CtrlApiCallHandler
             ApiCallRcEntry successEntry = new ApiCallRcEntry();
 
             successEntry.setReturnCode(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATED);
-            successEntry.setMessageFormat("Resource definition '${resName}' successfully created");
-            successEntry.putVariable("resName", resourceName);
+            successEntry.setMessageFormat("Resource definition '${" + API_RC_VAR_RESOURCE_NAME_KEY + "}' successfully created.");
+            successEntry.putVariable(API_RC_VAR_RESOURCE_NAME_KEY, resourceName);
+            successEntry.putVariable(API_RC_VAR_RESOURCE_PEER_COUNT_KEY, Short.toString(peerCount));
+            successEntry.putVariable(API_RC_VAR_RESOURCE_AL_STRIPES_KEY, Integer.toString(alStripes));
+            successEntry.putVariable(API_RC_VAR_RESOURCE_AL_SIZE_KEY, Long.toString(alStripeSize));
 
             apiCallRc.addEntry(successEntry);
 
@@ -254,45 +355,78 @@ class CtrlApiCallHandler
         {
             if (transMgr == null)
             { // handle sqlExc1
+                String errorMessage = "A database error occured while trying to create a new transaction.";
                 controller.getErrorReporter().reportError(
                     sqlExc,
                     accCtx,
                     client,
-                    "A database error occured while trying to create a new transaction."
+                    errorMessage
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_FAILED);
-                entry.setMessageFormat(sqlExc.getMessage());
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat(errorMessage);
+                entry.setCauseFormat(sqlExc.getMessage());
 
                 apiCallRc.addEntry(entry);
             }
             else
             if (rscDfn == null)
             { // handle sqlExc2
+                String errorMessage = "A database error occured while trying to create a new resource definition.";
                 controller.getErrorReporter().reportError(
                     sqlExc,
                     accCtx,
                     client,
-                    "A database error occured while trying to create a new resource definition."
+                    errorMessage
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_FAILED);
-                entry.setMessageFormat(sqlExc.getMessage());
-                entry.setCauseFormat("Persisting the resource definition resulted in an SQL Exception");
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat(errorMessage);
+                entry.setCauseFormat(sqlExc.getMessage());
 
                 apiCallRc.addEntry(entry);
             }
             else
             if (lastVolDfn == null)
             { // handle sqlExc3
-                // TODO implement error reporting
+                String errorMessage = "A database error occured while trying to create a new volume definition.";
+                controller.getErrorReporter().reportError(
+                    sqlExc,
+                    accCtx,
+                    client,
+                    errorMessage
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat(errorMessage);
+                entry.setCauseFormat(sqlExc.getMessage());
+                if (currentVolCrtData != null)
+                {
+                    entry.putVariable(API_RC_VAR_VOlUME_NUMBER_KEY, Integer.toString(currentVolCrtData.getId()));
+                    entry.putVariable(API_RC_VAR_VOlUME_MINOR_KEY, Integer.toString(currentVolCrtData.getMinorNr()));
+                }
+                apiCallRc.addEntry(entry);
             }
             else
             if (transMgr.isDirty())
             { // handle sqlExc4
-                // TODO implement error reporting
+                String errorMessage = "A database error occured while trying to commit the transaction.";
+                controller.getErrorReporter().reportError(
+                    sqlExc,
+                    accCtx,
+                    client,
+                    errorMessage
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat(errorMessage);
+                entry.setCauseFormat(sqlExc.getMessage());
+
+                apiCallRc.addEntry(entry);
             }
         }
         catch (AccessDeniedException accExc)
@@ -300,64 +434,67 @@ class CtrlApiCallHandler
             if (rscDfn == null)
             { // handle accDeniedExc1
 
-                // TODO: Generate a problem report with less debug information
-                controller.getErrorReporter().reportProblem(
-                    Level.ERROR, accExc, accCtx, client,
-                    "createResourceDefinition" // TOOD: Provide useful context information
+                String errorMessage = "The given access context has no permission to create a resource definition";
+                controller.getErrorReporter().reportError(
+                    accExc,
+                    accCtx,
+                    client,
+                    errorMessage
                 );
+
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
-                // TODO: set additional bits for further describing the problem
-                entry.setCauseFormat("The given access-context has insucuffient rights");
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat(errorMessage);
+                entry.setCauseFormat(accExc.getMessage());
                 entry.setDetailsFormat("The access-context (user: ${acUser}, role: ${acRole}) "
                     + "requires more rights to create a new resource definition ");
-                entry.putVariable("acUser", accCtx.subjectId.name.displayValue);
-                entry.putVariable("acRole", accCtx.subjectRole.name.displayValue);
+                entry.putVariable(API_RC_VAR_ACC_CTX_ID_KEY, accCtx.subjectId.name.displayValue);
+                entry.putVariable(API_RC_VAR_ACC_CTX_ROLE_KEY, accCtx.subjectRole.name.displayValue);
 
                 apiCallRc.addEntry(entry);
             }
             else
             if (lastVolDfn == null)
             { // handle accDeniedExc2
-                // TODO implement error reporting
+                String errorMessage = "The given access context has no permission to create a resource definition";
+                controller.getErrorReporter().reportError(
+                    new ImplementationError(
+                        "Could not create volume definition for a newly created resource definition",
+                        accExc
+                    ),
+                    accCtx,
+                    client,
+                    errorMessage
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat(errorMessage);
+                entry.setCauseFormat(accExc.getMessage());
+                entry.setDetailsFormat("The access-context (user: ${acUser}, role: ${acRole}) "
+                    + "requires more rights to create a new resource definition ");
+                entry.putVariable(API_RC_VAR_ACC_CTX_ID_KEY, accCtx.subjectId.name.displayValue);
+                entry.putVariable(API_RC_VAR_ACC_CTX_ROLE_KEY, accCtx.subjectRole.name.displayValue);
+
+                apiCallRc.addEntry(entry);
             }
         }
         catch (InvalidNameException nameExc)
         {
             // handle invalidNameExc1
 
-            // TODO: Generate a problem report with less debug information
-            String nameExcMsg = nameExc.getMessage();
-            String causeText = "The specified name is not valid for use as a resource name.";
-            if (nameExcMsg != null)
-            {
-                causeText += "\n" + nameExcMsg;
-            }
-            DrbdManageException resNameExc = new DrbdManageException(
-                nameExc.getMessage(),
-                // Description
-                "Creation of the resource definition failed.",
-                // Cause
-                causeText,
-                // Correction
-                "Retry creating the resource definition with a name that is valid for use as a resource name",
-                // Error details
-                null,
-                // Nested exception
-                nameExc
+            String errorMessage = "The specified name is not valid for use as a resource name.";
+            controller.getErrorReporter().reportError(
+                nameExc,
+                accCtx,
+                client,
+                errorMessage
             );
-            controller.getErrorReporter().reportProblem(
-                Level.ERROR, resNameExc, accCtx, client,
-                "createResourceDefinition" // TODO: Provide useful context information
-            );
-
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
-            // TODO: set additional bits for further describing the problem
-            entry.setMessageFormat(nameExcMsg);
-            entry.setCauseFormat("The given resource name is invalid");
-            entry.setDetailsFormat("The access-context (user: ${acUser}, role: ${acRole}) "
-                + "requires more rights to create a new resource definition ");
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat("The given resource name '${" + API_RC_VAR_RESOURCE_NAME_KEY + "}'is invalid");
+            entry.putVariable(API_RC_VAR_RESOURCE_NAME_KEY, resourceName);
 
             apiCallRc.addEntry(entry);
         }
@@ -366,46 +503,56 @@ class CtrlApiCallHandler
             if (volNr == null)
             { // handle valOORangeExc1
 
-                // TODO: Generate a problem report with less debug information
-                controller.getErrorReporter().reportError(valOORangeExc);
+                String errorMessage = "The specified volume number is invalid.";
+                controller.getErrorReporter().reportError(
+                    valOORangeExc,
+                    accCtx,
+                    client,
+                    errorMessage
+                );
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat(errorMessage);
+                entry.setCauseFormat("Given volume number ${" + API_RC_VAR_VOlUME_NUMBER_KEY + "} was invalid");
+                entry.putVariable(API_RC_VAR_VOlUME_NUMBER_KEY, Integer.toString(currentVolCrtData.getId()));
 
-                ApiCallRcEntry invalidVolNum = new ApiCallRcEntry();
-                invalidVolNum.setReturnCodeBit(ApiCallRc.MASK_ERROR);
-                // TODO: Additionally set further bitflags as return code describing the problem
-
-                invalidVolNum.setCorrectionFormat("Specify a valid volume number");
-                invalidVolNum.setDetailsFormat("Given volume number ${volNr} was invalid");
-                invalidVolNum.putVariable("volNr", Integer.toString(currentVolCrtData.getId()));
-                apiCallRc.addEntry(invalidVolNum);
+                apiCallRc.addEntry(entry);
             }
             else
             if (minorNr == null)
             { // handle valOORangeExc2
+                String errorMessage = "The specified minor number is invalid.";
+                controller.getErrorReporter().reportError(
+                    valOORangeExc,
+                    accCtx,
+                    client,
+                    errorMessage
+                );
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat(errorMessage);
+                entry.setCauseFormat("Given minor number ${" + API_RC_VAR_VOlUME_MINOR_KEY + "} was invalid");
+                entry.putVariable(API_RC_VAR_VOlUME_MINOR_KEY, Integer.toString(currentVolCrtData.getId()));
 
-                // TODO: Generate a problem report with less debug information
-                controller.getErrorReporter().reportError(valOORangeExc);
-
-                ApiCallRcEntry invalidMinorNum = new ApiCallRcEntry();
-                invalidMinorNum.setReturnCodeBit(ApiCallRc.MASK_ERROR);
-                // TODO: Additionally set further bitflags as return code describing the problem
-
-                invalidMinorNum.setCorrectionFormat("Specify a valid minor number");
-                invalidMinorNum.setDetailsFormat("Given minor number ${minorNr} was invalid");
-                invalidMinorNum.putVariable("volNr", Integer.toString(currentVolCrtData.getMinorNr()));
-                apiCallRc.addEntry(invalidMinorNum);
+                apiCallRc.addEntry(entry);
             }
         }
         catch (MdException metaDataExc)
         {
-            // handle mdExc1
+            // handle mdExc1 and mdExc2
 
-            // TODO: Generate a problem report with less debug information
-            controller.getErrorReporter().reportError(metaDataExc);
-
+            String errorMessage = "The specified volume size is invalid.";
+            controller.getErrorReporter().reportError(
+                metaDataExc,
+                accCtx,
+                client,
+                errorMessage
+            );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
-            // TODO: set additional bits for further describing the problem
-            entry.setMessageFormat(metaDataExc.getMessage());
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat("Given volume size ${" + API_RC_VAR_VOlUME_SIZE_KEY + "} was invalid");
+            entry.putVariable(API_RC_VAR_VOlUME_SIZE_KEY, Long.toString(currentVolCrtData.getSize()));
 
             apiCallRc.addEntry(entry);
         }
@@ -420,17 +567,18 @@ class CtrlApiCallHandler
             }
             catch (SQLException sqlExc)
             {
+                String errorMessage = "A database error occured while trying to rollback the transaction.";
                 controller.getErrorReporter().reportError(
                     sqlExc,
                     accCtx,
                     client,
-                    "A database error occured while trying to rollback the transaction."
+                    errorMessage
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRc.MASK_ERROR);
-                // TODO: set additional bits for further describing the problem
-                entry.setMessageFormat(sqlExc.getMessage());
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat(errorMessage);
+                entry.setCauseFormat(sqlExc.getMessage());
 
                 apiCallRc.addEntry(entry);
             }

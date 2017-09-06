@@ -90,6 +90,11 @@ public interface Node extends TransactionObject
             }
             return ret;
         }
+
+        public static NodeType valueOfIgnoreCase(String string)
+        {
+            return valueOf(string.toUpperCase());
+        }
     }
 
     public enum NodeFlag implements Flags
@@ -108,6 +113,19 @@ public interface Node extends TransactionObject
         public long getFlagValue()
         {
             return flagValue;
+        }
+
+        public static NodeFlag[] valuesOfIgnoreCase(String string)
+        {
+            String[] split = string.split(",");
+            NodeFlag[] flags = new NodeFlag[split.length];
+
+            for (int i = 0; i < split.length; i++)
+            {
+                flags[i] = NodeFlag.valueOf(split[i].toUpperCase().trim());
+            }
+
+            return flags;
         }
     }
 }
