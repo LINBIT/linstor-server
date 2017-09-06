@@ -20,6 +20,7 @@ import com.linbit.ImplementationError;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
+import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
@@ -365,7 +366,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, null, niInterfaceType, true);
 
@@ -388,7 +389,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, null, niInterfaceType, false);
 

@@ -10,6 +10,7 @@ import java.util.List;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;

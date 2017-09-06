@@ -3,7 +3,8 @@ package com.linbit.drbdmanage.security;
 import com.linbit.ErrorCheck;
 import com.linbit.InvalidNameException;
 import com.linbit.drbdmanage.ControllerDatabase;
-import com.linbit.drbdmanage.DrbdManage;
+import com.linbit.drbdmanage.core.DrbdManage;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;

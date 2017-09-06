@@ -11,6 +11,8 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
+import com.linbit.TransactionSimpleObject;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
@@ -40,7 +42,7 @@ public class NodeData extends BaseTransactionObject implements Node
     private final StateFlags<NodeFlag> flags;
 
     // Node type
-    private final StateFlags<NodeType> nodeTypeFlags;
+    private final TransactionSimpleObject<NodeType> nodeType;
 
     // List of resources assigned to this cluster node
     private final Map<ResourceName, Resource> resourceMap;
@@ -67,7 +69,7 @@ public class NodeData extends BaseTransactionObject implements Node
     private NodeData(
         AccessContext accCtx,
         NodeName nameRef,
-        long initialTypes,
+        NodeType type,
         long initialFlags,
         SerialGenerator srlGen,
         TransactionMgr transMgr
@@ -83,7 +85,7 @@ public class NodeData extends BaseTransactionObject implements Node
                 true
             ),
             nameRef,
-            initialTypes,
+            type,
             initialFlags,
             srlGen,
             transMgr
@@ -97,7 +99,7 @@ public class NodeData extends BaseTransactionObject implements Node
         UUID uuidRef,
         ObjectProtection objProtRef,
         NodeName nameRef,
-        long initialTypes,
+        NodeType type,
         long initialFlags,
         SerialGenerator srlGen,
         TransactionMgr transMgr
@@ -118,16 +120,16 @@ public class NodeData extends BaseTransactionObject implements Node
         nodeProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
 
         flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence(), initialFlags);
-        if (initialTypes == 0)
+        if (type == null)
         {
             // Default to creating an AUXILIARY type node
-            initialTypes = NodeType.AUXILIARY.getFlagValue();
+            type = NodeType.AUXILIARY;
         }
-        nodeTypeFlags = new NodeTypesFlagsImpl(objProt, dbDriver.getNodeTypeStateFlagPersistence(), initialTypes);
+        nodeType = new TransactionSimpleObject<Node.NodeType>(type, dbDriver.getNodeTypeDriver());
 
         transObjs = Arrays.<TransactionObject> asList(
             flags,
-            nodeTypeFlags,
+            nodeType,
             objProt,
             nodeProps
         );
@@ -141,7 +143,7 @@ public class NodeData extends BaseTransactionObject implements Node
     public static NodeData getInstance(
         AccessContext accCtx,
         NodeName nameRef,
-        NodeType[] types,
+        NodeType type,
         NodeFlag[] flags,
         SerialGenerator srlGen,
         TransactionMgr transMgr,
@@ -168,7 +170,7 @@ public class NodeData extends BaseTransactionObject implements Node
             nodeData = new NodeData(
                 accCtx,
                 nameRef,
-                StateFlagsBits.getMask(types),
+                type,
                 StateFlagsBits.getMask(flags),
                 srlGen,
                 transMgr
@@ -326,13 +328,13 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
-    public long getNodeTypes(AccessContext accCtx)
+    public NodeType getNodeType(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        return nodeTypeFlags.getFlagsBits(accCtx);
+        return nodeType.get();
     }
 
     @Override
@@ -342,7 +344,8 @@ public class NodeData extends BaseTransactionObject implements Node
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
-        return nodeTypeFlags.isSet(accCtx, reqType);
+        long reqFlags = reqType.getFlagValue();
+        return (nodeType.get().getFlagValue() & reqFlags) == reqFlags;
     }
 
     @Override

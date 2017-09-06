@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.dbdrivers.interfaces;
 
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.drbdmanage.Node.NodeFlag;
 import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.NodeData;
@@ -23,12 +24,12 @@ public interface NodeDataDatabaseDriver extends BasePropsDatabaseDriver<NodeData
     public StateFlagsPersistence getStateFlagPersistence();
 
     /**
-     * A special sub-driver to update the persisted {@link NodeType}s. The data record
+     * A special sub-driver to update the persisted {@link NodeType}. The data record
      * is specified by the primary key stored as instance variables.
      *
      * @return
      */
-    public StateFlagsPersistence getNodeTypeStateFlagPersistence();
+    public SingleColumnDatabaseDriver<NodeType> getNodeTypeDriver();
 
     /**
      * A special sub-driver to update the instance specific {@link Props}. The data record
@@ -37,4 +38,5 @@ public interface NodeDataDatabaseDriver extends BasePropsDatabaseDriver<NodeData
      * @return
      */
     public PropsConDatabaseDriver getPropsConDriver();
+
 }

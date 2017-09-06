@@ -31,6 +31,7 @@ import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeNumber;
+import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -142,7 +143,7 @@ public abstract class DerbyBase implements DerbyConstants
         ObjectProtectionDerbyDriver.clearCache();
         DriverUtils.clearCaches();
 
-        DriverUtils.setDatabaseClasses(
+        CoreUtils.setDatabaseClasses(
             secureDbDriver,
             persistenceDbDriver
         );

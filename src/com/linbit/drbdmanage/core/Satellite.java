@@ -1,19 +1,17 @@
-package com.linbit.drbdmanage;
+package com.linbit.drbdmanage.core;
 
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
+import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.drbdmanage.SatelliteCoreServices;
+import com.linbit.drbdmanage.SatellitePeerCtx;
 import com.linbit.drbdmanage.dbdrivers.NoOpDriver;
-import com.linbit.drbdmanage.debug.BaseDebugConsole;
-import com.linbit.drbdmanage.debug.CommonDebugCmd;
 import com.linbit.drbdmanage.debug.DebugConsole;
-import com.linbit.drbdmanage.debug.SatelliteDebugCmd;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
-import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
@@ -33,7 +31,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -47,7 +44,6 @@ import java.security.cert.CertificateException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -96,7 +92,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     // Worker thread pool & message processing dispatcher
     //
     private WorkerPool workerThrPool = null;
-    private CommonMessageProcessor msgProc = null;
+    private final CommonMessageProcessor msgProc;
 
     // ============================================================
     // Core system services
@@ -151,6 +147,35 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         // initialize noop databases drivers (needed for shutdownProt)
         securityDbDriver = new EmptySecurityDbDriver();
         persistenceDbDriver = new NoOpDriver();
+
+        // Initialize the worker thread pool
+        // errorLogRef.logInfo("Starting worker thread pool");
+        try
+        {
+            AccessContext initCtx = sysCtx.clone();
+            initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+            int cpuCount = getCpuCount();
+            int thrCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
+            int qSize = thrCount * getWorkerQueueFactor();
+            qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
+            setWorkerThreadCount(initCtx, thrCount);
+            setWorkerQueueSize(initCtx, qSize);
+            workerThrPool = WorkerPool.initialize(
+                thrCount, qSize, true, "MainWorkerPool", getErrorReporter()
+            );
+
+            // Initialize the message processor
+            // errorLogRef.logInfo("Initializing API call dispatcher");
+            msgProc = new CommonMessageProcessor(this, workerThrPool);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(
+                "Satellite's constructor cannot get system privileges",
+                accDeniedExc
+            );
+        }
 
         // Initialize shutdown controls
         shutdownFinished = false;
@@ -213,23 +238,6 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                     );
                 }
 
-                // Initialize the worker thread pool
-                errorLogRef.logInfo("Starting worker thread pool");
-                {
-                    int cpuCount = getCpuCount();
-                    int thrCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
-                    int qSize = thrCount * getWorkerQueueFactor();
-                    qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
-                    setWorkerThreadCount(initCtx, thrCount);
-                    setWorkerQueueSize(initCtx, qSize);
-                    workerThrPool = WorkerPool.initialize(
-                        thrCount, qSize, true, "MainWorkerPool", getErrorReporter()
-                    );
-                }
-
-                // Initialize the message processor
-                errorLogRef.logInfo("Initializing API call dispatcher");
-                msgProc = new CommonMessageProcessor(this, workerThrPool);
 
                 errorLogRef.logInfo("Initializing test APIs");
                 DrbdManage.loadApiCalls(msgProc, this, this);
@@ -271,7 +279,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
             DebugConsole dbgConsole = createDebugConsole(privCtx, debugCtx, null);
-            dbgConsole.stdStreamsConsole(DebugConsoleImpl.CONSOLE_PROMPT);
+            dbgConsole.stdStreamsConsole(StltDebugConsoleImpl.CONSOLE_PROMPT);
             System.out.println();
 
             errLog.logInfo("Debug console exited");
@@ -356,7 +364,13 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        Satellite.DebugConsoleImpl peerDbgConsole = new Satellite.DebugConsoleImpl(this, debugCtx);
+        StltDebugConsoleImpl peerDbgConsole = new StltDebugConsoleImpl(
+            this,
+            debugCtx,
+            systemServicesMap,
+            peerMap,
+            msgProc
+        );
         if (client != null)
         {
             SatellitePeerCtx peerContext = (SatellitePeerCtx) client.getAttachment();
@@ -421,7 +435,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                     msgProc,
                     bindAddress,
                     publicCtx,
-                    new ConnTracker(this)
+                    new StltConnTracker(this, peerMap)
                 );
             }
             else
@@ -441,7 +455,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                         msgProc,
                         bindAddress,
                         publicCtx,
-                        new ConnTracker(this),
+                        new StltConnTracker(this, peerMap),
                         sslProtocol,
                         keyStoreFile,
                         keyStorePasswd,
@@ -630,273 +644,5 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         }
 
         System.out.println();
-    }
-
-    private static class ConnTracker implements ConnectionObserver
-    {
-        private final Satellite satellite;
-
-        ConnTracker(Satellite satelliteRef)
-        {
-            satellite = satelliteRef;
-        }
-
-        @Override
-        public void outboundConnectionEstablished(Peer connPeer)
-        {
-            // FIXME: Something should done here for completeness, although the Satellite
-            //        does not normally connect outbound
-            if (connPeer != null)
-            {
-                SatellitePeerCtx peerCtx = (SatellitePeerCtx) connPeer.getAttachment();
-                if (peerCtx == null)
-                {
-                    peerCtx = new SatellitePeerCtx();
-                    connPeer.attach(peerCtx);
-                }
-                synchronized (satellite.peerMap)
-                {
-                    satellite.peerMap.put(connPeer.getId(), connPeer);
-                }
-            }
-        }
-
-        @Override
-        public void inboundConnectionEstablished(Peer connPeer)
-        {
-            if (connPeer != null)
-            {
-                SatellitePeerCtx peerCtx = new SatellitePeerCtx();
-                connPeer.attach(peerCtx);
-                synchronized (satellite.peerMap)
-                {
-                    satellite.peerMap.put(connPeer.getId(), connPeer);
-                }
-            }
-        }
-
-        @Override
-        public void connectionClosed(Peer connPeer)
-        {
-            if (connPeer != null)
-            {
-                synchronized (satellite.peerMap)
-                {
-                    satellite.peerMap.remove(connPeer.getId());
-                }
-            }
-        }
-    }
-
-    private static class DebugConsoleImpl extends BaseDebugConsole
-    {
-        private final Satellite satellite;
-
-        private boolean loadedCmds  = false;
-        private boolean exitFlag    = false;
-
-        public static final String CONSOLE_PROMPT = "Command ==> ";
-
-        public static final String[] GNRC_COMMAND_CLASS_LIST =
-        {
-        };
-        public static final String GNRC_COMMAND_CLASS_PKG = "com.linbit.drbdmanage.debug";
-        public static final String[] STLT_COMMAND_CLASS_LIST =
-        {
-            "CmdDisplayThreads",
-            "CmdDisplayContextInfo",
-            "CmdDisplayServices",
-            "CmdDisplaySecLevel",
-            "CmdDisplayModuleInfo",
-            "CmdDisplayVersion",
-            "CmdStartService",
-            "CmdEndService",
-            "CmdDisplayConnections",
-            "CmdCloseConnection",
-            "CmdDisplaySystemStatus",
-            "CmdDisplayApis",
-            "CmdTestErrorLog",
-            "CmdShutdown"
-        };
-        public static final String STLT_COMMAND_CLASS_PKG = "com.linbit.drbdmanage.debug";
-
-        private DebugControl debugCtl;
-
-        DebugConsoleImpl(
-            Satellite satelliteRef,
-            AccessContext accCtx
-        )
-        {
-            super(accCtx, satelliteRef);
-            ErrorCheck.ctorNotNull(DebugConsoleImpl.class, Satellite.class, satelliteRef);
-            ErrorCheck.ctorNotNull(DebugConsoleImpl.class, AccessContext.class, accCtx);
-
-            satellite = satelliteRef;
-            loadedCmds = false;
-            debugCtl = new DebugControlImpl(satellite);
-        }
-
-        public void stdStreamsConsole()
-        {
-            stdStreamsConsole(CONSOLE_PROMPT);
-        }
-
-        public void loadDefaultCommands(
-            PrintStream debugOut,
-            PrintStream debugErr
-        )
-        {
-            if (!loadedCmds)
-            {
-                for (String cmdClassName : STLT_COMMAND_CLASS_LIST)
-                {
-                    loadCommand(debugOut, debugErr, cmdClassName);
-                }
-            }
-            loadedCmds = true;
-        }
-
-        @Override
-        public void loadCommand(
-            PrintStream debugOut,
-            PrintStream debugErr,
-            String cmdClassName
-        )
-        {
-            try
-            {
-                Class<? extends Object> cmdClass = Class.forName(
-                    STLT_COMMAND_CLASS_PKG + "." + cmdClassName
-                );
-                try
-                {
-                    CommonDebugCmd cmnDebugCmd = (CommonDebugCmd) cmdClass.newInstance();
-                    cmnDebugCmd.commonInitialize(satellite, satellite, debugCtl, this);
-                    if (cmnDebugCmd instanceof SatelliteDebugCmd)
-                    {
-                        SatelliteDebugCmd debugCmd = (SatelliteDebugCmd) cmnDebugCmd;
-                        debugCmd.initialize(satellite, satellite, debugCtl, this);
-                    }
-
-                    // FIXME: Detect and report name collisions
-                    for (String cmdName : cmnDebugCmd.getCmdNames())
-                    {
-                        commandMap.put(cmdName.toUpperCase(), cmnDebugCmd);
-                    }
-                }
-                catch (IllegalAccessException | InstantiationException instantiateExc)
-                {
-                    satellite.getErrorReporter().reportError(instantiateExc);
-                }
-            }
-            catch (ClassNotFoundException cnfExc)
-            {
-                satellite.getErrorReporter().reportError(cnfExc);
-            }
-        }
-
-        @Override
-        public void unloadCommand(
-            PrintStream debugOut,
-            PrintStream debugErr,
-            String cmdClassName
-        )
-        {
-            // TODO: Implement
-        }
-    }
-
-    public static interface DebugControl extends CommonDebugControl
-    {
-        Satellite getModuleInstance();
-    }
-
-    private static class DebugControlImpl implements DebugControl
-    {
-        Satellite satellite;
-
-        DebugControlImpl(Satellite satelliteRef)
-        {
-            satellite = satelliteRef;
-        }
-
-        @Override
-        public DrbdManage getInstance()
-        {
-            return satellite;
-        }
-
-        @Override
-        public Satellite getModuleInstance()
-        {
-            return satellite;
-        }
-
-        @Override
-        public String getProgramName()
-        {
-            return PROGRAM;
-        }
-
-        @Override
-        public String getModuleType()
-        {
-            return MODULE;
-        }
-
-        @Override
-        public String getVersion()
-        {
-            return VERSION;
-        }
-
-        @Override
-        public Map<ServiceName, SystemService> getSystemServiceMap()
-        {
-            Map<ServiceName, SystemService> svcCpy = new TreeMap<>();
-            svcCpy.putAll(satellite.systemServicesMap);
-            return svcCpy;
-        }
-
-        @Override
-        public Peer getPeer(String peerId)
-        {
-            Peer peerObj = null;
-            synchronized (satellite.peerMap)
-            {
-                peerObj = satellite.peerMap.get(peerId);
-            }
-            return peerObj;
-        }
-
-        @Override
-        public Map<String, Peer> getAllPeers()
-        {
-            TreeMap<String, Peer> peerMapCpy = new TreeMap<>();
-            synchronized (satellite.peerMap)
-            {
-                peerMapCpy.putAll(satellite.peerMap);
-            }
-            return peerMapCpy;
-        }
-
-        @Override
-        public Set<String> getApiCallNames()
-        {
-            return satellite.msgProc.getApiCallNames();
-        }
-
-        @Override
-        public void shutdown(AccessContext accCtx)
-        {
-            try
-            {
-                satellite.shutdown(accCtx);
-            }
-            catch (AccessDeniedException accExc)
-            {
-                satellite.getErrorReporter().reportError(accExc);
-            }
-        }
     }
 }

@@ -13,13 +13,13 @@ import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.drbdmanage.BaseTransactionObject;
-import com.linbit.drbdmanage.Controller;
-import com.linbit.drbdmanage.DrbdManage;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceName;
-import com.linbit.drbdmanage.Satellite;
 import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.core.Controller;
+import com.linbit.drbdmanage.core.DrbdManage;
+import com.linbit.drbdmanage.core.Satellite;
 
 /**
  * Security protection for drbdmanageNG object

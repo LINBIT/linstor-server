@@ -1,8 +1,8 @@
 package com.linbit.drbdmanage.logging;
 
 import com.linbit.AutoIndent;
-import com.linbit.drbdmanage.DrbdManage;
 import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 

@@ -14,6 +14,7 @@ import com.linbit.drbdmanage.ConnectionDefinitionData;
 import com.linbit.drbdmanage.DmIpAddress;
 import com.linbit.drbdmanage.MinorNumber;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
+import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.NetInterfaceData;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
@@ -209,10 +210,11 @@ public class NoOpDriver implements DatabaseDriver
             return NO_OP_FLAG_DRIVER;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public StateFlagsPersistence getNodeTypeStateFlagPersistence()
+        public SingleColumnDatabaseDriver<NodeType> getNodeTypeDriver()
         {
-            return NO_OP_FLAG_DRIVER;
+            return (SingleColumnDatabaseDriver<NodeType>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @Override

@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
@@ -162,7 +163,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         StorPoolDefinitionData spddSat = StorPoolDefinitionData.getInstance(sysCtx, spName, null, true);
 
@@ -183,7 +184,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         StorPoolDefinitionData spddSat = StorPoolDefinitionData.getInstance(sysCtx, spName, null, false);
 

@@ -11,14 +11,17 @@ import java.util.Map;
 public interface ApiCallRc
 {
     // Mask for return codes that describe an error
-    public static final long MASK_ERROR = 0x8000000000000000L;
+    public static final long MASK_ERROR = 0xC000000000000000L;
 
     // Mask for return codes that describe a warning
-    public static final long MASK_WARN  = 0x4000000000000000L;
+    public static final long MASK_WARN  = 0x8000000000000000L;
 
     // Mask for return codes that describe contain detail information
     // about the result of an operation
-    public static final long MASK_INFO  = 0x2000000000000000L;
+    public static final long MASK_INFO  = 0x4000000000000000L;
+
+    // Mask for return codes that describe the operation was successfull
+    public static final long MASK_SUCCESS = 0L;
 
     // List of return codes
     List<RcEntry> getEntries();

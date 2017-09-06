@@ -4,7 +4,8 @@ import com.linbit.AutoIndent;
 import com.linbit.ErrorCheck;
 import com.linbit.drbdmanage.CommonDebugControl;
 import com.linbit.drbdmanage.CoreServices;
-import com.linbit.drbdmanage.DrbdManage;
+import com.linbit.drbdmanage.core.DrbdManage;
+
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.Set;

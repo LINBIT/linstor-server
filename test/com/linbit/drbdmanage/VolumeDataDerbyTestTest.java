@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.Volume.VlmFlags;
+import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.DerbyBase;
@@ -343,7 +344,7 @@ public class VolumeDataDerbyTestTest extends DerbyBase
     @Test
     public void testSatelliteCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         VolumeData volData = VolumeData.getInstance(
             sysCtx,
@@ -371,7 +372,7 @@ public class VolumeDataDerbyTestTest extends DerbyBase
     @Test
     public void testSatelliteNoCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
         VolumeData volData = VolumeData.getInstance(
             sysCtx,
             res,

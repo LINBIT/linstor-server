@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -255,7 +256,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         StorPoolData storPoolData = StorPoolData.getInstance(
             sysCtx,
@@ -288,7 +289,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         StorPoolData storPoolData = StorPoolData.getInstance(
             sysCtx,

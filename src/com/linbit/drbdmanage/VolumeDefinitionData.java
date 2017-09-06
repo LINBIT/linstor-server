@@ -14,6 +14,7 @@ import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;

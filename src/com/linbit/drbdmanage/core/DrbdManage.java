@@ -1,5 +1,19 @@
-package com.linbit.drbdmanage;
+package com.linbit.drbdmanage.core;
 
+import com.linbit.drbdmanage.ApiCall;
+import com.linbit.drbdmanage.CommonPeerCtx;
+import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.drbdmanage.NetInterfaceName;
+import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.Resource;
+import com.linbit.drbdmanage.ResourceDefinition;
+import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.StorPoolDefinition;
+import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.VolumeDefinition;
+import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;

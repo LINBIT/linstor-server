@@ -1,8 +1,9 @@
 package com.linbit.drbdmanage.debug;
 
 import com.linbit.drbdmanage.CoreServices;
-import com.linbit.drbdmanage.Satellite;
-import com.linbit.drbdmanage.Satellite.DebugControl;
+import com.linbit.drbdmanage.core.Satellite;
+import com.linbit.drbdmanage.core.StltDebugControl;
+
 import java.util.Map;
 
 /**
@@ -12,8 +13,8 @@ import java.util.Map;
  */
 public abstract class BaseSatelliteDebugCmd extends BaseDebugCmd implements SatelliteDebugCmd
 {
-    Satellite satellite;
-    DebugControl debugCtl;
+    Satellite       satellite;
+    StltDebugControl debugCtl;
 
     public BaseSatelliteDebugCmd(
         String[]            cmdNamesRef,
@@ -33,7 +34,7 @@ public abstract class BaseSatelliteDebugCmd extends BaseDebugCmd implements Sate
     public void initialize(
         Satellite       satelliteRef,
         CoreServices    coreSvcsRef,
-        DebugControl    debugCtlRef,
+        StltDebugControl    debugCtlRef,
         DebugConsole    debugConRef
     )
     {

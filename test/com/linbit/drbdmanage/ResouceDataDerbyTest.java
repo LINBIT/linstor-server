@@ -18,6 +18,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Resource.RscFlags;
+import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
@@ -277,7 +278,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         ResourceData resData = ResourceData.getInstance(
             sysCtx,
@@ -308,7 +309,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         ResourceData resData = ResourceData.getInstance(
             sysCtx,

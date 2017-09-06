@@ -9,7 +9,10 @@ import java.util.List;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.Node.NodeType;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -59,7 +62,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private final AccessContext dbCtx;
 
     private final StateFlagsPersistence flagDriver;
-    private final StateFlagsPersistence typeFlagDriver;
+    private final SingleColumnDatabaseDriver<NodeType> typeDriver;
     private final PropsConDatabaseDriver propsDriver;
 
     private NodeName nodeName;
@@ -71,7 +74,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         nodeName = nodeNameRef;
 
         flagDriver = new NodeFlagPersistence();
-        typeFlagDriver = new NodeTypePersistence();
+        typeDriver = new NodeTypeDriver();
         propsDriver = new PropsConDerbyDriver(PropsContainer.buildPath(nodeNameRef));
     }
 
@@ -85,7 +88,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             stmt.setString(2, node.getName().value);
             stmt.setString(3, node.getName().displayValue);
             stmt.setLong(4, node.getFlags().getFlagsBits(dbCtx));
-            stmt.setLong(5, node.getNodeTypes(dbCtx));
+            stmt.setLong(5, node.getNodeType(dbCtx).getFlagValue());
             stmt.setString(6, ObjectProtection.buildPath(node.getName()));
             stmt.executeUpdate();
             stmt.close();
@@ -141,7 +144,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                         UuidUtils.asUuid(resultSet.getBytes(NODE_UUID)),
                         objProt,
                         nodeName,
-                        resultSet.getLong(NODE_TYPE),
+                        Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
                         resultSet.getLong(NODE_FLAGS),
                         serialGen,
                         transMgr
@@ -271,9 +274,9 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public StateFlagsPersistence getNodeTypeStateFlagPersistence()
+    public SingleColumnDatabaseDriver<NodeType> getNodeTypeDriver()
     {
-        return typeFlagDriver;
+        return typeDriver;
     }
 
     @Override
@@ -297,14 +300,14 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         }
     }
 
-    private class NodeTypePersistence implements StateFlagsPersistence
+    private class NodeTypeDriver implements SingleColumnDatabaseDriver<NodeType>
     {
         @Override
-        public void persist(Connection con, long flags) throws SQLException
+        public void update(Connection con, NodeType element) throws SQLException
         {
             PreparedStatement stmt = con.prepareStatement(NODE_UPDATE_TYPE);
 
-            stmt.setInt(1, (int) flags);
+            stmt.setLong(1, element.getFlagValue());
             stmt.setString(2, nodeName.value);
 
             stmt.executeUpdate();

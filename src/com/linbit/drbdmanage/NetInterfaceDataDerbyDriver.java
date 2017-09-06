@@ -14,6 +14,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;

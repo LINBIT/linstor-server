@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
+import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.DerbyBase;
@@ -399,7 +400,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         VolumeDefinitionData volDfnSat = VolumeDefinitionData.getInstance(
             sysCtx,
@@ -432,7 +433,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteNoCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         VolumeDefinitionData volDfnSat = VolumeDefinitionData.getInstance(
             sysCtx,

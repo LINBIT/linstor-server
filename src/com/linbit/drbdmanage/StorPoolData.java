@@ -8,6 +8,7 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.Props;

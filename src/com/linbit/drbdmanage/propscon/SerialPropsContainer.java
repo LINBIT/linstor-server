@@ -22,7 +22,7 @@ public class SerialPropsContainer extends PropsContainer
     public static SerialPropsContainer getInstance(
         PropsConDatabaseDriver propsConDriver, // noop driver on satellite
         TransactionMgr transMgr, // null on satellite
-        SerialGenerator srlGen // can be null on both
+        SerialGenerator srlGen // can be null on both (controller & satellite)
     )
         throws SQLException
     {

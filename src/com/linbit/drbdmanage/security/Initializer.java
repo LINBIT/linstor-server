@@ -2,9 +2,10 @@ package com.linbit.drbdmanage.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.drbdmanage.Controller;
 import com.linbit.drbdmanage.ControllerDatabase;
-import com.linbit.drbdmanage.Satellite;
+import com.linbit.drbdmanage.core.Controller;
+import com.linbit.drbdmanage.core.Satellite;
+
 import java.io.IOException;
 import java.sql.SQLException;
 

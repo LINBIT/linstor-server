@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;

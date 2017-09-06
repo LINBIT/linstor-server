@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;

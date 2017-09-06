@@ -1,9 +1,9 @@
 package com.linbit.drbdmanage.debug;
 
-import com.linbit.drbdmanage.Controller;
-import com.linbit.drbdmanage.Controller.DebugControl;
 import com.linbit.drbdmanage.CoreServices;
-
+import com.linbit.drbdmanage.ControllerDebugCmd;
+import com.linbit.drbdmanage.core.Controller;
+import com.linbit.drbdmanage.core.CtrlDebugControl;
 import java.util.*;
 
 /**
@@ -13,8 +13,8 @@ import java.util.*;
  */
 public abstract class BaseControllerDebugCmd extends BaseDebugCmd implements ControllerDebugCmd
 {
-    Controller      controller;
-    DebugControl    debugCtl;
+    Controller          controller;
+    CtrlDebugControl    debugCtl;
 
     public BaseControllerDebugCmd(
         String[]            cmdNamesRef,
@@ -34,7 +34,7 @@ public abstract class BaseControllerDebugCmd extends BaseDebugCmd implements Con
     public void initialize(
         Controller      controllerRef,
         CoreServices    coreSvcsRef,
-        DebugControl    debugCtlRef,
+        CtrlDebugControl    debugCtlRef,
         DebugConsole    debugConRef
     )
     {

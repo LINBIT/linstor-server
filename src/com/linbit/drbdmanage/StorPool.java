@@ -4,6 +4,8 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 import com.linbit.TransactionObject;
+import com.linbit.drbdmanage.core.Controller;
+import com.linbit.drbdmanage.core.Satellite;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;

@@ -45,7 +45,7 @@ public interface Node extends TransactionObject
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public long getNodeTypes(AccessContext accCtx)
+    public NodeType getNodeType(AccessContext accCtx)
         throws AccessDeniedException;
 
     public boolean hasNodeType(AccessContext accCtx, NodeType reqType)
@@ -60,6 +60,8 @@ public interface Node extends TransactionObject
     {
         CONTROLLER(1),
         SATELLITE(2),
+        COMBINED(3),
+
         AUXILIARY(4);
 
         private final int flag;
@@ -73,6 +75,20 @@ public interface Node extends TransactionObject
         public long getFlagValue()
         {
             return flag;
+        }
+
+        public static NodeType getByValue(long value)
+        {
+            NodeType ret = null;
+            for (NodeType type : NodeType.values())
+            {
+                if (type.flag == value)
+                {
+                    ret = type;
+                    break;
+                }
+            }
+            return ret;
         }
     }
 

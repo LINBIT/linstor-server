@@ -1,8 +1,8 @@
 package com.linbit.drbdmanage.debug;
 
 import com.linbit.drbdmanage.CoreServices;
-import com.linbit.drbdmanage.Satellite;
-import com.linbit.drbdmanage.Satellite.DebugControl;
+import com.linbit.drbdmanage.core.Satellite;
+import com.linbit.drbdmanage.core.StltDebugControl;
 
 /**
  * Interface for Satellite debug console commands
@@ -14,7 +14,7 @@ public interface SatelliteDebugCmd extends CommonDebugCmd
     void initialize(
         Satellite       satelliteRef,
         CoreServices    coreSvcsRef,
-        DebugControl    debugCtlRef,
+        StltDebugControl    debugCtlRef,
         DebugConsole    debugConRef
     );
 }

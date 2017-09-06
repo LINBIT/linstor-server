@@ -17,6 +17,7 @@ import org.junit.Test;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.DerbyBase;

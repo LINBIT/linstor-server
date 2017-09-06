@@ -11,7 +11,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
-import com.linbit.drbdmanage.Controller;
+import com.linbit.drbdmanage.core.Controller;
 
 /**
  * Holds a list of all peers and checks their connectivity.

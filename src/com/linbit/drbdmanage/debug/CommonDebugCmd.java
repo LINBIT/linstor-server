@@ -2,7 +2,7 @@ package com.linbit.drbdmanage.debug;
 
 import com.linbit.drbdmanage.CommonDebugControl;
 import com.linbit.drbdmanage.CoreServices;
-import com.linbit.drbdmanage.DrbdManage;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.security.AccessContext;
 
 import java.io.PrintStream;

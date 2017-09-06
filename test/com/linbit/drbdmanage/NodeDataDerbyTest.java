@@ -17,6 +17,7 @@ import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
+import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
@@ -61,7 +62,7 @@ public class NodeDataDerbyTest extends DerbyBase
     private java.util.UUID uuid;
     private ObjectProtection objProt;
     private long initialFlags;
-    private long initialTypes;
+    private NodeType initialType;
     private NodeData node;
 
     public NodeDataDerbyTest() throws Exception
@@ -85,12 +86,12 @@ public class NodeDataDerbyTest extends DerbyBase
         uuid = randomUUID();
         objProt = ObjectProtection.getInstance(sysCtx, transMgr, ObjectProtection.buildPath(nodeName), true);
         initialFlags = NodeFlag.QIGNORE.flagValue;
-        initialTypes = NodeType.AUXILIARY.getFlagValue();
+        initialType = NodeType.AUXILIARY;
         node = new NodeData(
             uuid,
             objProt,
             nodeName,
-            initialTypes,
+            initialType,
             initialFlags,
             null,
             transMgr
@@ -223,7 +224,7 @@ public class NodeDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, loaded.getName().value);
         assertEquals(nodeName.displayValue, loaded.getName().displayValue);
         assertEquals(NodeFlag.QIGNORE.flagValue, loaded.getFlags().getFlagsBits(sysCtx));
-        assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), loaded.getNodeTypes(sysCtx));
+        assertEquals(Node.NodeType.AUXILIARY, loaded.getNodeType(sysCtx));
 
     };
 
@@ -242,7 +243,7 @@ public class NodeDataDerbyTest extends DerbyBase
         assertNotNull(loadedNode);
         assertEquals(nodeName, loadedNode.getName()); // NodeName class implements equals
         assertEquals(0, loadedNode.getFlags().getFlagsBits(sysCtx));
-        assertEquals(NodeType.AUXILIARY.getFlagValue(), loadedNode.getNodeTypes(sysCtx));
+        assertEquals(NodeType.AUXILIARY, loadedNode.getNodeType(sysCtx));
         assertEquals(1, loadedNode.getProps(sysCtx).size()); // serial number
     }
 
@@ -361,7 +362,7 @@ public class NodeDataDerbyTest extends DerbyBase
             assertEquals(netIfUuid, netIf.getUuid());
         }
 
-        assertEquals(NodeType.AUXILIARY.getFlagValue(), loadedNode.getNodeTypes(sysCtx));
+        assertEquals(NodeType.AUXILIARY, loadedNode.getNodeType(sysCtx));
         assertNotNull(loadedNode.getObjProt());
         {
             Props nodeProps = loadedNode.getProps(sysCtx);
@@ -516,7 +517,7 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         SerialGenerator serGen = new TestSerialGenerator();
         NodeData nodeData = NodeData.getInstance(
@@ -543,7 +544,7 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
-        DriverUtils.satelliteMode();
+        CoreUtils.satelliteMode();
 
         SerialGenerator serGen = new TestSerialGenerator();
         NodeData nodeData = NodeData.getInstance(
