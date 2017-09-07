@@ -35,7 +35,7 @@ public class ApiCallRcConstants
     /*
      * Node return codes
      */
-    public static final long RC_NODE_CREATED = 1 | MASK_RESOURCE_DEFINITION;
+    public static final long RC_NODE_CREATED = 1 | MASK_NODE;
 
     public static final long RC_NODE_CREATION_FAILED = RC_NODE_CREATED | ApiCallRc.MASK_ERROR;
 
