@@ -49,23 +49,24 @@ public final class ObjectProtection extends BaseTransactionObject
     // The creator's identity may change if the
     // account that was used to create the object
     // is deleted
-    private TransactionSimpleObject<Identity> objectCreator;
+    private TransactionSimpleObject<ObjectProtection, Identity> objectCreator;
 
     // Role that has owner rights on the object
-    private TransactionSimpleObject<Role> objectOwner;
+    private TransactionSimpleObject<ObjectProtection, Role> objectOwner;
 
     // Access control list for the object
     private final AccessControlList objectAcl;
     private Map<Role, AccessControlEntry> cachedAcl;
 
     // Security type for the object
-    private TransactionSimpleObject<SecurityType> objectType;
+    private TransactionSimpleObject<ObjectProtection, SecurityType> objectType;
 
     // Database driver
     private ObjectProtectionDatabaseDriver dbDriver;
 
     // Is this object already persisted or not
     private boolean persisted;
+    private String objPath;
 
     /**
      * Loads an ObjectProtection instance from the database.
@@ -81,41 +82,42 @@ public final class ObjectProtection extends BaseTransactionObject
      * @throws SQLException
      * @throws AccessDeniedException
      */
-    public static ObjectProtection getInstance(AccessContext accCtx, TransactionMgr transMgr, String objPath, boolean createIfNotExists)
+    public static ObjectProtection getInstance(AccessContext accCtx, String objPath, boolean createIfNotExists, TransactionMgr transMgr)
         throws SQLException, AccessDeniedException
     {
-        ObjectProtectionDatabaseDriver dbDriver = DrbdManage.getObjectProtectionDatabaseDriver(objPath);
+        ObjectProtectionDatabaseDriver dbDriver = DrbdManage.getObjectProtectionDatabaseDriver();
         ObjectProtection objProt = null;
 
         if (transMgr != null)
         {
-            objProt = dbDriver.loadObjectProtection(transMgr.dbCon);
+            objProt = dbDriver.loadObjectProtection(objPath, transMgr);
         }
 
         if (objProt == null && createIfNotExists)
         {
-            objProt = new ObjectProtection(accCtx, dbDriver);
+            objProt = new ObjectProtection(accCtx, objPath, dbDriver);
             if (transMgr != null)
             {
-                dbDriver.insertOp(transMgr.dbCon, objProt);
+                dbDriver.insertOp(objProt, transMgr);
             }
         }
 
         if (objProt != null)
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
+            objProt.objPath = objPath;
             objProt.dbDriver = dbDriver;
 
             if (transMgr == null)
             {
                 // satellite
                 objProt.persisted = false;
-                objProt.dbCon = null;
+                objProt.transMgr = null;
             }
             else
             {
                 transMgr.register(objProt);
-                objProt.dbCon = transMgr.dbCon;
+                objProt.transMgr = transMgr;
                 objProt.persisted = true;
             }
 
@@ -132,15 +134,16 @@ public final class ObjectProtection extends BaseTransactionObject
      * @param driver The DatabaseDriver. Can be null for temporary objects
      * @throws SQLException
      */
-    ObjectProtection(AccessContext accCtx, ObjectProtectionDatabaseDriver driver)
+    ObjectProtection(AccessContext accCtx, String objPathRef, ObjectProtectionDatabaseDriver driver)
     {
         ErrorCheck.ctorNotNull(ObjectProtection.class, AccessContext.class, accCtx);
 
         dbDriver = driver;
+        objPath = objPathRef;
 
-        SingleColumnDatabaseDriver<Identity> idDriver = null;
-        SingleColumnDatabaseDriver<Role> roleDriver = null;
-        SingleColumnDatabaseDriver<SecurityType> secTypeDriver = null;
+        SingleColumnDatabaseDriver<ObjectProtection, Identity> idDriver = null;
+        SingleColumnDatabaseDriver<ObjectProtection, Role> roleDriver = null;
+        SingleColumnDatabaseDriver<ObjectProtection, SecurityType> secTypeDriver = null;
 
         if (driver != null)
         {
@@ -149,9 +152,9 @@ public final class ObjectProtection extends BaseTransactionObject
             secTypeDriver = driver.getSecurityTypeDriver();
         }
 
-        objectCreator = new TransactionSimpleObject<>(accCtx.subjectId, idDriver);
-        objectOwner = new TransactionSimpleObject<>(accCtx.subjectRole, roleDriver);
-        objectType = new TransactionSimpleObject<>(accCtx.subjectDomain, secTypeDriver);
+        objectCreator = new TransactionSimpleObject<>(this, accCtx.subjectId, idDriver);
+        objectOwner = new TransactionSimpleObject<>(this, accCtx.subjectRole, roleDriver);
+        objectType = new TransactionSimpleObject<>(this, accCtx.subjectDomain, secTypeDriver);
         objectAcl = new AccessControlList();
         cachedAcl = new HashMap<>();
 
@@ -366,16 +369,16 @@ public final class ObjectProtection extends BaseTransactionObject
 
     private void updateOp() throws SQLException
     {
-        if (isInitialized() && dbCon != null)
+        if (isInitialized() && transMgr != null)
         {
             if (!persisted)
             {
-                dbDriver.insertOp(dbCon, this);
+                dbDriver.insertOp(this, transMgr);
                 persisted = true;
             }
             else
             {
-                dbDriver.updateOp(dbCon, this);
+                dbDriver.updateOp(this, transMgr);
             }
         }
     }
@@ -384,7 +387,7 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         if (isInitialized())
         {
-            if (dbCon != null)
+            if (transMgr != null)
             {
                 if (!persisted)
                 {
@@ -393,11 +396,11 @@ public final class ObjectProtection extends BaseTransactionObject
 
                 if (oldEntry == null)
                 {
-                    dbDriver.insertAcl(dbCon, entryRole, grantedAccess);
+                    dbDriver.insertAcl(this, entryRole, grantedAccess, transMgr);
                 }
                 else
                 {
-                    dbDriver.updateAcl(dbCon, entryRole, grantedAccess);
+                    dbDriver.updateAcl(this, entryRole, grantedAccess, transMgr);
                 }
             }
             if (!cachedAcl.containsKey(entryRole))
@@ -411,14 +414,14 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         if (isInitialized())
         {
-            if (dbCon != null)
+            if (transMgr != null)
             {
                 if (!persisted)
                 {
                     updateOp();
                 }
 
-                dbDriver.deleteAcl(dbCon, entryRole);
+                dbDriver.deleteAcl(this, entryRole, transMgr);
             }
             if (!cachedAcl.containsKey(entryRole))
             {
@@ -551,5 +554,10 @@ public final class ObjectProtection extends BaseTransactionObject
             resName.value + PATH_SEPARATOR +
             source.value + PATH_SEPARATOR +
             target.value;
+    }
+
+    String getObjectProtectionPath()
+    {
+        return objPath;
     }
 }

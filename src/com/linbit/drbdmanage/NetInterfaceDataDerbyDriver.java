@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,11 +12,13 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -66,60 +67,60 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         " WHERE " + NODE_NAME + " = ? AND " +
         "       " + NET_NAME  + " = ?";
 
-    private final Node node;
+    private static final Hashtable<PrimaryKey, NetInterfaceData> NI_CACHE = new Hashtable<>();
 
-    private final SingleColumnDatabaseDriver<DmIpAddress> netIfAddressDriver;
-    private final SingleColumnDatabaseDriver<NetInterfaceType> netIfTypeDriver;
+    private final SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> netIfAddressDriver;
+    private final SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> netIfTypeDriver;
 
     private final AccessContext dbCtx;
+    private final ErrorReporter errorReporter;
 
-    private static Hashtable<PrimaryKey, NetInterfaceData> niCache = new Hashtable<>();
-
-    private NetInterfaceName netName;
-    private boolean netNameLoaded = false;
-
-    public NetInterfaceDataDerbyDriver(AccessContext ctx, Node nodeRef, NetInterfaceName nameRef)
+    public NetInterfaceDataDerbyDriver(AccessContext ctx, ErrorReporter errorReporterRef)
     {
         dbCtx = ctx;
-        node = nodeRef;
-        netName = nameRef;
+        errorReporter = errorReporterRef;
 
         netIfAddressDriver = new NodeNetInterfaceAddressDriver();
         netIfTypeDriver = new NodeNetInterfaceTypeDriver();
     }
 
     @Override
-    public NetInterfaceData load(Connection con)
+    public NetInterfaceData load(Node node, NetInterfaceName niName, TransactionMgr transMgr)
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NNI_SELECT_BY_NODE_AND_NET);
-        stmt.setString(1, node.getName().value);
-        stmt.setString(2, netName.value);
+        NodeName nodeName = node.getName();
+
+        errorReporter.logDebug(
+            "Loading netInterfaceData (Node=%s, SrcNode=%s, DstNode=%s)",
+            nodeName.value,
+            niName.value
+        );
+
+
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_SELECT_BY_NODE_AND_NET);
+        stmt.setString(1, nodeName.value);
+        stmt.setString(2, niName.value);
         ResultSet resultSet = stmt.executeQuery();
-        NetInterfaceData netIfData = cacheGet(node, netName);
+        NetInterfaceData netIfData = cacheGet(node, niName);
         if (netIfData == null)
         {
             if (resultSet.next())
             {
-                if (!netNameLoaded)
+                try
                 {
-                    try
-                    {
-                        netName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
-                        netNameLoaded = true;
-                    }
-                    catch (InvalidNameException invalidNameExc)
-                    {
-                        resultSet.close();
-                        stmt.close();
-                        throw new ImplementationError(
-                            "The display name of a valid NetInterfaceName could not be restored",
-                            invalidNameExc
-                        );
-                    }
+                    niName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    resultSet.close();
+                    stmt.close();
+                    throw new ImplementationError(
+                        "The display name of a valid NetInterfaceName could not be restored",
+                        invalidNameExc
+                    );
                 }
 
-                netIfData = restoreInstance(con, node, netName, resultSet);
+                netIfData = restoreInstance(node, niName, resultSet, transMgr);
             }
         }
         else
@@ -137,15 +138,15 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     @Override
-    public void create(Connection con, NetInterfaceData netInterfaceData) throws SQLException
+    public void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NNI_INSERT);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_INSERT);
 
         DmIpAddress inetAddress = getAddress(netInterfaceData);
         NetInterfaceType type = getNetInterfaceType(netInterfaceData);
 
         stmt.setBytes(1, UuidUtils.asByteArray(netInterfaceData.getUuid()));
-        stmt.setString(2, node.getName().value);
+        stmt.setString(2, netInterfaceData.getNode().getName().value);
         stmt.setString(3, netInterfaceData.getName().value);
         stmt.setString(4, netInterfaceData.getName().displayValue);
         stmt.setString(5, inetAddress.getAddress());
@@ -157,11 +158,11 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         cache(netInterfaceData);
     }
 
-    public void ensureEntryExists(Connection con, NetInterfaceData netIfData) throws SQLException
+    public void ensureEntryExists(NetInterfaceData netIfData, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NNI_SELECT_BY_NODE_AND_NET);
-        stmt.setString(1, node.getName().value);
-        stmt.setString(2, netName.value);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_SELECT_BY_NODE_AND_NET);
+        stmt.setString(1, netIfData.getNode().getName().value);
+        stmt.setString(2, netIfData.getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
         NetInterfaceData niCached = cacheGet(netIfData.getNode(), netIfData.getName());
@@ -181,16 +182,19 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                 // XXX: user deleted db entry during runtime - throw exception?
                 // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
-            create(con, netIfData);
+            create(netIfData, transMgr);
         }
         resultSet.close();
         stmt.close();
     }
 
     @Override
-    public void delete(Connection con) throws SQLException
+    public void delete(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NNI_DELETE);
+        Node node = netInterfaceData.getNode();
+        NetInterfaceName netName = netInterfaceData.getName();
+
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_DELETE);
 
         stmt.setString(1, node.getName().value);
         stmt.setString(2, netName.value);
@@ -202,22 +206,22 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     @Override
-    public SingleColumnDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver()
+    public SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> getNetInterfaceAddressDriver()
     {
         return netIfAddressDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<NetInterfaceType> getNetInterfaceTypeDriver()
+    public SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> getNetInterfaceTypeDriver()
     {
         return netIfTypeDriver;
     }
 
 
-    public static List<NetInterfaceData> loadNetInterfaceData(Connection con, Node node)
+    public static List<NetInterfaceData> loadNetInterfaceData(Node node, TransactionMgr transMgr)
         throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NNI_SELECT_BY_NODE);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_SELECT_BY_NODE);
         stmt.setString(1, node.getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
@@ -235,7 +239,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                 stmt.close();
                 throw new DrbdSqlRuntimeException("NetInterface contains illegal displayName");
             }
-            netIfDataList.add(restoreInstance(con, node, netName, resultSet));
+            netIfDataList.add(restoreInstance(node, netName, resultSet, transMgr));
         }
 
         resultSet.close();
@@ -269,10 +273,10 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     private static NetInterfaceData restoreInstance(
-        Connection con,
         Node node,
         NetInterfaceName netName,
-        ResultSet resultSet
+        ResultSet resultSet,
+        TransactionMgr transMgr
     )
         throws SQLException
     {
@@ -295,10 +299,14 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
             }
             ObjectProtection objProt;
             {
-                ObjectProtectionDatabaseDriver opDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                    ObjectProtection.buildPath(node.getName(), netName)
+                ObjectProtectionDatabaseDriver opDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+                objProt = opDriver.loadObjectProtection(
+                    ObjectProtection.buildPath(
+                        node.getName(),
+                        netName
+                    ),
+                    transMgr
                 );
-                objProt = opDriver.loadObjectProtection(con);
             }
             ret = new NetInterfaceData(
                 uuid,
@@ -323,27 +331,27 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     private synchronized static boolean cache(NetInterfaceData netInterfaceData)
     {
         PrimaryKey pk = getPk(netInterfaceData);
-        boolean contains = niCache.containsKey(pk);
+        boolean contains = NI_CACHE.containsKey(pk);
         if (!contains)
         {
-            niCache.put(pk, netInterfaceData);
+            NI_CACHE.put(pk, netInterfaceData);
         }
         return !contains;
     }
 
     private static NetInterfaceData cacheGet(Node node, NetInterfaceName netName)
     {
-        return niCache.get(new PrimaryKey(node.getName().value, netName.value));
+        return NI_CACHE.get(new PrimaryKey(node.getName().value, netName.value));
     }
 
     private static NetInterfaceData cacheGet(ResultSet resultSet) throws SQLException
     {
-        return niCache.get(new PrimaryKey(resultSet.getString(NODE_NAME), resultSet.getString(NET_NAME)));
+        return NI_CACHE.get(new PrimaryKey(resultSet.getString(NODE_NAME), resultSet.getString(NET_NAME)));
     }
 
     private synchronized static void cacheRemove(NodeName nodeName, NetInterfaceName netName)
     {
-        niCache.remove(new PrimaryKey(nodeName.value, netName.value));
+        NI_CACHE.remove(new PrimaryKey(nodeName.value, netName.value));
     }
 
     private static PrimaryKey getPk(NetInterfaceData niData)
@@ -356,35 +364,37 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
      */
     static synchronized void clearCache()
     {
-        niCache.clear();
+        NI_CACHE.clear();
     }
 
-    private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<DmIpAddress>
+    private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress>
     {
         @Override
-        public void update(Connection con, DmIpAddress inetAddress) throws SQLException
+        public void update(NetInterfaceData parent, DmIpAddress inetAddress, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = con.prepareStatement(NNI_UPDATE_ADR);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_UPDATE_ADR);
 
             stmt.setString(1, inetAddress.getAddress());
-            stmt.setString(2, node.getName().value);
-            stmt.setString(3, netName.value);
+            stmt.setString(2, parent.getNode().getName().value);
+            stmt.setString(3, parent.getName().value);
 
             stmt.executeUpdate();
             stmt.close();
+
         }
     }
 
-    private class NodeNetInterfaceTypeDriver implements SingleColumnDatabaseDriver<NetInterfaceType>
+    private class NodeNetInterfaceTypeDriver implements SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType>
     {
         @Override
-        public void update(Connection con, NetInterfaceType type) throws SQLException
+        public void update(NetInterfaceData parent, NetInterfaceType type, TransactionMgr transMgr)
+            throws SQLException
         {
-            PreparedStatement stmt = con.prepareStatement(NNI_UPDATE_TYPE);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_UPDATE_TYPE);
 
             stmt.setString(1, type.name());
-            stmt.setString(2, node.getName().value);
-            stmt.setString(3, netName.value);
+            stmt.setString(2, parent.getNode().getName().value);
+            stmt.setString(3, parent.getName().value);
 
             stmt.executeUpdate();
             stmt.close();

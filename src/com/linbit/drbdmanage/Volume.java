@@ -22,7 +22,7 @@ public interface Volume extends TransactionObject
 
     public ResourceDefinition getResourceDfn();
 
-    public VolumeDefinition getVolumeDfn();
+    public VolumeDefinition getVolumeDefinition();
 
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;

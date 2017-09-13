@@ -10,6 +10,7 @@ import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -61,10 +62,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
         String blockDevicePathRef,
         String metaDiskPathRef,
         long initFlags,
+        AccessContext accCtx,
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         this(
             UUID.randomUUID(),
@@ -73,6 +75,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             blockDevicePathRef,
             metaDiskPathRef,
             initFlags,
+            accCtx,
             srlGen,
             transMgr
         );
@@ -88,10 +91,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
         String blockDevicePathRef,
         String metaDiskPathRef,
         long initFlags,
+        AccessContext accCtx,
         SerialGenerator srlGen,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         objId = uuid;
         resourceRef = resRef;
@@ -100,15 +104,24 @@ public class VolumeData extends BaseTransactionObject implements Volume
         blockDevicePath = blockDevicePathRef;
         metaDiskPath = metaDiskPathRef;
 
-        dbDriver = DrbdManage.getVolumeDataDatabaseDriver(resRef, volDfnRef);
+        dbDriver = DrbdManage.getVolumeDataDatabaseDriver();
 
         flags = new VlmFlagsImpl(
             resRef.getObjProt(),
+            this,
             dbDriver.getStateFlagsPersistence(),
             initFlags
         );
 
-        volumeProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
+        volumeProps = SerialPropsContainer.getInstance(
+            PropsContainer.buildPath(
+                resRef.getAssignedNode().getName(),
+                resRef.getDefinition().getName(),
+                volDfnRef.getVolumeNumber(accCtx)
+            ),
+            srlGen,
+            transMgr
+        );
 
         transObjs = Arrays.asList(
             resourceRef,
@@ -133,10 +146,15 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         VolumeData vol = null;
 
-        VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver(resRef, volDfn);
+        VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver();
         if (transMgr != null)
         {
-            vol = driver.load(serialGen, transMgr);
+            vol = driver.load(
+                resRef,
+                volDfn,
+                serialGen,
+                transMgr
+            );
         }
 
         if (vol == null && createIfNotExists)
@@ -149,12 +167,13 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 blockDevicePathRef,
                 metaDiskPathRef,
                 initFlags,
+                accCtx,
                 serialGen,
                 transMgr
             );
             if (transMgr != null)
             {
-                driver.create(transMgr.dbCon, vol);
+                driver.create(vol, transMgr);
             }
         }
 
@@ -198,7 +217,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public VolumeDefinition getVolumeDfn()
+    public VolumeDefinition getVolumeDefinition()
     {
         checkDeleted();
         return volumeDfn;
@@ -236,7 +255,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         resourceRef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         ((ResourceData) resourceRef).removeVolume(accCtx, this);
-        dbDriver.delete(dbCon);
+        dbDriver.delete(this, transMgr);
         deleted = true;
     }
 
@@ -248,17 +267,21 @@ public class VolumeData extends BaseTransactionObject implements Volume
         }
     }
 
-    private static final class VlmFlagsImpl extends StateFlagsBits<VlmFlags>
+    private final class VlmFlagsImpl extends StateFlagsBits<VolumeData, VlmFlags>
     {
         VlmFlagsImpl(
             ObjectProtection objProtRef,
-            StateFlagsPersistence persistenceRef,
+            VolumeData parent,
+            StateFlagsPersistence<VolumeData> persistenceRef,
             long initFlags
         )
         {
             super(
                 objProtRef,
-                StateFlagsBits.getMask(VlmFlags.values()),
+                parent,
+                StateFlagsBits.getMask(
+                    VlmFlags.values()
+                ),
                 persistenceRef,
                 initFlags
             );

@@ -19,8 +19,8 @@ public class TransactionMgr
 
     public TransactionMgr(Connection con) throws SQLException
     {
-        dbCon = con;
         con.setAutoCommit(false);
+        dbCon = con;
         transObjects = new LinkedHashSet<>(); // preserves the order but removes duplicates
     }
 
@@ -52,6 +52,13 @@ public class TransactionMgr
         if (clearTransObjects)
         {
             clearTransactionObjects();
+        }
+
+        // if no SQLException happened so far
+        for (TransactionObject transObj : transObjects)
+        {
+            // remove the active connection to force the next transaction to be explicit
+            transObj.setConnection(null);
         }
     }
 

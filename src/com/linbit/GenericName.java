@@ -42,16 +42,14 @@ public abstract class GenericName implements Comparable<GenericName>
         }
         else
         {
-            try
+            if (other instanceof GenericName)
             {
                 result = value.equals(((GenericName) other).value);
             }
-            catch (ClassCastException castExc)
+            else
+            if (other instanceof String)
             {
-                if (other instanceof String)
-                {
-                    result = value.equalsIgnoreCase((String) other);
-                }
+                result = value.equalsIgnoreCase((String) other);
             }
         }
         return result;

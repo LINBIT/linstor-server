@@ -15,6 +15,7 @@ import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -75,9 +76,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             UUID.randomUUID(),
             ObjectProtection.getInstance(
                 accCtx,
-                transMgr,
                 ObjectProtection.buildPath(resName),
-                true
+                true,
+                transMgr
             ),
             resName,
             initialFlags,
@@ -105,14 +106,18 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         objProt = objProtRef;
         resourceName = resName;
 
-        dbDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver(resName);
+        dbDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
 
         connectionMap = new TreeMap<>();
         volumeMap = new TreeMap<>();
         resourceMap = new TreeMap<>();
 
-        rscDfnProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, serialGen);
-        flags = new RscDfnFlagsImpl(objProt, dbDriver.getStateFlagsPersistence(), initialFlags);
+        rscDfnProps = SerialPropsContainer.getInstance(
+            PropsContainer.buildPath(resName),
+            serialGen,
+            transMgr
+        );
+        flags = new RscDfnFlagsImpl(objProt, this, dbDriver.getStateFlagsPersistence(), initialFlags);
 
         transObjs = Arrays.asList(
             flags,
@@ -131,12 +136,12 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     )
         throws SQLException, AccessDeniedException
     {
-        ResourceDefinitionDataDatabaseDriver driver = DrbdManage.getResourceDefinitionDataDatabaseDriver(resName);
+        ResourceDefinitionDataDatabaseDriver driver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
 
         ResourceDefinitionData resDfn = null;
         if (transMgr != null)
         {
-            resDfn = driver.load(serialGen, transMgr);
+            resDfn = driver.load(resName, serialGen, transMgr);
         }
 
         if (resDfn == null)
@@ -152,7 +157,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                 );
                 if (transMgr != null)
                 {
-                    driver.create(transMgr.dbCon, resDfn);
+                    driver.create(resDfn, transMgr);
                 }
             }
         }
@@ -331,7 +336,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
-        dbDriver.delete(dbCon);
+        dbDriver.delete(this, transMgr);
         deleted = true;
     }
 
@@ -343,11 +348,16 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         }
     }
 
-    private static final class RscDfnFlagsImpl extends StateFlagsBits<RscDfnFlags>
+    private static final class RscDfnFlagsImpl extends StateFlagsBits<ResourceDefinitionData, RscDfnFlags>
     {
-        RscDfnFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef, long initialFlags)
+        RscDfnFlagsImpl(
+            ObjectProtection objProtRef,
+            ResourceDefinitionData parent,
+            StateFlagsPersistence<ResourceDefinitionData> persistenceRef,
+            long initialFlags
+        )
         {
-            super(objProtRef, StateFlagsBits.getMask(RscDfnFlags.values()), persistenceRef, initialFlags);
+            super(objProtRef, parent, StateFlagsBits.getMask(RscDfnFlags.values()), persistenceRef, initialFlags);
         }
     }
 }

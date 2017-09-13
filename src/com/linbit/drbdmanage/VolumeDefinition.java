@@ -19,7 +19,7 @@ public interface VolumeDefinition extends TransactionObject
 {
     public UUID getUuid();
 
-    public ResourceDefinition getResourceDfn();
+    public ResourceDefinition getResourceDefinition();
 
     public VolumeNumber getVolumeNumber(AccessContext accCtx)
         throws AccessDeniedException;

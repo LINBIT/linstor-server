@@ -2,9 +2,9 @@ package com.linbit.drbdmanage;
 
 import static org.junit.Assert.*;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.HashMap;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +57,6 @@ public class NodeDataDerbyTest extends DerbyBase
     private final NodeName nodeName;
 
     private NodeDataDatabaseDriver dbDriver;
-    private Connection con;
     private TransactionMgr transMgr;
     private java.util.UUID uuid;
     private ObjectProtection objProt;
@@ -75,16 +74,11 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         assertEquals("NODES table's column count has changed. Update tests accordingly!", 6, TBL_COL_COUNT_NODES);
 
-        NodeDataDerbyDriver.clearCache();
-        NetInterfaceDataDerbyDriver.clearCache();
-        ResourceDataDerbyDriver.clearCache();
-
-        dbDriver = new NodeDataDerbyDriver(sysCtx, nodeName);
-        con = getConnection();
-        transMgr = new TransactionMgr(con);
+        dbDriver = new NodeDataDerbyDriver(sysCtx, errorReporter, new HashMap<NodeName, Node>());
+        transMgr = new TransactionMgr(getConnection());
 
         uuid = randomUUID();
-        objProt = ObjectProtection.getInstance(sysCtx, transMgr, ObjectProtection.buildPath(nodeName), true);
+        objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPath(nodeName), true, transMgr);
         initialFlags = NodeFlag.QIGNORE.flagValue;
         initialType = NodeType.AUXILIARY;
         node = new NodeData(
@@ -102,9 +96,9 @@ public class NodeDataDerbyTest extends DerbyBase
     public void testPersistSimple() throws Exception
     {
         node.initialized();
-        dbDriver.create(con, node);
+        dbDriver.create(node, transMgr);
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -132,10 +126,9 @@ public class NodeDataDerbyTest extends DerbyBase
             transMgr,
             true
         );
-        con.commit();
         transMgr.commit();
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database did not persist NodeData instance", resultSet.next());
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
@@ -148,21 +141,21 @@ public class NodeDataDerbyTest extends DerbyBase
         resultSet.close();
         stmt.close();
 
-        stmt = con.prepareStatement(SELECT_ALL_RESOURCES_FOR_NODE);
+        stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES_FOR_NODE);
         stmt.setString(1, nodeName.value);
         resultSet = stmt.executeQuery();
         assertFalse("Database persisted non existent resource", resultSet.next());
         resultSet.close();
         stmt.close();
 
-        stmt = con.prepareStatement(SELECT_ALL_NET_INTERFACES_FOR_NODE);
+        stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NET_INTERFACES_FOR_NODE);
         stmt.setString(1, nodeName.value);
         resultSet = stmt.executeQuery();
         assertFalse("Database persisted non existent net interface", resultSet.next());
         resultSet.close();
         stmt.close();
 
-        stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS_FOR_NODE);
+        stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS_FOR_NODE);
         stmt.setString(1, nodeName.value);
         resultSet = stmt.executeQuery();
         assertFalse("Database persisted non existent net interface", resultSet.next());
@@ -171,13 +164,13 @@ public class NodeDataDerbyTest extends DerbyBase
 
         ObjectProtection loadedObjProt = ObjectProtection.getInstance(
             sysCtx,
-            transMgr,
             ObjectProtection.buildPath(nodeName),
-            false
+            false,
+            transMgr
         );
         assertNotNull("Database did not persist objectProtection", loadedObjProt);
 
-        stmt = con.prepareStatement(SELECT_ALL_PROPS_FOR_NODE);
+        stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_PROPS_FOR_NODE);
         stmt.setString(1, "NODES/" + nodeName.value);
         resultSet = stmt.executeQuery();
         assertFalse("Database persisted non existent properties", resultSet.next());
@@ -188,7 +181,7 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testUpdateFlags() throws Exception
     {
-        insertNode(con, uuid, nodeName, 0, NodeType.AUXILIARY);
+        insertNode(transMgr, uuid, nodeName, 0, NodeType.AUXILIARY);
         transMgr.commit();
 
         NodeData loaded = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
@@ -198,7 +191,7 @@ public class NodeDataDerbyTest extends DerbyBase
         loaded.getFlags().enableFlags(sysCtx, NodeFlag.REMOVE);
         transMgr.commit();
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database deleted NodeData", resultSet.next());
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
@@ -215,11 +208,9 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testLoadSimple() throws Exception
     {
-        dbDriver.create(con, node);
+        dbDriver.create(node, transMgr);
 
-        NodeDataDerbyDriver.clearCache();
-
-        NodeData loaded = dbDriver.load(null, transMgr);
+        NodeData loaded = dbDriver.load(nodeName, null, transMgr);
 
         assertEquals(nodeName.value, loaded.getName().value);
         assertEquals(nodeName.displayValue, loaded.getName().displayValue);
@@ -234,9 +225,8 @@ public class NodeDataDerbyTest extends DerbyBase
         NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
         assertNull(loadedNode);
 
-        insertNode(con, uuid, nodeName, 0, NodeType.AUXILIARY);
-        con.commit();
-        NodeDataDerbyDriver.clearCache();
+        insertNode(transMgr, uuid, nodeName, 0, NodeType.AUXILIARY);
+        transMgr.commit();
 
         loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
 
@@ -303,42 +293,42 @@ public class NodeDataDerbyTest extends DerbyBase
         String storPoolTestValue = "storPoolTestValue";
 
         // node(1)'s objProt already created in startUp method
-        insertNode(con, nodeUuid, nodeName, NodeFlag.QIGNORE.getFlagValue(), NodeType.AUXILIARY);
-        insertProp(con, PropsContainer.buildPath(nodeName), nodeTestKey, nodeTestValue);
+        insertNode(transMgr, nodeUuid, nodeName, NodeFlag.QIGNORE.getFlagValue(), NodeType.AUXILIARY);
+        insertProp(transMgr, PropsContainer.buildPath(nodeName), nodeTestKey, nodeTestValue);
 
-        insertObjProt(con, ObjectProtection.buildPath(nodeName2), sysCtx);
-        insertNode(con, node2Uuid, nodeName2, 0, NodeType.AUXILIARY);
+        insertObjProt(transMgr, ObjectProtection.buildPath(nodeName2), sysCtx);
+        insertNode(transMgr, node2Uuid, nodeName2, 0, NodeType.AUXILIARY);
 
-        insertObjProt(con, ObjectProtection.buildPath(nodeName, netName), sysCtx);
-        insertNetInterface(con, netIfUuid, nodeName, netName, netHost, netType);
+        insertObjProt(transMgr, ObjectProtection.buildPath(nodeName, netName), sysCtx);
+        insertNetInterface(transMgr, netIfUuid, nodeName, netName, netHost, netType);
 
-        insertObjProt(con, ObjectProtection.buildPath(resName), sysCtx);
-        insertResDfn(con, resDfnUuid, resName, RscDfnFlags.REMOVE);
-        insertProp(con, PropsContainer.buildPath(resName), resDfnTestKey, resDfnTestValue);
+        insertObjProt(transMgr, ObjectProtection.buildPath(resName), sysCtx);
+        insertResDfn(transMgr, resDfnUuid, resName, RscDfnFlags.REMOVE);
+        insertProp(transMgr, PropsContainer.buildPath(resName), resDfnTestKey, resDfnTestValue);
 
-        insertObjProt(con, ObjectProtection.buildPath(resName, nodeName, nodeName2), sysCtx);
-        insertConnDfn(con, conUuid, resName, nodeName, nodeName2, conNr);
+        insertObjProt(transMgr, ObjectProtection.buildPath(resName, nodeName, nodeName2), sysCtx);
+        insertConnDfn(transMgr, conUuid, resName, nodeName, nodeName2, conNr);
 
-        insertObjProt(con, ObjectProtection.buildPath(nodeName, resName), sysCtx);
-        insertRes(con, resUuid, nodeName, resName, nodeId, Resource.RscFlags.CLEAN);
-        insertProp(con, PropsContainer.buildPath(nodeName, resName), resTestKey, resTestValue);
+        insertObjProt(transMgr, ObjectProtection.buildPath(nodeName, resName), sysCtx);
+        insertRes(transMgr, resUuid, nodeName, resName, nodeId, Resource.RscFlags.CLEAN);
+        insertProp(transMgr, PropsContainer.buildPath(nodeName, resName), resTestKey, resTestValue);
 
-        insertVolDfn(con, volDfnUuid, resName, volDfnNr, volDfnSize, volDfnMinorNr, VlmDfnFlags.REMOVE.flagValue);
-        insertProp(con, PropsContainer.buildPath(resName, volDfnNr), volDfnTestKey, volDfnTestValue);
+        insertVolDfn(transMgr, volDfnUuid, resName, volDfnNr, volDfnSize, volDfnMinorNr, VlmDfnFlags.REMOVE.flagValue);
+        insertProp(transMgr, PropsContainer.buildPath(resName, volDfnNr), volDfnTestKey, volDfnTestValue);
 
-        insertVol(con, volUuid, nodeName, resName, volDfnNr, volTestBlockDev, volTestMetaDisk, Volume.VlmFlags.CLEAN);
-        insertProp(con, PropsContainer.buildPath(nodeName, resName, volDfnNr), volTestKey, volTestValue);
+        insertVol(transMgr, volUuid, nodeName, resName, volDfnNr, volTestBlockDev, volTestMetaDisk, Volume.VlmFlags.CLEAN);
+        insertProp(transMgr, PropsContainer.buildPath(nodeName, resName, volDfnNr), volTestKey, volTestValue);
 
-        insertObjProt(con, ObjectProtection.buildPathSPD(poolName), sysCtx);
-        insertStorPoolDfn(con, storPoolDfnId, poolName);
+        insertObjProt(transMgr, ObjectProtection.buildPathSPD(poolName), sysCtx);
+        insertStorPoolDfn(transMgr, storPoolDfnId, poolName);
 
-        insertObjProt(con, ObjectProtection.buildPathSP(poolName), sysCtx);
-        insertStorPool(con, storPoolId, nodeName, poolName, driver);
+        insertObjProt(transMgr, ObjectProtection.buildPathSP(poolName), sysCtx);
+        insertStorPool(transMgr, storPoolId, nodeName, poolName, driver);
 
-        insertProp(con, storPoolPropsInstance, storPoolTestKey, storPoolTestValue);
-        con.commit();
+        insertProp(transMgr, storPoolPropsInstance, storPoolTestKey, storPoolTestValue);
+        transMgr.commit();
 
-        DriverUtils.clearCaches(); // just to be sure
+        clearDatabaseCaches(); // just to be sure
 
         NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
         NodeData loadedNode2 = NodeData.getInstance(sysCtx, nodeName2, null, null, null, transMgr, false);
@@ -400,7 +390,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 }
                 assertEquals(res, resDfn.getResource(sysCtx, nodeName));
                 assertEquals(resDfnUuid, resDfn.getUuid());
-                assertEquals(res.getVolume(volDfnNr).getVolumeDfn(), resDfn.getVolumeDfn(sysCtx, volDfnNr));
+                assertEquals(res.getVolume(volDfnNr).getVolumeDefinition(), resDfn.getVolumeDfn(sysCtx, volDfnNr));
             }
             assertEquals(nodeId, res.getNodeId());
             assertNotNull(res.getObjProt());
@@ -438,7 +428,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 assertEquals(res.getDefinition(), vol.getResourceDfn());
                 assertEquals(volUuid, vol.getUuid());
                 {
-                    VolumeDefinition volDfn = vol.getVolumeDfn();
+                    VolumeDefinition volDfn = vol.getVolumeDefinition();
                     assertTrue(volDfn.getFlags().isSet(sysCtx, VlmDfnFlags.REMOVE));
                     assertEquals(volDfnMinorNr, volDfn.getMinorNr(sysCtx).value);
                     {
@@ -448,7 +438,7 @@ public class NodeDataDerbyTest extends DerbyBase
                         assertNotNull(volDfnProps.getProp(SerialGenerator.KEY_SERIAL));
                         assertEquals(2, volDfnProps.size()); // serial number + testEntry
                     }
-                    assertEquals(res.getDefinition(), volDfn.getResourceDfn());
+                    assertEquals(res.getDefinition(), volDfn.getResourceDefinition());
                     assertEquals(volDfnUuid, volDfn.getUuid());
                     assertEquals(volDfnNr, volDfn.getVolumeNumber(sysCtx));
                     assertEquals(volDfnSize, volDfn.getVolumeSize(sysCtx));
@@ -489,23 +479,23 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        dbDriver.create(con, node);
+        dbDriver.create(node, transMgr);
 
         // no clearCaches
 
-        assertEquals(node, dbDriver.load(null, transMgr));
+        assertEquals(node, dbDriver.load(nodeName, null, transMgr));
     }
 
     @Test
     public void testDelete() throws Exception
     {
-        dbDriver.create(con, node);
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
+        dbDriver.create(node, transMgr);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
         resultSet.close();
 
-        dbDriver.delete(con);
+        dbDriver.delete(node, transMgr);
         resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
@@ -532,7 +522,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         assertNotNull(nodeData);
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());
 
@@ -559,7 +549,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         assertNull(nodeData);
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_NODES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
         ResultSet resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());
 
@@ -570,12 +560,11 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testHalfValidName() throws Exception
     {
-        dbDriver.create(con, node);
+        dbDriver.create(node, transMgr);
         DriverUtils.clearCaches();
 
         NodeName halfValidName = new NodeName(node.getName().value);
-        NodeDataDerbyDriver driver = new NodeDataDerbyDriver(sysCtx, halfValidName);
-        NodeData loadedNode = driver.load(null, transMgr);
+        NodeData loadedNode = dbDriver.load(halfValidName, null, transMgr);
 
         assertNotNull(loadedNode);
         assertEquals(node.getName(), loadedNode.getName());

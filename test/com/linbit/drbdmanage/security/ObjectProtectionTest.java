@@ -61,7 +61,7 @@ public class ObjectProtectionTest
     public void testGetOwner() throws Exception
     {
         AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, privSysAll);
-        ObjectProtection objProt = new ObjectProtection(accCtx, null);
+        ObjectProtection objProt = new ObjectProtection(accCtx, null, null);
 
         assertEquals(userRole, objProt.getOwner());
 
@@ -234,7 +234,7 @@ public class ObjectProtectionTest
     public void testGetCreator() throws Exception
     {
         AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, privSysAll);
-        ObjectProtection objProt = new ObjectProtection(accCtx, null);
+        ObjectProtection objProt = new ObjectProtection(accCtx, null, null);
 
         assertEquals(userId, objProt.getCreator());
 
@@ -415,7 +415,7 @@ public class ObjectProtectionTest
             AccessContext objCtx = new AccessContext(someOtherUserId, subjRole, someOtherUserSecDomain, privSysAll);
             objCtx.privEffective.enablePrivileges(PRIVILEGE_LIST);
 
-            ObjectProtection objProt = new ObjectProtection(objCtx, null);
+            ObjectProtection objProt = new ObjectProtection(objCtx, null, null);
 
 
             if (aclEntry != null)

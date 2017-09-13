@@ -5,9 +5,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.TransactionMgr;
 
 public class EmptySecurityDbDriver implements DbAccessor
 {
+
+    public static final SingleColumnDatabaseDriver<?, ?> NOOP_COL_DRIVER = new NoOpColDriver();
 
     @Override
     public ResultSet getSignInEntry(Connection dbConn, IdentityName idName) throws SQLException
@@ -58,82 +61,104 @@ public class EmptySecurityDbDriver implements DbAccessor
     }
 
     @Override
-    public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objectPath)
+    public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver()
     {
-        return new EmptyObjectProtectionDatabaseDriver(objectPath);
+        return new EmptyObjectProtectionDatabaseDriver();
     }
 
     private static class EmptyObjectProtectionDatabaseDriver implements ObjectProtectionDatabaseDriver
     {
-        /**
-         * @param objectPath
-         */
-        public EmptyObjectProtectionDatabaseDriver(String objectPath)
+        public EmptyObjectProtectionDatabaseDriver()
         {
         }
 
         @Override
-        public void insertOp(Connection con, ObjectProtection objProt) throws SQLException
+        public void insertOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void updateOp(Connection con, ObjectProtection objProt) throws SQLException
+        public void updateOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void deleteOp(Connection con) throws SQLException
+        public void deleteOp(String objPath, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void insertAcl(Connection con, Role role, AccessType grantedAccess) throws SQLException
+        public void insertAcl(
+            ObjectProtection objProt,
+            Role role,
+            AccessType grantedAccess,
+            TransactionMgr transMgr
+        )
+            throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void updateAcl(Connection con, Role role, AccessType grantedAccess) throws SQLException
+        public void updateAcl(
+            ObjectProtection objProt,
+            Role role,
+            AccessType grantedAccess,
+            TransactionMgr transMgr
+        )
+            throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void deleteAcl(Connection con, Role role) throws SQLException
+        public void deleteAcl(ObjectProtection objProt, Role role, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public ObjectProtection loadObjectProtection(Connection con) throws SQLException
-        {
-            // no-op
-            return null;
-        }
-
-        @Override
-        public SingleColumnDatabaseDriver<Identity> getIdentityDatabaseDrier()
-        {
-            // no-op
-            return null;
-        }
-
-        @Override
-        public SingleColumnDatabaseDriver<Role> getRoleDatabaseDriver()
+        public ObjectProtection loadObjectProtection(String objPath, TransactionMgr transMgr) throws SQLException
         {
             // no-op
             return null;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public SingleColumnDatabaseDriver<SecurityType> getSecurityTypeDriver()
+        public SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier()
         {
             // no-op
-            return null;
+            return (SingleColumnDatabaseDriver<ObjectProtection, Identity>) NOOP_COL_DRIVER;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver()
+        {
+            // no-op
+            return (SingleColumnDatabaseDriver<ObjectProtection, Role>) NOOP_COL_DRIVER;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver()
+        {
+            // no-op
+            return (SingleColumnDatabaseDriver<ObjectProtection, SecurityType>) NOOP_COL_DRIVER;
+        }
+    }
+
+    private static class NoOpColDriver implements SingleColumnDatabaseDriver<Object, Object>
+    {
+
+        @Override
+        public void update(Object parent, Object element, TransactionMgr transMgr) throws SQLException
+        {
+            // no-op
         }
 
     }

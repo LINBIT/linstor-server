@@ -59,7 +59,7 @@ public class ConfFile
                 metaDisk = volume.getMetaDiskPath(accCtx);
             }
             conf.append("        meta-disk   %s;\n", metaDisk);
-            conf.append("        device      minor %d;\n", volume.getVolumeDfn().getMinorNr(accCtx).value);
+            conf.append("        device      minor %d;\n", volume.getVolumeDefinition().getMinorNr(accCtx).value);
         }
         conf.append("    }\n");
         for (final Resource peerResource : peerResources)

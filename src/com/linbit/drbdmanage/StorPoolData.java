@@ -54,9 +54,9 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             UUID.randomUUID(),
             ObjectProtection.getInstance(
                 accCtx,
-                transMgr,
                 ObjectProtection.buildPathSP(storPoolDef.getName()),
-                true
+                true,
+                transMgr
             ),
             nodeRef,
             storPoolDef,
@@ -90,17 +90,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         node = nodeRef;
 
         props = SerialPropsContainer.getInstance(
-            DrbdManage.getPropConDatabaseDriver(
-                PropsContainer.buildPath(
-                    storPoolDefRef.getName(),
-                    nodeRef.getName()
-                )
-            ),
-            transMgr,
-            serGen
+            PropsContainer.buildPath(storPoolDef.getName(), node.getName()),
+            serGen,
+            transMgr
         );
 
-        dbDriver = DrbdManage.getStorPoolDataDatabaseDriver(nodeRef, storPoolDefRef);
+        dbDriver = DrbdManage.getStorPoolDataDatabaseDriver();
 
         transObjs = Arrays.<TransactionObject>asList(props);
     }
@@ -117,10 +112,10 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         throws SQLException, AccessDeniedException, ClassNotFoundException, InstantiationException, IllegalAccessException
     {
         StorPoolData storPoolData = null;
-        StorPoolDataDatabaseDriver driver = DrbdManage.getStorPoolDataDatabaseDriver(nodeRef, storPoolDefRef);
+        StorPoolDataDatabaseDriver driver = DrbdManage.getStorPoolDataDatabaseDriver();
         if (transMgr != null)
         {
-            storPoolData = driver.load(serGen, transMgr);
+            storPoolData = driver.load(nodeRef, storPoolDefRef, serGen, transMgr);
             if (storPoolData == null && createIfNotExists)
             {
                 storPoolData = new StorPoolData(
@@ -132,7 +127,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                     serGen,
                     transMgr
                 );
-                driver.create(transMgr.dbCon, storPoolData);
+                driver.create(storPoolData, transMgr);
             }
         }
         else
@@ -171,6 +166,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     {
         checkDeleted();
         return storPoolDef.getName();
+    }
+
+    @Override
+    public Node getNode()
+    {
+        return node;
     }
 
     @Override
@@ -236,7 +237,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
         ((NodeData) node).removeStorPool(accCtx, this);
-        dbDriver.delete(dbCon);
+        dbDriver.delete(this, transMgr);
         deleted = true;
     }
 
@@ -247,5 +248,4 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             throw new ImplementationError("Access to deleted node", null);
         }
     }
-
 }

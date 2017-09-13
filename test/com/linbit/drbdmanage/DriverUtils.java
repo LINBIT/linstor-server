@@ -6,7 +6,7 @@ public class DriverUtils
     {
         ConnectionDefinitionDataDerbyDriver.clearCache();
         NetInterfaceDataDerbyDriver.clearCache();
-        NodeDataDerbyDriver.clearCache();
+//        NodeDataDerbyDriver.clearCache();
         ResourceDataDerbyDriver.clearCache();
         ResourceDefinitionDataDerbyDriver.clearCache();
         StorPoolDataDerbyDriver.clearCache();

@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,10 +11,8 @@ import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
-import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
-import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
-import com.linbit.drbdmanage.propscon.PropsContainer;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -48,45 +45,34 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         " DELETE FROM " + TBL_RES_DEF +
         " WHERE " + RD_NAME + " = ?";
 
-    private AccessContext dbCtx;
-    private ResourceName resName;
-    private boolean resNameLoaded = false;
+    private static final Hashtable<PrimaryKey, ResourceDefinitionData> RES_DFN_CACHE = new Hashtable<>();
 
-    private StateFlagsPersistence resDfnFlagPersistence;
-    private PropsConDatabaseDriver propsDriver;
+    private final AccessContext dbCtx;
+    private final ErrorReporter errorReporter;
 
+    private final StateFlagsPersistence<ResourceDefinitionData> resDfnFlagPersistence;
 
-    private static Hashtable<PrimaryKey, ResourceDefinitionData> resDfnCache = new Hashtable<>();
-
-    public ResourceDefinitionDataDerbyDriver(AccessContext accCtx, ResourceName resNameRef)
+    public ResourceDefinitionDataDerbyDriver(AccessContext accCtx, ErrorReporter errorReporterRef)
     {
         dbCtx = accCtx;
-        resName = resNameRef;
+        errorReporter = errorReporterRef;
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
-        propsDriver = new PropsConDerbyDriver(PropsContainer.buildPath(resNameRef));
     }
 
     @Override
-    public void create(Connection con, ResourceDefinitionData resDfn) throws SQLException
+    public void create(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException
     {
-        if (!resDfn.getName().equals(resName))
-        {
-            throw new DrbdSqlRuntimeException(
-                "Driver with fixed PrimaryKey received a not matching object to persist"
-            );
-        }
-
         try
         {
-            PreparedStatement stmt = con.prepareStatement(RD_INSERT);
-            stmt.setBytes(1, UuidUtils.asByteArray(resDfn.getUuid()));
-            stmt.setString(2, resName.value);
-            stmt.setString(3, resName.displayValue);
-            stmt.setLong(4, resDfn.getFlags().getFlagsBits(dbCtx));
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_INSERT);
+            stmt.setBytes(1, UuidUtils.asByteArray(resourceDefinition.getUuid()));
+            stmt.setString(2, resourceDefinition.getName().value);
+            stmt.setString(3, resourceDefinition.getName().displayValue);
+            stmt.setLong(4, resourceDefinition.getFlags().getFlagsBits(dbCtx));
             stmt.executeUpdate();
             stmt.close();
 
-            cache(resDfn);
+            cache(resourceDefinition);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -98,10 +84,10 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     }
 
     @Override
-    public boolean exists(Connection con) throws SQLException
+    public boolean exists(ResourceName resourceName, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(RD_SELECT);
-        stmt.setString(1, resName.value);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_SELECT);
+        stmt.setString(1, resourceName.value);
         ResultSet resultSet = stmt.executeQuery();
 
         boolean exists = resultSet.next();
@@ -111,57 +97,55 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     }
 
     @Override
-    public ResourceDefinitionData load(SerialGenerator serialGen, TransactionMgr transMgr) throws SQLException
+    public ResourceDefinitionData load(
+        ResourceName resourceName,
+        SerialGenerator serialGen,
+        TransactionMgr transMgr
+    )
+        throws SQLException
     {
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_SELECT);
-        stmt.setString(1, resName.value);
+        stmt.setString(1, resourceName.value);
         ResultSet resultSet = stmt.executeQuery();
 
-        ResourceDefinitionData resDfn = cacheGet(resName);
+        ResourceDefinitionData resDfn = cacheGet(resourceName);
         if (resDfn == null)
         {
             if (resultSet.next())
             {
-                if (!resNameLoaded)
+                try
                 {
-                    // we could have been called with a half-valid resourceName.
-                    // that means that someone stored "test"/"TEST" as dsp/name
-                    // but another driver saw only the "TEST" reference.
-                    // hence we will update the resourceName accordingly
-                    try
-                    {
-                        resName = new ResourceName(resultSet.getString(RD_DSP_NAME));
-                        resNameLoaded = true;
-                    }
-                    catch (InvalidNameException invalidNameExc)
-                    {
-                        resultSet.close();
-                        stmt.close();
-                        throw new ImplementationError(
-                            "The display name of a valid ResourceName could not be restored",
-                            invalidNameExc
-                        );
-                    }
+                    resourceName = new ResourceName(resultSet.getString(RD_DSP_NAME));
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    resultSet.close();
+                    stmt.close();
+                    throw new ImplementationError(
+                        "The display name of a valid ResourceName could not be restored",
+                        invalidNameExc
+                    );
                 }
 
 
-                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                    ObjectProtection.buildPath(resName)
+                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+                ObjectProtection objProt = objProtDriver.loadObjectProtection(
+                    ObjectProtection.buildPath(resourceName),
+                    transMgr
                 );
-                ObjectProtection objProt = objProtDriver.loadObjectProtection(transMgr.dbCon);
                 if (objProt != null)
                 {
                     resDfn = new ResourceDefinitionData(
                         UuidUtils.asUuid(resultSet.getBytes(RD_UUID)),
                         objProt,
-                        resName,
+                        resourceName,
                         resultSet.getLong(RD_FLAGS),
                         serialGen,
                         transMgr
                     );
                     if (!cache(resDfn))
                     {
-                        resDfn = cacheGet(resName);
+                        resDfn = cacheGet(resourceName);
                     }
                     else
                     {
@@ -170,7 +154,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                             // restore connectionDefinitions
                             List<ConnectionDefinition> cons =
                                 ConnectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
-                                resName,
+                                resourceName,
                                 serialGen,
                                 transMgr,
                                 dbCtx
@@ -240,47 +224,41 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     }
 
     @Override
-    public void delete(Connection con) throws SQLException
+    public void delete(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(RD_DELETE);
-        stmt.setString(1, resName.value);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_DELETE);
+        stmt.setString(1, resourceDefinition.getName().value);
         stmt.executeUpdate();
 
         stmt.close();
-        cacheRemove(resName);
+        cacheRemove(resourceDefinition.getName());
     }
 
     @Override
-    public StateFlagsPersistence getStateFlagsPersistence()
+    public StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence()
     {
         return resDfnFlagPersistence;
-    }
-
-    @Override
-    public PropsConDatabaseDriver getPropsConDriver()
-    {
-        return propsDriver;
     }
 
     private synchronized static boolean cache(ResourceDefinitionData resDfn)
     {
         PrimaryKey pk = new PrimaryKey(resDfn.getName().value);
-        boolean contains = resDfnCache.containsKey(pk);
+        boolean contains = RES_DFN_CACHE.containsKey(pk);
         if (!contains)
         {
-            resDfnCache.put(pk, resDfn);
+            RES_DFN_CACHE.put(pk, resDfn);
         }
         return !contains;
     }
 
     private static ResourceDefinitionData cacheGet(ResourceName resName)
     {
-        return resDfnCache.get(new PrimaryKey(resName.value));
+        return RES_DFN_CACHE.get(new PrimaryKey(resName.value));
     }
 
     private synchronized static void cacheRemove(ResourceName resName)
     {
-        resDfnCache.remove(new PrimaryKey(resName.value));
+        RES_DFN_CACHE.remove(new PrimaryKey(resName.value));
     }
 
     /**
@@ -288,18 +266,17 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
      */
     static synchronized void clearCache()
     {
-        resDfnCache.clear();
+        RES_DFN_CACHE.clear();
     }
 
-    private class ResDfnFlagsPersistence implements StateFlagsPersistence
+    private class ResDfnFlagsPersistence implements StateFlagsPersistence<ResourceDefinitionData>
     {
-
         @Override
-        public void persist(Connection con, long flags) throws SQLException
+        public void persist(ResourceDefinitionData resourceDefinition, long flags, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = con.prepareStatement(RD_UPDATE_FLAGS);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_UPDATE_FLAGS);
             stmt.setLong(1, flags);
-            stmt.setString(2, resName.value);
+            stmt.setString(2, resourceDefinition.getName().value);
             stmt.executeUpdate();
 
             stmt.close();

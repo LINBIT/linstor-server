@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage.dbdrivers;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
@@ -76,8 +75,8 @@ public class NoOpDriver implements DatabaseDriver
     private static final NetInterfaceDataDatabaseDriver NO_OP_NI_DRIVER = new NoOpNiDriver();
     private static final ConnectionDefinitionDataDatabaseDriver NO_OP_CON_DFN_DRIVER = new NoOpConDfnDriver();
 
-    private static final StateFlagsPersistence NO_OP_FLAG_DRIVER = new NoOpFlagDriver();
-    private static final SingleColumnDatabaseDriver<?> NO_OP_OBJ_DB_DRIVER = new NoOpObjDbDriver<>();
+    private static final StateFlagsPersistence<?> NO_OP_FLAG_DRIVER = new NoOpFlagDriver();
+    private static final SingleColumnDatabaseDriver<?, ?> NO_OP_OBJ_DB_DRIVER = new NoOpObjDbDriver<>();
 
     private static final String NO_OP_STRING = "NO_OP";
 
@@ -94,65 +93,61 @@ public class NoOpDriver implements DatabaseDriver
     }
 
     @Override
-    public PropsConDatabaseDriver getPropsDatabaseDriver(String instanceName)
+    public PropsConDatabaseDriver getPropsDatabaseDriver()
     {
         return NO_OP_PROPS_DRIVER;
     }
 
     @Override
-    public NodeDataDatabaseDriver getNodeDatabaseDriver(NodeName nodeNameRef)
+    public NodeDataDatabaseDriver getNodeDatabaseDriver()
     {
         return NO_OP_NODE_DRIVER;
     }
 
     @Override
-    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver(NodeName nodeNameRef, ResourceName resName)
+    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver()
     {
         return NO_OP_RES_DRIVER;
     }
 
     @Override
-    public ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName)
+    public ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver()
     {
         return NO_OP_RES_DFN_DRIVER;
     }
 
     @Override
-    public VolumeDataDatabaseDriver getVolumeDataDatabaseDriver(Resource resRef, VolumeDefinition volDfnRef)
+    public VolumeDataDatabaseDriver getVolumeDataDatabaseDriver()
     {
         return NO_OP_VOL_DRIVER;
     }
 
     @Override
-    public VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(ResourceDefinition resDfn, VolumeNumber volNr)
+    public VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver()
     {
         return NO_OP_VOL_DFN_DRIVER;
     }
 
     @Override
-    public StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver(StorPoolName name)
+    public StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver()
     {
         return NO_OP_SP_DRIVER;
     }
 
     @Override
-    public StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef)
+    public StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver()
     {
         return NO_OP_SPD_DRIVER;
     }
 
     @Override
-    public NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node node, NetInterfaceName name)
+    public NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver()
     {
         return NO_OP_NI_DRIVER;
     }
 
     @Override
-    public ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver(
-        ResourceName resName,
-        NodeName sourceNodeName,
-        NodeName targetNodeName
-    )
+    public ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver()
     {
         return NO_OP_CON_DFN_DRIVER;
     }
@@ -160,43 +155,37 @@ public class NoOpDriver implements DatabaseDriver
     private static class NoOpPropDriver implements PropsConDatabaseDriver
     {
         @Override
-        public String getInstanceName()
+        public Map<String, String> load(String instanceName, TransactionMgr transMgr) throws SQLException
         {
             return null;
         }
 
         @Override
-        public Map<String, String> load(Connection con) throws SQLException
-        {
-            return null;
-        }
-
-        @Override
-        public void persist(Connection con, String key, String value) throws SQLException
+        public void persist(String instanceName, String key, String value, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void persist(Connection con, Map<String, String> props) throws SQLException
+        public void persist(String instanceName, Map<String, String> props, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void remove(Connection con, String key) throws SQLException
+        public void remove(String instanceName, String key, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void remove(Connection con, Set<String> keys) throws SQLException
+        public void remove(String instanceName, Set<String> keys, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void removeAll(Connection con) throws SQLException
+        public void removeAll(String instanceName, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -204,39 +193,35 @@ public class NoOpDriver implements DatabaseDriver
 
     private static class NoOpNodeDriver implements NodeDataDatabaseDriver
     {
+        @SuppressWarnings("unchecked")
         @Override
-        public StateFlagsPersistence getStateFlagPersistence()
+        public StateFlagsPersistence<NodeData> getStateFlagPersistence()
         {
-            return NO_OP_FLAG_DRIVER;
+            return (StateFlagsPersistence<NodeData>) NO_OP_FLAG_DRIVER;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public SingleColumnDatabaseDriver<NodeType> getNodeTypeDriver()
+        public SingleColumnDatabaseDriver<NodeData, NodeType> getNodeTypeDriver()
         {
-            return (SingleColumnDatabaseDriver<NodeType>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<NodeData, NodeType>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @Override
-        public PropsConDatabaseDriver getPropsConDriver()
-        {
-            return NO_OP_PROPS_DRIVER;
-        }
-
-        @Override
-        public void create(Connection con, NodeData nodeData) throws SQLException
+        public void create(NodeData nodeData, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public NodeData load(SerialGenerator serialGen, TransactionMgr transMgr) throws SQLException
+        public NodeData load(NodeName nodeName, SerialGenerator serialGen, TransactionMgr transMgr)
+            throws SQLException
         {
             return null;
         }
 
         @Override
-        public void delete(Connection con) throws SQLException
+        public void delete(NodeData data, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -244,33 +229,33 @@ public class NoOpDriver implements DatabaseDriver
 
     private static class NoOpResDriver implements ResourceDataDatabaseDriver
     {
+        @SuppressWarnings("unchecked")
         @Override
-        public StateFlagsPersistence getStateFlagPersistence()
+        public StateFlagsPersistence<ResourceData> getStateFlagPersistence()
         {
-            return NO_OP_FLAG_DRIVER;
+            return (StateFlagsPersistence<ResourceData>) NO_OP_FLAG_DRIVER;
         }
 
         @Override
-        public PropsConDatabaseDriver getPropsConDriver()
-        {
-            return NO_OP_PROPS_DRIVER;
-        }
-
-        @Override
-        public void create(Connection dbCon, ResourceData resData) throws SQLException
+        public void create(ResourceData resData, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public ResourceData load(Node node, SerialGenerator serialGen, TransactionMgr transMgr)
+        public ResourceData load(
+            Node node,
+            ResourceName resourceName,
+            SerialGenerator serialGen,
+            TransactionMgr transMgr
+        )
             throws SQLException
         {
             return null;
         }
 
         @Override
-        public void delete(Connection con) throws SQLException
+        public void delete(ResourceData resourceData, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -278,39 +263,38 @@ public class NoOpDriver implements DatabaseDriver
 
     private static class NoOpResDfnDriver implements ResourceDefinitionDataDatabaseDriver
     {
+        @SuppressWarnings("unchecked")
         @Override
-        public StateFlagsPersistence getStateFlagsPersistence()
+        public StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence()
         {
-            return NO_OP_FLAG_DRIVER;
+            return (StateFlagsPersistence<ResourceDefinitionData>) NO_OP_FLAG_DRIVER;
         }
 
         @Override
-        public PropsConDatabaseDriver getPropsConDriver()
-        {
-            return NO_OP_PROPS_DRIVER;
-        }
-
-        @Override
-        public void create(Connection dbCon, ResourceDefinitionData resDfn) throws SQLException
+        public void create(ResourceDefinitionData resDfn, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public boolean exists(Connection dbCon) throws SQLException
+        public boolean exists(ResourceName resourceName, TransactionMgr transMgr) throws SQLException
         {
             return false;
         }
 
         @Override
-        public ResourceDefinitionData load(SerialGenerator serialGen, TransactionMgr transMgr)
+        public ResourceDefinitionData load(
+            ResourceName resourceName,
+            SerialGenerator serialGen,
+            TransactionMgr transMgr
+        )
             throws SQLException
         {
             return null;
         }
 
         @Override
-        public void delete(Connection con) throws SQLException
+        public void delete(ResourceDefinitionData data, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -318,32 +302,33 @@ public class NoOpDriver implements DatabaseDriver
 
     private static class NoOpVolDriver implements VolumeDataDatabaseDriver
     {
+        @SuppressWarnings("unchecked")
         @Override
-        public StateFlagsPersistence getStateFlagsPersistence()
+        public StateFlagsPersistence<VolumeData> getStateFlagsPersistence()
         {
-            return NO_OP_FLAG_DRIVER;
+            return (StateFlagsPersistence<VolumeData>) NO_OP_FLAG_DRIVER;
         }
 
         @Override
-        public PropsConDatabaseDriver getPropsConDriver()
-        {
-            return NO_OP_PROPS_DRIVER;
-        }
-
-        @Override
-        public VolumeData load(SerialGenerator srlGen, TransactionMgr transMgr) throws SQLException
+        public VolumeData load(
+            Resource resource,
+            VolumeDefinition volumeDefinition,
+            SerialGenerator serialGen,
+            TransactionMgr transMgr
+        )
+            throws SQLException
         {
             return null;
         }
 
         @Override
-        public void create(Connection dbCon, VolumeData vol) throws SQLException
+        public void create(VolumeData vol, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void delete(Connection con) throws SQLException
+        public void delete(VolumeData data, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -351,47 +336,47 @@ public class NoOpDriver implements DatabaseDriver
 
     private static class NoOpVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
     {
+        @SuppressWarnings("unchecked")
         @Override
-        public StateFlagsPersistence getStateFlagsPersistence()
+        public StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence()
         {
-            return NO_OP_FLAG_DRIVER;
+            return (StateFlagsPersistence<VolumeDefinitionData>) NO_OP_FLAG_DRIVER;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public SingleColumnDatabaseDriver<MinorNumber> getMinorNumberDriver()
+        public SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber> getMinorNumberDriver()
         {
-            return (SingleColumnDatabaseDriver<MinorNumber>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public SingleColumnDatabaseDriver<Long> getVolumeSizeDriver()
+        public SingleColumnDatabaseDriver<VolumeDefinitionData, Long> getVolumeSizeDriver()
         {
-            return (SingleColumnDatabaseDriver<Long>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<VolumeDefinitionData, Long>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @Override
-        public PropsConDatabaseDriver getPropsDriver()
-        {
-            return NO_OP_PROPS_DRIVER;
-        }
-
-        @Override
-        public void create(Connection con, VolumeDefinitionData volDfnData) throws SQLException
+        public void create(VolumeDefinitionData volDfnData, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public VolumeDefinitionData load(SerialGenerator serialGen, TransactionMgr transMgr)
+        public VolumeDefinitionData load(
+            ResourceDefinition resourceDefinition,
+            VolumeNumber volumeNumber,
+            SerialGenerator serialGen,
+            TransactionMgr transMgr
+        )
             throws SQLException
         {
             return null;
         }
 
         @Override
-        public void delete(Connection con) throws SQLException
+        public void delete(VolumeDefinitionData data, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -400,19 +385,19 @@ public class NoOpDriver implements DatabaseDriver
     private static class NoOpSpDriver implements StorPoolDefinitionDataDatabaseDriver
     {
         @Override
-        public void create(Connection con, StorPoolDefinitionData storPoolDefinitionData) throws SQLException
+        public void create(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public StorPoolDefinitionData load(Connection con) throws SQLException
+        public StorPoolDefinitionData load(StorPoolName storPoolName, TransactionMgr transMgr) throws SQLException
         {
             return null;
         }
 
         @Override
-        public void delete(Connection con) throws SQLException
+        public void delete(StorPoolDefinitionData data, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -421,25 +406,31 @@ public class NoOpDriver implements DatabaseDriver
     private static class NoOpSpdDriver implements StorPoolDataDatabaseDriver
     {
         @Override
-        public StorPoolData load(SerialGenerator serGen, TransactionMgr transMgr) throws SQLException
+        public StorPoolData load(
+            Node node,
+            StorPoolDefinition storPoolDefinition,
+            SerialGenerator serialGen,
+            TransactionMgr transMgr
+        )
+            throws SQLException
         {
             return null;
         }
 
         @Override
-        public void create(Connection dbCon, StorPoolData storPoolData) throws SQLException
+        public void create(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void delete(Connection con) throws SQLException
+        public void delete(StorPoolData data, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void ensureEntryExists(Connection con, StorPoolData storPoolData) throws SQLException
+        public void ensureEntryExists(StorPoolData data, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -449,50 +440,55 @@ public class NoOpDriver implements DatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
-        public SingleColumnDatabaseDriver<DmIpAddress> getNetInterfaceAddressDriver()
+        public SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> getNetInterfaceAddressDriver()
         {
-            return (SingleColumnDatabaseDriver<DmIpAddress>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public SingleColumnDatabaseDriver<NetInterfaceType> getNetInterfaceTypeDriver()
+        public SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> getNetInterfaceTypeDriver()
         {
-            return (SingleColumnDatabaseDriver<NetInterfaceType>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @Override
-        public NetInterfaceData load(Connection dbCon) throws SQLException
+        public NetInterfaceData load(
+            Node node,
+            NetInterfaceName netInterfaceName,
+            TransactionMgr transMgr
+        )
+            throws SQLException
         {
             return null;
         }
 
         @Override
-        public void create(Connection dbCon, NetInterfaceData netInterfaceData) throws SQLException
+        public void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void delete(Connection con) throws SQLException
-        {
-            // no-op
-        }
-    }
-
-    private static class NoOpFlagDriver implements StateFlagsPersistence
-    {
-        @Override
-        public void persist(Connection dbConn, long flags) throws SQLException
+        public void delete(NetInterfaceData data, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
     }
 
-    private static class NoOpObjDbDriver<NOOP> implements SingleColumnDatabaseDriver<NOOP>
+    private static class NoOpFlagDriver implements StateFlagsPersistence<Object>
     {
         @Override
-        public void update(Connection con, NOOP element) throws SQLException
+        public void persist(Object parent, long flags, TransactionMgr transMgr) throws SQLException
+        {
+            // no-op
+        }
+    }
+
+    private static class NoOpObjDbDriver<NOOP_KEY, NOOP> implements SingleColumnDatabaseDriver<NOOP_KEY, NOOP>
+    {
+        @Override
+        public void update(NOOP_KEY parent, NOOP element, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -502,26 +498,31 @@ public class NoOpDriver implements DatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
-        public SingleColumnDatabaseDriver<Integer> getConnectionNumberDriver()
+        public SingleColumnDatabaseDriver<ConnectionDefinitionData, Integer> getConnectionNumberDriver()
         {
-            return (SingleColumnDatabaseDriver<Integer>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<ConnectionDefinitionData, Integer>) NO_OP_OBJ_DB_DRIVER;
         }
 
         @Override
-        public ConnectionDefinitionData load(SerialGenerator serialGen, TransactionMgr transMgr)
-            throws SQLException
+        public ConnectionDefinitionData load(
+            ResourceName resourceName,
+            NodeName sourceNodeName,
+            NodeName targetNodeName,
+            SerialGenerator serialGen,
+            TransactionMgr transMgr
+        ) throws SQLException
         {
             return null;
         }
 
         @Override
-        public void create(Connection con, ConnectionDefinitionData conDfnData) throws SQLException
+        public void create(ConnectionDefinitionData conDfnData, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void delete(Connection con) throws SQLException
+        public void delete(ConnectionDefinitionData data, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }

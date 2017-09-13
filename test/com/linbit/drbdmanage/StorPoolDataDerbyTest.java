@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
@@ -32,7 +31,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
     private final NodeName nodeName;
     private final StorPoolName spName;
 
-    private Connection con;
     private TransactionMgr transMgr;
     private NodeData node;
 
@@ -54,25 +52,24 @@ public class StorPoolDataDerbyTest extends DerbyBase
     {
         assertEquals(TBL_NODE_STOR_POOL + " table's column count has changed. Update tests accordingly!", 4, TBL_COL_COUNT_NODE_STOR_POOL);
 
-        con = getConnection();
-        transMgr = new TransactionMgr(con);
+        transMgr = new TransactionMgr(getConnection());
 
         node = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, true);
         spdd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, true);
 
-        driver = new StorPoolDataDerbyDriver(node, spdd);
+        driver = new StorPoolDataDerbyDriver(sysCtx, errorReporter);
 
         uuid = randomUUID();
-        objProt = ObjectProtection.getInstance(sysCtx, transMgr, ObjectProtection.buildPathSP(spName), true);
+        objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPathSP(spName), true, transMgr);
         storPool = new StorPoolData(uuid, objProt, node, spdd, null, LvmDriver.class.getSimpleName(), null, transMgr);
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        driver.create(con, storPool);
+        driver.create(storPool, transMgr);
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database did not persist storPool", resultSet.next());
         assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
@@ -97,12 +94,11 @@ public class StorPoolDataDerbyTest extends DerbyBase
             transMgr,
             true // create
         );
-        con.commit();
         transMgr.commit();
 
         // we do not check if node gets created, as testPersistSimple() does that already
         // thus, we only check if the net interface got persisted
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database did not persist storPool", resultSet.next());
         assertEquals(pool.getUuid(), UuidUtils.asUuid(resultSet.getBytes(UUID)));
@@ -118,13 +114,13 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        StorPoolData loadedStorPool = driver.load(null, transMgr);
+        StorPoolData loadedStorPool = driver.load(node, spdd, null, transMgr);
         assertNull(loadedStorPool);
 
-        driver.create(con, storPool);
+        driver.create(storPool, transMgr);
         DriverUtils.clearCaches();
 
-        loadedStorPool = driver.load(null, transMgr);
+        loadedStorPool = driver.load(node, spdd, null, transMgr);
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(sysCtx).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(sysCtx));
@@ -136,10 +132,10 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testLoadStatic() throws Exception
     {
-        driver.create(con, storPool);
+        driver.create(storPool, transMgr);
         DriverUtils.clearCaches();
 
-        List<StorPoolData> storPools = StorPoolDataDerbyDriver.loadStorPools(node, transMgr, null);
+        List<StorPoolData> storPools = StorPoolDataDerbyDriver.loadStorPools(node, null, transMgr);
 
         assertNotNull(storPools);
         assertEquals(1, storPools.size());
@@ -157,11 +153,11 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        driver.create(con, storPool);
+        driver.create(storPool, transMgr);
 
         // no clearCaches
 
-        assertEquals(storPool, driver.load(null, transMgr));
+        assertEquals(storPool, driver.load(node, spdd, null, transMgr));
     }
 
     @Test
@@ -179,7 +175,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
 
         assertNull(loadedStorPool);
 
-        driver.create(con, storPool);
+        driver.create(storPool, transMgr);
         DriverUtils.clearCaches();
         loadedStorPool = StorPoolData.getInstance(
             sysCtx,
@@ -211,16 +207,15 @@ public class StorPoolDataDerbyTest extends DerbyBase
             transMgr,
             true // create
         );
-        con.commit();
         transMgr.commit();
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS);
         ResultSet resultSet = stmt.executeQuery();
         assertTrue("Database did not persist storPool", resultSet.next());
 
         resultSet.close();
 
-        driver.delete(con);
+        driver.delete(storPool, transMgr);
 
         resultSet = stmt.executeQuery();
 
@@ -233,18 +228,18 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testEnsureExist() throws Exception
     {
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS);
         ResultSet resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.ensureEntryExists(con, storPool);
+        driver.ensureEntryExists(storPool, transMgr);
 
         resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
         resultSet.close();
 
-        driver.ensureEntryExists(con, storPool);
+        driver.ensureEntryExists(storPool, transMgr);
 
         resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
@@ -279,7 +274,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertNotNull(storPoolData.getObjProt());
         assertNotNull(storPoolData.getUuid());
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS);
         ResultSet resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());
         resultSet.close();
@@ -303,7 +298,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
 
         assertNull(storPoolData);
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_STOR_POOLS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS);
         ResultSet resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());
         resultSet.close();

@@ -23,7 +23,6 @@ import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpReconnectorService;
@@ -291,7 +290,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     AccessContext privCtx = sysCtx.clone();
                     privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
                     securityDbDriver = new DbDerbyPersistence(privCtx);
-                    persistenceDbDriver = new DerbyDriver(privCtx);
+                    persistenceDbDriver = new DerbyDriver(privCtx, errorLogRef, nodesMap);
 
                     String connectionUrl = dbProps.getProperty(
                         DB_CONN_URL,
@@ -351,41 +350,38 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 // initializing ObjectProtections for nodeMap, rscDfnMap and storPoolMap
                 nodesMapProt = ObjectProtection.getInstance(
                     initCtx,
-                    transMgr,
                     ObjectProtection.buildPath(this, "nodesMap"),
-                    true
+                    true,
+                    transMgr
                 );
                 rscDfnMapProt = ObjectProtection.getInstance(
                     initCtx,
-                    transMgr,
                     ObjectProtection.buildPath(this, "rscDfnMap"),
-                    true
+                    true,
+                    transMgr
                 );
                 storPoolMapProt = ObjectProtection.getInstance(
                     initCtx,
-                    transMgr,
                     ObjectProtection.buildPath(this, "storPoolMap"),
-                    true
+                    true,
+                    transMgr
                 );
 
                 // initializing controller serial propsCon + OP
-                ctrlConf = SerialPropsContainer.getInstance(
-                    getPropConDatabaseDriver(DB_CONTROLLER_PROPSCON_INSTANCE_NAME),
-                    transMgr
-                );
+                ctrlConf = loadPropsCon(errorLogRef);
                 rootSerialGen = ((SerialPropsContainer) ctrlConf).getSerialGenerator();
                 ctrlConfProt = ObjectProtection.getInstance(
                     initCtx,
-                    transMgr,
                     ObjectProtection.buildPath(this, "conf"),
-                    true
+                    true,
+                    transMgr
                 );
 
                 shutdownProt = ObjectProtection.getInstance(
                     initCtx,
-                    transMgr,
                     ObjectProtection.buildPath(this, "shutdown"),
-                    true
+                    true,
+                    transMgr
                 );
 
                 shutdownProt.setConnection(transMgr);
@@ -667,10 +663,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         try
         {
             TransactionMgr transMgr = new TransactionMgr(dbConnPool);
-            PropsConDatabaseDriver propsConDbDriver = persistenceDbDriver.getPropsDatabaseDriver(
-                DB_CONTROLLER_PROPSCON_INSTANCE_NAME
-            );
-            config = PropsContainer.getInstance(propsConDbDriver, transMgr);
+            config = PropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
             dbConnPool.returnConnection(transMgr.dbCon);
         }
         catch (SQLException sqlExc)

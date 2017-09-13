@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
@@ -15,7 +15,10 @@ import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
+import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.utils.UuidUtils;
@@ -46,65 +49,75 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 
     private static Hashtable<PrimaryKey, StorPoolData> storPoolCache = new Hashtable<>();
 
-    private final Node node;
-    private final StorPoolDefinition storPoolDfn;
+    private final ErrorReporter errorReporter;
+    private final AccessContext dbCtx;
 
-    public StorPoolDataDerbyDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef)
+    public StorPoolDataDerbyDriver(AccessContext dbCtxRef, ErrorReporter errorReporterRef)
     {
-        node = nodeRef;
-        storPoolDfn = storPoolDfnRef;
+        dbCtx = dbCtxRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
-    public void create(Connection con, StorPoolData storPoolData) throws SQLException
+    public void create(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NSP_INSERT);
+        errorReporter.logDebug(
+            "Creating StorPoolData (NodeName=%s, PoolName=%s)",
+            storPoolData.getNode().getName().value,
+            storPoolData.getName().value
+        );
+
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_INSERT);
         stmt.setBytes(1, UuidUtils.asByteArray(storPoolData.getUuid()));
-        stmt.setString(2, node.getName().value);
+        stmt.setString(2, storPoolData.getNode().getName().value);
         stmt.setString(3, storPoolData.getName().value);
         stmt.setString(4, storPoolData.getDriverName());
         stmt.executeUpdate();
         stmt.close();
 
-        cache(node, storPoolData);
+        cache(storPoolData.getNode(), storPoolData);
     }
-
 
     @Override
     public StorPoolData load(
-        SerialGenerator serGen,
+        Node node,
+        StorPoolDefinition storPoolDefinition,
+        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
     {
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT);
         stmt.setString(1, node.getName().value);
-        stmt.setString(2, storPoolDfn.getName().value);
+        stmt.setString(2, storPoolDefinition.getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        StorPoolData sp = cacheGet(node, storPoolDfn);
+        StorPoolData sp = cacheGet(node, storPoolDefinition);
         if (sp == null)
         {
             if (resultSet.next())
             {
-                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                    ObjectProtection.buildPathSP(storPoolDfn.getName())
+                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+                ObjectProtection objProt = objProtDriver.loadObjectProtection(
+                    ObjectProtection.buildPathSP(
+                        storPoolDefinition.getName()
+                    ),
+                    transMgr
                 );
-                ObjectProtection objProt = objProtDriver.loadObjectProtection(transMgr.dbCon);
 
                 sp = new StorPoolData(
                     UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
                     objProt,
                     node,
-                    storPoolDfn,
+                    storPoolDefinition,
                     null,   // storageDriver, has to be null in the controller
                     resultSet.getString(NSP_DRIVER),
-                    serGen,
+                    serialGen,
                     transMgr
                 );
                 if (!cache(node, sp))
                 {
-                    sp = cacheGet(node, storPoolDfn);
+                    sp = cacheGet(node, storPoolDefinition);
                 }
                 else
                 {
@@ -131,8 +144,8 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 
     public static List<StorPoolData> loadStorPools(
         NodeData node,
-        TransactionMgr transMgr,
-        SerialGenerator serGen
+        SerialGenerator serGen,
+        TransactionMgr transMgr
     )
         throws SQLException
     {
@@ -150,13 +163,16 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 StorPoolData storPoolData = cacheGet(node, storPoolName);
                 if (storPoolData == null)
                 {
-                    ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                        ObjectProtection.buildPathSP(storPoolName)
+                    ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+                    ObjectProtection objProt = objProtDriver.loadObjectProtection(
+                        ObjectProtection.buildPathSP(
+                            storPoolName
+                        ),
+                        transMgr
                     );
-                    ObjectProtection objProt = objProtDriver.loadObjectProtection(transMgr.dbCon);
 
-                    StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = DrbdManage.getStorPoolDefinitionDataDriver(storPoolName);
-                    StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(transMgr.dbCon);
+                    StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = DrbdManage.getStorPoolDefinitionDataDriver();
+                    StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(storPoolName, transMgr);
 
                     storPoolData = new StorPoolData(
                         UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
@@ -196,23 +212,45 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     }
 
     @Override
-    public void delete(Connection con) throws SQLException
+    public void delete(StorPoolData storPool, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NSP_DELETE);
+        try
+        {
+            Node node = storPool.getNode();
+            StorPoolDefinition storPoolDfn;
+            storPoolDfn = storPool.getDefinition(dbCtx);
 
-        stmt.setString(1, node.getName().value);
-        stmt.setString(2, storPoolDfn.getName().value);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_DELETE);
 
-        stmt.executeUpdate();
-        stmt.close();
+            stmt.setString(1, node.getName().value);
+            stmt.setString(2, storPoolDfn.getName().value);
 
-        cacheRemove(node, storPoolDfn.getName());
+            stmt.executeUpdate();
+            stmt.close();
+
+            cacheRemove(node, storPoolDfn.getName());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            handleAccessDeniedException(accDeniedExc);
+        }
     }
 
     @Override
-    public void ensureEntryExists(Connection con, StorPoolData storPoolData) throws SQLException
+    public void ensureEntryExists(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(NSP_SELECT);
+        Node node = storPoolData.getNode();
+        StorPoolDefinition storPoolDfn;
+        try
+        {
+            storPoolDfn = storPoolData.getDefinition(dbCtx);
+        }
+        catch (AccessDeniedException accessDeniedExc)
+        {
+            throw new ImplementationError(accessDeniedExc);
+        }
+
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT);
         stmt.setString(1, node.getName().value);
         stmt.setString(2, storPoolDfn.getName().value);
         ResultSet resultSet = stmt.executeQuery();
@@ -239,11 +277,19 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 // XXX: user deleted db entry during runtime - throw exception?
                 // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
-            create(con, storPoolData);
+            create(storPoolData, transMgr);
         }
 
         resultSet.close();
         stmt.close();
+    }
+
+    private static void handleAccessDeniedException(AccessDeniedException accessDeniedExc) throws ImplementationError
+    {
+        throw new ImplementationError(
+            "Database's access context has no permission to acces VolumeData's volNumber",
+            accessDeniedExc
+        );
     }
 
     private synchronized static boolean cache(Node node, StorPoolData storPoolData)

@@ -1,21 +1,22 @@
 package com.linbit;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
 
-public class TransactionSimpleObject<T> implements TransactionObject
+public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObject
 {
     private boolean initialized = false;
 
-    private T object;
-    private T cachedObject;
-    private SingleColumnDatabaseDriver<T> dbDriver;
+    private PARENT parent;
+    private ELEMENT object;
+    private ELEMENT cachedObject;
+    private SingleColumnDatabaseDriver<PARENT, ELEMENT> dbDriver;
 
-    private Connection con;
+    private TransactionMgr transMgr;
 
-    public TransactionSimpleObject(T obj, SingleColumnDatabaseDriver<T> driver)
+    public TransactionSimpleObject(PARENT parent, ELEMENT obj, SingleColumnDatabaseDriver<PARENT, ELEMENT> driver)
     {
+        this.parent = parent;
         object = obj;
         cachedObject = obj;
         if (driver == null)
@@ -28,13 +29,13 @@ public class TransactionSimpleObject<T> implements TransactionObject
         }
     }
 
-    public void set(T obj) throws SQLException
+    public void set(ELEMENT obj) throws SQLException
     {
         if (initialized)
         {
-            if (con != null && !Objects.equals(obj, cachedObject))
+            if (transMgr != null && !Objects.equals(obj, cachedObject))
             {
-                dbDriver.update(con, obj);
+                dbDriver.update(parent, obj, transMgr);
             }
         }
         else
@@ -44,7 +45,7 @@ public class TransactionSimpleObject<T> implements TransactionObject
         object = obj;
     }
 
-    public T get()
+    public ELEMENT get()
     {
         return object;
     }
@@ -62,17 +63,13 @@ public class TransactionSimpleObject<T> implements TransactionObject
     }
 
     @Override
-    public void setConnection(TransactionMgr transMgr) throws ImplementationError
+    public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
-        if (transMgr != null)
+        if (transMgrRef != null)
         {
-            transMgr.register(this);
-            con = transMgr.dbCon;
+            transMgrRef.register(this);
         }
-        else
-        {
-            con = null;
-        }
+        transMgr = transMgrRef;
     }
 
     @Override

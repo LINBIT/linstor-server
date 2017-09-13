@@ -50,9 +50,9 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
             UUID.randomUUID(),
             ObjectProtection.getInstance(
                 accCtx,
-                transMgr,
                 ObjectProtection.buildPath(resDfn.getName(), node1.getName(), node2.getName()),
-                true
+                true,
+                transMgr
             ),
             resDfn,
             node1,
@@ -89,12 +89,7 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
         }
         conNr = conNrRef;
 
-
-        dbDriver = DrbdManage.getConnectionDefinitionDatabaseDriver(
-            resDfn.getName(),
-            sourceNode.getName(),
-            targetNode.getName()
-        );
+        dbDriver = DrbdManage.getConnectionDefinitionDatabaseDriver();
 
         transObjs = Arrays.asList(
             objProt,
@@ -131,14 +126,17 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
             target = node1;
         }
 
-        ConnectionDefinitionDataDatabaseDriver dbDriver = DrbdManage.getConnectionDefinitionDatabaseDriver(
-            resDfn.getName(),
-            source.getName(),
-            target.getName()
-        );
+        ConnectionDefinitionDataDatabaseDriver dbDriver = DrbdManage.getConnectionDefinitionDatabaseDriver();
+
         if (transMgr != null)
         {
-            conDfnData = dbDriver.load(srlGen, transMgr);
+            conDfnData = dbDriver.load(
+                resDfn.getName(),
+                source.getName(),
+                target.getName(),
+                srlGen,
+                transMgr
+            );
         }
 
         if (conDfnData != null)
@@ -159,7 +157,7 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
             );
             if (transMgr != null)
             {
-                dbDriver.create(transMgr.dbCon, conDfnData);
+                dbDriver.create(conDfnData, transMgr);
             }
         }
 
@@ -231,7 +229,7 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
             targetNode.getName(),
             conNr
         );
-        dbDriver.delete(dbCon);
+        dbDriver.delete(this, transMgr);
         deleted = true;
     }
 
@@ -242,5 +240,4 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
             throw new ImplementationError("Access to deleted connectionDefinition", null);
         }
     }
-
 }

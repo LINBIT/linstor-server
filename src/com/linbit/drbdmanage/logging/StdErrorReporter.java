@@ -696,32 +696,32 @@ public final class StdErrorReporter implements ErrorReporter
     }
 
     @Override
-    public void logTrace(String message)
+    public void logTrace(String format, Object... args)
     {
-        mainLogger.trace(message);
+        mainLogger.trace(String.format(format, args));
     }
 
     @Override
-    public void logDebug(String message)
+    public void logDebug(String format, Object... args)
     {
-        mainLogger.debug(message);
+        mainLogger.debug(String.format(format, args));
     }
 
     @Override
-    public void logInfo(String message)
+    public void logInfo(String format, Object... args)
     {
-        mainLogger.info(message);
+        mainLogger.info(String.format(format, args));
     }
 
     @Override
-    public void logWarning(String message)
+    public void logWarning(String format, Object... args)
     {
-        mainLogger.warn(message);
+        mainLogger.warn(String.format(format, args));
     }
 
     @Override
-    public void logError(String message)
+    public void logError(String format, Object... args)
     {
-        mainLogger.error(message);
+        mainLogger.error(String.format(format, args));
     }
 }

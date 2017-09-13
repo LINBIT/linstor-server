@@ -18,13 +18,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-import org.slf4j.event.Level;
-
-import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.SatelliteCoreServices;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.testutils.EmptyErrorReporter;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.utils.TestExtCmd;
 import com.linbit.extproc.utils.TestExtCmd.Command;
@@ -221,52 +217,6 @@ public class StorageTestUtils
         public FileSystemWatch getFsWatch()
         {
             return null;
-        }
-    }
-
-    private class EmptyErrorReporter implements ErrorReporter
-    {
-
-        @Override
-        public void logTrace(String message)
-        {
-        }
-
-        @Override
-        public void logDebug(String message)
-        {
-        }
-
-        @Override
-        public void logInfo(String message)
-        {
-        }
-
-        @Override
-        public void logWarning(String message)
-        {
-        }
-
-        @Override
-        public void logError(String message)
-        {
-        }
-
-        @Override
-        public void reportError(Throwable errorInfo)
-        {
-        }
-
-        @Override
-        public void reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
-        {
-        }
-
-        @Override
-        public void reportProblem(
-            Level logLevel, DrbdManageException errorInfo, AccessContext accCtx, Peer client, String contextInfo
-        )
-        {
         }
     }
 }

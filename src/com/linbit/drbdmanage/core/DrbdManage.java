@@ -4,16 +4,6 @@ import com.linbit.drbdmanage.ApiCall;
 import com.linbit.drbdmanage.CommonPeerCtx;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.DrbdManageException;
-import com.linbit.drbdmanage.NetInterfaceName;
-import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.NodeName;
-import com.linbit.drbdmanage.Resource;
-import com.linbit.drbdmanage.ResourceDefinition;
-import com.linbit.drbdmanage.ResourceName;
-import com.linbit.drbdmanage.StorPoolDefinition;
-import com.linbit.drbdmanage.StorPoolName;
-import com.linbit.drbdmanage.VolumeDefinition;
-import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
@@ -338,10 +328,8 @@ public abstract class DrbdManage
             if (!pkgPath.toFile().exists())
             {
                 componentRef.errorLog.logDebug(
-                    String.format(
-                        "Package '%s' does not exist - skipping dynamic load of ApiCalls",
-                        pkgPath
-                    )
+                    "Package '%s' does not exist - skipping dynamic load of ApiCalls",
+                    pkgPath
                 );
             }
             else
@@ -597,62 +585,58 @@ public abstract class DrbdManage
 
     // static Database reference getters
 
-    public static PropsConDatabaseDriver getPropConDatabaseDriver(String instanceName)
+    public static PropsConDatabaseDriver getPropConDatabaseDriver()
     {
-        return persistenceDbDriver.getPropsDatabaseDriver(instanceName);
+        return persistenceDbDriver.getPropsDatabaseDriver();
     }
 
-    public static NodeDataDatabaseDriver getNodeDataDatabaseDriver(NodeName nodeName)
+    public static NodeDataDatabaseDriver getNodeDataDatabaseDriver()
     {
-        return persistenceDbDriver.getNodeDatabaseDriver(nodeName);
+        return persistenceDbDriver.getNodeDatabaseDriver();
     }
 
-    public static ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objProtPath)
+    public static ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver()
     {
-        return securityDbDriver.getObjectProtectionDatabaseDriver(objProtPath);
+        return securityDbDriver.getObjectProtectionDatabaseDriver();
     }
 
-    public static ResourceDataDatabaseDriver getResourceDataDatabaseDriver(NodeName nodeName, ResourceName resName)
+    public static ResourceDataDatabaseDriver getResourceDataDatabaseDriver()
     {
-        return persistenceDbDriver.getResourceDataDatabaseDriver(nodeName, resName);
+        return persistenceDbDriver.getResourceDataDatabaseDriver();
     }
 
-    public static ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName)
+    public static ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver()
     {
-        return persistenceDbDriver.getResourceDefinitionDataDatabaseDriver(resName);
+        return persistenceDbDriver.getResourceDefinitionDataDatabaseDriver();
     }
 
-    public static VolumeDataDatabaseDriver getVolumeDataDatabaseDriver(Resource res, VolumeDefinition volDfn)
+    public static VolumeDataDatabaseDriver getVolumeDataDatabaseDriver()
     {
-        return persistenceDbDriver.getVolumeDataDatabaseDriver(res, volDfn);
+        return persistenceDbDriver.getVolumeDataDatabaseDriver();
     }
 
-    public static VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(ResourceDefinition resDfn,VolumeNumber volNr)
+    public static VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver()
     {
-        return persistenceDbDriver.getVolumeDefinitionDataDatabaseDriver(resDfn, volNr);
+        return persistenceDbDriver.getVolumeDefinitionDataDatabaseDriver();
     }
 
-    public static StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef)
+    public static StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver()
     {
-        return persistenceDbDriver.getStorPoolDataDatabaseDriver(nodeRef, storPoolDfnRef);
+        return persistenceDbDriver.getStorPoolDataDatabaseDriver();
     }
 
-    public static StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDriver(StorPoolName name)
+    public static StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDriver()
     {
-        return persistenceDbDriver.getStorPoolDefinitionDataDatabaseDriver(name);
+        return persistenceDbDriver.getStorPoolDefinitionDataDatabaseDriver();
     }
 
-    public static NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node node, NetInterfaceName name)
+    public static NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver()
     {
-        return persistenceDbDriver.getNetInterfaceDataDatabaseDriver(node, name);
+        return persistenceDbDriver.getNetInterfaceDataDatabaseDriver();
     }
 
-    public static ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver(
-        ResourceName resName,
-        NodeName sourceNodeName,
-        NodeName targetNodeName
-    )
+    public static ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver()
     {
-        return persistenceDbDriver.getConnectionDefinitionDatabaseDriver(resName, sourceNodeName, targetNodeName);
+        return persistenceDbDriver.getConnectionDefinitionDatabaseDriver();
     }
 }

@@ -27,10 +27,11 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     private final NetInterfaceName niName;
 
     private final ObjectProtection objProt;
-    private final TransactionSimpleObject<DmIpAddress> niAddress;
-    private final TransactionSimpleObject<NetInterfaceType> niType;
+    private final TransactionSimpleObject<NetInterfaceData, DmIpAddress> niAddress;
+    private final TransactionSimpleObject<NetInterfaceData, NetInterfaceType> niType;
 
     private final NetInterfaceDataDatabaseDriver dbDriver;
+
     private boolean deleted = false;
 
     // used by getInstance
@@ -48,12 +49,12 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             UUID.randomUUID(),
             ObjectProtection.getInstance(
                 accCtx,
-                transMgr,
                 ObjectProtection.buildPath(
                     node.getName(),
                     name
                 ),
-                true
+                true,
+                transMgr
             ),
             name,
             node,
@@ -82,13 +83,15 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         niName = netName;
         objProt = objectProtection;
 
-        dbDriver = DrbdManage.getNetInterfaceDataDatabaseDriver(node, netName);
+        dbDriver = DrbdManage.getNetInterfaceDataDatabaseDriver();
 
         niAddress = new TransactionSimpleObject<>(
+            this,
             addr,
             dbDriver.getNetInterfaceAddressDriver()
         );
         niType = new TransactionSimpleObject<>(
+            this,
             netType,
             dbDriver.getNetInterfaceTypeDriver()
         );
@@ -112,11 +115,11 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         throws SQLException, AccessDeniedException
     {
         NetInterfaceData netData = null;
-        NetInterfaceDataDatabaseDriver driver = DrbdManage.getNetInterfaceDataDatabaseDriver(node, name);
+        NetInterfaceDataDatabaseDriver driver = DrbdManage.getNetInterfaceDataDatabaseDriver();
 
         if (transMgr != null)
         {
-            netData = driver.load(transMgr.dbCon);
+            netData = driver.load(node, name, transMgr);
         }
 
         if (netData == null && createIfNotExists)
@@ -124,7 +127,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             netData = new NetInterfaceData(accCtx, node, name, addr, transMgr, netType);
             if (transMgr != null)
             {
-                driver.create(transMgr.dbCon, netData);
+                driver.create(netData, transMgr);
             }
         }
 
@@ -209,7 +212,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
         ((NodeData) niNode).removeNetInterface(accCtx, this);
-        dbDriver.delete(dbCon);
+        dbDriver.delete(this, transMgr);
         deleted = true;
     }
 

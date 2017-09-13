@@ -1,30 +1,20 @@
 package com.linbit.drbdmanage.dbdrivers;
 
-import java.util.HashMap;
 import java.util.Map;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.drbdmanage.ConnectionDefinitionDataDerbyDriver;
 import com.linbit.drbdmanage.NetInterfaceDataDerbyDriver;
-import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeDataDerbyDriver;
 import com.linbit.drbdmanage.NodeName;
-import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.ResourceDataDerbyDriver;
-import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceDefinitionDataDerbyDriver;
-import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolDataDerbyDriver;
-import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolDefinitionDataDerbyDriver;
-import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.VolumeDataDerbyDriver;
-import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinitionDataDerbyDriver;
-import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -35,6 +25,7 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
 import com.linbit.drbdmanage.security.AccessContext;
 
@@ -62,23 +53,29 @@ public class DerbyDriver implements DatabaseDriver
         }
     }
 
-    private final AccessContext dbCtx;
+    private final NodeDataDerbyDriver nodeDriver;
+    private final PropsConDerbyDriver propsDriver;
+    private final ResourceDataDerbyDriver resourceDriver;
+    private final ResourceDefinitionDataDerbyDriver resesourceDefinitionDriver;
+    private final VolumeDefinitionDataDerbyDriver volumeDefinitionDriver;
+    private final VolumeDataDerbyDriver volumeDriver;
+    private final StorPoolDefinitionDataDerbyDriver storPoolDefinitionDriver;
+    private final StorPoolDataDerbyDriver storPoolDriver;
+    private final NetInterfaceDataDerbyDriver netInterfaceDriver;
+    private final ConnectionDefinitionDataDerbyDriver connectionDefinitionDriver;
 
-    private final Map<PrimaryKey, NodeDataDerbyDriver> nodeDriverCache = new HashMap<>();
-    private final Map<PrimaryKey, PropsConDerbyDriver> propsDriverCache = new HashMap<>();
-    private final Map<PrimaryKey, ResourceDataDerbyDriver> resDriverCache = new HashMap<>();
-    private final Map<PrimaryKey, ResourceDefinitionDataDerbyDriver> resDefDriverCache = new HashMap<>();
-    private final Map<PrimaryKey, VolumeDefinitionDataDerbyDriver> volDefDriverCache = new HashMap<>();
-    private final Map<PrimaryKey, VolumeDataDerbyDriver> volDriverCache = new HashMap<>();
-    private final Map<PrimaryKey, StorPoolDefinitionDataDerbyDriver> storPoolDfnDriverCache = new HashMap<>();
-    private final Map<PrimaryKey, StorPoolDataDerbyDriver> storPoolDriverCache = new HashMap<>();
-    private final Map<PrimaryKey, NetInterfaceDataDerbyDriver> netInterfaceDriverCache = new HashMap<>();
-    private final Map<PrimaryKey, ConnectionDefinitionDataDerbyDriver> conDfnDriverCache = new HashMap<>();
-
-
-    public DerbyDriver(AccessContext privCtx)
+    public DerbyDriver(AccessContext privCtx, ErrorReporter errorReporterRef, Map<NodeName, Node> nodesMap)
     {
-        this.dbCtx = privCtx;
+        nodeDriver = new NodeDataDerbyDriver(privCtx, errorReporterRef, nodesMap);
+        propsDriver = new PropsConDerbyDriver(errorReporterRef);
+        resourceDriver = new ResourceDataDerbyDriver(privCtx, errorReporterRef);
+        resesourceDefinitionDriver = new ResourceDefinitionDataDerbyDriver(privCtx, errorReporterRef);
+        volumeDefinitionDriver = new VolumeDefinitionDataDerbyDriver(privCtx, errorReporterRef);
+        volumeDriver = new VolumeDataDerbyDriver(privCtx, errorReporterRef);
+        storPoolDefinitionDriver = new StorPoolDefinitionDataDerbyDriver(errorReporterRef);
+        storPoolDriver = new StorPoolDataDerbyDriver(privCtx, errorReporterRef);
+        netInterfaceDriver = new NetInterfaceDataDerbyDriver(privCtx, errorReporterRef);
+        connectionDefinitionDriver = new ConnectionDefinitionDataDerbyDriver(privCtx, errorReporterRef);
     }
 
     @Override
@@ -94,137 +91,63 @@ public class DerbyDriver implements DatabaseDriver
     }
 
     @Override
-    public PropsConDatabaseDriver getPropsDatabaseDriver(String instanceName)
+    public PropsConDatabaseDriver getPropsDatabaseDriver()
     {
-        PrimaryKey pk = new PrimaryKey(instanceName);
-        PropsConDerbyDriver driver = propsDriverCache.get(pk);
-        if (driver == null)
-        {
-            driver = new PropsConDerbyDriver(instanceName);
-            propsDriverCache.put(pk, driver);
-        }
-        return driver;
+        return propsDriver;
     }
 
 
     @Override
-    public NodeDataDatabaseDriver getNodeDatabaseDriver(NodeName nodeName)
+    public NodeDataDatabaseDriver getNodeDatabaseDriver()
     {
-        PrimaryKey pk = new PrimaryKey(nodeName);
-        NodeDataDerbyDriver driver = nodeDriverCache.get(pk);
-        if (driver == null)
-        {
-            driver = new NodeDataDerbyDriver(dbCtx, nodeName);
-            nodeDriverCache.put(pk, driver);
-        }
-        return driver;
+        return nodeDriver;
     }
 
     @Override
-    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver(NodeName nodeName, ResourceName resName)
+    public ResourceDataDatabaseDriver getResourceDataDatabaseDriver()
     {
-        PrimaryKey pk = new PrimaryKey(resName, nodeName);
-        ResourceDataDerbyDriver driver = resDriverCache.get(pk);
-        if (driver == null)
-        {
-            driver = new ResourceDataDerbyDriver(dbCtx, nodeName, resName);
-            resDriverCache.put(pk, driver);
-        }
-        return driver;
+        return resourceDriver;
     }
 
     @Override
-    public ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver(ResourceName resName)
+    public ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver()
     {
-        PrimaryKey pk = new PrimaryKey(resName);
-        ResourceDefinitionDataDerbyDriver driver= resDefDriverCache.get(pk);
-        if (driver == null)
-        {
-            driver = new ResourceDefinitionDataDerbyDriver(dbCtx, resName);
-            resDefDriverCache.put(pk, driver);
-        }
-        return driver;
+        return resesourceDefinitionDriver;
     }
 
     @Override
-    public VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver(ResourceDefinition resDfn, VolumeNumber volNr)
+    public VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver()
     {
-        PrimaryKey pk = new PrimaryKey(resDfn, volNr);
-        VolumeDefinitionDataDerbyDriver driver = volDefDriverCache.get(pk);
-        if (driver == null)
-        {
-            driver = new VolumeDefinitionDataDerbyDriver(dbCtx, resDfn, volNr);
-            volDefDriverCache.put(pk, driver);
-        }
-        return driver;
+        return volumeDefinitionDriver;
     }
 
     @Override
-    public VolumeDataDatabaseDriver getVolumeDataDatabaseDriver(Resource resRef, VolumeDefinition volDfnRef)
+    public VolumeDataDatabaseDriver getVolumeDataDatabaseDriver()
     {
-        PrimaryKey pk = new PrimaryKey(resRef, volDfnRef);
-        VolumeDataDerbyDriver driver= volDriverCache.get(pk);
-        if (driver == null)
-        {
-            driver = new VolumeDataDerbyDriver(dbCtx, resRef, volDfnRef);
-            volDriverCache.put(pk, driver);
-        }
-        return driver;
+        return volumeDriver;
     }
 
     @Override
-    public StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver(StorPoolName name)
+    public StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver()
     {
-        PrimaryKey pk = new PrimaryKey(name);
-        StorPoolDefinitionDataDerbyDriver driver = storPoolDfnDriverCache.get(pk);
-        if (driver == null)
-        {
-            driver = new StorPoolDefinitionDataDerbyDriver(name);
-            storPoolDfnDriverCache.put(pk, driver);
-        }
-        return driver;
+        return storPoolDefinitionDriver;
     }
 
     @Override
-    public StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver(Node nodeRef, StorPoolDefinition storPoolDfnRef)
+    public StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver()
     {
-        PrimaryKey pk = new PrimaryKey(nodeRef, storPoolDfnRef);
-        StorPoolDataDerbyDriver driver = storPoolDriverCache.get(pk);
-        if (driver == null)
-        {
-            driver = new StorPoolDataDerbyDriver(nodeRef, storPoolDfnRef);
-            storPoolDriverCache.put(pk, driver);
-        }
-        return driver;
+        return storPoolDriver;
     }
 
     @Override
-    public NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver(Node nodeRef, NetInterfaceName netName)
+    public NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver()
     {
-        PrimaryKey pk = new PrimaryKey(nodeRef, netName);
-        NetInterfaceDataDerbyDriver driver = netInterfaceDriverCache.get(pk);
-        if (driver == null)
-        {
-            driver = new NetInterfaceDataDerbyDriver(dbCtx, nodeRef, netName);
-            netInterfaceDriverCache.put(pk, driver);
-        }
-        return driver;
+        return netInterfaceDriver;
     }
 
     @Override
-    public ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver(
-        ResourceName resName,
-        NodeName sourceNodeName,
-        NodeName targetNodeName
-    )
+    public ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver()
     {
-        PrimaryKey pk = new PrimaryKey(resName, sourceNodeName, targetNodeName);
-        ConnectionDefinitionDataDerbyDriver driver = conDfnDriverCache.get(pk);
-        if (driver == null)
-        {
-            driver = new ConnectionDefinitionDataDerbyDriver(dbCtx, resName, sourceNodeName, targetNodeName);
-            conDfnDriverCache.put(pk, driver);
-        }
-        return driver;
+        return connectionDefinitionDriver;
     }
 }

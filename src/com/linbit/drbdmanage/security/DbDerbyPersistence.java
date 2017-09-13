@@ -28,8 +28,6 @@ import static com.linbit.drbdmanage.security.SecurityDbFields.CONF_VALUE;
 
 import static com.linbit.drbdmanage.security.SecurityDbFields.KEY_SEC_LEVEL;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  *
@@ -77,13 +75,11 @@ public class DbDerbyPersistence implements DbAccessor
         " FROM " + TBL_ACL_MAP +
         " WHERE " + CONF_KEY + " = " + KEY_SEC_LEVEL;
 
-    private final Map<String, ObjectProtectionDatabaseDriver> objProtDriverCache = new HashMap<>();
-
-    private AccessContext dbCtx;
+    private final ObjectProtectionDatabaseDriver objProtDriver;
 
     public DbDerbyPersistence(AccessContext privCtx)
     {
-        dbCtx = privCtx;
+        objProtDriver = new ObjectProtectionDerbyDriver(privCtx);
     }
 
     @Override
@@ -144,15 +140,9 @@ public class DbDerbyPersistence implements DbAccessor
     }
 
     @Override
-    public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objectPath)
+    public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver()
     {
-        ObjectProtectionDatabaseDriver driver = objProtDriverCache.get(objectPath);
-        if (driver == null)
-        {
-            driver = new ObjectProtectionDerbyDriver(dbCtx, objectPath);
-            objProtDriverCache.put(objectPath, driver);
-        }
-        return driver;
+        return objProtDriver;
     }
 
     private ResultSet dbQuery(Connection dbConn, String sqlQuery) throws SQLException

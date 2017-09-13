@@ -30,6 +30,7 @@ import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.VolumeNumber;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 
 /**
@@ -45,13 +46,13 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
  */
 public class PropsContainer implements Props
 {
-    private static final String PATH_SEPARATOR      = "/";
-    private static final String PATH_STOR_POOL = "/storPoolConf/";
-    private static final String PATH_NODES = "/nodes/";
-    private static final String PATH_RESOURCE_DEFINITIONS = "/resourcedefinitions/";
-    private static final String PATH_RESOURCES = "/resources/";
-    private static final String PATH_VOLUME_DEFINITIONS = "/volumedefinitions/";
-    private static final String PATH_VOLUMES = "/volumes/";
+    private static final String PATH_SEPARATOR              = "/";
+    private static final String PATH_STOR_POOL              = "/storPoolConf/";
+    private static final String PATH_NODES                  = "/nodes/";
+    private static final String PATH_RESOURCE_DEFINITIONS   = "/resourcedefinitions/";
+    private static final String PATH_RESOURCES              = "/resources/";
+    private static final String PATH_VOLUME_DEFINITIONS     = "/volumedefinitions/";
+    private static final String PATH_VOLUMES                = "/volumes/";
 
     public static final int PATH_MAX_LENGTH = 256;
 
@@ -71,16 +72,13 @@ public class PropsContainer implements Props
     private Collection<String> valuesCollectionAccessor;
 
     protected PropsConDatabaseDriver dbDriver;
-    protected Connection dbCon;
+    protected TransactionMgr transMgr;
     private Map<String, String> cachedPropMap;
 
     private boolean initialized = false;
+    protected String instanceName;
 
-    public static PropsContainer getInstance(
-        PropsConDatabaseDriver propsConDbDriver,
-        TransactionMgr transMgr
-    )
-        throws SQLException
+    public static PropsContainer getInstance(String instanceName, TransactionMgr transMgr) throws SQLException
     {
         PropsContainer container;
         try
@@ -97,7 +95,8 @@ public class PropsContainer implements Props
             );
         }
 
-        container.dbDriver = propsConDbDriver;
+        container.dbDriver = DrbdManage.getPropConDatabaseDriver();
+        container.instanceName = instanceName;
 
         if (transMgr != null)
         {
@@ -105,7 +104,7 @@ public class PropsContainer implements Props
 
             try
             {
-                Map<String, String> loadedProps = container.dbDriver.load(transMgr.dbCon);
+                Map<String, String> loadedProps = container.dbDriver.load(instanceName, transMgr);
                 for (Entry<String, String> entry : loadedProps.entrySet())
                 {
                     String key = entry.getKey();
@@ -919,17 +918,13 @@ public class PropsContainer implements Props
     }
 
     @Override
-    public void setConnection(TransactionMgr transMgr)
+    public void setConnection(TransactionMgr transMgrRef)
     {
-        if (transMgr != null)
+        if (transMgrRef != null)
         {
-            transMgr.register(rootContainer);
-            dbCon = transMgr.dbCon;
+            transMgrRef.register(rootContainer);
         }
-        else
-        {
-            dbCon = null;
-        }
+        transMgr = transMgrRef;
     }
 
     @Override
@@ -1009,7 +1004,7 @@ public class PropsContainer implements Props
             {
                 try
                 {
-                    dbDriver.persist(dbCon, key, value);
+                    dbDriver.persist(instanceName, key, value, transMgr);
                 }
                 catch (SQLException sqlExc)
                 {
@@ -1029,7 +1024,7 @@ public class PropsContainer implements Props
             {
                 try
                 {
-                    dbDriver.remove(dbCon, key);
+                    dbDriver.remove(instanceName, key, transMgr);
                 }
                 catch (SQLException sqlExc)
                 {
@@ -1054,7 +1049,7 @@ public class PropsContainer implements Props
             {
                 try
                 {
-                    dbDriver.removeAll(dbCon);
+                    dbDriver.removeAll(instanceName, transMgr);
                 }
                 catch (SQLException sqlExc)
                 {
@@ -1065,18 +1060,13 @@ public class PropsContainer implements Props
         }
     }
 
-    static class PropsConMap implements Map<String, String>
+    class PropsConMap implements Map<String, String>
     {
         private PropsContainer container;
-        protected String instanceName;
 
         PropsConMap(PropsContainer con)
         {
             container = con;
-            if (con.dbDriver != null)
-            {
-                instanceName = con.dbDriver.getInstanceName();
-            }
         }
 
         @Override
@@ -1340,18 +1330,13 @@ public class PropsContainer implements Props
         }
     }
 
-    static abstract class BaseSet<T> implements Set<T>
+    abstract class BaseSet<T> implements Set<T>
     {
         PropsContainer container;
-        String instanceName;
 
         BaseSet(PropsContainer con)
         {
             container = con;
-            if (con.dbDriver != null)
-            {
-                instanceName = con.dbDriver.getInstanceName();
-            }
         }
 
         @Override
@@ -1413,7 +1398,7 @@ public class PropsContainer implements Props
         }
     }
 
-    static class KeySet extends BaseSet<String>
+    class KeySet extends BaseSet<String>
     {
         KeySet(PropsContainer con)
         {
@@ -1634,7 +1619,7 @@ public class PropsContainer implements Props
         }
     }
 
-    static class EntrySet extends BaseSet<Map.Entry<String, String>>
+    class EntrySet extends BaseSet<Map.Entry<String, String>>
     {
         EntrySet(PropsContainer con)
         {
@@ -1833,7 +1818,7 @@ public class PropsContainer implements Props
         }
     }
 
-    static class PropsKeyComparator implements Comparator<String>
+    class PropsKeyComparator implements Comparator<String>
     {
         @Override
         public int compare(String key1, String key2)
@@ -1848,18 +1833,13 @@ public class PropsContainer implements Props
         }
     }
 
-    static class ValuesCollection implements Collection<String>
+    class ValuesCollection implements Collection<String>
     {
         private PropsContainer container;
-        private String instanceName;
 
         ValuesCollection(PropsContainer con)
         {
             container = con;
-            if (con.dbDriver != null)
-            {
-                instanceName = con.dbDriver.getInstanceName();
-            }
         }
 
         @Override
@@ -2038,7 +2018,7 @@ public class PropsContainer implements Props
         }
     }
 
-    private abstract static class BaseIterator<T> implements Iterator<T>
+    private abstract class BaseIterator<T> implements Iterator<T>
     {
         PropsContainer container;
         private final Deque<Iterator<PropsContainer>> iterStack;
@@ -2117,7 +2097,7 @@ public class PropsContainer implements Props
         }
     }
 
-    private static class EntriesIterator
+    private class EntriesIterator
     extends BaseIterator<Map.Entry<String, String>>
     {
         EntriesIterator(PropsContainer con)
@@ -2159,7 +2139,7 @@ public class PropsContainer implements Props
         }
     }
 
-    private static class KeysIterator
+    private class KeysIterator
     extends BaseIterator<String>
     {
         KeysIterator(PropsContainer con)
@@ -2198,7 +2178,7 @@ public class PropsContainer implements Props
         }
     }
 
-    private static class ValuesIterator
+    private class ValuesIterator
     extends BaseIterator<String>
     {
         ValuesIterator(PropsContainer con)
@@ -2237,7 +2217,7 @@ public class PropsContainer implements Props
         }
     }
 
-    private static class PropsConEntry implements Map.Entry<String, String>
+    private class PropsConEntry implements Map.Entry<String, String>
     {
         PropsContainer container;
         String entryKey;
@@ -2288,7 +2268,7 @@ public class PropsContainer implements Props
             {
                 throw new DrbdSqlRuntimeException(
                     "Failed to add or update entries in the properties container " +
-                        container.dbDriver.getInstanceName(),
+                        container.instanceName,
                     sqlExc
                 );
             }
@@ -2319,9 +2299,9 @@ public class PropsContainer implements Props
 
     public static void main(String[] args) throws SQLException
     {
-        SerialPropsContainer serialCon = SerialPropsContainer.getInstance(null, null, null);
+        SerialPropsContainer serialCon = SerialPropsContainer.getInstance(null, (SerialGenerator) null, null);
         SerialGenerator serialGen = serialCon.getSerialGenerator();
-        Props rootCon = SerialPropsContainer.getInstance(null, null, serialGen);
+        Props rootCon = SerialPropsContainer.getInstance(null, serialGen, null);
         try
         {
             BufferedReader stdin = new BufferedReader(

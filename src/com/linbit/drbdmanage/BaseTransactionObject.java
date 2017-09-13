@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage;
 
-import java.sql.Connection;
 import java.util.List;
 
 import com.linbit.ImplementationError;
@@ -11,7 +10,7 @@ public abstract class BaseTransactionObject implements TransactionObject
 {
     private boolean initialized = false;
     protected List<TransactionObject> transObjs;
-    protected Connection dbCon;
+    protected TransactionMgr transMgr;
 
     private boolean inCommit = false;
     private boolean inRollback = false;
@@ -36,20 +35,17 @@ public abstract class BaseTransactionObject implements TransactionObject
     }
 
     @Override
-    public void setConnection(TransactionMgr transMgr) throws ImplementationError
+    public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
-        if (transMgr != null)
+        if (transMgrRef != null)
         {
-            transMgr.register(this);
-            dbCon = transMgr.dbCon;
+            transMgrRef.register(this);
         }
-        else
-        {
-            dbCon = null;
-        }
+        transMgr= transMgrRef;
+
         for (TransactionObject transObj : transObjs)
         {
-            transObj.setConnection(transMgr);
+            transObj.setConnection(transMgrRef);
         }
     }
 

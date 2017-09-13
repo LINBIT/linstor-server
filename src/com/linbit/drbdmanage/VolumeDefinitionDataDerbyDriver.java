@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,10 +14,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
-import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
-import com.linbit.drbdmanage.propscon.PropsConDerbyDriver;
-import com.linbit.drbdmanage.propscon.PropsContainer;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -69,43 +66,39 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         " WHERE " + VD_RES_NAME + " = ? AND " +
                     VD_ID       + " = ?";
 
-    private AccessContext dbCtx;
-    private ResourceDefinition resDfn;
-    private VolumeNumber volNr;
+    private static final Hashtable<PrimaryKey, VolumeDefinitionData> VOL_DFN_CACHE = new Hashtable<>();
 
-    private PropsConDatabaseDriver propsDriver;
+    private final AccessContext dbCtx;
+    private final ErrorReporter errorReporter;
+
     private final FlagDriver flagsDriver;
     private final MinorNumberDriver minorNumberDriver;
     private final SizeDriver sizeDriver;
 
-    private static Hashtable<PrimaryKey, VolumeDefinitionData> volDfnCache = new Hashtable<>();
-
-    public VolumeDefinitionDataDerbyDriver(AccessContext accCtx, ResourceDefinition resDfnRef, VolumeNumber volNrRef)
+    public VolumeDefinitionDataDerbyDriver(AccessContext accCtx, ErrorReporter errorReporterRef)
     {
         dbCtx = accCtx;
-        resDfn = resDfnRef;
-        volNr = volNrRef;
-        propsDriver = new PropsConDerbyDriver(PropsContainer.buildPath(resDfnRef.getName(), volNrRef));
+        errorReporter = errorReporterRef;
         flagsDriver = new FlagDriver();
         minorNumberDriver = new MinorNumberDriver();
         sizeDriver = new SizeDriver();
     }
 
     @Override
-    public void create(Connection con, VolumeDefinitionData volDfnData) throws SQLException
+    public void create(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException
     {
-        try(PreparedStatement stmt = con.prepareStatement(VD_INSERT))
+        try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_INSERT))
         {
-            stmt.setBytes(1, UuidUtils.asByteArray(volDfnData.getUuid()));
-            stmt.setString(2, volDfnData.getResourceDfn().getName().value);
-            stmt.setInt(3, volDfnData.getVolumeNumber(dbCtx).value);
-            stmt.setLong(4, volDfnData.getVolumeSize(dbCtx));
-            stmt.setInt(5, volDfnData.getMinorNr(dbCtx).value);
-            stmt.setLong(6, volDfnData.getFlags().getFlagsBits(dbCtx));
+            stmt.setBytes(1, UuidUtils.asByteArray(volumeDefinition.getUuid()));
+            stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
+            stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
+            stmt.setLong(4, volumeDefinition.getVolumeSize(dbCtx));
+            stmt.setInt(5, volumeDefinition.getMinorNr(dbCtx).value);
+            stmt.setLong(6, volumeDefinition.getFlags().getFlagsBits(dbCtx));
 
             stmt.executeUpdate();
 
-            cache(volDfnData, dbCtx);
+            cache(volumeDefinition, dbCtx);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -118,23 +111,32 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
     @Override
     public VolumeDefinitionData load(
+        ResourceDefinition resourceDefinition,
+        VolumeNumber volumeNumber,
         SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
     {
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT);
-        stmt.setString(1, resDfn.getName().value);
-        stmt.setInt(2, volNr.value);
+        stmt.setString(1, resourceDefinition.getName().value);
+        stmt.setInt(2, volumeNumber.value);
         ResultSet resultSet = stmt.executeQuery();
 
-        VolumeDefinitionData ret = cacheGet(resDfn, volNr);
+        VolumeDefinitionData ret = cacheGet(resourceDefinition, volumeNumber);
 
         if (ret == null)
         {
             if (resultSet.next())
             {
-                ret = restoreVolumeDefinition(resultSet, resDfn, volNr, serialGen, transMgr, dbCtx);
+                ret = restoreVolumeDefinition(
+                    resultSet,
+                    resourceDefinition,
+                    volumeNumber,
+                    serialGen,
+                    transMgr,
+                    dbCtx
+                );
             }
         }
         else
@@ -258,55 +260,68 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     }
 
     @Override
-    public void delete(Connection con) throws SQLException
+    public void delete(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(VD_DELETE);
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_DELETE))
+        {
+            stmt.setString(1, volumeDefinition.getResourceDefinition().getName().value);
+            stmt.setInt(2, volumeDefinition.getVolumeNumber(dbCtx).value);
+            stmt.executeUpdate();
 
-        stmt.setString(1, resDfn.getName().value);
-        stmt.setInt(2, volNr.value);
-        stmt.executeUpdate();
-        stmt.close();
-
-        cacheRemove(resDfn, volNr);
+            cacheRemove(volumeDefinition.getResourceDefinition(), volumeDefinition.getVolumeNumber(dbCtx));
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            handleAccessDeniedException(accDeniedExc);
+        }
     }
 
+    private static void handleAccessDeniedException(AccessDeniedException accessDeniedExc) throws ImplementationError
+    {
+        throw new ImplementationError(
+            "Database's access context has no permission to acces VolumeData's volNumber",
+            accessDeniedExc
+        );
+    }
+
+
     @Override
-    public StateFlagsPersistence getStateFlagsPersistence()
+    public StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence()
     {
         return flagsDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<MinorNumber> getMinorNumberDriver()
+    public SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber> getMinorNumberDriver()
     {
         return minorNumberDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<Long> getVolumeSizeDriver()
+    public SingleColumnDatabaseDriver<VolumeDefinitionData, Long> getVolumeSizeDriver()
     {
         return sizeDriver;
     }
 
     private synchronized static boolean cache(VolumeDefinitionData vdd, AccessContext dbCtx) throws AccessDeniedException
     {
-        PrimaryKey pk = new PrimaryKey(vdd.getResourceDfn().getName().value, vdd.getVolumeNumber(dbCtx).value);
-        boolean contains = volDfnCache.containsKey(pk);
+        PrimaryKey pk = new PrimaryKey(vdd.getResourceDefinition().getName().value, vdd.getVolumeNumber(dbCtx).value);
+        boolean contains = VOL_DFN_CACHE.containsKey(pk);
         if (!contains)
         {
-            volDfnCache.put(pk, vdd);
+            VOL_DFN_CACHE.put(pk, vdd);
         }
         return !contains;
     }
 
     private static VolumeDefinitionData cacheGet(ResourceDefinition resDfn, VolumeNumber volNr)
     {
-        return volDfnCache.get(new PrimaryKey(resDfn.getName().value, volNr.value));
+        return VOL_DFN_CACHE.get(new PrimaryKey(resDfn.getName().value, volNr.value));
     }
 
     private synchronized static void cacheRemove(ResourceDefinition resDfn, VolumeNumber volNr)
     {
-        volDfnCache.remove(new PrimaryKey(resDfn.getName().value, volNr.value));
+        VOL_DFN_CACHE.remove(new PrimaryKey(resDfn.getName().value, volNr.value));
     }
 
     /**
@@ -314,54 +329,64 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
      */
     static synchronized void clearCache()
     {
-        volDfnCache.clear();
+        VOL_DFN_CACHE.clear();
     }
 
-    @Override
-    public PropsConDatabaseDriver getPropsDriver()
-    {
-        return propsDriver;
-    }
-
-    private class FlagDriver implements StateFlagsPersistence
+    private class FlagDriver implements StateFlagsPersistence<VolumeDefinitionData>
     {
         @Override
-        public void persist(Connection con, long flags) throws SQLException
+        public void persist(VolumeDefinitionData volumeDefinition, long flags, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = con.prepareStatement(VD_UPDATE_FLAGS);
-            stmt.setLong(1, flags);
-            stmt.setString(2, resDfn.getName().value);
-            stmt.setInt(3, volNr.value);
-            stmt.executeUpdate();
-            stmt.close();
+            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_FLAGS))
+            {
+                stmt.setLong(1, flags);
+                stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
+                stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
+                stmt.executeUpdate();
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                handleAccessDeniedException(accDeniedExc);
+            }
         }
     }
 
-    private class MinorNumberDriver implements SingleColumnDatabaseDriver<MinorNumber>
+    private class MinorNumberDriver implements SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber>
     {
         @Override
-        public void update(Connection con, MinorNumber minorNr) throws SQLException
+        public void update(VolumeDefinitionData volumeDefinition, MinorNumber newNumber, TransactionMgr transMgr)
+            throws SQLException
         {
-            PreparedStatement stmt = con.prepareStatement(VD_UPDATE_MINOR_NR);
-            stmt.setInt(1, minorNr.value);
-            stmt.setString(2, resDfn.getName().value);
-            stmt.setInt(3, volNr.value);
-            stmt.executeUpdate();
-            stmt.close();
+            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_MINOR_NR))
+            {
+                stmt.setInt(1, newNumber.value);
+                stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
+                stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
+                stmt.executeUpdate();
+            }
+            catch (AccessDeniedException accessDeniedExc)
+            {
+                handleAccessDeniedException(accessDeniedExc);
+            }
         }
     }
 
-    private class SizeDriver implements SingleColumnDatabaseDriver<Long>
+    private class SizeDriver implements SingleColumnDatabaseDriver<VolumeDefinitionData, Long>
     {
         @Override
-        public void update(Connection con, Long size) throws SQLException
+        public void update(VolumeDefinitionData volumeDefinition, Long size, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = con.prepareStatement(VD_UPDATE_SIZE);
-            stmt.setLong(1, size);
-            stmt.setString(2, resDfn.getName().value);
-            stmt.setInt(3, volNr.value);
-            stmt.executeUpdate();
-            stmt.close();
+            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_SIZE))
+            {
+                stmt.setLong(1, size);
+                stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
+                stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
+                stmt.executeUpdate();
+            }
+            catch (AccessDeniedException accessDeniedExc)
+            {
+                handleAccessDeniedException(accessDeniedExc);
+            }
         }
     }
 }

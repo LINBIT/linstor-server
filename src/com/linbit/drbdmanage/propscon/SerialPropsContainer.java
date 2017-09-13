@@ -3,8 +3,7 @@ package com.linbit.drbdmanage.propscon;
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
-import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
-
+import com.linbit.drbdmanage.core.DrbdManage;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
@@ -20,9 +19,9 @@ public class SerialPropsContainer extends PropsContainer
     private SerialGenerator serialGen;
 
     public static SerialPropsContainer getInstance(
-        PropsConDatabaseDriver propsConDriver, // noop driver on satellite
-        TransactionMgr transMgr, // null on satellite
-        SerialGenerator srlGen // can be null on both (controller & satellite)
+        String instanceName, // might be null if transMgr is also null
+        SerialGenerator srlGen, // can be null on both (controller & satellite)
+        TransactionMgr transMgr // null on satellite
     )
         throws SQLException
     {
@@ -42,11 +41,12 @@ public class SerialPropsContainer extends PropsContainer
             );
         }
 
-        container.dbDriver = propsConDriver;
+        container.dbDriver = DrbdManage.getPropConDatabaseDriver();
+        container.instanceName = instanceName;
 
         if (transMgr != null)
         {
-            Map<String, String> loadedProps = propsConDriver.load(transMgr.dbCon);
+            Map<String, String> loadedProps = container.dbDriver.load(instanceName, transMgr);
 
             // we should skip the .setAllProps method as that triggers a db re-persist
             try

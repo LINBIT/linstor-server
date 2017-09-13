@@ -39,9 +39,9 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
             UUID.randomUUID(),
             ObjectProtection.getInstance(
                 accCtx,
-                transMgr,
                 ObjectProtection.buildPathSPD(nameRef),
-                true
+                true,
+                transMgr
             ),
             nameRef
         );
@@ -64,7 +64,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         objProt = objProtRef;
         name = nameRef;
 
-        dbDriver = DrbdManage.getStorPoolDefinitionDataDriver(nameRef);
+        dbDriver = DrbdManage.getStorPoolDefinitionDataDriver();
 
         transObjs = Arrays.<TransactionObject>asList(objProt);
     }
@@ -79,14 +79,14 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     {
         StorPoolDefinitionData storPoolDfn = null;
 
-        StorPoolDefinitionDataDatabaseDriver dbDriver = DrbdManage.getStorPoolDefinitionDataDriver(nameRef);
+        StorPoolDefinitionDataDatabaseDriver dbDriver = DrbdManage.getStorPoolDefinitionDataDriver();
         if (transMgr != null)
         {
-            storPoolDfn = dbDriver.load(transMgr.dbCon);
+            storPoolDfn = dbDriver.load(nameRef, transMgr);
             if (storPoolDfn == null && createIfNotExists)
             {
                 storPoolDfn = new StorPoolDefinitionData(accCtx, nameRef, transMgr);
-                dbDriver.create(transMgr.dbCon, storPoolDfn);
+                dbDriver.create(storPoolDfn, transMgr);
             }
         }
         else
@@ -131,7 +131,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
-        dbDriver.delete(dbCon);
+        dbDriver.delete(this, transMgr);
         deleted = true;
     }
 

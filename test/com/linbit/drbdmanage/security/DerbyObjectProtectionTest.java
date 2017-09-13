@@ -36,7 +36,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         final TransactionMgr transMgr = new TransactionMgr(con);
 
         final String objPath = "testPath";
-        ObjectProtection.getInstance(sysCtx, transMgr, objPath, true);
+        ObjectProtection.getInstance(sysCtx, objPath, true, transMgr);
 
         final PreparedStatement stmt = con.prepareStatement(OP_SELECT);
         final ResultSet resultSet = stmt.executeQuery();
@@ -69,7 +69,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
             sysCtx.subjectDomain,
             sysCtx.privEffective
         );
-        ObjectProtection.getInstance(accCtx, transMgr, objPath, true);
+        ObjectProtection.getInstance(accCtx, objPath, true, transMgr);
         fail("Creating an ObjectProtection with an unknown identity should have failed");
     }
 
@@ -88,7 +88,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
             sysCtx.subjectDomain,
             sysCtx.privEffective
         );
-        ObjectProtection.getInstance(accCtx, transMgr, objPath, true);
+        ObjectProtection.getInstance(accCtx, objPath, true, transMgr);
         fail("Creating an ObjectProtection with an unknown role should have failed");
     }
 
@@ -107,7 +107,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
             new SecurityType(new SecTypeName("UNKNOWN")),
             sysCtx.privEffective
         );
-        ObjectProtection.getInstance(accCtx, transMgr, objPath, true);
+        ObjectProtection.getInstance(accCtx, objPath, true, transMgr);
         fail("Creating an ObjectProtection with an unknown identity should have failed");
     }
 
@@ -130,7 +130,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
         con = getConnection();
         TransactionMgr transMgr = new TransactionMgr(con);
-        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, transMgr, objPath, false);
+        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, objPath, false, transMgr);
 
         assertEquals(sysCtx.subjectId, objProt.getCreator());
         assertEquals(sysCtx.subjectRole, objProt.getOwner());
@@ -147,7 +147,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
         final String objPath = "testPath";
 
-        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, transMgr, objPath, true);
+        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, objPath, true, transMgr);
 
         Role testRole = Role.create(sysCtx, new RoleName("test"));
 
@@ -186,7 +186,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         TransactionMgr transMgr = new TransactionMgr(con);
 
         final String objPath = "testPath";
-        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, transMgr, objPath, true);
+        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, objPath, true, transMgr);
         objProt.addAclEntry(sysCtx, sysCtx.subjectRole, AccessType.CHANGE);
 
         objProt.delAclEntry(sysCtx, sysCtx.subjectRole);
@@ -228,7 +228,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
         con = getConnection();
         TransactionMgr transMgr = new TransactionMgr(con);
-        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, transMgr, objPath, false);
+        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, objPath, false, transMgr);
 
         assertEquals(AccessType.CHANGE, objProt.getAcl().getEntry(sysCtx));
     }

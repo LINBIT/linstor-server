@@ -15,6 +15,7 @@ import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -78,12 +79,12 @@ public class ResourceData extends BaseTransactionObject implements Resource
             UUID.randomUUID(),
             ObjectProtection.getInstance(
                 accCtx,
-                transMgr,
                 ObjectProtection.buildPath(
                     nodeRef.getName(),
                     resDfnRef.getName()
                 ),
-                true
+                true,
+                transMgr
             ),
             resDfnRef,
             nodeRef,
@@ -116,13 +117,20 @@ public class ResourceData extends BaseTransactionObject implements Resource
         assgNode = nodeRef;
         objId = objIdRef;
 
-        dbDriver = DrbdManage.getResourceDataDatabaseDriver(nodeRef.getName(), resDfnRef.getName());
+        dbDriver = DrbdManage.getResourceDataDatabaseDriver();
 
         volumeMap = new TreeMap<>();
-        resourceProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
+        resourceProps = SerialPropsContainer.getInstance(
+            PropsContainer.buildPath(
+                nodeRef.getName(),
+                resDfnRef.getName()
+            ),
+            srlGen,
+            transMgr
+        );
         objProt = objProtRef;
 
-        flags = new RscFlagsImpl(objProt, dbDriver.getStateFlagPersistence(), initFlags);
+        flags = new RscFlagsImpl(objProt, this, dbDriver.getStateFlagPersistence(), initFlags);
 
         transObjs = Arrays.asList(
             resourceDfn,
@@ -147,14 +155,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         ResourceData resData = null;
 
-        ResourceDataDatabaseDriver driver = DrbdManage.getResourceDataDatabaseDriver(
-            node.getName(),
-            resDfn.getName()
-        );
+        ResourceDataDatabaseDriver driver = DrbdManage.getResourceDataDatabaseDriver();
 
         if (transMgr != null)
         {
-            resData = driver.load(node, srlGen, transMgr);
+            resData = driver.load(node, resDfn.getName(), srlGen, transMgr);
         }
 
         if (resData != null)
@@ -176,7 +181,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
                 );
                 if (transMgr != null)
                 {
-                    driver.create(transMgr.dbCon, resData);
+                    driver.create(resData, transMgr);
                 }
             }
         }
@@ -249,7 +254,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        return volumeMap.put(vol.getVolumeDfn().getVolumeNumber(accCtx), vol);
+        return volumeMap.put(vol.getVolumeDefinition().getVolumeNumber(accCtx), vol);
     }
 
     synchronized void removeVolume(AccessContext accCtx, Volume vol)
@@ -258,7 +263,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        volumeMap.remove(vol.getVolumeDfn().getVolumeNumber(accCtx));
+        volumeMap.remove(vol.getVolumeDefinition().getVolumeNumber(accCtx));
     }
 
     @Override
@@ -312,7 +317,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
                 }
             }
         }
-        dbDriver.delete(dbCon);
+        dbDriver.delete(this, transMgr);
         deleted = true;
     }
 
@@ -324,11 +329,22 @@ public class ResourceData extends BaseTransactionObject implements Resource
         }
     }
 
-    private static final class RscFlagsImpl extends StateFlagsBits<RscFlags>
+    private static final class RscFlagsImpl extends StateFlagsBits<ResourceData, RscFlags>
     {
-        RscFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef, long initMask)
+        RscFlagsImpl(
+            ObjectProtection objProtRef,
+            ResourceData parent,
+            StateFlagsPersistence<ResourceData> persistenceRef,
+            long initMask
+        )
         {
-            super(objProtRef, StateFlagsBits.getMask(RscFlags.values()), persistenceRef, initMask);
+            super(
+                objProtRef,
+                parent,
+                StateFlagsBits.getMask(RscFlags.values()),
+                persistenceRef,
+                initMask
+            );
         }
     }
 }

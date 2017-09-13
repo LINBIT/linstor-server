@@ -670,7 +670,7 @@ public class StateFlagBitsTest
     private ObjectProtection createObjectProtection(AccessType... grantedAccess) throws AccessDeniedException, SQLException
     {
         AccessContext objCtx = new AccessContext(someOtherUserId, someOtherRole, someOtherUserSecDomain, privSysAll);
-        ObjectProtection objProt = new ObjectProtection(objCtx, null);
+        ObjectProtection objProt = new ObjectProtection(objCtx, null, null);
         for (AccessType grantedAt : grantedAccess)
         {
             if (grantedAt != null)
@@ -737,11 +737,12 @@ public class StateFlagBitsTest
         }
     }
 
-    private class StateFlagBitsImpl extends StateFlagsBits<FlagImpl>
+    private class StateFlagBitsImpl extends StateFlagsBits<Object, FlagImpl>
     {
         public StateFlagBitsImpl(ObjectProtection objProtRef, long validFlagsMask)
         {
-            super(objProtRef, validFlagsMask, null);
+            super(objProtRef, new Object(), validFlagsMask, null);
+            // as this test should not test persistence, this should be no problem.
         }
     }
 }

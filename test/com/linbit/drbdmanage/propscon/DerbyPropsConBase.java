@@ -29,7 +29,6 @@ public class DerbyPropsConBase extends DerbyBase
 
     protected static final String DEFAULT_INSTANCE_NAME = "DEFAULT_INSTANCE";
 
-
     protected PropsConDerbyDriver dbDriver;
 
     @Override
@@ -37,7 +36,7 @@ public class DerbyPropsConBase extends DerbyBase
     public void setUp() throws SQLException
     {
         super.setUp();
-        dbDriver = new PropsConDerbyDriver(DEFAULT_INSTANCE_NAME);
+        dbDriver = new PropsConDerbyDriver(errorReporter);
     }
 
     protected String debugGetAllProps() throws SQLException

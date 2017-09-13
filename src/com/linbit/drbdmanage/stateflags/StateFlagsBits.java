@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage.stateflags;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
@@ -17,36 +16,41 @@ import com.linbit.drbdmanage.security.ObjectProtection;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
+public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements StateFlags<FLAG>
 {
     private final ObjectProtection objProt;
+    private final PRIMARY_KEY pk;
 
     private long stateFlags;
     private long changedStateFlags;
     private final long mask;
-    private final StateFlagsPersistence persistence;
+    private final StateFlagsPersistence<PRIMARY_KEY> persistence;
 
-    private Connection con;
+    private TransactionMgr transMgr;
 
     private boolean initialized = false;
 
+
     public StateFlagsBits(
         final ObjectProtection objProtRef,
+        final PRIMARY_KEY parent,
         final long validFlagsMask,
-        final StateFlagsPersistence persistenceRef
+        final StateFlagsPersistence<PRIMARY_KEY> persistenceRef
     )
     {
-        this(objProtRef, validFlagsMask, persistenceRef, 0L);
+        this(objProtRef, parent, validFlagsMask, persistenceRef, 0L);
     }
 
     public StateFlagsBits(
         final ObjectProtection objProtRef,
+        final PRIMARY_KEY pkRef,
         final long validFlagsMask,
-        final StateFlagsPersistence persistenceRef,
+        final StateFlagsPersistence<PRIMARY_KEY> persistenceRef,
         final long initialFlags
     )
     {
         objProt = objProtRef;
+        pk = pkRef;
         mask = validFlagsMask;
         stateFlags = initialFlags;
         changedStateFlags = initialFlags;
@@ -73,7 +77,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
 
     @SuppressWarnings("unchecked")
     @Override
-    public void enableFlags(final AccessContext accCtx, final T... flags)
+    public void enableFlags(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
@@ -84,7 +88,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
 
     @SuppressWarnings("unchecked")
     @Override
-    public void disableFlags(final AccessContext accCtx, final T... flags)
+    public void disableFlags(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
@@ -95,7 +99,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
 
     @SuppressWarnings("unchecked")
     @Override
-    public void enableFlagsExcept(final AccessContext accCtx, final T... flags)
+    public void enableFlagsExcept(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
@@ -106,7 +110,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
 
     @SuppressWarnings("unchecked")
     @Override
-    public void disableFlagsExcept(final AccessContext accCtx, final T... flags)
+    public void disableFlagsExcept(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
@@ -117,7 +121,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
 
     @SuppressWarnings("unchecked")
     @Override
-    public boolean isSet(final AccessContext accCtx, final T... flags)
+    public boolean isSet(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -128,7 +132,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
 
     @SuppressWarnings("unchecked")
     @Override
-    public boolean isUnset(final AccessContext accCtx, final T... flags)
+    public boolean isUnset(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -139,7 +143,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
 
     @SuppressWarnings("unchecked")
     @Override
-    public boolean isSomeSet(final AccessContext accCtx, final T... flags)
+    public boolean isSomeSet(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -150,7 +154,7 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
 
     @SuppressWarnings("unchecked")
     @Override
-    public boolean isSomeUnset(final AccessContext accCtx, final T... flags)
+    public boolean isSomeUnset(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
@@ -199,17 +203,13 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
     }
 
     @Override
-    public void setConnection(TransactionMgr transMgr) throws ImplementationError
+    public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
-        if (transMgr != null)
+        if (transMgrRef != null)
         {
-            transMgr.register(this);
-            con = transMgr.dbCon;
+            transMgrRef.register(this);
         }
-        else
-        {
-            con = null;
-        }
+        transMgr = transMgrRef;
     }
 
     @Override
@@ -239,10 +239,11 @@ public abstract class StateFlagsBits<T extends Flags> implements StateFlags<T>
         changedStateFlags = bits;
         if (initialized)
         {
-            if (persistence != null && con != null)
+            if (persistence != null && transMgr!= null)
             {
-                persistence.persist(con, changedStateFlags);
+                persistence.persist(pk, changedStateFlags, transMgr);
             }
+            // TODO: error report?
         }
         else
         {

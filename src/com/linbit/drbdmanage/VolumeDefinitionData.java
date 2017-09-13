@@ -18,6 +18,7 @@ import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -44,10 +45,10 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     private final VolumeNumber volumeNr;
 
     // DRBD device minor number
-    private final TransactionSimpleObject<MinorNumber> minorNr;
+    private final TransactionSimpleObject<VolumeDefinitionData, MinorNumber> minorNr;
 
     // Net volume size in kiB
-    private final TransactionSimpleObject<Long> volumeSize;
+    private final TransactionSimpleObject<VolumeDefinitionData, Long> volumeSize;
 
     // Properties container for this volume definition
     private final Props vlmDfnProps;
@@ -134,22 +135,29 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         objId = uuid;
         resourceDfn = resDfnRef;
 
-        dbDriver = DrbdManage.getVolumeDefinitionDataDatabaseDriver(resDfnRef, volNr);
+        dbDriver = DrbdManage.getVolumeDefinitionDataDatabaseDriver();
 
         volumeNr = volNr;
         minorNr = new TransactionSimpleObject<>(
+            this,
             minor,
             dbDriver.getMinorNumberDriver()
         );
         volumeSize = new TransactionSimpleObject<>(
+            this,
             volSize,
             dbDriver.getVolumeSizeDriver()
         );
 
-        vlmDfnProps = SerialPropsContainer.getInstance(dbDriver.getPropsDriver(), transMgr, srlGen);
+        vlmDfnProps = SerialPropsContainer.getInstance(
+            PropsContainer.buildPath(resDfnRef.getName(), volumeNr),
+            srlGen,
+            transMgr
+        );
 
         flags = new VlmDfnFlagsImpl(
             resDfnRef.getObjProt(),
+            this,
             dbDriver.getStateFlagsPersistence(),
             initFlags
         );
@@ -178,10 +186,10 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         VolumeDefinitionData volDfn = null;
 
-        VolumeDefinitionDataDatabaseDriver driver = DrbdManage.getVolumeDefinitionDataDatabaseDriver(resDfn, volNr);
+        VolumeDefinitionDataDatabaseDriver driver = DrbdManage.getVolumeDefinitionDataDatabaseDriver();
         if (transMgr != null)
         {
-            volDfn = driver.load(serialGen, transMgr);
+            volDfn = driver.load(resDfn, volNr, serialGen, transMgr);
         }
 
         if (volDfn == null)
@@ -200,7 +208,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
                 );
                 if (transMgr != null)
                 {
-                    driver.create(transMgr.dbCon, volDfn);
+                    driver.create(volDfn, transMgr);
                 }
             }
         }
@@ -232,7 +240,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
     @Override
-    public ResourceDefinition getResourceDfn()
+    public ResourceDefinition getResourceDefinition()
     {
         checkDeleted();
         return resourceDfn;
@@ -298,7 +306,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         ((ResourceDefinitionData) resourceDfn).removeVolumeDefinition(accCtx, this);
-        dbDriver.delete(dbCon);
+        dbDriver.delete(this, transMgr);
         deleted = true;
     }
 
@@ -310,16 +318,18 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         }
     }
 
-    private static final class VlmDfnFlagsImpl extends StateFlagsBits<VlmDfnFlags>
+    private static final class VlmDfnFlagsImpl extends StateFlagsBits<VolumeDefinitionData, VlmDfnFlags>
     {
         VlmDfnFlagsImpl(
             ObjectProtection objProtRef,
-            StateFlagsPersistence persistenceRef,
+            VolumeDefinitionData parent,
+            StateFlagsPersistence<VolumeDefinitionData> persistenceRef,
             long initFlags
         )
         {
             super(
                 objProtRef,
+                parent,
                 StateFlagsBits.getMask(VlmDfnFlags.values()),
                 persistenceRef,
                 initFlags

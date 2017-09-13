@@ -1,14 +1,15 @@
 package com.linbit.drbdmanage.propscon;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 
 import java.util.Set;
 import java.util.TreeMap;
@@ -41,46 +42,44 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         " DELETE FROM " + TBL_PROP + "\n" +
         "    WHERE " + COL_INSTANCE + " = ? ";
 
+    private final ErrorReporter errorReporter;
 
-    private final String instanceName;
-    private final String instanceNameUpper;
-
-    public PropsConDerbyDriver(String instanceName)
+    public PropsConDerbyDriver(ErrorReporter errorReporterRef)
     {
-        this.instanceName = instanceName;
-        instanceNameUpper = instanceName.toUpperCase();
+        errorReporter = errorReporterRef;
     }
 
     @Override
-    public void persist(Connection dbConn, String key, String value) throws SQLException
+    public void persist(String instanceName, String key, String value, TransactionMgr transMgr) throws SQLException
     {
-        if (dbConn != null)
+        if (transMgr != null)
         {
-            persistImpl(dbConn, key, value);
+            persistImpl(instanceName, key, value, transMgr);
         }
     }
 
     @Override
-    public void persist(Connection dbConn, Map<String, String> props) throws SQLException
+    public void persist(String instanceName, Map<String, String> props, TransactionMgr transMgr) throws SQLException
     {
-        if (dbConn != null)
+        if (transMgr!= null)
         {
             for (Entry<String, String> entry : props.entrySet())
             {
-                persistImpl(dbConn, entry.getKey(), entry.getValue());
+                persistImpl(instanceName, entry.getKey(), entry.getValue(), transMgr);
             }
         }
     }
 
-    private void persistImpl(Connection dbConn, String key, String value) throws SQLException
+    private void persistImpl(String instanceName, String key, String value, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = dbConn.prepareStatement(
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(
             SELECT_ENTRY_FOR_UPDATE,
             ResultSet.TYPE_SCROLL_SENSITIVE,
             ResultSet.CONCUR_UPDATABLE
         );
 
-        stmt.setString(1, instanceNameUpper);
+        String instanceUpper = instanceName.toUpperCase();
+        stmt.setString(1, instanceUpper);
         stmt.setString(2, key);
 
         ResultSet resultSet = stmt.executeQuery();
@@ -92,7 +91,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
         else
         {
             resultSet.moveToInsertRow();
-            resultSet.updateString(1, instanceNameUpper);
+            resultSet.updateString(1, instanceUpper);
             resultSet.updateString(2, key);
             resultSet.updateString(3, value);
             resultSet.insertRow();
@@ -103,13 +102,13 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public void remove(Connection dbConn, String key) throws SQLException
+    public void remove(String instanceName, String key, TransactionMgr transMgr) throws SQLException
     {
-        if (dbConn != null)
+        if (transMgr != null)
         {
-            PreparedStatement stmt = dbConn.prepareStatement(REMOVE_ENTRY);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ENTRY);
 
-            stmt.setString(1, instanceNameUpper);
+            stmt.setString(1, instanceName.toUpperCase());
             stmt.setString(2, key);
 
             stmt.executeUpdate();
@@ -118,13 +117,13 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public void remove(Connection dbConn, Set<String> keys) throws SQLException
+    public void remove(String instanceName, Set<String> keys, TransactionMgr transMgr) throws SQLException
     {
-        if (dbConn != null)
+        if (transMgr != null)
         {
-            PreparedStatement stmt = dbConn.prepareStatement(REMOVE_ENTRY);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ENTRY);
 
-            stmt.setString(1, instanceNameUpper);
+            stmt.setString(1, instanceName.toUpperCase());
 
             for (String key : keys)
             {
@@ -136,14 +135,13 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public void removeAll(Connection dbConn) throws SQLException
+    public void removeAll(String instanceName, TransactionMgr transMgr) throws SQLException
     {
-        if (dbConn != null)
+        if (transMgr != null)
         {
-            dbConn.setAutoCommit(false);
-            PreparedStatement stmt = dbConn.prepareStatement(REMOVE_ALL_ENTRIES);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ALL_ENTRIES);
 
-            stmt.setString(1, instanceNameUpper);
+            stmt.setString(1, instanceName.toUpperCase());
             stmt.executeUpdate();
 
             stmt.close();
@@ -151,14 +149,14 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public Map<String, String> load(Connection dbConn) throws SQLException
+    public Map<String, String> load(String instanceName, TransactionMgr transMgr) throws SQLException
     {
         Map<String, String> ret = new TreeMap<>();
-        if (dbConn != null)
+        if (transMgr != null)
         {
-            PreparedStatement stmt = dbConn.prepareStatement(SELECT_ALL_ENTRIES_BY_INSTANCE);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_ENTRIES_BY_INSTANCE);
 
-            stmt.setString(1, instanceNameUpper);
+            stmt.setString(1, instanceName.toUpperCase());
 
             ResultSet resultSet = stmt.executeQuery();
 
@@ -173,11 +171,5 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
             stmt.close();
         }
         return ret;
-    }
-
-    @Override
-    public String getInstanceName()
-    {
-        return instanceName;
     }
 }

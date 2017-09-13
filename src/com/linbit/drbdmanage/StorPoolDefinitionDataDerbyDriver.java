@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -9,10 +8,12 @@ import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.utils.UuidUtils;
@@ -38,68 +39,66 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
 
     private static Hashtable<PrimaryKey, StorPoolDefinitionData> spDfnCache = new Hashtable<>();
 
-    private StorPoolName spddName;
-    private boolean spddNameLoaded = false;
+    private ErrorReporter errorReporter;
 
-    public StorPoolDefinitionDataDerbyDriver(StorPoolName nameRef)
+    public StorPoolDefinitionDataDerbyDriver(ErrorReporter errorReporterRef)
     {
-        spddName = nameRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
-    public void create(Connection con, StorPoolDefinitionData spdd) throws SQLException
+    public void create(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(SPD_INSERT);
-        stmt.setBytes(1, UuidUtils.asByteArray(spdd.getUuid()));
-        stmt.setString(2, spdd.getName().value);
-        stmt.setString(3, spdd.getName().displayValue);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_INSERT);
+        stmt.setBytes(1, UuidUtils.asByteArray(storPoolDefinitionData.getUuid()));
+        stmt.setString(2, storPoolDefinitionData.getName().value);
+        stmt.setString(3, storPoolDefinitionData.getName().displayValue);
         stmt.executeUpdate();
         stmt.close();
 
-        cache(spdd);
+        cache(storPoolDefinitionData);
     }
 
     @Override
-    public StorPoolDefinitionData load(Connection con) throws SQLException
+    public StorPoolDefinitionData load(StorPoolName storPoolName, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(SPD_SELECT);
-        stmt.setString(1, spddName.value);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_SELECT);
+        stmt.setString(1, storPoolName.value);
         ResultSet resultSet = stmt.executeQuery();
 
-        StorPoolDefinitionData spdd = cacheGet(spddName);
+        StorPoolDefinitionData spdd = cacheGet(storPoolName);
         if (spdd == null)
         {
             if (resultSet.next())
             {
-                if (!spddNameLoaded)
+                try
                 {
-                    try
-                    {
-                        spddName = new StorPoolName(resultSet.getString(SPD_DSP_NAME));
-                    }
-                    catch (InvalidNameException invalidNameExc)
-                    {
-                        resultSet.close();
-                        stmt.close();
-                        throw new ImplementationError(
-                            "The display name of a valid StorPoolName could not be restored",
-                            invalidNameExc
-                        );
-                    }
+                    storPoolName = new StorPoolName(resultSet.getString(SPD_DSP_NAME));
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    resultSet.close();
+                    stmt.close();
+                    throw new ImplementationError(
+                        "The display name of a valid StorPoolName could not be restored",
+                        invalidNameExc
+                    );
                 }
 
 
                 UUID id = UuidUtils.asUuid(resultSet.getBytes(SPD_UUID));
 
                 ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                    ObjectProtection.buildPathSPD(spddName)
                 );
-                ObjectProtection objProt = objProtDriver.loadObjectProtection(con);
+                ObjectProtection objProt = objProtDriver.loadObjectProtection(
+                    ObjectProtection.buildPathSPD(storPoolName),
+                    transMgr
+                );
 
-                spdd = new StorPoolDefinitionData(id, objProt, spddName);
+                spdd = new StorPoolDefinitionData(id, objProt, storPoolName);
                 if (!cache(spdd))
                 {
-                    spdd = cacheGet(spddName);
+                    spdd = cacheGet(storPoolName);
                 }
                 else
                 {
@@ -121,14 +120,14 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     }
 
     @Override
-    public void delete(Connection con) throws SQLException
+    public void delete(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(SPD_DELETE);
-        stmt.setString(1, spddName.value);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_DELETE);
+        stmt.setString(1, storPoolDefinitionData.getName().value);
         stmt.executeUpdate();
         stmt.close();
 
-        cacheRemove(spddName);
+        cacheRemove(storPoolDefinitionData.getName());
     }
 
     private synchronized static boolean cache(StorPoolDefinitionData spdd)

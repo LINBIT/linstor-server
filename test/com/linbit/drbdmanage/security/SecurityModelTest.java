@@ -77,7 +77,7 @@ public class SecurityModelTest
         AccessContext buddyCtx = sysCtx.impersonate(
             buddyId, buddyRole, userType
         );
-        ObjectProtection prot = new ObjectProtection(creatorCtx, null);
+        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null);
         prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
         prot.requireAccess(buddyCtx, AccessType.VIEW);
         prot.requireAccess(buddyCtx, AccessType.USE);
@@ -93,7 +93,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
             // Grant access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
@@ -122,7 +122,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
             // Grant access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
@@ -149,7 +149,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
             // Grant access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
@@ -176,7 +176,7 @@ public class SecurityModelTest
         AccessContext buddyCtx = sysCtx.impersonate(
             buddyId, buddyRole, creatorCtx.getDomain()
         );
-        ObjectProtection prot = new ObjectProtection(creatorCtx, null);
+        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null);
         // Authorize buddy to change access control entries
         prot.addAclEntry(creatorCtx, buddyRole, AccessType.CONTROL);
         // As buddy, add an entry allowing public VIEW access
@@ -193,7 +193,7 @@ public class SecurityModelTest
         AccessContext buddyCtx = sysCtx.impersonate(
             buddyId, buddyRole, creatorCtx.getDomain()
         );
-        ObjectProtection prot = new ObjectProtection(creatorCtx, null);
+        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null);
         // Authorize buddy to change access control entries
         prot.addAclEntry(creatorCtx, buddyRole, AccessType.CONTROL);
         // As buddy, add an entry allowing public VIEW access
@@ -210,7 +210,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
             // Grant CONTROL access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CONTROL);
 
@@ -240,7 +240,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
             // Grant CONTROL access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CONTROL);
 
@@ -265,7 +265,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
             prot.setSecurityType(sysCtx, sysCtx.getDomain());
         }
         catch (AccessDeniedException deniedExc)
@@ -283,7 +283,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
@@ -309,7 +309,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
@@ -331,7 +331,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
 
             prot.setOwner(sysCtx, buddyRole);
         }
@@ -350,7 +350,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
@@ -375,7 +375,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
@@ -394,7 +394,7 @@ public class SecurityModelTest
         throws Throwable
     {
         // Create object as creator
-        ObjectProtection prot = new ObjectProtection(creatorCtx, null);
+        ObjectProtection prot = new ObjectProtection(creatorCtx, null, null);
 
         AccessContext clone1Sys = sysCtx.clone();
         clone1Sys.getEffectivePrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
@@ -434,7 +434,7 @@ public class SecurityModelTest
         AccessContext buddyCtx = null;
         try
         {
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
             buddyCtx = sysCtx.impersonate(
                 buddyId, buddyRole, userType, Privilege.PRIV_OBJ_OWNER
             );
@@ -479,7 +479,7 @@ public class SecurityModelTest
         AccessContext buddyCtx = null;
         try
         {
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
             buddyCtx = sysCtx.impersonate(
                 buddyId, buddyRole, userType, Privilege.PRIV_OBJ_OWNER
             );
@@ -522,7 +522,7 @@ public class SecurityModelTest
         AccessContext banditCtx = null;
 
         // Create object as creator
-        prot = new ObjectProtection(creatorCtx, null);
+        prot = new ObjectProtection(creatorCtx, null, null);
         prot.resetCreator(sysCtx);
     }
 
@@ -535,7 +535,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
 
             // Impersonate bandit
             banditCtx = sysCtx.impersonate(
@@ -576,7 +576,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
             // Grant access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
@@ -603,7 +603,7 @@ public class SecurityModelTest
         try
         {
             // Create object as creator
-            prot = new ObjectProtection(creatorCtx, null);
+            prot = new ObjectProtection(creatorCtx, null, null);
             // Grant access to buddy
             prot.addAclEntry(creatorCtx, buddyRole, AccessType.CHANGE);
 
@@ -629,7 +629,7 @@ public class SecurityModelTest
 
         ObjectProtection prot = null;
         // Create the object as creator
-        prot = new ObjectProtection(creatorCtx, null);
+        prot = new ObjectProtection(creatorCtx, null, null);
         prot.requireAccess(publicCtx, AccessType.CONTROL);
     }
 

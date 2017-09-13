@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
@@ -35,7 +34,6 @@ public class ResouceDataDerbyTest extends DerbyBase
     private final ResourceName resName;
     private final NodeId nodeId;
 
-    private Connection con;
     private TransactionMgr transMgr;
     private NodeData node;
     private ResourceDefinitionData resDfn;
@@ -59,27 +57,26 @@ public class ResouceDataDerbyTest extends DerbyBase
     {
         assertEquals(TBL_NODE_RESOURCE + " table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_NODE_RESOURCE);
 
-        con = getConnection();
-        transMgr = new TransactionMgr(con);
+        transMgr = new TransactionMgr(getConnection());
 
         node = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, true);
         resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, null, transMgr, true);
 
         resUuid = randomUUID();
-        objProt = ObjectProtection.getInstance(sysCtx, transMgr, ObjectProtection.buildPath(nodeName, resName), true);
+        objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPath(nodeName, resName), true, transMgr);
 
         initFlags = RscFlags.CLEAN.flagValue;
 
         res = new ResourceData(resUuid, objProt, resDfn, node, nodeId, initFlags, null, transMgr);
-        driver = new ResourceDataDerbyDriver(sysCtx, nodeName, resName);
+        driver = new ResourceDataDerbyDriver(sysCtx, errorReporter);
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        driver.create(con, res);
+        driver.create(res, transMgr);
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue("Database did not persist resource / resourceDefinition", resultSet.next());
@@ -110,7 +107,7 @@ public class ResouceDataDerbyTest extends DerbyBase
 
         transMgr.commit();
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue("Database did not persist resource / resourceDefinition", resultSet.next());
@@ -128,11 +125,11 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        driver.create(con, res);
+        driver.create(res, transMgr);
 
         DriverUtils.clearCaches();
 
-        ResourceData loadedRes = driver.load(node, null, transMgr);
+        ResourceData loadedRes = driver.load(node, resName, null, transMgr);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
         assertEquals(resUuid, loadedRes.getUuid());
@@ -159,7 +156,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         );
         assertNull(loadedRes);
 
-        driver.create(con, res);
+        driver.create(res, transMgr);
         DriverUtils.clearCaches();
 
         loadedRes = ResourceData.getInstance(
@@ -186,7 +183,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testLoadStatic() throws Exception
     {
-        driver.create(con, res);
+        driver.create(res, transMgr);
         DriverUtils.clearCaches();
 
         List<ResourceData> resList= ResourceDataDerbyDriver.loadResourceData(sysCtx, node, null, transMgr);
@@ -207,20 +204,20 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        driver.create(con, res);
+        driver.create(res, transMgr);
 
         // no clearCaches
 
-        assertEquals(res, driver.load(node, null, transMgr));
+        assertEquals(res, driver.load(node, resName, null, transMgr));
     }
 
     @Test
     public void testDelete() throws Exception
     {
-        driver.create(con, res);
-        driver.delete(con);
+        driver.create(res, transMgr);
+        driver.delete(res, transMgr);
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
@@ -232,11 +229,11 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testStateFlagPersistence() throws Exception
     {
-        driver.create(con, res);
-        StateFlagsPersistence stateFlagPersistence = driver.getStateFlagPersistence();
-        stateFlagPersistence.persist(con, StateFlagsBits.getMask(RscFlags.REMOVE));
+        driver.create(res, transMgr);
+        StateFlagsPersistence<ResourceData> stateFlagPersistence = driver.getStateFlagPersistence();
+        stateFlagPersistence.persist(res, StateFlagsBits.getMask(RscFlags.REMOVE), transMgr);
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -251,13 +248,13 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testEnsureExists() throws Exception
     {
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceDataDerbyDriver.ensureResExists(con, res, sysCtx);
+        ResourceDataDerbyDriver.ensureResExists(sysCtx, res, transMgr);
 
         resultSet = stmt.executeQuery();
 
@@ -265,7 +262,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceDataDerbyDriver.ensureResExists(con, res, sysCtx);
+        ResourceDataDerbyDriver.ensureResExists(sysCtx, res, transMgr);
 
         resultSet = stmt.executeQuery();
 
@@ -299,7 +296,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertTrue(resData.getStateFlags().isSet(sysCtx, RscFlags.CLEAN));
         assertNotNull(resData.getUuid());
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());
         resultSet.close();
@@ -324,7 +321,7 @@ public class ResouceDataDerbyTest extends DerbyBase
 
         assertNull(resData);
 
-        PreparedStatement stmt = con.prepareStatement(SELECT_ALL_RESOURCES);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());
         resultSet.close();

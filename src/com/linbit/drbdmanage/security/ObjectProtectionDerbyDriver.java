@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage.security;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,6 +9,7 @@ import java.util.Map;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
 import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 
@@ -94,68 +94,72 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
     private static Map<PrimaryKey, ObjectProtection> objProtCache = new Hashtable<>();
 
-    private String objPath;
-    private SingleColumnDatabaseDriver<Identity> identityDriver;
-    private SingleColumnDatabaseDriver<Role> roleDriver;
-    private SingleColumnDatabaseDriver<SecurityType> securityTypeDriver;
+    private SingleColumnDatabaseDriver<ObjectProtection, Identity> identityDriver;
+    private SingleColumnDatabaseDriver<ObjectProtection, Role> roleDriver;
+    private SingleColumnDatabaseDriver<ObjectProtection, SecurityType> securityTypeDriver;
     private AccessContext dbCtx;
 
-    public ObjectProtectionDerbyDriver(AccessContext accCtx, String objectPath)
+    public ObjectProtectionDerbyDriver(AccessContext accCtx)
     {
         dbCtx = accCtx;
-        objPath = objectPath;
         identityDriver = new IdentityDerbyDriver();
         roleDriver = new RoleDerbyDriver();
         securityTypeDriver = new SecurityTypeDerbyDriver();
     }
 
     @Override
-    public void insertOp(Connection con, ObjectProtection objProt) throws SQLException
+    public void insertOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(OP_INSERT);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_INSERT);
 
-        stmt.setString(1, objPath);
+        stmt.setString(1, objProt.getObjectProtectionPath());
         stmt.setString(2, objProt.getCreator().name.value);
         stmt.setString(3, objProt.getOwner().name.value);
         stmt.setString(4, objProt.getSecurityType().name.value);
 
         stmt.executeUpdate();
         stmt.close();
-        cache(objProt, objPath);
+        cache(objProt);
     }
 
     @Override
-    public void updateOp(Connection con, ObjectProtection objProt) throws SQLException
+    public void updateOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(OP_UPDATE);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE);
 
         stmt.setString(1, objProt.getCreator().name.value);
         stmt.setString(2, objProt.getOwner().name.value);
         stmt.setString(3, objProt.getSecurityType().name.value);
-        stmt.setString(4, objPath);
+        stmt.setString(4, objProt.getObjectProtectionPath());
 
         stmt.executeUpdate();
         stmt.close();
     }
 
     @Override
-    public void deleteOp(Connection con) throws SQLException
+    public void deleteOp(String objectPath, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(OP_DELETE);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_DELETE);
 
-        stmt.setString(1, objPath);
+        stmt.setString(1, objectPath);
 
         stmt.executeUpdate();
         stmt.close();
-        cacheRemove(objPath);
+        cacheRemove(objectPath);
     }
 
     @Override
-    public void insertAcl(Connection con, Role role, AccessType grantedAccess) throws SQLException
+    public void insertAcl(
+        ObjectProtection parent,
+        Role role,
+        AccessType grantedAccess,
+        TransactionMgr transMgr
+    )
+        throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(ACL_INSERT);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(ACL_INSERT);
 
-        stmt.setString(1, objPath);
+        stmt.setString(1, parent.getObjectProtectionPath());
         stmt.setString(2, role.name.value);
         stmt.setLong(3, grantedAccess.getAccessMask());
 
@@ -165,12 +169,18 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     }
 
     @Override
-    public void updateAcl(Connection con, Role role, AccessType grantedAccess) throws SQLException
+    public void updateAcl(
+        ObjectProtection parent,
+        Role role,
+        AccessType grantedAccess,
+        TransactionMgr transMgr
+    )
+        throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(ACL_UPDATE);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(ACL_UPDATE);
 
         stmt.setLong(1, grantedAccess.getAccessMask());
-        stmt.setString(2, objPath);
+        stmt.setString(2, parent.getObjectProtectionPath());
         stmt.setString(3, role.name.value);
 
         stmt.executeUpdate();
@@ -178,11 +188,11 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     }
 
     @Override
-    public void deleteAcl(Connection con, Role role) throws SQLException
+    public void deleteAcl(ObjectProtection parent, Role role, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = con.prepareStatement(ACL_DELETE);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(ACL_DELETE);
 
-        stmt.setString(1, objPath);
+        stmt.setString(1, parent.getObjectProtectionPath());
         stmt.setString(2, role.name.value);
 
         stmt.executeUpdate();
@@ -190,9 +200,9 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     }
 
     @Override
-    public ObjectProtection loadObjectProtection(Connection con) throws SQLException
+    public ObjectProtection loadObjectProtection(String objPath, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement opLoadStmt = con.prepareStatement(OP_LOAD);
+        PreparedStatement opLoadStmt = transMgr.dbCon.prepareStatement(OP_LOAD);
 
         opLoadStmt.setString(1, objPath);
 
@@ -210,7 +220,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                     SecurityType secType = SecurityType.get(new SecTypeName(opResultSet.getString(3)));
                     PrivilegeSet privLimitSet = new PrivilegeSet(opResultSet.getLong(4));
                     AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
-                    objProt = new ObjectProtection(accCtx, this);
+                    objProt = new ObjectProtection(accCtx, objPath, this);
                 }
                 catch (InvalidNameException invalidNameExc)
                 {
@@ -224,12 +234,12 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                 opResultSet.close();
                 opLoadStmt.close();
                 // restore ACL
-                PreparedStatement aclLoadStmt = con.prepareStatement(ACL_LOAD);
+                PreparedStatement aclLoadStmt = transMgr.dbCon.prepareStatement(ACL_LOAD);
                 aclLoadStmt.setString(1, objPath);
                 ResultSet aclResultSet = aclLoadStmt.executeQuery();
                 try
                 {
-                    if (cache(objProt, objPath))
+                    if (cache(objProt))
                     {
                         while (aclResultSet.next())
                         {
@@ -281,26 +291,26 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     }
 
     @Override
-    public SingleColumnDatabaseDriver<Identity> getIdentityDatabaseDrier()
+    public SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier()
     {
         return identityDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<Role> getRoleDatabaseDriver()
+    public SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver()
     {
         return roleDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<SecurityType> getSecurityTypeDriver()
+    public SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver()
     {
         return securityTypeDriver;
     }
 
-    private synchronized static boolean cache(ObjectProtection objProt, String objPath)
+    private synchronized static boolean cache(ObjectProtection objProt)
     {
-        PrimaryKey pk = new PrimaryKey(objPath);
+        PrimaryKey pk = new PrimaryKey(objProt.getObjectProtectionPath());
         boolean contains = objProtCache.containsKey(pk);
         if (!contains)
         {
@@ -324,45 +334,45 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         objProtCache.clear();
     }
 
-    private class IdentityDerbyDriver implements SingleColumnDatabaseDriver<Identity>
+    private class IdentityDerbyDriver implements SingleColumnDatabaseDriver<ObjectProtection, Identity>
     {
         @Override
-        public void update(Connection con, Identity element) throws SQLException
+        public void update(ObjectProtection parent, Identity element, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = con.prepareStatement(OP_UPDATE_IDENTITY);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE_IDENTITY);
 
             stmt.setString(1, element.name.value);
-            stmt.setString(2, objPath);
+            stmt.setString(2, parent.getObjectProtectionPath());
 
             stmt.executeUpdate();
             stmt.close();
         }
     }
 
-    private class RoleDerbyDriver implements SingleColumnDatabaseDriver<Role>
+    private class RoleDerbyDriver implements SingleColumnDatabaseDriver<ObjectProtection, Role>
     {
         @Override
-        public void update(Connection con, Role element) throws SQLException
+        public void update(ObjectProtection parent, Role element, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = con.prepareStatement(OP_UPDATE_ROLE);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE_ROLE);
 
             stmt.setString(1, element.name.value);
-            stmt.setString(2, objPath);
+            stmt.setString(2, parent.getObjectProtectionPath());
 
             stmt.executeUpdate();
             stmt.close();
         }
     }
 
-    private class SecurityTypeDerbyDriver implements SingleColumnDatabaseDriver<SecurityType>
+    private class SecurityTypeDerbyDriver implements SingleColumnDatabaseDriver<ObjectProtection, SecurityType>
     {
         @Override
-        public void update(Connection con, SecurityType element) throws SQLException
+        public void update(ObjectProtection parent, SecurityType element, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = con.prepareStatement(OP_UPDATE_SEC_TYPE);
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE_SEC_TYPE);
 
             stmt.setString(1, element.name.value);
-            stmt.setString(2, objPath);
+            stmt.setString(2, parent.getObjectProtectionPath());
 
             stmt.executeUpdate();
             stmt.close();

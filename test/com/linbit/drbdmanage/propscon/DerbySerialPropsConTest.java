@@ -16,7 +16,7 @@ public class DerbySerialPropsConTest extends DerbyPropsConBase
     {
         @SuppressWarnings("resource")
         Connection con = getConnection();
-        SerialPropsContainer container = SerialPropsContainer.getInstance(dbDriver, null, null);
+        SerialPropsContainer container = SerialPropsContainer.getInstance(DEFAULT_INSTANCE_NAME, null, null);
         TransactionMgr transMgr = new TransactionMgr(con);
         container.setConnection(transMgr);
         String expectedKey = "key";
@@ -32,6 +32,7 @@ public class DerbySerialPropsConTest extends DerbyPropsConBase
         checkExpectedMap(expectedMap, container);
 
         container.closeGeneration();
+        container.setConnection(transMgr);
         container.setProp(expectedKey, expectedOtherValue);
         transMgr.commit();
 
@@ -41,13 +42,10 @@ public class DerbySerialPropsConTest extends DerbyPropsConBase
         checkExpectedMap(expectedMap, container);
 
         SerialPropsContainer container2 = SerialPropsContainer.getInstance(
-            dbDriver,
-            new TransactionMgr(
-                con
-            ),
-            null
+            DEFAULT_INSTANCE_NAME,
+            null,
+            new TransactionMgr(con)
         );
         checkExpectedMap(expectedMap, container2);
     }
-
 }

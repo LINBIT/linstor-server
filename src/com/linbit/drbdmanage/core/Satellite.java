@@ -186,9 +186,9 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
             shutdownProt = ObjectProtection.getInstance(
                 initCtx,
-                null,
                 ObjectProtection.buildPath(this, "shutdown"),
-                true
+                true,
+                null
             );
         }
         catch (SQLException sqlExc)

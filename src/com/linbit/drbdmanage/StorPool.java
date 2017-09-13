@@ -32,6 +32,11 @@ public interface StorPool extends TransactionObject
     public StorPoolName getName();
 
     /**
+     * Returns the {@link Node} this StorPool is associated with.
+     */
+    public Node getNode();
+
+    /**
      * Returns the {@link ObjectProtection}
      */
     public ObjectProtection getObjProt();

@@ -16,6 +16,7 @@ import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -42,7 +43,7 @@ public class NodeData extends BaseTransactionObject implements Node
     private final StateFlags<NodeFlag> flags;
 
     // Node type
-    private final TransactionSimpleObject<NodeType> nodeType;
+    private final TransactionSimpleObject<NodeData, NodeType> nodeType;
 
     // List of resources assigned to this cluster node
     private final Map<ResourceName, Resource> resourceMap;
@@ -80,9 +81,9 @@ public class NodeData extends BaseTransactionObject implements Node
             UUID.randomUUID(),
             ObjectProtection.getInstance(
                 accCtx,
-                transMgr,
                 ObjectProtection.buildPath(nameRef),
-                true
+                true,
+                transMgr
             ),
             nameRef,
             type,
@@ -111,21 +112,25 @@ public class NodeData extends BaseTransactionObject implements Node
         objId = uuidRef;
         objProt = objProtRef;
         clNodeName = nameRef;
-        dbDriver = DrbdManage.getNodeDataDatabaseDriver(nameRef);
+        dbDriver = DrbdManage.getNodeDataDatabaseDriver();
 
         resourceMap = new TreeMap<>();
         netInterfaceMap = new TreeMap<>();
         storPoolMap = new TreeMap<>();
 
-        nodeProps = SerialPropsContainer.getInstance(dbDriver.getPropsConDriver(), transMgr, srlGen);
+        nodeProps = SerialPropsContainer.getInstance(
+            PropsContainer.buildPath(nameRef),
+            srlGen,
+            transMgr
+        );
 
-        flags = new NodeFlagsImpl(objProt, dbDriver.getStateFlagPersistence(), initialFlags);
+        flags = new NodeFlagsImpl(this, objProt, dbDriver.getStateFlagPersistence(), initialFlags);
         if (type == null)
         {
             // Default to creating an AUXILIARY type node
             type = NodeType.AUXILIARY;
         }
-        nodeType = new TransactionSimpleObject<Node.NodeType>(type, dbDriver.getNodeTypeDriver());
+        nodeType = new TransactionSimpleObject<NodeData, Node.NodeType>(this, type, dbDriver.getNodeTypeDriver());
 
         transObjs = Arrays.<TransactionObject> asList(
             flags,
@@ -153,10 +158,10 @@ public class NodeData extends BaseTransactionObject implements Node
     {
         NodeData nodeData = null;
 
-        NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver(nameRef);
+        NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver();
         if (transMgr != null)
         {
-            nodeData = dbDriver.load(srlGen, transMgr);
+            nodeData = dbDriver.load(nameRef, srlGen, transMgr);
         }
 
         if (nodeData != null)
@@ -177,7 +182,7 @@ public class NodeData extends BaseTransactionObject implements Node
             );
             if (transMgr != null)
             {
-                dbDriver.create(transMgr.dbCon, nodeData);
+                dbDriver.create(nodeData, transMgr);
             }
         }
 
@@ -362,7 +367,7 @@ public class NodeData extends BaseTransactionObject implements Node
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
-        dbDriver.delete(dbCon);
+        dbDriver.delete(this, transMgr);
         deleted = true;
     }
 
@@ -374,19 +379,11 @@ public class NodeData extends BaseTransactionObject implements Node
         }
     }
 
-    private static final class NodeFlagsImpl extends StateFlagsBits<NodeFlag>
+    private static final class NodeFlagsImpl extends StateFlagsBits<NodeData, NodeFlag>
     {
-        NodeFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef, long initialFlags)
+        NodeFlagsImpl(NodeData parent, ObjectProtection objProtRef, StateFlagsPersistence<NodeData> persistenceRef, long initialFlags)
         {
-            super(objProtRef, StateFlagsBits.getMask(NodeFlag.values()), persistenceRef, initialFlags);
-        }
-    }
-
-    private static final class NodeTypesFlagsImpl extends StateFlagsBits<NodeType>
-    {
-        NodeTypesFlagsImpl(ObjectProtection objProtRef, StateFlagsPersistence persistenceRef, long initialFlags)
-        {
-            super(objProtRef, StateFlagsBits.getMask(NodeType.values()), persistenceRef, initialFlags);
+            super(objProtRef, parent, StateFlagsBits.getMask(NodeFlag.values()), persistenceRef, initialFlags);
         }
     }
 }

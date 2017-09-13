@@ -30,5 +30,5 @@ public interface DbAccessor
     ResultSet loadSecurityLevel(Connection dbConn)
         throws SQLException;
 
-    ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objectPath);
+    ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver();
 }

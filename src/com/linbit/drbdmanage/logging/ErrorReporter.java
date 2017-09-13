@@ -14,11 +14,11 @@ public interface ErrorReporter
 {
     // TODO: javadoc
 
-    void logTrace(String message);
-    void logDebug(String message);
-    void logInfo(String message);
-    void logWarning(String message);
-    void logError(String message);
+    void logTrace(String format, Object... args);
+    void logDebug(String format, Object... args);
+    void logInfo(String format, Object... args);
+    void logWarning(String format, Object... args);
+    void logError(String format, Object... args);
 
     /**
      * Reports any kind of error, especially ones that are not expected during normal operation

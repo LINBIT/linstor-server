@@ -56,9 +56,8 @@ public class NoOpSecurityDriver implements DbAccessor
     }
 
     @Override
-    public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver(String objectPath)
+    public ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver()
     {
         return null; // intentionally null
     }
-
 }

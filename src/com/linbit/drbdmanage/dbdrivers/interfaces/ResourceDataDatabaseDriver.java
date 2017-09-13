@@ -7,9 +7,9 @@ import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.drbdmanage.ConnectionDefinitionData;
 import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.Resource.RscFlags;
+import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.ResourceData;
-import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
@@ -19,16 +19,16 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
  *
  * @author Gabor Hernadi <gabor.hernadi@linbit.com>
  */
-public interface ResourceDataDatabaseDriver extends BaseDatabaseDriver<ResourceData>
+public interface ResourceDataDatabaseDriver
 {
     /**
-     * Loads the {@link ResourceData} specified by the primary key
-     * stored as instance variables.
+     * Loads the {@link ResourceData} specified by the parameters {@code node} and
+     * {@code resourceName}.
      *
-     * @param dbCon
-     *  The used database {@link Connection}
      * @param node
-     *  The {@link Node} this resource should be assigned to
+     *  Part of the primary key specifying the database entry
+     * @param resourceName
+     *  Part of the primary key specifying the database entry
      * @param serialGen
      *  The {@link SerialGenerator}, used to initialize the {@link SerialPropsContainer}
      * @param transMgr
@@ -42,25 +42,40 @@ public interface ResourceDataDatabaseDriver extends BaseDatabaseDriver<ResourceD
      */
     public ResourceData load(
         Node node,
+        ResourceName resourceName,
         SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException;
 
     /**
-     * A special sub-driver to update the persisted {@link RscFlags}. The data record
-     * is specified by the primary key stored as instance variables.
+     * Persists the given {@link ResourceData} into the database.
      *
-     * @return
+     * The primary key for the insert statement is stored as
+     * instance variables already, thus might not be retrieved from the
+     * conDfnData parameter.
+     *
+     * @param resource
+     *  The data to be stored (including the primary key)
+     * @param transMgr
+     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     * @throws SQLException
      */
-    public StateFlagsPersistence getStateFlagPersistence();
+    void create(ResourceData resource, TransactionMgr transMgr) throws SQLException;
 
     /**
-     * A special sub-driver to update the instance specific {@link Props}. The data record
-     * is specified by the primary key stored as instance variables.
+     * Removes the given {@link ResourceData} from the database.
      *
-     * @return
+     * @param resource
+     *  The data identifying the row to delete
+     * @param transMgr
+     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     * @throws SQLException
      */
-    public PropsConDatabaseDriver getPropsConDriver();
+    void delete(ResourceData resource, TransactionMgr transMgr) throws SQLException;
 
+    /**
+     * A special sub-driver to update the persisted flags.
+     */
+    public StateFlagsPersistence<ResourceData> getStateFlagPersistence();
 }

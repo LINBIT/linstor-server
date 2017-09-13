@@ -241,33 +241,44 @@ public class WorkerPoolTest
         }
 
         @Override
-        public void logTrace(String message)
+        public void logTrace(String format, Object... args)
         {
-            System.err.printf("[TRACE] %s\n", message);
+            log("TRACE", format, args);
         }
 
         @Override
-        public void logDebug(String message)
+        public void logDebug(String format, Object... args)
         {
-            System.err.printf("[DEBUG] %s\n", message);
+            log("DEBUG", format, args);
         }
 
         @Override
-        public void logInfo(String message)
+        public void logInfo(String format, Object... args)
         {
-            System.err.printf("[INFO ] %s\n", message);
+            log("INFO ", format, args);
         }
 
         @Override
-        public void logWarning(String message)
+        public void logWarning(String format, Object... args)
         {
-            System.err.printf("[WARN ] %s\n", message);
+            log("WARN ", format, args);
         }
 
         @Override
-        public void logError(String message)
+        public void logError(String format, Object... args)
         {
-            System.err.printf("[ERROR] %s\n", message);
+            log("ERROR", format, args);
+        }
+
+        private void log(String type, String format, Object[] args)
+        {
+            System.err.printf("%s %s\\n",
+                type,
+                String.format(
+                    format,
+                    args
+                )
+            );
         }
     }
 

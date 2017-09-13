@@ -1,29 +1,41 @@
 package com.linbit.drbdmanage.security;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.TransactionMgr;
 
 public interface ObjectProtectionDatabaseDriver
 {
-    void insertOp(Connection con, ObjectProtection objProt) throws SQLException;
+    void insertOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException;
 
-    void updateOp(Connection con, ObjectProtection objProt) throws SQLException;
+    void updateOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException;
 
-    void deleteOp(Connection con) throws SQLException;
+    void deleteOp(String objectPath, TransactionMgr transMgr) throws SQLException;
 
-    void insertAcl(Connection con, Role role, AccessType grantedAccess) throws SQLException;
+    void insertAcl(
+        ObjectProtection parent,
+        Role role,
+        AccessType grantedAccess,
+        TransactionMgr transMgr
+    )
+        throws SQLException;
 
-    void updateAcl(Connection con, Role role, AccessType grantedAccess) throws SQLException;
+    void updateAcl(
+        ObjectProtection parent,
+        Role role,
+        AccessType grantedAccess,
+        TransactionMgr transMgr
+    )
+        throws SQLException;
 
-    void deleteAcl(Connection con, Role role) throws SQLException;
+    void deleteAcl(ObjectProtection parent, Role role, TransactionMgr transMgr) throws SQLException;
 
-    ObjectProtection loadObjectProtection(Connection con) throws SQLException;
+    ObjectProtection loadObjectProtection(String objectPath, TransactionMgr transMgr) throws SQLException;
 
-    SingleColumnDatabaseDriver<Identity> getIdentityDatabaseDrier();
+    SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier();
 
-    SingleColumnDatabaseDriver<Role> getRoleDatabaseDriver();
+    SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver();
 
-    SingleColumnDatabaseDriver<SecurityType> getSecurityTypeDriver();
+    SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver();
 }
