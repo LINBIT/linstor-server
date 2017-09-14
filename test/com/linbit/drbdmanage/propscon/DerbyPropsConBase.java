@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.junit.Before;
-
 import com.linbit.drbdmanage.security.DerbyBase;
 
 public class DerbyPropsConBase extends DerbyBase
@@ -32,8 +30,7 @@ public class DerbyPropsConBase extends DerbyBase
     protected PropsConDerbyDriver dbDriver;
 
     @Override
-    @Before
-    public void setUp() throws SQLException
+    public void setUp() throws Exception
     {
         super.setUp();
         dbDriver = new PropsConDerbyDriver(errorReporter);

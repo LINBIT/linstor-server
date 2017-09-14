@@ -12,6 +12,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.core.DrbdManage;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
@@ -54,26 +55,36 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         " WHERE " + NODE_NAME + " = ?";
 
 
-    private Map<NodeName, Node> nodeCache;
+    private final Map<NodeName, Node> nodeCache;
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
     private final StateFlagsPersistence<NodeData> flagDriver;
     private final SingleColumnDatabaseDriver<NodeData, NodeType> typeDriver;
 
+    private final NetInterfaceDataDerbyDriver netInterfaceDataDerbyDriver;
+    private final ResourceDataDerbyDriver resourceDataDerbyDriver;
+    private final StorPoolDataDerbyDriver storPoolDataDerbyDriver;
 
     public NodeDataDerbyDriver(
         AccessContext privCtx,
         ErrorReporter errorReporterRef,
-        Map<NodeName, Node> nodeCache
+        Map<NodeName, Node> nodeCacheRef,
+        NetInterfaceDataDerbyDriver netInterfaceDriver,
+        ResourceDataDerbyDriver resourceDriver,
+        StorPoolDataDerbyDriver storPoolDriver
     )
     {
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
-        this.nodeCache = nodeCache;
+        nodeCache = nodeCacheRef;
 
         flagDriver = new NodeFlagPersistence();
         typeDriver = new NodeTypeDriver();
+
+        netInterfaceDataDerbyDriver = netInterfaceDriver;
+        resourceDataDerbyDriver = resourceDriver;
+        storPoolDataDerbyDriver = storPoolDriver;
     }
 
     @Override
@@ -98,10 +109,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            throw new ImplementationError(
-                "Database's access context has no permission to access NodeFlags and NodeTypes",
-                accessDeniedExc
-            );
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -109,6 +117,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     public NodeData load(NodeName nodeName, SerialGenerator serialGen, TransactionMgr transMgr)
         throws SQLException
     {
+        NodeData node = null;
         try
         {
             String nodeDebug = "(NodeName=" + nodeName.value + ")";
@@ -118,7 +127,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             stmt.setString(1, nodeName.value);
             ResultSet resultSet = stmt.executeQuery();
 
-            NodeData node = cacheGet(nodeName);
+            node = cacheGet(nodeName);
             if (node == null)
             {
                 if (resultSet.next())
@@ -154,21 +163,22 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     if (cache(node))
                     {
                         errorReporter.logDebug("Restoring netInterfaceData " + nodeDebug);
-                        List<NetInterfaceData> netIfaces = NetInterfaceDataDerbyDriver.loadNetInterfaceData(node, transMgr);
+                        List<NetInterfaceData> netIfaces =
+                            netInterfaceDataDerbyDriver.loadNetInterfaceData(node, transMgr);
                         for (NetInterfaceData netIf : netIfaces)
                         {
                             node.addNetInterface(dbCtx, netIf);
                         }
 
                         errorReporter.logDebug("Restoring resourceData " + nodeDebug);
-                        List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceData(dbCtx, node, serialGen, transMgr);
+                        List<ResourceData> resList = resourceDataDerbyDriver.loadResourceData(dbCtx, node, serialGen, transMgr);
                         for (ResourceData res : resList)
                         {
                             node.addResource(dbCtx, res);
                         }
 
                         errorReporter.logDebug("Restoring storPools " + nodeDebug);
-                        List<StorPoolData> storPoolList = StorPoolDataDerbyDriver.loadStorPools(node, serialGen, transMgr);
+                        List<StorPoolData> storPoolList = storPoolDataDerbyDriver.loadStorPools(node, serialGen, transMgr);
                         for (StorPoolData storPool : storPoolList)
                         {
                             node.addStorPool(dbCtx, storPool);
@@ -192,34 +202,18 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             else
             {
                 errorReporter.logDebug("Node loaded from cache");
-                if (!resultSet.next())
-                {
-                    errorReporter.reportError(
-                        new DrbdSqlRuntimeException(
-                            "Cached Node was not found in the database",
-                            "The database entry from a node which was loaded from cache is missing",
-                            "That could only happen if a user manually deleted that node during runtime",
-                            null,
-                            null
-                        )
-                    );
-                }
             }
 
             resultSet.close();
             stmt.close();
 
             errorReporter.logTrace("Node loaded successfully (NodeName=" + nodeName.displayValue + ")");
-
-            return node;
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            throw new ImplementationError(
-                "Database's access context has no permission to fully restore NodeData",
-                accessDeniedExc
-            );
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
+        return node;
     }
 
     @Override

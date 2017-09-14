@@ -4,14 +4,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 
-import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
-import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
@@ -46,11 +44,8 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         " WHERE " + NSP_NODE + " = ? AND " +
         "       " + NSP_POOL + " = ?";
 
-
-    private static Hashtable<PrimaryKey, StorPoolData> storPoolCache = new Hashtable<>();
-
-    private final ErrorReporter errorReporter;
     private final AccessContext dbCtx;
+    private final ErrorReporter errorReporter;
 
     public StorPoolDataDerbyDriver(AccessContext dbCtxRef, ErrorReporter errorReporterRef)
     {
@@ -74,14 +69,13 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         stmt.setString(4, storPoolData.getDriverName());
         stmt.executeUpdate();
         stmt.close();
-
-        cache(storPoolData.getNode(), storPoolData);
     }
+
 
     @Override
     public StorPoolData load(
         Node node,
-        StorPoolDefinition storPoolDefinition,
+        StorPoolDefinition storPoolDfn,
         SerialGenerator serialGen,
         TransactionMgr transMgr
     )
@@ -89,10 +83,10 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     {
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT);
         stmt.setString(1, node.getName().value);
-        stmt.setString(2, storPoolDefinition.getName().value);
+        stmt.setString(2, storPoolDfn.getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        StorPoolData sp = cacheGet(node, storPoolDefinition);
+        StorPoolData sp = cacheGet(node, storPoolDfn);
         if (sp == null)
         {
             if (resultSet.next())
@@ -100,7 +94,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
                 ObjectProtection objProt = objProtDriver.loadObjectProtection(
                     ObjectProtection.buildPathSP(
-                        storPoolDefinition.getName()
+                        storPoolDfn.getName()
                     ),
                     transMgr
                 );
@@ -109,31 +103,12 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                     UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
                     objProt,
                     node,
-                    storPoolDefinition,
+                    storPoolDfn,
                     null,   // storageDriver, has to be null in the controller
                     resultSet.getString(NSP_DRIVER),
                     serialGen,
                     transMgr
                 );
-                if (!cache(node, sp))
-                {
-                    sp = cacheGet(node, storPoolDefinition);
-                }
-                else
-                {
-                    // restore references
-                }
-            }
-        }
-        else
-        {
-            // we have a cached storPool
-            if (!resultSet.next())
-            {
-                // but no entry in the db...
-
-                // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
         }
         resultSet.close();
@@ -142,7 +117,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         return sp;
     }
 
-    public static List<StorPoolData> loadStorPools(
+    public List<StorPoolData> loadStorPools(
         NodeData node,
         SerialGenerator serGen,
         TransactionMgr transMgr
@@ -184,14 +159,6 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                         serGen,
                         transMgr
                     );
-                    if (!cache(node, storPoolData))
-                    {
-                        storPoolData = cacheGet(node, storPoolDef);
-                    }
-                    else
-                    {
-                        // restore references
-                    }
                 }
                 storPoolList.add(storPoolData);
             }
@@ -214,25 +181,19 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     @Override
     public void delete(StorPoolData storPool, TransactionMgr transMgr) throws SQLException
     {
-        try
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_DELETE))
         {
             Node node = storPool.getNode();
-            StorPoolDefinition storPoolDfn;
-            storPoolDfn = storPool.getDefinition(dbCtx);
-
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_DELETE);
+            StorPoolDefinition storPoolDfn = storPool.getDefinition(dbCtx);
 
             stmt.setString(1, node.getName().value);
             stmt.setString(2, storPoolDfn.getName().value);
 
             stmt.executeUpdate();
-            stmt.close();
-
-            cacheRemove(node, storPoolDfn.getName());
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            handleAccessDeniedException(accDeniedExc);
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
         }
     }
 
@@ -241,103 +202,44 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     {
         Node node = storPoolData.getNode();
         StorPoolDefinition storPoolDfn;
-        try
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT);)
         {
             storPoolDfn = storPoolData.getDefinition(dbCtx);
-        }
-        catch (AccessDeniedException accessDeniedExc)
-        {
-            throw new ImplementationError(accessDeniedExc);
-        }
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT);
-        stmt.setString(1, node.getName().value);
-        stmt.setString(2, storPoolDfn.getName().value);
-        ResultSet resultSet = stmt.executeQuery();
+            stmt.setString(1, node.getName().value);
+            stmt.setString(2, storPoolDfn.getName().value);
+            ResultSet resultSet = stmt.executeQuery();
 
-        StorPoolData cachedStorPool = cacheGet(node, storPoolData.getName());
-        if (resultSet.next())
-        {
-            if (cachedStorPool == null)
+            if (!resultSet.next())
             {
-                cache(node, storPoolData);
+                create(storPoolData, transMgr);
             }
-            else
-            if (cachedStorPool != storPoolData)
-            {
-                resultSet.close();
-                stmt.close();
-                throw new DrbdSqlRuntimeException("A temporary StorPoolData instance is not allowed to override a persisted instance.");
-            }
-        }
-        else
-        {
-            if (cachedStorPool != null)
-            {
-                // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
-            }
-            create(storPoolData, transMgr);
-        }
 
-        resultSet.close();
-        stmt.close();
+            resultSet.close();
+            stmt.close();
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
+        }
     }
 
-    private static void handleAccessDeniedException(AccessDeniedException accessDeniedExc) throws ImplementationError
-    {
-        throw new ImplementationError(
-            "Database's access context has no permission to acces VolumeData's volNumber",
-            accessDeniedExc
-        );
-    }
-
-    private synchronized static boolean cache(Node node, StorPoolData storPoolData)
-    {
-        boolean ret = false;
-        if (storPoolData != null)
-        {
-            PrimaryKey pk = getPk(node, storPoolData);
-            boolean contains = storPoolCache.containsKey(pk);
-            if (!contains)
-            {
-                storPoolCache.put(pk, storPoolData);
-                ret = true;
-            }
-        }
-        return ret;
-    }
-
-    private static StorPoolData cacheGet(Node node, StorPoolDefinition storPoolDfn)
+    private StorPoolData cacheGet(Node node, StorPoolDefinition storPoolDfn)
     {
         return cacheGet(node, storPoolDfn.getName());
     }
 
-    private static StorPoolData cacheGet(Node node, StorPoolName storPoolName)
+    private StorPoolData cacheGet(Node node, StorPoolName storPoolName)
     {
-        return storPoolCache.get(getPk(node, storPoolName));
-    }
-
-    private synchronized static void cacheRemove(Node node, StorPoolName storPoolName)
-    {
-        storPoolCache.remove(getPk(node, storPoolName));
-    }
-
-    private static PrimaryKey getPk(Node node, StorPoolData storPoolData)
-    {
-        return new PrimaryKey(node.getName().value, storPoolData.getName().value);
-    }
-
-    private static PrimaryKey getPk(Node node, StorPoolName poolName)
-    {
-        return new PrimaryKey(node.getName().value, poolName.value);
-    }
-
-    /**
-     * this method should only be called by tests or if you want a full-reload from the database
-     */
-    static synchronized void clearCache()
-    {
-        storPoolCache.clear();
+        StorPoolData ret = null;
+        try
+        {
+            ret = (StorPoolData) node.getStorPool(dbCtx, storPoolName);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
+        }
+        return ret;
     }
 }

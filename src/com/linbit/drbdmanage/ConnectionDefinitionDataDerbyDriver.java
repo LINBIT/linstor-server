@@ -4,21 +4,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
-import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -67,14 +63,12 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
                     CON_NODE_SRC + " = ? AND " +
                     CON_NODE_DST + " = ?";
 
-    private static Map<PrimaryKey, ConnectionDefinitionData> conDfnCache = new HashMap<>();
-
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
     private final SingleColumnDatabaseDriver<ConnectionDefinitionData, Integer> conNrDriver;
 
-    public ConnectionDefinitionDataDerbyDriver(AccessContext accCtx,ErrorReporter errorReporterRef)
+    public ConnectionDefinitionDataDerbyDriver(AccessContext accCtx, ErrorReporter errorReporterRef)
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
@@ -84,7 +78,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
 
     @Override
     public ConnectionDefinitionData load(
-        ResourceName resourceName,
+        ResourceDefinition resDfn,
         NodeName sourceNodeName,
         NodeName targetNodeName,
         SerialGenerator serialGen,
@@ -94,71 +88,51 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     {
         errorReporter.logDebug(
             "Loading ConnectionDefinition (Res=%s, SrcNode=%s, DstNode=%s)",
-            resourceName.value,
+            resDfn.getName().value,
             sourceNodeName.value,
             targetNodeName.value
         );
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_SELECT);
-        stmt.setString(1, resourceName.value);
+        stmt.setString(1, resDfn.getName().value);
         stmt.setString(2, sourceNodeName.value);
         stmt.setString(3, targetNodeName.value);
 
         ResultSet resultSet = stmt.executeQuery();
 
-        ConnectionDefinitionData ret = cacheGet(resourceName, sourceNodeName, targetNodeName);
-        if (ret == null)
+        ConnectionDefinitionData ret = null;
+        if (resultSet.next())
         {
-            if (resultSet.next())
-            {
-                ret = restoreConnectionDefinition(resultSet, serialGen, transMgr, dbCtx);
-            }
-            else
-            {
-                errorReporter.logWarning(
-                    String.format(
-                        "The specified connection definition (resName=%s, srcNode=%s, dstNode=%s) was not found in the database",
-                         resourceName.displayValue,
-                         sourceNodeName.displayValue,
-                         targetNodeName.displayValue
-                    )
+            ret = restoreConnectionDefinition(resultSet, resDfn, serialGen, transMgr);
+            errorReporter.logTrace(
+                "ConnectionDefinition loaded successfully (Res=%s, SrcNode=%s, DstNode=%s)",
+                resDfn.getName().displayValue,
+                sourceNodeName.displayValue,
+                targetNodeName.displayValue
                 );
-            }
         }
         else
         {
-            errorReporter.logDebug("ConnectionDefinition loaded from cache");
-            if (!resultSet.next())
-            {
-                resultSet.close();
-                stmt.close();
-                throw new DrbdSqlRuntimeException(
-                    "Cached connection definition was not found in the database",
-                    "The database entry is unexpectedly missing",
-                    "That could only happen if a user manually deleted that entry during runtime",
-                    null,
-                    null
-                );
-            }
+            errorReporter.logWarning(
+                String.format(
+                    "The specified connection definition (resName=%s, srcNode=%s, dstNode=%s) was not found in the database",
+                     resDfn.getName().displayValue,
+                     sourceNodeName.displayValue,
+                     targetNodeName.displayValue
+                )
+            );
         }
-
         resultSet.close();
         stmt.close();
 
-        errorReporter.logTrace(
-            "ConnectionDefinition loaded successfully (Res=%s, SrcNode=%s, DstNode=%s)",
-            resourceName.displayValue,
-            sourceNodeName.displayValue,
-            targetNodeName.displayValue
-        );
         return ret;
     }
 
-    private static ConnectionDefinitionData restoreConnectionDefinition(
+    private ConnectionDefinitionData restoreConnectionDefinition(
         ResultSet resultSet,
+        ResourceDefinition resDfn,
         SerialGenerator serialGen,
-        TransactionMgr transMgr,
-        AccessContext accCtx
+        TransactionMgr transMgr
     )
         throws SQLException
     {
@@ -183,39 +157,40 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
             );
         }
 
-        ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
-        ObjectProtection objProt = objProtDriver.loadObjectProtection(
-            ObjectProtection.buildPath(resName, sourceNodeName, targetNodeName),
-            transMgr
-        );
-
-        ResourceDefinitionDataDatabaseDriver resDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
-        ResourceDefinitionData resDfn = resDriver.load(resName, serialGen, transMgr);
-
         NodeDataDatabaseDriver nodeDriver = DrbdManage.getNodeDataDatabaseDriver();
         NodeData nodeSrc = nodeDriver.load(sourceNodeName, serialGen, transMgr);
-        NodeData nodeDst = nodeDriver.load(targetNodeName, serialGen, transMgr);
 
-        ConnectionDefinitionData conData = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst, conNr);
-        cache(conData, accCtx);
+        ConnectionDefinitionData conData = cacheGet(resDfn, nodeSrc, conNr);
+
+        if (conData == null)
+        {
+            ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+            ObjectProtection objProt = objProtDriver.loadObjectProtection(
+                ObjectProtection.buildPath(resName, sourceNodeName, targetNodeName),
+                transMgr
+            );
+
+            NodeData nodeDst = nodeDriver.load(targetNodeName, serialGen, transMgr);
+
+            conData = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst, conNr);
+        }
         return conData;
     }
 
-    public static List<ConnectionDefinition> loadAllConnectionsByResourceDefinition(
-        ResourceName resName,
+    public List<ConnectionDefinition> loadAllConnectionsByResourceDefinition(
+        ResourceDefinitionData resDfn,
         SerialGenerator serialGen,
-        TransactionMgr transMgr,
-        AccessContext accCtx
+        TransactionMgr transMgr
     )
         throws SQLException
     {
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_SELECT_BY_RES_DFN);
-        stmt.setString(1, resName.value);
+        stmt.setString(1, resDfn.getName().value);
         ResultSet resultSet = stmt.executeQuery();
         List<ConnectionDefinition> connections = new ArrayList<>();
         while (resultSet.next())
         {
-            ConnectionDefinitionData conDfn = restoreConnectionDefinition(resultSet, serialGen, transMgr, accCtx);
+            ConnectionDefinitionData conDfn = restoreConnectionDefinition(resultSet, resDfn, serialGen, transMgr);
             connections.add(conDfn);
         }
         resultSet.close();
@@ -247,7 +222,6 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
             stmt.setInt(5, conDfnData.getConnectionNumber(dbCtx));
 
             stmt.executeUpdate();
-            cache(conDfnData, dbCtx);
 
             errorReporter.logTrace(
                 "Connection definition created (Res=%s, SrcNode=%s, DstNode=%s)",
@@ -258,10 +232,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            throw new ImplementationError(
-                "Database's access context has no permission to get storPoolDefinition",
-                accessDeniedExc
-            );
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -287,7 +258,6 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
                 stmt.setString(3, targetNodeName.value);
 
                 stmt.executeUpdate();
-                cacheRemove(resName, sourceNodeName, targetNodeName);
             }
             errorReporter.logTrace(
                 "Connection definition deleted (Res=%s, SrcNode=%s, DstNode=%s)",
@@ -298,16 +268,8 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            handleAccessDeniedException(accDeniedExc);
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
         }
-    }
-
-    private void handleAccessDeniedException(AccessDeniedException accDeniedExc)
-    {
-        throw new ImplementationError(
-            "Database's access context has no permission to acces VolumeData's volNumber",
-            accDeniedExc
-        );
     }
 
     @Override
@@ -316,60 +278,26 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         return conNrDriver;
     }
 
-    private static boolean cache(ConnectionDefinitionData con, AccessContext accCtx)
-    {
-        PrimaryKey pk = getPk(con, accCtx);
-        boolean contains = conDfnCache.containsKey(pk);
-        if (!contains)
-        {
-            conDfnCache.put(pk, con);
-        }
-        return !contains;
-    }
-
-    private static ConnectionDefinitionData cacheGet(
-        ResourceName resName,
-        NodeName sourceNodeName,
-        NodeName targetNodeName
+    private ConnectionDefinitionData cacheGet(
+        ResourceDefinition resDfn,
+        NodeData node,
+        int conNr
     )
     {
-        return conDfnCache.get(new PrimaryKey(resName.value, sourceNodeName.value, targetNodeName.value));
-    }
-
-    /**
-     * this method should only be called by tests or if you want a full-reload from the database
-     */
-    static void clearCache()
-    {
-        conDfnCache.clear();
-    }
-
-    private static void cacheRemove(
-        ResourceName resName,
-        NodeName sourceNodeName,
-        NodeName targetNodeName
-    )
-    {
-        conDfnCache.remove(new PrimaryKey(resName.value, sourceNodeName.value, targetNodeName.value));
-    }
-
-    private static PrimaryKey getPk(ConnectionDefinitionData con, AccessContext accCtx)
-    {
+        ConnectionDefinitionData ret = null;
         try
         {
-            return new PrimaryKey(
-                con.getResourceDefinition(accCtx).getName().value,
-                con.getSourceNode(accCtx).getName().value,
-                con.getTargetNode(accCtx).getName().value
+            ret = (ConnectionDefinitionData) resDfn.getConnectionDfn(
+                dbCtx,
+                node.getName(),
+                conNr
             );
         }
-        catch (AccessDeniedException accessDeniedExc)
+        catch (AccessDeniedException accDeniedExc)
         {
-            throw new ImplementationError(
-                "Database's access context has no permission to access ConnectionDefinitionData",
-                accessDeniedExc
-            );
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
         }
+        return ret;
     }
 
     private class ConnectionNumberDriver implements SingleColumnDatabaseDriver<ConnectionDefinitionData, Integer>
@@ -382,40 +310,37 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         )
             throws SQLException
         {
-            final ResourceName resName;
-            final NodeName sourceNodeName;
-            final NodeName targetNodeName;
             try
             {
-                resName = parent.getResourceDefinition(dbCtx).getName();
-                sourceNodeName = parent.getSourceNode(dbCtx).getName();
-                targetNodeName = parent.getTargetNode(dbCtx).getName();
+                final ResourceName resName = parent.getResourceDefinition(dbCtx).getName();
+                final NodeName sourceNodeName = parent.getSourceNode(dbCtx).getName();
+                final NodeName targetNodeName = parent.getTargetNode(dbCtx).getName();
+
+                errorReporter.logDebug(
+                    "Updating connection definition's connection number (Res=%s, SrcNode=%s, DstNode=%s)",
+                    resName.value,
+                    sourceNodeName.value,
+                    targetNodeName.value
+                );
+                PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_UPDATE_CON_NR);
+                stmt.setInt(1, newConNr);
+                stmt.setString(2, resName.value);
+                stmt.setString(3, sourceNodeName.value);
+                stmt.setString(4, targetNodeName.value);
+                stmt.executeUpdate();
+                stmt.close();
+
+                errorReporter.logTrace(
+                    "Connection definition's connection number updated (Res=%s, SrcNode=%s, DstNode=%s)",
+                    resName.displayValue,
+                    sourceNodeName.displayValue,
+                    targetNodeName.displayValue
+                );
             }
             catch (AccessDeniedException accessDeniedExc)
             {
-                throw new ImplementationError("Database accCtx does not have enough privileges", accessDeniedExc);
+                DerbyDriver.handleAccessDeniedException(accessDeniedExc);
             }
-
-            errorReporter.logDebug(
-                "Updating connection definition's connection number (Res=%s, SrcNode=%s, DstNode=%s)",
-                resName.value,
-                sourceNodeName.value,
-                targetNodeName.value
-            );
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_UPDATE_CON_NR);
-            stmt.setInt(1, newConNr);
-            stmt.setString(2, resName.value);
-            stmt.setString(3, sourceNodeName.value);
-            stmt.setString(4, targetNodeName.value);
-            stmt.executeUpdate();
-            stmt.close();
-
-            errorReporter.logTrace(
-                "Connection definition's connection number updated (Res=%s, SrcNode=%s, DstNode=%s)",
-                resName.displayValue,
-                sourceNodeName.displayValue,
-                targetNodeName.displayValue
-            );
         }
     }
 }

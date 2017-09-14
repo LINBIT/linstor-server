@@ -12,10 +12,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 
-import com.linbit.ImplementationError;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
@@ -57,9 +55,10 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         niAddr = new DmIpAddress(niAddrStr);
     }
 
-    @Before
-    public void startUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         assertEquals("NODE_NET_INTERFACES table's column count has changed. Update tests accordingly!", 6, TBL_COL_COUNT_NODE_NET_INTERFACES);
 
         transMgr = new TransactionMgr(getConnection());
@@ -160,7 +159,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(niData, transMgr);
-        DriverUtils.clearCaches();
 
         NetInterfaceData netData = dbDriver.load(node, niName, transMgr);
 
@@ -178,7 +176,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(niData, transMgr);
-        DriverUtils.clearCaches();
 
         NetInterfaceData netData = dbDriver.load(node, niName, transMgr);
 
@@ -196,7 +193,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         niData.initialized();
         dbDriver.create(niData, transMgr);
-        DriverUtils.clearCaches();
 
         NetInterfaceData netData1 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, transMgr, niInterfaceType, false);
 
@@ -213,14 +209,12 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testLoadStatic() throws Exception
+    public void testLoadAll() throws Exception
     {
         niData.initialized();
         dbDriver.create(niData, transMgr);
 
-        NetInterfaceDataDerbyDriver.clearCache();
-
-        List<NetInterfaceData> niList = NetInterfaceDataDerbyDriver.loadNetInterfaceData(node, transMgr);
+        List<NetInterfaceData> niList = dbDriver.loadNetInterfaceData(node, transMgr);
         assertEquals(1, niList.size());
         NetInterfaceData netData = niList.get(0);
 
@@ -237,10 +231,18 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        dbDriver.create(niData, transMgr);
+        NetInterfaceData storedInstance = NetInterfaceData.getInstance(
+            sysCtx,
+            node,
+            niName,
+            niAddr,
+            transMgr,
+            niInterfaceType,
+            true
+        );
 
         // no clearCaches
-        assertEquals(niData, dbDriver.load(node, niName, transMgr));
+        assertEquals(storedInstance, dbDriver.load(node, niName, transMgr));
     }
 
     @Test
@@ -400,35 +402,9 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testEnsureExistsDoublePrimaryKey() throws Exception
-    {
-        niData.initialized();
-        dbDriver.ensureEntryExists(niData, transMgr);
-
-        NetInterfaceData netData = new NetInterfaceData(
-            randomUUID(),
-            null,
-            niName,
-            node,
-            niAddr,
-            niInterfaceType
-        );
-        try
-        {
-            dbDriver.ensureEntryExists(netData, transMgr);
-            fail("dbDriver should have thrown ImplementationError");
-        }
-        catch (ImplementationError implErr)
-        {
-            // expected
-        }
-    }
-
-    @Test
     public void testHalfValidName() throws Exception
     {
         dbDriver.create(niData, transMgr);
-        DriverUtils.clearCaches();
 
         NetInterfaceName halfValidNiName = new NetInterfaceName(niData.getName().value);
 

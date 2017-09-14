@@ -175,8 +175,8 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private ObjectProtection rscDfnMapProt;
 
     // Map of all storage pools
-    private Map<StorPoolName, StorPoolDefinition> storPoolMap;
-    private ObjectProtection storPoolMapProt;
+    private Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
+    private ObjectProtection storPoolDfnMapProt;
 
     private short defaultPeerCount = DEFAULT_PEER_COUNT;
     private long defaultAlSize = DEFAULT_AL_SIZE;
@@ -218,7 +218,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         // Initialize DrbdManage objects maps
         nodesMap = new TreeMap<>();
         rscDfnMap = new TreeMap<>();
-        storPoolMap = new TreeMap<>();
+        storPoolDfnMap = new TreeMap<>();
         // the corresponding protectionObjects will be initialized in the initialize method
         // after the initialization of the database
 
@@ -290,7 +290,13 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     AccessContext privCtx = sysCtx.clone();
                     privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
                     securityDbDriver = new DbDerbyPersistence(privCtx);
-                    persistenceDbDriver = new DerbyDriver(privCtx, errorLogRef, nodesMap);
+                    persistenceDbDriver = new DerbyDriver(
+                        privCtx,
+                        errorLogRef,
+                        nodesMap,
+                        rscDfnMap,
+                        storPoolDfnMap
+                    );
 
                     String connectionUrl = dbProps.getProperty(
                         DB_CONN_URL,
@@ -360,7 +366,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     true,
                     transMgr
                 );
-                storPoolMapProt = ObjectProtection.getInstance(
+                storPoolDfnMapProt = ObjectProtection.getInstance(
                     initCtx,
                     ObjectProtection.buildPath(this, "storPoolMap"),
                     true,

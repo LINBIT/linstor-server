@@ -4,15 +4,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 
-import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.core.DrbdManage;
-import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
@@ -58,8 +56,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
                     VOL_RES_NAME  + " = ? AND " +
                     VOL_ID        + " = ?";
-
-    private static Hashtable<PrimaryKey, VolumeData> volCache = new Hashtable<>();
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -123,12 +119,12 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            handleAccessDeniedException(accDeniedExc);
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
         }
         return ret;
     }
 
-    public static List<VolumeData> loadAllVolumesByResource(
+    public List<VolumeData> loadAllVolumesByResource(
         Resource resRef,
         TransactionMgr transMgr,
         SerialGenerator serialGen,
@@ -149,7 +145,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     }
 
 
-    private static List<VolumeData> load(
+    private List<VolumeData> load(
         AccessContext accCtx,
         Resource resRef,
         ResultSet resultSet,
@@ -198,17 +194,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         serialGen,
                         transMgr
                     );
-                }
-                catch (AccessDeniedException accessDeniedExc)
-                {
-                    handleAccessDeniedException(accessDeniedExc);
-                }
-                if (!cache(volData, accCtx))
-                {
-                    volData = cacheGet(resRef.getAssignedNode(), resRef.getDefinition(), volNr);
-                }
-                else
-                {
+
                     // restore flags
                     StateFlags<VlmFlags> flags = volData.getFlags();
                     long lFlags = resultSet.getLong(VOL_FLAGS);
@@ -216,19 +202,13 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     {
                         if ((lFlags & flag.flagValue) == flag.flagValue)
                         {
-                            try
-                            {
-                                flags.enableFlags(accCtx, flag);
-                            }
-                            catch (AccessDeniedException accessDeniedExc)
-                            {
-                                throw new ImplementationError(
-                                    "Database's access context has no permission to set VolumeDefinition's flags",
-                                    accessDeniedExc
-                                );
-                            }
+                            flags.enableFlags(accCtx, flag);
                         }
                     }
+                }
+                catch (AccessDeniedException accessDeniedExc)
+                {
+                    DerbyDriver.handleAccessDeniedException(accessDeniedExc);
                 }
             }
             volList.add(volData);
@@ -250,14 +230,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setString(6, vol.getMetaDiskPath(dbCtx));
             stmt.setLong(7, vol.getFlags().getFlagsBits(dbCtx));
             stmt.executeUpdate();
-            cache(vol, dbCtx);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            throw new ImplementationError(
-                "Database's access context has no permission to access Volume",
-                accessDeniedExc
-            );
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -270,15 +246,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setString(2, volume.getResource().getDefinition().getName().value);
             stmt.setInt(3, volume.getVolumeDefinition().getVolumeNumber(dbCtx).value);
             stmt.executeUpdate();
-
-            cacheRemove(volume.getResource(), volume.getVolumeDefinition().getVolumeNumber(dbCtx));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            throw new ImplementationError(
-                "Database's access context has no permission to access Volume",
-                accessDeniedExc
-            );
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -288,61 +259,25 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return flagPersistenceDriver;
     }
 
-    private synchronized static boolean cache(VolumeData vol, AccessContext accCtx)
+    private VolumeData cacheGet(Node node, ResourceDefinition resDfn, VolumeNumber volNr)
     {
-        boolean contains = false;
+        VolumeData ret = null;
         try
         {
-            PrimaryKey pk = new PrimaryKey(
-                vol.getResource().getAssignedNode().getName().value,
-                vol.getResourceDfn().getName().value,
-                vol.getVolumeDefinition().getVolumeNumber(accCtx).value);
-            contains = volCache.containsKey(pk);
-            if (!contains)
+            if (node != null)
             {
-                volCache.put(pk, vol);
+                Resource res = node.getResource(dbCtx, resDfn.getName());
+                if (res != null)
+                {
+                    ret = (VolumeData) res.getVolume(volNr);
+                }
             }
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            handleAccessDeniedException(accessDeniedExc);
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
-        return !contains;
-    }
-
-    private static VolumeData cacheGet(Node node, ResourceDefinition resDfn, VolumeNumber volNr)
-    {
-        return volCache.get(new PrimaryKey(node.getName().value, resDfn.getName().value, volNr.value));
-    }
-
-    private synchronized static void cacheRemove(Resource res, VolumeNumber volumeNumber)
-    {
-        volCache.remove(getPk(res, volumeNumber));
-    }
-
-    private static PrimaryKey getPk(Resource res, VolumeNumber volumeNumber)
-    {
-        return new PrimaryKey(
-            res.getAssignedNode().getName().value,
-            res.getDefinition().getName().value,
-            volumeNumber.value
-        );
-    }
-
-    /**
-     * this method should only be called by tests or if you want a full-reload from the database
-     */
-    static synchronized void clearCache()
-    {
-        volCache.clear();
-    }
-
-    private static void handleAccessDeniedException(AccessDeniedException accessDeniedExc) throws ImplementationError
-    {
-        throw new ImplementationError(
-            "Database's access context has no permission to acces VolumeData's volNumber",
-            accessDeniedExc
-        );
+        return ret;
     }
 
     private class VolFlagsPersistence implements StateFlagsPersistence<VolumeData>
@@ -361,7 +296,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             }
             catch (AccessDeniedException accessDeniedExc)
             {
-                handleAccessDeniedException(accessDeniedExc);
+                DerbyDriver.handleAccessDeniedException(accessDeniedExc);
             }
         }
     }

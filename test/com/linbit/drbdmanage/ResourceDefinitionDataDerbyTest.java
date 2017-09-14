@@ -6,13 +6,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -51,9 +51,10 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         conNodeName2 = new NodeName("TestNodeName2");
     }
 
-    @Before
-    public void startUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         assertEquals(TBL_RESOURCE_DEFINITIONS + " table's column count has changed. Update tests accordingly!", 4, TBL_COL_COUNT_RESOURCE_DEFINITIONS);
 
         transMgr = new TransactionMgr(getConnection());
@@ -96,7 +97,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         );
 
 
-        driver = new ResourceDefinitionDataDerbyDriver(sysCtx, errorReporter);
+        driver = (ResourceDefinitionDataDerbyDriver) DrbdManage.getResourceDefinitionDataDatabaseDriver();
     }
 
     @Test
@@ -174,8 +175,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             true
         );
 
-        DriverUtils.clearCaches();
-
         ResourceDefinitionData loadedResDfn = driver.load(resName, null, transMgr);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
@@ -233,8 +232,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             true
         );
 
-        DriverUtils.clearCaches();
-
         loadedResDfn = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
@@ -264,11 +261,18 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        driver.create(resDfn, transMgr);
+        ResourceDefinitionData storedInstance = ResourceDefinitionData.getInstance(
+            sysCtx,
+            resName,
+            null,
+            null,
+            transMgr,
+            true
+        );
 
         // no clearCaches
 
-        assertEquals(resDfn, driver.load(resName, null, transMgr));
+        assertEquals(storedInstance, driver.load(resName, null, transMgr));
     }
 
     @Test
@@ -318,7 +322,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         String testValue = "TestValue";
         insertProp(transMgr, PropsContainer.buildPath(resName), testKey, testValue);
 
-        DriverUtils.clearCaches();
+        clearCaches();
 
         ResourceDefinitionData loadedResDfn = driver.load(resName, null, transMgr);
 
@@ -348,8 +352,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             true
         );
 
-        DriverUtils.clearCaches();
-
         ResourceDefinitionData loadedResDfn = driver.load(resName, null, transMgr);
         Resource loadedRes = loadedResDfn.getResource(sysCtx, nodeName);
 
@@ -372,8 +374,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         MinorNumber minor = new MinorNumber(42);
         long volSize = 5_000;
         VolumeDefinitionData volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, null, transMgr, true);
-
-        DriverUtils.clearCaches();
 
         ResourceDefinitionData loadedResDfn = driver.load(resName, null, transMgr);
         VolumeDefinition loadedVolDfn = loadedResDfn.getVolumeDfn(sysCtx, volNr);
@@ -467,7 +467,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testHalfValidName() throws Exception
     {
         driver.create(resDfn, transMgr);
-        DriverUtils.clearCaches();
 
         ResourceName halfValidResName = new ResourceName(resDfn.getName().value);
 

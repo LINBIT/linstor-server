@@ -3,15 +3,11 @@ package com.linbit.drbdmanage.security;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Hashtable;
-import java.util.Map;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
-import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 
 
 public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriver
@@ -92,8 +88,6 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         "     " + TBL_ACL + " AS ACL " +
         " WHERE " + ACL_OBJECT_PATH + " = ?";
 
-    private static Map<PrimaryKey, ObjectProtection> objProtCache = new Hashtable<>();
-
     private SingleColumnDatabaseDriver<ObjectProtection, Identity> identityDriver;
     private SingleColumnDatabaseDriver<ObjectProtection, Role> roleDriver;
     private SingleColumnDatabaseDriver<ObjectProtection, SecurityType> securityTypeDriver;
@@ -119,7 +113,6 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
         stmt.executeUpdate();
         stmt.close();
-        cache(objProt);
     }
 
     @Override
@@ -145,7 +138,6 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
         stmt.executeUpdate();
         stmt.close();
-        cacheRemove(objectPath);
     }
 
     @Override
@@ -208,81 +200,67 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
         ResultSet opResultSet = opLoadStmt.executeQuery();
 
-        ObjectProtection objProt = cacheGet(objPath);
-        if (objProt == null)
+        ObjectProtection objProt = null;
+        if (opResultSet.next())
         {
-            if (opResultSet.next())
+            try
             {
-                try
-                {
-                    Identity identity = Identity.get(new IdentityName(opResultSet.getString(1)));
-                    Role role = Role.get(new RoleName(opResultSet.getString(2)));
-                    SecurityType secType = SecurityType.get(new SecTypeName(opResultSet.getString(3)));
-                    PrivilegeSet privLimitSet = new PrivilegeSet(opResultSet.getLong(4));
-                    AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
-                    objProt = new ObjectProtection(accCtx, objPath, this);
-                }
-                catch (InvalidNameException invalidNameExc)
-                {
-                    opResultSet.close();
-                    opLoadStmt.close();
-                    throw new DrbdSqlRuntimeException(
-                        "A name has been modified in the database to an illegal string.",
-                        invalidNameExc
-                    );
-                }
+                Identity identity = Identity.get(new IdentityName(opResultSet.getString(1)));
+                Role role = Role.get(new RoleName(opResultSet.getString(2)));
+                SecurityType secType = SecurityType.get(new SecTypeName(opResultSet.getString(3)));
+                PrivilegeSet privLimitSet = new PrivilegeSet(opResultSet.getLong(4));
+                AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
+                objProt = new ObjectProtection(accCtx, objPath, this);
+            }
+            catch (InvalidNameException invalidNameExc)
+            {
                 opResultSet.close();
                 opLoadStmt.close();
-                // restore ACL
-                PreparedStatement aclLoadStmt = transMgr.dbCon.prepareStatement(ACL_LOAD);
-                aclLoadStmt.setString(1, objPath);
-                ResultSet aclResultSet = aclLoadStmt.executeQuery();
-                try
-                {
-                    if (cache(objProt))
-                    {
-                        while (aclResultSet.next())
-                        {
-                            Role role = Role.get(new RoleName(aclResultSet.getString(1)));
-                            AccessType type = AccessType.get(aclResultSet.getInt(2));
-
-                            objProt.addAclEntry(dbCtx, role, type);
-                        }
-                    }
-                    else
-                    {
-                        objProt = cacheGet(objPath);
-                    }
-                    aclResultSet.close();
-                    aclLoadStmt.close();
-                }
-                catch (InvalidNameException invalidNameExc)
-                {
-                    aclLoadStmt.close();
-                    aclResultSet.close();
-                    throw new DrbdSqlRuntimeException(
-                        "A name has been modified in the database to an illegal string.",
-                        invalidNameExc
-                    );
-                }
-                catch (AccessDeniedException accessDeniedExc)
-                {
-                    aclLoadStmt.close();
-                    aclResultSet.close();
-                    throw new ImplementationError(
-                        " Database's accessContext has insufficient rights to restore object protection",
-                        accessDeniedExc
-                    );
-                }
+                throw new DrbdSqlRuntimeException(
+                    "A name has been modified in the database to an illegal string.",
+                    invalidNameExc
+                );
             }
-            else
+            opResultSet.close();
+            opLoadStmt.close();
+            // restore ACL
+            PreparedStatement aclLoadStmt = transMgr.dbCon.prepareStatement(ACL_LOAD);
+            aclLoadStmt.setString(1, objPath);
+            ResultSet aclResultSet = aclLoadStmt.executeQuery();
+            try
             {
-                if (!opResultSet.next())
+                while (aclResultSet.next())
                 {
-                    // XXX: user deleted db entry during runtime - throw exception?
-                    // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
+                    Role role = Role.get(new RoleName(aclResultSet.getString(1)));
+                    AccessType type = AccessType.get(aclResultSet.getInt(2));
+
+                    objProt.addAclEntry(dbCtx, role, type);
                 }
+                aclResultSet.close();
+                aclLoadStmt.close();
             }
+            catch (InvalidNameException invalidNameExc)
+            {
+                aclLoadStmt.close();
+                aclResultSet.close();
+                throw new DrbdSqlRuntimeException(
+                    "A name has been modified in the database to an illegal string.",
+                    invalidNameExc
+                );
+            }
+            catch (AccessDeniedException accessDeniedExc)
+            {
+                aclLoadStmt.close();
+                aclResultSet.close();
+                throw new ImplementationError(
+                    " Database's accessContext has insufficient rights to restore object protection",
+                    accessDeniedExc
+                );
+            }
+        }
+        else
+        {
+            // TODO: log warning that op not found
         }
         opResultSet.close();
         opLoadStmt.close();
@@ -306,32 +284,6 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     public SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver()
     {
         return securityTypeDriver;
-    }
-
-    private synchronized static boolean cache(ObjectProtection objProt)
-    {
-        PrimaryKey pk = new PrimaryKey(objProt.getObjectProtectionPath());
-        boolean contains = objProtCache.containsKey(pk);
-        if (!contains)
-        {
-            objProtCache.put(pk, objProt);
-        }
-        return !contains;
-    }
-
-    private static ObjectProtection cacheGet(String objPath)
-    {
-        return objProtCache.get(new PrimaryKey(objPath));
-    }
-
-    private synchronized static void cacheRemove(String objPath)
-    {
-        objProtCache.remove(new PrimaryKey(objPath));
-    }
-
-    static synchronized void clearCache()
-    {
-        objProtCache.clear();
     }
 
     private class IdentityDerbyDriver implements SingleColumnDatabaseDriver<ObjectProtection, Identity>

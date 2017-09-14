@@ -10,13 +10,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.CoreUtils;
-import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.storage.LvmDriver;
@@ -39,7 +37,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
     private StorPoolData storPool;
 
     private StorPoolDefinitionData spdd;
-    private StorPoolDataDatabaseDriver driver;
+    private StorPoolDataDerbyDriver driver;
 
     public StorPoolDataDerbyTest() throws InvalidNameException
     {
@@ -47,9 +45,10 @@ public class StorPoolDataDerbyTest extends DerbyBase
         spName = new StorPoolName("TestStorPoolDefinition");
     }
 
-    @Before
-    public void startUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         assertEquals(TBL_NODE_STOR_POOL + " table's column count has changed. Update tests accordingly!", 4, TBL_COL_COUNT_NODE_STOR_POOL);
 
         transMgr = new TransactionMgr(getConnection());
@@ -118,7 +117,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertNull(loadedStorPool);
 
         driver.create(storPool, transMgr);
-        DriverUtils.clearCaches();
 
         loadedStorPool = driver.load(node, spdd, null, transMgr);
         assertEquals(uuid, loadedStorPool.getUuid());
@@ -130,12 +128,11 @@ public class StorPoolDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testLoadStatic() throws Exception
+    public void testLoadAll() throws Exception
     {
         driver.create(storPool, transMgr);
-        DriverUtils.clearCaches();
 
-        List<StorPoolData> storPools = StorPoolDataDerbyDriver.loadStorPools(node, null, transMgr);
+        List<StorPoolData> storPools = driver.loadStorPools(node, null, transMgr);
 
         assertNotNull(storPools);
         assertEquals(1, storPools.size());
@@ -153,11 +150,19 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        driver.create(storPool, transMgr);
+        StorPoolData storedInstance = StorPoolData.getInstance(
+            sysCtx,
+            node,
+            spdd,
+            LvmDriver.class.getSimpleName(),
+            null,
+            transMgr,
+            true
+        );
 
         // no clearCaches
 
-        assertEquals(storPool, driver.load(node, spdd, null, transMgr));
+        assertEquals(storedInstance, driver.load(node, spdd, null, transMgr));
     }
 
     @Test
@@ -176,7 +181,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertNull(loadedStorPool);
 
         driver.create(storPool, transMgr);
-        DriverUtils.clearCaches();
         loadedStorPool = StorPoolData.getInstance(
             sysCtx,
             node,

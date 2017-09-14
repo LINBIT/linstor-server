@@ -505,12 +505,13 @@ public class NoOpDriver implements DatabaseDriver
 
         @Override
         public ConnectionDefinitionData load(
-            ResourceName resourceName,
+            ResourceDefinition resDfn,
             NodeName sourceNodeName,
             NodeName targetNodeName,
             SerialGenerator serialGen,
             TransactionMgr transMgr
-        ) throws SQLException
+        )
+            throws SQLException
         {
             return null;
         }

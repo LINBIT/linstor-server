@@ -4,15 +4,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 
-import com.linbit.ImplementationError;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
-import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
@@ -66,8 +64,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         " WHERE " + VD_RES_NAME + " = ? AND " +
                     VD_ID       + " = ?";
 
-    private static final Hashtable<PrimaryKey, VolumeDefinitionData> VOL_DFN_CACHE = new Hashtable<>();
-
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
@@ -97,15 +93,10 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             stmt.setLong(6, volumeDefinition.getFlags().getFlagsBits(dbCtx));
 
             stmt.executeUpdate();
-
-            cache(volumeDefinition, dbCtx);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            throw new ImplementationError(
-                "Database's access context has no permission to access VolumeDefinition",
-                accessDeniedExc
-            );
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -153,7 +144,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         return ret;
     }
 
-    private static VolumeDefinitionData restoreVolumeDefinition(
+    private VolumeDefinitionData restoreVolumeDefinition(
         ResultSet resultSet,
         ResourceDefinition resDfn,
         VolumeNumber volNr,
@@ -166,33 +157,27 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         VolumeDefinitionData ret = null;
         try
         {
-            ret = new VolumeDefinitionData(
-                UuidUtils.asUuid(resultSet.getBytes(VD_UUID)),
-                accCtx, // volumeDefinition does not have objProt, but require access to their resource's objProt
-                resDfn,
-                volNr,
-                new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
-                resultSet.getLong(VD_SIZE),
-                resultSet.getLong(VD_FLAGS),
-                serialGen,
-                transMgr
-            );
-            if (!cache(ret, accCtx))
+            ret = cacheGet(resDfn, volNr);
+
+            if (ret == null)
             {
-                ret = cacheGet(resDfn, volNr);
-            }
-            else
-            {
+                ret = new VolumeDefinitionData(
+                    UuidUtils.asUuid(resultSet.getBytes(VD_UUID)),
+                    accCtx, // volumeDefinition does not have objProt, but require access to their resource's objProt
+                    resDfn,
+                    volNr,
+                    new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
+                    resultSet.getLong(VD_SIZE),
+                    resultSet.getLong(VD_FLAGS),
+                    serialGen,
+                    transMgr
+                );
                 // restore references
             }
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            resultSet.close();
-            throw new ImplementationError(
-                "Database's access context has no permission to create VolumeDefinition",
-                accessDeniedExc
-            );
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
         catch (MdException mdExc)
         {
@@ -214,7 +199,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     }
 
 
-    public static List<VolumeDefinition> loadAllVolumeDefinitionsByResourceDefinition(
+    public List<VolumeDefinition> loadAllVolumeDefinitionsByResourceDefinition(
             ResourceDefinition resDfn,
             SerialGenerator serialGen,
             TransactionMgr transMgr,
@@ -267,23 +252,12 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             stmt.setString(1, volumeDefinition.getResourceDefinition().getName().value);
             stmt.setInt(2, volumeDefinition.getVolumeNumber(dbCtx).value);
             stmt.executeUpdate();
-
-            cacheRemove(volumeDefinition.getResourceDefinition(), volumeDefinition.getVolumeNumber(dbCtx));
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            handleAccessDeniedException(accDeniedExc);
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
         }
     }
-
-    private static void handleAccessDeniedException(AccessDeniedException accessDeniedExc) throws ImplementationError
-    {
-        throw new ImplementationError(
-            "Database's access context has no permission to acces VolumeData's volNumber",
-            accessDeniedExc
-        );
-    }
-
 
     @Override
     public StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence()
@@ -303,33 +277,20 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         return sizeDriver;
     }
 
-    private synchronized static boolean cache(VolumeDefinitionData vdd, AccessContext dbCtx) throws AccessDeniedException
+    private VolumeDefinitionData cacheGet(ResourceDefinition resDfn, VolumeNumber volNr)
     {
-        PrimaryKey pk = new PrimaryKey(vdd.getResourceDefinition().getName().value, vdd.getVolumeNumber(dbCtx).value);
-        boolean contains = VOL_DFN_CACHE.containsKey(pk);
-        if (!contains)
+        VolumeDefinitionData ret = null;
+
+        try
         {
-            VOL_DFN_CACHE.put(pk, vdd);
+            ret = (VolumeDefinitionData) resDfn.getVolumeDfn(dbCtx, volNr);
         }
-        return !contains;
-    }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
+        }
 
-    private static VolumeDefinitionData cacheGet(ResourceDefinition resDfn, VolumeNumber volNr)
-    {
-        return VOL_DFN_CACHE.get(new PrimaryKey(resDfn.getName().value, volNr.value));
-    }
-
-    private synchronized static void cacheRemove(ResourceDefinition resDfn, VolumeNumber volNr)
-    {
-        VOL_DFN_CACHE.remove(new PrimaryKey(resDfn.getName().value, volNr.value));
-    }
-
-    /**
-     * this method should only be called by tests or if you want a full-reload from the database
-     */
-    static synchronized void clearCache()
-    {
-        VOL_DFN_CACHE.clear();
+        return ret;
     }
 
     private class FlagDriver implements StateFlagsPersistence<VolumeDefinitionData>
@@ -344,9 +305,9 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
                 stmt.executeUpdate();
             }
-            catch (AccessDeniedException accDeniedExc)
+            catch (AccessDeniedException accessDeniedExc)
             {
-                handleAccessDeniedException(accDeniedExc);
+                DerbyDriver.handleAccessDeniedException(accessDeniedExc);
             }
         }
     }
@@ -366,7 +327,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             }
             catch (AccessDeniedException accessDeniedExc)
             {
-                handleAccessDeniedException(accessDeniedExc);
+                DerbyDriver.handleAccessDeniedException(accessDeniedExc);
             }
         }
     }
@@ -385,7 +346,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             }
             catch (AccessDeniedException accessDeniedExc)
             {
-                handleAccessDeniedException(accessDeniedExc);
+                DerbyDriver.handleAccessDeniedException(accessDeniedExc);
             }
         }
     }

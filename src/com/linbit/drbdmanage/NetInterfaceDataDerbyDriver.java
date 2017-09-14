@@ -4,7 +4,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,7 +14,7 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.core.DrbdManage;
-import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
@@ -67,15 +66,16 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         " WHERE " + NODE_NAME + " = ? AND " +
         "       " + NET_NAME  + " = ?";
 
-    private static final Hashtable<PrimaryKey, NetInterfaceData> NI_CACHE = new Hashtable<>();
-
     private final SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> netIfAddressDriver;
     private final SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> netIfTypeDriver;
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    public NetInterfaceDataDerbyDriver(AccessContext ctx, ErrorReporter errorReporterRef)
+    public NetInterfaceDataDerbyDriver(
+        AccessContext ctx,
+        ErrorReporter errorReporterRef
+    )
     {
         dbCtx = ctx;
         errorReporter = errorReporterRef;
@@ -154,8 +154,6 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
         stmt.executeUpdate();
         stmt.close();
-
-        cache(netInterfaceData);
     }
 
     public void ensureEntryExists(NetInterfaceData netIfData, TransactionMgr transMgr) throws SQLException
@@ -165,23 +163,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         stmt.setString(2, netIfData.getName().value);
         ResultSet resultSet = stmt.executeQuery();
 
-        NetInterfaceData niCached = cacheGet(netIfData.getNode(), netIfData.getName());
-        if (resultSet.next())
+        if (!resultSet.next())
         {
-            if (niCached != netIfData)
-            {
-                resultSet.close();
-                stmt.close();
-                throw new ImplementationError("Two different NetInterfaceData share the same primary key", null);
-            }
-        }
-        else
-        {
-            if (niCached != null)
-            {
-                // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
-            }
             create(netIfData, transMgr);
         }
         resultSet.close();
@@ -201,8 +184,6 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
         stmt.executeUpdate();
         stmt.close();
-
-        cacheRemove(node.getName(), netName);
     }
 
     @Override
@@ -218,7 +199,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
 
-    public static List<NetInterfaceData> loadNetInterfaceData(Node node, TransactionMgr transMgr)
+    public List<NetInterfaceData> loadNetInterfaceData(Node node, TransactionMgr transMgr)
         throws SQLException
     {
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_SELECT_BY_NODE);
@@ -250,29 +231,33 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
     private DmIpAddress getAddress(NetInterface value)
     {
+        DmIpAddress ip = null;
         try
         {
-            return value.getAddress(dbCtx);
+            ip = value.getAddress(dbCtx);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            throw new ImplementationError("NodeDerbyDriver should have a clone of sysCtx", accessDeniedExc);
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
+        return ip;
     }
 
     private NetInterfaceType getNetInterfaceType(NetInterface value)
     {
+        NetInterfaceType type = null;
         try
         {
-            return value.getNetInterfaceType(dbCtx);
+            type = value.getNetInterfaceType(dbCtx);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            throw new ImplementationError("NodeDerbyDriver should have a clone of sysCtx", accessDeniedExc);
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
+        return type;
     }
 
-    private static NetInterfaceData restoreInstance(
+    private NetInterfaceData restoreInstance(
         Node node,
         NetInterfaceName netName,
         ResultSet resultSet,
@@ -280,7 +265,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     )
         throws SQLException
     {
-        NetInterfaceData ret = cacheGet(resultSet);
+        NetInterfaceData ret = cacheGet(node, netName);
         if (ret == null)
         {
             UUID uuid = UuidUtils.asUuid(resultSet.getBytes(NET_UUID));
@@ -297,17 +282,14 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                     invalidIpAddressExc
                 );
             }
-            ObjectProtection objProt;
-            {
-                ObjectProtectionDatabaseDriver opDriver = DrbdManage.getObjectProtectionDatabaseDriver();
-                objProt = opDriver.loadObjectProtection(
-                    ObjectProtection.buildPath(
-                        node.getName(),
-                        netName
-                    ),
-                    transMgr
-                );
-            }
+            ObjectProtectionDatabaseDriver opDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+            ObjectProtection objProt = opDriver.loadObjectProtection(
+                ObjectProtection.buildPath(
+                    node.getName(),
+                    netName
+                ),
+                transMgr
+            );
             ret = new NetInterfaceData(
                 uuid,
                 objProt,
@@ -316,55 +298,23 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                 addr,
                 NetInterfaceType.byValue(type)
             );
-            if (cache(ret))
-            {
-                // restore references
-            }
-            else {
-                ret = cacheGet(resultSet);
-            }
         }
 
         return ret;
     }
 
-    private synchronized static boolean cache(NetInterfaceData netInterfaceData)
+    private NetInterfaceData cacheGet(Node node, NetInterfaceName netName)
     {
-        PrimaryKey pk = getPk(netInterfaceData);
-        boolean contains = NI_CACHE.containsKey(pk);
-        if (!contains)
+        NetInterfaceData ret = null;
+        try
         {
-            NI_CACHE.put(pk, netInterfaceData);
+            ret = (NetInterfaceData) node.getNetInterface(dbCtx, netName);
         }
-        return !contains;
-    }
-
-    private static NetInterfaceData cacheGet(Node node, NetInterfaceName netName)
-    {
-        return NI_CACHE.get(new PrimaryKey(node.getName().value, netName.value));
-    }
-
-    private static NetInterfaceData cacheGet(ResultSet resultSet) throws SQLException
-    {
-        return NI_CACHE.get(new PrimaryKey(resultSet.getString(NODE_NAME), resultSet.getString(NET_NAME)));
-    }
-
-    private synchronized static void cacheRemove(NodeName nodeName, NetInterfaceName netName)
-    {
-        NI_CACHE.remove(new PrimaryKey(nodeName.value, netName.value));
-    }
-
-    private static PrimaryKey getPk(NetInterfaceData niData)
-    {
-        return new PrimaryKey(niData.getNode().getName().value, niData.getName().value);
-    }
-
-    /**
-     * this method should only be called by tests or if you want a full-reload from the database
-     */
-    static synchronized void clearCache()
-    {
-        NI_CACHE.clear();
+        catch (AccessDeniedException accDeniedExc)
+        {
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
+        }
+        return ret;
     }
 
     private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress>

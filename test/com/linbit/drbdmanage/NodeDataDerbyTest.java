@@ -4,9 +4,6 @@ import static org.junit.Assert.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashMap;
-
-import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
@@ -18,6 +15,7 @@ import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
 import com.linbit.drbdmanage.core.CoreUtils;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
@@ -69,12 +67,13 @@ public class NodeDataDerbyTest extends DerbyBase
         nodeName = new NodeName("TestNodeName");
     }
 
-    @Before
-    public void startUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         assertEquals("NODES table's column count has changed. Update tests accordingly!", 6, TBL_COL_COUNT_NODES);
 
-        dbDriver = new NodeDataDerbyDriver(sysCtx, errorReporter, new HashMap<NodeName, Node>());
+        dbDriver = DrbdManage.getNodeDataDatabaseDriver();
         transMgr = new TransactionMgr(getConnection());
 
         uuid = randomUUID();
@@ -328,7 +327,7 @@ public class NodeDataDerbyTest extends DerbyBase
         insertProp(transMgr, storPoolPropsInstance, storPoolTestKey, storPoolTestValue);
         transMgr.commit();
 
-        clearDatabaseCaches(); // just to be sure
+        clearCaches();
 
         NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, false);
         NodeData loadedNode2 = NodeData.getInstance(sysCtx, nodeName2, null, null, null, transMgr, false);
@@ -561,7 +560,6 @@ public class NodeDataDerbyTest extends DerbyBase
     public void testHalfValidName() throws Exception
     {
         dbDriver.create(node, transMgr);
-        DriverUtils.clearCaches();
 
         NodeName halfValidName = new NodeName(node.getName().value);
         NodeData loadedNode = dbDriver.load(halfValidName, null, transMgr);

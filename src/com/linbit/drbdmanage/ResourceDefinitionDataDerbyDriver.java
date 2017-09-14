@@ -3,13 +3,14 @@ package com.linbit.drbdmanage;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
-import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
@@ -45,18 +46,33 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         " DELETE FROM " + TBL_RES_DEF +
         " WHERE " + RD_NAME + " = ?";
 
-    private static final Hashtable<PrimaryKey, ResourceDefinitionData> RES_DFN_CACHE = new Hashtable<>();
-
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
+    private final Map<ResourceName, ResourceDefinition> resDfnMap;
 
     private final StateFlagsPersistence<ResourceDefinitionData> resDfnFlagPersistence;
 
-    public ResourceDefinitionDataDerbyDriver(AccessContext accCtx, ErrorReporter errorReporterRef)
+    private final ConnectionDefinitionDataDerbyDriver connectionDefinitionDataDerbyDriver;
+    private final ResourceDataDerbyDriver resourceDataDerbyDriver;
+    private final VolumeDefinitionDataDerbyDriver volumeDefinitionDataDerbyDriver;
+
+    public ResourceDefinitionDataDerbyDriver(
+        AccessContext accCtx,
+        ErrorReporter errorReporterRef,
+        Map<ResourceName, ResourceDefinition> resDfnMapRef,
+        ConnectionDefinitionDataDerbyDriver connectionDefinitionDriver,
+        ResourceDataDerbyDriver resourceDriver,
+        VolumeDefinitionDataDerbyDriver volumeDefinitionDriver
+    )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
+        resDfnMap = resDfnMapRef;
+
+        connectionDefinitionDataDerbyDriver = connectionDefinitionDriver;
+        resourceDataDerbyDriver = resourceDriver;
+        volumeDefinitionDataDerbyDriver = volumeDefinitionDriver;
     }
 
     @Override
@@ -72,14 +88,11 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
             stmt.executeUpdate();
             stmt.close();
 
-            cache(resourceDefinition);
+            resDfnMap.put(resourceDefinition.getName(), resourceDefinition);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
-            throw new ImplementationError(
-                "Database's access context has no permission to get storPoolDefinition",
-                accessDeniedExc
-            );
+            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -108,7 +121,12 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         stmt.setString(1, resourceName.value);
         ResultSet resultSet = stmt.executeQuery();
 
-        ResourceDefinitionData resDfn = cacheGet(resourceName);
+        ResourceDefinitionData resDfn = null;
+
+        // resourceDefinition loads connectionDefinitions loads resourceDefinitions...
+        // to break this cycle, we check if we are already in this cylce
+        resDfn = (ResourceDefinitionData) resDfnMap.get(resourceName);
+
         if (resDfn == null)
         {
             if (resultSet.next())
@@ -143,78 +161,60 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                         serialGen,
                         transMgr
                     );
-                    if (!cache(resDfn))
+                    resDfnMap.put(resourceName, resDfn);
+
+                    try
                     {
-                        resDfn = cacheGet(resourceName);
+                        // restore connectionDefinitions
+                        List<ConnectionDefinition> cons = connectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
+                            resDfn,
+                            serialGen,
+                            transMgr
+                        );
+                        for (ConnectionDefinition conDfn : cons)
+                        {
+                            int conDfnNr = conDfn.getConnectionNumber(dbCtx);
+                            resDfn.addConnection(
+                                dbCtx,
+                                conDfn.getSourceNode(dbCtx).getName(),
+                                conDfn.getTargetNode(dbCtx).getName(),
+                                conDfnNr,
+                                conDfn
+                            );
+                        }
+
+                        // restore volumeDefinitions
+                        List<VolumeDefinition> volDfns =
+                            volumeDefinitionDataDerbyDriver.loadAllVolumeDefinitionsByResourceDefinition(
+                            resDfn,
+                            serialGen,
+                            transMgr,
+                            dbCtx
+                        );
+                        for (VolumeDefinition volDfn : volDfns)
+                        {
+                            resDfn.putVolumeDefinition(dbCtx, volDfn);
+                        }
+
+                        // restore resources
+                        List<ResourceData> resList = resourceDataDerbyDriver.loadResourceDataByResourceDefinition(
+                            resDfn,
+                            serialGen,
+                            transMgr,
+                            dbCtx
+                        );
+                        for (ResourceData res : resList)
+                        {
+                            resDfn.addResource(dbCtx, res);
+                        }
                     }
-                    else
+                    catch (AccessDeniedException accessDeniedExc)
                     {
-                        try
-                        {
-                            // restore connectionDefinitions
-                            List<ConnectionDefinition> cons =
-                                ConnectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
-                                resourceName,
-                                serialGen,
-                                transMgr,
-                                dbCtx
-                            );
-                            for (ConnectionDefinition conDfn : cons)
-                            {
-                                int conDfnNr = conDfn.getConnectionNumber(dbCtx);
-                                resDfn.addConnection(
-                                    dbCtx,
-                                    conDfn.getSourceNode(dbCtx).getName(),
-                                    conDfn.getTargetNode(dbCtx).getName(),
-                                    conDfnNr,
-                                    conDfn
-                                );
-                            }
-
-                            // restore volumeDefinitions
-                            List<VolumeDefinition> volDfns =
-                                VolumeDefinitionDataDerbyDriver.loadAllVolumeDefinitionsByResourceDefinition(
-                                resDfn,
-                                serialGen,
-                                transMgr,
-                                dbCtx
-                            );
-                            for (VolumeDefinition volDfn : volDfns)
-                            {
-                                resDfn.putVolumeDefinition(dbCtx, volDfn);
-                            }
-
-                            // restore resources
-                            List<ResourceData> resList = ResourceDataDerbyDriver.loadResourceDataByResourceDefinition(
-                                resDfn,
-                                serialGen,
-                                transMgr,
-                                dbCtx
-                            );
-                            for (ResourceData res : resList)
-                            {
-                                resDfn.addResource(dbCtx, res);
-                            }
-                        }
-                        catch (AccessDeniedException accessDeniedExc)
-                        {
-                            resultSet.close();
-                            stmt.close();
-                            throw new ImplementationError(
-                                "Database's access context has no permission to get storPoolDefinition",
-                                accessDeniedExc
-                            );
-                        }
+                        resultSet.close();
+                        stmt.close();
+                        DerbyDriver.handleAccessDeniedException(accessDeniedExc);
                     }
                 }
-            }
-        }
-        else
-        {
-            if (!resultSet.next())
-            {
-                // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
             }
         }
         resultSet.close();
@@ -231,42 +231,12 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         stmt.executeUpdate();
 
         stmt.close();
-        cacheRemove(resourceDefinition.getName());
     }
 
     @Override
     public StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence()
     {
         return resDfnFlagPersistence;
-    }
-
-    private synchronized static boolean cache(ResourceDefinitionData resDfn)
-    {
-        PrimaryKey pk = new PrimaryKey(resDfn.getName().value);
-        boolean contains = RES_DFN_CACHE.containsKey(pk);
-        if (!contains)
-        {
-            RES_DFN_CACHE.put(pk, resDfn);
-        }
-        return !contains;
-    }
-
-    private static ResourceDefinitionData cacheGet(ResourceName resName)
-    {
-        return RES_DFN_CACHE.get(new PrimaryKey(resName.value));
-    }
-
-    private synchronized static void cacheRemove(ResourceName resName)
-    {
-        RES_DFN_CACHE.remove(new PrimaryKey(resName.value));
-    }
-
-    /**
-     * this method should only be called by tests or if you want a full-reload from the database
-     */
-    static synchronized void clearCache()
-    {
-        RES_DFN_CACHE.clear();
     }
 
     private class ResDfnFlagsPersistence implements StateFlagsPersistence<ResourceDefinitionData>

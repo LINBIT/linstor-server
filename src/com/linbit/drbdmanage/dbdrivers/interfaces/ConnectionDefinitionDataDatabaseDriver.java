@@ -8,7 +8,7 @@ import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.drbdmanage.ConnectionDefinitionData;
 import com.linbit.drbdmanage.NodeName;
-import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 
@@ -42,7 +42,7 @@ public interface ConnectionDefinitionDataDatabaseDriver
      * @throws SQLException
      */
     public ConnectionDefinitionData load(
-        ResourceName resourceName,
+        ResourceDefinition resDfn,
         NodeName sourceNodeName,
         NodeName targetNodeName,
         SerialGenerator serialGen,

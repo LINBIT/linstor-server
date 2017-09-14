@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
@@ -45,9 +44,10 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
     private VolumeDefinitionDataDerbyDriver driver;
 
-    @Before
-    public void startUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         assertEquals(TBL_VOLUME_DEFINITIONS + " table's column count has changed. Update tests accordingly!",
             6,
             TBL_COL_COUNT_VOLUME_DEFINITIONS
@@ -142,7 +142,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     public void testLoad() throws Exception
     {
         driver.create(volDfn, transMgr);
-        DriverUtils.clearCaches();
 
         VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, null, transMgr);
         assertNotNull(loadedVd);
@@ -158,7 +157,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     public void testLoadGetInstance() throws Exception
     {
         driver.create(volDfn, transMgr);
-        DriverUtils.clearCaches();
 
         VolumeDefinitionData loadedVd = VolumeDefinitionData.getInstance(
             sysCtx,
@@ -181,12 +179,11 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testLoadStatic() throws Exception
+    public void testLoadAll() throws Exception
     {
         driver.create(volDfn, transMgr);
-        DriverUtils.clearCaches();
 
-        List<VolumeDefinition> volDfnList = VolumeDefinitionDataDerbyDriver.loadAllVolumeDefinitionsByResourceDefinition(
+        List<VolumeDefinition> volDfnList = driver.loadAllVolumeDefinitionsByResourceDefinition(
             resDfn,
             null,
             transMgr,
@@ -206,20 +203,9 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testCache() throws Exception
-    {
-        driver.create(volDfn, transMgr);
-
-        // no clearCaches
-
-        assertEquals(volDfn, driver.load(resDfn, volNr, null, transMgr));
-    }
-
-    @Test
     public void testDelete() throws Exception
     {
         driver.create(volDfn, transMgr);
-        DriverUtils.clearCaches();
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
@@ -263,8 +249,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         String testKey = "TestKey";
         String testValue = "TestValue";
         insertProp(transMgr, PropsContainer.buildPath(resName, volNr), testKey, testValue);
-
-        DriverUtils.clearCaches();
 
         VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, null, transMgr);
         Props props = loadedVd.getProps(sysCtx);

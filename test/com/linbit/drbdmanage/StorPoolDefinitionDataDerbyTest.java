@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
@@ -29,9 +28,10 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
     private StorPoolDefinitionDataDerbyDriver driver;
 
-    @Before
-    public void startUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         assertEquals(TBL_STOR_POOL_DEFINITIONS + " table's column count has changed. Update tests accordingly!", 3, TBL_COL_COUNT_STOR_POOL_DEFINITIONS);
 
         transMgr = new TransactionMgr(getConnection());
@@ -41,7 +41,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPathSPD(spName), true, transMgr);
         spdd = new StorPoolDefinitionData(uuid, objProt, spName);
 
-        driver = new StorPoolDefinitionDataDerbyDriver(errorReporter);
+        driver = new StorPoolDefinitionDataDerbyDriver(errorReporter, storPoolDfnMap);
     }
 
     @Test
@@ -89,7 +89,6 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     public void testLoad() throws Exception
     {
         driver.create(spdd, transMgr);
-        DriverUtils.clearCaches();
 
         StorPoolDefinitionData loadedSpdd = driver.load(spName, transMgr);
 
@@ -103,7 +102,6 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     public void testLoadGetInstance() throws Exception
     {
         driver.create(spdd, transMgr);
-        DriverUtils.clearCaches();
 
         StorPoolDefinitionData loadedSpdd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, false);
         assertNotNull(loadedSpdd);
@@ -135,7 +133,6 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     public void testDelete() throws Exception
     {
         driver.create(spdd, transMgr);
-        DriverUtils.clearCaches();
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS);
         ResultSet resultSet = stmt.executeQuery();
@@ -146,7 +143,6 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         resultSet.close();
 
         driver.delete(spdd, transMgr);
-        DriverUtils.clearCaches();
 
         resultSet = stmt.executeQuery();
 
@@ -200,7 +196,6 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     public void testHalfValidName() throws Exception
     {
         driver.create(spdd, transMgr);
-        DriverUtils.clearCaches();
 
         StorPoolName halfValidName = new StorPoolName(spdd.getName().value);
 

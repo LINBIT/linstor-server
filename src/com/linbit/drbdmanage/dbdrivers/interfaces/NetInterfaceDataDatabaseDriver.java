@@ -2,7 +2,6 @@ package com.linbit.drbdmanage.dbdrivers.interfaces;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.BaseTransactionObject;
@@ -73,5 +72,4 @@ public interface NetInterfaceDataDatabaseDriver
      * A special sub-driver to update the persisted transportType.
      */
     public SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> getNetInterfaceTypeDriver();
-
 }

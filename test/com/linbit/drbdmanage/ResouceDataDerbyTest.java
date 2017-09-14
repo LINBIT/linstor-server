@@ -10,7 +10,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.InvalidNameException;
@@ -18,6 +17,7 @@ import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.core.CoreUtils;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
@@ -52,9 +52,10 @@ public class ResouceDataDerbyTest extends DerbyBase
         nodeId = new NodeId(13);
     }
 
-    @Before
-    public void startUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         assertEquals(TBL_NODE_RESOURCE + " table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_NODE_RESOURCE);
 
         transMgr = new TransactionMgr(getConnection());
@@ -68,7 +69,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         initFlags = RscFlags.CLEAN.flagValue;
 
         res = new ResourceData(resUuid, objProt, resDfn, node, nodeId, initFlags, null, transMgr);
-        driver = new ResourceDataDerbyDriver(sysCtx, errorReporter);
+        driver = (ResourceDataDerbyDriver) DrbdManage.getResourceDataDatabaseDriver();
     }
 
     @Test
@@ -127,8 +128,6 @@ public class ResouceDataDerbyTest extends DerbyBase
     {
         driver.create(res, transMgr);
 
-        DriverUtils.clearCaches();
-
         ResourceData loadedRes = driver.load(node, resName, null, transMgr);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
@@ -157,7 +156,6 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertNull(loadedRes);
 
         driver.create(res, transMgr);
-        DriverUtils.clearCaches();
 
         loadedRes = ResourceData.getInstance(
             sysCtx,
@@ -181,12 +179,11 @@ public class ResouceDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testLoadStatic() throws Exception
+    public void testLoadAll() throws Exception
     {
         driver.create(res, transMgr);
-        DriverUtils.clearCaches();
 
-        List<ResourceData> resList= ResourceDataDerbyDriver.loadResourceData(sysCtx, node, null, transMgr);
+        List<ResourceData> resList= driver.loadResourceData(sysCtx, node, null, transMgr);
 
         assertNotNull(resList);
         assertEquals(1, resList.size());
@@ -204,11 +201,20 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        driver.create(res, transMgr);
+        ResourceData storedInstance = ResourceData.getInstance(
+            sysCtx,
+            resDfn,
+            node,
+            nodeId,
+            null,
+            null,
+            transMgr,
+            true
+        );
 
         // no clearCaches
 
-        assertEquals(res, driver.load(node, resName, null, transMgr));
+        assertEquals(storedInstance, driver.load(node, resName, null, transMgr));
     }
 
     @Test
@@ -254,7 +260,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceDataDerbyDriver.ensureResExists(sysCtx, res, transMgr);
+        driver.ensureResExists(sysCtx, res, transMgr);
 
         resultSet = stmt.executeQuery();
 
@@ -262,7 +268,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceDataDerbyDriver.ensureResExists(sysCtx, res, transMgr);
+        driver.ensureResExists(sysCtx, res, transMgr);
 
         resultSet = stmt.executeQuery();
 

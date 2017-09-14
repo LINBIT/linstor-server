@@ -10,13 +10,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -44,7 +42,7 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
 
     private ConnectionDefinitionData conDfn;
 
-    private ConnectionDefinitionDataDatabaseDriver driver;
+    private ConnectionDefinitionDataDerbyDriver driver;
     private SingleColumnDatabaseDriver<ConnectionDefinitionData, Integer> conNrDriver;
 
     public ConnectionDefinitionDataDerbyTest() throws InvalidNameException
@@ -55,9 +53,10 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
         conNr = 13;
     }
 
-    @Before
-    public void startUp() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
         transMgr = new TransactionMgr(getConnection());
 
         uuid = randomUUID();
@@ -122,26 +121,22 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
     public void testLoad() throws Exception
     {
         driver.create(conDfn, transMgr);
-        DriverUtils.clearCaches();
 
-        ConnectionDefinitionData loadedConDfn = driver.load(resName, sourceName, targetName, null, transMgr);
+        ConnectionDefinitionData loadedConDfn = driver.load(resDfn, sourceName, targetName, null, transMgr);
 
         checkLoadedConDfn(loadedConDfn, true);
     }
 
 
     @Test
-    public void testLoadStatic() throws Exception
+    public void testLoadAll() throws Exception
     {
         driver.create(conDfn, transMgr);
-        DriverUtils.clearCaches();
 
-        List<ConnectionDefinition> cons =
-            ConnectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
-                resName,
-                null,
-                transMgr,
-                sysCtx
+        List<ConnectionDefinition> cons = driver.loadAllConnectionsByResourceDefinition(
+            resDfn,
+            null,
+            transMgr
         );
 
         assertNotNull(cons);
@@ -165,7 +160,6 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
     public void testLoadGetInstance() throws Exception
     {
         driver.create(conDfn, transMgr);
-        DriverUtils.clearCaches();
 
         ConnectionDefinitionData loadedConDfn = ConnectionDefinitionData.getInstance(
             sysCtx,
@@ -197,18 +191,26 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        ConnectionDefinitionData storedInstance = ConnectionDefinitionData.getInstance(
+            sysCtx,
+            resDfn,
+            nodeSrc,
+            nodeDst,
+            conNr,
+            null,
+            transMgr,
+            true
+        );
 
         // no clear-cache
 
-        assertEquals(conDfn, driver.load(resName, sourceName, targetName, null, transMgr));
+        assertEquals(storedInstance, driver.load(resDfn, sourceName, targetName, null, transMgr));
     }
 
     @Test
     public void testDelete() throws Exception
     {
         driver.create(conDfn, transMgr);
-        DriverUtils.clearCaches();
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();

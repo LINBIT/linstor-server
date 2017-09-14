@@ -3,14 +3,13 @@ package com.linbit.drbdmanage;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
-import com.linbit.drbdmanage.dbdrivers.PrimaryKey;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
@@ -37,13 +36,16 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         " DELETE FROM " + TBL_SPD +
         " WHERE " + SPD_NAME + " = ?";
 
-    private static Hashtable<PrimaryKey, StorPoolDefinitionData> spDfnCache = new Hashtable<>();
+    private final ErrorReporter errorReporter;
+    private final Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
-    private ErrorReporter errorReporter;
-
-    public StorPoolDefinitionDataDerbyDriver(ErrorReporter errorReporterRef)
+    public StorPoolDefinitionDataDerbyDriver(
+        ErrorReporter errorReporterRef,
+        Map<StorPoolName, StorPoolDefinition> storPoolDfnMapRef
+    )
     {
         errorReporter = errorReporterRef;
+        storPoolDfnMap = storPoolDfnMapRef;
     }
 
     @Override
@@ -96,23 +98,12 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
                 );
 
                 spdd = new StorPoolDefinitionData(id, objProt, storPoolName);
-                if (!cache(spdd))
-                {
-                    spdd = cacheGet(storPoolName);
-                }
-                else
-                {
-                    // restore references
-                }
+                cache(spdd);
             }
         }
         else
         {
-            if (!resultSet.next())
-            {
-                // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
-            }
+            // TODO: warn that no entry was found
         }
         resultSet.close();
         stmt.close();
@@ -126,36 +117,15 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         stmt.setString(1, storPoolDefinitionData.getName().value);
         stmt.executeUpdate();
         stmt.close();
-
-        cacheRemove(storPoolDefinitionData.getName());
     }
 
-    private synchronized static boolean cache(StorPoolDefinitionData spdd)
+    private void cache(StorPoolDefinitionData spdd)
     {
-        PrimaryKey pk = new PrimaryKey(spdd.getName().value);
-        boolean contains = spDfnCache.containsKey(pk);
-        if (!contains)
-        {
-            spDfnCache.put(pk, spdd);
-        }
-        return !contains;
+        storPoolDfnMap.put(spdd.getName(), spdd);
     }
 
-    private static StorPoolDefinitionData cacheGet(StorPoolName sName)
+    private StorPoolDefinitionData cacheGet(StorPoolName sName)
     {
-        return spDfnCache.get(new PrimaryKey(sName.value));
-    }
-
-    private synchronized static void cacheRemove(StorPoolName sName)
-    {
-        spDfnCache.remove(new PrimaryKey(sName.value));
-    }
-
-    /**
-     * this method should only be called by tests or if you want a full-reload from the database
-     */
-    static synchronized void clearCache()
-    {
-        spDfnCache.clear();
+        return (StorPoolDefinitionData) storPoolDfnMap.get(sName);
     }
 }

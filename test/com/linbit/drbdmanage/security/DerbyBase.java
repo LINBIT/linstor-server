@@ -21,15 +21,16 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.DriverUtils;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.NodeId;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.Resource;
+import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
 import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeNumber;
@@ -64,9 +65,12 @@ public abstract class DerbyBase implements DerbyConstants
     private static boolean initialized = false;
     private static DbDerbyPersistence secureDbDriver;
     private static DerbyDriver persistenceDbDriver;
-    private static HashMap<NodeName, Node> nodesCache;
+    protected static HashMap<NodeName, Node> nodesMap;
+    protected static HashMap<ResourceName, ResourceDefinition> resDfnMap;
+    protected static HashMap<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
     protected static ErrorReporter errorReporter = new EmptyErrorReporter(true);
+
 
 
     static
@@ -127,11 +131,17 @@ public abstract class DerbyBase implements DerbyConstants
 
             con = dbConnPool.getConnection();
             secureDbDriver = new DbDerbyPersistence(sysCtx);
-            nodesCache = new HashMap<NodeName, Node>();
+
+            nodesMap = new HashMap<NodeName, Node>();
+            resDfnMap = new HashMap<ResourceName, ResourceDefinition>();
+            storPoolDfnMap = new HashMap<StorPoolName, StorPoolDefinition>();
+
             persistenceDbDriver = new DerbyDriver(
                 sysCtx,
                 errorReporter,
-                nodesCache
+                nodesMap,
+                resDfnMap,
+                storPoolDfnMap
             );
         }
     }
@@ -149,11 +159,12 @@ public abstract class DerbyBase implements DerbyConstants
     }
 
     @Before
-    public void setUp() throws SQLException
+    public void setUp() throws Exception
     {
         truncateTables();
         insertDefaults();
-        clearDatabaseCaches();
+
+        clearCaches();
 
         CoreUtils.setDatabaseClasses(
             secureDbDriver,
@@ -161,11 +172,11 @@ public abstract class DerbyBase implements DerbyConstants
         );
     }
 
-    protected void clearDatabaseCaches()
+    protected void clearCaches()
     {
-        ObjectProtectionDerbyDriver.clearCache();
-        DriverUtils.clearCaches();
-        nodesCache.clear();
+        nodesMap.clear();
+        resDfnMap.clear();
+        storPoolDfnMap.clear();
     }
 
     @After

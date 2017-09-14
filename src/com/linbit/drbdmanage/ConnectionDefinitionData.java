@@ -131,7 +131,7 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
         if (transMgr != null)
         {
             conDfnData = dbDriver.load(
-                resDfn.getName(),
+                resDfn,
                 source.getName(),
                 target.getName(),
                 srlGen,
