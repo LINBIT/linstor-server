@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
@@ -86,45 +87,29 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     )
         throws SQLException
     {
-        errorReporter.logDebug(
-            "Loading ConnectionDefinition (Res=%s, SrcNode=%s, DstNode=%s)",
-            resDfn.getName().value,
-            sourceNodeName.value,
-            targetNodeName.value
-        );
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_SELECT);
-        stmt.setString(1, resDfn.getName().value);
-        stmt.setString(2, sourceNodeName.value);
-        stmt.setString(3, targetNodeName.value);
-
-        ResultSet resultSet = stmt.executeQuery();
+        errorReporter.logTrace("Loading ConnectionDefinition %s", getTraceId(resDfn, sourceNodeName, targetNodeName));
 
         ConnectionDefinitionData ret = null;
-        if (resultSet.next())
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_SELECT))
         {
-            ret = restoreConnectionDefinition(resultSet, resDfn, serialGen, transMgr);
-            errorReporter.logTrace(
-                "ConnectionDefinition loaded successfully (Res=%s, SrcNode=%s, DstNode=%s)",
-                resDfn.getName().displayValue,
-                sourceNodeName.displayValue,
-                targetNodeName.displayValue
-                );
-        }
-        else
-        {
-            errorReporter.logWarning(
-                String.format(
-                    "The specified connection definition (resName=%s, srcNode=%s, dstNode=%s) was not found in the database",
-                     resDfn.getName().displayValue,
-                     sourceNodeName.displayValue,
-                     targetNodeName.displayValue
-                )
-            );
-        }
-        resultSet.close();
-        stmt.close();
+            stmt.setString(1, resDfn.getName().value);
+            stmt.setString(2, sourceNodeName.value);
+            stmt.setString(3, targetNodeName.value);
 
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+
+                if (resultSet.next())
+                {
+                    ret = restoreConnectionDefinition(resultSet, resDfn, serialGen, transMgr);
+                    // traceLog about loaded from DB|cache in restoreConDfn method
+                }
+                else
+                {
+                    errorReporter.logWarning("ConnectionDefinition not found in DB %s", getDebugId(resDfn, sourceNodeName, targetNodeName));
+                }
+            }
+        }
         return ret;
     }
 
@@ -164,17 +149,43 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
 
         if (conData == null)
         {
-            ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
-            ObjectProtection objProt = objProtDriver.loadObjectProtection(
-                ObjectProtection.buildPath(resName, sourceNodeName, targetNodeName),
-                transMgr
-            );
+            ObjectProtection objProt = getObjectProtection(resName, sourceNodeName, targetNodeName, transMgr);
 
             NodeData nodeDst = nodeDriver.load(targetNodeName, serialGen, transMgr);
 
             conData = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst, conNr);
+            errorReporter.logDebug("ConnectionDefinition loaded from DB %s", getDebugId(conData));
         }
+        else
+        {
+            errorReporter.logDebug("ConnectionDefinition loaded from cache %s", getDebugId(conData));
+        }
+
         return conData;
+    }
+
+    private ObjectProtection getObjectProtection(
+        ResourceName resName,
+        NodeName sourceNodeName,
+        NodeName targetNodeName,
+        TransactionMgr transMgr
+    )
+        throws SQLException
+    {
+        ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+        ObjectProtection objProt = objProtDriver.loadObjectProtection(
+            ObjectProtection.buildPath(resName, sourceNodeName, targetNodeName),
+            transMgr
+        );
+        if (objProt == null)
+        {
+            throw new ImplementationError(
+                "ConnectionDefinition's DB entry exists, but is missing an entry in ObjProt table! " +
+                    getTraceId(resName, sourceNodeName, targetNodeName),
+                null
+            );
+        }
+        return objProt;
     }
 
     public List<ConnectionDefinition> loadAllConnectionsByResourceDefinition(
@@ -208,12 +219,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
             final NodeName sourceNodeName = conDfnData.getSourceNode(dbCtx).getName();
             final NodeName targetNodeName = conDfnData.getTargetNode(dbCtx).getName();
 
-            errorReporter.logDebug(
-                "Creating connection definition (Res=%s, SrcNode=%s, DstNode=%s)",
-                resName.value,
-                sourceNodeName.value,
-                targetNodeName.value
-            );
+            errorReporter.logTrace("Creating ConnectionDefinition %s", getTraceId(conDfnData));
 
             stmt.setBytes(1, UuidUtils.asByteArray(conDfnData.getUuid()));
             stmt.setString(2, resName.value);
@@ -223,12 +229,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
 
             stmt.executeUpdate();
 
-            errorReporter.logTrace(
-                "Connection definition created (Res=%s, SrcNode=%s, DstNode=%s)",
-                resName.displayValue,
-                sourceNodeName.displayValue,
-                targetNodeName.displayValue
-            );
+            errorReporter.logDebug("ConnectionDefinition created s", getDebugId(conDfnData));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -245,12 +246,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
             final NodeName sourceNodeName = conDfnData.getSourceNode(dbCtx).getName();
             final NodeName targetNodeName = conDfnData.getTargetNode(dbCtx).getName();
 
-            errorReporter.logDebug(
-                "Deleting connection definition (Res=%s, SrcNode=%s, DstNode=%s)",
-                resName.value,
-                sourceNodeName.value,
-                targetNodeName.value
-            );
+            errorReporter.logTrace("Deleting ConnectionDefinition %s", getTraceId(conDfnData));
             try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_DELETE))
             {
                 stmt.setString(1, resName.value);
@@ -259,12 +255,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
 
                 stmt.executeUpdate();
             }
-            errorReporter.logTrace(
-                "Connection definition deleted (Res=%s, SrcNode=%s, DstNode=%s)",
-                resName.displayValue,
-                sourceNodeName.displayValue,
-                targetNodeName.displayValue
-            );
+            errorReporter.logDebug("ConnectionDefinition deleted %s", getDebugId(conDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -300,46 +291,106 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         return ret;
     }
 
+    private String getTraceId(ConnectionDefinitionData conData)
+    {
+        String id = null;
+        try
+        {
+            id = getId(
+                conData.getResourceDefinition(dbCtx).getName().value,
+                conData.getSourceNode(dbCtx).getName().value,
+                conData.getTargetNode(dbCtx).getName().value
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
+        }
+        return id;
+    }
+
+    private String getDebugId(ConnectionDefinitionData conData)
+    {
+        String id = null;
+        try
+        {
+            id = getId(
+                conData.getResourceDefinition(dbCtx).getName().displayValue,
+                conData.getSourceNode(dbCtx).getName().displayValue,
+                conData.getTargetNode(dbCtx).getName().displayValue
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
+        }
+        return id;
+    }
+
+    private String getTraceId(ResourceDefinition resDfn, NodeName sourceNodeName, NodeName targetNodeName)
+    {
+        return getId(
+            resDfn.getName().value,
+            sourceNodeName.value,
+            targetNodeName.value
+        );
+    }
+
+    private String getDebugId(ResourceDefinition resDfn, NodeName sourceNodeName, NodeName targetNodeName)
+    {
+        return getId(
+            resDfn.getName().displayValue,
+            sourceNodeName.displayValue,
+            targetNodeName.displayValue
+        );
+    }
+
+    private String getTraceId(ResourceName resName, NodeName sourceNodeName, NodeName targetNodeName)
+    {
+        return getId(
+            resName.value,
+            sourceNodeName.value,
+            targetNodeName.value
+        );
+    }
+
+    private String getId(String resName, String sourceName, String targetName)
+    {
+        return "(ResName=" + resName + " SourceNode=" + sourceName + " TargetNode=" + targetName + ")";
+    }
+
     private class ConnectionNumberDriver implements SingleColumnDatabaseDriver<ConnectionDefinitionData, Integer>
     {
         @Override
-        public synchronized void update(
-            ConnectionDefinitionData parent,
-            Integer newConNr,
-            TransactionMgr transMgr
-        )
+        public synchronized void update(ConnectionDefinitionData parent, Integer newConNr, TransactionMgr transMgr)
             throws SQLException
         {
             try
             {
-                final ResourceName resName = parent.getResourceDefinition(dbCtx).getName();
-                final NodeName sourceNodeName = parent.getSourceNode(dbCtx).getName();
-                final NodeName targetNodeName = parent.getTargetNode(dbCtx).getName();
-
-                errorReporter.logDebug(
-                    "Updating connection definition's connection number (Res=%s, SrcNode=%s, DstNode=%s)",
-                    resName.value,
-                    sourceNodeName.value,
-                    targetNodeName.value
-                );
-                PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_UPDATE_CON_NR);
-                stmt.setInt(1, newConNr);
-                stmt.setString(2, resName.value);
-                stmt.setString(3, sourceNodeName.value);
-                stmt.setString(4, targetNodeName.value);
-                stmt.executeUpdate();
-                stmt.close();
-
                 errorReporter.logTrace(
-                    "Connection definition's connection number updated (Res=%s, SrcNode=%s, DstNode=%s)",
-                    resName.displayValue,
-                    sourceNodeName.displayValue,
-                    targetNodeName.displayValue
+                    "Updating ConnectionDefinition's ConnectionNumber from [%d] to [%d] %s",
+                    parent.getConnectionNumber(dbCtx),
+                    newConNr,
+                    getTraceId(parent)
+                );
+                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(CON_UPDATE_CON_NR))
+                {
+                    stmt.setInt(1, newConNr);
+                    stmt.setString(2, parent.getResourceDefinition(dbCtx).getName().value);
+                    stmt.setString(3, parent.getSourceNode(dbCtx).getName().value);
+                    stmt.setString(4, parent.getTargetNode(dbCtx).getName().value);
+                    stmt.executeUpdate();
+                }
+                errorReporter.logDebug(
+                    "ConnectionDefinition's ConnectionNumber updated from [%d] to [%d] %s",
+                    parent.getConnectionNumber(dbCtx),
+                    newConNr,
+                    getDebugId(parent)
                 );
             }
-            catch (AccessDeniedException accessDeniedExc)
+            catch (AccessDeniedException accDeniedExc)
             {
-                DerbyDriver.handleAccessDeniedException(accessDeniedExc);
+                DerbyDriver.handleAccessDeniedException(accDeniedExc);
             }
         }
     }

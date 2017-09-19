@@ -20,7 +20,7 @@ public interface Volume extends TransactionObject
 
     public Resource getResource();
 
-    public ResourceDefinition getResourceDfn();
+    public ResourceDefinition getResourceDefinition();
 
     public VolumeDefinition getVolumeDefinition();
 

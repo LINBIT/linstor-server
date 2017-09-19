@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.linbit.ImplementationError;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
@@ -85,6 +86,8 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     {
         try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_INSERT))
         {
+            errorReporter.logTrace("Creating VolumeDefinition %s", getTraceId(volumeDefinition));
+
             stmt.setBytes(1, UuidUtils.asByteArray(volumeDefinition.getUuid()));
             stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
             stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
@@ -93,6 +96,8 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             stmt.setLong(6, volumeDefinition.getFlags().getFlagsBits(dbCtx));
 
             stmt.executeUpdate();
+
+            errorReporter.logDebug("VolumeDefinition created %s", getDebugId(volumeDefinition));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -109,15 +114,16 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT);
-        stmt.setString(1, resourceDefinition.getName().value);
-        stmt.setInt(2, volumeNumber.value);
-        ResultSet resultSet = stmt.executeQuery();
-
-        VolumeDefinitionData ret = cacheGet(resourceDefinition, volumeNumber);
-
-        if (ret == null)
+        errorReporter.logTrace("Loading VolumeDefinition %s", getTraceId(resourceDefinition, volumeNumber));
+        ResultSet resultSet = null;
+        VolumeDefinitionData ret = null;
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT))
         {
+            stmt.setString(1, resourceDefinition.getName().value);
+            stmt.setInt(2, volumeNumber.value);
+            resultSet = stmt.executeQuery();
+
+            ret = cacheGet(resourceDefinition, volumeNumber);
             if (resultSet.next())
             {
                 ret = restoreVolumeDefinition(
@@ -128,18 +134,23 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     transMgr,
                     dbCtx
                 );
+                errorReporter.logDebug("VolumeDefinition loaded %s", getDebugId(resourceDefinition, volumeNumber));
             }
-        }
-        else
-        {
-            if (!resultSet.next())
+            else
             {
-                // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
+                errorReporter.logWarning(
+                    "Requested VolumeDefinition %s could not be found in the Database",
+                    getDebugId(resourceDefinition, volumeNumber)
+                );
             }
         }
-        resultSet.close();
-        stmt.close();
+        finally
+        {
+            if (resultSet != null)
+            {
+                resultSet.close();
+            }
+        }
 
         return ret;
     }
@@ -154,6 +165,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     )
         throws SQLException
     {
+        errorReporter.logTrace("Restoring VolumeDefinition %s", getTraceId(resDfn, volNr));
         VolumeDefinitionData ret = null;
         try
         {
@@ -172,7 +184,12 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     serialGen,
                     transMgr
                 );
+                errorReporter.logTrace("VolumeDefinition %s created during restore", getTraceId(ret));
                 // restore references
+            }
+            else
+            {
+                errorReporter.logTrace("VolumeDefinition %s restored from cache", getTraceId(ret));
             }
         }
         catch (AccessDeniedException accessDeniedExc)
@@ -181,7 +198,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         }
         catch (MdException mdExc)
         {
-            resultSet.close();
             throw new DrbdSqlRuntimeException(
                 "Invalid volume size: " + resultSet.getLong(VD_SIZE),
                 mdExc
@@ -189,7 +205,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         }
         catch (ValueOutOfRangeException valueOutOfRangeExc)
         {
-            resultSet.close();
             throw new DrbdSqlRuntimeException(
                 "Invalid minor number: " + resultSet.getInt(VD_MINOR_NR),
                 valueOutOfRangeExc
@@ -207,51 +222,58 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT_BY_RES_DFN);
-        stmt.setString(1, resDfn.getName().value);
-        ResultSet resultSet = stmt.executeQuery();
+        errorReporter.logTrace(
+            "Loading list of VolumeDefinitions by ResourceDefinition (ResName=%s)",
+            resDfn.getName().value
+        );
         List<VolumeDefinition> ret = new ArrayList<>();
-        while (resultSet.next())
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT_BY_RES_DFN))
         {
-            VolumeNumber volNr;
-            try
+            stmt.setString(1, resDfn.getName().value);
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                volNr = new VolumeNumber(resultSet.getInt(VD_ID));
-            }
-            catch (ValueOutOfRangeException valueOutOfRangeExc)
-            {
-                resultSet.close();
-                stmt.close();
-                throw new DrbdSqlRuntimeException(
-                    "Invalid volume number: " + resultSet.getInt(VD_ID),
-                    valueOutOfRangeExc
-                );
-            }
+                while (resultSet.next())
+                {
+                    VolumeNumber volNr;
+                    try
+                    {
+                        volNr = new VolumeNumber(resultSet.getInt(VD_ID));
+                    }
+                    catch (ValueOutOfRangeException valueOutOfRangeExc)
+                    {
+                        throw new DrbdSqlRuntimeException(
+                            "Invalid volume number: " + resultSet.getInt(VD_ID),
+                            valueOutOfRangeExc
+                        );
+                    }
 
-            VolumeDefinition volDfn = restoreVolumeDefinition(
-                resultSet,
-                resDfn,
-                volNr,
-                serialGen,
-                transMgr,
-                accCtx
-            );
+                    VolumeDefinitionData volDfn = restoreVolumeDefinition(
+                        resultSet,
+                        resDfn,
+                        volNr,
+                        serialGen,
+                        transMgr,
+                        accCtx
+                    );
+                    errorReporter.logTrace("VolumeDefinition created %s", getTraceId(volDfn));
 
-            ret.add(volDfn);
+                    ret.add(volDfn);
+                }
+            }
         }
-        resultSet.close();
-        stmt.close();
         return ret;
     }
 
     @Override
     public void delete(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException
     {
+        errorReporter.logTrace("Deleting VolumeDefinition %s", getTraceId(volumeDefinition));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_DELETE))
         {
             stmt.setString(1, volumeDefinition.getResourceDefinition().getName().value);
             stmt.setInt(2, volumeDefinition.getVolumeNumber(dbCtx).value);
             stmt.executeUpdate();
+            errorReporter.logDebug("VolumeDefinition deleted %s", getDebugId(volumeDefinition));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -293,6 +315,58 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         return ret;
     }
 
+    private String getDebugId(VolumeDefinitionData volDfn)
+    {
+        return getDebugId(
+            volDfn.getResourceDefinition(),
+            getVolNr(volDfn)
+        );
+    }
+
+    private String getDebugId(ResourceDefinition resourceDefinition, VolumeNumber volumeNumber)
+    {
+        return getId(
+            resourceDefinition.getName().displayValue,
+            volumeNumber
+        );
+    }
+
+    private String getTraceId(VolumeDefinitionData volDfn)
+    {
+        return getTraceId(
+            volDfn.getResourceDefinition(),
+            getVolNr(volDfn)
+        );
+    }
+
+    private String getTraceId(ResourceDefinition resourceDefinition, VolumeNumber volumeNumber)
+    {
+        return getId(
+            resourceDefinition.getName().value,
+            volumeNumber
+        );
+    }
+
+    private VolumeNumber getVolNr(VolumeDefinitionData volDfn) throws ImplementationError
+    {
+        VolumeNumber volumeNumber = null;
+        try
+        {
+            volumeNumber = volDfn.getVolumeNumber(dbCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
+        }
+        return volumeNumber;
+    }
+
+    private String getId(String resName, VolumeNumber volNum)
+    {
+        return "(ResName=" + resName + " VolNum=" + volNum.value + ")";
+    }
+
+
     private class FlagDriver implements StateFlagsPersistence<VolumeDefinitionData>
     {
         @Override
@@ -300,10 +374,23 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         {
             try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_FLAGS))
             {
+                errorReporter.logTrace(
+                    "Updating VolumeDefinition's flags from [%s] to [%s] %s",
+                    Long.toBinaryString(volumeDefinition.getFlags().getFlagsBits(dbCtx)),
+                    Long.toBinaryString(flags),
+                    getTraceId(volumeDefinition)
+                );
                 stmt.setLong(1, flags);
                 stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
                 stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
                 stmt.executeUpdate();
+
+                errorReporter.logDebug(
+                    "VolumeDefinition's flags updated from [%s] to [%s] %s",
+                    Long.toBinaryString(volumeDefinition.getFlags().getFlagsBits(dbCtx)),
+                    Long.toBinaryString(flags),
+                    getDebugId(volumeDefinition)
+                );
             }
             catch (AccessDeniedException accessDeniedExc)
             {
@@ -320,10 +407,23 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         {
             try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_MINOR_NR))
             {
+                errorReporter.logTrace(
+                    "Updating VolumeDefinition's MinorNumber from [%d] to [%d] %s",
+                    volumeDefinition.getMinorNr(dbCtx).value,
+                    newNumber.value,
+                    getTraceId(volumeDefinition)
+                );
                 stmt.setInt(1, newNumber.value);
                 stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
                 stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
                 stmt.executeUpdate();
+
+                errorReporter.logDebug(
+                    "VolumeDefinition's MinorNumber updated from [%d] to [%d] %s",
+                    volumeDefinition.getMinorNr(dbCtx).value,
+                    newNumber.value,
+                    getDebugId(volumeDefinition)
+                );
             }
             catch (AccessDeniedException accessDeniedExc)
             {
@@ -339,10 +439,24 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         {
             try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_SIZE))
             {
+                errorReporter.logTrace(
+                    "Updating VolumeDefinition's Size from [%d] to [%d] %s",
+                    volumeDefinition.getVolumeSize(dbCtx),
+                    size,
+                    getTraceId(volumeDefinition)
+                );
+
                 stmt.setLong(1, size);
                 stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
                 stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
                 stmt.executeUpdate();
+
+                errorReporter.logDebug(
+                    "VolumeDefinition's Size updated from [%d] to [%d] %s",
+                    volumeDefinition.getVolumeSize(dbCtx),
+                    size,
+                    getDebugId(volumeDefinition)
+                );
             }
             catch (AccessDeniedException accessDeniedExc)
             {

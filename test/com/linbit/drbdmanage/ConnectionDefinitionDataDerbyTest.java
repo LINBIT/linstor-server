@@ -255,14 +255,15 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
 
         conDfn.initialized();
         conDfn.setConnection(transMgr);
-        conDfn.setConnectionNumber(sysCtx, 42);
+        int newConNr = 42;
+        conDfn.setConnectionNumber(sysCtx, newConNr);
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
 
-        assertEquals(conNr, resultSet.getInt(CON_NR));
+        assertEquals(newConNr, resultSet.getInt(CON_NR));
 
         resultSet.close();
         stmt.close();

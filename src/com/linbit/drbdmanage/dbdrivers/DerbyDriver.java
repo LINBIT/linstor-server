@@ -2,8 +2,6 @@ package com.linbit.drbdmanage.dbdrivers;
 
 import java.util.Map;
 
-import org.omg.CORBA.INITIALIZE;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
@@ -118,6 +116,7 @@ public class DerbyDriver implements DatabaseDriver
             resourceDriver,
             volumeDefinitionDriver
         );
+        errorReporterRef.logError("Error");
     }
 
     @Override
@@ -194,6 +193,7 @@ public class DerbyDriver implements DatabaseDriver
     }
 
     public static void handleAccessDeniedException(AccessDeniedException accDeniedExc)
+        throws ImplementationError
     {
         throw new ImplementationError(
             "Database's access context has insufficient permissions",

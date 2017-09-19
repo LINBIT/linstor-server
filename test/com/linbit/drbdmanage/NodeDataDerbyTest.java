@@ -424,7 +424,7 @@ public class NodeDataDerbyTest extends DerbyBase
                     assertEquals(2, volProps.size()); // serial number + testEntry
                 }
                 assertEquals(res, vol.getResource());
-                assertEquals(res.getDefinition(), vol.getResourceDfn());
+                assertEquals(res.getDefinition(), vol.getResourceDefinition());
                 assertEquals(volUuid, vol.getUuid());
                 {
                     VolumeDefinition volDfn = vol.getVolumeDefinition();

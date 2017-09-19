@@ -5,6 +5,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
@@ -85,6 +87,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
     private void create(AccessContext accCtx, ResourceData res, TransactionMgr transMgr) throws SQLException
     {
+        errorReporter.logTrace("Creating Resource %s", getTraceId(res));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(res.getUuid()));
@@ -98,22 +101,25 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         {
             DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
+        errorReporter.logDebug("Resource created %s", getDebugId(res));
     }
 
     public void ensureResExists(AccessContext accCtx, ResourceData res, TransactionMgr transMgr)
         throws SQLException
     {
+        errorReporter.logTrace("Ensuring Resource exists %s", getTraceId(res));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT))
         {
             stmt.setString(1, res.getAssignedNode().getName().value);
             stmt.setString(2, res.getDefinition().getName().value);
 
-            ResultSet resultSet = stmt.executeQuery();
-            if (!resultSet.next())
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                create(accCtx, res, transMgr);
+                if (!resultSet.next())
+                {
+                    create(accCtx, res, transMgr);
+                }
             }
-            resultSet.close();
         }
     }
 
@@ -126,34 +132,29 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT);
-        stmt.setString(1, node.getName().value);
-        stmt.setString(2, resourceName.value);
-        ResultSet resultSet = stmt.executeQuery();
-
-        List<ResourceData> list = load(resultSet, dbCtx, node, serialGen, transMgr);
-        resultSet.close();
-        stmt.close();
-
+        errorReporter.logTrace("Loading Resource %s", getTraceId(node, resourceName));
         ResourceData ret = null;
-        if (!list.isEmpty())
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT))
         {
-            ret = list.get(0);
-        }
-        else
-        {
-            if (cacheGet(node, resourceName) != null)
+            stmt.setString(1, node.getName().value);
+            stmt.setString(2, resourceName.value);
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                // list is empty -> no entry in database
-                // resCache knows the pk, so it was loaded or created by the db...
+                List<ResourceData> list = load(resultSet, dbCtx, node, serialGen, transMgr);
 
-                // XXX: user deleted db entry during runtime - throw exception?
-                // or just remove the item from the cache + detach item from parent (if needed) + warn the user?
+                if (!list.isEmpty())
+                {
+                    ret = list.get(0);
+                    // logDebug about "Resource loaded" was printed in the load method above
+                }
+                else
+                {
+                    errorReporter.logWarning("Resource could not be found %s", getDebugId(node, resourceName));
+                }
             }
         }
         return ret;
     }
-
 
     public List<ResourceData> loadResourceDataByResourceDefinition(
         ResourceDefinitionData resDfn,
@@ -163,28 +164,42 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT_BY_RES_DFN);
-        stmt.setString(1, resDfn.getName().value);
-        ResultSet resultSet = stmt.executeQuery();
-
-        List<ResourceData> resList = load(resultSet, accCtx, null, serialGen, transMgr);
-
-        resultSet.close();
-        stmt.close();
+        errorReporter.logTrace("Loading all Resources by ResourceDefinition %s", getTraceResDfnId(resDfn));
+        List<ResourceData> resList;
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT_BY_RES_DFN))
+        {
+            stmt.setString(1, resDfn.getName().value);
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                resList = load(resultSet, accCtx, null, serialGen, transMgr);
+            }
+        }
+        errorReporter.logTrace(
+            "Loaded %d Resources for ResourceDefinition %s",
+            resList.size(),
+            getTraceResDfnId(resDfn)
+        );
         return resList;
     }
 
     public List<ResourceData> loadResourceData(AccessContext dbCtx, NodeData node, SerialGenerator serialGen, TransactionMgr transMgr)
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT_BY_NODE);
-        stmt.setString(1, node.getName().value);
-        ResultSet resultSet = stmt.executeQuery();
-
-        List<ResourceData> ret = load(resultSet, dbCtx, node, serialGen, transMgr);
-        resultSet.close();
-        stmt.close();
-
+        errorReporter.logTrace("Loading all Resources by Node %s", getTraceNodeId(node));
+        List<ResourceData> ret;
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT_BY_NODE))
+        {
+            stmt.setString(1, node.getName().value);
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                ret = load(resultSet, dbCtx, node, serialGen, transMgr);
+            }
+        }
+        errorReporter.logTrace(
+            "Loaded %d Resources for Node %s",
+            ret.size(),
+            getTraceNodeId(node)
+        );
         return ret;
     }
 
@@ -200,22 +215,51 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         List<ResourceData> resList = new ArrayList<>();
         while (resultSet.next())
         {
+            Node node = null;
+            ResourceName resName = null;
             try
             {
-                Node node;
                 if (globalNode != null)
                 {
                     node = globalNode;
                 }
                 else
                 {
-                    node = DrbdManage.getNodeDataDatabaseDriver().load(
-                        new NodeName(resultSet.getString(RES_NODE_NAME)),
-                        serialGen,
-                        transMgr
+                    try
+                    {
+                        node = DrbdManage.getNodeDataDatabaseDriver().load(
+                            new NodeName(resultSet.getString(RES_NODE_NAME)),
+                            serialGen,
+                            transMgr
+                        );
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        throw new DrbdSqlRuntimeException(
+                            String.format(
+                                "A NodeName in the table %s has an illegal value. NodeName=%s",
+                                TBL_RES,
+                                resultSet.getString(RES_NODE_NAME)
+                            ),
+                            invalidNameExc
+                        );
+                    }
+                }
+                try
+                {
+                    resName = new ResourceName(resultSet.getString(RES_NAME));
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    throw new DrbdSqlRuntimeException(
+                        String.format(
+                            "A ResourceName in the table %s has an illegal value. ResourceName=%s",
+                            TBL_RES,
+                            resultSet.getString(RES_NAME)
+                        ),
+                        invalidNameExc
                     );
                 }
-                ResourceName resName = new ResourceName(resultSet.getString(RES_NAME));
 
                 ResourceData resData = cacheGet(node, resName);
                 if (resData == null)
@@ -229,13 +273,27 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     if (loadedRes == null)
                     {
                         // here we are currently loading our own resDfn, and it is loading us
-                        ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
-                        ObjectProtection objProt = objProtDriver.loadObjectProtection(
-                            ObjectProtection.buildPath(resName),
-                            transMgr
-                            );
 
-                        NodeId nodeId = new NodeId(resultSet.getInt(RES_NODE_ID));
+                        ObjectProtection objProt = getObjectProection(node, resName, transMgr);
+
+                        NodeId nodeId;
+                        try
+                        {
+                            nodeId = new NodeId(resultSet.getInt(RES_NODE_ID));
+                        }
+                        catch (ValueOutOfRangeException valueOutOfRangeExc)
+                        {
+                            throw new DrbdSqlRuntimeException(
+                                String.format(
+                                    "A NodeId in the table %s has an illegal value. %s Illegal value: %d",
+                                    TBL_RES,
+                                    getDebugId(node, resName),
+                                    resultSet.getInt(RES_NODE_ID)
+                                ),
+                                valueOutOfRangeExc
+                            );
+                        }
+
                         resData = new ResourceData(
                             UuidUtils.asUuid(resultSet.getBytes(RES_UUID)),
                             objProt,
@@ -245,14 +303,17 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                             resultSet.getLong(RES_FLAGS),
                             serialGen,
                             transMgr
-                            );
+                        );
+                        errorReporter.logTrace("Resource instance created %s", getTraceId(resData));
 
                         // restore volumes
                         List<VolumeData> volList = volumeDataDerbyDriver.loadAllVolumesByResource(resData, transMgr, serialGen, dbCtx);
                         for (VolumeData volData : volList)
                         {
-                            resData.setVolume(dbCtx, volData);
+                            resData.putVolume(dbCtx, volData);
                         }
+                        errorReporter.logTrace("Resource's Volumes restored %s", getTraceId(resData));
+                        errorReporter.logDebug("Resource loaded from DB %s", getTraceId(resData));
                     }
                     else
                     {
@@ -261,21 +322,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         resData = (ResourceData) loadedRes;
                     }
                 }
+                else
+                {
+                    errorReporter.logDebug("Resource loaded from cache %s", getDebugId(resData));
+                }
                 resList.add(resData);
-            }
-            catch (InvalidNameException invalidNameExc)
-            {
-                throw new DrbdSqlRuntimeException(
-                    "A resource or node name in the table " + TBL_RES + " has been modified in the database to an illegal string.",
-                    invalidNameExc
-                );
-            }
-            catch (ValueOutOfRangeException valueOutOfRangeExc)
-            {
-                throw new DrbdSqlRuntimeException(
-                    "A node id in the table " + TBL_RES + " has been modified in the database to an illegal value.",
-                    valueOutOfRangeExc
-                );
             }
             catch (AccessDeniedException accessDeniedExc)
             {
@@ -285,16 +336,36 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return resList;
     }
 
+    private ObjectProtection getObjectProection(Node node, ResourceName resName, TransactionMgr transMgr)
+        throws SQLException
+    {
+        ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+        ObjectProtection objProt = objProtDriver.loadObjectProtection(
+            ObjectProtection.buildPath(resName),
+            transMgr
+        );
+        if (objProt == null)
+        {
+            throw new ImplementationError(
+                "Resource's DB entry exists, but is missing an entry in ObjProt table! " + getTraceId(node, resName),
+                null
+            );
+        }
+        return objProt;
+    }
+
     @Override
     public void delete(ResourceData resource, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_DELETE);
+        errorReporter.logTrace("Deleting Resource %s", getTraceId(resource));
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_DELETE))
+        {
+            stmt.setString(1, resource.getAssignedNode().getName().value);
+            stmt.setString(2, resource.getDefinition().getName().value);
 
-        stmt.setString(1, resource.getAssignedNode().getName().value);
-        stmt.setString(2, resource.getDefinition().getName().value);
-
-        stmt.executeUpdate();
-        stmt.close();
+            stmt.executeUpdate();
+        }
+        errorReporter.logDebug("Resource deleted %s", getTraceId(resource));
     }
 
     @Override
@@ -317,20 +388,85 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return ret;
     }
 
+    private String getTraceId(Node node, ResourceName resourceName)
+    {
+        return getId(
+            node.getName().value,
+            resourceName.value
+        );
+    }
+
+    private String getTraceId(ResourceData res)
+    {
+        return getId(
+            res.getAssignedNode().getName().value,
+            res.getDefinition().getName().value
+        );
+    }
+
+    private String getDebugId(Node node, ResourceName resourceName)
+    {
+        return getId(
+            node.getName().displayValue,
+            resourceName.displayValue
+        );
+    }
+
+    private String getDebugId(ResourceData res)
+    {
+        return getId(
+            res.getAssignedNode().getName().displayValue,
+            res.getDefinition().getName().displayValue
+        );
+    }
+
+    private String getId(String nodeName, String resName)
+    {
+        return "(NodeName=" + nodeName + " ResName=" + resName + ")";
+    }
+
+    private String getTraceResDfnId(ResourceDefinitionData resDfn)
+    {
+        return "(ResName=" + resDfn.getName().value + ")";
+    }
+
+    private String getTraceNodeId(NodeData node)
+    {
+        return "(NodeName=" + node.getName().value + ")";
+    }
+
     private class FlagDriver implements StateFlagsPersistence<ResourceData>
     {
         @Override
         public void persist(ResourceData resource, long flags, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_UPDATE_FLAG);
+            try
+            {
+                errorReporter.logTrace("Updating Reource's flags from [%s] to [%s] %s",
+                    Long.toBinaryString(resource.getStateFlags().getFlagsBits(dbCtx)),
+                    Long.toBinaryString(flags),
+                    getTraceId(resource)
+                );
+                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_UPDATE_FLAG))
+                {
+                    stmt.setLong(1, flags);
 
-            stmt.setLong(1, flags);
+                    stmt.setString(2, resource.getAssignedNode().getName().value);
+                    stmt.setString(3, resource.getDefinition().getName().value);
 
-            stmt.setString(2, resource.getAssignedNode().getName().value);
-            stmt.setString(3, resource.getDefinition().getName().value);
+                    stmt.executeUpdate();
 
-            stmt.executeUpdate();
-            stmt.close();
+                    errorReporter.logDebug("Reource's flags updated from [%s] to [%s] %s",
+                        Long.toBinaryString(resource.getStateFlags().getFlagsBits(dbCtx)),
+                        Long.toBinaryString(flags),
+                        getDebugId(resource)
+                    );
+                }
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                DerbyDriver.handleAccessDeniedException(accDeniedExc);
+            }
         }
     }
 }

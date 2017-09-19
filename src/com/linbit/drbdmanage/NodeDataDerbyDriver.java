@@ -90,11 +90,9 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     @Override
     public void create(NodeData node, TransactionMgr transMgr) throws SQLException
     {
-        try
+        errorReporter.logTrace("Creating Node %s", getTraceId(node));
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_INSERT))
         {
-            errorReporter.logDebug("Creating Node (NodeName=" + node.getName().value + ")");
-
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_INSERT);
             stmt.setBytes(1, UuidUtils.asByteArray(node.getUuid()));
             stmt.setString(2, node.getName().value);
             stmt.setString(3, node.getName().displayValue);
@@ -102,10 +100,9 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             stmt.setLong(5, node.getNodeType(dbCtx).getFlagValue());
             stmt.setString(6, ObjectProtection.buildPath(node.getName()));
             stmt.executeUpdate();
-            stmt.close();
-
             cache(node);
-            errorReporter.logTrace("Node created (NodeName=" + node.getName().displayValue + ")");
+
+            errorReporter.logDebug("Node created %s", getDebugId(node));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -118,96 +115,108 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         throws SQLException
     {
         NodeData node = null;
-        try
+        errorReporter.logTrace("Loading node %s", getTraceId(nodeName));
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_SELECT))
         {
-            String nodeDebug = "(NodeName=" + nodeName.value + ")";
-            errorReporter.logDebug("Loading node " + nodeDebug);
-
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_SELECT);
             stmt.setString(1, nodeName.value);
-            ResultSet resultSet = stmt.executeQuery();
-
-            node = cacheGet(nodeName);
-            if (node == null)
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                if (resultSet.next())
+                node = cacheGet(nodeName);
+                if (node == null)
                 {
-                    try
+                    if (resultSet.next())
                     {
-                        nodeName = new NodeName(resultSet.getString(NODE_DSP_NAME));
-                    }
-                    catch (InvalidNameException invalidNameExc)
-                    {
-                        resultSet.close();
-                        stmt.close();
-                        throw new ImplementationError(
-                            "The display name of a valid NodeName could not be restored",
-                            invalidNameExc
+                        try
+                        {
+                            nodeName = new NodeName(resultSet.getString(NODE_DSP_NAME));
+                        }
+                        catch (InvalidNameException invalidNameExc)
+                        {
+                            resultSet.close();
+                            stmt.close();
+                            throw new ImplementationError(
+                                "The display name of a valid NodeName could not be restored",
+                                invalidNameExc
+                            );
+                        }
+                        ObjectProtection objProt = getObjectProtection(nodeName, transMgr);
+
+                        node = new NodeData(
+                            UuidUtils.asUuid(resultSet.getBytes(NODE_UUID)),
+                            objProt,
+                            nodeName,
+                            Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
+                            resultSet.getLong(NODE_FLAGS),
+                            serialGen,
+                            transMgr
                         );
-                    }
-                    ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
-                    ObjectProtection objProt = objProtDriver.loadObjectProtection(
-                        ObjectProtection.buildPath(nodeName),
-                        transMgr
-                    );
 
-                    node = new NodeData(
-                        UuidUtils.asUuid(resultSet.getBytes(NODE_UUID)),
-                        objProt,
-                        nodeName,
-                        Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
-                        resultSet.getLong(NODE_FLAGS),
-                        serialGen,
-                        transMgr
-                    );
-                    if (cache(node))
-                    {
-                        errorReporter.logDebug("Restoring netInterfaceData " + nodeDebug);
-                        List<NetInterfaceData> netIfaces =
-                            netInterfaceDataDerbyDriver.loadNetInterfaceData(node, transMgr);
-                        for (NetInterfaceData netIf : netIfaces)
+                        errorReporter.logTrace("Node instance created %s", getTraceId(node));
+
+                        // (-> == loads)
+                        // node -> resource
+                        // resource -> resourceDefinition
+                        // resourceDefinition -> resource (other than before)
+                        // resource -> node (containing "our" node, but also other nodes)
+
+                        // to break this infinite loop we (re-)check our nodesMaps (cache)
+                        if (cache(node))
                         {
-                            node.addNetInterface(dbCtx, netIf);
+                            List<NetInterfaceData> netIfaces =
+                                netInterfaceDataDerbyDriver.loadNetInterfaceData(node, transMgr);
+                            for (NetInterfaceData netIf : netIfaces)
+                            {
+                                node.addNetInterface(dbCtx, netIf);
+                            }
+                            errorReporter.logTrace(
+                                "Node's NetInterfaces restored %s Count: %d",
+                                getTraceId(node),
+                                netIfaces.size()
+                            );
+
+                            List<ResourceData> resList = resourceDataDerbyDriver.loadResourceData(dbCtx, node, serialGen, transMgr);
+                            for (ResourceData res : resList)
+                            {
+                                node.addResource(dbCtx, res);
+                            }
+                            errorReporter.logTrace(
+                                "Node's Resources restored %s Count: %d",
+                                getTraceId(node),
+                                resList.size()
+                            );
+
+                            List<StorPoolData> storPoolList = storPoolDataDerbyDriver.loadStorPools(node, serialGen, transMgr);
+                            for (StorPoolData storPool : storPoolList)
+                            {
+                                node.addStorPool(dbCtx, storPool);
+                            }
+                            errorReporter.logTrace(
+                                "Node's StorPools restored %s Count: %d",
+                                getTraceId(node),
+                                storPoolList.size()
+                            );
+
+                            errorReporter.logDebug("Node loaded from DB %s", getDebugId(node));
                         }
-
-                        errorReporter.logDebug("Restoring resourceData " + nodeDebug);
-                        List<ResourceData> resList = resourceDataDerbyDriver.loadResourceData(dbCtx, node, serialGen, transMgr);
-                        for (ResourceData res : resList)
+                        else
                         {
-                            node.addResource(dbCtx, res);
-                        }
-
-                        errorReporter.logDebug("Restoring storPools " + nodeDebug);
-                        List<StorPoolData> storPoolList = storPoolDataDerbyDriver.loadStorPools(node, serialGen, transMgr);
-                        for (StorPoolData storPool : storPoolList)
-                        {
-                            node.addStorPool(dbCtx, storPool);
+                            node = cacheGet(nodeName);
+                            errorReporter.logDebug("Node loaded from Cache %s", getDebugId(node));
                         }
                     }
                     else
                     {
-                        node = cacheGet(nodeName);
+                        errorReporter.logWarning(
+                            "Node not found in the DB %s",
+                            getDebugId(nodeName)
+                        );
                     }
                 }
                 else
                 {
-                    errorReporter.logWarning(
-                        String.format(
-                            "The specified node (%s) was not found in the database",
-                            nodeName.displayValue
-                        )
-                    );
+                    errorReporter.logDebug("Node loaded from cache %s", getDebugId(node));
                 }
             }
-            else
-            {
-                errorReporter.logDebug("Node loaded from cache");
-            }
-
-            resultSet.close();
-            stmt.close();
-
-            errorReporter.logTrace("Node loaded successfully (NodeName=" + nodeName.displayValue + ")");
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -216,21 +225,35 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         return node;
     }
 
+    private ObjectProtection getObjectProtection(NodeName nodeName, TransactionMgr transMgr) throws SQLException
+    {
+        ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+        ObjectProtection objProt = objProtDriver.loadObjectProtection(
+            ObjectProtection.buildPath(nodeName),
+            transMgr
+        );
+        if (objProt == null)
+        {
+            throw new ImplementationError(
+                "Node's DB entry exists, but is missing an entry in ObjProt table! " + getTraceId(nodeName),
+                null
+            );
+        }
+        return objProt;
+    }
+
     @Override
     public void delete(NodeData node, TransactionMgr transMgr) throws SQLException
     {
-        NodeName nodeName = node.getName();
-        errorReporter.logDebug("Deleting node (NodeName=" + nodeName.value + ")");
+        errorReporter.logTrace("Deleting node %s", getTraceId(node));
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_DELETE))
+        {
+            stmt.setString(1, node.getName().value);
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_DELETE);
-
-        stmt.setString(1, nodeName.value);
-
-        stmt.executeUpdate();
-        stmt.close();
-
-        cacheRemove(nodeName);
-        errorReporter.logTrace("Node deleted (NodeName=" + nodeName.displayValue + ")");
+            stmt.executeUpdate();
+        }
+        cacheRemove(node.getName());
+        errorReporter.logDebug("Node deleted %s", getDebugId(node));
     }
 
     private boolean cache(NodeData node)
@@ -274,21 +297,60 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         return typeDriver;
     }
 
+    private String getTraceId(NodeData node)
+    {
+        return getId(node.getName().value);
+    }
+
+    private String getDebugId(NodeData node)
+    {
+        return getId(node.getName().displayValue);
+    }
+
+    private String getTraceId(NodeName nodeName)
+    {
+        return getId(nodeName.value);
+    }
+
+    private String getDebugId(NodeName nodeName)
+    {
+        return getId(nodeName.displayValue);
+    }
+
+    private String getId(String nodeName)
+    {
+        return "(NodeName=" + nodeName + ")";
+    }
+
     private class NodeFlagPersistence implements StateFlagsPersistence<NodeData>
     {
         @Override
         public void persist(NodeData node, long flags, TransactionMgr transMgr) throws SQLException
         {
-            NodeName nodeName = node.getName();
-            errorReporter.logDebug("Updating node flags (NodeName=" + nodeName.value + ")");
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_UPDATE_FLAGS);
+            try
+            {
+                errorReporter.logTrace("Updating Node's flags from [%s] to [%s] %s",
+                    Long.toBinaryString(node.getFlags().getFlagsBits(dbCtx)),
+                    Long.toBinaryString(flags),
+                    getTraceId(node)
+                );
+                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_UPDATE_FLAGS))
+                {
+                    stmt.setLong(1, flags);
+                    stmt.setString(2, node.getName().value);
 
-            stmt.setLong(1, flags);
-            stmt.setString(2, nodeName.value);
-
-            stmt.executeUpdate();
-            stmt.close();
-            errorReporter.logTrace("Node flags updated (NodeName=" + nodeName.displayValue + ")");
+                    stmt.executeUpdate();
+                }
+                errorReporter.logDebug("Node's flags updated from [%s] to [%s] %s",
+                    Long.toBinaryString(node.getFlags().getFlagsBits(dbCtx)),
+                    Long.toBinaryString(flags),
+                    getDebugId(node)
+                );
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                DerbyDriver.handleAccessDeniedException(accDeniedExc);
+            }
         }
     }
 
@@ -297,18 +359,30 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         @Override
         public void update(NodeData parent, NodeType element, TransactionMgr transMgr) throws SQLException
         {
-            NodeName nodeName = parent.getName();
-            errorReporter.logDebug("Updating node type (NodeName=" + nodeName.value + ")");
+            try
+            {
+                errorReporter.logTrace("Updating Node's NodeType from [%s] to [%s] %s",
+                    parent.getNodeType(dbCtx).name(),
+                    element.name(),
+                    getTraceId(parent)
+                );
+                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_UPDATE_TYPE))
+                {
+                    stmt.setLong(1, element.getFlagValue());
+                    stmt.setString(2, parent.getName().value);
 
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_UPDATE_TYPE);
-
-            stmt.setLong(1, element.getFlagValue());
-            stmt.setString(2, nodeName.value);
-
-            stmt.executeUpdate();
-            stmt.close();
-
-            errorReporter.logDebug("Node type updated (NodeName=" + nodeName.displayValue + ")");
+                    stmt.executeUpdate();
+                }
+                errorReporter.logDebug("Node's NodeType updated from [%s] to [%s] %s",
+                    parent.getNodeType(dbCtx).name(),
+                    element.name(),
+                    getDebugId(parent)
+                );
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                DerbyDriver.handleAccessDeniedException(accDeniedExc);
+            }
         }
     }
 }

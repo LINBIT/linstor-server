@@ -177,7 +177,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         assertTrue(volData.getFlags().isSet(sysCtx, VlmFlags.CLEAN));
         assertNotNull(volData.getProps(sysCtx));
         assertEquals(res, volData.getResource());
-        assertEquals(resDfn, volData.getResourceDfn());
+        assertEquals(resDfn, volData.getResourceDefinition());
         assertEquals(volDfn, volData.getVolumeDefinition());
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOLS);

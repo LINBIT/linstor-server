@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
+import com.linbit.TransactionSimpleObject;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
@@ -29,7 +30,7 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
     private final Node targetNode;
     private final ConnectionDefinitionDataDatabaseDriver dbDriver;
 
-    private int conNr;
+    private final TransactionSimpleObject<ConnectionDefinitionData, Integer> conNr;
 
     private boolean deleted = false;
 
@@ -87,15 +88,21 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
             sourceNode = node2;
             targetNode = node1;
         }
-        conNr = conNrRef;
 
         dbDriver = DrbdManage.getConnectionDefinitionDatabaseDriver();
+
+        conNr = new TransactionSimpleObject<ConnectionDefinitionData, Integer>(
+            this,
+            conNrRef,
+            dbDriver.getConnectionNumberDriver()
+        );
 
         transObjs = Arrays.asList(
             objProt,
             resDfn,
             sourceNode,
-            targetNode
+            targetNode,
+            conNr
         );
     }
 
@@ -205,16 +212,16 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
     public int getConnectionNumber(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return conNr;
+        return conNr.get();
     }
 
     @Override
     public void setConnectionNumber(AccessContext accCtx, int newConNr)
-        throws AccessDeniedException
+        throws AccessDeniedException, SQLException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        conNr = newConNr;
+        conNr.set(newConNr);
     }
 
     @Override
@@ -227,7 +234,7 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
             accCtx,
             sourceNode.getName(),
             targetNode.getName(),
-            conNr
+            conNr.get()
         );
         dbDriver.delete(this, transMgr);
         deleted = true;

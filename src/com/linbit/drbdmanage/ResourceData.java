@@ -248,7 +248,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         return volumeMap.get(volNr);
     }
 
-    synchronized Volume setVolume(AccessContext accCtx, Volume vol)
+    synchronized Volume putVolume(AccessContext accCtx, Volume vol)
         throws AccessDeniedException
     {
         checkDeleted();

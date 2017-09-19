@@ -179,7 +179,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
         if (vol != null)
         {
-            ((ResourceData) resRef).setVolume(accCtx, vol);
+            ((ResourceData) resRef).putVolume(accCtx, vol);
 
             vol.initialized();
         }
@@ -210,7 +210,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
-    public ResourceDefinition getResourceDfn()
+    public ResourceDefinition getResourceDefinition()
     {
         checkDeleted();
         return resourceDfn;

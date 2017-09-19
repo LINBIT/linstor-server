@@ -38,9 +38,9 @@ import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
+import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
-import com.linbit.drbdmanage.testutils.EmptyErrorReporter;
 import com.linbit.utils.UuidUtils;
 
 public abstract class DerbyBase implements DerbyConstants
@@ -69,7 +69,9 @@ public abstract class DerbyBase implements DerbyConstants
     protected static HashMap<ResourceName, ResourceDefinition> resDfnMap;
     protected static HashMap<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
-    protected static ErrorReporter errorReporter = new EmptyErrorReporter(true);
+    protected static ErrorReporter errorReporter =
+//        new EmptyErrorReporter(true);
+        new StdErrorReporter("TESTS");
 
 
 

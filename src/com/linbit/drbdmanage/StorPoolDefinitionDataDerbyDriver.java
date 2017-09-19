@@ -51,72 +51,109 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     @Override
     public void create(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_INSERT);
-        stmt.setBytes(1, UuidUtils.asByteArray(storPoolDefinitionData.getUuid()));
-        stmt.setString(2, storPoolDefinitionData.getName().value);
-        stmt.setString(3, storPoolDefinitionData.getName().displayValue);
-        stmt.executeUpdate();
-        stmt.close();
+        errorReporter.logTrace("Creating StorPoolDefinition %s", getTraceId(storPoolDefinitionData));
+
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_INSERT))
+        {
+            stmt.setBytes(1, UuidUtils.asByteArray(storPoolDefinitionData.getUuid()));
+            stmt.setString(2, storPoolDefinitionData.getName().value);
+            stmt.setString(3, storPoolDefinitionData.getName().displayValue);
+            stmt.executeUpdate();
+        }
 
         cache(storPoolDefinitionData);
+
+        errorReporter.logDebug("StorPoolDefinition created %s", getDebugId(storPoolDefinitionData));
     }
 
     @Override
     public StorPoolDefinitionData load(StorPoolName storPoolName, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_SELECT);
-        stmt.setString(1, storPoolName.value);
-        ResultSet resultSet = stmt.executeQuery();
+        errorReporter.logTrace("Loading StorPoolDefinition %s", getTraceId(storPoolName));
 
-        StorPoolDefinitionData spdd = cacheGet(storPoolName);
-        if (spdd == null)
+        StorPoolDefinitionData storPoolDefinition = null;
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_SELECT))
         {
-            if (resultSet.next())
+            stmt.setString(1, storPoolName.value);
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                try
+                storPoolDefinition = cacheGet(storPoolName);
+                if (storPoolDefinition == null)
                 {
-                    storPoolName = new StorPoolName(resultSet.getString(SPD_DSP_NAME));
+                    if (resultSet.next())
+                    {
+                        try
+                        {
+                            storPoolName = new StorPoolName(resultSet.getString(SPD_DSP_NAME));
+                        }
+                        catch (InvalidNameException invalidNameExc)
+                        {
+                            resultSet.close();
+                            stmt.close();
+                            throw new ImplementationError(
+                                "The display name of a valid StorPoolName could not be restored",
+                                invalidNameExc
+                            );
+                        }
+
+                        UUID uuid = UuidUtils.asUuid(resultSet.getBytes(SPD_UUID));
+
+                        ObjectProtection objProt = getObjectProtection(storPoolName, transMgr);
+
+                        storPoolDefinition = new StorPoolDefinitionData(uuid, objProt, storPoolName);
+                        cache(storPoolDefinition);
+                        errorReporter.logDebug(
+                            "StorPoolDefinition loaded from DB %s",
+                            getDebugId(storPoolName)
+                        );
+                    }
+                    else
+                    {
+                        errorReporter.logWarning(
+                            "StorPoolDefinition was not found in the DB %s",
+                            getDebugId(storPoolName)
+                        );
+                    }
                 }
-                catch (InvalidNameException invalidNameExc)
+                else
                 {
-                    resultSet.close();
-                    stmt.close();
-                    throw new ImplementationError(
-                        "The display name of a valid StorPoolName could not be restored",
-                        invalidNameExc
-                    );
+                    errorReporter.logDebug(
+                        "StorPoolDefinition loaded from cache %s",
+                        getDebugId(storPoolName));
                 }
-
-
-                UUID id = UuidUtils.asUuid(resultSet.getBytes(SPD_UUID));
-
-                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver(
-                );
-                ObjectProtection objProt = objProtDriver.loadObjectProtection(
-                    ObjectProtection.buildPathSPD(storPoolName),
-                    transMgr
-                );
-
-                spdd = new StorPoolDefinitionData(id, objProt, storPoolName);
-                cache(spdd);
             }
         }
-        else
+        return storPoolDefinition;
+    }
+
+    private ObjectProtection getObjectProtection(StorPoolName storPoolName, TransactionMgr transMgr)
+        throws SQLException, ImplementationError
+    {
+        ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+        ObjectProtection objProt = objProtDriver.loadObjectProtection(
+            ObjectProtection.buildPathSPD(storPoolName),
+            transMgr
+        );
+        if (objProt == null)
         {
-            // TODO: warn that no entry was found
+            throw new ImplementationError(
+                "StorPoolDefinition's DB entry exists, but is missing an entry in ObjProt table! " + getTraceId(storPoolName),
+                null
+            );
         }
-        resultSet.close();
-        stmt.close();
-        return spdd;
+        return objProt;
     }
 
     @Override
     public void delete(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_DELETE);
-        stmt.setString(1, storPoolDefinitionData.getName().value);
-        stmt.executeUpdate();
-        stmt.close();
+        errorReporter.logTrace("Deleting StorPoolDefinition %s", getTraceId(storPoolDefinitionData));
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_DELETE))
+        {
+            stmt.setString(1, storPoolDefinitionData.getName().value);
+            stmt.executeUpdate();
+        }
+        errorReporter.logDebug("StorPoolDefinition deleted %s", getDebugId(storPoolDefinitionData));
     }
 
     private void cache(StorPoolDefinitionData spdd)
@@ -128,4 +165,30 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     {
         return (StorPoolDefinitionData) storPoolDfnMap.get(sName);
     }
+
+    private String getTraceId(StorPoolDefinitionData storPoolDefinition)
+    {
+        return getId(storPoolDefinition.getName().value);
+    }
+
+    private String getTraceId(StorPoolName storPoolName)
+    {
+        return getId(storPoolName.value);
+    }
+
+    private String getDebugId(StorPoolDefinitionData storPoolDefinition)
+    {
+        return getId(storPoolDefinition.getName().displayValue);
+    }
+
+    private String getDebugId(StorPoolName storPoolName)
+    {
+        return getId(storPoolName.displayValue);
+    }
+
+    private String getId(String name)
+    {
+        return " (StorPoolName=" + name + ")";
+    }
+
 }

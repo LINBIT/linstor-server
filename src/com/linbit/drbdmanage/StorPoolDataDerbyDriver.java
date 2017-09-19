@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
@@ -56,21 +57,17 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     @Override
     public void create(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logDebug(
-            "Creating StorPoolData (NodeName=%s, PoolName=%s)",
-            storPoolData.getNode().getName().value,
-            storPoolData.getName().value
-        );
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_INSERT);
-        stmt.setBytes(1, UuidUtils.asByteArray(storPoolData.getUuid()));
-        stmt.setString(2, storPoolData.getNode().getName().value);
-        stmt.setString(3, storPoolData.getName().value);
-        stmt.setString(4, storPoolData.getDriverName());
-        stmt.executeUpdate();
-        stmt.close();
+        errorReporter.logTrace("Creating StorPool %s", getTraceId(storPoolData));
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_INSERT))
+        {
+            stmt.setBytes(1, UuidUtils.asByteArray(storPoolData.getUuid()));
+            stmt.setString(2, storPoolData.getNode().getName().value);
+            stmt.setString(3, storPoolData.getName().value);
+            stmt.setString(4, storPoolData.getDriverName());
+            stmt.executeUpdate();
+        }
+        errorReporter.logDebug("StorPool created %s", getDebugId(storPoolData));
     }
-
 
     @Override
     public StorPoolData load(
@@ -81,39 +78,51 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT);
-        stmt.setString(1, node.getName().value);
-        stmt.setString(2, storPoolDfn.getName().value);
-        ResultSet resultSet = stmt.executeQuery();
-
-        StorPoolData sp = cacheGet(node, storPoolDfn);
-        if (sp == null)
+        errorReporter.logTrace("Loading StorPool %s", getTraceId(node, storPoolDfn));
+        StorPoolData sp = null;
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT))
         {
-            if (resultSet.next())
+            stmt.setString(1, node.getName().value);
+            stmt.setString(2, storPoolDfn.getName().value);
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
-                ObjectProtection objProt = objProtDriver.loadObjectProtection(
-                    ObjectProtection.buildPathSP(
-                        storPoolDfn.getName()
-                    ),
-                    transMgr
-                );
+                sp = cacheGet(node, storPoolDfn);
+                if (sp == null)
+                {
+                    if (resultSet.next())
+                    {
+                        ObjectProtection objProt = loadObjectProtection(
+                            (NodeData) node,
+                            storPoolDfn.getName(),
+                            transMgr
+                        );
 
-                sp = new StorPoolData(
-                    UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
-                    objProt,
-                    node,
-                    storPoolDfn,
-                    null,   // storageDriver, has to be null in the controller
-                    resultSet.getString(NSP_DRIVER),
-                    serialGen,
-                    transMgr
-                );
+                        sp = new StorPoolData(
+                            UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
+                            objProt,
+                            node,
+                            storPoolDfn,
+                            null,   // storageDriver, has to be null in the controller
+                            resultSet.getString(NSP_DRIVER),
+                            serialGen,
+                            transMgr
+                        );
+                        errorReporter.logDebug("StorPool loaded from DB", getDebugId(sp));
+                    }
+                    else
+                    {
+                        errorReporter.logWarning(
+                            "StorPool was not found in the DB %s",
+                            getDebugId(node, storPoolDfn)
+                        );
+                    }
+                }
+                else
+                {
+                    errorReporter.logDebug("StorPool loaded from cache %s", getDebugId(sp));
+                }
             }
         }
-        resultSet.close();
-        stmt.close();
-
         return sp;
     }
 
@@ -124,63 +133,95 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT_BY_NODE);
-        stmt.setString(1, node.getName().value);
-        ResultSet resultSet = stmt.executeQuery();
-
+        errorReporter.logTrace("Loading all StorPools from Node (NodeName=%s)", node.getName().value);
         List<StorPoolData> storPoolList = new ArrayList<>();
-        try
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT_BY_NODE))
         {
-            while(resultSet.next())
+            stmt.setString(1, node.getName().value);
+
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                StorPoolName storPoolName = new StorPoolName(resultSet.getString(NSP_POOL));
-
-                StorPoolData storPoolData = cacheGet(node, storPoolName);
-                if (storPoolData == null)
+                while(resultSet.next())
                 {
-                    ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
-                    ObjectProtection objProt = objProtDriver.loadObjectProtection(
-                        ObjectProtection.buildPathSP(
-                            storPoolName
-                        ),
-                        transMgr
-                    );
+                    StorPoolName storPoolName;
+                    try
+                    {
+                        storPoolName = new StorPoolName(resultSet.getString(NSP_POOL));
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        throw new DrbdSqlRuntimeException(
+                            String.format(
+                                "Invalid StorName loaded from Table %s: %s ",
+                                TBL_NSP,
+                                resultSet.getString(NSP_POOL)
+                            ),
+                            invalidNameExc
+                        );
+                    }
+                    StorPoolData storPoolData = cacheGet(node, storPoolName);
+                    if (storPoolData == null)
+                    {
+                        ObjectProtection objProt = loadObjectProtection(node, storPoolName, transMgr);
 
-                    StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = DrbdManage.getStorPoolDefinitionDataDriver();
-                    StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(storPoolName, transMgr);
+                        StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = DrbdManage.getStorPoolDefinitionDataDriver();
+                        StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(storPoolName, transMgr);
 
-                    storPoolData = new StorPoolData(
-                        UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
-                        objProt,
-                        node,
-                        storPoolDef,
-                        null, // controller should not have an instance of storage driver.
-                        resultSet.getString(NSP_DRIVER),
-                        serGen,
-                        transMgr
-                    );
+                        storPoolData = new StorPoolData(
+                            UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
+                            objProt,
+                            node,
+                            storPoolDef,
+                            null, // controller should not have an instance of storage driver.
+                            resultSet.getString(NSP_DRIVER),
+                            serGen,
+                            transMgr
+                        );
+                        errorReporter.logDebug("Loaded StorPool from DB %s", getDebugId(storPoolData));
+                    }
+                    else
+                    {
+                        errorReporter.logDebug("Loaded StorPool from cache %s", getDebugId(storPoolData));
+                    }
+                    storPoolList.add(storPoolData);
                 }
-                storPoolList.add(storPoolData);
             }
         }
-        catch (InvalidNameException invalidNameExc)
+        return storPoolList;
+    }
+
+    private ObjectProtection loadObjectProtection(
+        NodeData node,
+        StorPoolName storPoolName,
+        TransactionMgr transMgr
+    )
+        throws SQLException, ImplementationError
+    {
+        ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
+        ObjectProtection objProt = objProtDriver.loadObjectProtection(
+            ObjectProtection.buildPathSP(storPoolName),
+            transMgr
+        );
+        if (objProt == null)
         {
-            resultSet.close();
-            stmt.close();
-            throw new DrbdSqlRuntimeException(
-                String.format("Invalid storage name loaded from Table %s: %s ", TBL_NSP, resultSet.getString(NSP_POOL)),
-                invalidNameExc
+            throw new ImplementationError(
+                String.format(
+                    "StorPool's DB entry exists, but the corresponding entry in ObjProt table is missing! %s",
+                    getId(
+                        node.getName().value,
+                        storPoolName.value
+                    )
+                ),
+                null
             );
         }
-
-        resultSet.close();
-        stmt.close();
-        return storPoolList;
+        return objProt;
     }
 
     @Override
     public void delete(StorPoolData storPool, TransactionMgr transMgr) throws SQLException
     {
+        errorReporter.logTrace("Deleting StorPool %s", getTraceId(storPool));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_DELETE))
         {
             Node node = storPool.getNode();
@@ -190,6 +231,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             stmt.setString(2, storPoolDfn.getName().value);
 
             stmt.executeUpdate();
+            errorReporter.logDebug("StorPool deleted %s", getDebugId(storPool));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -200,6 +242,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     @Override
     public void ensureEntryExists(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
     {
+        errorReporter.logTrace("Ensuring StorPool exists %s", getTraceId(storPoolData));
         Node node = storPoolData.getNode();
         StorPoolDefinition storPoolDfn;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT);)
@@ -208,15 +251,18 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 
             stmt.setString(1, node.getName().value);
             stmt.setString(2, storPoolDfn.getName().value);
-            ResultSet resultSet = stmt.executeQuery();
 
-            if (!resultSet.next())
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                create(storPoolData, transMgr);
+                if (!resultSet.next())
+                {
+                    create(storPoolData, transMgr);
+                }
+                else
+                {
+                    errorReporter.logTrace("StorPool existed, nothing to do %s", getTraceId(storPoolData));
+                }
             }
-
-            resultSet.close();
-            stmt.close();
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -241,5 +287,42 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             DerbyDriver.handleAccessDeniedException(accDeniedExc);
         }
         return ret;
+    }
+
+    private String getTraceId(StorPoolData storPoolData)
+    {
+        return getId(
+            storPoolData.getNode().getName().value,
+            storPoolData.getName().value
+        );
+    }
+
+    private String getTraceId(Node node, StorPoolDefinition storPoolDfn)
+    {
+        return getId(
+            node.getName().value,
+            storPoolDfn.getName().value
+        );
+    }
+
+    private String getDebugId(StorPoolData storPoolData)
+    {
+        return getId(
+            storPoolData.getNode().getName().displayValue,
+            storPoolData.getName().displayValue
+        );
+    }
+
+    private String getDebugId(Node node, StorPoolDefinition storPoolDfn)
+    {
+        return getId(
+            node.getName().displayValue,
+            storPoolDfn.getName().displayValue
+        );
+    }
+
+    private String getId(String nodeName, String poolName)
+    {
+        return "(NodeName=" + nodeName + " PoolName=" + poolName + ")";
     }
 }

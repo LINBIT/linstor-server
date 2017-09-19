@@ -138,11 +138,6 @@ public class NodeData extends BaseTransactionObject implements Node
             objProt,
             nodeProps
         );
-
-        if (transMgr != null)
-        {
-            setConnection(transMgr);
-        }
     }
 
     public static NodeData getInstance(

@@ -24,5 +24,5 @@ public interface ConnectionDefinition
 
     public int getConnectionNumber(AccessContext accCtx) throws AccessDeniedException;
 
-    public void setConnectionNumber(AccessContext accCtx, int conNr) throws AccessDeniedException;
+    public void setConnectionNumber(AccessContext accCtx, int conNr) throws AccessDeniedException, SQLException;
 }

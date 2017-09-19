@@ -236,17 +236,41 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
 
     private void setFlags(final long bits) throws SQLException
     {
-        changedStateFlags = bits;
         if (initialized)
         {
             if (persistence != null && transMgr!= null)
             {
-                persistence.persist(pk, changedStateFlags, transMgr);
+                persistence.persist(pk, bits, transMgr);
+                changedStateFlags = bits;
             }
-            // TODO: error report?
+            else
+            {
+                String npeMsg;
+                if (persistence == null && transMgr == null)
+                {
+                    npeMsg = "Persistence and transMgr are null";
+                }
+                else
+                {
+                    if (persistence == null)
+                    {
+                        npeMsg = "Persistence is null";
+                    }
+                    else
+                    {
+                        npeMsg = "transMgr is null";
+                    }
+                }
+                throw new ImplementationError(
+                    "Initilized StateFlagsBits is missing persistence or transMgr reference. "+
+                        "Maybe you forget to call .setConnection(TransMgr) ?",
+                    new NullPointerException(npeMsg)
+                );
+            }
         }
         else
         {
+            changedStateFlags = bits;
             commit();
         }
     }
