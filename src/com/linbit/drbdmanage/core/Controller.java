@@ -31,7 +31,6 @@ import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
 import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.Props;
-import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
@@ -669,7 +668,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         try
         {
             TransactionMgr transMgr = new TransactionMgr(dbConnPool);
-            config = PropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
+            config = SerialPropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, null, transMgr);
             dbConnPool.returnConnection(transMgr.dbCon);
         }
         catch (SQLException sqlExc)
