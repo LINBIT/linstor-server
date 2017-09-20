@@ -355,51 +355,69 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     );
                 }
 
-                // get a connection to initialize objects
-                TransactionMgr transMgr = new TransactionMgr(dbConnPool);
+                TransactionMgr transMgr = null;
+                try
+                {
+                    transMgr = new TransactionMgr(dbConnPool);
 
-                // initializing ObjectProtections for nodeMap, rscDfnMap and storPoolMap
-                nodesMapProt = ObjectProtection.getInstance(
-                    initCtx,
-                    ObjectProtection.buildPath(this, "nodesMap"),
-                    true,
-                    transMgr
-                );
-                rscDfnMapProt = ObjectProtection.getInstance(
-                    initCtx,
-                    ObjectProtection.buildPath(this, "rscDfnMap"),
-                    true,
-                    transMgr
-                );
-                storPoolDfnMapProt = ObjectProtection.getInstance(
-                    initCtx,
-                    ObjectProtection.buildPath(this, "storPoolMap"),
-                    true,
-                    transMgr
-                );
+                    // initializing ObjectProtections for nodeMap, rscDfnMap and storPoolMap
+                    nodesMapProt = ObjectProtection.getInstance(
+                        initCtx,
+                        ObjectProtection.buildPath(this, "nodesMap"),
+                        true,
+                        transMgr
+                    );
+                    rscDfnMapProt = ObjectProtection.getInstance(
+                        initCtx,
+                        ObjectProtection.buildPath(this, "rscDfnMap"),
+                        true,
+                        transMgr
+                    );
+                    storPoolDfnMapProt = ObjectProtection.getInstance(
+                        initCtx,
+                        ObjectProtection.buildPath(this, "storPoolMap"),
+                        true,
+                        transMgr
+                    );
 
-                // initializing controller serial propsCon + OP
-                ctrlConf = loadPropsCon(errorLogRef);
-                rootSerialGen = ((SerialPropsContainer) ctrlConf).getSerialGenerator();
-                ctrlConfProt = ObjectProtection.getInstance(
-                    initCtx,
-                    ObjectProtection.buildPath(this, "conf"),
-                    true,
-                    transMgr
-                );
+                    // initializing controller serial propsCon + OP
+                    ctrlConf = loadPropsCon(errorLogRef);
+                    rootSerialGen = ((SerialPropsContainer) ctrlConf).getSerialGenerator();
+                    ctrlConfProt = ObjectProtection.getInstance(
+                        initCtx,
+                        ObjectProtection.buildPath(this, "conf"),
+                        true,
+                        transMgr
+                    );
 
-                shutdownProt = ObjectProtection.getInstance(
-                    initCtx,
-                    ObjectProtection.buildPath(this, "shutdown"),
-                    true,
-                    transMgr
-                );
+                    shutdownProt = ObjectProtection.getInstance(
+                        initCtx,
+                        ObjectProtection.buildPath(this, "shutdown"),
+                        true,
+                        transMgr
+                    );
 
-                shutdownProt.setConnection(transMgr);
-                // Set CONTROL access for the SYSTEM role on shutdown
-                shutdownProt.addAclEntry(initCtx, initCtx.getRole(), AccessType.CONTROL);
+                    shutdownProt.setConnection(transMgr);
+                    // Set CONTROL access for the SYSTEM role on shutdown
+                    shutdownProt.addAclEntry(initCtx, initCtx.getRole(), AccessType.CONTROL);
 
-                transMgr.commit(true);
+                    transMgr.commit(true);
+                }
+                catch (Exception rollbackExc)
+                {
+                    if (transMgr != null)
+                    {
+                        transMgr.rollback();
+                    }
+                    errorLogRef.reportError(rollbackExc, sysCtx, null, "Controller initialization");
+                }
+                finally
+                {
+                    if (transMgr != null)
+                    {
+                        dbConnPool.returnConnection(transMgr.dbCon);
+                    }
+                }
 
                 errorLogRef.logInfo("Initializing test APIs");
                 DrbdManage.loadApiCalls(msgProc, this, this);
