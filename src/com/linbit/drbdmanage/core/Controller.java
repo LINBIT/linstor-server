@@ -162,24 +162,24 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private final ReadWriteLock reconfigurationLock;
 
     // Controller configuration properties
-    private Props ctrlConf;
-    private ObjectProtection ctrlConfProt;
+    Props ctrlConf;
+    ObjectProtection ctrlConfProt;
     private SerialGenerator rootSerialGen;
 
     // ============================================================
     // DrbdManage objects
     //
     // Map of all managed nodes
-    private Map<NodeName, Node> nodesMap;
-    private ObjectProtection nodesMapProt;
+    Map<NodeName, Node> nodesMap;
+    ObjectProtection nodesMapProt;
 
     // Map of all resource definitions
-    private Map<ResourceName, ResourceDefinition> rscDfnMap;
-    private ObjectProtection rscDfnMapProt;
+    Map<ResourceName, ResourceDefinition> rscDfnMap;
+    ObjectProtection rscDfnMapProt;
 
     // Map of all storage pools
-    private Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
-    private ObjectProtection storPoolDfnMapProt;
+    Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
+    ObjectProtection storPoolDfnMapProt;
 
     private short defaultPeerCount = DEFAULT_PEER_COUNT;
     private long defaultAlSize = DEFAULT_AL_SIZE;

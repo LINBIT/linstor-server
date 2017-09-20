@@ -6,7 +6,12 @@ import java.util.TreeMap;
 
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.ResourceDefinition;
+import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -94,6 +99,25 @@ class CtrlDebugControlImpl implements CtrlDebugControl
     public Set<String> getApiCallNames()
     {
         return msgProc.getApiCallNames();
+    }
+
+    @Override
+    public Map<NodeName, Node> getNodesMap()
+    {
+        return controller.nodesMap;
+    }
+
+    @Override
+    public Map<ResourceName, ResourceDefinition> getRscDfnMap()
+    {
+        return controller.rscDfnMap;
+    }
+
+    @Override
+    public Props getConf()
+    {
+        // FIXME: return the satellite's configuration
+        return null;
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import java.util.Map;
 import java.util.Set;
@@ -23,5 +24,8 @@ public interface CommonDebugControl
     Peer getPeer(String peerId);
     Map<String, Peer> getAllPeers();
     Set<String> getApiCallNames();
+    Map<NodeName, Node> getNodesMap();
+    Map<ResourceName, ResourceDefinition> getRscDfnMap();
+    Props getConf();
     void shutdown(AccessContext accCtx);
 }

@@ -7,8 +7,14 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
 import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.ResourceDefinition;
+import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.SatelliteCoreServices;
 import com.linbit.drbdmanage.SatellitePeerCtx;
+import com.linbit.drbdmanage.StorPoolDefinition;
+import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.dbdrivers.NoOpDriver;
 import com.linbit.drbdmanage.debug.DebugConsole;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
@@ -16,6 +22,7 @@ import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
+import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -105,6 +112,19 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
     // Map of network communications connectors
     private final Map<ServiceName, TcpConnector> netComConnectors;
+
+    // Controller configuration properties
+    Props stltConf;
+    ObjectProtection stltConfProt;
+
+    // Map of all managed nodes
+    Map<NodeName, Node> nodesMap;
+
+    // Map of all resource definitions
+    Map<ResourceName, ResourceDefinition> rscDfnMap;
+
+    // Map of all storage pools
+    Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
     // File system watch service
     private FileSystemWatch fsWatchSvc;
