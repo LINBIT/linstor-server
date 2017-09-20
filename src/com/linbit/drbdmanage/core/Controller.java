@@ -25,7 +25,6 @@ import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.netcom.TcpReconnectorService;
 import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
@@ -44,6 +43,10 @@ import com.linbit.drbdmanage.security.IdentityName;
 import com.linbit.drbdmanage.security.Initializer;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.Privilege;
+import com.linbit.drbdmanage.tasks.GarbageCollectorTask;
+import com.linbit.drbdmanage.tasks.PingTask;
+import com.linbit.drbdmanage.tasks.ReconnectorTask;
+import com.linbit.drbdmanage.tasks.TaskScheduleService;
 import com.linbit.drbdmanage.timer.CoreTimer;
 import com.linbit.utils.Base64;
 
@@ -64,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -142,7 +146,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private final DbConnectionPool dbConnPool;
 
     // Satellite reconnector service
-    private final TcpReconnectorService reconnectorService;
+    private final TaskScheduleService taskScheduleService;
 
     // Map of connected peers
     private final Map<String, Peer> peerMap;
@@ -181,6 +185,8 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private long defaultAlSize = DEFAULT_AL_SIZE;
     private int defaultAlStripes = DEFAULT_AL_STRIPES;
 
+    private ReconnectorTask reconnectorTask;
+    private PingTask pingTask;
 
     public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
     {
@@ -205,14 +211,14 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         dbConnPool = new DbConnectionPool();
         systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
 
-        reconnectorService = new TcpReconnectorService(this);
-        systemServicesMap.put(reconnectorService.getInstanceName(), reconnectorService);
-
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
 
         // Initialize connected peers map
         peerMap = new TreeMap<>();
+
+        taskScheduleService = new TaskScheduleService(this);
+        systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
 
         // Initialize DrbdManage objects maps
         nodesMap = new TreeMap<>();
@@ -398,6 +404,16 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 errorLogRef.logInfo("Initializing test APIs");
                 DrbdManage.loadApiCalls(msgProc, this, this);
 
+                // Initialize tasks
+                {
+                    reconnectorTask = new ReconnectorTask(this);
+                    pingTask = new PingTask(this, reconnectorTask);
+                    taskScheduleService.addTask(pingTask);
+                    taskScheduleService.addTask(reconnectorTask);
+
+                    taskScheduleService.addTask(new GarbageCollectorTask());
+                }
+
                 // Initialize the network communications service
                 Props config = loadPropsCon(errorLogRef);
                 if (config == null)
@@ -437,13 +453,13 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 //                        connectSatellite(new InetSocketAddress("localhost", 9978), entry.getValue());
 //                    }
 //                }
-//                for(Entry<ServiceName, TcpConnector> entry : netComConnectors.entrySet())
-//                {
-//                    if (!entry.getKey().value.contains("SSL"))
-//                    {
-//                        connectSatellite(new InetSocketAddress("localhost", 9977), entry.getValue());
-//                    }
-//                }
+                for(Entry<ServiceName, TcpConnector> entry : netComConnectors.entrySet())
+                {
+                    if (!entry.getKey().value.contains("SSL"))
+                    {
+                        connectSatellite(new InetSocketAddress("localhost", 9977), entry.getValue());
+                    }
+                }
             }
             catch (AccessDeniedException accessExc)
             {
@@ -792,7 +808,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                             new CtrlConnTracker(
                                 this,
                                 peerMap,
-                                reconnectorService
+                                reconnectorTask
                             )
                         );
                     }
@@ -809,7 +825,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                                 new CtrlConnTracker(
                                     this,
                                     peerMap,
-                                    reconnectorService
+                                    reconnectorTask
                                 ),
                                 loadPropChecked(configProp, PROPSCON_KEY_NETCOM_SSL_PROTOCOL),
                                 loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE),
@@ -931,11 +947,11 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     Peer peer = tcpConnector.connect(satelliteAddress);
                     if (!peer.isConnected())
                     {
-                        reconnectorService.addReconnect(peer);
+                        reconnectorTask.add(peer);
                     }
                     else
                     {
-                        reconnectorService.addPing(peer);
+                        pingTask.add(peer);
                     }
                 }
                 catch (IOException ioExc)

@@ -327,7 +327,6 @@ public class TcpConnectorPeer implements Peer
     {
         try
         {
-            System.out.println("sending ping");
             sendMessage(getInternalPingMessage());
         }
         catch (IllegalMessageStateException illegalMsgStateExc)
@@ -347,7 +346,6 @@ public class TcpConnectorPeer implements Peer
     {
         try
         {
-            System.out.println("sending pong");
             sendMessage(getInternalPongMessage());
         }
         catch (IllegalMessageStateException illegalMsgStateExc)

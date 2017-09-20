@@ -6,22 +6,23 @@ import java.util.Map;
 import com.linbit.drbdmanage.ControllerPeerCtx;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.netcom.TcpReconnectorService;
+import com.linbit.drbdmanage.tasks.ReconnectorTask;
 
 class CtrlConnTracker implements ConnectionObserver
 {
     private final Controller controller;
     private final Map<String, Peer> peerMap;
-    private final TcpReconnectorService reconnectorService;
+    private final ReconnectorTask reconnectorTask;
 
     CtrlConnTracker(
         Controller controllerRef,
         Map<String, Peer> peerMapRef,
-        TcpReconnectorService reconnectorServiceRef)
+        ReconnectorTask reconnectorTaskRef
+    )
     {
         controller = controllerRef;
         peerMap = peerMapRef;
-        reconnectorService = reconnectorServiceRef;
+        reconnectorTask = reconnectorTaskRef;
     }
 
     @Override
@@ -39,7 +40,7 @@ class CtrlConnTracker implements ConnectionObserver
             {
                 peerMap.put(connPeer.getId(), connPeer);
             }
-            reconnectorService.peerConnected(connPeer);
+            reconnectorTask.peerConnected(connPeer);
         }
         // TODO: If a satellite has been connected, schedule any necessary actions
     }
