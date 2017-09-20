@@ -14,7 +14,7 @@ import java.util.Set;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Props extends TransactionObject
+public interface Props extends TransactionObject, Iterable<Map.Entry<String, String>>
 {
     public String getProp(String key)
         throws InvalidKeyException;
