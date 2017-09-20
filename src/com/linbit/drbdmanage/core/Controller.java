@@ -871,7 +871,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             if (value == null)
             {
                 String errorMsg = String.format(
-                    "The configuration entry '%s/%s' is missing in the configuration",
+                    "The configuration entry '%s%s' is missing in the configuration",
                     props.getPath(), key
                 );
                 throw new SystemServiceStartException(
