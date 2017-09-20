@@ -62,7 +62,8 @@ public class SerialPropsContainer extends PropsContainer
                     {
                         targetContainer = (SerialPropsContainer) container.ensureNamespaceExists(key.substring(0, idx));
                     }
-                    String oldValue = targetContainer.getRawPropMap().put(key, value);
+                    String actualKey = key.substring(idx + 1);
+                    String oldValue = targetContainer.getRawPropMap().put(actualKey, value);
                     if (oldValue == null)
                     {
                         targetContainer.modifySize(1);
