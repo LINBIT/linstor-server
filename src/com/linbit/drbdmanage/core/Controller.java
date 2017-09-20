@@ -665,24 +665,47 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private Props loadPropsCon(ErrorReporter errorLogRef)
     {
         Props config = null;
+        TransactionMgr transMgr = null;
         try
         {
-            TransactionMgr transMgr = new TransactionMgr(dbConnPool);
+            transMgr = new TransactionMgr(dbConnPool);
             config = SerialPropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, null, transMgr);
             dbConnPool.returnConnection(transMgr.dbCon);
         }
         catch (SQLException sqlExc)
         {
-            errorLogRef.reportError(
-                new SystemServiceStartException(
-                    "Failed to load controller's config from the database",
-                    "Failed to load PropsContainer from the database",
-                    sqlExc.getLocalizedMessage(),
-                    null,
-                    null,
-                    sqlExc
-               )
-            );
+            if (transMgr == null)
+            {
+                errorLogRef.reportError(
+                    new SystemServiceStartException("Failed to create transaction when loading controller's properties")
+                );
+            }
+            else
+            {
+                try
+                {
+                    transMgr.rollback();
+                }
+                catch (SQLException rollbackExc)
+                {
+                    errorLogRef.reportError(
+                        rollbackExc,
+                        null,
+                        null,
+                        "Transaction rollback threw an exception"
+                    );
+                }
+                errorLogRef.reportError(
+                    new SystemServiceStartException(
+                        "Failed to load controller's config from the database",
+                        "Failed to load PropsContainer from the database",
+                        sqlExc.getLocalizedMessage(),
+                        null,
+                        null,
+                        sqlExc
+                        )
+                    );
+            }
         }
         return config;
     }

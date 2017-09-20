@@ -12,4 +12,7 @@ public interface Message
 
     public void setData(byte[] data)
         throws IllegalMessageStateException;
+
+    public int getType()
+        throws IllegalMessageStateException;
 }

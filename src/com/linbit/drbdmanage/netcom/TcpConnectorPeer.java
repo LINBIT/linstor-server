@@ -28,8 +28,6 @@ import java.nio.channels.SocketChannel;
  */
 public class TcpConnectorPeer implements Peer
 {
-    protected static final Message PING_MSG = new TcpPingMessage();
-
     private String peerId;
 
     private TcpConnector connector;
@@ -61,7 +59,10 @@ public class TcpConnectorPeer implements Peer
     private volatile long msgRecvCtr = 0;
 
     protected long lastPingSent = -1;
-    private long lastPingReceived = -1;
+    private long lastPongReceived = -1;
+
+    protected Message internalPingMsg;
+    protected Message internalPongMsg;
 
     protected TcpConnectorPeer(
         String peerIdRef,
@@ -84,6 +85,9 @@ public class TcpConnectorPeer implements Peer
         selKey = key;
         peerAccCtx = accCtx;
         attachment = null;
+
+        internalPingMsg = new TcpHeaderOnlyMessage(MessageTypes.PING);
+        internalPongMsg = new TcpHeaderOnlyMessage(MessageTypes.PONG);
     }
 
     @Override
@@ -323,7 +327,8 @@ public class TcpConnectorPeer implements Peer
     {
         try
         {
-            sendMessage(PING_MSG);
+            System.out.println("sending ping");
+            sendMessage(getInternalPingMessage());
         }
         catch (IllegalMessageStateException illegalMsgStateExc)
         {
@@ -332,10 +337,34 @@ public class TcpConnectorPeer implements Peer
         lastPingSent = System.currentTimeMillis();
     }
 
+    protected Message getInternalPingMessage()
+    {
+        return internalPingMsg;
+    }
+
+    @Override
+    public void sendPong()
+    {
+        try
+        {
+            System.out.println("sending pong");
+            sendMessage(getInternalPongMessage());
+        }
+        catch (IllegalMessageStateException illegalMsgStateExc)
+        {
+            throw new ImplementationError(illegalMsgStateExc);
+        }
+    }
+
+    protected Message getInternalPongMessage()
+    {
+        return internalPongMsg;
+    }
+
     @Override
     public void pongReceived()
     {
-        lastPingReceived = System.currentTimeMillis();
+        lastPongReceived = System.currentTimeMillis();
     }
 
     @Override
@@ -345,8 +374,8 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public long getLastPingReceived()
+    public long getLastPongReceived()
     {
-        return lastPingReceived;
+        return lastPongReceived;
     }
 }

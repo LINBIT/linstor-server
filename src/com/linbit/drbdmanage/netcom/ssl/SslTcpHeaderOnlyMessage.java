@@ -5,13 +5,19 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLEngine;
-import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
-import com.linbit.drbdmanage.netcom.TcpPingMessage;
 
-public class SslTcpPingMessage extends TcpPingMessage
+import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
+import com.linbit.drbdmanage.netcom.TcpHeaderOnlyMessage;
+
+public class SslTcpHeaderOnlyMessage extends TcpHeaderOnlyMessage
 {
     private SSLEngine sslEngine;
     private ByteBuffer encryptedBuffer;
+
+    protected SslTcpHeaderOnlyMessage(int type)
+    {
+        super(type);
+    }
 
     void setSslEngine(SSLEngine sslEngineRef)
     {
@@ -22,20 +28,26 @@ public class SslTcpPingMessage extends TcpPingMessage
     @Override
     protected WriteState write(SocketChannel outChannel) throws IllegalMessageStateException, IOException
     {
+        WriteState state;
         synchronized (this)
         {
             if (!encryptedBuffer.hasRemaining())
             {
-                sslEngine.wrap(pingByteBuffer, encryptedBuffer);
+                sslEngine.wrap(byteBuffer, encryptedBuffer);
                 encryptedBuffer.flip();
-                pingByteBuffer.flip();
+                byteBuffer.flip();
             }
             outChannel.write(encryptedBuffer);
             if (!encryptedBuffer.hasRemaining())
             {
                 encryptedBuffer.clear();
+                state = WriteState.FINISHED;
+            }
+            else
+            {
+                state = WriteState.UNFINISHED;
             }
         }
-        return WriteState.FINISHED;
+        return state;
     }
 }

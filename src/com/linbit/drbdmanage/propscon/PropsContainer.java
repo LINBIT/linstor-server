@@ -25,6 +25,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbdmanage.DrbdManageRuntimeException;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceName;
@@ -993,6 +994,17 @@ public class PropsContainer implements Props
                 );
             }
         }
+        if (transMgr != null)
+        {
+            try
+            {
+                transMgr.rollback();
+            }
+            catch (SQLException rollbackExc)
+            {
+                throw new DrbdManageRuntimeException("Transaction rollback threw an SQLException", rollbackExc);
+            }
+        }
     }
 
     private void dbPersist(String key, String value, String oldValue) throws SQLException
@@ -1186,6 +1198,7 @@ public class PropsContainer implements Props
             }
             catch (SQLException sqlExc)
             {
+                rollback();
                 throw new DrbdSqlRuntimeException(
                     "Failed to add or update entries in the properties container " + instanceName,
                     sqlExc

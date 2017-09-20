@@ -1,52 +1,29 @@
 package com.linbit.drbdmanage.netcom;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
-
 import com.linbit.ImplementationError;
-import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 
-public class TcpPingMessage extends TcpConnectorMessage
+// TODO: if more than classes are needed beside Tcp(Ping|Pong)InternalMessage
+// create a common super class for them
+public class TcpHeaderOnlyMessage extends TcpConnectorMessage
 {
-    protected static final byte[] PING_CONTENT;
-    protected final ByteBuffer pingByteBuffer;
+    protected final static byte[] DATA = new byte[0];
+    protected final ByteBuffer byteBuffer;
 
-    static
-    {
-        try
-        {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            MsgHeader.Builder headerBuilder = MsgHeader.newBuilder();
-            headerBuilder.setMsgId(42);
-            headerBuilder.setApiCall("Ping");
-
-            MsgHeader header = headerBuilder.build();
-            header.writeDelimitedTo(baos);
-
-            PING_CONTENT = baos.toByteArray();
-        }
-        catch (IOException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
-
-    protected TcpPingMessage()
+    protected TcpHeaderOnlyMessage(int type)
     {
         super(true);
-        byte[] buffer = new byte[HEADER_SIZE + PING_CONTENT.length];
-        System.arraycopy(PING_CONTENT, 0, buffer, HEADER_SIZE, PING_CONTENT.length);
-        pingByteBuffer = ByteBuffer.wrap(buffer);
-        pingByteBuffer.putInt(LENGTH_FIELD_OFFSET, PING_CONTENT.length);
+        byte[] buffer = new byte[HEADER_SIZE];
+        byteBuffer = ByteBuffer.wrap(buffer);
+        byteBuffer.putInt(TYPE_FIELD_OFFSET, type);
     }
 
     @Override
     public byte[] getData()
     {
-        return Arrays.copyOf(PING_CONTENT, PING_CONTENT.length);
+        return DATA;
     }
 
     @Override
@@ -73,15 +50,15 @@ public class TcpPingMessage extends TcpConnectorMessage
         WriteState state;
         synchronized (this)
         {
-            outChannel.write(pingByteBuffer);
-            if (pingByteBuffer.hasRemaining())
+            outChannel.write(byteBuffer);
+            if (byteBuffer.hasRemaining())
             {
                 state = WriteState.UNFINISHED;
             }
             else
             {
                 state = WriteState.FINISHED;
-                pingByteBuffer.flip();
+                byteBuffer.flip();
             }
         }
         return state;

@@ -256,7 +256,7 @@ public class TcpReconnectorService implements SystemService
 
         private int checkPing(int idx, final Peer peer) throws IOException
         {
-            final long lastPingReceived = peer.getLastPingReceived();
+            final long lastPingReceived = peer.getLastPongReceived();
             final long lastPingSent = peer.getLastPingSent();
             if (lastPingReceived + PING_TIMEOUT < lastPingSent)
             {

@@ -14,7 +14,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 
 import com.linbit.ImplementationError;
-import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
+import com.linbit.drbdmanage.netcom.MessageTypes;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage;
 import com.linbit.drbdmanage.netcom.TcpConnectorPeer;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -95,7 +95,9 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         // also set the msgOut, as we will need it for sending handshake messages
         msgOut = handshakeMessage;
 
-        pingMsg = new SslTcpPingMessage(sslEngine.getSession().getPacketBufferSize());
+        pingMsg = new SslTcpPingMessage();
+        internalPingMsg = new SslTcpHeaderOnlyMessage(MessageTypes.PING);
+        internalPongMsg = new SslTcpHeaderOnlyMessage(MessageTypes.PONG);
     }
 
     @Override
@@ -151,20 +153,6 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         }
     }
 
-    @Override
-    public void sendPing()
-    {
-        try
-        {
-            sendMessage(pingMsg);
-        }
-        catch (IllegalMessageStateException illegalMsgStateExc)
-        {
-            throw new ImplementationError(illegalMsgStateExc);
-        }
-        lastPingSent = System.currentTimeMillis();
-    }
-
     // Only SSL-Clients should call this method
     public void encryptConnection() throws IOException
     {
@@ -175,7 +163,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
 
     /**
      * Performs a step of the handshaking process.
-     * Does NOT perform the whole handshake, as the central networking engine is non-blocking, thus
+     * Does NOT perform the whole handshake, as the central networking engine is non-blocking,
      * we have to wait until our socketChannel received a ready to read / write event.
      *
      * @param socketChannel

@@ -7,6 +7,7 @@ import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.MessageProcessor;
+import com.linbit.drbdmanage.netcom.MessageTypes;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
@@ -107,8 +108,35 @@ public class CommonMessageProcessor implements MessageProcessor
     {
         try
         {
+            switch(msg.getType())
+            {
+                case MessageTypes.DATA:
+                    handleDataMessage(msg, connector, client);
+                    break;
+                case MessageTypes.PING:
+                    client.sendPong();
+                    break;
+                case MessageTypes.PONG:
+                    client.pongReceived();
+                    break;
+            }
+        }
+        catch (IllegalMessageStateException msgExc)
+        {
+            coreSvcs.getErrorReporter().reportError(msgExc);
+        }
+
+    }
+
+    private void handleDataMessage(Message msg, TcpConnector connector, Peer client)
+        throws IllegalMessageStateException
+    {
+        try
+        {
             byte[] msgData = msg.getData();
             ByteArrayInputStream msgDataIn = new ByteArrayInputStream(msgData);
+
+
             MsgHeader header = MsgHeader.parseDelimitedFrom(msgDataIn);
 
             int msgId = header.getMsgId();
@@ -149,10 +177,6 @@ public class CommonMessageProcessor implements MessageProcessor
             //         a loop if error reports are created due to receiving a
             //         malformed error report
             coreSvcs.getErrorReporter().reportError(ioExc);
-        }
-        catch (IllegalMessageStateException msgExc)
-        {
-            coreSvcs.getErrorReporter().reportError(msgExc);
         }
     }
 

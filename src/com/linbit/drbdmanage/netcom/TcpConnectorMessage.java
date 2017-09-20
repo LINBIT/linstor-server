@@ -109,6 +109,18 @@ public class TcpConnectorMessage implements Message
         currentPhase = Phase.HEADER;
     }
 
+    @Override
+    public int getType() throws IllegalMessageStateException
+    {
+        if (currentPhase == Phase.PREPARE || currentPhase == Phase.HEADER)
+        {
+            throw new IllegalMessageStateException(
+                "Attempt to fetch header type from a message that is not ready for processing"
+            );
+        }
+        return headerBuffer.getInt(TYPE_FIELD_OFFSET);
+    }
+
     protected ReadState read(SocketChannel inChannel)
         throws IllegalMessageStateException, IOException
     {

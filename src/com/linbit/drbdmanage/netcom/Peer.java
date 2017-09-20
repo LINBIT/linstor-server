@@ -139,10 +139,14 @@ public interface Peer
     TcpConnector getConnector();
 
     /**
-     * Tries to send a ping packet
+     * Sends an internal ping packet (no data, MessageType = {@link MessageTypes#PING}
      */
     void sendPing();
 
+    /**
+     * Sends an internal pong packet (no data, MessageType = {@link MessageTypes#PONG}
+     */
+    void sendPong();
     /**
      * This method should only be called by {@link Ping}, in order to calculate the latency
      */
@@ -160,5 +164,6 @@ public interface Peer
      *
      * @return
      */
-    long getLastPingReceived();
+    long getLastPongReceived();
+
 }
