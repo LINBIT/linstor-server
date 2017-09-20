@@ -706,10 +706,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         }
         else
         {
-            try
+            Iterator<String> namespaces = netComProps.iterateNamespaces();
+            while (namespaces.hasNext())
             {
-                Iterator<String> namespaces = netComProps.iterateNamespaces();
-                while (namespaces.hasNext())
+                try
                 {
                     String namespaceStr = namespaces.next();
                     ServiceName serviceName;
@@ -853,10 +853,11 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                         tcpCons.add(netComSvc);
                     }
                 }
-            }
-            catch (SystemServiceStartException sysSvcStartExc)
-            {
-                errorLog.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
+                catch (SystemServiceStartException sysSvcStartExc)
+                {
+                    errorLog.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
+                }
+
             }
         }
         return tcpCons;

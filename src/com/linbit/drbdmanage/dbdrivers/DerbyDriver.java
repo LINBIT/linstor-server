@@ -116,7 +116,6 @@ public class DerbyDriver implements DatabaseDriver
             resourceDriver,
             volumeDefinitionDriver
         );
-        errorReporterRef.logError("Error");
     }
 
     @Override
