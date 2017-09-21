@@ -20,8 +20,8 @@ public class CmdDisplayConfValue extends BaseDebugCmd
     private static final String PRM_FILTER_VALUE = "MATCHVALUE";
     private static final String PRM_NAMESPACE = "NAMESPACE";
 
-    private static final String ENTRY_HEADER_FORMAT = "    \u001b[1;37m%-40s = %s\u001b[0m\n";
-    private static final String ENTRY_OUTPUT_FORMAT = "    %-40s = %s\n";
+    private static final String ENTRY_HEADER_FORMAT = "\u001b[1;37m%-40s = %s\u001b[0m\n";
+    private static final String ENTRY_OUTPUT_FORMAT = "%-40s = %s\n";
     private static final String HEADER_KEY = "Key";
     private static final String HEADER_VALUE = "Value";
 
