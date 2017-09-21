@@ -116,8 +116,7 @@ class CtrlDebugControlImpl implements CtrlDebugControl
     @Override
     public Props getConf()
     {
-        // FIXME: return the satellite's configuration
-        return null;
+        return controller.ctrlConf;
     }
 
     @Override
