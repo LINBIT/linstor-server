@@ -43,6 +43,8 @@ class CtrlDebugConsoleImpl extends BaseDebugConsole
         "CmdDisplayNodes",
         "CmdDisplayResourceDfn",
         "CmdDisplayConfValue",
+        "CmdSetConfValue",
+        "CmdDeleteConfValue",
         "CmdTestErrorLog",
         "CmdShutdown"
     };
