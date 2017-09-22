@@ -7,6 +7,7 @@ import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.core.DrbdManage;
 
 import java.io.PrintStream;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -147,9 +148,58 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
                 paramName
             ),
             null,
-            "Reenter the command including the required parameter",
+            "Reenter the command including the required parameter.",
             null
         );
+    }
+
+    public void printMultiMissingParamError(
+        PrintStream debugErr,
+        Map<String, String> parameters,
+        String... paramNameList
+    )
+    {
+        Set<String> missingParams = new TreeSet<>();
+        for (String paramName : paramNameList)
+        {
+            if (parameters.get(paramName) == null)
+            {
+                missingParams.add(paramName);
+            }
+        }
+        String errorText = null;
+        String correctionText = null;
+        if (missingParams.size() == 1)
+        {
+            Iterator<String> paramIter = missingParams.iterator();
+            errorText = String.format(
+                "The required parameter '%s' is not present.",
+                paramIter.next()
+            );
+            correctionText = "Reenter the command including the required parameter.";
+        }
+        else
+        if (missingParams.size() > 0)
+        {
+            StringBuilder errorTextBld = new StringBuilder();
+            errorTextBld.append("The following required parameters are not present:\n");
+            for (String paramName : missingParams)
+            {
+                errorTextBld.append(String.format("    %s\n", paramName));
+            }
+            errorText = errorTextBld.toString();
+            correctionText = "Reenter the command including the required parameters.";
+        }
+        if (errorText != null && correctionText != null)
+        {
+            printError(
+                debugErr,
+                errorText,
+                null,
+                correctionText,
+                null
+            );
+        }
     }
 
     public void printError(
