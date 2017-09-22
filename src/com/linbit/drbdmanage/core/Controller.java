@@ -143,7 +143,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private final Map<ServiceName, SystemService> systemServicesMap;
 
     // Database connection pool service
-    private final DbConnectionPool dbConnPool;
+    final DbConnectionPool dbConnPool;
 
     // Satellite reconnector service
     private final TaskScheduleService taskScheduleService;

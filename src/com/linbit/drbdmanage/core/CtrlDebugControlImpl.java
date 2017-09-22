@@ -10,6 +10,7 @@ import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
@@ -117,6 +118,11 @@ class CtrlDebugControlImpl implements CtrlDebugControl
     public Props getConf()
     {
         return controller.ctrlConf;
+    }
+
+    public DbConnectionPool getDbConnectionPool()
+    {
+        return controller.dbConnPool;
     }
 
     @Override
