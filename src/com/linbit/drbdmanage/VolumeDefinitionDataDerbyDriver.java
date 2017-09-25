@@ -15,7 +15,6 @@ import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
@@ -109,7 +108,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     public VolumeDefinitionData load(
         ResourceDefinition resourceDefinition,
         VolumeNumber volumeNumber,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -130,7 +128,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     resultSet,
                     resourceDefinition,
                     volumeNumber,
-                    serialGen,
                     transMgr,
                     dbCtx
                 );
@@ -159,7 +156,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         ResultSet resultSet,
         ResourceDefinition resDfn,
         VolumeNumber volNr,
-        SerialGenerator serialGen,
         TransactionMgr transMgr,
         AccessContext accCtx
     )
@@ -181,7 +177,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     new MinorNumber(resultSet.getInt(VD_MINOR_NR)),
                     resultSet.getLong(VD_SIZE),
                     resultSet.getLong(VD_FLAGS),
-                    serialGen,
                     transMgr
                 );
                 errorReporter.logTrace("VolumeDefinition %s created during restore", getTraceId(ret));
@@ -216,7 +211,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
     public List<VolumeDefinition> loadAllVolumeDefinitionsByResourceDefinition(
             ResourceDefinition resDfn,
-            SerialGenerator serialGen,
             TransactionMgr transMgr,
             AccessContext accCtx
     )
@@ -251,7 +245,6 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                         resultSet,
                         resDfn,
                         volNr,
-                        serialGen,
                         transMgr,
                         accCtx
                     );

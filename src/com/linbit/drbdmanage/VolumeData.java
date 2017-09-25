@@ -11,8 +11,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.PropsContainer;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -63,7 +61,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         String metaDiskPathRef,
         long initFlags,
         AccessContext accCtx,
-        SerialGenerator srlGen,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -76,7 +73,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
             metaDiskPathRef,
             initFlags,
             accCtx,
-            srlGen,
             transMgr
         );
     }
@@ -92,7 +88,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         String metaDiskPathRef,
         long initFlags,
         AccessContext accCtx,
-        SerialGenerator srlGen,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -113,13 +108,12 @@ public class VolumeData extends BaseTransactionObject implements Volume
             initFlags
         );
 
-        volumeProps = SerialPropsContainer.getInstance(
+        volumeProps = PropsContainer.getInstance(
             PropsContainer.buildPath(
                 resRef.getAssignedNode().getName(),
                 resRef.getDefinition().getName(),
                 volDfnRef.getVolumeNumber(accCtx)
             ),
-            srlGen,
             transMgr
         );
 
@@ -138,7 +132,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         String blockDevicePathRef,
         String metaDiskPathRef,
         VlmFlags[] flags,
-        SerialGenerator serialGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
     )
@@ -152,7 +145,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
             vol = driver.load(
                 resRef,
                 volDfn,
-                serialGen,
                 transMgr
             );
         }
@@ -168,7 +160,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 metaDiskPathRef,
                 initFlags,
                 accCtx,
-                serialGen,
                 transMgr
             );
             if (transMgr != null)

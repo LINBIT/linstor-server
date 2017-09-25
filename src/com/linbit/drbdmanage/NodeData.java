@@ -17,8 +17,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.PropsContainer;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -72,7 +70,6 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeName nameRef,
         NodeType type,
         long initialFlags,
-        SerialGenerator srlGen,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -88,7 +85,6 @@ public class NodeData extends BaseTransactionObject implements Node
             nameRef,
             type,
             initialFlags,
-            srlGen,
             transMgr
         );
     }
@@ -102,7 +98,6 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeName nameRef,
         NodeType type,
         long initialFlags,
-        SerialGenerator srlGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -118,9 +113,8 @@ public class NodeData extends BaseTransactionObject implements Node
         netInterfaceMap = new TreeMap<>();
         storPoolMap = new TreeMap<>();
 
-        nodeProps = SerialPropsContainer.getInstance(
+        nodeProps = PropsContainer.getInstance(
             PropsContainer.buildPath(nameRef),
-            srlGen,
             transMgr
         );
 
@@ -145,7 +139,6 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeName nameRef,
         NodeType type,
         NodeFlag[] flags,
-        SerialGenerator srlGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
     )
@@ -156,7 +149,7 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver();
         if (transMgr != null)
         {
-            nodeData = dbDriver.load(nameRef, srlGen, transMgr);
+            nodeData = dbDriver.load(nameRef, transMgr);
         }
 
         if (nodeData != null)
@@ -172,7 +165,6 @@ public class NodeData extends BaseTransactionObject implements Node
                 nameRef,
                 type,
                 StateFlagsBits.getMask(flags),
-                srlGen,
                 transMgr
             );
             if (transMgr != null)

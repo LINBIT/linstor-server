@@ -2313,9 +2313,7 @@ public class PropsContainer implements Props
 
     public static void main(String[] args) throws SQLException
     {
-        SerialPropsContainer serialCon = SerialPropsContainer.getInstance(null, (SerialGenerator) null, null);
-        SerialGenerator serialGen = serialCon.getSerialGenerator();
-        Props rootCon = SerialPropsContainer.getInstance(null, serialGen, null);
+        Props rootCon = PropsContainer.getInstance(null, null);
         try
         {
             BufferedReader stdin = new BufferedReader(
@@ -2455,11 +2453,6 @@ public class PropsContainer implements Props
                                             con.getPath(),
                                             con.size()
                                         );
-                                        System.out.printf(
-                                            "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
-                                            serialGen.peekSerial(),
-                                            serialCon.getProp(SerialGenerator.KEY_SERIAL)
-                                        );
                                     }
                                     else
                                     {
@@ -2484,11 +2477,6 @@ public class PropsContainer implements Props
                                             "End of list: Container '%s' size = %d\n",
                                             con.getPath(),
                                             con.size()
-                                        );
-                                        System.out.printf(
-                                            "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
-                                            serialGen.peekSerial(),
-                                            serialCon.getProp(SerialGenerator.KEY_SERIAL)
                                         );
                                     }
                                     else
@@ -2515,21 +2503,11 @@ public class PropsContainer implements Props
                                             con.getPath(),
                                             con.size()
                                         );
-                                        System.out.printf(
-                                            "SerialGenerator serial = %d, SerialContainer serial = '%s'\n",
-                                            serialGen.peekSerial(),
-                                            serialCon.getProp(SerialGenerator.KEY_SERIAL)
-                                        );
                                     }
                                     else
                                     {
                                         System.out.println("Path is not a container");
                                     }
-                                }
-                                break;
-                            case "close":
-                                {
-                                    serialGen.closeGeneration();
                                 }
                                 break;
                             case "exit":

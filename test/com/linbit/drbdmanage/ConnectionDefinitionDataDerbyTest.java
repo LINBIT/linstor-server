@@ -71,9 +71,9 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
             transMgr
         );
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, null, transMgr, true);
-        nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, null, transMgr, true);
-        nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, null, transMgr, true);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true);
+        nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true);
+        nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true);
 
         conDfn = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst, conNr);
         driver = new ConnectionDefinitionDataDerbyDriver(sysCtx, errorReporter);
@@ -91,7 +91,7 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        ConnectionDefinitionData.getInstance(sysCtx, resDfn, nodeSrc, nodeDst, conNr, null, transMgr, true);
+        ConnectionDefinitionData.getInstance(sysCtx, resDfn, nodeSrc, nodeDst, conNr, transMgr, true);
 
         checkDbPersist(false);
     }
@@ -122,7 +122,7 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(conDfn, transMgr);
 
-        ConnectionDefinitionData loadedConDfn = driver.load(resDfn, sourceName, targetName, null, transMgr);
+        ConnectionDefinitionData loadedConDfn = driver.load(resDfn, sourceName, targetName, transMgr);
 
         checkLoadedConDfn(loadedConDfn, true);
     }
@@ -135,7 +135,6 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
 
         List<ConnectionDefinition> cons = driver.loadAllConnectionsByResourceDefinition(
             resDfn,
-            null,
             transMgr
         );
 
@@ -167,7 +166,6 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
             nodeSrc,
             nodeDst,
             conNr,
-            null,
             transMgr,
             false
         );
@@ -197,14 +195,13 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
             nodeSrc,
             nodeDst,
             conNr,
-            null,
             transMgr,
             true
         );
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(resDfn, sourceName, targetName, null, transMgr));
+        assertEquals(storedInstance, driver.load(resDfn, sourceName, targetName, transMgr));
     }
 
     @Test
@@ -279,7 +276,6 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
             nodeDst,
             conNr,
             null,
-            null,
             true
         );
 
@@ -302,7 +298,6 @@ public class ConnectionDefinitionDataDerbyTest extends DerbyBase
             nodeSrc,
             nodeDst,
             conNr,
-            null,
             null,
             false
         );

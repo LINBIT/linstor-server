@@ -10,8 +10,6 @@ import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.ResourceData;
 import com.linbit.drbdmanage.StorPoolData;
 import com.linbit.drbdmanage.StorPoolDefinition;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 
 /**
  * Database driver for {@link StorPoolData}.
@@ -41,7 +39,6 @@ public interface StorPoolDataDatabaseDriver
     public StorPoolData load(
         Node node,
         StorPoolDefinition storPoolDefinition,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException;

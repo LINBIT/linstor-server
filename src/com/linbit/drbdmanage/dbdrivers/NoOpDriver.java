@@ -42,7 +42,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
 public class NoOpDriver implements DatabaseDriver
@@ -214,7 +213,7 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public NodeData load(NodeName nodeName, SerialGenerator serialGen, TransactionMgr transMgr)
+        public NodeData load(NodeName nodeName, TransactionMgr transMgr)
             throws SQLException
         {
             return null;
@@ -246,7 +245,6 @@ public class NoOpDriver implements DatabaseDriver
         public ResourceData load(
             Node node,
             ResourceName resourceName,
-            SerialGenerator serialGen,
             TransactionMgr transMgr
         )
             throws SQLException
@@ -283,11 +281,7 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public ResourceDefinitionData load(
-            ResourceName resourceName,
-            SerialGenerator serialGen,
-            TransactionMgr transMgr
-        )
+        public ResourceDefinitionData load(ResourceName resourceName,TransactionMgr transMgr)
             throws SQLException
         {
             return null;
@@ -313,7 +307,6 @@ public class NoOpDriver implements DatabaseDriver
         public VolumeData load(
             Resource resource,
             VolumeDefinition volumeDefinition,
-            SerialGenerator serialGen,
             TransactionMgr transMgr
         )
             throws SQLException
@@ -367,7 +360,6 @@ public class NoOpDriver implements DatabaseDriver
         public VolumeDefinitionData load(
             ResourceDefinition resourceDefinition,
             VolumeNumber volumeNumber,
-            SerialGenerator serialGen,
             TransactionMgr transMgr
         )
             throws SQLException
@@ -409,7 +401,6 @@ public class NoOpDriver implements DatabaseDriver
         public StorPoolData load(
             Node node,
             StorPoolDefinition storPoolDefinition,
-            SerialGenerator serialGen,
             TransactionMgr transMgr
         )
             throws SQLException
@@ -508,7 +499,6 @@ public class NoOpDriver implements DatabaseDriver
             ResourceDefinition resDfn,
             NodeName sourceNodeName,
             NodeName targetNodeName,
-            SerialGenerator serialGen,
             TransactionMgr transMgr
         )
             throws SQLException

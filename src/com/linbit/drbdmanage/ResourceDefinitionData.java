@@ -16,8 +16,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabase
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.PropsContainer;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -67,7 +65,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         AccessContext accCtx,
         ResourceName resName,
         long initialFlags,
-        SerialGenerator srlGen,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -82,7 +79,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             ),
             resName,
             initialFlags,
-            srlGen,
             transMgr
         );
     }
@@ -95,7 +91,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ObjectProtection objProtRef,
         ResourceName resName,
         long initialFlags,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -112,9 +107,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         volumeMap = new TreeMap<>();
         resourceMap = new TreeMap<>();
 
-        rscDfnProps = SerialPropsContainer.getInstance(
+        rscDfnProps = PropsContainer.getInstance(
             PropsContainer.buildPath(resName),
-            serialGen,
             transMgr
         );
         flags = new RscDfnFlagsImpl(objProt, this, dbDriver.getStateFlagsPersistence(), initialFlags);
@@ -130,7 +124,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         AccessContext accCtx,
         ResourceName resName,
         RscDfnFlags[] flags,
-        SerialGenerator serialGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
     )
@@ -141,7 +134,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ResourceDefinitionData resDfn = null;
         if (transMgr != null)
         {
-            resDfn = driver.load(resName, serialGen, transMgr);
+            resDfn = driver.load(resName, transMgr);
         }
 
         if (resDfn == null)
@@ -152,7 +145,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                     accCtx,
                     resName,
                     StateFlagsBits.getMask(flags),
-                    serialGen,
                     transMgr
                 );
                 if (transMgr != null)

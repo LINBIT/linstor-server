@@ -71,7 +71,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             nodeName,
             null,
             null,
-            null,
             transMgr,
             true
         );
@@ -80,7 +79,6 @@ public class VolumeDataDerbyTest extends DerbyBase
         resDfn = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
-            null,
             null,
             transMgr,
             true
@@ -92,7 +90,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             resDfn,
             node,
             nodeId,
-            null,
             null,
             transMgr,
             true
@@ -107,7 +104,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             volNr,
             minor,
             volSize,
-            null,
             null,
             transMgr,
             true
@@ -124,7 +120,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
             sysCtx,
-            null,
             transMgr
         );
 
@@ -164,7 +159,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             new VlmFlags[] { VlmFlags.CLEAN },
-            null, // serial
             transMgr,
             true
         );
@@ -202,7 +196,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         driver.create(vol, transMgr);
 
-        VolumeData loadedVol = driver.load(res, volDfn, null, transMgr);
+        VolumeData loadedVol = driver.load(res, volDfn, transMgr);
 
         checkLoaded(loadedVol, uuid);
     }
@@ -215,7 +209,6 @@ public class VolumeDataDerbyTest extends DerbyBase
         List<VolumeData> volList = driver.loadAllVolumesByResource(
             res,
             transMgr,
-            null,
             sysCtx
         );
 
@@ -237,7 +230,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             null, // flags
-            null, // serial
             transMgr,
             false
         );
@@ -254,14 +246,13 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             null,
-            null,
             transMgr,
             true
         );
 
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(res, volDfn, null, transMgr));
+        assertEquals(storedInstance, driver.load(res, volDfn, transMgr));
     }
 
     @Test
@@ -312,7 +303,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         String testValue = "TestValue";
         insertProp(transMgr, PropsContainer.buildPath(nodeName, resName, volNr), testKey, testValue);
 
-        VolumeData loadedVol = driver.load(res, volDfn, null, transMgr);
+        VolumeData loadedVol = driver.load(res, volDfn, transMgr);
 
         assertNotNull(loadedVol);
         Props props = loadedVol.getProps(sysCtx);
@@ -356,7 +347,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             new VlmFlags[] { VlmFlags.CLEAN },
-            null, // serial
             null, // transMgr
             true
         );
@@ -383,7 +373,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             blockDevicePath,
             metaDiskPath,
             new VlmFlags[] { VlmFlags.CLEAN },
-            null, // serial
             null, // transMgr
             false
         );

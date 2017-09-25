@@ -17,7 +17,6 @@ import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -82,7 +81,6 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         ResourceDefinition resDfn,
         NodeName sourceNodeName,
         NodeName targetNodeName,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -101,7 +99,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
 
                 if (resultSet.next())
                 {
-                    ret = restoreConnectionDefinition(resultSet, resDfn, serialGen, transMgr);
+                    ret = restoreConnectionDefinition(resultSet, resDfn, transMgr);
                     // traceLog about loaded from DB|cache in restoreConDfn method
                 }
                 else
@@ -116,7 +114,6 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
     private ConnectionDefinitionData restoreConnectionDefinition(
         ResultSet resultSet,
         ResourceDefinition resDfn,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -143,7 +140,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         }
 
         NodeDataDatabaseDriver nodeDriver = DrbdManage.getNodeDataDatabaseDriver();
-        NodeData nodeSrc = nodeDriver.load(sourceNodeName, serialGen, transMgr);
+        NodeData nodeSrc = nodeDriver.load(sourceNodeName, transMgr);
 
         ConnectionDefinitionData conData = cacheGet(resDfn, nodeSrc, conNr);
 
@@ -151,7 +148,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         {
             ObjectProtection objProt = getObjectProtection(resName, sourceNodeName, targetNodeName, transMgr);
 
-            NodeData nodeDst = nodeDriver.load(targetNodeName, serialGen, transMgr);
+            NodeData nodeDst = nodeDriver.load(targetNodeName, transMgr);
 
             conData = new ConnectionDefinitionData(uuid, objProt, resDfn, nodeSrc, nodeDst, conNr);
             errorReporter.logDebug("ConnectionDefinition loaded from DB %s", getDebugId(conData));
@@ -190,7 +187,6 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
 
     public List<ConnectionDefinition> loadAllConnectionsByResourceDefinition(
         ResourceDefinitionData resDfn,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -201,7 +197,7 @@ public class ConnectionDefinitionDataDerbyDriver implements ConnectionDefinition
         List<ConnectionDefinition> connections = new ArrayList<>();
         while (resultSet.next())
         {
-            ConnectionDefinitionData conDfn = restoreConnectionDefinition(resultSet, resDfn, serialGen, transMgr);
+            ConnectionDefinitionData conDfn = restoreConnectionDefinition(resultSet, resDfn, transMgr);
             connections.add(conDfn);
         }
         resultSet.close();

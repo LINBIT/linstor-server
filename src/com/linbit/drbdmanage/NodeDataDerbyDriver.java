@@ -16,7 +16,6 @@ import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -111,7 +110,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public NodeData load(NodeName nodeName, SerialGenerator serialGen, TransactionMgr transMgr)
+    public NodeData load(NodeName nodeName, TransactionMgr transMgr)
         throws SQLException
     {
         NodeData node = null;
@@ -147,7 +146,6 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                             nodeName,
                             Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
                             resultSet.getLong(NODE_FLAGS),
-                            serialGen,
                             transMgr
                         );
 
@@ -174,7 +172,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                                 netIfaces.size()
                             );
 
-                            List<ResourceData> resList = resourceDataDerbyDriver.loadResourceData(dbCtx, node, serialGen, transMgr);
+                            List<ResourceData> resList = resourceDataDerbyDriver.loadResourceData(dbCtx, node, transMgr);
                             for (ResourceData res : resList)
                             {
                                 node.addResource(dbCtx, res);
@@ -185,7 +183,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                                 resList.size()
                             );
 
-                            List<StorPoolData> storPoolList = storPoolDataDerbyDriver.loadStorPools(node, serialGen, transMgr);
+                            List<StorPoolData> storPoolList = storPoolDataDerbyDriver.loadStorPools(node, transMgr);
                             for (StorPoolData storPool : storPoolList)
                             {
                                 node.addStorPool(dbCtx, storPool);

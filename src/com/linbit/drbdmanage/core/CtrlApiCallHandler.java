@@ -105,7 +105,6 @@ class CtrlApiCallHandler
                 nodeName,
                 type,
                 flags,
-                controller.getRootSerialGenerator(),
                 transMgr,
                 true
             );
@@ -280,7 +279,6 @@ class CtrlApiCallHandler
                 accCtx,
                 new ResourceName(resourceName), // invalidNameExc1
                 null, // init flags
-                controller.getRootSerialGenerator(),
                 transMgr,
                 true
             );
@@ -312,7 +310,6 @@ class CtrlApiCallHandler
                     minorNr,
                     size,
                     null, // init flags
-                    controller.getRootSerialGenerator(),
                     transMgr,
                     true
                 );

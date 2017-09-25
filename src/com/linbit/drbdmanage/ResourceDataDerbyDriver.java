@@ -16,7 +16,6 @@ import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -127,7 +126,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     public ResourceData load(
         Node node,
         ResourceName resourceName,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -140,7 +138,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
             stmt.setString(2, resourceName.value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                List<ResourceData> list = load(resultSet, dbCtx, node, serialGen, transMgr);
+                List<ResourceData> list = load(resultSet, dbCtx, node, transMgr);
 
                 if (!list.isEmpty())
                 {
@@ -158,7 +156,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
     public List<ResourceData> loadResourceDataByResourceDefinition(
         ResourceDefinitionData resDfn,
-        SerialGenerator serialGen,
         TransactionMgr transMgr,
         AccessContext accCtx
     )
@@ -171,7 +168,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
             stmt.setString(1, resDfn.getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                resList = load(resultSet, accCtx, null, serialGen, transMgr);
+                resList = load(resultSet, accCtx, null, transMgr);
             }
         }
         errorReporter.logTrace(
@@ -182,7 +179,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return resList;
     }
 
-    public List<ResourceData> loadResourceData(AccessContext dbCtx, NodeData node, SerialGenerator serialGen, TransactionMgr transMgr)
+    public List<ResourceData> loadResourceData(AccessContext dbCtx, NodeData node, TransactionMgr transMgr)
         throws SQLException
     {
         errorReporter.logTrace("Loading all Resources by Node %s", getTraceNodeId(node));
@@ -192,7 +189,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
             stmt.setString(1, node.getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                ret = load(resultSet, dbCtx, node, serialGen, transMgr);
+                ret = load(resultSet, dbCtx, node, transMgr);
             }
         }
         errorReporter.logTrace(
@@ -207,7 +204,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         ResultSet resultSet,
         AccessContext dbCtx,
         Node globalNode,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -229,7 +225,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     {
                         node = DrbdManage.getNodeDataDatabaseDriver().load(
                             new NodeName(resultSet.getString(RES_NODE_NAME)),
-                            serialGen,
                             transMgr
                         );
                     }
@@ -265,7 +260,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 if (resData == null)
                 {
                     ResourceDefinitionDataDatabaseDriver resDfnDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
-                    ResourceDefinition resDfn = resDfnDriver.load(resName, serialGen, transMgr);
+                    ResourceDefinition resDfn = resDfnDriver.load(resName, transMgr);
 
                     Resource loadedRes = resDfn.getResource(dbCtx, node.getName());
                     // although we just asked the cache, we also just loaded the resDfn.
@@ -301,13 +296,12 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                             node,
                             nodeId,
                             resultSet.getLong(RES_FLAGS),
-                            serialGen,
                             transMgr
                         );
                         errorReporter.logTrace("Resource instance created %s", getTraceId(resData));
 
                         // restore volumes
-                        List<VolumeData> volList = volumeDataDerbyDriver.loadAllVolumesByResource(resData, transMgr, serialGen, dbCtx);
+                        List<VolumeData> volList = volumeDataDerbyDriver.loadAllVolumesByResource(resData, transMgr, dbCtx);
                         for (VolumeData volData : volList)
                         {
                             resData.putVolume(dbCtx, volData);

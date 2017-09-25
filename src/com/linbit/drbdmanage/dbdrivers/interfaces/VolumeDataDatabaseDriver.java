@@ -9,8 +9,6 @@ import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.VolumeData;
 import com.linbit.drbdmanage.VolumeDefinition;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
 /**
@@ -63,7 +61,6 @@ public interface VolumeDataDatabaseDriver
     public VolumeData load(
         Resource resource,
         VolumeDefinition volumeDefinition,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException;

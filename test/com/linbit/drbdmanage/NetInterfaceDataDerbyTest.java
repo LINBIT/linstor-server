@@ -68,7 +68,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             nodeName,
             null, // types
             null, // flags
-            null, // srlGen
             transMgr,
             true
         );

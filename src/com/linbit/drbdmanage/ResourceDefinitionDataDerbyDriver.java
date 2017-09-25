@@ -14,7 +14,6 @@ import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -115,7 +114,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     @Override
     public ResourceDefinitionData load(
         ResourceName resourceName,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -152,7 +150,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                             objProt,
                             resourceName,
                             resultSet.getLong(RD_FLAGS),
-                            serialGen,
                             transMgr
                         );
                         // cache the resDfn BEFORE we load the conDfns
@@ -163,7 +160,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                         // restore connectionDefinitions
                         List<ConnectionDefinition> cons = connectionDefinitionDataDerbyDriver.loadAllConnectionsByResourceDefinition(
                             resDfn,
-                            serialGen,
                             transMgr
                         );
                         for (ConnectionDefinition conDfn : cons)
@@ -185,7 +181,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                         List<VolumeDefinition> volDfns =
                             volumeDefinitionDataDerbyDriver.loadAllVolumeDefinitionsByResourceDefinition(
                             resDfn,
-                            serialGen,
                             transMgr,
                             dbCtx
                         );
@@ -201,7 +196,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                         // restore resources
                         List<ResourceData> resList = resourceDataDerbyDriver.loadResourceDataByResourceDefinition(
                             resDfn,
-                            serialGen,
                             transMgr,
                             dbCtx
                         );

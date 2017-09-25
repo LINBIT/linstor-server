@@ -16,7 +16,6 @@ import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.StateFlags;
@@ -74,7 +73,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     public VolumeData load(
         Resource resource,
         VolumeDefinition volumeDefintion,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -97,7 +95,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     dbCtx,
                     resource,
                     resultSet,
-                    serialGen,
                     transMgr
                 );
 
@@ -128,7 +125,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     public List<VolumeData> loadAllVolumesByResource(
         Resource resRef,
         TransactionMgr transMgr,
-        SerialGenerator serialGen,
         AccessContext accCtx
     )
         throws SQLException
@@ -144,7 +140,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setString(2, resRef.getDefinition().getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                ret = load(accCtx, resRef, resultSet, serialGen, transMgr);
+                ret = load(accCtx, resRef, resultSet, transMgr);
             }
         }
         for (VolumeData vol : ret)
@@ -158,7 +154,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         AccessContext accCtx,
         Resource resRef,
         ResultSet resultSet,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -183,7 +178,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             volDfn = volDfnDriver.load(
                 resRef.getDefinition(),
                 volNr,
-                serialGen,
                 transMgr
             );
 
@@ -200,7 +194,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         resultSet.getString(VOL_META_DISK),
                         resultSet.getLong(VOL_FLAGS),
                         accCtx,
-                        serialGen,
                         transMgr
                     );
                     errorReporter.logTrace("Volume created %s", getTraceId(volData));

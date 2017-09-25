@@ -9,8 +9,6 @@ import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.drbdmanage.ConnectionDefinitionData;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDefinition;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 
 /**
  * Database driver for {@link ConnectionDefinitionData}.
@@ -45,7 +43,6 @@ public interface ConnectionDefinitionDataDatabaseDriver
         ResourceDefinition resDfn,
         NodeName sourceNodeName,
         NodeName targetNodeName,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException;

@@ -19,8 +19,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDr
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.PropsContainer;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -70,7 +68,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         MinorNumber minor,
         long volSize,
         long initFlags,
-        SerialGenerator srlGen,
         TransactionMgr transMgr
     )
         throws MdException, AccessDeniedException, SQLException
@@ -83,7 +80,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             minor,
             volSize,
             initFlags,
-            srlGen,
             transMgr
         );
     }
@@ -99,7 +95,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         MinorNumber minor,
         long volSize,
         long initFlags,
-        SerialGenerator srlGen,
         TransactionMgr transMgr
     )
         throws MdException, AccessDeniedException, SQLException
@@ -149,9 +144,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             dbDriver.getVolumeSizeDriver()
         );
 
-        vlmDfnProps = SerialPropsContainer.getInstance(
+        vlmDfnProps = PropsContainer.getInstance(
             PropsContainer.buildPath(resDfnRef.getName(), volumeNr),
-            srlGen,
             transMgr
         );
 
@@ -178,7 +172,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         MinorNumber minor,
         long volSize,
         VlmDfnFlags[] initFlags,
-        SerialGenerator serialGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
     )
@@ -189,7 +182,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         VolumeDefinitionDataDatabaseDriver driver = DrbdManage.getVolumeDefinitionDataDatabaseDriver();
         if (transMgr != null)
         {
-            volDfn = driver.load(resDfn, volNr, serialGen, transMgr);
+            volDfn = driver.load(resDfn, volNr, transMgr);
         }
 
         if (volDfn == null)
@@ -203,7 +196,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
                     minor,
                     volSize,
                     StateFlagsBits.getMask(initFlags),
-                    serialGen,
                     transMgr
                 );
                 if (transMgr != null)

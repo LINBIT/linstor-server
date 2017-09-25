@@ -13,8 +13,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -45,7 +43,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDefinition storPoolDef,
         StorageDriver storDriver,
         String storDriverSimpleClassName,
-        SerialGenerator serGen,
         TransactionMgr transMgr
     )
         throws AccessDeniedException, SQLException
@@ -62,7 +59,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             storPoolDef,
             storDriver,
             storDriverSimpleClassName,
-            serGen,
             transMgr
         );
     }
@@ -77,7 +73,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDefinition storPoolDefRef,
         StorageDriver storDriverRef,
         String storDriverSimpleClassNameRef,
-        SerialGenerator serGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -89,9 +84,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         objProt = objProtRef;
         node = nodeRef;
 
-        props = SerialPropsContainer.getInstance(
+        props = PropsContainer.getInstance(
             PropsContainer.buildPath(storPoolDef.getName(), node.getName()),
-            serGen,
             transMgr
         );
 
@@ -105,7 +99,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
         String storDriverSimpleClassNameRef,
-        SerialGenerator serGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
     )
@@ -115,7 +108,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDataDatabaseDriver driver = DrbdManage.getStorPoolDataDatabaseDriver();
         if (transMgr != null)
         {
-            storPoolData = driver.load(nodeRef, storPoolDefRef, serGen, transMgr);
+            storPoolData = driver.load(nodeRef, storPoolDefRef, transMgr);
             if (storPoolData == null && createIfNotExists)
             {
                 storPoolData = new StorPoolData(
@@ -124,7 +117,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                     storPoolDefRef,
                     null,
                     storDriverSimpleClassNameRef,
-                    serGen,
                     transMgr
                 );
                 driver.create(storPoolData, transMgr);
@@ -140,7 +132,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                 // TODO: should every StorPool create a new storDriver instance?
                 StorageDriverUtils.createInstance(storDriverSimpleClassNameRef),
                 storDriverSimpleClassNameRef,
-                serGen,
                 transMgr
             );
         }

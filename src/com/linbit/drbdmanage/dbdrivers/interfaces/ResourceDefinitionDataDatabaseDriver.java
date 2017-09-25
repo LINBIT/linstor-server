@@ -7,8 +7,6 @@ import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.ResourceName;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
 /**
@@ -36,7 +34,6 @@ public interface ResourceDefinitionDataDatabaseDriver
      */
     public ResourceDefinitionData load(
         ResourceName resourceName,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException;

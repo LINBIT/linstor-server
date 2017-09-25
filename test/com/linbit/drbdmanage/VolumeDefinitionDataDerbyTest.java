@@ -19,7 +19,6 @@ import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
 import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
 
@@ -56,7 +55,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(getConnection());
 
         resName = new ResourceName("TestResource");
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, null, transMgr, true);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true);
 
         uuid = randomUUID();
         volNr = new VolumeNumber(13);
@@ -70,7 +69,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             minor,
             volSize,
             VlmDfnFlags.REMOVE.flagValue,
-            null,
             transMgr
         );
 
@@ -119,7 +117,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             minor,
             volSize,
             new VlmDfnFlags[] { VlmDfnFlags.REMOVE },
-            null,
             transMgr,
             true
         );
@@ -143,7 +140,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(volDfn, transMgr);
 
-        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, null, transMgr);
+        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, transMgr);
         assertNotNull(loadedVd);
         assertEquals(uuid, loadedVd.getUuid());
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
@@ -165,7 +162,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             minor,
             volSize,
             null,
-            null,
             transMgr,
             false
         );
@@ -185,7 +181,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         List<VolumeDefinition> volDfnList = driver.loadAllVolumeDefinitionsByResourceDefinition(
             resDfn,
-            null,
             transMgr,
             sysCtx
         );
@@ -250,12 +245,11 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         String testValue = "TestValue";
         insertProp(transMgr, PropsContainer.buildPath(resName, volNr), testKey, testValue);
 
-        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, null, transMgr);
+        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, transMgr);
         Props props = loadedVd.getProps(sysCtx);
 
         assertEquals(testValue, props.getProp(testKey));
-        assertNotNull(props.getProp(SerialGenerator.KEY_SERIAL));
-        assertEquals(2, props.size());
+        assertEquals(1, props.size());
     }
 
     @Test
@@ -396,7 +390,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volSize,
             new VlmDfnFlags[] { VlmDfnFlags.REMOVE },
             null,
-            null,
             true
         );
 
@@ -428,7 +421,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             minor,
             volSize,
             new VlmDfnFlags[] { VlmDfnFlags.REMOVE },
-            null,
             null,
             false
         );

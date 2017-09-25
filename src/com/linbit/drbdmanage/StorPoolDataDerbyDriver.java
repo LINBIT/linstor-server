@@ -15,7 +15,6 @@ import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -73,7 +72,6 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     public StorPoolData load(
         Node node,
         StorPoolDefinition storPoolDfn,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -104,7 +102,6 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                             storPoolDfn,
                             null,   // storageDriver, has to be null in the controller
                             resultSet.getString(NSP_DRIVER),
-                            serialGen,
                             transMgr
                         );
                         errorReporter.logDebug("StorPool loaded from DB", getDebugId(sp));
@@ -128,7 +125,6 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 
     public List<StorPoolData> loadStorPools(
         NodeData node,
-        SerialGenerator serGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -174,7 +170,6 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                             storPoolDef,
                             null, // controller should not have an instance of storage driver.
                             resultSet.getString(NSP_DRIVER),
-                            serGen,
                             transMgr
                         );
                         errorReporter.logDebug("Loaded StorPool from DB %s", getDebugId(storPoolData));

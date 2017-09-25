@@ -39,7 +39,6 @@ import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.stateflags.StateFlagsBits;
 import com.linbit.utils.UuidUtils;
 
@@ -343,24 +342,12 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.setString(1, instanceName.toUpperCase());
         ResultSet resultSet = stmt.executeQuery();
 
-        if (serialCheck)
-        {
-            map.put(SerialGenerator.KEY_SERIAL, "ignore");
-        }
-
         while (resultSet.next())
         {
             String key = resultSet.getString(PROP_KEY);
             String value = resultSet.getString(PROP_VALUE);
 
-            if (serialCheck && key.equals(SerialGenerator.KEY_SERIAL))
-            {
-                map.remove(key); // ignore its value
-            }
-            else
-            {
-                assertEquals(map.remove(key), value);
-            }
+            assertEquals(map.remove(key), value);
         }
         assertTrue(map.isEmpty());
 

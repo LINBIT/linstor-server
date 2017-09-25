@@ -9,7 +9,6 @@ import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -112,7 +111,6 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
         Node node1,
         Node node2,
         int conNr,
-        SerialGenerator srlGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
     )
@@ -141,7 +139,6 @@ public class ConnectionDefinitionData extends BaseTransactionObject implements C
                 resDfn,
                 source.getName(),
                 target.getName(),
-                srlGen,
                 transMgr
             );
         }

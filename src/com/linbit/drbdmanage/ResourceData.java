@@ -16,8 +16,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.PropsContainer;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -70,7 +68,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
         Node nodeRef,
         NodeId nodeIdRef,
         long initFlags,
-        SerialGenerator srlGen,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -90,7 +87,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
             nodeRef,
             nodeIdRef,
             initFlags,
-            srlGen,
             transMgr
         );
     }
@@ -105,7 +101,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
         Node nodeRef,
         NodeId nodeIdRef,
         long initFlags,
-        SerialGenerator srlGen,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -120,12 +115,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
         dbDriver = DrbdManage.getResourceDataDatabaseDriver();
 
         volumeMap = new TreeMap<>();
-        resourceProps = SerialPropsContainer.getInstance(
+        resourceProps = PropsContainer.getInstance(
             PropsContainer.buildPath(
                 nodeRef.getName(),
                 resDfnRef.getName()
             ),
-            srlGen,
             transMgr
         );
         objProt = objProtRef;
@@ -147,7 +141,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
         Node node,
         NodeId nodeId,
         RscFlags[] initFlags,
-        SerialGenerator srlGen,
         TransactionMgr transMgr,
         boolean createIfNotExists
     )
@@ -159,7 +152,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         if (transMgr != null)
         {
-            resData = driver.load(node, resDfn.getName(), srlGen, transMgr);
+            resData = driver.load(node, resDfn.getName(), transMgr);
         }
 
         if (resData != null)
@@ -176,7 +169,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
                     node,
                     nodeId,
                     StateFlagsBits.getMask(initFlags),
-                    srlGen,
                     transMgr
                 );
                 if (transMgr != null)

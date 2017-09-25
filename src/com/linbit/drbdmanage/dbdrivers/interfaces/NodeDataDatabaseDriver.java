@@ -11,8 +11,6 @@ import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeName;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
 /**
@@ -40,7 +38,6 @@ public interface NodeDataDatabaseDriver
      */
     public NodeData load(
         NodeName nodeName,
-        SerialGenerator serialGen,
         TransactionMgr transMgr
     )
         throws SQLException;

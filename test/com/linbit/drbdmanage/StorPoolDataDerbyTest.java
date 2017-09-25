@@ -53,14 +53,14 @@ public class StorPoolDataDerbyTest extends DerbyBase
 
         transMgr = new TransactionMgr(getConnection());
 
-        node = NodeData.getInstance(sysCtx, nodeName, null, null, null, transMgr, true);
+        node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true);
         spdd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, true);
 
         driver = new StorPoolDataDerbyDriver(sysCtx, errorReporter);
 
         uuid = randomUUID();
         objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPathSP(spName), true, transMgr);
-        storPool = new StorPoolData(uuid, objProt, node, spdd, null, LvmDriver.class.getSimpleName(), null, transMgr);
+        storPool = new StorPoolData(uuid, objProt, node, spdd, null, LvmDriver.class.getSimpleName(), transMgr);
     }
 
     @Test
@@ -89,7 +89,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
-            null, // serialGen
             transMgr,
             true // create
         );
@@ -113,12 +112,12 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        StorPoolData loadedStorPool = driver.load(node, spdd, null, transMgr);
+        StorPoolData loadedStorPool = driver.load(node, spdd, transMgr);
         assertNull(loadedStorPool);
 
         driver.create(storPool, transMgr);
 
-        loadedStorPool = driver.load(node, spdd, null, transMgr);
+        loadedStorPool = driver.load(node, spdd, transMgr);
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(sysCtx).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(sysCtx));
@@ -132,7 +131,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
     {
         driver.create(storPool, transMgr);
 
-        List<StorPoolData> storPools = driver.loadStorPools(node, null, transMgr);
+        List<StorPoolData> storPools = driver.loadStorPools(node, transMgr);
 
         assertNotNull(storPools);
         assertEquals(1, storPools.size());
@@ -155,14 +154,13 @@ public class StorPoolDataDerbyTest extends DerbyBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
-            null,
             transMgr,
             true
         );
 
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(node, spdd, null, transMgr));
+        assertEquals(storedInstance, driver.load(node, spdd, transMgr));
     }
 
     @Test
@@ -173,7 +171,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
-            null,
             transMgr,
             false
         );
@@ -186,7 +183,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
-            null,
             transMgr,
             false
         );
@@ -207,7 +203,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
-            null, // serialGen
             transMgr,
             true // create
         );
@@ -263,7 +258,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             null,
-            null,
             true
         );
 
@@ -295,7 +289,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             node,
             spdd,
             LvmDriver.class.getSimpleName(),
-            null,
             null,
             false
         );

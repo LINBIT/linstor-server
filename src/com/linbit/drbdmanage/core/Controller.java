@@ -30,8 +30,7 @@ import com.linbit.drbdmanage.netcom.TcpConnectorService;
 import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
 import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.Props;
-import com.linbit.drbdmanage.propscon.SerialGenerator;
-import com.linbit.drbdmanage.propscon.SerialPropsContainer;
+import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -163,7 +162,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // Controller configuration properties
     Props ctrlConf;
     ObjectProtection ctrlConfProt;
-    private SerialGenerator rootSerialGen;
 
     // ============================================================
     // DrbdManage objects
@@ -381,7 +379,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
                     // initializing controller serial propsCon + OP
                     ctrlConf = loadPropsCon(errorLogRef);
-                    rootSerialGen = ((SerialPropsContainer) ctrlConf).getSerialGenerator();
                     ctrlConfProt = ObjectProtection.getInstance(
                         initCtx,
                         ObjectProtection.buildPath(this, "conf"),
@@ -702,7 +699,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         try
         {
             transMgr = new TransactionMgr(dbConnPool);
-            config = SerialPropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, null, transMgr);
+            config = PropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
             dbConnPool.returnConnection(transMgr.dbCon);
         }
         catch (SQLException sqlExc)
@@ -1005,11 +1002,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         new SecureRandom().nextBytes(randomBytes);
         String secret = Base64.encode(randomBytes);
         return secret;
-    }
-
-    SerialGenerator getRootSerialGenerator()
-    {
-        return rootSerialGen;
     }
 
     public MetaDataApi getMetaDataApi()
