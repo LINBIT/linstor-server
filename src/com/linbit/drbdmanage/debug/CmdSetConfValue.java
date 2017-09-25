@@ -11,6 +11,7 @@ import com.linbit.drbdmanage.security.AccessContext;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
 
 public class CmdSetConfValue extends BaseDebugCmd
 {
@@ -64,6 +65,8 @@ public class CmdSetConfValue extends BaseDebugCmd
         Props conf = null;
         DbConnectionPool dbConnPool = null;
         TransactionMgr transMgr = null;
+        Lock confLock = cmnDebugCtl.getConfLock().writeLock();
+        confLock.lock();
         try
         {
             String key = parameters.get(PRM_KEY);
@@ -142,6 +145,8 @@ public class CmdSetConfValue extends BaseDebugCmd
         }
         finally
         {
+            confLock.unlock();
+            
             if (dbConnPool != null && transMgr != null)
             {
                 dbConnPool.returnConnection(transMgr.dbCon);

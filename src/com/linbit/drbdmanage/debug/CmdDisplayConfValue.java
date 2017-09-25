@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -83,12 +84,14 @@ public class CmdDisplayConfValue extends BaseDebugCmd
         // or specifying nothing, but not the combination of specifying the key and any of the filters
         if (prmKey == null || (prmFilterKey == null && prmFilterValue == null))
         {
+            Lock confLock = cmnDebugCtl.getConfLock().readLock();
+            confLock.lock();
             try
             {
                 char[] rulerData = new char[78];
                 Arrays.fill(rulerData, '-');
                 String ruler = new String(rulerData);
-    
+
                 Props searchRoot = conf;
                 if (prmNamespace != null)
                 {
@@ -155,7 +158,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
                 {
                    Matcher keyMatcher = null;
                    Matcher valueMatcher = null;
-    
+
                    if (prmFilterKey != null)
                    {
                        try
@@ -169,7 +172,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
                            throw patternExc;
                        }
                    }
-    
+
                    if (prmFilterValue != null)
                    {
                        try
@@ -183,13 +186,13 @@ public class CmdDisplayConfValue extends BaseDebugCmd
                            throw patternExc;
                        }
                    }
-    
+
                    long count = 0;
                    for (Map.Entry<String, String> confEntry : searchRoot)
                    {
                        String key = confEntry.getKey();
                        String value = confEntry.getValue();
-    
+
                        boolean selected = true;
                        if (keyMatcher != null)
                        {
@@ -201,7 +204,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
                            valueMatcher.reset(value);
                            selected &= valueMatcher.find();
                        }
-    
+
                        if (selected)
                        {
                            if (count == 0)
@@ -238,6 +241,10 @@ public class CmdDisplayConfValue extends BaseDebugCmd
             catch (NamespaceException nameSpcExc)
             {
                 debugOut.println(nameSpcExc.getMessage());
+            }
+            finally
+            {
+                confLock.unlock();
             }
         }
         else
