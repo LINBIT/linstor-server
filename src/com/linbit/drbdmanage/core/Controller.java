@@ -67,7 +67,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -471,13 +470,13 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 //                        connectSatellite(new InetSocketAddress("localhost", 9978), entry.getValue());
 //                    }
 //                }
-                for(Entry<ServiceName, TcpConnector> entry : netComConnectors.entrySet())
-                {
-                    if (!entry.getKey().value.contains("SSL"))
-                    {
-                        connectSatellite(new InetSocketAddress("localhost", 9977), entry.getValue());
-                    }
-                }
+//                for(Entry<ServiceName, TcpConnector> entry : netComConnectors.entrySet())
+//                {
+//                    if (!entry.getKey().value.contains("SSL"))
+//                    {
+//                        connectSatellite(new InetSocketAddress("localhost", 9977), entry.getValue());
+//                    }
+//                }
             }
             catch (AccessDeniedException accessExc)
             {

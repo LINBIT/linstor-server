@@ -47,7 +47,11 @@ public class TransactionMgr
         dbCon.commit();
         for (TransactionObject transObj : transObjects)
         {
-            transObj.commit();
+            // checking if isDirty to prevent endless indirect recursion
+            if (transObj.isDirty())
+            {
+                transObj.commit();
+            }
         }
         if (clearTransObjects)
         {
@@ -67,7 +71,11 @@ public class TransactionMgr
     {
         for (TransactionObject transObj : transObjects)
         {
-            transObj.rollback();
+            // checking if isDirty to prevent endless indirect recursion
+            if (transObj.isDirty())
+            {
+                transObj.rollback();
+            }
         }
         dbCon.rollback();
     }

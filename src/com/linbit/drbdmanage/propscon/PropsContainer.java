@@ -972,9 +972,9 @@ public class PropsContainer implements Props
                     targetContainer = root.ensureNamespaceExists(key.substring(0, idx));
                 }
                 String oldValue;
-                if (entry.getValue() == null)
+                if (value == null)
                 {
-                    oldValue = targetContainer.propMap.remove(entry.getKey());
+                    oldValue = targetContainer.propMap.remove(key);
                 }
                 else
                 {
@@ -994,6 +994,7 @@ public class PropsContainer implements Props
                 );
             }
         }
+        root.cachedPropMap.clear();
         if (transMgr != null)
         {
             try
