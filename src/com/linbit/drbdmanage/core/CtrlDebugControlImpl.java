@@ -16,6 +16,7 @@ import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import java.util.concurrent.locks.ReadWriteLock;
 
 class CtrlDebugControlImpl implements CtrlDebugControl
 {
@@ -136,5 +137,11 @@ class CtrlDebugControlImpl implements CtrlDebugControl
         {
             controller.getErrorReporter().reportError(accExc);
         }
+    }
+
+    @Override
+    public ReadWriteLock getConfLock()
+    {
+        return controller.ctrlConfLock;
     }
 }

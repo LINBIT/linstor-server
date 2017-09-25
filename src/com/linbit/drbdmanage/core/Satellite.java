@@ -134,13 +134,15 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     private ObjectProtection shutdownProt;
 
     // Lock for major global changes
-    private final ReadWriteLock reconfigurationLock;
+    public final ReadWriteLock reconfigurationLock;
+    public final ReadWriteLock stltConfLock;
 
     public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
         throws IOException
     {
         // Initialize synchronization
         reconfigurationLock = new ReentrantReadWriteLock(true);
+        stltConfLock        = new ReentrantReadWriteLock(true);
 
         // Initialize security contexts
         sysCtx = sysCtxRef;

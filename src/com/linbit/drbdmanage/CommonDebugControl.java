@@ -8,6 +8,7 @@ import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * Common debug methods of the Controller and Satellite modules
@@ -27,5 +28,6 @@ public interface CommonDebugControl
     Map<NodeName, Node> getNodesMap();
     Map<ResourceName, ResourceDefinition> getRscDfnMap();
     Props getConf();
+    ReadWriteLock getConfLock();
     void shutdown(AccessContext accCtx);
 }

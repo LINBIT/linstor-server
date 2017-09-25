@@ -15,6 +15,7 @@ import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.proto.CommonMessageProcessor;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
+import java.util.concurrent.locks.ReadWriteLock;
 
 class StltDebugControlImpl implements StltDebugControl
 {
@@ -131,5 +132,11 @@ class StltDebugControlImpl implements StltDebugControl
         {
             satellite.getErrorReporter().reportError(accExc);
         }
+    }
+
+    @Override
+    public ReadWriteLock getConfLock()
+    {
+        return satellite.stltConfLock;
     }
 }
