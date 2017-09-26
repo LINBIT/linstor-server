@@ -319,9 +319,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     );
 
                     // Connect the database connection pool to the database
-                    dbConnPool.setServiceInstanceName(
-                        persistenceDbDriver.getDefaultServiceInstanceName()
-                    );
                     dbConnPool.initializeDataSource(
                         connectionUrl,
                         dbProps
