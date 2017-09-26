@@ -53,8 +53,10 @@ public class CmdDisplayServices extends BaseDebugCmd
             );
             debugOut.println(ruler);
             int startedCtr = 0;
-            for (SystemService sysSvc : services.values())
+            for (Map.Entry<ServiceName, SystemService> sysSvcEntry : services.entrySet())
             {
+                ServiceName svcName = sysSvcEntry.getKey();
+                SystemService sysSvc = sysSvcEntry.getValue();
                 boolean started = sysSvc.isStarted();
                 if (started)
                 {
@@ -62,7 +64,7 @@ public class CmdDisplayServices extends BaseDebugCmd
                 }
                 debugOut.printf(
                     "%-32s %-7s %s\n",
-                    sysSvc.getInstanceName().getDisplayName(),
+                    svcName.getDisplayName(),
                     started ? "Y" : "N",
                     sysSvc.getServiceName().getDisplayName()
                 );
