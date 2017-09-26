@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.SystemServiceStopException;
 import com.linbit.TransactionMgr;
 import com.linbit.WorkerPool;
 import com.linbit.drbd.md.MetaData;
@@ -752,13 +753,13 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         return config;
     }
 
-    private List<TcpConnector> initNetComServices(Props netComProps, ErrorReporter errorLog)
+    private List<TcpConnector> initNetComServices(Props netComProps, ErrorReporter errorLogRef)
     {
         List<TcpConnector> tcpCons = new ArrayList<>();
         if (netComProps == null)
         {
             String errorMsg = "The controller configuration does not define any network communication services";
-            errorLog.reportError(
+            errorLogRef.reportError(
                 new SystemServiceStartException(
                     errorMsg,
                     errorMsg,
@@ -777,155 +778,243 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 try
                 {
                     String namespaceStr = namespaces.next();
-                    ServiceName serviceName;
-                    try
-                    {
-                        serviceName = new ServiceName(namespaceStr);
-                    }
-                    catch (InvalidNameException invalidNameExc)
-                    {
-                        throw new SystemServiceStartException(
-                            String.format(
-                                "The name '%s' can not be used for a network communication service instance",
-                                namespaceStr
-                            ),
-                            String.format(
-                                "The name '%s' is not a valid name for a network communication service instance",
-                                namespaceStr
-                            ),
-                            null,
-                            "Change the name of the network communication service instance",
-                            null,
-                            invalidNameExc
-                        );
-                    }
-                    Props configProp;
-                    try
-                    {
-                        configProp = netComProps.getNamespace(namespaceStr);
-                    }
-                    catch (InvalidKeyException invalidKeyExc)
-                    {
-                        throw new ImplementationError(
-                            String.format(
-                                "A properties container returned the key '%s' as the identifier for a namespace, " +
-                                "but using the same key to obtain a reference to the namespace generated an " +
-                                "%s",
-                                namespaceStr,
-                                invalidKeyExc.getClass().getSimpleName()
-                            ),
-                            invalidKeyExc
-                        );
-                    }
-                    String bindAddressStr = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_BINDADDR);
-                    Integer port = Integer.parseInt(loadPropChecked(configProp, PROPSCON_KEY_NETCOM_PORT));
-                    String type = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TYPE);
-
-                    SocketAddress bindAddress = new InetSocketAddress(bindAddressStr, port);
-
-                    TcpConnector netComSvc = null;
-                    if (type.equals(PROPSCON_NETCOM_TYPE_PLAIN))
-                    {
-                        netComSvc = new TcpConnectorService(
-                            this,
-                            msgProc,
-                            bindAddress,
-                            publicCtx,
-                            new CtrlConnTracker(
-                                this,
-                                peerMap,
-                                reconnectorTask
-                            )
-                        );
-                    }
-                    else
-                    if (type.equals(PROPSCON_NETCOM_TYPE_SSL))
-                    {
-                        try
-                        {
-                            netComSvc = new SslTcpConnectorService(
-                                this,
-                                msgProc,
-                                bindAddress ,
-                                publicCtx,
-                                new CtrlConnTracker(
-                                    this,
-                                    peerMap,
-                                    reconnectorTask
-                                ),
-                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_SSL_PROTOCOL),
-                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE),
-                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD).toCharArray(),
-                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEY_PASSWD).toCharArray(),
-                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE),
-                                loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE_PASSWD).toCharArray()
-                            );
-                        }
-                        catch (
-                            KeyManagementException | UnrecoverableKeyException |
-                            NoSuchAlgorithmException | KeyStoreException | CertificateException |
-                            IOException exc
-                        )
-                        {
-                            String errorMsg = "Initialization of an SSL-enabled network communication service failed";
-                            errorLog.reportError(exc);
-                            throw new SystemServiceStartException(
-                                errorMsg,
-                                errorMsg,
-                                null,
-                                null,
-                                null,
-                                exc
-                            );
-                        }
-                    }
-                    else
-                    {
-                        errorLog.reportProblem(
-                            Level.ERROR,
-                            new DrbdManageException(
-                                String.format(
-                                    "The connection type for the network communication service '%s' is not valid",
-                                    serviceName
-                                ),
-                                String.format(
-                                    "The connection type has to be either '%s' or '%s', but was '%s'",
-                                    PROPSCON_NETCOM_TYPE_PLAIN,
-                                    PROPSCON_NETCOM_TYPE_SSL,
-                                    type),
-                                null,
-                                "Correct the entry in the database",
-                                null
-                            ),
-                            null, // accCtx
-                            null, // client
-                            null  // contextInfo
-                        );
-                    }
-
+                    TcpConnector netComSvc = createNetComService(namespaceStr, netComProps, errorLogRef);
                     if (netComSvc != null)
                     {
-                        netComSvc.setServiceInstanceName(serviceName);
-                        netComConnectors.put(serviceName, netComSvc);
-                        systemServicesMap.put(serviceName, netComSvc);
-                        netComSvc.start();
-                        errorLog.logInfo(
-                            String.format(
-                                "Started network communication service '%s', bound to %s:%d",
-                                serviceName.displayValue, bindAddressStr, port
-                            )
-                        );
                         tcpCons.add(netComSvc);
                     }
                 }
                 catch (SystemServiceStartException sysSvcStartExc)
                 {
-                    errorLog.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
+                    errorLogRef.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
                 }
-
             }
         }
         return tcpCons;
+    }
+
+    TcpConnector createNetComService(
+        String serviceNameStr,
+        Props netComProps,
+        ErrorReporter errorLogRef
+    )
+        throws SystemServiceStartException
+    {
+        ServiceName serviceName;
+        try
+        {
+            serviceName = new ServiceName(serviceNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new SystemServiceStartException(
+                String.format(
+                    "The name '%s' can not be used for a network communication service instance",
+                    serviceNameStr
+                ),
+                String.format(
+                    "The name '%s' is not a valid name for a network communication service instance",
+                    serviceNameStr
+                ),
+                null,
+                "Change the name of the network communication service instance",
+                null,
+                invalidNameExc
+            );
+        }
+        Props configProp;
+        try
+        {
+            configProp = netComProps.getNamespace(serviceNameStr);
+        }
+        catch (InvalidKeyException invalidKeyExc)
+        {
+            throw new ImplementationError(
+                String.format(
+                    "A properties container returned the key '%s' as the identifier for a namespace, " +
+                    "but using the same key to obtain a reference to the namespace generated an " +
+                    "%s",
+                    serviceName,
+                    invalidKeyExc.getClass().getSimpleName()
+                ),
+                invalidKeyExc
+            );
+        }
+        String bindAddressStr = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_BINDADDR);
+        Integer port = Integer.parseInt(loadPropChecked(configProp, PROPSCON_KEY_NETCOM_PORT));
+        String type = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TYPE);
+
+        SocketAddress bindAddress = new InetSocketAddress(bindAddressStr, port);
+
+        TcpConnector netComSvc = null;
+        if (type.equals(PROPSCON_NETCOM_TYPE_PLAIN))
+        {
+            netComSvc = new TcpConnectorService(
+                this,
+                msgProc,
+                bindAddress,
+                publicCtx,
+                new CtrlConnTracker(
+                    this,
+                    peerMap,
+                    reconnectorTask
+                )
+            );
+        }
+        else
+        if (type.equals(PROPSCON_NETCOM_TYPE_SSL))
+        {
+            try
+            {
+                netComSvc = new SslTcpConnectorService(
+                    this,
+                    msgProc,
+                    bindAddress ,
+                    publicCtx,
+                    new CtrlConnTracker(
+                        this,
+                        peerMap,
+                        reconnectorTask
+                    ),
+                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_SSL_PROTOCOL),
+                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE),
+                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEYSTORE_PASSWD).toCharArray(),
+                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_KEY_PASSWD).toCharArray(),
+                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE),
+                    loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE_PASSWD).toCharArray()
+                );
+            }
+            catch (
+                KeyManagementException | UnrecoverableKeyException |
+                NoSuchAlgorithmException | KeyStoreException | CertificateException |
+                IOException exc
+            )
+            {
+                String errorMsg = "Initialization of an SSL-enabled network communication service failed";
+                errorLogRef.reportError(exc);
+                throw new SystemServiceStartException(
+                    errorMsg,
+                    errorMsg,
+                    null,
+                    null,
+                    null,
+                    exc
+                );
+            }
+        }
+        else
+        {
+            errorLogRef.reportProblem(
+                Level.ERROR,
+                new DrbdManageException(
+                    String.format(
+                        "The connection type for the network communication service '%s' is not valid",
+                        serviceName
+                    ),
+                    String.format(
+                        "The connection type has to be either '%s' or '%s', but was '%s'",
+                        PROPSCON_NETCOM_TYPE_PLAIN,
+                        PROPSCON_NETCOM_TYPE_SSL,
+                        type),
+                    null,
+                    "Correct the entry in the database",
+                    null
+                ),
+                null, // accCtx
+                null, // client
+                null  // contextInfo
+            );
+        }
+
+        if (netComSvc != null)
+        {
+            netComSvc.setServiceInstanceName(serviceName);
+            netComConnectors.put(serviceName, netComSvc);
+            systemServicesMap.put(serviceName, netComSvc);
+            errorLogRef.logInfo(
+                String.format(
+                    "Created network communication service '%s', bound to %s:%d",
+                    serviceName.displayValue, bindAddressStr, port
+                )
+            );
+        }
+
+        return netComSvc;
+    }
+
+    boolean deleteNetComService(String serviceNameStr, ErrorReporter errorLogRef) throws SystemServiceStopException
+    {
+        ServiceName serviceName;
+        try
+        {
+            serviceName = new ServiceName(serviceNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new SystemServiceStopException(
+                String.format(
+                    "The name '%s' can not be used for a network communication service instance",
+                    serviceNameStr
+                ),
+                String.format(
+                    "The name '%s' is not a valid name for a network communication service instance",
+                    serviceNameStr
+                ),
+                null,
+                "Change the name of the network communication service instance",
+                null,
+                invalidNameExc
+            );
+        }
+        TcpConnector netComSvc = netComConnectors.get(serviceName);
+        SystemService sysSvc = systemServicesMap.get(serviceName);
+
+        boolean svcStarted = false;
+        boolean issuedShutdown = false;
+        if (netComSvc != null)
+        {
+            svcStarted = netComSvc.isStarted();
+            if (svcStarted)
+            {
+                netComSvc.shutdown();
+                issuedShutdown = true;
+            }
+        }
+        else
+        if (sysSvc != null)
+        {
+            svcStarted = sysSvc.isStarted();
+            if (svcStarted)
+            {
+                sysSvc.shutdown();
+                issuedShutdown = true;
+            }
+        }
+
+        netComConnectors.remove(serviceName);
+        systemServicesMap.remove(serviceName);
+
+        if (svcStarted && issuedShutdown)
+        {
+            errorLogRef.logInfo(
+                String.format(
+                    "Initiated shutdown of network communication service '%s'",
+                    serviceName.displayValue
+                )
+            );
+        }
+
+        if (netComSvc != null || sysSvc != null)
+        {
+            errorLogRef.logInfo(
+                String.format(
+                    "Deleted network communication service '%s'",
+                    serviceName.displayValue
+                )
+            );
+        }
+
+        return netComSvc != null || sysSvc != null;
     }
 
     private String loadPropChecked(Props props, String key) throws SystemServiceStartException
