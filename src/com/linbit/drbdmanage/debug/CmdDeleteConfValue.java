@@ -138,7 +138,7 @@ public class CmdDeleteConfValue extends BaseDebugCmd
         finally
         {
             confLock.unlock();
-            
+
             if (dbConnPool != null && transMgr != null)
             {
                 dbConnPool.returnConnection(transMgr.dbCon);
