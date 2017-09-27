@@ -238,7 +238,7 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
     {
         if (initialized)
         {
-            if (persistence != null && transMgr!= null)
+            if (persistence != null)
             {
                 persistence.persist(pk, bits, transMgr);
                 changedStateFlags = bits;
@@ -246,7 +246,7 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
             else
             {
                 String npeMsg;
-                if (persistence == null && transMgr == null)
+                if (persistence == null)
                 {
                     npeMsg = "Persistence and transMgr are null";
                 }

@@ -72,8 +72,6 @@ public abstract class DerbyBase implements DerbyConstants
 //        new EmptyErrorReporter(true);
         new StdErrorReporter("TESTS");
 
-
-
     static
     {
         PrivilegeSet sysPrivs = new PrivilegeSet(Privilege.PRIV_SYS_ALL);
@@ -178,6 +176,11 @@ public abstract class DerbyBase implements DerbyConstants
         nodesMap.clear();
         resDfnMap.clear();
         storPoolDfnMap.clear();
+    }
+
+    protected void satelliteMode()
+    {
+        CoreUtils.satelliteMode(sysCtx, nodesMap, resDfnMap, storPoolDfnMap);
     }
 
     @After

@@ -52,21 +52,15 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
     @Override
     public void persist(String instanceName, String key, String value, TransactionMgr transMgr) throws SQLException
     {
-        if (transMgr != null)
-        {
-            persistImpl(instanceName, key, value, transMgr);
-        }
+        persistImpl(instanceName, key, value, transMgr);
     }
 
     @Override
     public void persist(String instanceName, Map<String, String> props, TransactionMgr transMgr) throws SQLException
     {
-        if (transMgr!= null)
+        for (Entry<String, String> entry : props.entrySet())
         {
-            for (Entry<String, String> entry : props.entrySet())
-            {
-                persistImpl(instanceName, entry.getKey(), entry.getValue(), transMgr);
-            }
+            persistImpl(instanceName, entry.getKey(), entry.getValue(), transMgr);
         }
     }
 

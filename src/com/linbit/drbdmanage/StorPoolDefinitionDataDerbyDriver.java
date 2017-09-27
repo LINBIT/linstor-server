@@ -70,7 +70,12 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     }
 
     @Override
-    public StorPoolDefinitionData load(StorPoolName storPoolName, TransactionMgr transMgr) throws SQLException
+    public StorPoolDefinitionData load(
+        StorPoolName storPoolName,
+        boolean logWarnIfNotExists,
+        TransactionMgr transMgr
+    )
+        throws SQLException
     {
         errorReporter.logTrace("Loading StorPoolDefinition %s", getTraceId(storPoolName));
 
@@ -85,6 +90,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
                     storPoolDefinition = load(resultSet, transMgr);
                 }
                 else
+                if (logWarnIfNotExists)
                 {
                     errorReporter.logWarning(
                         "StorPoolDefinition was not found in the DB %s",

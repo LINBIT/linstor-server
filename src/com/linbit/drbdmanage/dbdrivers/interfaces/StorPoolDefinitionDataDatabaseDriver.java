@@ -20,6 +20,8 @@ public interface StorPoolDefinitionDataDatabaseDriver
      *
      * @param storPoolName
      *  The primaryKey identifying the row to load
+     * @param logWarnIfNoTExists
+     *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
      *  The {@link TransactionMgr} containing the used database {@link Connection}
      * @return
@@ -28,7 +30,12 @@ public interface StorPoolDefinitionDataDatabaseDriver
      *
      * @throws SQLException
      */
-    public StorPoolDefinitionData load(StorPoolName storPoolName, TransactionMgr transMgr) throws SQLException;
+    public StorPoolDefinitionData load(
+        StorPoolName storPoolName,
+        boolean logWarnIfNotExists,
+        TransactionMgr transMgr
+    )
+        throws SQLException;
 
     /**
      * Persists the given {@link StorPoolDefinitionData} into the database.

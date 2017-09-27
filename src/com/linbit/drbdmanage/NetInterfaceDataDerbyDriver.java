@@ -79,7 +79,11 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     @Override
-    public NetInterfaceData load(Node node, NetInterfaceName niName, TransactionMgr transMgr)
+    public NetInterfaceData load(
+        Node node,
+        NetInterfaceName niName,
+        boolean logWarnIfNotExists,
+        TransactionMgr transMgr)
         throws SQLException
     {
         errorReporter.logTrace("Loading NetInterface %s", getTraceId(node, niName));
@@ -108,6 +112,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                     // ("loaded from [DB|cache]...") msg gets logged in restoreInstance method
                 }
                 else
+                if (logWarnIfNotExists)
                 {
                     errorReporter.logWarning("NetInterface not found in DB %s", getDebugId(node, niName));
                 }

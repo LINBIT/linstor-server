@@ -96,6 +96,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
     public VolumeConnectionData load(
         Volume sourceVolume,
         Volume targetVolume,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -149,6 +150,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                         );
                     }
                     else
+                    if (logWarnIfNotExists)
                     {
                         errorReporter.logWarning(
                             "VolumeConnection not found in the DB %s",
@@ -270,20 +272,21 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             );
         }
 
-        Node sourceNode = nodeDataDerbyDriver.load(sourceNodeName, transMgr);
-        Node targetNode = nodeDataDerbyDriver.load(targetNodeName, transMgr);
+        Node sourceNode = nodeDataDerbyDriver.load(sourceNodeName, true, transMgr);
+        Node targetNode = nodeDataDerbyDriver.load(targetNodeName, true, transMgr);
 
         ResourceDefinition resourceDefinition = resourceDefinitionDataDerbyDriver.load(
             resourceName,
+            true,
             transMgr
         );
-        VolumeDefinition volumeDfn = volumeDefinitionDataDerbyDriver.load(resourceDefinition, volNr, transMgr);
+        VolumeDefinition volumeDfn = volumeDefinitionDataDerbyDriver.load(resourceDefinition, volNr, true, transMgr);
 
-        Resource sourceResource = resourceDataDerbyDriver.load(sourceNode, resourceName, transMgr);
-        Resource targetResource = resourceDataDerbyDriver.load(targetNode, resourceName, transMgr);
+        Resource sourceResource = resourceDataDerbyDriver.load(sourceNode, resourceName, true, transMgr);
+        Resource targetResource = resourceDataDerbyDriver.load(targetNode, resourceName, true, transMgr);
 
-        Volume sourceVolume = volumeDataDerbyDriver.load(sourceResource, volumeDfn, transMgr);
-        Volume targetVolume = volumeDataDerbyDriver.load(targetResource, volumeDfn, transMgr);
+        Volume sourceVolume = volumeDataDerbyDriver.load(sourceResource, volumeDfn, true, transMgr);
+        Volume targetVolume = volumeDataDerbyDriver.load(targetResource, volumeDfn, true, transMgr);
 
         VolumeConnectionData ret = null;
         try

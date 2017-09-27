@@ -125,7 +125,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     {
         driver.create(conDfn, transMgr);
 
-        VolumeConnectionData loadedConDfn = driver.load(volSrc , volDst, transMgr);
+        VolumeConnectionData loadedConDfn = driver.load(volSrc , volDst, true, transMgr);
 
         checkLoadedConDfn(loadedConDfn, true);
     }
@@ -176,7 +176,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(volSrc, volDst, transMgr));
+        assertEquals(storedInstance, driver.load(volSrc, volDst, true, transMgr));
     }
 
     @Test
@@ -204,6 +204,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteCreate() throws Exception
     {
+        satelliteMode();
         VolumeConnectionData satelliteConDfn = VolumeConnectionData.getInstance(
             sysCtx,
             volSrc,
@@ -225,6 +226,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteNoCreate() throws Exception
     {
+        satelliteMode();
         VolumeConnectionData satelliteConDfn = VolumeConnectionData.getInstance(
             sysCtx,
             volSrc,

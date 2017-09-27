@@ -19,6 +19,32 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 public interface VolumeDataDatabaseDriver
 {
     /**
+     * Loads the {@link VolumeData} specified by the parameters
+     *
+     * @param resource
+     *  Part of the primary key specifying the database entry
+     * @param volumeDefinition
+     *  Part of the primary key specifying the database entry
+     * @param logWarnIfNoTExists
+     *  If true a warning is logged if the requested entry does not exist
+     * @param transMgr
+     *  The {@link TransactionMgr}, used to restore references, like {@link Node},
+     *  {@link Resource}, and so on
+     * @return
+     *  An instance which contains valid references, but is not
+     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
+     *
+     * @throws SQLException
+     */
+    public VolumeData load(
+        Resource resource,
+        VolumeDefinition volumeDefinition,
+        boolean logWarnIfNotExists,
+        TransactionMgr transMgr
+    )
+        throws SQLException;
+
+    /**
      * Persists the given {@link VolumeData} into the database.
      *
      * @param volume
@@ -39,31 +65,6 @@ public interface VolumeDataDatabaseDriver
      * @throws SQLException
      */
     public void delete(VolumeData volume, TransactionMgr transMgr) throws SQLException;
-
-    /**
-     * Loads the {@link VolumeData} specified by the parameters
-     *
-     * @param resource
-     *  Part of the primary key specifying the database entry
-     * @param volumeDefinition
-     *  Part of the primary key specifying the database entry
-     * @param serialGen
-     *  The {@link SerialGenerator}, used to initialize the {@link SerialPropsContainer}
-     * @param transMgr
-     *  The {@link TransactionMgr}, used to restore references, like {@link Node},
-     *  {@link Resource}, and so on
-     * @return
-     *  An instance which contains valid references, but is not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
-     *
-     * @throws SQLException
-     */
-    public VolumeData load(
-        Resource resource,
-        VolumeDefinition volumeDefinition,
-        TransactionMgr transMgr
-    )
-        throws SQLException;
 
     /**
      * A special sub-driver to update the persisted flags

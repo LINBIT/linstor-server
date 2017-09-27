@@ -26,6 +26,8 @@ public interface NetInterfaceDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param netInterfaceName
      *  Part of the primary key specifying the database entry
+     * @param logWarnIfNoTExists
+     *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
      *  The {@link TransactionMgr} containing the used database {@link Connection}
      * @return
@@ -37,6 +39,7 @@ public interface NetInterfaceDataDatabaseDriver
     public NetInterfaceData load(
         Node node,
         NetInterfaceName netInterfaceName,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException;

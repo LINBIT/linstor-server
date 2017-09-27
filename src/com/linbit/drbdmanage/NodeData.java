@@ -151,18 +151,9 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeData nodeData = null;
 
         NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver();
-        if (transMgr != null)
-        {
-            nodeData = dbDriver.load(nameRef, transMgr);
-        }
+        nodeData = dbDriver.load(nameRef, false, transMgr);
 
-        if (nodeData != null)
-        {
-            nodeData.objProt.requireAccess(accCtx, AccessType.CONTROL);
-            nodeData.setConnection(transMgr);
-        }
-        else
-        if (createIfNotExists)
+        if (nodeData == null && createIfNotExists)
         {
             nodeData = new NodeData(
                 accCtx,
@@ -171,12 +162,8 @@ public class NodeData extends BaseTransactionObject implements Node
                 StateFlagsBits.getMask(flags),
                 transMgr
             );
-            if (transMgr != null)
-            {
-                dbDriver.create(nodeData, transMgr);
-            }
+            dbDriver.create(nodeData, transMgr);
         }
-
         if (nodeData != null)
         {
             nodeData.initialized();

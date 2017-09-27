@@ -116,37 +116,26 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
             target = node1;
         }
 
+        source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
         NodeConnectionDataDatabaseDriver dbDriver = DrbdManage.getNodeConnectionDatabaseDriver();
+        nodeConDfnData = dbDriver.load(
+            source,
+            target,
+            false,
+            transMgr
+        );
 
-        if (transMgr != null)
-        {
-            nodeConDfnData = dbDriver.load(
-                source,
-                target,
-                transMgr
-            );
-        }
-
-        if (nodeConDfnData != null)
-        {
-            source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-            target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-            nodeConDfnData.setConnection(transMgr);
-        }
-        else
-        if (createIfNotExists)
+        if (nodeConDfnData == null && createIfNotExists)
         {
             nodeConDfnData = new NodeConnectionData(
                 source,
                 target,
                 transMgr
             );
-            if (transMgr != null)
-            {
-                dbDriver.create(nodeConDfnData, transMgr);
-            }
+            dbDriver.create(nodeConDfnData, transMgr);
         }
-
         if (nodeConDfnData != null)
         {
             source.setNodeConnection(accCtx, nodeConDfnData);

@@ -33,7 +33,7 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
     {
         if (initialized)
         {
-            if (transMgr != null && !Objects.equals(obj, cachedObject))
+            if (!Objects.equals(obj, cachedObject))
             {
                 dbDriver.update(parent, obj, transMgr);
             }

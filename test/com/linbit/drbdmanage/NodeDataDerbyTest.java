@@ -14,7 +14,6 @@ import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
-import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
@@ -202,7 +201,7 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         dbDriver.create(node, transMgr);
 
-        NodeData loaded = dbDriver.load(nodeName, transMgr);
+        NodeData loaded = dbDriver.load(nodeName, true, transMgr);
 
         assertEquals(nodeName.value, loaded.getName().value);
         assertEquals(nodeName.displayValue, loaded.getName().displayValue);
@@ -582,7 +581,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(node, dbDriver.load(nodeName, transMgr));
+        assertEquals(node, dbDriver.load(nodeName, true, transMgr));
     }
 
     @Test
@@ -606,7 +605,7 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
-        CoreUtils.satelliteMode();
+        satelliteMode();
 
         NodeData nodeData = NodeData.getInstance(
             sysCtx,
@@ -631,7 +630,7 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
-        CoreUtils.satelliteMode();
+        satelliteMode();
 
         NodeData nodeData = NodeData.getInstance(
             sysCtx,
@@ -658,7 +657,7 @@ public class NodeDataDerbyTest extends DerbyBase
         dbDriver.create(node, transMgr);
 
         NodeName halfValidName = new NodeName(node.getName().value);
-        NodeData loadedNode = dbDriver.load(halfValidName, transMgr);
+        NodeData loadedNode = dbDriver.load(halfValidName, true, transMgr);
 
         assertNotNull(loadedNode);
         assertEquals(node.getName(), loadedNode.getName());

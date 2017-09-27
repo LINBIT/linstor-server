@@ -151,36 +151,24 @@ public class ResourceData extends BaseTransactionObject implements Resource
     )
         throws SQLException, AccessDeniedException
     {
+        resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         ResourceData resData = null;
 
         ResourceDataDatabaseDriver driver = DrbdManage.getResourceDataDatabaseDriver();
 
-        if (transMgr != null)
-        {
-            resData = driver.load(node, resDfn.getName(), transMgr);
-        }
+        resData = driver.load(node, resDfn.getName(), false, transMgr);
 
-        if (resData != null)
+        if (resData == null && createIfNotExists)
         {
-            resData.objProt.requireAccess(accCtx, AccessType.VIEW);
-        }
-        else
-        {
-            if (createIfNotExists)
-            {
-                resData = new ResourceData(
-                    accCtx,
-                    resDfn,
-                    node,
-                    nodeId,
-                    StateFlagsBits.getMask(initFlags),
-                    transMgr
-                );
-                if (transMgr != null)
-                {
-                    driver.create(resData, transMgr);
-                }
-            }
+            resData = new ResourceData(
+                accCtx,
+                resDfn,
+                node,
+                nodeId,
+                StateFlagsBits.getMask(initFlags),
+                transMgr
+            );
+            driver.create(resData, transMgr);
         }
 
         if (resData != null)

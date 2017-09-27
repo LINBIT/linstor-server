@@ -21,8 +21,8 @@ public interface ResourceDefinitionDataDatabaseDriver
      *
      * @param resourceName
      *  The primary key specifying the database entry
-     * @param serialGen
-     *  The {@link SerialGenerator}, used to initialize the {@link SerialPropsContainer}
+     * @param logWarnIfNoTExists
+     *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
      *  The {@link TransactionMgr}, used to restore references, like {@link Node},
      *  {@link Resource}, and so on
@@ -34,6 +34,7 @@ public interface ResourceDefinitionDataDatabaseDriver
      */
     public ResourceDefinitionData load(
         ResourceName resourceName,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException;

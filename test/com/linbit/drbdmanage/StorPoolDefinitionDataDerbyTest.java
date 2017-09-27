@@ -8,7 +8,6 @@ import java.sql.ResultSet;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
@@ -90,7 +89,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(spdd, transMgr);
 
-        StorPoolDefinitionData loadedSpdd = driver.load(spName, transMgr);
+        StorPoolDefinitionData loadedSpdd = driver.load(spName, true, transMgr);
 
         assertNotNull(loadedSpdd);
         assertEquals(uuid, loadedSpdd.getUuid());
@@ -117,7 +116,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(spdd, driver.load(spName, transMgr));
+        assertEquals(spdd, driver.load(spName, true, transMgr));
     }
 
     @Test
@@ -156,7 +155,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
-        CoreUtils.satelliteMode();
+        satelliteMode();
 
         StorPoolDefinitionData spddSat = StorPoolDefinitionData.getInstance(sysCtx, spName, null, true);
 
@@ -177,7 +176,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
-        CoreUtils.satelliteMode();
+        satelliteMode();
 
         StorPoolDefinitionData spddSat = StorPoolDefinitionData.getInstance(sysCtx, spName, null, false);
 
@@ -199,7 +198,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         StorPoolName halfValidName = new StorPoolName(spdd.getName().value);
 
-        StorPoolDefinitionData loadedSpdd = driver.load(halfValidName, transMgr);
+        StorPoolDefinitionData loadedSpdd = driver.load(halfValidName, true, transMgr);
 
         assertNotNull(loadedSpdd);
         assertEquals(spdd.getName(), loadedSpdd.getName());

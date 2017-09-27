@@ -49,10 +49,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             netType
         );
 
-        if (transMgr != null)
-        {
-            setConnection(transMgr);
-        }
+        setConnection(transMgr);
     }
 
     // used by db drivers and tests
@@ -103,24 +100,16 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         NetInterfaceData netData = null;
         NetInterfaceDataDatabaseDriver driver = DrbdManage.getNetInterfaceDataDatabaseDriver();
 
-        if (transMgr != null)
-        {
-            netData = driver.load(node, name, transMgr);
-        }
+        netData = driver.load(node, name, false, transMgr);
 
         if (netData == null && createIfNotExists)
         {
             netData = new NetInterfaceData(node, name, addr, transMgr, netType);
-            if (transMgr != null)
-            {
-                driver.create(netData, transMgr);
-            }
+            driver.create(netData, transMgr);
         }
-
         if (netData != null)
         {
             ((NodeData) node).addNetInterface(accCtx, netData);
-
             netData.initialized();
         }
 

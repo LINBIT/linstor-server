@@ -108,6 +108,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     public VolumeDefinitionData load(
         ResourceDefinition resourceDefinition,
         VolumeNumber volumeNumber,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -134,6 +135,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 errorReporter.logDebug("VolumeDefinition loaded %s", getDebugId(resourceDefinition, volumeNumber));
             }
             else
+            if (logWarnIfNotExists)
             {
                 errorReporter.logWarning(
                     "Requested VolumeDefinition %s could not be found in the Database",

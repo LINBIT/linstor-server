@@ -138,38 +138,27 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             source = targetResource;
             target = sourceResource;
         }
+        source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         ResourceConnectionDataDatabaseDriver dbDriver = DrbdManage.getResourceConnectionDatabaseDriver();
 
-        if (transMgr != null)
-        {
-            resConDfnData = dbDriver.load(
-                source,
-                target,
-                transMgr
-            );
-        }
+        resConDfnData = dbDriver.load(
+            source,
+            target,
+            false,
+            transMgr
+        );
 
-        if (resConDfnData != null)
-        {
-            source.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-            target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-            resConDfnData.setConnection(transMgr);
-        }
-        else
-        if (createIfNotExists)
+        if (resConDfnData == null && createIfNotExists)
         {
             resConDfnData = new ResourceConnectionData(
                 source,
                 target,
                 transMgr
             );
-            if (transMgr != null)
-            {
-                dbDriver.create(resConDfnData, transMgr);
-            }
+            dbDriver.create(resConDfnData, transMgr);
         }
-
         if (resConDfnData != null)
         {
             sourceResource.setResourceConnection(accCtx, resConDfnData);

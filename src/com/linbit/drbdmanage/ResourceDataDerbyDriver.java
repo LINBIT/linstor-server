@@ -135,6 +135,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     public ResourceData load(
         Node node,
         ResourceName resourceName,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -155,6 +156,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     // logDebug about "Resource loaded" was printed in the load method above
                 }
                 else
+                if (logWarnIfNotExists)
                 {
                     errorReporter.logWarning("Resource could not be found %s", getDebugId(node, resourceName));
                 }
@@ -234,6 +236,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     {
                         node = DrbdManage.getNodeDataDatabaseDriver().load(
                             new NodeName(resultSet.getString(RES_NODE_NAME)),
+                            true,
                             transMgr
                         );
                     }
@@ -269,7 +272,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 if (resData == null)
                 {
                     ResourceDefinitionDataDatabaseDriver resDfnDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
-                    ResourceDefinition resDfn = resDfnDriver.load(resName, transMgr);
+                    ResourceDefinition resDfn = resDfnDriver.load(resName, true, transMgr);
 
                     Resource loadedRes = resDfn.getResource(dbCtx, node.getName());
                     // although we just asked the cache, we also just loaded the resDfn.

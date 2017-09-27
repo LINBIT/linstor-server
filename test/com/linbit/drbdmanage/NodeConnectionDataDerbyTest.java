@@ -81,7 +81,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     {
         driver.create(conDfn, transMgr);
 
-        NodeConnectionData loadedConDfn = driver.load(nodeSrc , nodeDst, transMgr);
+        NodeConnectionData loadedConDfn = driver.load(nodeSrc , nodeDst, true, transMgr);
 
         checkLoadedConDfn(loadedConDfn, true);
     }
@@ -132,7 +132,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(nodeSrc, nodeDst, transMgr));
+        assertEquals(storedInstance, driver.load(nodeSrc, nodeDst, true, transMgr));
     }
 
     @Test
@@ -160,6 +160,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteCreate() throws Exception
     {
+        satelliteMode();
         NodeConnectionData satelliteConDfn = NodeConnectionData.getInstance(
             sysCtx,
             nodeSrc,
@@ -181,6 +182,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteNoCreate() throws Exception
     {
+        satelliteMode();
         NodeConnectionData satelliteConDfn = NodeConnectionData.getInstance(
             sysCtx,
             nodeSrc,

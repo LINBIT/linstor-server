@@ -137,7 +137,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     }
 
     @Override
-    public NodeData load(NodeName nodeName, TransactionMgr transMgr)
+    public NodeData load(NodeName nodeName, boolean logWarnIfNotExists, TransactionMgr transMgr)
         throws SQLException
     {
         NodeData node = null;
@@ -152,6 +152,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     node = load(resultSet, transMgr);
                 }
                 else
+                if (logWarnIfNotExists)
                 {
                     errorReporter.logWarning(
                         "Node not found in the DB %s",

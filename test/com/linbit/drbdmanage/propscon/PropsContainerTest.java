@@ -16,6 +16,15 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.ResourceDefinition;
+import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.StorPoolDefinition;
+import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.core.CoreUtils;
+import com.linbit.drbdmanage.security.TestAccessContextProvider;
+
 public class PropsContainerTest
 {
     private PropsContainer root;
@@ -27,6 +36,18 @@ public class PropsContainerTest
     @Before
     public void setUp() throws Throwable
     {
+        Map<NodeName, Node> nodesMap = new HashMap<>();
+        Map<ResourceName, ResourceDefinition> resDfnMap = new HashMap<>();
+        Map<StorPoolName, StorPoolDefinition> storPoolDfnMap = new HashMap<>();
+
+        CoreUtils.satelliteMode(
+            TestAccessContextProvider.sysCtx,
+            nodesMap,
+            resDfnMap,
+            storPoolDfnMap
+        );
+
+
         root = PropsContainer.getInstance(null, null);
 
         fillProps(root, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);

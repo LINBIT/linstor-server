@@ -12,10 +12,10 @@ import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.SatelliteCoreServices;
+import com.linbit.drbdmanage.SatelliteDbDriver;
 import com.linbit.drbdmanage.SatellitePeerCtx;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolName;
-import com.linbit.drbdmanage.dbdrivers.NoOpDriver;
 import com.linbit.drbdmanage.debug.DebugConsole;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.Peer;
@@ -168,7 +168,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
         // initialize noop databases drivers (needed for shutdownProt)
         securityDbDriver = new EmptySecurityDbDriver();
-        persistenceDbDriver = new NoOpDriver();
+        persistenceDbDriver = new SatelliteDbDriver(sysCtx, nodesMap, rscDfnMap, storPoolDfnMap);
 
         // Initialize the worker thread pool
         // errorLogRef.logInfo("Starting worker thread pool");

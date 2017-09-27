@@ -16,7 +16,6 @@ import org.junit.Test;
 
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
-import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.security.DerbyBase;
@@ -140,7 +139,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(volDfn, transMgr);
 
-        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, transMgr);
+        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, true, transMgr);
         assertNotNull(loadedVd);
         assertEquals(uuid, loadedVd.getUuid());
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
@@ -245,7 +244,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         String testValue = "TestValue";
         insertProp(transMgr, PropsContainer.buildPath(resName, volNr), testKey, testValue);
 
-        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, transMgr);
+        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, true, transMgr);
         Props props = loadedVd.getProps(sysCtx);
 
         assertEquals(testValue, props.getProp(testKey));
@@ -380,7 +379,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteCreate() throws Exception
     {
-        CoreUtils.satelliteMode();
+        satelliteMode();
 
         VolumeDefinitionData volDfnSat = VolumeDefinitionData.getInstance(
             sysCtx,
@@ -412,7 +411,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteNoCreate() throws Exception
     {
-        CoreUtils.satelliteMode();
+        satelliteMode();
 
         VolumeDefinitionData volDfnSat = VolumeDefinitionData.getInstance(
             sysCtx,

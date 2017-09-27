@@ -119,6 +119,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     @Override
     public ResourceDefinitionData load(
         ResourceName resourceName,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -135,6 +136,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     resDfn = load(resultSet, transMgr);
                 }
                 else
+                if (logWarnIfNotExists)
                 {
                     errorReporter.logWarning("ResourceDefinition not found in the DB %s", getDebugId(resourceName));
                 }

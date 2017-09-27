@@ -25,8 +25,8 @@ public interface StorPoolDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param storPoolDefinition
      *  Part of the primary key specifying the database entry
-     * @param serialGen
-     *  The {@link SerialGenerator}, used to initialize the {@link SerialPropsContainer}
+     * @param logWarnIfNoTExists
+     *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
      *  The {@link TransactionMgr}, used to restore references, like {@link NodeData},
      *  {@link ResourceData}, and so on
@@ -39,6 +39,7 @@ public interface StorPoolDataDatabaseDriver
     public StorPoolData load(
         Node node,
         StorPoolDefinition storPoolDefinition,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException;

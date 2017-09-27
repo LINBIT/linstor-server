@@ -17,7 +17,6 @@ import org.junit.Test;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
-import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
 
@@ -151,7 +150,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         niData.initialized();
         dbDriver.create(niData, transMgr);
 
-        NetInterfaceData netData = dbDriver.load(node, niName, transMgr);
+        NetInterfaceData netData = dbDriver.load(node, niName, true, transMgr);
 
         assertNotNull(netData);
         assertEquals(niUuid, netData.getUuid());
@@ -168,7 +167,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         niData.initialized();
         dbDriver.create(niData, transMgr);
 
-        NetInterfaceData netData = dbDriver.load(node, niName, transMgr);
+        NetInterfaceData netData = dbDriver.load(node, niName, true, transMgr);
 
         assertNotNull(netData);
         assertEquals(niUuid, netData.getUuid());
@@ -232,7 +231,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         );
 
         // no clearCaches
-        assertEquals(storedInstance, dbDriver.load(node, niName, transMgr));
+        assertEquals(storedInstance, dbDriver.load(node, niName, true, transMgr));
     }
 
     @Test
@@ -354,7 +353,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
-        CoreUtils.satelliteMode();
+        satelliteMode();
 
         NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, null, niInterfaceType, true);
 
@@ -376,7 +375,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
-        CoreUtils.satelliteMode();
+        satelliteMode();
 
         NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, null, niInterfaceType, false);
 
@@ -397,7 +396,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
 
         NetInterfaceName halfValidNiName = new NetInterfaceName(niData.getName().value);
 
-        NetInterfaceData loadedNi = dbDriver.load(node, halfValidNiName, transMgr);
+        NetInterfaceData loadedNi = dbDriver.load(node, halfValidNiName, true, transMgr);
 
         assertNotNull(loadedNi);
         assertEquals(niData.getName(), loadedNi.getName());

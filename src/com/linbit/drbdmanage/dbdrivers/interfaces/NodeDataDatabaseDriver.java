@@ -27,6 +27,8 @@ public interface NodeDataDatabaseDriver
      *  The primary key identifying the row to load
      * @param serialGen
      *  The {@link SerialGenerator}, used to initialize the {@link SerialPropsContainer}
+     * @param logWarnIfNoTExists
+     *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
      *  The {@link TransactionMgr}, used to restore references, like {@link Node},
      *  {@link Resource}, and so on
@@ -38,6 +40,7 @@ public interface NodeDataDatabaseDriver
      */
     public NodeData load(
         NodeName nodeName,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException;

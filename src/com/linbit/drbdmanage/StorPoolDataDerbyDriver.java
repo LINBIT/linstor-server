@@ -69,6 +69,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     public StorPoolData load(
         Node node,
         StorPoolDefinition storPoolDfn,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -97,6 +98,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                         errorReporter.logDebug("StorPool loaded from DB", getDebugId(sp));
                     }
                     else
+                    if (logWarnIfNotExists)
                     {
                         errorReporter.logWarning(
                             "StorPool was not found in the DB %s",
@@ -149,7 +151,11 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                     if (storPoolData == null)
                     {
                         StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = DrbdManage.getStorPoolDefinitionDataDriver();
-                        StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(storPoolName, transMgr);
+                        StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(
+                            storPoolName,
+                            true,
+                            transMgr
+                        );
 
                         storPoolData = new StorPoolData(
                             UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),

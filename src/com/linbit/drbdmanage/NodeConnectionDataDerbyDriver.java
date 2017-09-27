@@ -66,6 +66,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
     public NodeConnectionData load(
         Node sourceNode,
         Node targetNode,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -86,6 +87,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
                     // traceLog about loaded from DB|cache in restoreConDfn method
                 }
                 else
+                if (logWarnIfNotExists)
                 {
                     errorReporter.logWarning(
                         "NodeConnection not found in DB %s",
@@ -177,8 +179,8 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
         }
 
 
-        Node sourceNode = nodeDriver.load(sourceNodeName, transMgr);
-        Node targetNode = nodeDriver.load(targetNodeName, transMgr);
+        Node sourceNode = nodeDriver.load(sourceNodeName, true, transMgr);
+        Node targetNode = nodeDriver.load(targetNodeName, true, transMgr);
 
         NodeConnectionData nodeConData = cacheGet(sourceNode, targetNode);
         if (nodeConData == null)

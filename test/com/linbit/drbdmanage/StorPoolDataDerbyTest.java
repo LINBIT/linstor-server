@@ -14,7 +14,6 @@ import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.storage.LvmDriver;
 import com.linbit.utils.UuidUtils;
@@ -109,12 +108,12 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        StorPoolData loadedStorPool = driver.load(node, spdd, transMgr);
+        StorPoolData loadedStorPool = driver.load(node, spdd, false, transMgr);
         assertNull(loadedStorPool);
 
         driver.create(storPool, transMgr);
 
-        loadedStorPool = driver.load(node, spdd, transMgr);
+        loadedStorPool = driver.load(node, spdd, true, transMgr);
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(sysCtx).getName());
         assertEquals(spdd, loadedStorPool.getDefinition(sysCtx));
@@ -157,7 +156,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(node, spdd, transMgr));
+        assertEquals(storedInstance, driver.load(node, spdd, true, transMgr));
     }
 
     @Test
@@ -247,7 +246,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
-        CoreUtils.satelliteMode();
+        satelliteMode();
 
         StorPoolData storPoolData = StorPoolData.getInstance(
             sysCtx,
@@ -278,7 +277,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
-        CoreUtils.satelliteMode();
+        satelliteMode();
 
         StorPoolData storPoolData = StorPoolData.getInstance(
             sysCtx,

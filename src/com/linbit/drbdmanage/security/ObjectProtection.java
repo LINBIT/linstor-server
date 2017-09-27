@@ -84,18 +84,12 @@ public final class ObjectProtection extends BaseTransactionObject
         ObjectProtectionDatabaseDriver dbDriver = DrbdManage.getObjectProtectionDatabaseDriver();
         ObjectProtection objProt = null;
 
-        if (transMgr != null)
-        {
-            objProt = dbDriver.loadObjectProtection(objPath, transMgr);
-        }
+        objProt = dbDriver.loadObjectProtection(objPath, transMgr);
 
         if (objProt == null && createIfNotExists)
         {
             objProt = new ObjectProtection(accCtx, objPath, dbDriver);
-            if (transMgr != null)
-            {
-                dbDriver.insertOp(objProt, transMgr);
-            }
+            dbDriver.insertOp(objProt, transMgr);
         }
 
         if (objProt != null)
@@ -365,7 +359,7 @@ public final class ObjectProtection extends BaseTransactionObject
 
     private void updateOp() throws SQLException
     {
-        if (isInitialized() && transMgr != null)
+        if (isInitialized())
         {
             if (!persisted)
             {
@@ -383,22 +377,20 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         if (isInitialized())
         {
-            if (transMgr != null)
+            if (!persisted)
             {
-                if (!persisted)
-                {
-                    updateOp();
-                }
-
-                if (oldEntry == null)
-                {
-                    dbDriver.insertAcl(this, entryRole, grantedAccess, transMgr);
-                }
-                else
-                {
-                    dbDriver.updateAcl(this, entryRole, grantedAccess, transMgr);
-                }
+                updateOp();
             }
+
+            if (oldEntry == null)
+            {
+                dbDriver.insertAcl(this, entryRole, grantedAccess, transMgr);
+            }
+            else
+            {
+                dbDriver.updateAcl(this, entryRole, grantedAccess, transMgr);
+            }
+
             if (!cachedAcl.containsKey(entryRole))
             {
                 cachedAcl.put(entryRole, oldEntry);
@@ -410,15 +402,13 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         if (isInitialized())
         {
-            if (transMgr != null)
+            if (!persisted)
             {
-                if (!persisted)
-                {
-                    updateOp();
-                }
-
-                dbDriver.deleteAcl(this, entryRole, transMgr);
+                updateOp();
             }
+
+            dbDriver.deleteAcl(this, entryRole, transMgr);
+
             if (!cachedAcl.containsKey(entryRole))
             {
                 cachedAcl.put(entryRole, oldEntry);

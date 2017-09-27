@@ -151,7 +151,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             true
         );
 
-        ResourceDefinitionData loadedResDfn = driver.load(resName, transMgr);
+        ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
@@ -211,7 +211,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         // no clearCaches
 
-        assertEquals(storedInstance, driver.load(resName, transMgr));
+        assertEquals(storedInstance, driver.load(resName, true, transMgr));
     }
 
     @Test
@@ -263,7 +263,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         clearCaches();
 
-        ResourceDefinitionData loadedResDfn = driver.load(resName, transMgr);
+        ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
 
         Props props = loadedResDfn.getProps(sysCtx);
 
@@ -289,7 +289,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             true
         );
 
-        ResourceDefinitionData loadedResDfn = driver.load(resName, transMgr);
+        ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
         Resource loadedRes = loadedResDfn.getResource(sysCtx, nodeName);
 
         assertNotNull(loadedRes);
@@ -312,7 +312,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         long volSize = 5_000;
         VolumeDefinitionData volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true);
 
-        ResourceDefinitionData loadedResDfn = driver.load(resName, transMgr);
+        ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
         VolumeDefinition loadedVolDfn = loadedResDfn.getVolumeDfn(sysCtx, volNr);
 
         assertNotNull(loadedVolDfn);
@@ -356,6 +356,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
+        satelliteMode();
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
@@ -379,6 +380,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testGetInstanceSatelliteNoCreate() throws Exception
     {
+        satelliteMode();
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
@@ -405,7 +407,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         ResourceName halfValidResName = new ResourceName(resDfn.getName().value);
 
-        ResourceDefinitionData loadedResDfn = driver.load(halfValidResName, transMgr);
+        ResourceDefinitionData loadedResDfn = driver.load(halfValidResName, true, transMgr);
 
         assertNotNull(loadedResDfn);
         assertEquals(resDfn.getName(), loadedResDfn.getName());

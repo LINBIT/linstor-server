@@ -28,6 +28,8 @@ public interface ResourceConnectionDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param targetResource
      *  Part of the primary key specifying the database entry
+     * @param logWarnIfNoTExists
+     *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
      *  Used to restore references, like {@link Node}, {@link Resource}, and so on
      *
@@ -40,6 +42,7 @@ public interface ResourceConnectionDataDatabaseDriver
     public ResourceConnectionData load(
         Resource source,
         Resource target,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException;

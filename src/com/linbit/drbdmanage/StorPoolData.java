@@ -94,40 +94,25 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     )
         throws SQLException, AccessDeniedException, ClassNotFoundException, InstantiationException, IllegalAccessException
     {
+        nodeRef.getObjProt().requireAccess(accCtx, AccessType.USE);
         StorPoolData storPoolData = null;
         StorPoolDataDatabaseDriver driver = DrbdManage.getStorPoolDataDatabaseDriver();
-        if (transMgr != null)
-        {
-            storPoolData = driver.load(nodeRef, storPoolDefRef, transMgr);
-            if (storPoolData == null && createIfNotExists)
-            {
-                storPoolData = new StorPoolData(
-                    nodeRef,
-                    storPoolDefRef,
-                    null,
-                    storDriverSimpleClassNameRef,
-                    transMgr
-                );
-                driver.create(storPoolData, transMgr);
-            }
-        }
-        else
-        if (createIfNotExists)
+
+        storPoolData = driver.load(nodeRef, storPoolDefRef, false, transMgr);
+        if (storPoolData == null && createIfNotExists)
         {
             storPoolData = new StorPoolData(
                 nodeRef,
                 storPoolDefRef,
-                // TODO: should every StorPool create a new storDriver instance?
                 StorageDriverUtils.createInstance(storDriverSimpleClassNameRef),
                 storDriverSimpleClassNameRef,
                 transMgr
             );
+            driver.create(storPoolData, transMgr);
         }
-
         if (storPoolData != null)
         {
             ((NodeData) nodeRef).addStorPool(accCtx, storPoolData);
-
             storPoolData.initialized();
         }
         return storPoolData;

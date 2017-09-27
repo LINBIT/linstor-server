@@ -177,38 +177,30 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     )
         throws SQLException, AccessDeniedException, MdException
     {
+        resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         VolumeDefinitionData volDfn = null;
 
         VolumeDefinitionDataDatabaseDriver driver = DrbdManage.getVolumeDefinitionDataDatabaseDriver();
-        if (transMgr != null)
-        {
-            volDfn = driver.load(resDfn, volNr, transMgr);
-        }
 
-        if (volDfn == null)
+        volDfn = driver.load(resDfn, volNr, false, transMgr);
+
+        if (volDfn == null && createIfNotExists)
         {
-            if (createIfNotExists)
-            {
-                volDfn = new VolumeDefinitionData(
-                    accCtx,
-                    resDfn,
-                    volNr,
-                    minor,
-                    volSize,
-                    StateFlagsBits.getMask(initFlags),
-                    transMgr
-                );
-                if (transMgr != null)
-                {
-                    driver.create(volDfn, transMgr);
-                }
-            }
+            volDfn = new VolumeDefinitionData(
+                accCtx,
+                resDfn,
+                volNr,
+                minor,
+                volSize,
+                StateFlagsBits.getMask(initFlags),
+                transMgr
+            );
+            driver.create(volDfn, transMgr);
         }
 
         if (volDfn != null)
         {
             ((ResourceDefinitionData) resDfn).putVolumeDefinition(accCtx, volDfn);
-
             volDfn.initialized();
         }
 

@@ -72,6 +72,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     public ResourceConnectionData load(
         Resource sourceResource,
         Resource targetResource,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -93,8 +94,12 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
                     // traceLog about loaded from DB|cache in restoreConDfn method
                 }
                 else
+                if (logWarnIfNotExists)
                 {
-                    errorReporter.logWarning("ResourceConnection not found in DB %s", getDebugId(sourceResource, targetResource));
+                    errorReporter.logWarning(
+                        "ResourceConnection not found in DB %s",
+                        getDebugId(sourceResource, targetResource)
+                    );
                 }
             }
         }
@@ -149,10 +154,10 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             );
         }
 
-        Node sourceNode = nodeDataDerbyDriver.load(sourceNodeName, transMgr);
-        Node targetNode = nodeDataDerbyDriver.load(targetNodeName, transMgr);
-        Resource sourceResource = resourceDataDerbyDriver.load(sourceNode, resourceName, transMgr);
-        Resource targetResource = resourceDataDerbyDriver.load(targetNode, resourceName, transMgr);
+        Node sourceNode = nodeDataDerbyDriver.load(sourceNodeName, true, transMgr);
+        Node targetNode = nodeDataDerbyDriver.load(targetNodeName, true, transMgr);
+        Resource sourceResource = resourceDataDerbyDriver.load(sourceNode, resourceName, true, transMgr);
+        Resource targetResource = resourceDataDerbyDriver.load(targetNode, resourceName, true, transMgr);
 
         ResourceConnectionData resConData = cacheGet(sourceResource, targetResource);
         if (resConData == null)

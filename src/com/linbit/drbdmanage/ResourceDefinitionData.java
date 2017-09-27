@@ -127,28 +127,18 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ResourceDefinitionDataDatabaseDriver driver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
 
         ResourceDefinitionData resDfn = null;
-        if (transMgr != null)
-        {
-            resDfn = driver.load(resName, transMgr);
-        }
+        resDfn = driver.load(resName, false, transMgr);
 
-        if (resDfn == null)
+        if (resDfn == null && createIfNotExists)
         {
-            if (createIfNotExists)
-            {
-                resDfn = new ResourceDefinitionData(
-                    accCtx,
-                    resName,
-                    StateFlagsBits.getMask(flags),
-                    transMgr
-                );
-                if (transMgr != null)
-                {
-                    driver.create(resDfn, transMgr);
-                }
-            }
+            resDfn = new ResourceDefinitionData(
+                accCtx,
+                resName,
+                StateFlagsBits.getMask(flags),
+                transMgr
+            );
+            driver.create(resDfn, transMgr);
         }
-
         if (resDfn != null)
         {
             resDfn.initialized();

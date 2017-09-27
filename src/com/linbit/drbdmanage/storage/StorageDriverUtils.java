@@ -7,13 +7,16 @@ public class StorageDriverUtils
     {
         StorageDriver driver = null;
 
-        String fullQualifiedName = StorageDriverUtils.class.getPackage().getName() + "." + simpleName;
-        Class<?> driverClass = Class.forName(fullQualifiedName);
-        if (!StorageDriver.class.isAssignableFrom(driverClass))
+        if (simpleName != null)
         {
-            throw new ClassCastException("Class does not implement the StorageDriver interface: " + simpleName);
+            String fullQualifiedName = StorageDriverUtils.class.getPackage().getName() + "." + simpleName;
+            Class<?> driverClass = Class.forName(fullQualifiedName);
+            if (!StorageDriver.class.isAssignableFrom(driverClass))
+            {
+                throw new ClassCastException("Class does not implement the StorageDriver interface: " + simpleName);
+            }
+            driver = (StorageDriver) driverClass.newInstance();
         }
-        driver = (StorageDriver) driverClass.newInstance();
 
         return driver;
     }

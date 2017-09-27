@@ -142,17 +142,16 @@ public class VolumeData extends BaseTransactionObject implements Volume
     )
         throws SQLException, AccessDeniedException
     {
+        resRef.getObjProt().requireAccess(accCtx, AccessType.USE);
         VolumeData vol = null;
 
         VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver();
-        if (transMgr != null)
-        {
-            vol = driver.load(
-                resRef,
-                volDfn,
-                transMgr
-            );
-        }
+        vol = driver.load(
+            resRef,
+            volDfn,
+            false,
+            transMgr
+        );
 
         if (vol == null && createIfNotExists)
         {
@@ -167,16 +166,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 accCtx,
                 transMgr
             );
-            if (transMgr != null)
-            {
-                driver.create(vol, transMgr);
-            }
+            driver.create(vol, transMgr);
         }
-
         if (vol != null)
         {
             ((ResourceData) resRef).putVolume(accCtx, vol);
-
             vol.initialized();
         }
         return vol;

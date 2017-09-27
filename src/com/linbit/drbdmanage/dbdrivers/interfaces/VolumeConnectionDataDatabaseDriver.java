@@ -28,6 +28,8 @@ public interface VolumeConnectionDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param targetVolume
      *  Part of the primary key specifying the database entry
+     * @param logWarnIfNoTExists
+     *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
      *  Used to restore references, like {@link Node}, {@link Resource}, and so on
      *
@@ -40,6 +42,7 @@ public interface VolumeConnectionDataDatabaseDriver
     public VolumeConnectionData load(
         Volume sourceVolume,
         Volume targetVolume,
+        boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
         throws SQLException;

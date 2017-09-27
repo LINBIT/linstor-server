@@ -144,26 +144,19 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
             source = targetVolume;
             target = sourceVolume;
         }
+        source.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        target.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         VolumeConnectionDataDatabaseDriver dbDriver = DrbdManage.getVolumeConnectionDatabaseDriver();
 
-        if (transMgr != null)
-        {
-            volConData = dbDriver.load(
-                source,
-                target,
-                transMgr
-            );
-        }
+        volConData = dbDriver.load(
+            source,
+            target,
+            false,
+            transMgr
+        );
 
-        if (volConData != null)
-        {
-            source.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-            target.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-            volConData.setConnection(transMgr);
-        }
-        else
-        if (createIfNotExists)
+        if (volConData == null && createIfNotExists)
         {
             volConData = new VolumeConnectionData(
                 accCtx,
@@ -171,12 +164,9 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
                 target,
                 transMgr
             );
-            if (transMgr != null)
-            {
-                dbDriver.create(volConData, transMgr);
-            }
-        }
 
+            dbDriver.create(volConData, transMgr);
+        }
         if (volConData != null)
         {
             source.setVolumeConnection(accCtx, volConData);

@@ -41,7 +41,7 @@ public abstract class BaseTransactionObject implements TransactionObject
         {
             transMgrRef.register(this);
         }
-        transMgr= transMgrRef;
+        transMgr = transMgrRef;
 
         for (TransactionObject transObj : transObjs)
         {

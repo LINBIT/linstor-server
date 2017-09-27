@@ -80,19 +80,13 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         StorPoolDefinitionData storPoolDfn = null;
 
         StorPoolDefinitionDataDatabaseDriver dbDriver = DrbdManage.getStorPoolDefinitionDataDriver();
-        if (transMgr != null)
-        {
-            storPoolDfn = dbDriver.load(nameRef, transMgr);
-            if (storPoolDfn == null && createIfNotExists)
-            {
-                storPoolDfn = new StorPoolDefinitionData(accCtx, nameRef, transMgr);
-                dbDriver.create(storPoolDfn, transMgr);
-            }
-        }
-        else
-        if (createIfNotExists)
+        storPoolDfn = dbDriver.load(nameRef, false, transMgr);
+
+        if (storPoolDfn == null && createIfNotExists)
         {
             storPoolDfn = new StorPoolDefinitionData(accCtx, nameRef, transMgr);
+
+            dbDriver.create(storPoolDfn, transMgr);
         }
 
         if (storPoolDfn != null)

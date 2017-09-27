@@ -1,6 +1,7 @@
-package com.linbit.drbdmanage.dbdrivers;
+package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,33 +11,10 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.ResourceConnectionData;
-import com.linbit.drbdmanage.DmIpAddress;
-import com.linbit.drbdmanage.MinorNumber;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.Node.NodeType;
-import com.linbit.drbdmanage.NetInterfaceData;
-import com.linbit.drbdmanage.NetInterfaceName;
-import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.NodeConnectionData;
-import com.linbit.drbdmanage.NodeData;
-import com.linbit.drbdmanage.NodeName;
-import com.linbit.drbdmanage.Resource;
-import com.linbit.drbdmanage.ResourceData;
-import com.linbit.drbdmanage.ResourceDefinition;
-import com.linbit.drbdmanage.ResourceDefinitionData;
-import com.linbit.drbdmanage.ResourceName;
-import com.linbit.drbdmanage.StorPoolData;
-import com.linbit.drbdmanage.StorPoolDefinition;
-import com.linbit.drbdmanage.StorPoolDefinitionData;
-import com.linbit.drbdmanage.StorPoolName;
-import com.linbit.drbdmanage.Volume;
-import com.linbit.drbdmanage.VolumeConnectionData;
-import com.linbit.drbdmanage.VolumeData;
-import com.linbit.drbdmanage.VolumeDefinition;
-import com.linbit.drbdmanage.VolumeDefinitionData;
-import com.linbit.drbdmanage.VolumeNumber;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
@@ -48,9 +26,11 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabase
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
-public class NoOpDriver implements DatabaseDriver
+public class SatelliteDbDriver implements DatabaseDriver
 {
     public static final ServiceName DFLT_SERVICE_INSTANCE_NAME;
 
@@ -69,23 +49,41 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static final PropsConDatabaseDriver NO_OP_PROPS_DRIVER = new NoOpPropDriver();
-    private static final NodeDataDatabaseDriver NO_OP_NODE_DRIVER = new NoOpNodeDriver();
-    private static final ResourceDataDatabaseDriver NO_OP_RES_DRIVER = new NoOpResDriver();
-    private static final ResourceDefinitionDataDatabaseDriver NO_OP_RES_DFN_DRIVER = new NoOpResDfnDriver();
-    private static final VolumeDataDatabaseDriver NO_OP_VOL_DRIVER = new NoOpVolDriver();
-    private static final VolumeDefinitionDataDatabaseDriver NO_OP_VOL_DFN_DRIVER = new NoOpVolDfnDriver();
-    private static final StorPoolDefinitionDataDatabaseDriver NO_OP_SP_DRIVER = new NoOpSpDriver();
-    private static final StorPoolDataDatabaseDriver NO_OP_SPD_DRIVER = new NoOpSpdDriver();
-    private static final NetInterfaceDataDatabaseDriver NO_OP_NI_DRIVER = new NoOpNiDriver();
-    private static final NodeConnectionDataDatabaseDriver NO_OP_NODE_CON_DFN_DRIVER = new NoOpNodeConDfnDriver();
-    private static final ResourceConnectionDataDatabaseDriver NO_OP_RES_CON_DFN_DRIVER = new NoOpResConDfnDriver();
-    private static final VolumeConnectionDataDatabaseDriver NO_OP_VOL_CON_DFN_DRIVER = new NoOpVolConDfnDriver();
+    private final PropsConDatabaseDriver propsDriver = new SatellitePropDriver();
+    private final NodeDataDatabaseDriver nodeDriver = new SatelliteNodeDriver();
+    private final ResourceDataDatabaseDriver resourceDriver = new SatelliteResDriver();
+    private final ResourceDefinitionDataDatabaseDriver resourceDefinitionDriver = new SatelliteResDfnDriver();
+    private final VolumeDataDatabaseDriver volumeDriver = new SatelliteVolDriver();
+    private final VolumeDefinitionDataDatabaseDriver volumeDefinitionDriver = new SatelliteVolDfnDriver();
+    private final StorPoolDefinitionDataDatabaseDriver storPoolDriver = new SatelliteSpDriver();
+    private final StorPoolDataDatabaseDriver storPoolDefinitionDriver = new SatelliteSpdDriver();
+    private final NetInterfaceDataDatabaseDriver netInterfaceDriver = new SatelliteNiDriver();
+    private final NodeConnectionDataDatabaseDriver nodeConnectionDriver = new SatelliteNodeConDfnDriver();
+    private final ResourceConnectionDataDatabaseDriver resourceConnectionDriver = new SatelliteResConDfnDriver();
+    private final VolumeConnectionDataDatabaseDriver volumeConnectionDriver = new SatelliteVolConDfnDriver();
 
-    private static final StateFlagsPersistence<?> NO_OP_FLAG_DRIVER = new NoOpFlagDriver();
-    private static final SingleColumnDatabaseDriver<?, ?> NO_OP_OBJ_DB_DRIVER = new NoOpObjDbDriver<>();
+    private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
+    private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
 
-    private static final String NO_OP_STRING = "NO_OP";
+    private final String dbUrl = "NO_OP";
+
+    private final AccessContext dbCtx;
+    private final Map<NodeName, Node> nodesMap;
+    private final Map<ResourceName, ResourceDefinition> resDfnMap;
+    private final Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
+
+    public SatelliteDbDriver(
+        AccessContext privCtx,
+        Map<NodeName, Node> nodesMapRef,
+        Map<ResourceName, ResourceDefinition> rscDfnMapRef,
+        Map<StorPoolName, StorPoolDefinition> storPoolDfnMapRef
+    )
+    {
+        dbCtx = privCtx;
+        nodesMap = nodesMapRef;
+        resDfnMap = rscDfnMapRef;
+        storPoolDfnMap = storPoolDfnMapRef;
+    }
 
     @Override
     public void loadAll(TransactionMgr transMgr) throws SQLException
@@ -102,87 +100,87 @@ public class NoOpDriver implements DatabaseDriver
     @Override
     public String getDefaultConnectionUrl()
     {
-        return NO_OP_STRING;
+        return dbUrl;
     }
 
     @Override
     public PropsConDatabaseDriver getPropsDatabaseDriver()
     {
-        return NO_OP_PROPS_DRIVER;
+        return propsDriver;
     }
 
     @Override
     public NodeDataDatabaseDriver getNodeDatabaseDriver()
     {
-        return NO_OP_NODE_DRIVER;
+        return nodeDriver;
     }
 
     @Override
     public ResourceDataDatabaseDriver getResourceDataDatabaseDriver()
     {
-        return NO_OP_RES_DRIVER;
+        return resourceDriver;
     }
 
     @Override
     public ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver()
     {
-        return NO_OP_RES_DFN_DRIVER;
+        return resourceDefinitionDriver;
     }
 
     @Override
     public VolumeDataDatabaseDriver getVolumeDataDatabaseDriver()
     {
-        return NO_OP_VOL_DRIVER;
+        return volumeDriver;
     }
 
     @Override
     public VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver()
     {
-        return NO_OP_VOL_DFN_DRIVER;
+        return volumeDefinitionDriver;
     }
 
     @Override
     public StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver()
     {
-        return NO_OP_SP_DRIVER;
+        return storPoolDriver;
     }
 
     @Override
     public StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver()
     {
-        return NO_OP_SPD_DRIVER;
+        return storPoolDefinitionDriver;
     }
 
     @Override
     public NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver()
     {
-        return NO_OP_NI_DRIVER;
+        return netInterfaceDriver;
     }
 
     @Override
     public NodeConnectionDataDatabaseDriver getNodeConnectionDataDatabaseDriver()
     {
-        return NO_OP_NODE_CON_DFN_DRIVER;
+        return nodeConnectionDriver;
     }
 
     @Override
     public ResourceConnectionDataDatabaseDriver getResourceConnectionDataDatabaseDriver()
     {
-        return NO_OP_RES_CON_DFN_DRIVER;
+        return resourceConnectionDriver;
     }
 
     @Override
     public VolumeConnectionDataDatabaseDriver getVolumeConnectionDataDatabaseDriver()
     {
-        return NO_OP_VOL_CON_DFN_DRIVER;
+        return volumeConnectionDriver;
     }
 
-    private static class NoOpPropDriver implements PropsConDatabaseDriver
+    private class SatellitePropDriver implements PropsConDatabaseDriver
     {
         @Override
         public Map<String, String> load(String instanceName, TransactionMgr transMgr) throws SQLException
         {
-            return null;
+            return Collections.emptyMap();
         }
 
         @Override
@@ -216,53 +214,53 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpNodeDriver implements NodeDataDatabaseDriver
+    private class SatelliteNodeDriver implements NodeDataDatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
         public StateFlagsPersistence<NodeData> getStateFlagPersistence()
         {
-            return (StateFlagsPersistence<NodeData>) NO_OP_FLAG_DRIVER;
+            return (StateFlagsPersistence<NodeData>) stateFlagsDriver;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public SingleColumnDatabaseDriver<NodeData, NodeType> getNodeTypeDriver()
         {
-            return (SingleColumnDatabaseDriver<NodeData, NodeType>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<NodeData, NodeType>) singleColDriver;
         }
 
         @Override
-        public void create(NodeData nodeData, TransactionMgr transMgr) throws SQLException
+        public void create(NodeData node, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public NodeData load(NodeName nodeName, TransactionMgr transMgr)
+        public NodeData load(NodeName nodeName, boolean logWarnIfNotExists, TransactionMgr transMgr)
             throws SQLException
         {
-            return null;
+            return (NodeData) nodesMap.get(nodeName);
         }
 
         @Override
-        public void delete(NodeData data, TransactionMgr transMgr) throws SQLException
+        public void delete(NodeData node, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
     }
 
-    private static class NoOpResDriver implements ResourceDataDatabaseDriver
+    private class SatelliteResDriver implements ResourceDataDatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
         public StateFlagsPersistence<ResourceData> getStateFlagPersistence()
         {
-            return (StateFlagsPersistence<ResourceData>) NO_OP_FLAG_DRIVER;
+            return (StateFlagsPersistence<ResourceData>) stateFlagsDriver;
         }
 
         @Override
-        public void create(ResourceData resData, TransactionMgr transMgr) throws SQLException
+        public void create(ResourceData res, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
@@ -271,11 +269,21 @@ public class NoOpDriver implements DatabaseDriver
         public ResourceData load(
             Node node,
             ResourceName resourceName,
+            boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
             throws SQLException
         {
-            return null;
+            ResourceData resource = null;
+            try
+            {
+                resource = (ResourceData) node.getResource(dbCtx, resourceName);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                handleAccessDeniedException(accDeniedExc);
+            }
+            return resource;
         }
 
         @Override
@@ -285,13 +293,13 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpResDfnDriver implements ResourceDefinitionDataDatabaseDriver
+    private class SatelliteResDfnDriver implements ResourceDefinitionDataDatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
         public StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence()
         {
-            return (StateFlagsPersistence<ResourceDefinitionData>) NO_OP_FLAG_DRIVER;
+            return (StateFlagsPersistence<ResourceDefinitionData>) stateFlagsDriver;
         }
 
         @Override
@@ -303,14 +311,18 @@ public class NoOpDriver implements DatabaseDriver
         @Override
         public boolean exists(ResourceName resourceName, TransactionMgr transMgr) throws SQLException
         {
-            return false;
+            return resDfnMap.containsKey(resourceName);
         }
 
         @Override
-        public ResourceDefinitionData load(ResourceName resourceName,TransactionMgr transMgr)
+        public ResourceDefinitionData load(
+            ResourceName resourceName,
+            boolean logWarnIfNotExists,
+            TransactionMgr transMgr
+        )
             throws SQLException
         {
-            return null;
+            return (ResourceDefinitionData) resDfnMap.get(resourceName);
         }
 
         @Override
@@ -320,24 +332,34 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpVolDriver implements VolumeDataDatabaseDriver
+    private class SatelliteVolDriver implements VolumeDataDatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
         public StateFlagsPersistence<VolumeData> getStateFlagsPersistence()
         {
-            return (StateFlagsPersistence<VolumeData>) NO_OP_FLAG_DRIVER;
+            return (StateFlagsPersistence<VolumeData>) stateFlagsDriver;
         }
 
         @Override
         public VolumeData load(
             Resource resource,
             VolumeDefinition volumeDefinition,
+            boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
             throws SQLException
         {
-            return null;
+            VolumeData volume = null;
+            try
+            {
+                volume = (VolumeData) resource.getVolume(volumeDefinition.getVolumeNumber(dbCtx));
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                handleAccessDeniedException(accDeniedExc);
+            }
+            return volume;
         }
 
         @Override
@@ -353,27 +375,27 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
+    private class SatelliteVolDfnDriver implements VolumeDefinitionDataDatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
         public StateFlagsPersistence<VolumeDefinitionData> getStateFlagsPersistence()
         {
-            return (StateFlagsPersistence<VolumeDefinitionData>) NO_OP_FLAG_DRIVER;
+            return (StateFlagsPersistence<VolumeDefinitionData>) stateFlagsDriver;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber> getMinorNumberDriver()
         {
-            return (SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<VolumeDefinitionData, MinorNumber>) singleColDriver;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public SingleColumnDatabaseDriver<VolumeDefinitionData, Long> getVolumeSizeDriver()
         {
-            return (SingleColumnDatabaseDriver<VolumeDefinitionData, Long>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<VolumeDefinitionData, Long>) singleColDriver;
         }
 
         @Override
@@ -386,11 +408,21 @@ public class NoOpDriver implements DatabaseDriver
         public VolumeDefinitionData load(
             ResourceDefinition resourceDefinition,
             VolumeNumber volumeNumber,
+            boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
             throws SQLException
         {
-            return null;
+            VolumeDefinitionData volumeDfn = null;
+            try
+            {
+                volumeDfn = (VolumeDefinitionData) resourceDefinition.getVolumeDfn(dbCtx, volumeNumber);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                handleAccessDeniedException(accDeniedExc);
+            }
+            return volumeDfn;
         }
 
         @Override
@@ -400,7 +432,7 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpSpDriver implements StorPoolDefinitionDataDatabaseDriver
+    private class SatelliteSpDriver implements StorPoolDefinitionDataDatabaseDriver
     {
         @Override
         public void create(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
@@ -409,9 +441,14 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public StorPoolDefinitionData load(StorPoolName storPoolName, TransactionMgr transMgr) throws SQLException
+        public StorPoolDefinitionData load(
+            StorPoolName storPoolName,
+            boolean logWarnIfNotExists,
+            TransactionMgr transMgr
+        )
+            throws SQLException
         {
-            return null;
+            return (StorPoolDefinitionData) storPoolDfnMap.get(storPoolName);
         }
 
         @Override
@@ -421,17 +458,27 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpSpdDriver implements StorPoolDataDatabaseDriver
+    private class SatelliteSpdDriver implements StorPoolDataDatabaseDriver
     {
         @Override
         public StorPoolData load(
             Node node,
             StorPoolDefinition storPoolDefinition,
+            boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
             throws SQLException
         {
-            return null;
+            StorPoolData storPool = null;
+            try
+            {
+                storPool = (StorPoolData) node.getStorPool(dbCtx, storPoolDefinition.getName());
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                handleAccessDeniedException(accDeniedExc);
+            }
+            return storPool;
         }
 
         @Override
@@ -453,31 +500,41 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpNiDriver implements NetInterfaceDataDatabaseDriver
+    private class SatelliteNiDriver implements NetInterfaceDataDatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
         public SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> getNetInterfaceAddressDriver()
         {
-            return (SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress>) singleColDriver;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> getNetInterfaceTypeDriver()
         {
-            return (SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType>) NO_OP_OBJ_DB_DRIVER;
+            return (SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType>) singleColDriver;
         }
 
         @Override
         public NetInterfaceData load(
             Node node,
             NetInterfaceName netInterfaceName,
+            boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
             throws SQLException
         {
-            return null;
+            NetInterfaceData netInterface = null;
+            try
+            {
+                netInterface = (NetInterfaceData) node.getNetInterface(dbCtx, netInterfaceName);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                handleAccessDeniedException(accDeniedExc);
+            }
+            return netInterface;
         }
 
         @Override
@@ -493,7 +550,7 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpFlagDriver implements StateFlagsPersistence<Object>
+    private class SatelliteFlagDriver implements StateFlagsPersistence<Object>
     {
         @Override
         public void persist(Object parent, long flags, TransactionMgr transMgr) throws SQLException
@@ -502,7 +559,7 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpObjDbDriver<NOOP_KEY, NOOP> implements SingleColumnDatabaseDriver<NOOP_KEY, NOOP>
+    private class SatelliteSingleColDriver<NOOP_KEY, NOOP> implements SingleColumnDatabaseDriver<NOOP_KEY, NOOP>
     {
         @Override
         public void update(NOOP_KEY parent, NOOP element, TransactionMgr transMgr) throws SQLException
@@ -511,17 +568,27 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpNodeConDfnDriver implements NodeConnectionDataDatabaseDriver
+    private class SatelliteNodeConDfnDriver implements NodeConnectionDataDatabaseDriver
     {
         @Override
         public NodeConnectionData load(
             Node sourceNode,
             Node targetNode,
+            boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
             throws SQLException
         {
-            return null;
+            NodeConnectionData nodeConnection = null;
+            try
+            {
+                nodeConnection = (NodeConnectionData) sourceNode.getNodeConnection(dbCtx, targetNode);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                handleAccessDeniedException(accDeniedExc);
+            }
+            return nodeConnection;
         }
 
         @Override
@@ -531,7 +598,7 @@ public class NoOpDriver implements DatabaseDriver
         )
             throws SQLException
         {
-            return null;
+            return Collections.emptyList();
         }
 
         @Override
@@ -547,17 +614,27 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpResConDfnDriver implements ResourceConnectionDataDatabaseDriver
+    private class SatelliteResConDfnDriver implements ResourceConnectionDataDatabaseDriver
     {
         @Override
         public ResourceConnectionData load(
             Resource source,
             Resource target,
+            boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
             throws SQLException
         {
-            return null;
+            ResourceConnectionData resourceConnection = null;
+            try
+            {
+                resourceConnection = (ResourceConnectionData) source.getResourceConnection(dbCtx, target);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                handleAccessDeniedException(accDeniedExc);
+            }
+            return resourceConnection;
         }
 
         @Override
@@ -567,7 +644,7 @@ public class NoOpDriver implements DatabaseDriver
         )
             throws SQLException
         {
-            return null;
+            return Collections.emptyList();
         }
 
         @Override
@@ -583,17 +660,27 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpVolConDfnDriver implements VolumeConnectionDataDatabaseDriver
+    private class SatelliteVolConDfnDriver implements VolumeConnectionDataDatabaseDriver
     {
         @Override
         public VolumeConnectionData load(
             Volume sourceVolume,
             Volume targetVolume,
+            boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
             throws SQLException
         {
-            return null;
+            VolumeConnectionData volumeConnection = null;
+            try
+            {
+                volumeConnection = (VolumeConnectionData) sourceVolume.getVolumeConnection(dbCtx, targetVolume);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                handleAccessDeniedException(accDeniedExc);
+            }
+            return volumeConnection;
         }
 
         @Override
@@ -603,7 +690,7 @@ public class NoOpDriver implements DatabaseDriver
         )
             throws SQLException
         {
-            return null;
+            return Collections.emptyList();
         }
 
         @Override
@@ -617,5 +704,13 @@ public class NoOpDriver implements DatabaseDriver
         {
             // no-op
         }
+    }
+
+    public void handleAccessDeniedException(AccessDeniedException accDeniedExc)
+    {
+        throw new ImplementationError(
+            "SatelliteDbDriver's accessContext has not enough privileges",
+            accDeniedExc
+        );
     }
 }
