@@ -13,15 +13,12 @@ import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
-import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
-import com.linbit.drbdmanage.security.ObjectProtection;
-import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.utils.UuidUtils;
 
 public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriver
@@ -72,10 +69,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
-    public NetInterfaceDataDerbyDriver(
-        AccessContext ctx,
-        ErrorReporter errorReporterRef
-    )
+    public NetInterfaceDataDerbyDriver(AccessContext ctx, ErrorReporter errorReporterRef)
     {
         dbCtx = ctx;
         errorReporter = errorReporterRef;
@@ -110,7 +104,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                             invalidNameExc
                         );
                     }
-                    netIfData = restoreInstance(node, niName, resultSet, transMgr);
+                    netIfData = restoreInstance(node, niName, resultSet);
                     // ("loaded from [DB|cache]...") msg gets logged in restoreInstance method
                 }
                 else
@@ -210,7 +204,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                     {
                         throw new DrbdSqlRuntimeException("NetInterface contains illegal displayName");
                     }
-                    netIfDataList.add(restoreInstance(node, netName, resultSet, transMgr));
+                    netIfDataList.add(restoreInstance(node, netName, resultSet));
                 }
             }
         }
@@ -253,8 +247,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     private NetInterfaceData restoreInstance(
         Node node,
         NetInterfaceName netName,
-        ResultSet resultSet,
-        TransactionMgr transMgr
+        ResultSet resultSet
     )
         throws SQLException
     {
@@ -275,10 +268,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                     invalidIpAddressExc
                 );
             }
-            ObjectProtection objProt = getObjectProtection(node, netName, transMgr);
             ret = new NetInterfaceData(
                 uuid,
-                objProt,
                 netName,
                 node,
                 addr,
@@ -287,26 +278,6 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         }
 
         return ret;
-    }
-
-    private ObjectProtection getObjectProtection(Node node, NetInterfaceName netName, TransactionMgr transMgr) throws SQLException
-    {
-        ObjectProtectionDatabaseDriver opDriver = DrbdManage.getObjectProtectionDatabaseDriver();
-        ObjectProtection objProt = opDriver.loadObjectProtection(
-            ObjectProtection.buildPath(
-                node.getName(),
-                netName
-            ),
-            transMgr
-        );
-        if (objProt == null)
-        {
-            throw new ImplementationError(
-                "NetInterface's DB entry exists, but is missing an entry in ObjProt table! " + getTraceId(node, netName),
-                null
-            );
-        }
-        return objProt;
     }
 
     private NetInterfaceData cacheGet(Node node, NetInterfaceName netName)

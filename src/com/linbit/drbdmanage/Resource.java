@@ -32,6 +32,15 @@ public interface Resource extends TransactionObject
 
     public NodeId getNodeId();
 
+    public ResourceConnection getResourceConnection(AccessContext accCtx, Resource otherResource)
+        throws AccessDeniedException;
+
+    public void setResourceConnection(AccessContext accCtx, ResourceConnection resCon)
+        throws AccessDeniedException;
+
+    public void removeResourceConnection(AccessContext accCtx, ResourceConnection resCon)
+        throws AccessDeniedException;
+
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
@@ -58,5 +67,7 @@ public interface Resource extends TransactionObject
             return flagValue;
         }
     }
+
+
 
 }

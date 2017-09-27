@@ -13,7 +13,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
-import com.linbit.drbdmanage.security.ObjectProtection;
 
 /**
  * Implementation of a network interface
@@ -26,7 +25,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     private final Node niNode;
     private final NetInterfaceName niName;
 
-    private final ObjectProtection objProt;
     private final TransactionSimpleObject<NetInterfaceData, DmIpAddress> niAddress;
     private final TransactionSimpleObject<NetInterfaceData, NetInterfaceType> niType;
 
@@ -36,26 +34,15 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
     // used by getInstance
     private NetInterfaceData(
-        AccessContext accCtx,
         Node node,
         NetInterfaceName name,
         DmIpAddress addr,
         TransactionMgr transMgr,
         NetInterfaceType netType
     )
-        throws SQLException, AccessDeniedException
     {
         this(
             UUID.randomUUID(),
-            ObjectProtection.getInstance(
-                accCtx,
-                ObjectProtection.buildPath(
-                    node.getName(),
-                    name
-                ),
-                true,
-                transMgr
-            ),
             name,
             node,
             addr,
@@ -71,7 +58,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     // used by db drivers and tests
     NetInterfaceData(
         UUID uuid,
-        ObjectProtection objectProtection,
         NetInterfaceName netName,
         Node node,
         DmIpAddress addr,
@@ -81,7 +67,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         niUuid = uuid;
         niNode = node;
         niName = netName;
-        objProt = objectProtection;
 
         dbDriver = DrbdManage.getNetInterfaceDataDatabaseDriver();
 
@@ -98,8 +83,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         transObjs = Arrays.<TransactionObject> asList(
             niAddress,
-            niType,
-            objProt
+            niType
         );
     }
 
@@ -114,6 +98,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     )
         throws SQLException, AccessDeniedException
     {
+        node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
         NetInterfaceData netData = null;
         NetInterfaceDataDatabaseDriver driver = DrbdManage.getNetInterfaceDataDatabaseDriver();
 
@@ -124,7 +110,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         if (netData == null && createIfNotExists)
         {
-            netData = new NetInterfaceData(accCtx, node, name, addr, transMgr, netType);
+            netData = new NetInterfaceData(node, name, addr, transMgr, netType);
             if (transMgr != null)
             {
                 driver.create(netData, transMgr);
@@ -149,13 +135,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     }
 
     @Override
-    public ObjectProtection getObjProt()
-    {
-        checkDeleted();
-        return objProt;
-    }
-
-    @Override
     public NetInterfaceName getName()
     {
         checkDeleted();
@@ -174,7 +153,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         throws AccessDeniedException
     {
         checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        niNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return niAddress.get();
     }
 
@@ -183,7 +162,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         niAddress.set(newAddress);
     }
 
@@ -192,7 +171,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         throws AccessDeniedException
     {
         checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
+        niNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return niType.get();
     }
 
@@ -201,7 +180,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         niType.set(type);
     }
 
@@ -209,7 +188,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
         checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CONTROL);
+        niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         ((NodeData) niNode).removeNetInterface(accCtx, this);
         dbDriver.delete(this, transMgr);
@@ -220,7 +199,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     {
         if (deleted)
         {
-            throw new ImplementationError("Access to deleted connectionDefinition", null);
+            throw new ImplementationError("Access to deleted NetInterface", null);
         }
     }
 }

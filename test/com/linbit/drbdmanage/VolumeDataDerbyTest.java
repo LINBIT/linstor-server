@@ -17,6 +17,7 @@ import org.junit.Test;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.core.CoreUtils;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -123,7 +124,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             transMgr
         );
 
-        driver = new VolumeDataDerbyDriver(sysCtx, errorReporter);
+        driver = (VolumeDataDerbyDriver) DrbdManage.getVolumeDataDatabaseDriver();
     }
 
     @Test
@@ -292,7 +293,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         Map<String, String> map = new HashMap<>();
         map.put(testKey, testValue);
 
-        testProps(transMgr, PropsContainer.buildPath(nodeName, resName, volNr), map, true);
+        testProps(transMgr, PropsContainer.buildPath(nodeName, resName, volNr), map);
     }
 
     @Test

@@ -9,7 +9,6 @@ import com.linbit.drbdmanage.core.Satellite;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
-import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.storage.StorageDriver;
 import com.linbit.drbdmanage.storage.StorageException;
 
@@ -35,11 +34,6 @@ public interface StorPool extends TransactionObject
      * Returns the {@link Node} this StorPool is associated with.
      */
     public Node getNode();
-
-    /**
-     * Returns the {@link ObjectProtection}
-     */
-    public ObjectProtection getObjProt();
 
     /**
      * Returns the {@link StorPoolDefinition}.

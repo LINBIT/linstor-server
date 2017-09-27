@@ -6,7 +6,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
@@ -17,8 +16,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabase
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
-import com.linbit.drbdmanage.security.ObjectProtection;
-import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.utils.UuidUtils;
 
 public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
@@ -89,15 +86,8 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 {
                     if (resultSet.next())
                     {
-                        ObjectProtection objProt = loadObjectProtection(
-                            (NodeData) node,
-                            storPoolDfn.getName(),
-                            transMgr
-                        );
-
                         sp = new StorPoolData(
                             UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
-                            objProt,
                             node,
                             storPoolDfn,
                             null,   // storageDriver, has to be null in the controller
@@ -158,14 +148,11 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                     StorPoolData storPoolData = cacheGet(node, storPoolName);
                     if (storPoolData == null)
                     {
-                        ObjectProtection objProt = loadObjectProtection(node, storPoolName, transMgr);
-
                         StorPoolDefinitionDataDatabaseDriver storPoolDefDriver = DrbdManage.getStorPoolDefinitionDataDriver();
                         StorPoolDefinitionData storPoolDef = storPoolDefDriver.load(storPoolName, transMgr);
 
                         storPoolData = new StorPoolData(
                             UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
-                            objProt,
                             node,
                             storPoolDef,
                             null, // controller should not have an instance of storage driver.
@@ -183,34 +170,6 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             }
         }
         return storPoolList;
-    }
-
-    private ObjectProtection loadObjectProtection(
-        NodeData node,
-        StorPoolName storPoolName,
-        TransactionMgr transMgr
-    )
-        throws SQLException, ImplementationError
-    {
-        ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
-        ObjectProtection objProt = objProtDriver.loadObjectProtection(
-            ObjectProtection.buildPathSP(storPoolName),
-            transMgr
-        );
-        if (objProt == null)
-        {
-            throw new ImplementationError(
-                String.format(
-                    "StorPool's DB entry exists, but the corresponding entry in ObjProt table is missing! %s",
-                    getId(
-                        node.getName().value,
-                        storPoolName.value
-                    )
-                ),
-                null
-            );
-        }
-        return objProt;
     }
 
     @Override

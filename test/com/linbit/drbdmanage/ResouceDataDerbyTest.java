@@ -28,7 +28,7 @@ public class ResouceDataDerbyTest extends DerbyBase
 {
     private static final String SELECT_ALL_RESOURCES =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + NODE_ID + ", " + RESOURCE_FLAGS +
-        " FROM " + TBL_NODE_RESOURCE;
+        " FROM " + TBL_RESOURCES;
 
     private final NodeName nodeName;
     private final ResourceName resName;
@@ -56,7 +56,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_NODE_RESOURCE + " table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_NODE_RESOURCE);
+        assertEquals(TBL_RESOURCES + " table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_RESOURCES);
 
         transMgr = new TransactionMgr(getConnection());
 

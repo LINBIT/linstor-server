@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.linbit.ImplementationError;
@@ -25,7 +26,7 @@ import com.linbit.utils.UuidUtils;
 
 public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 {
-    private static final String TBL_RES = DerbyConstants.TBL_NODE_RESOURCE;
+    private static final String TBL_RES = DerbyConstants.TBL_RESOURCES;
 
     private static final String RES_UUID = DerbyConstants.UUID;
     private static final String RES_NODE_NAME = DerbyConstants.NODE_NAME;
@@ -63,19 +64,27 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private final ErrorReporter errorReporter;
     private final FlagDriver flagDriver;
 
-    private final VolumeDataDerbyDriver volumeDataDerbyDriver;
+    private VolumeDataDerbyDriver volumeDriver;
+    private ResourceConnectionDataDerbyDriver resourceConnectionDriver;
 
-    public ResourceDataDerbyDriver(
-        AccessContext accCtx,
-        ErrorReporter errorReporterRef,
-        VolumeDataDerbyDriver volumeDriver
-    )
+    private HashMap<ResPrimaryKey, ResourceData> resCache;
+
+    public ResourceDataDerbyDriver(AccessContext accCtx, ErrorReporter errorReporterRef)
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
 
         flagDriver = new FlagDriver();
-        volumeDataDerbyDriver = volumeDriver;
+        resCache = new HashMap<>();
+    }
+
+    public void initialize(
+        ResourceConnectionDataDerbyDriver resourceConnectionDefinitionDriverRef,
+        VolumeDataDerbyDriver volumeDriverRef
+    )
+    {
+        resourceConnectionDriver = resourceConnectionDefinitionDriverRef;
+        volumeDriver = volumeDriverRef;
     }
 
     @Override
@@ -267,6 +276,12 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     // which loads all its resources.
                     if (loadedRes == null)
                     {
+                        // additionally we have to as our own cache in order to prevent
+                        // endless recursion with loadResourceConnection -> loadResource -> ...
+                        loadedRes = resCache.get(new ResPrimaryKey(node, resDfn));
+                    }
+                    if (loadedRes == null)
+                    {
                         // here we are currently loading our own resDfn, and it is loading us
 
                         ObjectProtection objProt = getObjectProection(node, resName, transMgr);
@@ -298,10 +313,27 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                             resultSet.getLong(RES_FLAGS),
                             transMgr
                         );
+
+                        resCache.put(new ResPrimaryKey(node, resDfn), resData);
+
                         errorReporter.logTrace("Resource instance created %s", getTraceId(resData));
 
+                        // restore ResourceConnection
+                        List<ResourceConnectionData> cons = resourceConnectionDriver.loadAllByResource(
+                            resData,
+                            transMgr
+                        );
+                        for (ResourceConnection conDfn : cons)
+                        {
+                            resData.setResourceConnection(dbCtx, conDfn);
+                        }
+                        errorReporter.logTrace(
+                            "Restored Resource's ConnectionDefinitions %s",
+                            getTraceId(resData)
+                        );
+
                         // restore volumes
-                        List<VolumeData> volList = volumeDataDerbyDriver.loadAllVolumesByResource(resData, transMgr, dbCtx);
+                        List<VolumeData> volList = volumeDriver.loadAllVolumesByResource(resData, transMgr, dbCtx);
                         for (VolumeData volData : volList)
                         {
                             resData.putVolume(dbCtx, volData);
@@ -311,8 +343,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     }
                     else
                     {
-                        // here we are back in our own loading (resDfn is finished)
-                        // which means we simply use the already loaded version of us
                         resData = (ResourceData) loadedRes;
                     }
                 }
@@ -461,6 +491,80 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
             {
                 DerbyDriver.handleAccessDeniedException(accDeniedExc);
             }
+        }
+    }
+
+    public void clearCache()
+    {
+        resCache.clear();
+    }
+
+    private static class ResPrimaryKey
+    {
+        private Node node;
+        private ResourceDefinition resDfn;
+
+        public ResPrimaryKey(Node node, ResourceDefinition resDfn)
+        {
+            this.node = node;
+            this.resDfn = resDfn;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((node == null) ? 0 : node.hashCode());
+            result = prime * result + ((resDfn == null) ? 0 : resDfn.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+            {
+                return true;
+            }
+            if (obj == null)
+            {
+                return false;
+            }
+            if (getClass() != obj.getClass())
+            {
+                return false;
+            }
+            ResPrimaryKey other = (ResPrimaryKey) obj;
+            if (node == null)
+            {
+                if (other.node != null)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (!node.equals(other.node))
+                {
+                    return false;
+                }
+            }
+            if (resDfn == null)
+            {
+                if (other.resDfn != null)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (!resDfn.equals(other.resDfn))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

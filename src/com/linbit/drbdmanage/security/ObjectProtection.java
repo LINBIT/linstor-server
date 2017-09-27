@@ -13,7 +13,6 @@ import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.drbdmanage.BaseTransactionObject;
-import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolName;
@@ -32,10 +31,7 @@ public final class ObjectProtection extends BaseTransactionObject
     private static final String PATH_RESOURCES               = "/resources/";
     private static final String PATH_RESOURCE_DEFINITIONS    = "/resourcedefinitions/";
     private static final String PATH_NODES                   = "/nodes/";
-    private static final String PATH_NET_INTERFACES          = "/netinterfaces/";
     private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
-    private static final String PATH_STOR_POOLS              = "/storpools/";
-    private static final String PATH_CONNECTION_DEFINITIONS  = "/connectiondefinitions/";
 
     private static final String PATH_SYS                     = "/sys/";
     private static final String PATH_CONTROLLER              = PATH_SYS + "controller/";
@@ -480,20 +476,6 @@ public final class ObjectProtection extends BaseTransactionObject
     }
 
     /**
-     * ObjProt-Path for NetInterfaces
-     *
-     * @param nodeName
-     * @param netName
-     * @return
-     */
-    public static String buildPath(NodeName nodeName, NetInterfaceName netName)
-    {
-        return PATH_NET_INTERFACES +
-            nodeName.value + PATH_SEPARATOR +
-            netName.value;
-    }
-
-    /**
      * ObjProt-Path for Nodes
      *
      * @param nodeName
@@ -513,47 +495,6 @@ public final class ObjectProtection extends BaseTransactionObject
     public static String buildPathSPD(StorPoolName storPoolName)
     {
         return PATH_STOR_POOL_DEFINITIONS + storPoolName.value;
-    }
-
-    /**
-     * ObjProt-Path for StorPools
-     *
-     * @param storPoolName
-     * @return
-     */
-    public static String buildPathSP(StorPoolName storPoolName)
-    {
-        return PATH_STOR_POOLS + storPoolName.value;
-    }
-
-    /**
-     * ObjProt-Path for ConnectionDefinitions
-     *
-     * @param resName
-     * @param sourceName
-     * @param targetName
-     * @return
-     */
-    public static String buildPath(ResourceName resName, NodeName sourceName, NodeName targetName)
-    {
-        NodeName source;
-        NodeName target;
-
-        if (sourceName.compareTo(targetName) < 0)
-        {
-            source = sourceName;
-            target = targetName;
-        }
-        else
-        {
-            source = targetName;
-            target = sourceName;
-        }
-
-        return PATH_CONNECTION_DEFINITIONS +
-            resName.value + PATH_SEPARATOR +
-            source.value + PATH_SEPARATOR +
-            target.value;
     }
 
     String getObjectProtectionPath()

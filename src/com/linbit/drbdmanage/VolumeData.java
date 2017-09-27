@@ -2,6 +2,8 @@ package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -42,6 +44,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     // State flags
     private final StateFlags<VlmFlags> flags;
+
+    private final Map<Volume, VolumeConnection> volumeConnections;
 
     private final String blockDevicePath;
 
@@ -108,6 +112,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             initFlags
         );
 
+        volumeConnections = new HashMap<>();
         volumeProps = PropsContainer.getInstance(
             PropsContainer.buildPath(
                 resRef.getAssignedNode().getName(),
@@ -215,6 +220,60 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
+    public VolumeConnection getVolumeConnection(AccessContext accCtx, Volume othervolume)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return volumeConnections.get(othervolume);
+    }
+
+    @Override
+    public void setVolumeConnection(AccessContext accCtx, VolumeConnectionData volumeConnection)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+
+        Volume sourceVolume = volumeConnection.getSourceVolume(accCtx);
+        Volume targetVolume = volumeConnection.getTargetVolume(accCtx);
+
+        sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        if (this == sourceVolume)
+        {
+            volumeConnections.put(targetVolume, volumeConnection);
+        }
+        else
+        {
+            volumeConnections.put(sourceVolume, volumeConnection);
+        }
+    }
+
+    @Override
+    public void removeVolumeConnection(AccessContext accCtx, VolumeConnectionData volumeConnection)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+
+        Volume sourceVolume = volumeConnection.getSourceVolume(accCtx);
+        Volume targetVolume = volumeConnection.getTargetVolume(accCtx);
+
+        sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        if (this == sourceVolume)
+        {
+            volumeConnections.remove(targetVolume, volumeConnection);
+        }
+        else
+        {
+            volumeConnections.remove(sourceVolume, volumeConnection);
+        }
+    }
+
+
+    @Override
     public StateFlags<VlmFlags> getFlags()
     {
         checkDeleted();
@@ -242,7 +301,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
-        // TODO: still a good idea that volume does not have its own objProt?
         resourceRef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         ((ResourceData) resourceRef).removeVolume(accCtx, this);

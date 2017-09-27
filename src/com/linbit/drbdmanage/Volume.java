@@ -24,17 +24,24 @@ public interface Volume extends TransactionObject
 
     public VolumeDefinition getVolumeDefinition();
 
-    public Props getProps(AccessContext accCtx)
-        throws AccessDeniedException;
+    public Props getProps(AccessContext accCtx) throws AccessDeniedException;
 
     public StateFlags<VlmFlags> getFlags();
+
+    public VolumeConnection getVolumeConnection(AccessContext dbCtx, Volume otherVol)
+        throws AccessDeniedException;
+
+    void setVolumeConnection(AccessContext accCtx, VolumeConnectionData volumeConnection)
+        throws AccessDeniedException;
+
+    void removeVolumeConnection(AccessContext accCtx, VolumeConnectionData volumeConnection)
+        throws AccessDeniedException;
 
     public String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException;
 
     public String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException;
 
-    public void delete(AccessContext accCtx)
-        throws AccessDeniedException, SQLException;
+    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
     public enum VlmFlags implements Flags
     {
@@ -53,5 +60,4 @@ public interface Volume extends TransactionObject
             return flagValue;
         }
     }
-
 }

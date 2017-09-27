@@ -25,13 +25,16 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     private static final String SPD_NAME = DerbyConstants.POOL_NAME;
     private static final String SPD_DSP_NAME = DerbyConstants.POOL_DSP_NAME;
 
-    private static final String SPD_INSERT =
-        " INSERT INTO " + TBL_SPD +
-        " VALUES (?, ?, ?)";
     private static final String SPD_SELECT =
         " SELECT " + SPD_UUID + ", " + SPD_NAME + ", " + SPD_DSP_NAME +
         " FROM " + TBL_SPD +
         " WHERE " + SPD_NAME + " = ?";
+    private static final String SPD_SELECT_ALL =
+        " SELECT " + SPD_UUID + ", " + SPD_NAME + ", " + SPD_DSP_NAME +
+        " FROM " + TBL_SPD;
+    private static final String SPD_INSERT =
+        " INSERT INTO " + TBL_SPD +
+        " VALUES (?, ?, ?)";
     private static final String SPD_DELETE =
         " DELETE FROM " + TBL_SPD +
         " WHERE " + SPD_NAME + " = ?";
@@ -77,51 +80,70 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
             stmt.setString(1, storPoolName.value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                storPoolDefinition = cacheGet(storPoolName);
-                if (storPoolDefinition == null)
+                if (resultSet.next())
                 {
-                    if (resultSet.next())
-                    {
-                        try
-                        {
-                            storPoolName = new StorPoolName(resultSet.getString(SPD_DSP_NAME));
-                        }
-                        catch (InvalidNameException invalidNameExc)
-                        {
-                            resultSet.close();
-                            stmt.close();
-                            throw new ImplementationError(
-                                "The display name of a valid StorPoolName could not be restored",
-                                invalidNameExc
-                            );
-                        }
-
-                        UUID uuid = UuidUtils.asUuid(resultSet.getBytes(SPD_UUID));
-
-                        ObjectProtection objProt = getObjectProtection(storPoolName, transMgr);
-
-                        storPoolDefinition = new StorPoolDefinitionData(uuid, objProt, storPoolName);
-                        cache(storPoolDefinition);
-                        errorReporter.logDebug(
-                            "StorPoolDefinition loaded from DB %s",
-                            getDebugId(storPoolName)
-                        );
-                    }
-                    else
-                    {
-                        errorReporter.logWarning(
-                            "StorPoolDefinition was not found in the DB %s",
-                            getDebugId(storPoolName)
-                        );
-                    }
+                    storPoolDefinition = load(resultSet, transMgr);
                 }
                 else
                 {
-                    errorReporter.logDebug(
-                        "StorPoolDefinition loaded from cache %s",
-                        getDebugId(storPoolName));
+                    errorReporter.logWarning(
+                        "StorPoolDefinition was not found in the DB %s",
+                        getDebugId(storPoolName)
+                    );
                 }
             }
+        }
+        return storPoolDefinition;
+    }
+
+    public void loadAll(TransactionMgr transMgr) throws SQLException
+    {
+        errorReporter.logTrace("Loading all StorPoolDefinitions");
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_SELECT_ALL))
+        {
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                while (resultSet.next())
+                {
+                    load(resultSet, transMgr); // we do not care about the return value
+                    // the loaded resDfn(s) get cached anyways, and thus the controller gets
+                    // the references that way
+                }
+            }
+        }
+        errorReporter.logDebug("Loaded %d StorPoolDefinitions", storPoolDfnMap.size());
+    }
+
+    public StorPoolDefinitionData load(ResultSet resultSet, TransactionMgr transMgr) throws SQLException
+    {
+        StorPoolDefinitionData storPoolDefinition = null;
+        StorPoolName storPoolName;
+        try
+        {
+            storPoolName = new StorPoolName(resultSet.getString(SPD_DSP_NAME));
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new DrbdSqlRuntimeException(
+                "The display name of a stored StorPoolName could not be restored",
+                invalidNameExc
+            );
+        }
+
+        storPoolDefinition = cacheGet(storPoolName);
+        if (storPoolDefinition == null)
+        {
+            UUID uuid = UuidUtils.asUuid(resultSet.getBytes(SPD_UUID));
+
+            ObjectProtection objProt = getObjectProtection(storPoolName, transMgr);
+
+            storPoolDefinition = new StorPoolDefinitionData(uuid, objProt, storPoolName);
+            cache(storPoolDefinition);
+            errorReporter.logDebug("StorPoolDefinition loaded from DB %s", getDebugId(storPoolName));
+        }
+        else
+        {
+            errorReporter.logDebug("StorPoolDefinition loaded from cache %s", getDebugId(storPoolName));
         }
         return storPoolDefinition;
     }
@@ -190,5 +212,4 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     {
         return " (StorPoolName=" + name + ")";
     }
-
 }

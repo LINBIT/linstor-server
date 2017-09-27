@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
@@ -47,13 +48,17 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
  */
 public class PropsContainer implements Props
 {
-    private static final String PATH_SEPARATOR              = "/";
-    private static final String PATH_STOR_POOL              = "/storPoolConf/";
-    private static final String PATH_NODES                  = "/nodes/";
-    private static final String PATH_RESOURCE_DEFINITIONS   = "/resourcedefinitions/";
-    private static final String PATH_RESOURCES              = "/resources/";
-    private static final String PATH_VOLUME_DEFINITIONS     = "/volumedefinitions/";
-    private static final String PATH_VOLUMES                = "/volumes/";
+    private static final String PATH_SEPARATOR                = "/";
+    private static final String PATH_STOR_POOL                = "/storPoolConf/";
+    private static final String PATH_NODES                    = "/nodes/";
+    private static final String PATH_RESOURCE_DEFINITIONS     = "/resourcedefinitions/";
+    private static final String PATH_RESOURCES                = "/resources/";
+    private static final String PATH_VOLUME_DEFINITIONS       = "/volumedefinitions/";
+    private static final String PATH_VOLUMES                  = "/volumes/";
+    private static final String PATH_NODE_CON_DEFINITIONS     = "/conDfn/nodes/";
+    private static final String PATH_RESOURCE_CON_DEFINITIONS = "/conDfn/resources/";
+    private static final String PATH_VOLUME_CON_DEFINITIONS   = "/conDfn/volume/";
+
 
     public static final int PATH_MAX_LENGTH = 256;
 
@@ -2600,6 +2605,41 @@ public class PropsContainer implements Props
     public static String buildPath(NodeName nodeName, ResourceName resName, VolumeNumber volNr)
     {
         return PATH_VOLUMES + nodeName.value +
+            PATH_SEPARATOR + resName.value +
+            PATH_SEPARATOR + volNr.value;
+    }
+
+    /**
+     * PropsCon-Path for NodeConnectionDefinitionData
+     */
+    public static String buildPath(NodeName sourceName, NodeName targetName)
+    {
+        return PATH_NODE_CON_DEFINITIONS + sourceName.value +
+            PATH_SEPARATOR + targetName.value;
+    }
+
+    /**
+     * PropsCon-Path for ResourceConnectionDefinitionData
+     */
+    public static String buildPath(NodeName sourceName, NodeName targetName, ResourceName resName)
+    {
+        return PATH_RESOURCE_CON_DEFINITIONS + sourceName.value +
+            PATH_SEPARATOR + targetName.value +
+            PATH_SEPARATOR + resName.value;
+    }
+
+    /**
+     * PropsCon-Path for ResourceConnectionDefinitionData
+     */
+    public static String buildPath(
+        NodeName sourceName,
+        NodeName targetName,
+        ResourceName resName,
+        VolumeNumber volNr
+    )
+    {
+        return PATH_VOLUME_CON_DEFINITIONS + sourceName.value +
+            PATH_SEPARATOR + targetName.value +
             PATH_SEPARATOR + resName.value +
             PATH_SEPARATOR + volNr.value;
     }

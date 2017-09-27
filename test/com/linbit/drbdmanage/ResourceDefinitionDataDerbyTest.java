@@ -1,11 +1,17 @@
 package com.linbit.drbdmanage;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.junit.Test;
 
 import com.linbit.InvalidNameException;
@@ -27,9 +33,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         " FROM " + TBL_RESOURCE_DEFINITIONS;
 
     private final ResourceName resName;
-    private final int conNr;
-    private final NodeName conNodeName1;
-    private final NodeName conNodeName2;
+    private final NodeName nodeName;
 
     private TransactionMgr transMgr;
     private java.util.UUID resDfnUuid;
@@ -37,7 +41,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
     private NodeId node1Id;
     private Node node1;
-    private Node node2;
 
     private ResourceDefinitionData resDfn;
     private ResourceDefinitionDataDerbyDriver driver;
@@ -45,9 +48,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public ResourceDefinitionDataDerbyTest() throws InvalidNameException
     {
         resName = new ResourceName("TestResName");
-        conNr = 42;
-        conNodeName1 = new NodeName("TestNodeName1");
-        conNodeName2 = new NodeName("TestNodeName2");
+        nodeName = new NodeName("TestNodeName1");
     }
 
     @Override
@@ -70,15 +71,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         node1Id = new NodeId(1);
         node1 = NodeData.getInstance(
             sysCtx,
-            conNodeName1,
-            null,
-            null,
-            transMgr,
-            true
-        );
-        node2 = NodeData.getInstance(
-            sysCtx,
-            conNodeName2,
+            nodeName,
             null,
             null,
             transMgr,
@@ -158,33 +151,12 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             true
         );
 
-        ConnectionDefinitionData.getInstance(
-            sysCtx,
-            resDfn,
-            node1,
-            node2,
-            conNr,
-            transMgr,
-            true
-        );
-
         ResourceDefinitionData loadedResDfn = driver.load(resName, transMgr);
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
         assertEquals(RscDfnFlags.REMOVE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
-
-        ConnectionDefinition loadedConDfn = loadedResDfn.getConnectionDfn(sysCtx, conNodeName1, conNr);
-        assertNotNull(loadedConDfn);
-        if (loadedConDfn.getSourceNode(sysCtx).getName().equals(conNodeName1))
-        {
-            assertEquals(conNodeName2, loadedConDfn.getTargetNode(sysCtx).getName());
-        }
-        else
-        {
-            assertEquals(conNodeName2, loadedConDfn.getSourceNode(sysCtx).getName());
-        }
     }
 
     @Test
@@ -212,16 +184,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             true
         );
 
-        ConnectionDefinitionData.getInstance(
-            sysCtx,
-            resDfn,
-            node1,
-            node2,
-            conNr,
-            transMgr,
-            true
-        );
-
         loadedResDfn = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
@@ -234,17 +196,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
         assertEquals(RscDfnFlags.REMOVE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
-
-        ConnectionDefinition loadedConDfn = loadedResDfn.getConnectionDfn(sysCtx, conNodeName1, conNr);
-        assertNotNull(loadedConDfn);
-        if (loadedConDfn.getSourceNode(sysCtx).getName().equals(conNodeName1))
-        {
-            assertEquals(conNodeName2, loadedConDfn.getTargetNode(sysCtx).getName());
-        }
-        else
-        {
-            assertEquals(conNodeName2, loadedConDfn.getSourceNode(sysCtx).getName());
-        }
     }
 
     @Test
@@ -299,7 +250,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         Map<String, String> testMap = new HashMap<>();
         testMap.put(testKey, testValue);
-        testProps(transMgr, PropsContainer.buildPath(resName), testMap, true);
+        testProps(transMgr, PropsContainer.buildPath(resName), testMap);
     }
 
     @Test
@@ -459,5 +410,28 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull(loadedResDfn);
         assertEquals(resDfn.getName(), loadedResDfn.getName());
         assertEquals(resDfn.getUuid(), loadedResDfn.getUuid());
+    }
+
+    @Test
+    public void testLoadAll() throws Exception
+    {
+        driver.create(resDfn, transMgr);
+        ResourceName resName2 = new ResourceName("ResName2");
+        ResourceDefinitionData.getInstance(
+            sysCtx,
+            resName2,
+            null,
+            transMgr,
+            true
+        );
+
+        clearCaches();
+
+        driver.loadAll(transMgr);
+
+        assertEquals(2, resDfnMap.size());
+        assertNotNull(resDfnMap.get(resName));
+        assertNotNull(resDfnMap.get(resName2));
+        assertNotEquals(resDfnMap.get(resName2), resDfnMap.get(resName));
     }
 }

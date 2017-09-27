@@ -332,8 +332,7 @@ public abstract class DerbyBase implements DerbyConstants
     protected static void testProps(
         TransactionMgr transMgr,
         String instanceName,
-        Map<String, String> testMap,
-        boolean serialCheck
+        Map<String, String> testMap
     )
         throws SQLException
     {
@@ -392,7 +391,6 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.setString(3, nodeName.displayValue);
         stmt.setLong(4, flags);
         stmt.setLong(5, typeMask);
-        stmt.setString(6, ObjectProtection.buildPath(nodeName));
         stmt.executeUpdate();
         stmt.close();
     }
@@ -417,27 +415,59 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.executeUpdate();
         stmt.close();
     }
-
-    protected static void insertConnDfn(
+    protected static void insertNodeCon(
         TransactionMgr transMgr,
         java.util.UUID uuid,
-        ResourceName resName,
-        NodeName srcNode,
-        NodeName dstNode,
-        int conNr
+        NodeName sourceNodeName,
+        NodeName targetNodeName
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_CONNECTION_DEFINITIONS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_NODE_CONNECTIONS);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
-        stmt.setString(2, resName.value);
-        stmt.setString(3, srcNode.value);
-        stmt.setString(4, dstNode.value);
-        stmt.setInt(5, conNr);
+        stmt.setString(2, sourceNodeName.value);
+        stmt.setString(3, targetNodeName.value);
         stmt.executeUpdate();
         stmt.close();
     }
 
+    protected static void insertResCon(
+        TransactionMgr transMgr,
+        java.util.UUID uuid,
+        NodeName sourceNodeName,
+        NodeName targetNodeName,
+        ResourceName resName
+    )
+        throws SQLException
+    {
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_RESOURCE_CONNECTIONS);
+        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(2, sourceNodeName.value);
+        stmt.setString(3, targetNodeName.value);
+        stmt.setString(4, resName.value);
+        stmt.executeUpdate();
+        stmt.close();
+    }
+
+    protected static void insertVolCon(
+        TransactionMgr transMgr,
+        java.util.UUID uuid,
+        NodeName sourceNodeName,
+        NodeName targetNodeName,
+        ResourceName resName,
+        VolumeNumber volDfnNr
+    )
+        throws SQLException
+    {
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_VOLUME_CONNECTIONS);
+        stmt.setBytes(1, UuidUtils.asByteArray(uuid));
+        stmt.setString(2, sourceNodeName.value);
+        stmt.setString(3, targetNodeName.value);
+        stmt.setString(4, resName.value);
+        stmt.setInt(5, volDfnNr.value);
+        stmt.executeUpdate();
+        stmt.close();
+    }
 
     protected static void insertResDfn(
         TransactionMgr transMgr,
@@ -466,7 +496,7 @@ public abstract class DerbyBase implements DerbyConstants
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_NODE_RESOURCE);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT_RESOURCES);
         stmt.setBytes(1, UuidUtils.asByteArray(uuid));
         stmt.setString(2, nodeName.value);
         stmt.setString(3, resName.value);

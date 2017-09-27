@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.linbit.ImplementationError;
@@ -34,24 +35,24 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     private static final String VOL_META_DISK = DerbyConstants.META_DISK_PATH;
     private static final String VOL_FLAGS = DerbyConstants.VLM_FLAGS;
 
-    private static final String VOL_SELECT_BY_RES =
+    private static final String SELECT_BY_RES =
         " SELECT " +  VOL_UUID + ", " + VOL_ID + ", " + VOL_BLOCK_DEVICE + ", " +
                     VOL_META_DISK + ", " + VOL_FLAGS +
         " FROM " + TBL_VOL +
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
                     VOL_RES_NAME  + " = ?";
-    private static final String VOL_SELECT =  VOL_SELECT_BY_RES +
+    private static final String SELECT =  SELECT_BY_RES +
         " AND " +   VOL_ID +        " = ?";
-    private static final String VOL_INSERT =
+    private static final String INSERT =
         " INSERT INTO " + TBL_VOL +
         " VALUES (?, ?, ?, ?, ?, ?, ?)";
-    private static final String VOL_UPDATE_FLAGS =
+    private static final String UPDATE_FLAGS =
         " UPDATE " + TBL_VOL +
         " SET " + VOL_FLAGS + " = ? " +
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
                     VOL_RES_NAME  + " = ? AND " +
                     VOL_ID        + " = ?";
-    private static final String VOL_DELETE =
+    private static final String DELETE =
         " DELETE FROM " + TBL_VOL +
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
                     VOL_RES_NAME  + " = ? AND " +
@@ -62,11 +63,22 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
     private final StateFlagsPersistence<VolumeData> flagPersistenceDriver;
 
+    private VolumeConnectionDataDerbyDriver volumeConnectionDefinitionDriver;
+
+    private HashMap<VolPrimaryKey, VolumeData> volCache;
+
     public VolumeDataDerbyDriver(AccessContext privCtx, ErrorReporter errorReporterRef)
     {
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
         flagPersistenceDriver = new VolFlagsPersistence();
+
+        volCache = new HashMap<>();
+    }
+
+    public void initialize(VolumeConnectionDataDerbyDriver volumeConnectionDefinitionDataDerbyDriverRef)
+    {
+        volumeConnectionDefinitionDriver = volumeConnectionDefinitionDataDerbyDriverRef;
     }
 
     @Override
@@ -78,7 +90,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         throws SQLException
     {
         VolumeData ret = null;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VOL_SELECT))
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT))
         {
             errorReporter.logTrace(
                 "Loading Volume %s",
@@ -130,7 +142,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         throws SQLException
     {
         List<VolumeData> ret;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VOL_SELECT_BY_RES))
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_BY_RES))
         {
             errorReporter.logTrace(
                 "Loading all Volumes by resource %s",
@@ -182,6 +194,12 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             );
 
             VolumeData volData = cacheGet(resRef.getAssignedNode(), resRef.getDefinition(), volNr);
+            VolPrimaryKey primaryKey = null;
+            if (volData == null)
+            {
+                primaryKey = new VolPrimaryKey(resRef, volDfn);
+                volData = volCache.get(primaryKey);
+            }
             if (volData == null)
             {
                 try
@@ -197,6 +215,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         transMgr
                     );
                     errorReporter.logTrace("Volume created %s", getTraceId(volData));
+                    volCache.put(primaryKey, volData);
 
                     // restore flags
                     StateFlags<VlmFlags> flags = volData.getFlags();
@@ -213,6 +232,21 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         lFlags,
                         getTraceId(volData)
                     );
+
+                    // restore volCon
+                    List<VolumeConnectionData> volConDfnList =
+                        volumeConnectionDefinitionDriver.loadAllByVolume(volData, transMgr);
+                    for (VolumeConnectionData volConDfn : volConDfnList)
+                    {
+                        volData.setVolumeConnection(dbCtx, volConDfn);
+                    }
+                    errorReporter.logTrace(
+                        "%d VolumeConnectionDefinitions restored %s",
+                        volConDfnList.size(),
+                        getTraceId(volData)
+                    );
+
+                    errorReporter.logTrace("Volume restored %s", getTraceId(volData));
                 }
                 catch (AccessDeniedException accessDeniedExc)
                 {
@@ -232,7 +266,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     @Override
     public void create(VolumeData vol, TransactionMgr transMgr) throws SQLException
     {
-        try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(VOL_INSERT))
+        try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
         {
             errorReporter.logTrace("Creating Volume %s", getDebugId(vol));
 
@@ -256,7 +290,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     @Override
     public void delete(VolumeData volume, TransactionMgr transMgr) throws SQLException
     {
-        try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(VOL_DELETE))
+        try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(DELETE))
         {
             errorReporter.logTrace("Deleting Volume %s", getTraceId(volume));
 
@@ -365,7 +399,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         public void persist(VolumeData volume, long flags, TransactionMgr transMgr)
             throws SQLException
         {
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VOL_UPDATE_FLAGS))
+            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(UPDATE_FLAGS))
             {
                 errorReporter.logTrace(
                     "Updating Volume's flags from [%s] to [%s] %s",
@@ -391,6 +425,80 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             {
                 DerbyDriver.handleAccessDeniedException(accessDeniedExc);
             }
+        }
+    }
+
+    public void clearCache()
+    {
+        volCache.clear();
+    }
+
+    public static class VolPrimaryKey
+    {
+        private Resource resRef;
+        private VolumeDefinition volDfn;
+
+        public VolPrimaryKey(Resource resRef, VolumeDefinition volDfn)
+        {
+            this.resRef = resRef;
+            this.volDfn = volDfn;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((resRef == null) ? 0 : resRef.hashCode());
+            result = prime * result + ((volDfn == null) ? 0 : volDfn.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+            {
+                return true;
+            }
+            if (obj == null)
+            {
+                return false;
+            }
+            if (getClass() != obj.getClass())
+            {
+                return false;
+            }
+            VolPrimaryKey other = (VolPrimaryKey) obj;
+            if (resRef == null)
+            {
+                if (other.resRef != null)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (!resRef.equals(other.resRef))
+                {
+                    return false;
+                }
+            }
+            if (volDfn == null)
+            {
+                if (other.volDfn != null)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (!volDfn.equals(other.volDfn))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

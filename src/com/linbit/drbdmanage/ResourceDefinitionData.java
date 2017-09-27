@@ -2,7 +2,6 @@ package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -35,9 +34,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     // Resource name
     private final ResourceName resourceName;
-
-    // Connections to the peer resources
-    private final Map<NodeName, Map<Integer, ConnectionDefinition>> connectionMap;
 
     // Volumes of the resource
     private final Map<VolumeNumber, VolumeDefinition> volumeMap;
@@ -103,7 +99,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
         dbDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
 
-        connectionMap = new TreeMap<>();
         volumeMap = new TreeMap<>();
         resourceMap = new TreeMap<>();
 
@@ -183,70 +178,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         return PropsAccess.secureGetProps(accCtx, objProt, rscDfnProps);
     }
 
-    synchronized void addConnection(
-        AccessContext accCtx,
-        NodeName srcNodeName,
-        NodeName dstNodeName,
-        int conDfnNr,
-        ConnectionDefinition conDfn
-    )
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.USE);
 
-        addConnection0(conDfnNr, conDfn, srcNodeName);
-        addConnection0(conDfnNr, conDfn, dstNodeName);
-    }
-
-    private void addConnection0(int conDfnNr, ConnectionDefinition conDfn, NodeName nodeName)
-    {
-        Map<Integer, ConnectionDefinition> nodeConnMap = connectionMap.get(nodeName);
-        if (nodeConnMap == null)
-        {
-            nodeConnMap = new HashMap<>();
-            connectionMap.put(nodeName, nodeConnMap);
-        }
-        nodeConnMap.put(conDfnNr, conDfn);
-    }
-
-    synchronized void removeConnection(
-        AccessContext accCtx,
-        NodeName srcNodeName,
-        NodeName dstNodeName,
-        int conDfnNr
-    )
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.USE);
-        removeConnection0(conDfnNr, srcNodeName);
-        removeConnection0(conDfnNr, dstNodeName);
-    }
-
-    private void removeConnection0(int conDfnNr, NodeName nodeName)
-    {
-        Map<Integer, ConnectionDefinition> nodeConnMap = connectionMap.get(nodeName);
-        if (nodeConnMap != null)
-        {
-            nodeConnMap.remove(conDfnNr);
-        }
-    }
-
-    @Override
-    public ConnectionDefinition getConnectionDfn(AccessContext accCtx, NodeName clNodeName, Integer connNr)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-        ConnectionDefinition connDfn = null;
-        Map<Integer, ConnectionDefinition> nodeConnMap = connectionMap.get(clNodeName);
-        if (nodeConnMap != null)
-        {
-            connDfn = nodeConnMap.get(connNr);
-        }
-        return connDfn;
-    }
 
     synchronized void putVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn)
         throws AccessDeniedException

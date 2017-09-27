@@ -1,13 +1,16 @@
 package com.linbit.drbdmanage.dbdrivers;
 
+import java.sql.SQLException;
 import java.util.Map;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.drbdmanage.ConnectionDefinitionDataDerbyDriver;
+import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.ResourceConnectionDataDerbyDriver;
 import com.linbit.drbdmanage.NetInterfaceDataDerbyDriver;
 import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NodeConnectionDataDerbyDriver;
 import com.linbit.drbdmanage.NodeDataDerbyDriver;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDataDerbyDriver;
@@ -18,16 +21,19 @@ import com.linbit.drbdmanage.StorPoolDataDerbyDriver;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolDefinitionDataDerbyDriver;
 import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.VolumeConnectionDataDerbyDriver;
 import com.linbit.drbdmanage.VolumeDataDerbyDriver;
 import com.linbit.drbdmanage.VolumeDefinitionDataDerbyDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
@@ -59,16 +65,18 @@ public class DerbyDriver implements DatabaseDriver
         }
     }
 
-    private final NodeDataDerbyDriver nodeDriver;
     private final PropsConDerbyDriver propsDriver;
-    private final ResourceDataDerbyDriver resourceDriver;
+    private final NodeDataDerbyDriver nodeDriver;
     private final ResourceDefinitionDataDerbyDriver resesourceDefinitionDriver;
+    private final ResourceDataDerbyDriver resourceDriver;
     private final VolumeDefinitionDataDerbyDriver volumeDefinitionDriver;
     private final VolumeDataDerbyDriver volumeDriver;
     private final StorPoolDefinitionDataDerbyDriver storPoolDefinitionDriver;
     private final StorPoolDataDerbyDriver storPoolDriver;
     private final NetInterfaceDataDerbyDriver netInterfaceDriver;
-    private final ConnectionDefinitionDataDerbyDriver connectionDefinitionDriver;
+    private final NodeConnectionDataDerbyDriver nodeConnectionDefinitionDriver;
+    private final ResourceConnectionDataDerbyDriver resourceConnectionDefinitionDriver;
+    private final VolumeConnectionDataDerbyDriver volumeConnectionDefinitionDriver;
 
     public DerbyDriver(
         AccessContext privCtx,
@@ -78,44 +86,61 @@ public class DerbyDriver implements DatabaseDriver
         Map<StorPoolName, StorPoolDefinition> storPoolDfnMap
     )
     {
-        // DO NOT CHANGE THE INIT-ORDER!
-        // some of the drivers depend on other drivers
-
-        // no dependencies
-        netInterfaceDriver = new NetInterfaceDataDerbyDriver(privCtx, errorReporterRef);
-        connectionDefinitionDriver = new ConnectionDefinitionDataDerbyDriver(privCtx, errorReporterRef);
         propsDriver = new PropsConDerbyDriver(errorReporterRef);
+        nodeDriver = new NodeDataDerbyDriver(privCtx, errorReporterRef, nodesMap);
+        resesourceDefinitionDriver = new ResourceDefinitionDataDerbyDriver(
+            privCtx,
+            errorReporterRef,
+            rscDfnMap
+        );
+        resourceDriver = new ResourceDataDerbyDriver(privCtx, errorReporterRef);
         volumeDefinitionDriver = new VolumeDefinitionDataDerbyDriver(privCtx, errorReporterRef);
         volumeDriver = new VolumeDataDerbyDriver(privCtx, errorReporterRef);
         storPoolDefinitionDriver = new StorPoolDefinitionDataDerbyDriver(errorReporterRef, storPoolDfnMap);
         storPoolDriver = new StorPoolDataDerbyDriver(privCtx, errorReporterRef);
-
-        // depends on volume
-        resourceDriver = new ResourceDataDerbyDriver(
+        netInterfaceDriver = new NetInterfaceDataDerbyDriver(privCtx, errorReporterRef);
+        nodeConnectionDefinitionDriver = new NodeConnectionDataDerbyDriver(
             privCtx,
-            errorReporterRef,
+            errorReporterRef
+        );
+        resourceConnectionDefinitionDriver = new ResourceConnectionDataDerbyDriver(
+            privCtx,
+            errorReporterRef
+        );
+        volumeConnectionDefinitionDriver = new VolumeConnectionDataDerbyDriver(
+            privCtx,
+            errorReporterRef
+        );
+
+        // propsDriver.initialize();
+        nodeDriver.initialize(netInterfaceDriver, resourceDriver, storPoolDriver, nodeConnectionDefinitionDriver);
+        resesourceDefinitionDriver.initialize(resourceDriver, volumeDefinitionDriver);
+        resourceDriver.initialize(resourceConnectionDefinitionDriver, volumeDriver);
+        // volumeDefinitionDriver.initialize();
+        volumeDriver.initialize(volumeConnectionDefinitionDriver);
+        // storPoolDefinitionDriver.initialize();
+        // storPoolDriver.initialize();
+        // netInterfaceDriver.initialize();
+        nodeConnectionDefinitionDriver.initialize(nodeDriver);
+        resourceConnectionDefinitionDriver.initialize(nodeDriver, resourceDriver);
+        volumeConnectionDefinitionDriver.initialize(
+            nodeDriver,
+            resesourceDefinitionDriver,
+            resourceDriver,
+            volumeDefinitionDriver,
             volumeDriver
         );
+    }
 
-        // depends on netInterface, res and storPool
-        nodeDriver = new NodeDataDerbyDriver(
-            privCtx,
-            errorReporterRef,
-            nodesMap,
-            netInterfaceDriver,
-            resourceDriver,
-            storPoolDriver
-        );
+    @Override
+    public void loadAll(TransactionMgr transMgr) throws SQLException
+    {
+        nodeDriver.loadAll(transMgr);
+        resesourceDefinitionDriver.loadAll(transMgr);
+        storPoolDefinitionDriver.loadAll(transMgr);
 
-        // depends on conDfn, resData, volDfn
-        resesourceDefinitionDriver = new ResourceDefinitionDataDerbyDriver(
-            privCtx,
-            errorReporterRef,
-            rscDfnMap,
-            connectionDefinitionDriver,
-            resourceDriver,
-            volumeDefinitionDriver
-        );
+        resourceDriver.clearCache();
+        volumeDriver.clearCache();
     }
 
     @Override
@@ -135,7 +160,6 @@ public class DerbyDriver implements DatabaseDriver
     {
         return propsDriver;
     }
-
 
     @Override
     public NodeDataDatabaseDriver getNodeDatabaseDriver()
@@ -186,9 +210,21 @@ public class DerbyDriver implements DatabaseDriver
     }
 
     @Override
-    public ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver()
+    public NodeConnectionDataDatabaseDriver getNodeConnectionDataDatabaseDriver()
     {
-        return connectionDefinitionDriver;
+        return nodeConnectionDefinitionDriver;
+    }
+
+    @Override
+    public ResourceConnectionDataDatabaseDriver getResourceConnectionDataDatabaseDriver()
+    {
+        return resourceConnectionDefinitionDriver;
+    }
+
+    @Override
+    public VolumeConnectionDataDatabaseDriver getVolumeConnectionDataDatabaseDriver()
+    {
+        return volumeConnectionDefinitionDriver;
     }
 
     public static void handleAccessDeniedException(AccessDeniedException accDeniedExc)

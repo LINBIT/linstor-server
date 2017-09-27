@@ -5,7 +5,7 @@ import java.sql.SQLException;
 
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.BaseTransactionObject;
-import com.linbit.drbdmanage.ConnectionDefinitionData;
+import com.linbit.drbdmanage.ResourceConnectionData;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.ResourceData;
@@ -33,7 +33,7 @@ public interface ResourceDataDatabaseDriver
      *  The {@link TransactionMgr}, used to restore references, like {@link Node},
      *  {@link Resource}, and so on
      * @return
-     *  A {@link ConnectionDefinitionData} which contains valid references, but is not
+     *  A {@link ResourceConnectionData} which contains valid references, but is not
      *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
      *
      * @throws SQLException

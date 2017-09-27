@@ -234,7 +234,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         Map<String, String> map = new HashMap<>();
         map.put(testKey, testValue);
-        testProps(transMgr, PropsContainer.buildPath(resName, volNr), map, true);
+        testProps(transMgr, PropsContainer.buildPath(resName, volNr), map);
     }
 
     @Test

@@ -282,9 +282,6 @@ class CtrlApiCallHandler
                 transMgr,
                 true
             );
-            // TODO: Read optional ConnectionDefinitions from the properties map
-            // TODO: Read optional TcpPortNumbers for ConnectionDefinitions
-            //       from the properties map, or allocate a free TcpPortNumber
 
             for (VolumeDefinition.CreationData volCrtData : volDescrMap)
             {

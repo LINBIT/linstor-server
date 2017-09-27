@@ -3,6 +3,7 @@ package com.linbit.drbdmanage;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -36,6 +37,9 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     // Reference to the resource definition
     private final ResourceDefinition resourceDfn;
+
+    // Connections to the peer resources
+    private final Map<Resource, ResourceConnection> resourceConnections;
 
     // List of volumes of this resource
     private final Map<VolumeNumber, Volume> volumeMap;
@@ -114,6 +118,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         dbDriver = DrbdManage.getResourceDataDatabaseDriver();
 
+        resourceConnections = new HashMap<>();
         volumeMap = new TreeMap<>();
         resourceProps = PropsContainer.getInstance(
             PropsContainer.buildPath(
@@ -231,6 +236,58 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         checkDeleted();
         return resourceDfn;
+    }
+
+    @Override
+    public synchronized void setResourceConnection(AccessContext accCtx, ResourceConnection resCon)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+
+        Resource sourceResource = resCon.getSourceResource(accCtx);
+        Resource targetResource = resCon.getTargetResource(accCtx);
+
+        sourceResource.getObjProt().requireAccess(accCtx, AccessType.USE);
+        targetResource.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        if (this == sourceResource)
+        {
+            resourceConnections.put(targetResource, resCon);
+        }
+        else
+        {
+            resourceConnections.put(sourceResource, resCon);
+        }
+    }
+
+    @Override
+    public synchronized void removeResourceConnection(AccessContext accCtx, ResourceConnection con)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        Resource sourceResource = con.getSourceResource(accCtx);
+        Resource targetResource = con.getTargetResource(accCtx);
+
+        sourceResource.getObjProt().requireAccess(accCtx, AccessType.USE);
+        targetResource.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        if (this == sourceResource)
+        {
+            resourceConnections.remove(targetResource, con);
+        }
+        else
+        {
+            resourceConnections.remove(sourceResource, con);
+        }
+    }
+
+    @Override
+    public ResourceConnection getResourceConnection(AccessContext accCtx, Resource otherResource)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return resourceConnections.get(otherResource);
     }
 
     @Override

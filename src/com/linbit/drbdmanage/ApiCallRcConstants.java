@@ -60,7 +60,15 @@ public class ApiCallRcConstants
      */
 
     /*
-     * ConnectionDefinition return codes
+     * NodeConnectionDefinition return codes
+     */
+
+    /*
+     * ResourceConnectionDefinition return codes
+     */
+
+    /*
+     * VolumeConnectionDefinition return codes
      */
 
     /*

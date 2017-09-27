@@ -16,7 +16,6 @@ import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
 import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.core.DrbdManage;
-import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.security.DerbyBase;
@@ -28,13 +27,13 @@ import com.linbit.drbdmanage.storage.StorageDriver;
 public class NodeDataDerbyTest extends DerbyBase
 {
     private static final String SELECT_ALL_NODES =
-        " SELECT " + NODE_NAME + ", " + NODE_DSP_NAME + ", " + NODE_FLAGS + ", " + NODE_TYPE + ", " + OBJECT_PATH +
+        " SELECT " + NODE_NAME + ", " + NODE_DSP_NAME + ", " + NODE_FLAGS + ", " + NODE_TYPE +
         " FROM " + TBL_NODES;
     private static final String SELECT_ALL_RESOURCES_FOR_NODE =
         " SELECT RES_DEF." + RESOURCE_NAME + ", RES_DEF." + RESOURCE_DSP_NAME +
         " FROM " + TBL_RESOURCE_DEFINITIONS + " AS RES_DEF " +
-        " RIGHT JOIN " + TBL_NODE_RESOURCE + " ON " +
-        "     " + TBL_NODE_RESOURCE + "." + RESOURCE_NAME + " = RES_DEF." + RESOURCE_NAME +
+        " RIGHT JOIN " + TBL_RESOURCES + " ON " +
+        "     " + TBL_RESOURCES + "." + RESOURCE_NAME + " = RES_DEF." + RESOURCE_NAME +
         " WHERE " + NODE_NAME + " = ?";
     private static final String SELECT_ALL_NET_INTERFACES_FOR_NODE =
         " SELECT " + NODE_NET_NAME + ", " + NODE_NET_DSP_NAME + ", " + INET_ADDRESS + ", " + INET_TRANSPORT_TYPE +
@@ -53,7 +52,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
     private final NodeName nodeName;
 
-    private NodeDataDatabaseDriver dbDriver;
+    private NodeDataDerbyDriver dbDriver;
     private TransactionMgr transMgr;
     private java.util.UUID uuid;
     private ObjectProtection objProt;
@@ -70,9 +69,9 @@ public class NodeDataDerbyTest extends DerbyBase
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals("NODES table's column count has changed. Update tests accordingly!", 6, TBL_COL_COUNT_NODES);
+        assertEquals("NODES table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_NODES);
 
-        dbDriver = DrbdManage.getNodeDataDatabaseDriver();
+        dbDriver = (NodeDataDerbyDriver) DrbdManage.getNodeDataDatabaseDriver();
         transMgr = new TransactionMgr(getConnection());
 
         uuid = randomUUID();
@@ -103,7 +102,6 @@ public class NodeDataDerbyTest extends DerbyBase
         assertEquals(nodeName.displayValue, resultSet.getString(NODE_DSP_NAME));
         assertEquals(NodeFlag.QIGNORE.flagValue, resultSet.getLong(NODE_FLAGS));
         assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
-        assertEquals(ObjectProtection.buildPath(nodeName), resultSet.getString(OBJECT_PATH));
 
         assertFalse(resultSet.next());
         resultSet.close();
@@ -131,7 +129,6 @@ public class NodeDataDerbyTest extends DerbyBase
         assertEquals(nodeName.displayValue, resultSet.getString(NODE_DSP_NAME));
         assertEquals(0, resultSet.getLong(NODE_FLAGS));
         assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
-        assertEquals(ObjectProtection.buildPath(nodeName), resultSet.getString(OBJECT_PATH));
         assertFalse("Database contains too many datasets", resultSet.next());
 
         resultSet.close();
@@ -194,7 +191,6 @@ public class NodeDataDerbyTest extends DerbyBase
         assertEquals(nodeName.displayValue, resultSet.getString(NODE_DSP_NAME));
         assertEquals(NodeFlag.REMOVE.flagValue, resultSet.getLong(NODE_FLAGS));
         assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
-        assertEquals(ObjectProtection.buildPath(nodeName), resultSet.getString(OBJECT_PATH));
         assertFalse("Database contains too many datasets", resultSet.next());
 
         resultSet.close();
@@ -236,92 +232,174 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstanceComplete() throws Exception
     {
+        // node1
         java.util.UUID nodeUuid = randomUUID();
-        String nodeTestKey = "nodeTestKey";
-        String nodeTestValue = "nodeTestValue";
-        NodeId nodeId = new NodeId(13);
+        String node1PropsPath = PropsContainer.buildPath(nodeName);
+        String node1TestKey = "nodeTestKey";
+        String node1TestValue = "nodeTestValue";
 
-        NodeName nodeName2 = new NodeName("TestTargetNodeName");
-        java.util.UUID node2Uuid = randomUUID();
-
+        // node1 netName
         java.util.UUID netIfUuid = randomUUID();
         NetInterfaceName netName = new NetInterfaceName("TestNetName");
         String netHost = "127.0.0.1";
         String netType = "IP";
 
+        // node2
+        NodeName nodeName2 = new NodeName("TestTargetNodeName");
+        java.util.UUID node2Uuid = randomUUID();
+        String node2objProtPath = ObjectProtection.buildPath(nodeName2);
+
+        // resDfn
         ResourceName resName = new ResourceName("TestResName");
         java.util.UUID resDfnUuid = randomUUID();
+        String resDfnObjProtPath = ObjectProtection.buildPath(resName);
+        String resDfnPropsPath = PropsContainer.buildPath(resName);
         String resDfnTestKey = "resDfnTestKey";
         String resDfnTestValue = "resDfnTestValue";
 
-        java.util.UUID resUuid = randomUUID();
-        String resTestKey = "resTestKey";
-        String resTestValue = "resTestValue";
+        // node1 res
+        java.util.UUID res1Uuid = randomUUID();
+        String res1ObjProtPath = ObjectProtection.buildPath(nodeName, resName);
+        String res1PropsPath = PropsContainer.buildPath(nodeName, resName);
+        String res1TestKey = "res1TestKey";
+        String res1TestValue = "res1TestValue";
+        NodeId node1Id = new NodeId(13);
 
-        int conNr = 1;
-        java.util.UUID conUuid = randomUUID();
+        // node2 res
+        java.util.UUID res2Uuid = randomUUID();
+        String res2ObjProtPath = ObjectProtection.buildPath(nodeName2, resName);
+        String res2PropsPath = PropsContainer.buildPath(nodeName2, resName);
+        String res2TestKey = "res2TestKey";
+        String res2TestValue = "res2TestValue";
+        NodeId node2Id = new NodeId(14);
 
+        // volDfn
         java.util.UUID volDfnUuid = randomUUID();
         VolumeNumber volDfnNr = new VolumeNumber(42);
         long volDfnSize = 5_000_000L;
         int volDfnMinorNr = 10;
+        String volDfnPropsPath = PropsContainer.buildPath(resName, volDfnNr);
         String volDfnTestKey = "volDfnTestKey";
         String volDfnTestValue = "volDfnTestValue";
 
+        // node1 vol
+        java.util.UUID vol1Uuid = randomUUID();
+        String vol1TestBlockDev = "/dev/do/not/use/me1";
+        String vol1TestMetaDisk = "/dev/do/not/use/me1/neither";
+        String vol1PropsInstance = PropsContainer.buildPath(nodeName, resName, volDfnNr);
+        String vol1TestKey = "vol1TestKey";
+        String vol1TestValue = "vol1TestValue";
 
-        java.util.UUID volUuid = randomUUID();
-        String volTestBlockDev = "/dev/do/not/use/me";
-        String volTestMetaDisk = "/dev/do/not/use/me/neither";
-        String volTestKey = "volTestKey";
-        String volTestValue = "volTestValue";
+        // node1 vol
+        java.util.UUID vol2Uuid = randomUUID();
+        String vol2TestBlockDev = "/dev/do/not/use/me2";
+        String vol2TestMetaDisk = "/dev/do/not/use/me2/neither";
+        String vol2PropsInstance = PropsContainer.buildPath(nodeName2, resName, volDfnNr);
+        String vol2TestKey = "vol2TestKey";
+        String vol2TestValue = "vol2TestValue";
 
+        // storPoolDfn
         java.util.UUID storPoolDfnId = randomUUID();
         StorPoolName poolName = new StorPoolName("TestPoolName");
 
-        java.util.UUID storPoolId = randomUUID();
-        String driver = LvmDriver.class.getSimpleName();
+        // storPool
+        java.util.UUID storPool1Id = randomUUID();
+        String storPoolDriver1 = LvmDriver.class.getSimpleName();
+        String storPool1PropsInstance = PropsContainer.buildPath(poolName, nodeName);
+        String storPool1TestKey = "storPool1TestKey";
+        String storPool1TestValue = "storPool1TestValue";
 
-        String storPoolPropsInstance = PropsContainer.buildPath(
-            poolName,
-            nodeName
-        );
-        String storPoolTestKey = "storPoolTestKey";
-        String storPoolTestValue = "storPoolTestValue";
+        // storPool
+        java.util.UUID storPool2Id = randomUUID();
+        String storPoolDriver2 = LvmDriver.class.getSimpleName();
+        String storPool2PropsInstance = PropsContainer.buildPath(poolName, nodeName2);
+        String storPool2TestKey = "storPool2TestKey";
+        String storPool2TestValue = "storPool2TestValue";
 
-        // node(1)'s objProt already created in startUp method
+        // nodeCon
+        java.util.UUID nodeConUuid = randomUUID();
+        String nodeConPropsPath = PropsContainer.buildPath(nodeName, nodeName2);
+        String nodeConTestKey = "nodeConTestKey";
+        String nodeConTestValue = "nodeConTestValue";
+
+        // resCon
+        java.util.UUID resConUuid = randomUUID();
+        String resConPropPath = PropsContainer.buildPath(nodeName, nodeName2, resName);
+        String resConTestKey = "resConTestKey";
+        String resConTestValue = "resConTestValue";
+
+        // volCon
+        java.util.UUID volConUuid = randomUUID();
+        String volConPropPath = PropsContainer.buildPath(nodeName, nodeName2, resName, volDfnNr);
+        String volConTestKey = "volConTestKey";
+        String volConTestValue = "volConTestValue";
+
+
+
+
+        // node1
+        // objProt already created in startUp method
         insertNode(transMgr, nodeUuid, nodeName, NodeFlag.QIGNORE.getFlagValue(), NodeType.AUXILIARY);
-        insertProp(transMgr, PropsContainer.buildPath(nodeName), nodeTestKey, nodeTestValue);
+        insertProp(transMgr, node1PropsPath, node1TestKey, node1TestValue);
 
-        insertObjProt(transMgr, ObjectProtection.buildPath(nodeName2), sysCtx);
-        insertNode(transMgr, node2Uuid, nodeName2, 0, NodeType.AUXILIARY);
-
-        insertObjProt(transMgr, ObjectProtection.buildPath(nodeName, netName), sysCtx);
+        // node1's netIface
         insertNetInterface(transMgr, netIfUuid, nodeName, netName, netHost, netType);
 
-        insertObjProt(transMgr, ObjectProtection.buildPath(resName), sysCtx);
+        // node2
+        insertObjProt(transMgr, node2objProtPath, sysCtx);
+        insertNode(transMgr, node2Uuid, nodeName2, 0, NodeType.AUXILIARY);
+
+        // resDfn
+        insertObjProt(transMgr, resDfnObjProtPath, sysCtx);
         insertResDfn(transMgr, resDfnUuid, resName, RscDfnFlags.REMOVE);
-        insertProp(transMgr, PropsContainer.buildPath(resName), resDfnTestKey, resDfnTestValue);
+        insertProp(transMgr, resDfnPropsPath, resDfnTestKey, resDfnTestValue);
 
-        insertObjProt(transMgr, ObjectProtection.buildPath(resName, nodeName, nodeName2), sysCtx);
-        insertConnDfn(transMgr, conUuid, resName, nodeName, nodeName2, conNr);
-
-        insertObjProt(transMgr, ObjectProtection.buildPath(nodeName, resName), sysCtx);
-        insertRes(transMgr, resUuid, nodeName, resName, nodeId, Resource.RscFlags.CLEAN);
-        insertProp(transMgr, PropsContainer.buildPath(nodeName, resName), resTestKey, resTestValue);
-
+        // volDfn
         insertVolDfn(transMgr, volDfnUuid, resName, volDfnNr, volDfnSize, volDfnMinorNr, VlmDfnFlags.REMOVE.flagValue);
-        insertProp(transMgr, PropsContainer.buildPath(resName, volDfnNr), volDfnTestKey, volDfnTestValue);
+        insertProp(transMgr, volDfnPropsPath, volDfnTestKey, volDfnTestValue);
 
-        insertVol(transMgr, volUuid, nodeName, resName, volDfnNr, volTestBlockDev, volTestMetaDisk, Volume.VlmFlags.CLEAN);
-        insertProp(transMgr, PropsContainer.buildPath(nodeName, resName, volDfnNr), volTestKey, volTestValue);
-
+        // storPoolDfn
         insertObjProt(transMgr, ObjectProtection.buildPathSPD(poolName), sysCtx);
         insertStorPoolDfn(transMgr, storPoolDfnId, poolName);
 
-        insertObjProt(transMgr, ObjectProtection.buildPathSP(poolName), sysCtx);
-        insertStorPool(transMgr, storPoolId, nodeName, poolName, driver);
+        // node1 res
+        insertObjProt(transMgr, res1ObjProtPath, sysCtx);
+        insertRes(transMgr, res1Uuid, nodeName, resName, node1Id, Resource.RscFlags.CLEAN);
+        insertProp(transMgr, res1PropsPath, res1TestKey, res1TestValue);
 
-        insertProp(transMgr, storPoolPropsInstance, storPoolTestKey, storPoolTestValue);
+        // node1 vol
+        insertVol(transMgr, vol1Uuid, nodeName, resName, volDfnNr, vol1TestBlockDev, vol1TestMetaDisk, Volume.VlmFlags.CLEAN);
+        insertProp(transMgr, vol1PropsInstance, vol1TestKey, vol1TestValue);
+
+        // node2 res
+        insertObjProt(transMgr, res2ObjProtPath, sysCtx);
+        insertRes(transMgr, res2Uuid, nodeName2, resName, node2Id, Resource.RscFlags.CLEAN);
+        insertProp(transMgr, res2PropsPath, res2TestKey, res2TestValue);
+
+        // node2 vol
+        insertVol(transMgr, vol2Uuid, nodeName2, resName, volDfnNr, vol2TestBlockDev, vol2TestMetaDisk, Volume.VlmFlags.CLEAN);
+        insertProp(transMgr, vol2PropsInstance, vol2TestKey, vol2TestValue);
+
+        // node1 storPool
+        insertStorPool(transMgr, storPool1Id, nodeName, poolName, storPoolDriver1);
+        insertProp(transMgr, storPool1PropsInstance, storPool1TestKey, storPool1TestValue);
+
+        // node2 storPool
+        insertStorPool(transMgr, storPool2Id, nodeName2, poolName, storPoolDriver2);
+        insertProp(transMgr, storPool2PropsInstance, storPool2TestKey, storPool2TestValue);
+
+        // nodeCon node1 <-> node2
+        insertNodeCon(transMgr, nodeConUuid, nodeName, nodeName2);
+        insertProp(transMgr, nodeConPropsPath, nodeConTestKey, nodeConTestValue);
+
+        // resCon res1 <-> res2
+        insertResCon(transMgr, resConUuid, nodeName, nodeName2, resName);
+        insertProp(transMgr, resConPropPath, resConTestKey, resConTestValue);
+
+        // volCon vol1 <-> vol2
+        insertVolCon(transMgr, volConUuid, nodeName, nodeName2, resName, volDfnNr);
+        insertProp(transMgr, volConPropPath, volConTestKey, volConTestValue);
+
         transMgr.commit();
 
         clearCaches();
@@ -344,7 +422,6 @@ public class NodeDataDerbyTest extends DerbyBase
             assertEquals(netName, netIf.getName());
             assertEquals(NetInterfaceType.byValue(netType), netIf.getNetInterfaceType(sysCtx));
             assertEquals(loadedNode, netIf.getNode());
-            assertNotNull(netIf.getObjProt());
             assertEquals(netIfUuid, netIf.getUuid());
         }
 
@@ -353,7 +430,7 @@ public class NodeDataDerbyTest extends DerbyBase
         {
             Props nodeProps = loadedNode.getProps(sysCtx);
             assertNotNull(nodeProps);
-            assertEquals(nodeTestValue, nodeProps.getProp(nodeTestKey));
+            assertEquals(node1TestValue, nodeProps.getProp(node1TestKey));
             assertEquals(1, nodeProps.size());
         }
         {
@@ -363,15 +440,6 @@ public class NodeDataDerbyTest extends DerbyBase
             {
                 ResourceDefinition resDfn = res.getDefinition();
                 assertNotNull(resDfn);
-                {
-                    ConnectionDefinition conDfn = resDfn.getConnectionDfn(sysCtx, nodeName, conNr);
-                    assertNotNull(conDfn);
-                    assertEquals(conUuid, conDfn.getUuid());
-                    assertEquals(conNr, conDfn.getConnectionNumber(sysCtx));
-                    assertEquals(resDfn, conDfn.getResourceDefinition(sysCtx));
-                    assertEquals(loadedNode, conDfn.getSourceNode(sysCtx));
-                    assertEquals(loadedNode2, conDfn.getTargetNode(sysCtx));
-                }
                 assertEquals(RscDfnFlags.REMOVE.flagValue, resDfn.getFlags().getFlagsBits(sysCtx));
                 assertEquals(resName, resDfn.getName());
                 assertNotNull(resDfn.getObjProt());
@@ -386,13 +454,13 @@ public class NodeDataDerbyTest extends DerbyBase
                 assertEquals(resDfnUuid, resDfn.getUuid());
                 assertEquals(res.getVolume(volDfnNr).getVolumeDefinition(), resDfn.getVolumeDfn(sysCtx, volDfnNr));
             }
-            assertEquals(nodeId, res.getNodeId());
+            assertEquals(node1Id, res.getNodeId());
             assertNotNull(res.getObjProt());
             {
                 Props resProps = res.getProps(sysCtx);
                 assertNotNull(resProps);
 
-                assertEquals(resTestValue, resProps.getProp(resTestKey));
+                assertEquals(res1TestValue, resProps.getProp(res1TestKey));
                 assertEquals(1, resProps.size());
             }
             {
@@ -401,7 +469,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 assertTrue(resStateFlags.isSet(sysCtx, RscFlags.CLEAN));
                 assertFalse(resStateFlags.isSet(sysCtx, RscFlags.REMOVE));
             }
-            assertEquals(resUuid, res.getUuid());
+            assertEquals(res1Uuid, res.getUuid());
             {
                 Volume vol = res.getVolume(volDfnNr);
                 assertNotNull(vol);
@@ -413,12 +481,12 @@ public class NodeDataDerbyTest extends DerbyBase
                 {
                     Props volProps = vol.getProps(sysCtx);
                     assertNotNull(volProps);
-                    assertEquals(volTestValue, volProps.getProp(volTestKey));
+                    assertEquals(vol1TestValue, volProps.getProp(vol1TestKey));
                     assertEquals(1, volProps.size());
                 }
                 assertEquals(res, vol.getResource());
                 assertEquals(res.getDefinition(), vol.getResourceDefinition());
-                assertEquals(volUuid, vol.getUuid());
+                assertEquals(vol1Uuid, vol.getUuid());
                 {
                     VolumeDefinition volDfn = vol.getVolumeDefinition();
                     assertTrue(volDfn.getFlags().isSet(sysCtx, VlmDfnFlags.REMOVE));
@@ -434,6 +502,37 @@ public class NodeDataDerbyTest extends DerbyBase
                     assertEquals(volDfnNr, volDfn.getVolumeNumber(sysCtx));
                     assertEquals(volDfnSize, volDfn.getVolumeSize(sysCtx));
                 }
+                {
+                    Volume vol2 = loadedNode2.getResource(sysCtx, resName).getVolume(volDfnNr);
+                    assertNotNull(vol2);
+
+                    VolumeConnection volCon = vol.getVolumeConnection(sysCtx, vol2);
+                    assertNotNull(volCon);
+
+                    assertEquals(vol, volCon.getSourceVolume(sysCtx));
+                    assertEquals(vol2, volCon.getTargetVolume(sysCtx));
+                    assertEquals(volConUuid, volCon.getUuid());
+
+                    Props volConProps = volCon.getProps(sysCtx);
+                    assertNotNull(volConProps);
+                    assertEquals(volConTestValue, volConProps.getProp(volConTestKey));
+                    assertEquals(1, volConProps.size());
+                }
+            }
+            {
+                Resource res2 = loadedNode2.getResource(sysCtx, resName);
+                assertNotNull(res2);
+                ResourceConnection resCon = res.getResourceConnection(sysCtx, res2);
+                assertNotNull(resCon);
+
+                assertEquals(res, resCon.getSourceResource(sysCtx));
+                assertEquals(res2, resCon.getTargetResource(sysCtx));
+                assertEquals(resConUuid, resCon.getUuid());
+
+                Props resConProps = resCon.getProps(sysCtx);
+                assertNotNull(resConProps);
+                assertEquals(resConTestValue, resConProps.getProp(resConTestKey));
+                assertEquals(1, resConProps.size());
             }
         }
 
@@ -443,7 +542,7 @@ public class NodeDataDerbyTest extends DerbyBase
             {
                 Props storPoolConfig = storPool.getConfiguration(sysCtx);
                 assertNotNull(storPoolConfig);
-                assertEquals(storPoolTestValue, storPoolConfig.getProp(storPoolTestKey));
+                assertEquals(storPool1TestValue, storPoolConfig.getProp(storPool1TestKey));
                 assertEquals(1, storPoolConfig.size());
             }
             {
@@ -458,12 +557,22 @@ public class NodeDataDerbyTest extends DerbyBase
                 assertNull(storageDriver);
                 // in controller storDriver HAS to be null (as we are testing database, we have to be testing the controller)
             }
-            assertEquals(driver, storPool.getDriverName());
+            assertEquals(storPoolDriver2, storPool.getDriverName());
             assertEquals(poolName, storPool.getName());
-            assertNotNull(storPool.getObjProt());
-            assertEquals(storPoolId, storPool.getUuid());
         }
         assertEquals(nodeUuid, loadedNode.getUuid());
+
+        NodeConnection nodeCon = loadedNode.getNodeConnection(sysCtx, loadedNode2);
+        assertNotNull(nodeCon);
+
+        assertEquals(loadedNode, nodeCon.getSourceNode(sysCtx));
+        assertEquals(loadedNode2, nodeCon.getTargetNode(sysCtx));
+        assertEquals(nodeConUuid, nodeCon.getUuid());
+
+        Props nodeConProps = nodeCon.getProps(sysCtx);
+        assertNotNull(nodeConProps);
+        assertEquals(nodeConTestValue, nodeConProps.getProp(nodeConTestKey));
+        assertEquals(1, nodeConProps.size());
     }
 
     @Test
@@ -554,5 +663,29 @@ public class NodeDataDerbyTest extends DerbyBase
         assertNotNull(loadedNode);
         assertEquals(node.getName(), loadedNode.getName());
         assertEquals(node.getUuid(), loadedNode.getUuid());
+    }
+
+    @Test
+    public void testLoadAll() throws Exception
+    {
+        dbDriver.create(node, transMgr);
+        NodeName nodeName2 = new NodeName("NodeName2");
+        NodeData.getInstance(
+            sysCtx,
+            nodeName2,
+            NodeType.CONTROLLER,
+            null,
+            transMgr,
+            true
+        );
+
+        clearCaches();
+
+        dbDriver.loadAll(transMgr);
+
+        assertEquals(2, nodesMap.size());
+        assertNotNull(nodesMap.get(nodeName));
+        assertNotNull(nodesMap.get(nodeName2));
+        assertNotEquals(nodesMap.get(nodeName2), nodesMap.get(nodeName));
     }
 }

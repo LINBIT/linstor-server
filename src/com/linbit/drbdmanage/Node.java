@@ -33,6 +33,15 @@ public interface Node extends TransactionObject
     public Resource getResource(AccessContext accCtx, ResourceName resName)
         throws AccessDeniedException;
 
+    public NodeConnection getNodeConnection(AccessContext accCtx, Node otherNode)
+        throws AccessDeniedException;
+
+    public void setNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
+        throws AccessDeniedException;
+
+    public void removeNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
+        throws AccessDeniedException;
+
     public Iterator<Resource> iterateResources(AccessContext accCtx)
         throws AccessDeniedException;
 

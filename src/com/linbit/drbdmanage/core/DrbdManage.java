@@ -6,14 +6,16 @@ import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
@@ -635,8 +637,18 @@ public abstract class DrbdManage
         return persistenceDbDriver.getNetInterfaceDataDatabaseDriver();
     }
 
-    public static ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver()
+    public static NodeConnectionDataDatabaseDriver getNodeConnectionDatabaseDriver()
     {
-        return persistenceDbDriver.getConnectionDefinitionDatabaseDriver();
+        return persistenceDbDriver.getNodeConnectionDataDatabaseDriver();
+    }
+
+    public static ResourceConnectionDataDatabaseDriver getResourceConnectionDatabaseDriver()
+    {
+        return persistenceDbDriver.getResourceConnectionDataDatabaseDriver();
+    }
+
+    public static VolumeConnectionDataDatabaseDriver getVolumeConnectionDatabaseDriver()
+    {
+        return persistenceDbDriver.getVolumeConnectionDataDatabaseDriver();
     }
 }

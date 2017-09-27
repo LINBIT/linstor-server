@@ -9,27 +9,29 @@ public class DerbyConstants
     public static final String VIEW_SEC_TYPE_RULES_LOAD = "SEC_TYPE_RULES_LOAD";
 
     // Table names
-    public static final String TBL_SEC_CONFIGURATION      = "SEC_CONFIGURATION";
-    public static final String TBL_SEC_IDENTITIES         = "SEC_IDENTITIES";
-    public static final String TBL_SEC_TYPES              = "SEC_TYPES";
-    public static final String TBL_SEC_ROLES              = "SEC_ROLES";
-    public static final String TBL_SEC_ID_ROLE_MAP        = "SEC_ID_ROLE_MAP";
-    public static final String TBL_SEC_ACCESS_TYPES       = "SEC_ACCESS_TYPES";
-    public static final String TBL_SEC_TYPE_RULES         = "SEC_TYPE_RULES";
-    public static final String TBL_SEC_DFLT_ROLES         = "SEC_DFLT_ROLES";
-    public static final String TBL_SEC_OBJECT_PROTECTION  = "SEC_OBJECT_PROTECTION";
-    public static final String TBL_SEC_ACL_MAP            = "SEC_ACL_MAP";
-    public static final String TBL_CTRL_CONFIGURATION     = "CTRL_CONFIGURATION";
-    public static final String TBL_NODES                  = "NODES";
-    public static final String TBL_NODE_NET_INTERFACES    = "NODE_NET_INTERFACES";
-    public static final String TBL_RESOURCE_DEFINITIONS   = "RESOURCE_DEFINITIONS";
-    public static final String TBL_NODE_RESOURCE          = "NODE_RESOURCE";
-    public static final String TBL_VOLUME_DEFINITIONS     = "VOLUME_DEFINITIONS";
-    public static final String TBL_VOLUMES                = "VOLUMES";
-    public static final String TBL_STOR_POOL_DEFINITIONS  = "STOR_POOL_DEFINITIONS";
-    public static final String TBL_NODE_STOR_POOL         = "NODE_STOR_POOL";
-    public static final String TBL_CONNECTION_DEFINITIONS = "CONNECTION_DEFINITIONS";
-    public static final String TBL_PROPS_CONTAINERS       = "PROPS_CONTAINERS";
+    public static final String TBL_SEC_CONFIGURATION     = "SEC_CONFIGURATION";
+    public static final String TBL_SEC_IDENTITIES        = "SEC_IDENTITIES";
+    public static final String TBL_SEC_TYPES             = "SEC_TYPES";
+    public static final String TBL_SEC_ROLES             = "SEC_ROLES";
+    public static final String TBL_SEC_ID_ROLE_MAP       = "SEC_ID_ROLE_MAP";
+    public static final String TBL_SEC_ACCESS_TYPES      = "SEC_ACCESS_TYPES";
+    public static final String TBL_SEC_TYPE_RULES        = "SEC_TYPE_RULES";
+    public static final String TBL_SEC_DFLT_ROLES        = "SEC_DFLT_ROLES";
+    public static final String TBL_SEC_OBJECT_PROTECTION = "SEC_OBJECT_PROTECTION";
+    public static final String TBL_SEC_ACL_MAP           = "SEC_ACL_MAP";
+    public static final String TBL_CTRL_CONFIGURATION    = "CTRL_CONFIGURATION";
+    public static final String TBL_NODES                 = "NODES";
+    public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
+    public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
+    public static final String TBL_RESOURCES             = "RESOURCES";
+    public static final String TBL_VOLUME_DEFINITIONS    = "VOLUME_DEFINITIONS";
+    public static final String TBL_VOLUMES               = "VOLUMES";
+    public static final String TBL_STOR_POOL_DEFINITIONS = "STOR_POOL_DEFINITIONS";
+    public static final String TBL_NODE_STOR_POOL        = "NODE_STOR_POOL";
+    public static final String TBL_NODE_CONNECTIONS      = "NODE_CONNECTIONS";
+    public static final String TBL_RESOURCE_CONNECTIONS  = "RESOURCE_CONNECTIONS";
+    public static final String TBL_VOLUME_CONNECTIONS    = "VOLUME_CONNECTIONS";
+    public static final String TBL_PROPS_CONTAINERS      = "PROPS_CONTAINERS";
 
     // SEC_CONFIGURATION column names
     public static final String ENTRY_KEY     = "ENTRY_KEY";
@@ -87,7 +89,7 @@ public class DerbyConstants
     public static final String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
     public static final String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
 
-    // NODE_RESOURCE column names
+    // RESOURCES column names
     public static final String NODE_ID        = "NODE_ID";
 
     // VOLUME_DEFINITIONS column names
@@ -107,10 +109,9 @@ public class DerbyConstants
     // NODE_STOR_POOL column names
     public static final String DRIVER_NAME = "DRIVER_NAME";
 
-    // CONNECTION_DEFINITIONS column names
+    // NODE_CONNECTIONS column names
     public static final String NODE_NAME_SRC = "NODE_NAME_SRC";
     public static final String NODE_NAME_DST = "NODE_NAME_DST";
-    public static final String CON_NR        = "CON_NR";
 
     // PROPS_CONTAINERS column names
     public static final String PROPS_INSTANCE = "PROPS_INSTANCE";

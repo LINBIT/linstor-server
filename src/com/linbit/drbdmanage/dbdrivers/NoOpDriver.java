@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.dbdrivers;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -9,7 +10,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.ConnectionDefinitionData;
+import com.linbit.drbdmanage.ResourceConnectionData;
 import com.linbit.drbdmanage.DmIpAddress;
 import com.linbit.drbdmanage.MinorNumber;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
@@ -17,6 +18,7 @@ import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.NetInterfaceData;
 import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NodeConnectionData;
 import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.Resource;
@@ -28,18 +30,22 @@ import com.linbit.drbdmanage.StorPoolData;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolDefinitionData;
 import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.Volume;
+import com.linbit.drbdmanage.VolumeConnectionData;
 import com.linbit.drbdmanage.VolumeData;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.VolumeNumber;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ConnectionDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
@@ -72,12 +78,20 @@ public class NoOpDriver implements DatabaseDriver
     private static final StorPoolDefinitionDataDatabaseDriver NO_OP_SP_DRIVER = new NoOpSpDriver();
     private static final StorPoolDataDatabaseDriver NO_OP_SPD_DRIVER = new NoOpSpdDriver();
     private static final NetInterfaceDataDatabaseDriver NO_OP_NI_DRIVER = new NoOpNiDriver();
-    private static final ConnectionDefinitionDataDatabaseDriver NO_OP_CON_DFN_DRIVER = new NoOpConDfnDriver();
+    private static final NodeConnectionDataDatabaseDriver NO_OP_NODE_CON_DFN_DRIVER = new NoOpNodeConDfnDriver();
+    private static final ResourceConnectionDataDatabaseDriver NO_OP_RES_CON_DFN_DRIVER = new NoOpResConDfnDriver();
+    private static final VolumeConnectionDataDatabaseDriver NO_OP_VOL_CON_DFN_DRIVER = new NoOpVolConDfnDriver();
 
     private static final StateFlagsPersistence<?> NO_OP_FLAG_DRIVER = new NoOpFlagDriver();
     private static final SingleColumnDatabaseDriver<?, ?> NO_OP_OBJ_DB_DRIVER = new NoOpObjDbDriver<>();
 
     private static final String NO_OP_STRING = "NO_OP";
+
+    @Override
+    public void loadAll(TransactionMgr transMgr) throws SQLException
+    {
+        // no-op
+    }
 
     @Override
     public ServiceName getDefaultServiceInstanceName()
@@ -146,9 +160,21 @@ public class NoOpDriver implements DatabaseDriver
     }
 
     @Override
-    public ConnectionDefinitionDataDatabaseDriver getConnectionDefinitionDatabaseDriver()
+    public NodeConnectionDataDatabaseDriver getNodeConnectionDataDatabaseDriver()
     {
-        return NO_OP_CON_DFN_DRIVER;
+        return NO_OP_NODE_CON_DFN_DRIVER;
+    }
+
+    @Override
+    public ResourceConnectionDataDatabaseDriver getResourceConnectionDataDatabaseDriver()
+    {
+        return NO_OP_RES_CON_DFN_DRIVER;
+    }
+
+    @Override
+    public VolumeConnectionDataDatabaseDriver getVolumeConnectionDataDatabaseDriver()
+    {
+        return NO_OP_VOL_CON_DFN_DRIVER;
     }
 
     private static class NoOpPropDriver implements PropsConDatabaseDriver
@@ -485,20 +511,12 @@ public class NoOpDriver implements DatabaseDriver
         }
     }
 
-    private static class NoOpConDfnDriver implements ConnectionDefinitionDataDatabaseDriver
+    private static class NoOpNodeConDfnDriver implements NodeConnectionDataDatabaseDriver
     {
-        @SuppressWarnings("unchecked")
         @Override
-        public SingleColumnDatabaseDriver<ConnectionDefinitionData, Integer> getConnectionNumberDriver()
-        {
-            return (SingleColumnDatabaseDriver<ConnectionDefinitionData, Integer>) NO_OP_OBJ_DB_DRIVER;
-        }
-
-        @Override
-        public ConnectionDefinitionData load(
-            ResourceDefinition resDfn,
-            NodeName sourceNodeName,
-            NodeName targetNodeName,
+        public NodeConnectionData load(
+            Node sourceNode,
+            Node targetNode,
             TransactionMgr transMgr
         )
             throws SQLException
@@ -507,13 +525,95 @@ public class NoOpDriver implements DatabaseDriver
         }
 
         @Override
-        public void create(ConnectionDefinitionData conDfnData, TransactionMgr transMgr) throws SQLException
+        public List<NodeConnectionData> loadAllByNode(
+            Node node,
+            TransactionMgr transMgr
+        )
+            throws SQLException
+        {
+            return null;
+        }
+
+        @Override
+        public void create(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }
 
         @Override
-        public void delete(ConnectionDefinitionData data, TransactionMgr transMgr) throws SQLException
+        public void delete(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException
+        {
+            // no-op
+        }
+    }
+
+    private static class NoOpResConDfnDriver implements ResourceConnectionDataDatabaseDriver
+    {
+        @Override
+        public ResourceConnectionData load(
+            Resource source,
+            Resource target,
+            TransactionMgr transMgr
+        )
+            throws SQLException
+        {
+            return null;
+        }
+
+        @Override
+        public List<ResourceConnectionData> loadAllByResource(
+            Resource resource,
+            TransactionMgr transMgr
+        )
+            throws SQLException
+        {
+            return null;
+        }
+
+        @Override
+        public void create(ResourceConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
+        {
+            // no-op
+        }
+
+        @Override
+        public void delete(ResourceConnectionData data, TransactionMgr transMgr) throws SQLException
+        {
+            // no-op
+        }
+    }
+
+    private static class NoOpVolConDfnDriver implements VolumeConnectionDataDatabaseDriver
+    {
+        @Override
+        public VolumeConnectionData load(
+            Volume sourceVolume,
+            Volume targetVolume,
+            TransactionMgr transMgr
+        )
+            throws SQLException
+        {
+            return null;
+        }
+
+        @Override
+        public List<VolumeConnectionData> loadAllByVolume(
+            Volume volume,
+            TransactionMgr transMgr
+        )
+            throws SQLException
+        {
+            return null;
+        }
+
+        @Override
+        public void create(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
+        {
+            // no-op
+        }
+
+        @Override
+        public void delete(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
         {
             // no-op
         }

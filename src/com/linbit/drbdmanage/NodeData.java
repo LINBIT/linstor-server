@@ -2,6 +2,7 @@ package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -60,6 +61,8 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private final NodeDataDatabaseDriver dbDriver;
 
+    private final Map<Node, NodeConnection> nodeConnections;
+
     private boolean deleted = false;
 
     /*
@@ -117,6 +120,7 @@ public class NodeData extends BaseTransactionObject implements Node
             PropsContainer.buildPath(nameRef),
             transMgr
         );
+        nodeConnections = new HashMap<>();
 
         flags = new NodeFlagsImpl(this, objProt, dbDriver.getStateFlagPersistence(), initialFlags);
         if (type == null)
@@ -201,6 +205,59 @@ public class NodeData extends BaseTransactionObject implements Node
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return resourceMap.get(resName);
+    }
+
+    @Override
+    public NodeConnection getNodeConnection(AccessContext accCtx, Node otherNode)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        otherNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return nodeConnections.get(otherNode);
+    }
+
+    @Override
+    public void setNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        Node sourceNode = nodeConnection.getSourceNode(accCtx);
+        Node targetNode = nodeConnection.getTargetNode(accCtx);
+
+        sourceNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        if (sourceNode == this)
+        {
+            nodeConnections.put(targetNode, nodeConnection);
+        }
+        else
+        {
+            nodeConnections.put(sourceNode, nodeConnection);
+        }
+    }
+
+    @Override
+    public void removeNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+
+        Node sourceNode = nodeConnection.getSourceNode(accCtx);
+        Node targetNode = nodeConnection.getTargetNode(accCtx);
+
+        sourceNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        if (sourceNode == this)
+        {
+            nodeConnections.remove(targetNode, nodeConnection);
+        }
+        else
+        {
+            nodeConnections.remove(sourceNode, nodeConnection);
+        }
     }
 
     @Override

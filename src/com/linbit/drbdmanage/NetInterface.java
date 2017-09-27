@@ -3,7 +3,6 @@ package com.linbit.drbdmanage;
 import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
-import com.linbit.drbdmanage.security.ObjectProtection;
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -15,8 +14,6 @@ import java.util.UUID;
 public interface NetInterface extends TransactionObject
 {
     public UUID getUuid();
-
-    public ObjectProtection getObjProt();
 
     public NetInterfaceName getName();
 

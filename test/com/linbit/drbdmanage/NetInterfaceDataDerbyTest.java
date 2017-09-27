@@ -19,7 +19,6 @@ import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.security.DerbyBase;
-import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
 
 public class NetInterfaceDataDerbyTest extends DerbyBase
@@ -43,7 +42,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     private NetInterfaceDataDerbyDriver dbDriver;
 
     private java.util.UUID niUuid;
-    private ObjectProtection niObjProt;
     private NetInterfaceData niData;
     private SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> niAddrDriver;
     private SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> niTypeDriver;
@@ -73,13 +71,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         );
 
         niUuid = java.util.UUID.randomUUID();
-        niObjProt = ObjectProtection.getInstance(
-            sysCtx,
-            ObjectProtection.buildPath(nodeName, niName),
-            true,
-            transMgr
-        );
-        niData = new NetInterfaceData(niUuid, niObjProt, niName, node, niAddr, niInterfaceType); // does not persist
+        niData = new NetInterfaceData(niUuid, niName, node, niAddr, niInterfaceType); // does not persist
 
         dbDriver = new NetInterfaceDataDerbyDriver(sysCtx, errorReporter);
         niAddrDriver = dbDriver.getNetInterfaceAddressDriver();
@@ -224,7 +216,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.displayValue, netData.getName().displayValue);
         assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress());
         assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
-        assertNotNull(netData.getObjProt());
     }
 
     @Test
@@ -372,7 +363,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName, netData.getName());
         assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
         assertEquals(node, netData.getNode());
-        assertNotNull(netData.getObjProt());
         assertNotNull(netData.getUuid());
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);

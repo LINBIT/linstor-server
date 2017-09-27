@@ -16,7 +16,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.CoreUtils;
 import com.linbit.drbdmanage.security.DerbyBase;
-import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.storage.LvmDriver;
 import com.linbit.utils.UuidUtils;
 
@@ -33,7 +32,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
     private NodeData node;
 
     private java.util.UUID uuid;
-    private ObjectProtection objProt;
     private StorPoolData storPool;
 
     private StorPoolDefinitionData spdd;
@@ -59,8 +57,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         driver = new StorPoolDataDerbyDriver(sysCtx, errorReporter);
 
         uuid = randomUUID();
-        objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPathSP(spName), true, transMgr);
-        storPool = new StorPoolData(uuid, objProt, node, spdd, null, LvmDriver.class.getSimpleName(), transMgr);
+        storPool = new StorPoolData(uuid, node, spdd, null, LvmDriver.class.getSimpleName(), transMgr);
     }
 
     @Test
@@ -269,7 +266,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertTrue(storPoolData.getDriver(sysCtx) instanceof LvmDriver);
         assertEquals(LvmDriver.class.getSimpleName(), storPoolData.getDriverName());
         assertEquals(spName, storPoolData.getName());
-        assertNotNull(storPoolData.getObjProt());
         assertNotNull(storPoolData.getUuid());
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS);

@@ -9,27 +9,29 @@ public interface DerbyConstants
     public static final String VIEW_SEC_TYPE_RULES_LOAD = "SEC_TYPE_RULES_LOAD";
 
     // Table names
-    public static final String TBL_SEC_CONFIGURATION      = "SEC_CONFIGURATION";
-    public static final String TBL_SEC_IDENTITIES         = "SEC_IDENTITIES";
-    public static final String TBL_SEC_TYPES              = "SEC_TYPES";
-    public static final String TBL_SEC_ROLES              = "SEC_ROLES";
-    public static final String TBL_SEC_ID_ROLE_MAP        = "SEC_ID_ROLE_MAP";
-    public static final String TBL_SEC_ACCESS_TYPES       = "SEC_ACCESS_TYPES";
-    public static final String TBL_SEC_TYPE_RULES         = "SEC_TYPE_RULES";
-    public static final String TBL_SEC_DFLT_ROLES         = "SEC_DFLT_ROLES";
-    public static final String TBL_SEC_OBJECT_PROTECTION  = "SEC_OBJECT_PROTECTION";
-    public static final String TBL_SEC_ACL_MAP            = "SEC_ACL_MAP";
-    public static final String TBL_CTRL_CONFIGURATION     = "CTRL_CONFIGURATION";
-    public static final String TBL_NODES                  = "NODES";
-    public static final String TBL_NODE_NET_INTERFACES    = "NODE_NET_INTERFACES";
-    public static final String TBL_RESOURCE_DEFINITIONS   = "RESOURCE_DEFINITIONS";
-    public static final String TBL_NODE_RESOURCE          = "NODE_RESOURCE";
-    public static final String TBL_VOLUME_DEFINITIONS     = "VOLUME_DEFINITIONS";
-    public static final String TBL_VOLUMES                = "VOLUMES";
-    public static final String TBL_STOR_POOL_DEFINITIONS  = "STOR_POOL_DEFINITIONS";
-    public static final String TBL_NODE_STOR_POOL         = "NODE_STOR_POOL";
-    public static final String TBL_CONNECTION_DEFINITIONS = "CONNECTION_DEFINITIONS";
-    public static final String TBL_PROPS_CONTAINERS       = "PROPS_CONTAINERS";
+    public static final String TBL_SEC_CONFIGURATION     = "SEC_CONFIGURATION";
+    public static final String TBL_SEC_IDENTITIES        = "SEC_IDENTITIES";
+    public static final String TBL_SEC_TYPES             = "SEC_TYPES";
+    public static final String TBL_SEC_ROLES             = "SEC_ROLES";
+    public static final String TBL_SEC_ID_ROLE_MAP       = "SEC_ID_ROLE_MAP";
+    public static final String TBL_SEC_ACCESS_TYPES      = "SEC_ACCESS_TYPES";
+    public static final String TBL_SEC_TYPE_RULES        = "SEC_TYPE_RULES";
+    public static final String TBL_SEC_DFLT_ROLES        = "SEC_DFLT_ROLES";
+    public static final String TBL_SEC_OBJECT_PROTECTION = "SEC_OBJECT_PROTECTION";
+    public static final String TBL_SEC_ACL_MAP           = "SEC_ACL_MAP";
+    public static final String TBL_CTRL_CONFIGURATION    = "CTRL_CONFIGURATION";
+    public static final String TBL_NODES                 = "NODES";
+    public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
+    public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
+    public static final String TBL_RESOURCES             = "RESOURCES";
+    public static final String TBL_VOLUME_DEFINITIONS    = "VOLUME_DEFINITIONS";
+    public static final String TBL_VOLUMES               = "VOLUMES";
+    public static final String TBL_STOR_POOL_DEFINITIONS = "STOR_POOL_DEFINITIONS";
+    public static final String TBL_NODE_STOR_POOL        = "NODE_STOR_POOL";
+    public static final String TBL_NODE_CONNECTIONS      = "NODE_CONNECTIONS";
+    public static final String TBL_RESOURCE_CONNECTIONS  = "RESOURCE_CONNECTIONS";
+    public static final String TBL_VOLUME_CONNECTIONS    = "VOLUME_CONNECTIONS";
+    public static final String TBL_PROPS_CONTAINERS      = "PROPS_CONTAINERS";
 
     // SEC_CONFIGURATION column names
     public static final String ENTRY_KEY     = "ENTRY_KEY";
@@ -87,7 +89,7 @@ public interface DerbyConstants
     public static final String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
     public static final String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
 
-    // NODE_RESOURCE column names
+    // RESOURCES column names
     public static final String NODE_ID        = "NODE_ID";
 
     // VOLUME_DEFINITIONS column names
@@ -107,10 +109,9 @@ public interface DerbyConstants
     // NODE_STOR_POOL column names
     public static final String DRIVER_NAME = "DRIVER_NAME";
 
-    // CONNECTION_DEFINITIONS column names
+    // NODE_CONNECTIONS column names
     public static final String NODE_NAME_SRC = "NODE_NAME_SRC";
     public static final String NODE_NAME_DST = "NODE_NAME_DST";
-    public static final String CON_NR        = "CON_NR";
 
     // PROPS_CONTAINERS column names
     public static final String PROPS_INSTANCE = "PROPS_INSTANCE";
@@ -118,27 +119,29 @@ public interface DerbyConstants
     public static final String PROP_VALUE     = "PROP_VALUE";
 
     // table column counts
-    public static final int TBL_COL_COUNT_SEC_CONFIGURATION      = 3;
-    public static final int TBL_COL_COUNT_SEC_IDENTITIES         = 6;
-    public static final int TBL_COL_COUNT_SEC_TYPES              = 3;
-    public static final int TBL_COL_COUNT_SEC_ROLES              = 5;
-    public static final int TBL_COL_COUNT_SEC_ID_ROLE_MAP        = 2;
-    public static final int TBL_COL_COUNT_SEC_ACCESS_TYPES       = 2;
-    public static final int TBL_COL_COUNT_SEC_TYPE_RULES         = 3;
-    public static final int TBL_COL_COUNT_SEC_DFLT_ROLES         = 2;
-    public static final int TBL_COL_COUNT_SEC_OBJECT_PROTECTION  = 4;
-    public static final int TBL_COL_COUNT_SEC_ACL_MAP            = 3;
-    public static final int TBL_COL_COUNT_CTRL_CONFIGURATION     = 3;
-    public static final int TBL_COL_COUNT_NODES                  = 6;
-    public static final int TBL_COL_COUNT_NODE_NET_INTERFACES    = 6;
-    public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS   = 4;
-    public static final int TBL_COL_COUNT_NODE_RESOURCE          = 5;
-    public static final int TBL_COL_COUNT_VOLUME_DEFINITIONS     = 6;
-    public static final int TBL_COL_COUNT_VOLUMES                = 7;
-    public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS  = 3;
-    public static final int TBL_COL_COUNT_NODE_STOR_POOL         = 4;
-    public static final int TBL_COL_COUNT_CONNECTION_DEFINITIONS = 5;
-    public static final int TBL_COL_COUNT_PROPS_CONTAINERS       = 3;
+    public static final int TBL_COL_COUNT_SEC_CONFIGURATION     = 3;
+    public static final int TBL_COL_COUNT_SEC_IDENTITIES        = 6;
+    public static final int TBL_COL_COUNT_SEC_TYPES             = 3;
+    public static final int TBL_COL_COUNT_SEC_ROLES             = 5;
+    public static final int TBL_COL_COUNT_SEC_ID_ROLE_MAP       = 2;
+    public static final int TBL_COL_COUNT_SEC_ACCESS_TYPES      = 2;
+    public static final int TBL_COL_COUNT_SEC_TYPE_RULES        = 3;
+    public static final int TBL_COL_COUNT_SEC_DFLT_ROLES        = 2;
+    public static final int TBL_COL_COUNT_SEC_OBJECT_PROTECTION = 4;
+    public static final int TBL_COL_COUNT_SEC_ACL_MAP           = 3;
+    public static final int TBL_COL_COUNT_CTRL_CONFIGURATION    = 3;
+    public static final int TBL_COL_COUNT_NODES                 = 5;
+    public static final int TBL_COL_COUNT_NODE_NET_INTERFACES   = 6;
+    public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 4;
+    public static final int TBL_COL_COUNT_RESOURCES             = 5;
+    public static final int TBL_COL_COUNT_VOLUME_DEFINITIONS    = 6;
+    public static final int TBL_COL_COUNT_VOLUMES               = 7;
+    public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS = 3;
+    public static final int TBL_COL_COUNT_NODE_STOR_POOL        = 4;
+    public static final int TBL_COL_COUNT_NODE_CONNECTIONS      = 3;
+    public static final int TBL_COL_COUNT_RESOURCE_CONNECTIONS  = 4;
+    public static final int TBL_COL_COUNT_VOLUME_CONNECTIONS    = 5;
+    public static final int TBL_COL_COUNT_PROPS_CONTAINERS      = 3;
 
     // create statements
     public static final String CREATE_TABLE_SEC_CONFIGURATION =
@@ -258,9 +261,7 @@ public interface DerbyConstants
         "    NODE_DSP_NAME VARCHAR(255) NOT NULL, \n" +
         "    NODE_FLAGS BIGINT NOT NULL, \n" +
         "    NODE_TYPE INT NOT NULL, \n" +
-        "    OBJECT_PATH VARCHAR(512) NOT NULL, \n" +
-        "    CONSTRAINT NODES_CHKDSPNAME CHECK (UPPER(NODE_DSP_NAME) = NODE_NAME), \n" +
-        "    FOREIGN KEY (OBJECT_PATH) REFERENCES SEC_OBJECT_PROTECTION(OBJECT_PATH)  \n" +
+        "    CONSTRAINT NODES_CHKDSPNAME CHECK (UPPER(NODE_DSP_NAME) = NODE_NAME) \n" +
         ")";
     public static final String CREATE_TABLE_NODE_NET_INTERFACES =
         "CREATE TABLE NODE_NET_INTERFACES \n" +
@@ -284,8 +285,8 @@ public interface DerbyConstants
         "    RESOURCE_FLAGS BIGINT NOT NULL, \n" +
         "    CONSTRAINT RSC_DFN_CHKDSPNAME CHECK (UPPER(RESOURCE_DSP_NAME) = RESOURCE_NAME) \n" +
         ")";
-    public static final String CREATE_TABLE_NODE_RESOURCE =
-        "CREATE TABLE NODE_RESOURCE \n" +
+    public static final String CREATE_TABLE_RESOURCES =
+        "CREATE TABLE RESOURCES \n" +
         "( \n" +
         "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" +
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
@@ -293,8 +294,8 @@ public interface DerbyConstants
         "    NODE_ID INT NOT NULL, \n" +
         "    RESOURCE_FLAGS BIGINT NOT NULL, \n" +
         "    PRIMARY KEY (NODE_NAME, RESOURCE_NAME), \n" +
-        "    FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) ON DELETE CASCADE, \n" +
-        "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE \n" +
+        "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) ON DELETE CASCADE \n" +
         ")";
     public static final String CREATE_TABLE_VOLUME_DEFINITIONS =
         "CREATE TABLE VOLUME_DEFINITIONS \n" +
@@ -319,7 +320,7 @@ public interface DerbyConstants
         "    META_DISK_PATH VARCHAR(255),  -- null == internal \n" +
         "    VLM_FLAGS BIGINT NOT NULL, \n" +
         "    PRIMARY KEY (NODE_NAME, RESOURCE_NAME, VLM_NR), \n" +
-        "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (NODE_NAME, RESOURCE_NAME) REFERENCES RESOURCES(NODE_NAME, RESOURCE_NAME) ON DELETE CASCADE, \n" +
         "    FOREIGN KEY (RESOURCE_NAME, VLM_NR) REFERENCES VOLUME_DEFINITIONS(RESOURCE_NAME, VLM_NR) ON DELETE CASCADE \n" +
         ")";
     public static final String CREATE_TABLE_STOR_POOL_DEFINITIONS =
@@ -342,18 +343,38 @@ public interface DerbyConstants
         "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" +
         "    FOREIGN KEY (POOL_NAME) REFERENCES STOR_POOL_DEFINITIONS(POOL_NAME) ON DELETE CASCADE \n" +
         ")";
-    public static final String CREATE_TABLE_CONNECTION_DEFINITIONS =
-        "CREATE TABLE CONNECTION_DEFINITIONS \n" +
+    public static final String CREATE_TABLE_NODE_CONNECTIONS =
+        "CREATE TABLE NODE_CONNECTIONS \n" +
         "( \n" +
         "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
-        "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
         "    NODE_NAME_SRC VARCHAR(255) NOT NULL, \n" +
         "    NODE_NAME_DST VARCHAR(255) NOT NULL, \n" +
-        "    CON_NR INT NOT NULL, \n" +
-        "    PRIMARY KEY (RESOURCE_NAME, NODE_NAME_SRC, NODE_NAME_DST), \n" +
-        "    FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) ON DELETE CASCADE, \n" +
+        "    PRIMARY KEY (NODE_NAME_SRC, NODE_NAME_DST), \n" +
         "    FOREIGN KEY (NODE_NAME_SRC) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" +
         "    FOREIGN KEY (NODE_NAME_DST) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE \n" +
+        ")";
+    public static final String CREATE_TABLE_RESOURCE_CONNECTIONS =
+        "CREATE TABLE RESOURCE_CONNECTIONS \n" +
+        "( \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    NODE_NAME_SRC VARCHAR(255) NOT NULL, \n" +
+        "    NODE_NAME_DST VARCHAR(255) NOT NULL, \n" +
+        "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
+        "    PRIMARY KEY (NODE_NAME_SRC, NODE_NAME_DST, RESOURCE_NAME), \n" +
+        "    FOREIGN KEY (NODE_NAME_SRC, RESOURCE_NAME) REFERENCES RESOURCES(NODE_NAME, RESOURCE_NAME) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (NODE_NAME_DST, RESOURCE_NAME) REFERENCES RESOURCES(NODE_NAME, RESOURCE_NAME) ON DELETE CASCADE \n" +
+        ")";
+    public static final String CREATE_TABLE_VOLUME_CONNECTIONS =
+        "CREATE TABLE VOLUME_CONNECTIONS \n" +
+        "( \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    NODE_NAME_SRC VARCHAR(255) NOT NULL, \n" +
+        "    NODE_NAME_DST VARCHAR(255) NOT NULL, \n" +
+        "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
+        "    VLM_NR INT NOT NULL, \n" +
+        "    PRIMARY KEY (NODE_NAME_SRC, NODE_NAME_DST, RESOURCE_NAME, VLM_NR), \n" +
+        "    FOREIGN KEY (NODE_NAME_SRC, RESOURCE_NAME, VLM_NR) REFERENCES VOLUMES(NODE_NAME, RESOURCE_NAME, VLM_NR) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (NODE_NAME_DST, RESOURCE_NAME, VLM_NR) REFERENCES VOLUMES(NODE_NAME, RESOURCE_NAME, VLM_NR) ON DELETE CASCADE \n" +
         ")";
     public static final String CREATE_TABLE_PROPS_CONTAINERS =
         "CREATE TABLE PROPS_CONTAINERS \n" +
@@ -386,54 +407,58 @@ public interface DerbyConstants
         "    ORDER BY DOMAIN_NAME, TYPE_NAME ASC";
 
     // drop statements
-    public static final String DROP_VIEW_SEC_TYPE_RULES_LOAD   = "DROP VIEW " + VIEW_SEC_TYPE_RULES_LOAD;
-    public static final String DROP_VIEW_SEC_TYPES_LOAD        = "DROP VIEW " + VIEW_SEC_TYPES_LOAD;
-    public static final String DROP_VIEW_SEC_ROLES_LOAD        = "DROP VIEW " + VIEW_SEC_ROLES_LOAD;
-    public static final String DROP_VIEW_SEC_IDENTITIES_LOAD   = "DROP VIEW " + VIEW_SEC_IDENTITIES_LOAD;
-    public static final String DROP_TBL_PROPS_CONTAINERS       = "DROP TABLE " + TBL_PROPS_CONTAINERS;
-    public static final String DROP_TBL_CONNECTION_DEFINITIONS = "DROP TABLE " + TBL_CONNECTION_DEFINITIONS;
-    public static final String DROP_TBL_NODE_STOR_POOL         = "DROP TABLE " + TBL_NODE_STOR_POOL;
-    public static final String DROP_TBL_STOR_POOL_DEFINITIONS  = "DROP TABLE " + TBL_STOR_POOL_DEFINITIONS;
-    public static final String DROP_TBL_VOLUMES                = "DROP TABLE " + TBL_VOLUMES;
-    public static final String DROP_TBL_VOLUME_DEFINITIONS     = "DROP TABLE " + TBL_VOLUME_DEFINITIONS;
-    public static final String DROP_TBL_NODE_RESOURCE          = "DROP TABLE " + TBL_NODE_RESOURCE;
-    public static final String DROP_TBL_RESOURCE_DEFINITIONS   = "DROP TABLE " + TBL_RESOURCE_DEFINITIONS;
-    public static final String DROP_TBL_NODE_NET_INTERFACES    = "DROP TABLE " + TBL_NODE_NET_INTERFACES;
-    public static final String DROP_TBL_NODES                  = "DROP TABLE " + TBL_NODES;
-    public static final String DROP_TBL_CTRL_CONFIGURATION     = "DROP TABLE " + TBL_CTRL_CONFIGURATION;
-    public static final String DROP_TBL_SEC_ACL_MAP            = "DROP TABLE " + TBL_SEC_ACL_MAP;
-    public static final String DROP_TBL_SEC_OBJECT_PROTECTION  = "DROP TABLE " + TBL_SEC_OBJECT_PROTECTION;
-    public static final String DROP_TBL_SEC_DFLT_ROLES         = "DROP TABLE " + TBL_SEC_DFLT_ROLES;
-    public static final String DROP_TBL_SEC_TYPE_RULES         = "DROP TABLE " + TBL_SEC_TYPE_RULES;
-    public static final String DROP_TBL_SEC_ACCESS_TYPES       = "DROP TABLE " + TBL_SEC_ACCESS_TYPES;
-    public static final String DROP_TBL_SEC_ID_ROLE_MAP        = "DROP TABLE " + TBL_SEC_ID_ROLE_MAP;
-    public static final String DROP_TBL_SEC_ROLES              = "DROP TABLE " + TBL_SEC_ROLES;
-    public static final String DROP_TBL_SEC_TYPES              = "DROP TABLE " + TBL_SEC_TYPES;
-    public static final String DROP_TBL_SEC_IDENTITIES         = "DROP TABLE " + TBL_SEC_IDENTITIES;
-    public static final String DROP_TBL_SEC_CONFIGURATION      = "DROP TABLE " + TBL_SEC_CONFIGURATION;
+    public static final String DROP_VIEW_SEC_TYPE_RULES_LOAD  = "DROP VIEW " + VIEW_SEC_TYPE_RULES_LOAD;
+    public static final String DROP_VIEW_SEC_TYPES_LOAD       = "DROP VIEW " + VIEW_SEC_TYPES_LOAD;
+    public static final String DROP_VIEW_SEC_ROLES_LOAD       = "DROP VIEW " + VIEW_SEC_ROLES_LOAD;
+    public static final String DROP_VIEW_SEC_IDENTITIES_LOAD  = "DROP VIEW " + VIEW_SEC_IDENTITIES_LOAD;
+    public static final String DROP_TBL_PROPS_CONTAINERS      = "DROP TABLE " + TBL_PROPS_CONTAINERS;
+    public static final String DROP_TBL_VOLUME_CONNECTIONS    = "DROP TABLE " + TBL_VOLUME_CONNECTIONS;
+    public static final String DROP_TBL_RESOURCE_CONNECTIONS  = "DROP TABLE " + TBL_RESOURCE_CONNECTIONS;
+    public static final String DROP_TBL_NODE_CONNECTIONS      = "DROP TABLE " + TBL_NODE_CONNECTIONS;
+    public static final String DROP_TBL_NODE_STOR_POOL        = "DROP TABLE " + TBL_NODE_STOR_POOL;
+    public static final String DROP_TBL_STOR_POOL_DEFINITIONS = "DROP TABLE " + TBL_STOR_POOL_DEFINITIONS;
+    public static final String DROP_TBL_VOLUMES               = "DROP TABLE " + TBL_VOLUMES;
+    public static final String DROP_TBL_VOLUME_DEFINITIONS    = "DROP TABLE " + TBL_VOLUME_DEFINITIONS;
+    public static final String DROP_TBL_RESOURCES             = "DROP TABLE " + TBL_RESOURCES;
+    public static final String DROP_TBL_RESOURCE_DEFINITIONS  = "DROP TABLE " + TBL_RESOURCE_DEFINITIONS;
+    public static final String DROP_TBL_NODE_NET_INTERFACES   = "DROP TABLE " + TBL_NODE_NET_INTERFACES;
+    public static final String DROP_TBL_NODES                 = "DROP TABLE " + TBL_NODES;
+    public static final String DROP_TBL_CTRL_CONFIGURATION    = "DROP TABLE " + TBL_CTRL_CONFIGURATION;
+    public static final String DROP_TBL_SEC_ACL_MAP           = "DROP TABLE " + TBL_SEC_ACL_MAP;
+    public static final String DROP_TBL_SEC_OBJECT_PROTECTION = "DROP TABLE " + TBL_SEC_OBJECT_PROTECTION;
+    public static final String DROP_TBL_SEC_DFLT_ROLES        = "DROP TABLE " + TBL_SEC_DFLT_ROLES;
+    public static final String DROP_TBL_SEC_TYPE_RULES        = "DROP TABLE " + TBL_SEC_TYPE_RULES;
+    public static final String DROP_TBL_SEC_ACCESS_TYPES      = "DROP TABLE " + TBL_SEC_ACCESS_TYPES;
+    public static final String DROP_TBL_SEC_ID_ROLE_MAP       = "DROP TABLE " + TBL_SEC_ID_ROLE_MAP;
+    public static final String DROP_TBL_SEC_ROLES             = "DROP TABLE " + TBL_SEC_ROLES;
+    public static final String DROP_TBL_SEC_TYPES             = "DROP TABLE " + TBL_SEC_TYPES;
+    public static final String DROP_TBL_SEC_IDENTITIES        = "DROP TABLE " + TBL_SEC_IDENTITIES;
+    public static final String DROP_TBL_SEC_CONFIGURATION     = "DROP TABLE " + TBL_SEC_CONFIGURATION;
 
     // truncate statements
-    public static final String TRUNCATE_PROPS_CONTAINERS       = "DELETE FROM " + TBL_PROPS_CONTAINERS;
-    public static final String TRUNCATE_CONNECTION_DEFINITIONS = "DELETE FROM " + TBL_CONNECTION_DEFINITIONS;
-    public static final String TRUNCATE_NODE_STOR_POOL         = "DELETE FROM " + TBL_NODE_STOR_POOL;
-    public static final String TRUNCATE_STOR_POOL_DEFINITIONS  = "DELETE FROM " + TBL_STOR_POOL_DEFINITIONS;
-    public static final String TRUNCATE_VOLUMES                = "DELETE FROM " + TBL_VOLUMES;
-    public static final String TRUNCATE_VOLUME_DEFINITIONS     = "DELETE FROM " + TBL_VOLUME_DEFINITIONS;
-    public static final String TRUNCATE_NODE_RESOURCE          = "DELETE FROM " + TBL_NODE_RESOURCE;
-    public static final String TRUNCATE_RESOURCE_DEFINITIONS   = "DELETE FROM " + TBL_RESOURCE_DEFINITIONS;
-    public static final String TRUNCATE_NODE_NET_INTERFACES    = "DELETE FROM " + TBL_NODE_NET_INTERFACES;
-    public static final String TRUNCATE_NODES                  = "DELETE FROM " + TBL_NODES;
-    public static final String TRUNCATE_CTRL_CONFIGURATION     = "DELETE FROM " + TBL_CTRL_CONFIGURATION;
-    public static final String TRUNCATE_SEC_ACL_MAP            = "DELETE FROM " + TBL_SEC_ACL_MAP;
-    public static final String TRUNCATE_SEC_OBJECT_PROTECTION  = "DELETE FROM " + TBL_SEC_OBJECT_PROTECTION;
-    public static final String TRUNCATE_SEC_DFLT_ROLES         = "DELETE FROM " + TBL_SEC_DFLT_ROLES;
-    public static final String TRUNCATE_SEC_TYPE_RULES         = "DELETE FROM " + TBL_SEC_TYPE_RULES;
-    public static final String TRUNCATE_SEC_ACCESS_TYPES       = "DELETE FROM " + TBL_SEC_ACCESS_TYPES;
-    public static final String TRUNCATE_SEC_ID_ROLE_MAP        = "DELETE FROM " + TBL_SEC_ID_ROLE_MAP;
-    public static final String TRUNCATE_SEC_ROLES              = "DELETE FROM " + TBL_SEC_ROLES;
-    public static final String TRUNCATE_SEC_TYPES              = "DELETE FROM " + TBL_SEC_TYPES;
-    public static final String TRUNCATE_SEC_IDENTITIES         = "DELETE FROM " + TBL_SEC_IDENTITIES;
-    public static final String TRUNCATE_SEC_CONFIGURATION      = "DELETE FROM " + TBL_SEC_CONFIGURATION;
+    public static final String TRUNCATE_PROPS_CONTAINERS      = "DELETE FROM " + TBL_PROPS_CONTAINERS;
+    public static final String TRUNCATE_VOLUME_CONNECTIONS    = "DELETE FROM " + TBL_VOLUME_CONNECTIONS;
+    public static final String TRUNCATE_RESOURCE_CONNECTIONS  = "DELETE FROM " + TBL_RESOURCE_CONNECTIONS;
+    public static final String TRUNCATE_NODE_CONNECTIONS      = "DELETE FROM " + TBL_NODE_CONNECTIONS;
+    public static final String TRUNCATE_NODE_STOR_POOL        = "DELETE FROM " + TBL_NODE_STOR_POOL;
+    public static final String TRUNCATE_STOR_POOL_DEFINITIONS = "DELETE FROM " + TBL_STOR_POOL_DEFINITIONS;
+    public static final String TRUNCATE_VOLUMES               = "DELETE FROM " + TBL_VOLUMES;
+    public static final String TRUNCATE_VOLUME_DEFINITIONS    = "DELETE FROM " + TBL_VOLUME_DEFINITIONS;
+    public static final String TRUNCATE_RESOURCES             = "DELETE FROM " + TBL_RESOURCES;
+    public static final String TRUNCATE_RESOURCE_DEFINITIONS  = "DELETE FROM " + TBL_RESOURCE_DEFINITIONS;
+    public static final String TRUNCATE_NODE_NET_INTERFACES   = "DELETE FROM " + TBL_NODE_NET_INTERFACES;
+    public static final String TRUNCATE_NODES                 = "DELETE FROM " + TBL_NODES;
+    public static final String TRUNCATE_CTRL_CONFIGURATION    = "DELETE FROM " + TBL_CTRL_CONFIGURATION;
+    public static final String TRUNCATE_SEC_ACL_MAP           = "DELETE FROM " + TBL_SEC_ACL_MAP;
+    public static final String TRUNCATE_SEC_OBJECT_PROTECTION = "DELETE FROM " + TBL_SEC_OBJECT_PROTECTION;
+    public static final String TRUNCATE_SEC_DFLT_ROLES        = "DELETE FROM " + TBL_SEC_DFLT_ROLES;
+    public static final String TRUNCATE_SEC_TYPE_RULES        = "DELETE FROM " + TBL_SEC_TYPE_RULES;
+    public static final String TRUNCATE_SEC_ACCESS_TYPES      = "DELETE FROM " + TBL_SEC_ACCESS_TYPES;
+    public static final String TRUNCATE_SEC_ID_ROLE_MAP       = "DELETE FROM " + TBL_SEC_ID_ROLE_MAP;
+    public static final String TRUNCATE_SEC_ROLES             = "DELETE FROM " + TBL_SEC_ROLES;
+    public static final String TRUNCATE_SEC_TYPES             = "DELETE FROM " + TBL_SEC_TYPES;
+    public static final String TRUNCATE_SEC_IDENTITIES        = "DELETE FROM " + TBL_SEC_IDENTITIES;
+    public static final String TRUNCATE_SEC_CONFIGURATION     = "DELETE FROM " + TBL_SEC_CONFIGURATION;
 
     // create statement array
     public static final String[] CREATE_TABLES =
@@ -452,12 +477,14 @@ public interface DerbyConstants
         CREATE_TABLE_NODES,
         CREATE_TABLE_NODE_NET_INTERFACES,
         CREATE_TABLE_RESOURCE_DEFINITIONS,
-        CREATE_TABLE_NODE_RESOURCE,
+        CREATE_TABLE_RESOURCES,
         CREATE_TABLE_VOLUME_DEFINITIONS,
         CREATE_TABLE_VOLUMES,
         CREATE_TABLE_STOR_POOL_DEFINITIONS,
         CREATE_TABLE_NODE_STOR_POOL,
-        CREATE_TABLE_CONNECTION_DEFINITIONS,
+        CREATE_TABLE_NODE_CONNECTIONS,
+        CREATE_TABLE_RESOURCE_CONNECTIONS,
+        CREATE_TABLE_VOLUME_CONNECTIONS,
         CREATE_TABLE_PROPS_CONTAINERS,
         CREATE_VIEW_SEC_IDENTITIES_LOAD,
         CREATE_VIEW_SEC_ROLES_LOAD,
@@ -539,15 +566,15 @@ public interface DerbyConstants
         " VALUES (?, ?, ?)";
     public static final String INSERT_NODES =
         " INSERT INTO " + TBL_NODES +
-        " VALUES (?, ?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?)";
     public static final String INSERT_NODE_NET_INTERFACES =
         " INSERT INTO " + TBL_NODE_NET_INTERFACES +
         " VALUES (?, ?, ?, ?, ?, ?)";
     public static final String INSERT_RESOURCE_DEFINITIONS =
         " INSERT INTO " + TBL_RESOURCE_DEFINITIONS +
         " VALUES (?, ?, ?, ?)";
-    public static final String INSERT_NODE_RESOURCE =
-        " INSERT INTO " + TBL_NODE_RESOURCE +
+    public static final String INSERT_RESOURCES =
+        " INSERT INTO " + TBL_RESOURCES +
         " VALUES (?, ?, ?, ?, ?)";
     public static final String INSERT_VOLUME_DEFINITIONS =
         " INSERT INTO " + TBL_VOLUME_DEFINITIONS +
@@ -561,8 +588,14 @@ public interface DerbyConstants
     public static final String INSERT_NODE_STOR_POOL =
         " INSERT INTO " + TBL_NODE_STOR_POOL +
         " VALUES (?, ?, ?, ?)";
-    public static final String INSERT_CONNECTION_DEFINITIONS =
-        " INSERT INTO " + TBL_CONNECTION_DEFINITIONS +
+    public static final String INSERT_NODE_CONNECTIONS =
+        " INSERT INTO " + TBL_NODE_CONNECTIONS +
+        " VALUES (?, ?, ?)";
+    public static final String INSERT_RESOURCE_CONNECTIONS =
+        " INSERT INTO " + TBL_RESOURCE_CONNECTIONS +
+        " VALUES (?, ?, ?, ?)";
+    public static final String INSERT_VOLUME_CONNECTIONS =
+        " INSERT INTO " + TBL_VOLUME_CONNECTIONS +
         " VALUES (?, ?, ?, ?, ?)";
     public static final String INSERT_PROPS_CONTAINERS =
         " INSERT INTO " + TBL_PROPS_CONTAINERS +
@@ -576,12 +609,14 @@ public interface DerbyConstants
         DROP_VIEW_SEC_ROLES_LOAD,
         DROP_VIEW_SEC_IDENTITIES_LOAD,
         DROP_TBL_PROPS_CONTAINERS,
-        DROP_TBL_CONNECTION_DEFINITIONS,
+        DROP_TBL_VOLUME_CONNECTIONS,
+        DROP_TBL_RESOURCE_CONNECTIONS,
+        DROP_TBL_NODE_CONNECTIONS,
         DROP_TBL_NODE_STOR_POOL,
         DROP_TBL_STOR_POOL_DEFINITIONS,
         DROP_TBL_VOLUMES,
         DROP_TBL_VOLUME_DEFINITIONS,
-        DROP_TBL_NODE_RESOURCE,
+        DROP_TBL_RESOURCES,
         DROP_TBL_RESOURCE_DEFINITIONS,
         DROP_TBL_NODE_NET_INTERFACES,
         DROP_TBL_NODES,
@@ -602,12 +637,14 @@ public interface DerbyConstants
     public static final String[] TRUNCATE_TABLES =
     {
         TRUNCATE_PROPS_CONTAINERS,
-        TRUNCATE_CONNECTION_DEFINITIONS,
+        TRUNCATE_VOLUME_CONNECTIONS,
+        TRUNCATE_RESOURCE_CONNECTIONS,
+        TRUNCATE_NODE_CONNECTIONS,
         TRUNCATE_NODE_STOR_POOL,
         TRUNCATE_STOR_POOL_DEFINITIONS,
         TRUNCATE_VOLUMES,
         TRUNCATE_VOLUME_DEFINITIONS,
-        TRUNCATE_NODE_RESOURCE,
+        TRUNCATE_RESOURCES,
         TRUNCATE_RESOURCE_DEFINITIONS,
         TRUNCATE_NODE_NET_INTERFACES,
         TRUNCATE_NODES,

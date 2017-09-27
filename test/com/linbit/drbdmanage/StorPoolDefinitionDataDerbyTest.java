@@ -206,4 +206,18 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         assertEquals(spdd.getUuid(), loadedSpdd.getUuid());
     }
 
+    @Test
+    public void testLoadAll() throws Exception
+    {
+        driver.create(spdd, transMgr);
+        StorPoolName spName2 = new StorPoolName("StorPoolName2");
+        StorPoolDefinitionData.getInstance(sysCtx, spName2, transMgr, true);
+
+        driver.loadAll(transMgr);
+
+        assertEquals(2, storPoolDfnMap.size());
+        assertNotNull(storPoolDfnMap.get(spName));
+        assertNotNull(storPoolDfnMap.get(spName2));
+        assertNotEquals(storPoolDfnMap.get(spName2), storPoolDfnMap.get(spName));
+    }
 }
