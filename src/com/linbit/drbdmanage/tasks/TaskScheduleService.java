@@ -12,6 +12,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.drbdmanage.DrbdManageRuntimeException;
 import com.linbit.drbdmanage.core.Controller;
 
 public class TaskScheduleService implements SystemService, Runnable
@@ -54,7 +55,7 @@ public class TaskScheduleService implements SystemService, Runnable
     private ServiceName serviceInstanceName;
     private boolean running = false;
 
-    private final Thread workerThread;
+    private Thread workerThread;
 
     private final TreeMap<Long, Task> tasks = new TreeMap<>();
     private final LinkedList<Task> newTasks = new LinkedList<>();
@@ -64,7 +65,6 @@ public class TaskScheduleService implements SystemService, Runnable
     {
         this.controller = controller;
         serviceInstanceName = SERVICE_NAME;
-        workerThread = new Thread(this, serviceInstanceName.displayValue);
     }
 
     @Override
@@ -111,6 +111,26 @@ public class TaskScheduleService implements SystemService, Runnable
     @Override
     public void start() throws SystemServiceStartException
     {
+        if (workerThread != null && workerThread.isAlive())
+        {
+            shutdown();
+            try
+            {
+                awaitShutdown(1000);
+            }
+            catch (InterruptedException interruptedExc)
+            {
+                throw new DrbdManageRuntimeException(
+                    "Waiting for stop of old TaskScheduleService thread was interrupted",
+                    interruptedExc
+                );
+            }
+            if (workerThread.isAlive())
+            {
+                throw new DrbdManageRuntimeException("Could not kill already running TaskScheduleService-Thread");
+            }
+        }
+        workerThread = new Thread(this, serviceInstanceName.displayValue);
         workerThread.start();
         running = true;
     }
@@ -128,7 +148,10 @@ public class TaskScheduleService implements SystemService, Runnable
     @Override
     public void awaitShutdown(long timeout) throws InterruptedException
     {
-        workerThread.join(timeout);
+        if (workerThread != null)
+        {
+            workerThread.join(timeout);
+        }
     }
 
     public void addTask(Task task)
