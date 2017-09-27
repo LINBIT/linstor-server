@@ -79,11 +79,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     }
 
     public void initialize(
-        ResourceConnectionDataDerbyDriver resourceConnectionDefinitionDriverRef,
+        ResourceConnectionDataDerbyDriver resourceConnectionDriverRef,
         VolumeDataDerbyDriver volumeDriverRef
     )
     {
-        resourceConnectionDriver = resourceConnectionDefinitionDriverRef;
+        resourceConnectionDriver = resourceConnectionDriverRef;
         volumeDriver = volumeDriverRef;
     }
 

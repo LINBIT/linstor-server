@@ -63,7 +63,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
     private final StateFlagsPersistence<VolumeData> flagPersistenceDriver;
 
-    private VolumeConnectionDataDerbyDriver volumeConnectionDefinitionDriver;
+    private VolumeConnectionDataDerbyDriver volumeConnectionDriver;
 
     private HashMap<VolPrimaryKey, VolumeData> volCache;
 
@@ -76,9 +76,9 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         volCache = new HashMap<>();
     }
 
-    public void initialize(VolumeConnectionDataDerbyDriver volumeConnectionDefinitionDataDerbyDriverRef)
+    public void initialize(VolumeConnectionDataDerbyDriver volumeConnectionDataDerbyDriverRef)
     {
-        volumeConnectionDefinitionDriver = volumeConnectionDefinitionDataDerbyDriverRef;
+        volumeConnectionDriver = volumeConnectionDataDerbyDriverRef;
     }
 
     @Override
@@ -235,13 +235,13 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
                     // restore volCon
                     List<VolumeConnectionData> volConDfnList =
-                        volumeConnectionDefinitionDriver.loadAllByVolume(volData, transMgr);
+                        volumeConnectionDriver.loadAllByVolume(volData, transMgr);
                     for (VolumeConnectionData volConDfn : volConDfnList)
                     {
                         volData.setVolumeConnection(dbCtx, volConDfn);
                     }
                     errorReporter.logTrace(
-                        "%d VolumeConnectionDefinitions restored %s",
+                        "%d VolumeConnections restored %s",
                         volConDfnList.size(),
                         getTraceId(volData)
                     );

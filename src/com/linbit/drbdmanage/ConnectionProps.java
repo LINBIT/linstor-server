@@ -16,35 +16,35 @@ public class ConnectionProps
 
     public ConnectionProps(
         AccessContext accCtx,
-        NodeConnection nodeConnectionDefinition,
-        ResourceConnection resourceConnectionDefinition,
-        VolumeConnection volumeConnectionDefinition
+        NodeConnection nodeConnection,
+        ResourceConnection resourceConnection,
+        VolumeConnection volumeConnection
     )
         throws AccessDeniedException
     {
-        if (nodeConnectionDefinition == null)
+        if (nodeConnection == null)
         {
             nodeProps = null;
         }
         else
         {
-            nodeProps = nodeConnectionDefinition.getProps(accCtx);
+            nodeProps = nodeConnection.getProps(accCtx);
         }
-        if (resourceConnectionDefinition == null)
+        if (resourceConnection == null)
         {
             resProps = null;
         }
         else
         {
-            resProps = resourceConnectionDefinition.getProps(accCtx);
+            resProps = resourceConnection.getProps(accCtx);
         }
-        if (volumeConnectionDefinition == null)
+        if (volumeConnection == null)
         {
             volProps = null;
         }
         else
         {
-            volProps = volumeConnectionDefinition.getProps(accCtx);
+            volProps = volumeConnection.getProps(accCtx);
         }
     }
 

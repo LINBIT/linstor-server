@@ -2610,7 +2610,7 @@ public class PropsContainer implements Props
     }
 
     /**
-     * PropsCon-Path for NodeConnectionDefinitionData
+     * PropsCon-Path for NodeConnectionData
      */
     public static String buildPath(NodeName sourceName, NodeName targetName)
     {
@@ -2619,7 +2619,7 @@ public class PropsContainer implements Props
     }
 
     /**
-     * PropsCon-Path for ResourceConnectionDefinitionData
+     * PropsCon-Path for ResourceConnectionData
      */
     public static String buildPath(NodeName sourceName, NodeName targetName, ResourceName resName)
     {
@@ -2629,7 +2629,7 @@ public class PropsContainer implements Props
     }
 
     /**
-     * PropsCon-Path for ResourceConnectionDefinitionData
+     * PropsCon-Path for ResourceConnectionData
      */
     public static String buildPath(
         NodeName sourceName,

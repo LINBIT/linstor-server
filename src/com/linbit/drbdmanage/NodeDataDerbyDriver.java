@@ -66,7 +66,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private NetInterfaceDataDerbyDriver netInterfaceDriver;
     private ResourceDataDerbyDriver resourceDataDriver;
     private StorPoolDataDerbyDriver storPoolDriver;
-    private NodeConnectionDataDerbyDriver nodeConnectionDefinitionDriver;
+    private NodeConnectionDataDerbyDriver nodeConnectionDriver;
 
     public NodeDataDerbyDriver(
         AccessContext privCtx,
@@ -87,13 +87,13 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         NetInterfaceDataDerbyDriver netInterfaceDriverRef,
         ResourceDataDerbyDriver resourceDriverRef,
         StorPoolDataDerbyDriver storPoolDriverRef,
-        NodeConnectionDataDerbyDriver nodeConnectionDefinitionDriverRef
+        NodeConnectionDataDerbyDriver nodeConnectionDriverRef
     )
     {
         netInterfaceDriver = netInterfaceDriverRef;
         resourceDataDriver = resourceDriverRef;
         storPoolDriver = storPoolDriverRef;
-        nodeConnectionDefinitionDriver = nodeConnectionDefinitionDriverRef;
+        nodeConnectionDriver = nodeConnectionDriverRef;
     }
 
     @Override
@@ -242,7 +242,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     );
 
                     List<NodeConnectionData> nodeConDfnList =
-                        nodeConnectionDefinitionDriver.loadAllByNode(node, transMgr);
+                        nodeConnectionDriver.loadAllByNode(node, transMgr);
                     for (NodeConnectionData nodeConDfn : nodeConDfnList)
                     {
                         node.setNodeConnection(dbCtx, nodeConDfn);

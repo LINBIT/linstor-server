@@ -76,7 +76,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     )
         throws SQLException
     {
-        errorReporter.logTrace("Loading ResourceConnectionDefinition %s", getTraceId(sourceResource, targetResource));
+        errorReporter.logTrace("Loading ResourceConnection %s", getTraceId(sourceResource, targetResource));
 
         ResourceConnectionData ret = null;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT))
@@ -89,19 +89,19 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             {
                 if (resultSet.next())
                 {
-                    ret = restoreResourceConnectionDefinition(resultSet, transMgr);
+                    ret = restoreResourceConnection(resultSet, transMgr);
                     // traceLog about loaded from DB|cache in restoreConDfn method
                 }
                 else
                 {
-                    errorReporter.logWarning("ResourceConnectionDefinition not found in DB %s", getDebugId(sourceResource, targetResource));
+                    errorReporter.logWarning("ResourceConnection not found in DB %s", getDebugId(sourceResource, targetResource));
                 }
             }
         }
         return ret;
     }
 
-    private ResourceConnectionData restoreResourceConnectionDefinition(
+    private ResourceConnectionData restoreResourceConnection(
         ResultSet resultSet,
         TransactionMgr transMgr
     )
@@ -163,11 +163,11 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
                 targetResource,
                 transMgr
             );
-            errorReporter.logDebug("ResourceConnectionDefinition loaded from DB %s", getDebugId(resConData));
+            errorReporter.logDebug("ResourceConnection loaded from DB %s", getDebugId(resConData));
         }
         else
         {
-            errorReporter.logDebug("ResourceConnectionDefinition loaded from cache %s", getDebugId(resConData));
+            errorReporter.logDebug("ResourceConnection loaded from cache %s", getDebugId(resConData));
         }
 
         return resConData;
@@ -181,7 +181,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         throws SQLException
     {
         errorReporter.logTrace(
-            "Loading all ResourceConnectionDefinitions for Resource %s",
+            "Loading all ResourceConnections for Resource %s",
             getResourceTraceId(resource)
         );
 
@@ -196,7 +196,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             {
                 while (resultSet.next())
                 {
-                    ResourceConnectionData conDfn = restoreResourceConnectionDefinition(
+                    ResourceConnectionData conDfn = restoreResourceConnection(
                         resultSet,
                         transMgr
                     );
@@ -206,7 +206,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         }
 
         errorReporter.logDebug(
-            "%d ResourceConnectionDefinitions loaded for Resource %s",
+            "%d ResourceConnections loaded for Resource %s",
             connections.size(),
             getResourceDebugId(resource)
         );
@@ -216,7 +216,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     @Override
     public void create(ResourceConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating ResourceConnectionDefinition %s", getTraceId(conDfnData));
+        errorReporter.logTrace("Creating ResourceConnection %s", getTraceId(conDfnData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
         {
             NodeName sourceNodeName = conDfnData.getSourceResource(dbCtx).getAssignedNode().getName();
@@ -230,7 +230,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
 
             stmt.executeUpdate();
 
-            errorReporter.logDebug("ResourceConnectionDefinition created s", getDebugId(conDfnData));
+            errorReporter.logDebug("ResourceConnection created s", getDebugId(conDfnData));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -241,7 +241,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     @Override
     public void delete(ResourceConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting ResourceConnectionDefinition %s", getTraceId(conDfnData));
+        errorReporter.logTrace("Deleting ResourceConnection %s", getTraceId(conDfnData));
         try
         {
             NodeName sourceNodeName = conDfnData.getSourceResource(dbCtx).getAssignedNode().getName();
@@ -256,7 +256,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
 
                 stmt.executeUpdate();
             }
-            errorReporter.logDebug("ResourceConnectionDefinition deleted %s", getDebugId(conDfnData));
+            errorReporter.logDebug("ResourceConnection deleted %s", getDebugId(conDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {

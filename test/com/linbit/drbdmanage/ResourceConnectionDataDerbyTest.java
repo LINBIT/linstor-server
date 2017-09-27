@@ -19,26 +19,37 @@ import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
 
-public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
+public class ResourceConnectionDataDerbyTest extends DerbyBase
 {
     private static final String SELECT_ALL_RES_CON_DFNS =
-        " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " + NODE_NAME_DST +
-        " FROM " + TBL_NODE_CONNECTIONS;
+        " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " +
+                     NODE_NAME_DST + ", " + RESOURCE_NAME +
+        " FROM " + TBL_RESOURCE_CONNECTIONS;
 
+    private final ResourceName resName;
     private final NodeName sourceName;
     private final NodeName targetName;
 
     private TransactionMgr transMgr;
 
     private java.util.UUID uuid;
+    private ResourceDefinitionData resDfn;
     private NodeData nodeSrc;
     private NodeData nodeDst;
 
-    private NodeConnectionData conDfn;
-    private NodeConnectionDataDerbyDriver driver;
+    private ResourceConnectionData resCon;
 
-    public NodeConnectionDefinitionDataDerbyTest() throws InvalidNameException
+    private ResourceConnectionDataDerbyDriver driver;
+
+    private NodeId nodeIdSrc;
+    private NodeId nodeIdDst;
+
+    private ResourceData resSrc;
+    private ResourceData resDst;
+
+    public ResourceConnectionDataDerbyTest() throws InvalidNameException
     {
+        resName = new ResourceName("testResourceName");
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
     }
@@ -47,23 +58,30 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_NODE_CONNECTIONS + " table's column count has changed. Update tests accordingly!", 3, TBL_COL_COUNT_NODE_CONNECTIONS);
+        assertEquals(TBL_RESOURCE_CONNECTIONS + " table's column count has changed. Update tests accordingly!", 4, TBL_COL_COUNT_RESOURCE_CONNECTIONS);
 
         transMgr = new TransactionMgr(getConnection());
 
         uuid = randomUUID();
 
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true);
         nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true);
         nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true);
 
-        conDfn = new NodeConnectionData(uuid, nodeSrc, nodeDst, transMgr);
-        driver = (NodeConnectionDataDerbyDriver) DrbdManage.getNodeConnectionDatabaseDriver();
+        nodeIdSrc = new NodeId(13);
+        nodeIdDst = new NodeId(14);
+
+        resSrc = ResourceData.getInstance(sysCtx, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true);
+        resDst = ResourceData.getInstance(sysCtx, resDfn, nodeDst, nodeIdDst, null, transMgr, true);
+
+        resCon = new ResourceConnectionData(uuid, resSrc, resDst, transMgr);
+        driver = (ResourceConnectionDataDerbyDriver) DrbdManage.getResourceConnectionDatabaseDriver();
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(resCon, transMgr);
 
         checkDbPersist(true);
     }
@@ -71,7 +89,7 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        NodeConnectionData.getInstance(sysCtx, nodeSrc, nodeDst, transMgr, true);
+        ResourceConnectionData.getInstance(sysCtx, resSrc, resDst, transMgr, true);
 
         checkDbPersist(false);
     }
@@ -79,9 +97,9 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(resCon, transMgr);
 
-        NodeConnectionData loadedConDfn = driver.load(nodeSrc , nodeDst, transMgr);
+        ResourceConnectionData loadedConDfn = driver.load(resSrc , resDst, transMgr);
 
         checkLoadedConDfn(loadedConDfn, true);
     }
@@ -89,15 +107,15 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(resCon, transMgr);
 
-        List<NodeConnectionData> cons = driver.loadAllByNode(nodeSrc, transMgr);
+        List<ResourceConnectionData> cons = driver.loadAllByResource(resSrc, transMgr);
 
         assertNotNull(cons);
 
         assertEquals(1, cons.size());
 
-        NodeConnection loadedConDfn = cons.get(0);
+        ResourceConnection loadedConDfn = cons.get(0);
         assertNotNull(loadedConDfn);
 
         checkLoadedConDfn(loadedConDfn, true);
@@ -106,12 +124,12 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(resCon, transMgr);
 
-        NodeConnectionData loadedConDfn = NodeConnectionData.getInstance(
+        ResourceConnectionData loadedConDfn = ResourceConnectionData.getInstance(
             sysCtx,
-            nodeSrc,
-            nodeDst,
+            resSrc,
+            resDst,
             transMgr,
             false
         );
@@ -122,23 +140,23 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        NodeConnectionData storedInstance = NodeConnectionData.getInstance(
+        ResourceConnectionData storedInstance = ResourceConnectionData.getInstance(
             sysCtx,
-            nodeSrc,
-            nodeDst,
+            resSrc,
+            resDst,
             transMgr,
             true
         );
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(nodeSrc, nodeDst, transMgr));
+        assertEquals(storedInstance, driver.load(resSrc, resDst, transMgr));
     }
 
     @Test
     public void testDelete() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(resCon, transMgr);
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
@@ -147,7 +165,7 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.delete(conDfn, transMgr);
+        driver.delete(resCon, transMgr);
 
         resultSet = stmt.executeQuery();
 
@@ -160,10 +178,10 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteCreate() throws Exception
     {
-        NodeConnectionData satelliteConDfn = NodeConnectionData.getInstance(
+        ResourceConnectionData satelliteConDfn = ResourceConnectionData.getInstance(
             sysCtx,
-            nodeSrc,
-            nodeDst,
+            resSrc,
+            resDst,
             null,
             true
         );
@@ -181,10 +199,10 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteNoCreate() throws Exception
     {
-        NodeConnectionData satelliteConDfn = NodeConnectionData.getInstance(
+        ResourceConnectionData satelliteConDfn = ResourceConnectionData.getInstance(
             sysCtx,
-            nodeSrc,
-            nodeDst,
+            resSrc,
+            resDst,
             null,
             false
         );
@@ -209,6 +227,7 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
         {
             assertEquals(uuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         }
+        assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(sourceName.value, resultSet.getString(NODE_NAME_SRC));
         assertEquals(targetName.value, resultSet.getString(NODE_NAME_DST));
 
@@ -218,17 +237,19 @@ public class NodeConnectionDefinitionDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    private void checkLoadedConDfn(NodeConnection loadedConDfn, boolean checkUuid) throws AccessDeniedException
+    private void checkLoadedConDfn(ResourceConnection loadedConDfn, boolean checkUuid) throws AccessDeniedException
     {
         assertNotNull(loadedConDfn);
         if (checkUuid)
         {
             assertEquals(uuid, loadedConDfn.getUuid());
         }
-        Node sourceNode = loadedConDfn.getSourceNode(sysCtx);
-        Node targetNode = loadedConDfn.getTargetNode(sysCtx);
+        Resource sourceResource = loadedConDfn.getSourceResource(sysCtx);
+        Resource targetResource = loadedConDfn.getTargetResource(sysCtx);
 
-        assertEquals(sourceName, sourceNode.getName());
-        assertEquals(targetName, targetNode.getName());
+        assertEquals(resName, sourceResource.getDefinition().getName());
+        assertEquals(sourceName, sourceResource.getAssignedNode().getName());
+        assertEquals(targetName, targetResource.getAssignedNode().getName());
+        assertEquals(sourceResource.getDefinition().getName(), targetResource.getDefinition().getName());
     }
 }

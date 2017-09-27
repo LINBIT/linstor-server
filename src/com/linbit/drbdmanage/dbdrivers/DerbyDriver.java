@@ -74,9 +74,9 @@ public class DerbyDriver implements DatabaseDriver
     private final StorPoolDefinitionDataDerbyDriver storPoolDefinitionDriver;
     private final StorPoolDataDerbyDriver storPoolDriver;
     private final NetInterfaceDataDerbyDriver netInterfaceDriver;
-    private final NodeConnectionDataDerbyDriver nodeConnectionDefinitionDriver;
-    private final ResourceConnectionDataDerbyDriver resourceConnectionDefinitionDriver;
-    private final VolumeConnectionDataDerbyDriver volumeConnectionDefinitionDriver;
+    private final NodeConnectionDataDerbyDriver nodeConnectionDriver;
+    private final ResourceConnectionDataDerbyDriver resourceConnectionDriver;
+    private final VolumeConnectionDataDerbyDriver volumeConnectionDriver;
 
     public DerbyDriver(
         AccessContext privCtx,
@@ -99,31 +99,31 @@ public class DerbyDriver implements DatabaseDriver
         storPoolDefinitionDriver = new StorPoolDefinitionDataDerbyDriver(errorReporterRef, storPoolDfnMap);
         storPoolDriver = new StorPoolDataDerbyDriver(privCtx, errorReporterRef);
         netInterfaceDriver = new NetInterfaceDataDerbyDriver(privCtx, errorReporterRef);
-        nodeConnectionDefinitionDriver = new NodeConnectionDataDerbyDriver(
+        nodeConnectionDriver = new NodeConnectionDataDerbyDriver(
             privCtx,
             errorReporterRef
         );
-        resourceConnectionDefinitionDriver = new ResourceConnectionDataDerbyDriver(
+        resourceConnectionDriver = new ResourceConnectionDataDerbyDriver(
             privCtx,
             errorReporterRef
         );
-        volumeConnectionDefinitionDriver = new VolumeConnectionDataDerbyDriver(
+        volumeConnectionDriver = new VolumeConnectionDataDerbyDriver(
             privCtx,
             errorReporterRef
         );
 
         // propsDriver.initialize();
-        nodeDriver.initialize(netInterfaceDriver, resourceDriver, storPoolDriver, nodeConnectionDefinitionDriver);
+        nodeDriver.initialize(netInterfaceDriver, resourceDriver, storPoolDriver, nodeConnectionDriver);
         resesourceDefinitionDriver.initialize(resourceDriver, volumeDefinitionDriver);
-        resourceDriver.initialize(resourceConnectionDefinitionDriver, volumeDriver);
+        resourceDriver.initialize(resourceConnectionDriver, volumeDriver);
         // volumeDefinitionDriver.initialize();
-        volumeDriver.initialize(volumeConnectionDefinitionDriver);
+        volumeDriver.initialize(volumeConnectionDriver);
         // storPoolDefinitionDriver.initialize();
         // storPoolDriver.initialize();
         // netInterfaceDriver.initialize();
-        nodeConnectionDefinitionDriver.initialize(nodeDriver);
-        resourceConnectionDefinitionDriver.initialize(nodeDriver, resourceDriver);
-        volumeConnectionDefinitionDriver.initialize(
+        nodeConnectionDriver.initialize(nodeDriver);
+        resourceConnectionDriver.initialize(nodeDriver, resourceDriver);
+        volumeConnectionDriver.initialize(
             nodeDriver,
             resesourceDefinitionDriver,
             resourceDriver,
@@ -212,19 +212,19 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public NodeConnectionDataDatabaseDriver getNodeConnectionDataDatabaseDriver()
     {
-        return nodeConnectionDefinitionDriver;
+        return nodeConnectionDriver;
     }
 
     @Override
     public ResourceConnectionDataDatabaseDriver getResourceConnectionDataDatabaseDriver()
     {
-        return resourceConnectionDefinitionDriver;
+        return resourceConnectionDriver;
     }
 
     @Override
     public VolumeConnectionDataDatabaseDriver getVolumeConnectionDataDatabaseDriver()
     {
-        return volumeConnectionDefinitionDriver;
+        return volumeConnectionDriver;
     }
 
     public static void handleAccessDeniedException(AccessDeniedException accDeniedExc)

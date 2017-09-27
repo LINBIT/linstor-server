@@ -106,13 +106,13 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             resDfn != targetVolume.getResource().getDefinition())
         {
             throw new ImplementationError(
-                "Failed to load VolumeConnectionDefinition between unrelated volumes",
+                "Failed to load VolumeConnection between unrelated volumes",
                 null
             );
         }
 
         errorReporter.logTrace(
-            "Loading VolumeConnectionDefinition %s",
+            "Loading VolumeConnection %s",
             getTraceId(sourceVolume, targetVolume)
         );
 
@@ -139,19 +139,19 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                 {
                     if (resultSet.next())
                     {
-                        ret = restoreVolumeConnectionDefinitionData(
+                        ret = restoreVolumeConnectionData(
                             resultSet,
                             transMgr
                         );
                         errorReporter.logDebug(
-                            "VolumeConnectionDefinition loaded %s",
+                            "VolumeConnection loaded %s",
                             getDebugId(ret)
                         );
                     }
                     else
                     {
                         errorReporter.logWarning(
-                            "VolumeConnectionDefinition not found in the DB %s",
+                            "VolumeConnection not found in the DB %s",
                             getDebugId(sourceVolume, targetVolume)
                         );
                     }
@@ -173,7 +173,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         throws SQLException
     {
         errorReporter.logTrace(
-            "Loading all VolumeConnectionDefinitions for Volume %s",
+            "Loading all VolumeConnections for Volume %s",
             getVolumeTraceId(volume)
         );
 
@@ -190,7 +190,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             {
                 while (resultSet.next())
                 {
-                    VolumeConnectionData conDfn = restoreVolumeConnectionDefinitionData(
+                    VolumeConnectionData conDfn = restoreVolumeConnectionData(
                         resultSet,
                         transMgr
                     );
@@ -200,14 +200,14 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         }
 
         errorReporter.logDebug(
-            "%d VolumeConnectionDefinitions loaded for Resource %s",
+            "%d VolumeConnections loaded for Resource %s",
             connections.size(),
             getVolumeDebugId(volume)
         );
         return connections;
     }
 
-    private VolumeConnectionData restoreVolumeConnectionDefinitionData(
+    private VolumeConnectionData restoreVolumeConnectionData(
         ResultSet resultSet,
         TransactionMgr transMgr
     )
@@ -317,7 +317,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
     @Override
     public void create(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating VolumeConnectionDefinition %s", getTraceId(conDfnData));
+        errorReporter.logTrace("Creating VolumeConnection %s", getTraceId(conDfnData));
 
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
         {
@@ -332,7 +332,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
 
             stmt.executeUpdate();
 
-            errorReporter.logDebug("VolumeConnectionDefinition created %s", getDebugId(conDfnData));
+            errorReporter.logDebug("VolumeConnection created %s", getDebugId(conDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -343,7 +343,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
     @Override
     public void delete(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting VolumeConnectionDefinition %s", getTraceId(conDfnData));
+        errorReporter.logTrace("Deleting VolumeConnection %s", getTraceId(conDfnData));
 
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(DELETE))
         {
@@ -357,7 +357,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
 
             stmt.executeUpdate();
 
-            errorReporter.logDebug("VolumeConnectionDefinition deleted %s", getDebugId(conDfnData));
+            errorReporter.logDebug("VolumeConnection deleted %s", getDebugId(conDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {

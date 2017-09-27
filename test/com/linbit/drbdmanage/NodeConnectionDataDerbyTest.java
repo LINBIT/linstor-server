@@ -14,72 +14,40 @@ import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
 
-public class VolumeConnectionDefinitionDataDerbyTest extends DerbyBase
+public class NodeConnectionDataDerbyTest extends DerbyBase
 {
     private static final String SELECT_ALL_RES_CON_DFNS =
-        " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " + NODE_NAME_DST + ", " +
-                     RESOURCE_NAME + ", " + VLM_NR +
-        " FROM " + TBL_VOLUME_CONNECTIONS;
+        " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " + NODE_NAME_DST +
+        " FROM " + TBL_NODE_CONNECTIONS;
 
     private final NodeName sourceName;
     private final NodeName targetName;
-    private final ResourceName resName;
-    private final VolumeNumber volNr;
-
-    private final MinorNumber minor;
-    private final long volSize;
-
-    private final String volBlockDevSrc;
-    private final String volMetaDiskPathSrc;
-    private final String volBlockDevDst;
-    private final String volMetaDiskPathDst;
 
     private TransactionMgr transMgr;
 
     private java.util.UUID uuid;
-
     private NodeData nodeSrc;
     private NodeData nodeDst;
-    private ResourceDefinitionData resDfn;
-    private VolumeDefinitionData volDfn;
-    private ResourceData resSrc;
-    private ResourceData resDst;
-    private VolumeData volSrc;
-    private VolumeData volDst;
 
-    private VolumeConnectionData conDfn;
-    private VolumeConnectionDataDerbyDriver driver;
+    private NodeConnectionData conDfn;
+    private NodeConnectionDataDerbyDriver driver;
 
-    private NodeId nodeIdSrc;
-    private NodeId nodeIdDst;
-
-    public VolumeConnectionDefinitionDataDerbyTest() throws InvalidNameException, ValueOutOfRangeException
+    public NodeConnectionDataDerbyTest() throws InvalidNameException
     {
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
-        resName = new ResourceName("testResourceName");
-        volNr = new VolumeNumber(42);
-
-        minor = new MinorNumber(43);
-        volSize = 9001;
-
-        volBlockDevSrc="/dev/src/vol/block";
-        volMetaDiskPathSrc = "/dev/src/vol/meta";
-        volBlockDevDst ="/dev/dst/vol/block";
-        volMetaDiskPathDst = "/dev/dst/vol/meta";
     }
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_VOLUME_CONNECTIONS + " table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_VOLUME_CONNECTIONS);
+        assertEquals(TBL_NODE_CONNECTIONS + " table's column count has changed. Update tests accordingly!", 3, TBL_COL_COUNT_NODE_CONNECTIONS);
 
         transMgr = new TransactionMgr(getConnection());
 
@@ -88,20 +56,8 @@ public class VolumeConnectionDefinitionDataDerbyTest extends DerbyBase
         nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true);
         nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true);
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true);
-        volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true);
-
-        nodeIdSrc = new NodeId(13);
-        nodeIdDst = new NodeId(14);
-
-        resSrc = ResourceData.getInstance(sysCtx, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true);
-        resDst = ResourceData.getInstance(sysCtx, resDfn, nodeDst, nodeIdDst, null, transMgr, true);
-
-        volSrc = VolumeData.getInstance(sysCtx, resSrc, volDfn, volBlockDevSrc, volMetaDiskPathSrc, null, transMgr, true);
-        volDst = VolumeData.getInstance(sysCtx, resDst, volDfn, volBlockDevDst, volMetaDiskPathDst, null, transMgr, true);
-
-        conDfn = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
-        driver = (VolumeConnectionDataDerbyDriver) DrbdManage.getVolumeConnectionDatabaseDriver();
+        conDfn = new NodeConnectionData(uuid, nodeSrc, nodeDst, transMgr);
+        driver = (NodeConnectionDataDerbyDriver) DrbdManage.getNodeConnectionDatabaseDriver();
     }
 
     @Test
@@ -115,7 +71,7 @@ public class VolumeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        VolumeConnectionData.getInstance(sysCtx, volSrc, volDst, transMgr, true);
+        NodeConnectionData.getInstance(sysCtx, nodeSrc, nodeDst, transMgr, true);
 
         checkDbPersist(false);
     }
@@ -125,7 +81,7 @@ public class VolumeConnectionDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(conDfn, transMgr);
 
-        VolumeConnectionData loadedConDfn = driver.load(volSrc , volDst, transMgr);
+        NodeConnectionData loadedConDfn = driver.load(nodeSrc , nodeDst, transMgr);
 
         checkLoadedConDfn(loadedConDfn, true);
     }
@@ -135,13 +91,13 @@ public class VolumeConnectionDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(conDfn, transMgr);
 
-        List<VolumeConnectionData> cons = driver.loadAllByVolume(volSrc, transMgr);
+        List<NodeConnectionData> cons = driver.loadAllByNode(nodeSrc, transMgr);
 
         assertNotNull(cons);
 
         assertEquals(1, cons.size());
 
-        VolumeConnection loadedConDfn = cons.get(0);
+        NodeConnection loadedConDfn = cons.get(0);
         assertNotNull(loadedConDfn);
 
         checkLoadedConDfn(loadedConDfn, true);
@@ -152,10 +108,10 @@ public class VolumeConnectionDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(conDfn, transMgr);
 
-        VolumeConnectionData loadedConDfn = VolumeConnectionData.getInstance(
+        NodeConnectionData loadedConDfn = NodeConnectionData.getInstance(
             sysCtx,
-            volSrc,
-            volDst,
+            nodeSrc,
+            nodeDst,
             transMgr,
             false
         );
@@ -166,17 +122,17 @@ public class VolumeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testCache() throws Exception
     {
-        VolumeConnectionData storedInstance = VolumeConnectionData.getInstance(
+        NodeConnectionData storedInstance = NodeConnectionData.getInstance(
             sysCtx,
-            volSrc,
-            volDst,
+            nodeSrc,
+            nodeDst,
             transMgr,
             true
         );
 
         // no clear-cache
 
-        assertEquals(storedInstance, driver.load(volSrc, volDst, transMgr));
+        assertEquals(storedInstance, driver.load(nodeSrc, nodeDst, transMgr));
     }
 
     @Test
@@ -204,10 +160,10 @@ public class VolumeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteCreate() throws Exception
     {
-        VolumeConnectionData satelliteConDfn = VolumeConnectionData.getInstance(
+        NodeConnectionData satelliteConDfn = NodeConnectionData.getInstance(
             sysCtx,
-            volSrc,
-            volDst,
+            nodeSrc,
+            nodeDst,
             null,
             true
         );
@@ -225,10 +181,10 @@ public class VolumeConnectionDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testSatelliteNoCreate() throws Exception
     {
-        VolumeConnectionData satelliteConDfn = VolumeConnectionData.getInstance(
+        NodeConnectionData satelliteConDfn = NodeConnectionData.getInstance(
             sysCtx,
-            volSrc,
-            volDst,
+            nodeSrc,
+            nodeDst,
             null,
             false
         );
@@ -262,21 +218,17 @@ public class VolumeConnectionDefinitionDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    private void checkLoadedConDfn(VolumeConnection loadedConDfn, boolean checkUuid) throws AccessDeniedException
+    private void checkLoadedConDfn(NodeConnection loadedConDfn, boolean checkUuid) throws AccessDeniedException
     {
         assertNotNull(loadedConDfn);
         if (checkUuid)
         {
             assertEquals(uuid, loadedConDfn.getUuid());
         }
-        Volume sourceVolume = loadedConDfn.getSourceVolume(sysCtx);
-        Volume targetVolume = loadedConDfn.getTargetVolume(sysCtx);
+        Node sourceNode = loadedConDfn.getSourceNode(sysCtx);
+        Node targetNode = loadedConDfn.getTargetNode(sysCtx);
 
-        assertEquals(sourceName, sourceVolume.getResource().getAssignedNode().getName());
-        assertEquals(targetName, targetVolume.getResource().getAssignedNode().getName());
-        assertEquals(resName, sourceVolume.getResourceDefinition().getName());
-        assertEquals(sourceVolume.getResourceDefinition(), targetVolume.getResourceDefinition());
-        assertEquals(volNr, sourceVolume.getVolumeDefinition().getVolumeNumber(sysCtx));
-        assertEquals(sourceVolume.getVolumeDefinition(), targetVolume.getVolumeDefinition());
+        assertEquals(sourceName, sourceNode.getName());
+        assertEquals(targetName, targetNode.getName());
     }
 }
