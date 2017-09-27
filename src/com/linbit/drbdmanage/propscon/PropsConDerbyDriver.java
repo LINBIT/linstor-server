@@ -72,104 +72,131 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
 
     private void persistImpl(String instanceName, String key, String value, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(
-            SELECT_ENTRY_FOR_UPDATE,
-            ResultSet.TYPE_SCROLL_SENSITIVE,
-            ResultSet.CONCUR_UPDATABLE
-        );
-
-        String instanceUpper = instanceName.toUpperCase();
-        stmt.setString(1, instanceUpper);
-        stmt.setString(2, key);
-
-        ResultSet resultSet = stmt.executeQuery();
-        if (resultSet.next())
+        errorReporter.logTrace("Storing property %s", getId(instanceName, key, value));
+        try (
+            PreparedStatement stmt = transMgr.dbCon.prepareStatement(
+                SELECT_ENTRY_FOR_UPDATE,
+                ResultSet.TYPE_SCROLL_SENSITIVE,
+                ResultSet.CONCUR_UPDATABLE
+            )
+        )
         {
-            resultSet.updateString(3, value);
-            resultSet.updateRow();
-        }
-        else
-        {
-            resultSet.moveToInsertRow();
-            resultSet.updateString(1, instanceUpper);
-            resultSet.updateString(2, key);
-            resultSet.updateString(3, value);
-            resultSet.insertRow();
-        }
+            String instanceUpper = instanceName.toUpperCase();
+            stmt.setString(1, instanceUpper);
+            stmt.setString(2, key);
 
-        resultSet.close();
-        stmt.close();
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                if (resultSet.next())
+                {
+                    resultSet.updateString(3, value);
+                    resultSet.updateRow();
+                }
+                else
+                {
+                    resultSet.moveToInsertRow();
+                    resultSet.updateString(1, instanceUpper);
+                    resultSet.updateString(2, key);
+                    resultSet.updateString(3, value);
+                    resultSet.insertRow();
+                }
+            }
+        }
+        errorReporter.logDebug("Property stored %s", getId(instanceName, key, value));
     }
 
     @Override
     public void remove(String instanceName, String key, TransactionMgr transMgr) throws SQLException
     {
-        if (transMgr != null)
-        {
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ENTRY);
+        errorReporter.logTrace("Removing property %s", getId(instanceName, key));
 
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ENTRY))
+        {
             stmt.setString(1, instanceName.toUpperCase());
             stmt.setString(2, key);
 
             stmt.executeUpdate();
-            stmt.close();
         }
+
+        errorReporter.logDebug("Property removed %s", getId(instanceName, key));
     }
 
     @Override
     public void remove(String instanceName, Set<String> keys, TransactionMgr transMgr) throws SQLException
     {
-        if (transMgr != null)
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ENTRY))
         {
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ENTRY);
-
             stmt.setString(1, instanceName.toUpperCase());
-
             for (String key : keys)
             {
+                errorReporter.logTrace("Removing property %s", getId(instanceName, key));
+
                 stmt.setString(2, key);
                 stmt.executeUpdate();
+
+                errorReporter.logDebug("Property removed %s", getId(instanceName, key));
             }
-            stmt.close();
         }
     }
 
     @Override
     public void removeAll(String instanceName, TransactionMgr transMgr) throws SQLException
     {
-        if (transMgr != null)
+        errorReporter.logTrace("Removing all properties by instance %s", getId(instanceName));
+
+        int rowsUpdated;
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ALL_ENTRIES))
         {
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(REMOVE_ALL_ENTRIES);
-
             stmt.setString(1, instanceName.toUpperCase());
-            stmt.executeUpdate();
-
-            stmt.close();
+            rowsUpdated = stmt.executeUpdate();
         }
+        errorReporter.logDebug(
+            "Removed all (%d) properties by instance %s",
+            rowsUpdated,
+            getId(instanceName)
+        );
     }
 
     @Override
     public Map<String, String> load(String instanceName, TransactionMgr transMgr) throws SQLException
     {
+        errorReporter.logTrace("Loading properties for instance %s", getId(instanceName));
         Map<String, String> ret = new TreeMap<>();
-        if (transMgr != null)
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_ENTRIES_BY_INSTANCE))
         {
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_ENTRIES_BY_INSTANCE);
-
             stmt.setString(1, instanceName.toUpperCase());
 
-            ResultSet resultSet = stmt.executeQuery();
-
-            while (resultSet.next())
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                String key = resultSet.getString(1);
-                String value = resultSet.getString(2);
+                while (resultSet.next())
+                {
+                    String key = resultSet.getString(1);
+                    String value = resultSet.getString(2);
 
-                ret.put(key, value);
+                    ret.put(key, value);
+                }
             }
-            resultSet.close();
-            stmt.close();
         }
+        errorReporter.logDebug(
+            "Loaded all (%d) properties for instance %s",
+            ret.size(),
+            getId(instanceName)
+        );
         return ret;
+    }
+
+    private String getId(String instanceName)
+    {
+        return "(InstanceName=" + instanceName + ")";
+    }
+
+    private String getId(String instanceName, String key)
+    {
+        return "(InstanceName=" + instanceName + " Key=" + key + ")";
+    }
+
+    private String getId(String instanceName, String key, String value)
+    {
+        return "(InstanceName=" + instanceName + " Key=" + key + " Value=" + value + ")";
     }
 }
