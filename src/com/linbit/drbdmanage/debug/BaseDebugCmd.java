@@ -4,6 +4,7 @@ import com.linbit.AutoIndent;
 import com.linbit.ErrorCheck;
 import com.linbit.drbdmanage.CommonDebugControl;
 import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.core.DrbdManage;
 
 import java.io.PrintStream;
@@ -200,6 +201,28 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
                 null
             );
         }
+    }
+
+    public void printDmException(PrintStream debugErr, DrbdManageException dmExc)
+    {
+        String descText = dmExc.getDescriptionText();
+        if (descText == null)
+        {
+            descText = dmExc.getMessage();
+            if (descText == null)
+            {
+                descText = "(Uncommented exception of type " +
+                           dmExc.getClass().getCanonicalName() + ")";
+            }
+        }
+
+        printError(
+            debugErr,
+            descText,
+            dmExc.getCauseText(),
+            dmExc.getCorrectionText(),
+            dmExc.getDetailsText()
+        );
     }
 
     public void printError(
