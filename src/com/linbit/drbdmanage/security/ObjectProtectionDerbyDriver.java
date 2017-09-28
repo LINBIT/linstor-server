@@ -104,40 +104,40 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     @Override
     public void insertOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_INSERT);
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_INSERT))
+        {
+            stmt.setString(1, objProt.getObjectProtectionPath());
+            stmt.setString(2, objProt.getCreator().name.value);
+            stmt.setString(3, objProt.getOwner().name.value);
+            stmt.setString(4, objProt.getSecurityType().name.value);
 
-        stmt.setString(1, objProt.getObjectProtectionPath());
-        stmt.setString(2, objProt.getCreator().name.value);
-        stmt.setString(3, objProt.getOwner().name.value);
-        stmt.setString(4, objProt.getSecurityType().name.value);
-
-        stmt.executeUpdate();
-        stmt.close();
+            stmt.executeUpdate();
+        }
     }
 
     @Override
     public void updateOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE);
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE))
+        {
+            stmt.setString(1, objProt.getCreator().name.value);
+            stmt.setString(2, objProt.getOwner().name.value);
+            stmt.setString(3, objProt.getSecurityType().name.value);
+            stmt.setString(4, objProt.getObjectProtectionPath());
 
-        stmt.setString(1, objProt.getCreator().name.value);
-        stmt.setString(2, objProt.getOwner().name.value);
-        stmt.setString(3, objProt.getSecurityType().name.value);
-        stmt.setString(4, objProt.getObjectProtectionPath());
-
-        stmt.executeUpdate();
-        stmt.close();
+            stmt.executeUpdate();
+        }
     }
 
     @Override
     public void deleteOp(String objectPath, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_DELETE);
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_DELETE))
+        {
+            stmt.setString(1, objectPath);
 
-        stmt.setString(1, objectPath);
-
-        stmt.executeUpdate();
-        stmt.close();
+            stmt.executeUpdate();
+        }
     }
 
     @Override
@@ -149,14 +149,14 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(ACL_INSERT);
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(ACL_INSERT))
+        {
+            stmt.setString(1, parent.getObjectProtectionPath());
+            stmt.setString(2, role.name.value);
+            stmt.setLong(3, grantedAccess.getAccessMask());
 
-        stmt.setString(1, parent.getObjectProtectionPath());
-        stmt.setString(2, role.name.value);
-        stmt.setLong(3, grantedAccess.getAccessMask());
-
-        stmt.executeUpdate();
-        stmt.close();
+            stmt.executeUpdate();
+        }
 
     }
 
@@ -169,133 +169,131 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     )
         throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(ACL_UPDATE);
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(ACL_UPDATE))
+        {
+            stmt.setLong(1, grantedAccess.getAccessMask());
+            stmt.setString(2, parent.getObjectProtectionPath());
+            stmt.setString(3, role.name.value);
 
-        stmt.setLong(1, grantedAccess.getAccessMask());
-        stmt.setString(2, parent.getObjectProtectionPath());
-        stmt.setString(3, role.name.value);
-
-        stmt.executeUpdate();
-        stmt.close();
+            stmt.executeUpdate();
+        }
     }
 
     @Override
     public void deleteAcl(ObjectProtection parent, Role role, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(ACL_DELETE);
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(ACL_DELETE))
+        {
+            stmt.setString(1, parent.getObjectProtectionPath());
+            stmt.setString(2, role.name.value);
 
-        stmt.setString(1, parent.getObjectProtectionPath());
-        stmt.setString(2, role.name.value);
-
-        stmt.executeUpdate();
-        stmt.close();
+            stmt.executeUpdate();
+        }
     }
 
     @Override
     public ObjectProtection loadObjectProtection(String objPath, TransactionMgr transMgr) throws SQLException
     {
-        PreparedStatement opLoadStmt = transMgr.dbCon.prepareStatement(OP_LOAD);
-
-        opLoadStmt.setString(1, objPath);
-
-        ResultSet opResultSet = opLoadStmt.executeQuery();
-
         ObjectProtection objProt = null;
-        if (opResultSet.next())
+        try (PreparedStatement opLoadStmt = transMgr.dbCon.prepareStatement(OP_LOAD))
         {
-            Identity identity = null;
-            Role role = null;
-            SecurityType secType = null;
-            try
-            {
-                identity = Identity.get(new IdentityName(opResultSet.getString(1)));
-                role = Role.get(new RoleName(opResultSet.getString(2)));
-                secType = SecurityType.get(new SecTypeName(opResultSet.getString(3)));
-                PrivilegeSet privLimitSet = new PrivilegeSet(opResultSet.getLong(4));
-                AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
-                objProt = new ObjectProtection(accCtx, objPath, this);
-            }
-            catch (InvalidNameException invalidNameExc)
-            {
-                String name;
-                String invalidValue;
-                if (identity == null)
-                {
-                    name = "IdentityName";
-                    invalidValue = opResultSet.getString(1);
-                }
-                else
-                if (role == null)
-                {
-                    name = "RoleName";
-                    invalidValue = opResultSet.getString(2);
-                }
-                else
-                {
-                    name = "SecTypeName";
-                    invalidValue = opResultSet.getString(3);
-                }
-                opResultSet.close();
-                opLoadStmt.close();
-                throw new DrbdSqlRuntimeException(
-                    String.format(
-                        "A stored %s in the table %s could not be restored." +
-                            "(ObjectPath=%s, invalid %s=%s)",
-                        name,
-                        TBL_OP,
-                        objPath,
-                        name,
-                        invalidValue
-                    ),
-                    invalidNameExc
-                );
-            }
-            opResultSet.close();
-            opLoadStmt.close();
-            // restore ACL
-            PreparedStatement aclLoadStmt = transMgr.dbCon.prepareStatement(ACL_LOAD);
-            aclLoadStmt.setString(1, objPath);
-            ResultSet aclResultSet = aclLoadStmt.executeQuery();
-            try
-            {
-                while (aclResultSet.next())
-                {
-                    role = Role.get(new RoleName(aclResultSet.getString(1)));
-                    AccessType type = AccessType.get(aclResultSet.getInt(2));
+            opLoadStmt.setString(1, objPath);
 
-                    objProt.addAclEntry(dbCtx, role, type);
+            try (ResultSet opResultSet = opLoadStmt.executeQuery())
+            {
+                if (opResultSet.next())
+                {
+                    Identity identity = null;
+                    Role role = null;
+                    SecurityType secType = null;
+                    try
+                    {
+                        identity = Identity.get(new IdentityName(opResultSet.getString(1)));
+                        role = Role.get(new RoleName(opResultSet.getString(2)));
+                        secType = SecurityType.get(new SecTypeName(opResultSet.getString(3)));
+                        PrivilegeSet privLimitSet = new PrivilegeSet(opResultSet.getLong(4));
+                        AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
+                        objProt = new ObjectProtection(accCtx, objPath, this);
+                    }
+                    catch (InvalidNameException invalidNameExc)
+                    {
+                        String name;
+                        String invalidValue;
+                        if (identity == null)
+                        {
+                            name = "IdentityName";
+                            invalidValue = opResultSet.getString(1);
+                        }
+                        else
+                        if (role == null)
+                        {
+                            name = "RoleName";
+                            invalidValue = opResultSet.getString(2);
+                        }
+                        else
+                        {
+                            name = "SecTypeName";
+                            invalidValue = opResultSet.getString(3);
+                        }
+                        opResultSet.close();
+                        opLoadStmt.close();
+                        throw new DrbdSqlRuntimeException(
+                            String.format(
+                                "A stored %s in the table %s could not be restored." +
+                                    "(ObjectPath=%s, invalid %s=%s)",
+                                name,
+                                TBL_OP,
+                                objPath,
+                                name,
+                                invalidValue
+                            ),
+                            invalidNameExc
+                        );
+                    }
                 }
-                aclResultSet.close();
-                aclLoadStmt.close();
             }
-            catch (InvalidNameException invalidNameExc)
+        }
+        if (objProt != null)
+        {
+            // restore ACL
+            try (PreparedStatement aclLoadStmt = transMgr.dbCon.prepareStatement(ACL_LOAD))
             {
-                aclLoadStmt.close();
-                aclResultSet.close();
-                throw new DrbdSqlRuntimeException(
-                    String.format(
-                        "A stored RoleName in the table %s could not be restored." +
-                            "(ObjectPath=%s, invalid RoleName=%s)",
-                        TBL_OP,
-                        objPath,
-                        aclResultSet.getString(1)
-                    ),
-                    invalidNameExc
-                );
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                aclLoadStmt.close();
-                aclResultSet.close();
-                DerbyDriver.handleAccessDeniedException(accDeniedExc);
+                aclLoadStmt.setString(1, objPath);
+                String currentRoleName = null;
+                try (ResultSet aclResultSet = aclLoadStmt.executeQuery())
+                {
+                    while (aclResultSet.next())
+                    {
+                        currentRoleName = aclResultSet.getString(1);
+                        Role role = Role.get(new RoleName(currentRoleName));
+                        AccessType type = AccessType.get(aclResultSet.getInt(2));
+
+                        objProt.addAclEntry(dbCtx, role, type);
+                    }
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    throw new DrbdSqlRuntimeException(
+                        String.format(
+                            "A stored RoleName in the table %s could not be restored." +
+                                "(ObjectPath=%s, invalid RoleName=%s)",
+                            TBL_OP,
+                            objPath,
+                            currentRoleName
+                        ),
+                        invalidNameExc
+                    );
+                }
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    DerbyDriver.handleAccessDeniedException(accDeniedExc);
+                }
             }
         }
         else
         {
             // TODO: log warning that op not found
         }
-        opResultSet.close();
-        opLoadStmt.close();
 
         return objProt;
     }
@@ -323,13 +321,13 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         @Override
         public void update(ObjectProtection parent, Identity element, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE_IDENTITY);
+            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE_IDENTITY))
+            {
+                stmt.setString(1, element.name.value);
+                stmt.setString(2, parent.getObjectProtectionPath());
 
-            stmt.setString(1, element.name.value);
-            stmt.setString(2, parent.getObjectProtectionPath());
-
-            stmt.executeUpdate();
-            stmt.close();
+                stmt.executeUpdate();
+            }
         }
     }
 
@@ -338,13 +336,13 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         @Override
         public void update(ObjectProtection parent, Role element, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE_ROLE);
+            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE_ROLE))
+            {
+                stmt.setString(1, element.name.value);
+                stmt.setString(2, parent.getObjectProtectionPath());
 
-            stmt.setString(1, element.name.value);
-            stmt.setString(2, parent.getObjectProtectionPath());
-
-            stmt.executeUpdate();
-            stmt.close();
+                stmt.executeUpdate();
+            }
         }
     }
 
@@ -353,13 +351,13 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         @Override
         public void update(ObjectProtection parent, SecurityType element, TransactionMgr transMgr) throws SQLException
         {
-            PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE_SEC_TYPE);
+            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(OP_UPDATE_SEC_TYPE))
+            {
+                stmt.setString(1, element.name.value);
+                stmt.setString(2, parent.getObjectProtectionPath());
 
-            stmt.setString(1, element.name.value);
-            stmt.setString(2, parent.getObjectProtectionPath());
-
-            stmt.executeUpdate();
-            stmt.close();
+                stmt.executeUpdate();
+            }
         }
     }
 }

@@ -114,43 +114,35 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         throws SQLException
     {
         errorReporter.logTrace("Loading VolumeDefinition %s", getTraceId(resourceDefinition, volumeNumber));
-        ResultSet resultSet = null;
         VolumeDefinitionData ret = null;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT))
         {
             stmt.setString(1, resourceDefinition.getName().value);
             stmt.setInt(2, volumeNumber.value);
-            resultSet = stmt.executeQuery();
-
-            ret = cacheGet(resourceDefinition, volumeNumber);
-            if (resultSet.next())
+            try (ResultSet resultSet = stmt.executeQuery())
             {
-                ret = restoreVolumeDefinition(
-                    resultSet,
-                    resourceDefinition,
-                    volumeNumber,
-                    transMgr,
-                    dbCtx
-                );
-                errorReporter.logDebug("VolumeDefinition loaded %s", getDebugId(resourceDefinition, volumeNumber));
-            }
-            else
-            if (logWarnIfNotExists)
-            {
-                errorReporter.logWarning(
-                    "Requested VolumeDefinition %s could not be found in the Database",
-                    getDebugId(resourceDefinition, volumeNumber)
-                );
-            }
-        }
-        finally
-        {
-            if (resultSet != null)
-            {
-                resultSet.close();
+                ret = cacheGet(resourceDefinition, volumeNumber);
+                if (resultSet.next())
+                {
+                    ret = restoreVolumeDefinition(
+                        resultSet,
+                        resourceDefinition,
+                        volumeNumber,
+                        transMgr,
+                        dbCtx
+                    );
+                    errorReporter.logDebug("VolumeDefinition loaded %s", getDebugId(resourceDefinition, volumeNumber));
+                }
+                else
+                if (logWarnIfNotExists)
+                {
+                    errorReporter.logWarning(
+                        "Requested VolumeDefinition %s could not be found in the Database",
+                        getDebugId(resourceDefinition, volumeNumber)
+                    );
+                }
             }
         }
-
         return ret;
     }
 
