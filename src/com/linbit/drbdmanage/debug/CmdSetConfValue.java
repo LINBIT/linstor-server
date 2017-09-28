@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.debug;
 
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
 import com.linbit.drbdmanage.core.CtrlDebugControl;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
@@ -8,6 +9,8 @@ import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.InvalidValueException;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessType;
+import com.linbit.drbdmanage.security.ObjectProtection;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
@@ -76,6 +79,13 @@ public class CmdSetConfValue extends BaseDebugCmd
             if (key != null && value != null)
             {
                 conf = cmnDebugCtl.getConf();
+                {
+                    ObjectProtection confProt = cmnDebugCtl.getConfProt();
+                    if (confProt != null)
+                    {
+                        confProt.requireAccess(accCtx, AccessType.CHANGE);
+                    }
+                }
 
                 // On the controller, commit changes to the database
                 if (cmnDebugCtl instanceof CtrlDebugControl)
@@ -142,6 +152,10 @@ public class CmdSetConfValue extends BaseDebugCmd
                 "Reenter the command with a valid value for the configuration entry.",
                 null
             );
+        }
+        catch (DrbdManageException dmExc)
+        {
+            printDmException(debugErr, dmExc);
         }
         finally
         {

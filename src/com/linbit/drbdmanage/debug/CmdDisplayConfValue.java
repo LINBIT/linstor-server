@@ -1,8 +1,11 @@
 package com.linbit.drbdmanage.debug;
 
 import com.linbit.ImplementationError;
+import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessType;
+import com.linbit.drbdmanage.security.ObjectProtection;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Map;
@@ -88,6 +91,13 @@ public class CmdDisplayConfValue extends BaseDebugCmd
             confLock.lock();
             try
             {
+                {
+                    ObjectProtection confProt = cmnDebugCtl.getConfProt();
+                    if (confProt != null)
+                    {
+                        confProt.requireAccess(accCtx, AccessType.VIEW);
+                    }
+                }
                 char[] rulerData = new char[78];
                 Arrays.fill(rulerData, '-');
                 String ruler = new String(rulerData);
@@ -241,6 +251,10 @@ public class CmdDisplayConfValue extends BaseDebugCmd
             catch (NamespaceException nameSpcExc)
             {
                 debugOut.println(nameSpcExc.getMessage());
+            }
+            catch (DrbdManageException dmExc)
+            {
+                printDmException(debugErr, dmExc);
             }
             finally
             {
