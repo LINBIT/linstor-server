@@ -173,25 +173,18 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         if (resData != null)
         {
-            synchronized (node)
+            NodeData nodeData = (NodeData) node;
+            nodeData.addResource(accCtx, resData);
+            try
             {
-                synchronized (resDfn)
-                {
-                    NodeData nodeData = (NodeData) node;
-                    nodeData.addResource(accCtx, resData);
-                    try
-                    {
-                        ((ResourceDefinitionData) resDfn).addResource(accCtx, resData);
-                    }
-                    catch (AccessDeniedException accExc)
-                    {
-                        // Rollback adding the resource to the node
-                        nodeData.removeResource(accCtx, resData);
-                        throw accExc;
-                    }
-                }
+                ((ResourceDefinitionData) resDfn).addResource(accCtx, resData);
             }
-
+            catch (AccessDeniedException accExc)
+            {
+                // Rollback adding the resource to the node
+                nodeData.removeResource(accCtx, resData);
+                throw accExc;
+            }
             resData.initialized();
         }
         return resData;
