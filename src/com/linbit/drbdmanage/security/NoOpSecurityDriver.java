@@ -84,12 +84,6 @@ public class NoOpSecurityDriver implements DbAccessor
         }
 
         @Override
-        public void updateOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException
-        {
-            // no-op
-        }
-
-        @Override
         public void deleteOp(String objectPath, TransactionMgr transMgr) throws SQLException
         {
             // no-op
@@ -116,7 +110,12 @@ public class NoOpSecurityDriver implements DbAccessor
         }
 
         @Override
-        public ObjectProtection loadObjectProtection(String objectPath, TransactionMgr transMgr) throws SQLException
+        public ObjectProtection loadObjectProtection(
+            String objectPath,
+            boolean logWarnIfNotExists,
+            TransactionMgr transMgr
+        )
+            throws SQLException
         {
             return dummyObjProt;
         }

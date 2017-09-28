@@ -165,6 +165,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPathSPD(storPoolName),
+            false, // no need to log a warning, as we would fail then anyways
             transMgr
         );
         if (objProt == null)

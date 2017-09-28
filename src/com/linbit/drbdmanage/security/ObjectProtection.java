@@ -84,7 +84,7 @@ public final class ObjectProtection extends BaseTransactionObject
         ObjectProtectionDatabaseDriver dbDriver = DrbdManage.getObjectProtectionDatabaseDriver();
         ObjectProtection objProt = null;
 
-        objProt = dbDriver.loadObjectProtection(objPath, transMgr);
+        objProt = dbDriver.loadObjectProtection(objPath, false, transMgr);
 
         if (objProt == null && createIfNotExists)
         {
@@ -202,8 +202,6 @@ public final class ObjectProtection extends BaseTransactionObject
         PrivilegeSet privs = context.getEffectivePrivs();
         privs.requirePrivileges(Privilege.PRIV_SYS_ALL);
         objectCreator.set(Identity.SYSTEM_ID);
-
-        updateOp();
     }
 
     public Role getOwner()
@@ -217,8 +215,6 @@ public final class ObjectProtection extends BaseTransactionObject
         PrivilegeSet privs = context.getEffectivePrivs();
         privs.requirePrivileges(Privilege.PRIV_OBJ_OWNER);
         objectOwner.set(newOwner);
-
-        updateOp();
     }
 
     public AccessControlList getAcl()
@@ -252,8 +248,6 @@ public final class ObjectProtection extends BaseTransactionObject
                 );
         }
         objectType.set(newSecType);
-
-        updateOp();
     }
 
     public void addAclEntry(AccessContext context, Role entryRole, AccessType grantedAccess)
@@ -357,30 +351,11 @@ public final class ObjectProtection extends BaseTransactionObject
         cachedAcl.clear();
     }
 
-    private void updateOp() throws SQLException
-    {
-        if (isInitialized())
-        {
-            if (!persisted)
-            {
-                dbDriver.insertOp(this, transMgr);
-                persisted = true;
-            }
-            else
-            {
-                dbDriver.updateOp(this, transMgr);
-            }
-        }
-    }
-
     private void setAcl(Role entryRole, AccessType grantedAccess, AccessControlEntry oldEntry) throws SQLException
     {
         if (isInitialized())
         {
-            if (!persisted)
-            {
-                updateOp();
-            }
+            ensureObjProtIsPersisted();
 
             if (oldEntry == null)
             {
@@ -402,10 +377,7 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         if (isInitialized())
         {
-            if (!persisted)
-            {
-                updateOp();
-            }
+            ensureObjProtIsPersisted();
 
             dbDriver.deleteAcl(this, entryRole, transMgr);
 
@@ -413,6 +385,15 @@ public final class ObjectProtection extends BaseTransactionObject
             {
                 cachedAcl.put(entryRole, oldEntry);
             }
+        }
+    }
+
+    private void ensureObjProtIsPersisted() throws SQLException
+    {
+        if (!persisted)
+        {
+            dbDriver.insertOp(this, transMgr);
+            persisted = true;
         }
     }
 

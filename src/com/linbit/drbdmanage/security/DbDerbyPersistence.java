@@ -29,6 +29,8 @@ import static com.linbit.drbdmanage.security.SecurityDbFields.CONF_VALUE;
 import static com.linbit.drbdmanage.security.SecurityDbFields.KEY_SEC_LEVEL;
 import java.sql.Statement;
 
+import com.linbit.drbdmanage.logging.ErrorReporter;
+
 /**
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -77,9 +79,9 @@ public class DbDerbyPersistence implements DbAccessor
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
 
-    public DbDerbyPersistence(AccessContext privCtx)
+    public DbDerbyPersistence(AccessContext privCtx, ErrorReporter errorReporter)
     {
-        objProtDriver = new ObjectProtectionDerbyDriver(privCtx);
+        objProtDriver = new ObjectProtectionDerbyDriver(privCtx, errorReporter);
     }
 
     @Override

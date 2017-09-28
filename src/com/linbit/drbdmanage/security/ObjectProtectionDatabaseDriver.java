@@ -7,13 +7,11 @@ import com.linbit.TransactionMgr;
 
 public interface ObjectProtectionDatabaseDriver
 {
-    void insertOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException;
+    public void insertOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException;
 
-    void updateOp(ObjectProtection objProt, TransactionMgr transMgr) throws SQLException;
+    public void deleteOp(String objectPath, TransactionMgr transMgr) throws SQLException;
 
-    void deleteOp(String objectPath, TransactionMgr transMgr) throws SQLException;
-
-    void insertAcl(
+    public void insertAcl(
         ObjectProtection parent,
         Role role,
         AccessType grantedAccess,
@@ -21,7 +19,7 @@ public interface ObjectProtectionDatabaseDriver
     )
         throws SQLException;
 
-    void updateAcl(
+    public void updateAcl(
         ObjectProtection parent,
         Role role,
         AccessType grantedAccess,
@@ -29,13 +27,18 @@ public interface ObjectProtectionDatabaseDriver
     )
         throws SQLException;
 
-    void deleteAcl(ObjectProtection parent, Role role, TransactionMgr transMgr) throws SQLException;
+    public void deleteAcl(ObjectProtection parent, Role role, TransactionMgr transMgr) throws SQLException;
 
-    ObjectProtection loadObjectProtection(String objectPath, TransactionMgr transMgr) throws SQLException;
+    public ObjectProtection loadObjectProtection(
+        String objectPath,
+        boolean logWarnIfNotExists,
+        TransactionMgr transMgr
+    )
+        throws SQLException;
 
-    SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier();
+    public SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier();
 
-    SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver();
+    public SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver();
 
-    SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver();
+    public SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver();
 }

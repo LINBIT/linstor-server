@@ -253,6 +253,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         ObjectProtectionDatabaseDriver objProtDriver = DrbdManage.getObjectProtectionDatabaseDriver();
         ObjectProtection objProt = objProtDriver.loadObjectProtection(
             ObjectProtection.buildPath(resourceName),
+            false, // no need to log a warning, as we would fail then anyways
             transMgr
         );
         if (objProt == null)

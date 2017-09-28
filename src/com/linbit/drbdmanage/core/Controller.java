@@ -304,7 +304,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     // TODO: determine which DBDriver to use
                     AccessContext privCtx = sysCtx.clone();
                     privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                    securityDbDriver = new DbDerbyPersistence(privCtx);
+                    securityDbDriver = new DbDerbyPersistence(privCtx, errorLogRef);
                     persistenceDbDriver = new DerbyDriver(
                         privCtx,
                         errorLogRef,

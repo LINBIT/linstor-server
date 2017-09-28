@@ -129,7 +129,7 @@ public abstract class DerbyBase implements DerbyConstants
             dbConnPool.initializeDataSource(DB_URL, DB_PROPS);
 
             con = dbConnPool.getConnection();
-            secureDbDriver = new DbDerbyPersistence(sysCtx);
+            secureDbDriver = new DbDerbyPersistence(sysCtx, errorReporter);
 
             nodesMap = new HashMap<NodeName, Node>();
             resDfnMap = new HashMap<ResourceName, ResourceDefinition>();
