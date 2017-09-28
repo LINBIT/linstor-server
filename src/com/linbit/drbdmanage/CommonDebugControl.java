@@ -6,6 +6,7 @@ import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.ObjectProtection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -26,8 +27,11 @@ public interface CommonDebugControl
     Map<String, Peer> getAllPeers();
     Set<String> getApiCallNames();
     Map<NodeName, Node> getNodesMap();
+    ObjectProtection getNodesMapProt();
     Map<ResourceName, ResourceDefinition> getRscDfnMap();
+    ObjectProtection getRscDfnMapProt();
     Props getConf();
+    ObjectProtection getConfProt();
     ReadWriteLock getConfLock();
     void shutdown(AccessContext accCtx);
 }
