@@ -196,14 +196,28 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         catch (MdException mdExc)
         {
             throw new DrbdSqlRuntimeException(
-                "Invalid volume size: " + resultSet.getLong(VD_SIZE),
+                String.format(
+                    "A VolumeSize of a stored VolumeDefinition in table %s could not be restored. " +
+                        "(ResourceName=%s, VolumeNumber=%d, invalid VolumeSize=%d)",
+                    TBL_VOL_DFN,
+                    resDfn.getName().value,
+                    volNr.value,
+                    resultSet.getLong(VD_SIZE)
+                ),
                 mdExc
             );
         }
         catch (ValueOutOfRangeException valueOutOfRangeExc)
         {
             throw new DrbdSqlRuntimeException(
-                "Invalid minor number: " + resultSet.getInt(VD_MINOR_NR),
+                String.format(
+                    "A MinorNumber of a stored VolumeDefinition in table %s could not be restored. " +
+                        "(ResourceName=%s, VolumeNumber=%d, invalid MinorNumber=%d)",
+                    TBL_VOL_DFN,
+                    resDfn.getName().value,
+                    volNr.value,
+                    resultSet.getLong(VD_MINOR_NR)
+                ),
                 valueOutOfRangeExc
             );
         }
@@ -238,7 +252,13 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     catch (ValueOutOfRangeException valueOutOfRangeExc)
                     {
                         throw new DrbdSqlRuntimeException(
-                            "Invalid volume number: " + resultSet.getInt(VD_ID),
+                            String.format(
+                                "A VolumeNumber of a stored VolumeDefinition in table %s could not be restored. " +
+                                    "(ResourceName=%s, invalid VolumeNumber=%d)",
+                                TBL_VOL_DFN,
+                                resDfn.getName().value,
+                                resultSet.getLong(VD_ID)
+                            ),
                             valueOutOfRangeExc
                         );
                     }

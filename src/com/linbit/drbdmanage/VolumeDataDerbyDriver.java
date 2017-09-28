@@ -184,7 +184,13 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             catch (ValueOutOfRangeException valueOutOfRangeExc)
             {
                 throw new DrbdSqlRuntimeException(
-                    String.format("Invalid volumeNumber in %s: %d", TBL_VOL, resultSet.getInt(VOL_ID)),
+                    String.format(
+                        "A VolumeNumber of a stored Volume in table %s could not be restored. " +
+                            "(NodeName=%s, ResName=%s, invalid VolumeNumber=%d)",
+                        TBL_VOL,
+                        resRef.getAssignedNode().getName().value,
+                        resRef.getDefinition().getName().value,
+                        resultSet.getInt(VOL_ID)),
                     valueOutOfRangeExc
                 );
             }

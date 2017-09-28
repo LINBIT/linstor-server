@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
@@ -103,8 +102,13 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                     }
                     catch (InvalidNameException invalidNameExc)
                     {
-                        throw new ImplementationError(
-                            "The display name of a valid NetInterfaceName could not be restored",
+                        throw new DrbdSqlRuntimeException(
+                            String.format(
+                                "The display name of a stored NetInterface could not be restored " +
+                                    "(NodeName=%s, invalid NetInterfaceName=%s)",
+                                node.getName().displayValue,
+                                resultSet.getString(NET_DSP_NAME)
+                            ),
                             invalidNameExc
                         );
                     }
@@ -205,9 +209,17 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                     {
                         netName = new NetInterfaceName(resultSet.getString(NET_DSP_NAME));
                     }
-                    catch (InvalidNameException e)
+                    catch (InvalidNameException invalidNameExc)
                     {
-                        throw new DrbdSqlRuntimeException("NetInterface contains illegal displayName");
+                        throw new DrbdSqlRuntimeException(
+                            String.format(
+                                "The display name of a stored NetInterface could not be restored " +
+                                    "(NodeName=%s, invalid NetInterfaceName=%s)",
+                                node.getName().displayValue,
+                                resultSet.getString(NET_DSP_NAME)
+                            ),
+                            invalidNameExc
+                        );
                     }
                     netIfDataList.add(restoreInstance(node, netName, resultSet));
                 }
@@ -269,7 +281,13 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
             catch (InvalidIpAddressException invalidIpAddressExc)
             {
                 throw new DrbdSqlRuntimeException(
-                    "SQL-based change to NetInterface's host caused an UnknownHostException",
+                    String.format(
+                        "The ip address of a stored NetInterface could not be restored " +
+                            "(NodeName=%s, NetInterfaceName=%s, invalid address=%s)",
+                        node.getName().displayValue,
+                        netName.displayValue,
+                        resultSet.getString(INET_ADDRESS)
+                    ),
                     invalidIpAddressExc
                 );
             }

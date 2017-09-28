@@ -140,8 +140,10 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                     {
                         throw new DrbdSqlRuntimeException(
                             String.format(
-                                "Invalid StorName loaded from Table %s: %s ",
+                                "A StorPoolName of a stored StorPool in the table %s could not be restored. " +
+                                    "(NodeName=%s, invalid StorPoolName=%s)",
                                 TBL_NSP,
+                                resultSet.getString(NSP_NODE),
                                 resultSet.getString(NSP_POOL)
                             ),
                             invalidNameExc

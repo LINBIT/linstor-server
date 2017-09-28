@@ -155,24 +155,25 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
         catch (InvalidNameException invalidNameExc)
         {
             String col;
+            String format = "The stored %s in table %s could not be restored. ";
             if (sourceNodeName == null)
             {
                 col = "SourceNodeName";
+                format += "(invalid SourceNodeName=%s, TargetNodeName=%s)";
             }
             else
             {
                 col = "TargetNodeName";
+                format += "(SourceNodeName=%s, invalid TargetNodeName=%s)";
             }
 
             throw new DrbdSqlRuntimeException(
                 String.format(
-                    "Invalid %s loaded from Table %s %s",
+                    format,
                     col,
                     TBL_NODE_CON_DFN,
-                    getId(
-                        resultSet.getString(NODE_SRC),
-                        resultSet.getString(NODE_DST)
-                    )
+                    resultSet.getString(NODE_SRC),
+                    resultSet.getString(NODE_DST)
                 ),
                 invalidNameExc
             );

@@ -3,11 +3,11 @@ package com.linbit.drbdmanage.security;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.DrbdSqlRuntimeException;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 
 
 public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriver
@@ -203,21 +203,50 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         ObjectProtection objProt = null;
         if (opResultSet.next())
         {
+            Identity identity = null;
+            Role role = null;
+            SecurityType secType = null;
             try
             {
-                Identity identity = Identity.get(new IdentityName(opResultSet.getString(1)));
-                Role role = Role.get(new RoleName(opResultSet.getString(2)));
-                SecurityType secType = SecurityType.get(new SecTypeName(opResultSet.getString(3)));
+                identity = Identity.get(new IdentityName(opResultSet.getString(1)));
+                role = Role.get(new RoleName(opResultSet.getString(2)));
+                secType = SecurityType.get(new SecTypeName(opResultSet.getString(3)));
                 PrivilegeSet privLimitSet = new PrivilegeSet(opResultSet.getLong(4));
                 AccessContext accCtx = new AccessContext(identity, role, secType, privLimitSet);
                 objProt = new ObjectProtection(accCtx, objPath, this);
             }
             catch (InvalidNameException invalidNameExc)
             {
+                String name;
+                String invalidValue;
+                if (identity == null)
+                {
+                    name = "IdentityName";
+                    invalidValue = opResultSet.getString(1);
+                }
+                else
+                if (role == null)
+                {
+                    name = "RoleName";
+                    invalidValue = opResultSet.getString(2);
+                }
+                else
+                {
+                    name = "SecTypeName";
+                    invalidValue = opResultSet.getString(3);
+                }
                 opResultSet.close();
                 opLoadStmt.close();
                 throw new DrbdSqlRuntimeException(
-                    "A name has been modified in the database to an illegal string.",
+                    String.format(
+                        "A stored %s in the table %s could not be restored." +
+                            "(ObjectPath=%s, invalid %s=%s)",
+                        name,
+                        TBL_OP,
+                        objPath,
+                        name,
+                        invalidValue
+                    ),
                     invalidNameExc
                 );
             }
@@ -231,7 +260,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
             {
                 while (aclResultSet.next())
                 {
-                    Role role = Role.get(new RoleName(aclResultSet.getString(1)));
+                    role = Role.get(new RoleName(aclResultSet.getString(1)));
                     AccessType type = AccessType.get(aclResultSet.getInt(2));
 
                     objProt.addAclEntry(dbCtx, role, type);
@@ -244,18 +273,21 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
                 aclLoadStmt.close();
                 aclResultSet.close();
                 throw new DrbdSqlRuntimeException(
-                    "A name has been modified in the database to an illegal string.",
+                    String.format(
+                        "A stored RoleName in the table %s could not be restored." +
+                            "(ObjectPath=%s, invalid RoleName=%s)",
+                        TBL_OP,
+                        objPath,
+                        aclResultSet.getString(1)
+                    ),
                     invalidNameExc
                 );
             }
-            catch (AccessDeniedException accessDeniedExc)
+            catch (AccessDeniedException accDeniedExc)
             {
                 aclLoadStmt.close();
                 aclResultSet.close();
-                throw new ImplementationError(
-                    " Database's accessContext has insufficient rights to restore object protection",
-                    accessDeniedExc
-                );
+                DerbyDriver.handleAccessDeniedException(accDeniedExc);
             }
         }
         else

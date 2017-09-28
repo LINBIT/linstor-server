@@ -131,7 +131,12 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         catch (InvalidNameException invalidNameExc)
         {
             throw new DrbdSqlRuntimeException(
-                "The display name of a stored StorPoolName could not be restored",
+                String.format(
+                    "A display StorPoolName of a stored StorPoolDefinition in the table %s could not be restored. " +
+                        "(invalid display StorPoolName=%s)",
+                    TBL_SPD,
+                    resultSet.getString(SPD_DSP_NAME)
+                ),
                 invalidNameExc
             );
         }

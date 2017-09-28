@@ -176,7 +176,11 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         catch (InvalidNameException invalidNameExc)
         {
             throw new DrbdSqlRuntimeException(
-                "The display name of a stored NodeName could not be restored",
+                String.format(
+                    "The display name of a stored Node could not be restored" +
+                        "(invalid display NodeName=%s)",
+                    resultSet.getString(NODE_DSP_NAME)
+                ),
                 invalidNameExc
             );
         }

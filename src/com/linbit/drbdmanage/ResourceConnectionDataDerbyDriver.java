@@ -5,6 +5,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
@@ -79,6 +81,19 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     {
         errorReporter.logTrace("Loading ResourceConnection %s", getTraceId(sourceResource, targetResource));
 
+        ResourceDefinition resDfn = sourceResource.getDefinition();
+        if (resDfn != targetResource.getDefinition())
+        {
+            throw new ImplementationError(
+                String.format(
+                    "Failed to load ResourceConnection between unrelated resources. %s %s",
+                    getResourceTraceId(sourceResource),
+                    getResourceTraceId(targetResource)
+                ),
+                null
+            );
+        }
+
         ResourceConnectionData ret = null;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT))
         {
@@ -125,30 +140,32 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         catch (InvalidNameException invalidNameExc)
         {
             String col;
+            String format = "The stored %s in table %s could not be restored. ";
             if (sourceNodeName == null)
             {
                 col = "SourceNodeName";
+                format += "(invalid SourceNodeName=%s, TargetNodeName=%s, ResourceName=%s)";
             }
             else
             if (targetNodeName == null)
             {
                 col = "TargetNodeName";
+                format += "(SourceNodeName=%s, invalid TargetNodeName=%s, ResourceName=%s)";
             }
             else
             {
                 col = "ResourceName";
+                format += "(SourceNodeName=%s, TargetNodeName=%s, invalid ResourceName=%s)";
             }
 
             throw new DrbdSqlRuntimeException(
                 String.format(
-                    "Invalid %s loaded from Table %s %s ",
+                    format,
                     col,
                     TBL_RES_CON_DFN,
-                    getId(
-                        resultSet.getString(NODE_SRC),
-                        resultSet.getString(NODE_DST),
-                        resultSet.getString(RES_NAME)
-                    )
+                    resultSet.getString(NODE_SRC),
+                    resultSet.getString(NODE_DST),
+                    resultSet.getString(RES_NAME)
                 ),
                 invalidNameExc
             );

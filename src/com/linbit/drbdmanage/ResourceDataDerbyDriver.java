@@ -244,9 +244,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     {
                         throw new DrbdSqlRuntimeException(
                             String.format(
-                                "A NodeName in the table %s has an illegal value. NodeName=%s",
+                                "A NodeName of a stored Resource in the table %s could not be restored. " +
+                                    "(invalid NodeName=%s, ResName=%s)",
                                 TBL_RES,
-                                resultSet.getString(RES_NODE_NAME)
+                                resultSet.getString(RES_NODE_NAME),
+                                resultSet.getString(RES_NAME)
                             ),
                             invalidNameExc
                         );
@@ -260,8 +262,10 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 {
                     throw new DrbdSqlRuntimeException(
                         String.format(
-                            "A ResourceName in the table %s has an illegal value. ResourceName=%s",
+                            "A ResourceName of a stored Resource in the table %s could not be restored. " +
+                                "(NodeName=%s, invalid ResName=%s)",
                             TBL_RES,
+                            resultSet.getString(RES_NODE_NAME),
                             resultSet.getString(RES_NAME)
                         ),
                         invalidNameExc
@@ -271,6 +275,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 ResourceData resData = cacheGet(node, resName);
                 if (resData == null)
                 {
+
                     ResourceDefinitionDataDatabaseDriver resDfnDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
                     ResourceDefinition resDfn = resDfnDriver.load(resName, true, transMgr);
 
@@ -286,7 +291,6 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     if (loadedRes == null)
                     {
                         // here we are currently loading our own resDfn, and it is loading us
-
                         ObjectProtection objProt = getObjectProection(node, resName, transMgr);
 
                         NodeId nodeId;
@@ -298,9 +302,11 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         {
                             throw new DrbdSqlRuntimeException(
                                 String.format(
-                                    "A NodeId in the table %s has an illegal value. %s Illegal value: %d",
+                                    "A NodeId of a stored Resource in the table %s could not be restored. " +
+                                        "(NodeName=%s, ResName=%s, invalid NodeId=%d)",
                                     TBL_RES,
-                                    getDebugId(node, resName),
+                                    node.getName().displayValue,
+                                    resName.displayValue,
                                     resultSet.getInt(RES_NODE_ID)
                                 ),
                                 valueOutOfRangeExc

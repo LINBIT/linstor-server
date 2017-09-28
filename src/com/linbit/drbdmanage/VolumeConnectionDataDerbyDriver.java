@@ -107,7 +107,11 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             resDfn != targetVolume.getResource().getDefinition())
         {
             throw new ImplementationError(
-                "Failed to load VolumeConnection between unrelated volumes",
+                String.format(
+                    "Failed to load VolumeConnection between unrelated volumes. %s %s",
+                    getVolumeTraceId(sourceVolume),
+                    getVolumeTraceId(targetVolume)
+                ),
                 null
             );
         }
@@ -229,23 +233,26 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         catch (InvalidNameException invalidNameExc)
         {
             String col;
+            String format = "A %s of a stored VolumeConnection in table %s could not be restored. ";
             if (sourceNodeName == null)
             {
+                format += "(invalid SourceNodeName=%s, TargetNodeName=%s, ResName=%s)";
                 col = "SourceNodeName";
             }
             else
             if (targetNodeName == null)
             {
+                format += "(SourceNodeName=%s, invalid TargetNodeName=%s, ResName=%s)";
                 col = "TargetNodeName";
             }
             else
             {
+                format += "(SourceNodeName=%s, TargetNodeName=%s, invalid ResName=%s)";
                 col = "ResName";
             }
             throw new DrbdSqlRuntimeException(
                 String.format(
-                    "Invalid %s loaded from table %s: " +
-                        "SourceNodeName=%s, TargetNodeName=%s, ResName=%s, VolNr=%d ",
+                    format,
                     col,
                     TBL_VOL_CON_DFN,
                     resultSet.getString(NODE_SRC),
@@ -260,8 +267,8 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         {
             throw new DrbdSqlRuntimeException(
                 String.format(
-                    "Invalid volume number loaded from table %s: " +
-                        "SourceNodeName=%s, TargetNodeName=%s, ResName=%s, VolNr=%d ",
+                    "A VolumeNumber of a stored VolumeConnection in table %s could not be restored. " +
+                        "(SourceNodeName=%s, TargetNodeName=%s, ResName=%s, invalid VolNr=%d)",
                     TBL_VOL_CON_DFN,
                     resultSet.getString(NODE_SRC),
                     resultSet.getString(NODE_DST),

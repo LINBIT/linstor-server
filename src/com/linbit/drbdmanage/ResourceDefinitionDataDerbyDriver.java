@@ -174,7 +174,12 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         catch (InvalidNameException invalidNameExc)
         {
             throw new DrbdSqlRuntimeException(
-                "The display name of a stored ResourceName could not be restored",
+                String.format(
+                    "The display name of a stored ResourceDefinition in the table %s could not be restored. " +
+                        "(invalid display ResName=%s)",
+                    TBL_RES_DEF,
+                    resultSet.getString(RD_DSP_NAME)
+                ),
                 invalidNameExc
             );
         }
