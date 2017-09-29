@@ -4,15 +4,11 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.slf4j.event.Level;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
-import com.linbit.drbdmanage.DrbdManageException;
-import com.linbit.drbdmanage.DrbdManageRuntimeException;
 import com.linbit.drbdmanage.core.Controller;
 
 public class TaskScheduleService implements SystemService, Runnable
@@ -54,10 +50,11 @@ public class TaskScheduleService implements SystemService, Runnable
 
     private ServiceName serviceInstanceName;
     private boolean running = false;
+    private boolean shutdown = false;
 
     private Thread workerThread;
 
-    private final TreeMap<Long, Task> tasks = new TreeMap<>();
+    private final TreeMap<Long, LinkedList<Task>> tasks = new TreeMap<>();
     private final LinkedList<Task> newTasks = new LinkedList<>();
     private final Controller controller;
 
@@ -111,28 +108,18 @@ public class TaskScheduleService implements SystemService, Runnable
     @Override
     public void start() throws SystemServiceStartException
     {
-        if (workerThread != null && workerThread.isAlive())
+        boolean needStart;
+        synchronized (tasks)
         {
-            shutdown();
-            try
-            {
-                awaitShutdown(1000);
-            }
-            catch (InterruptedException interruptedExc)
-            {
-                throw new DrbdManageRuntimeException(
-                    "Waiting for stop of old TaskScheduleService thread was interrupted",
-                    interruptedExc
-                );
-            }
-            if (workerThread.isAlive())
-            {
-                throw new DrbdManageRuntimeException("Could not kill already running TaskScheduleService-Thread");
-            }
+            needStart = !running;
+            running = true;
+            shutdown = false;
         }
-        workerThread = new Thread(this, serviceInstanceName.displayValue);
-        workerThread.start();
-        running = true;
+        if (needStart)
+        {
+            workerThread = new Thread(this, serviceInstanceName.displayValue);
+            workerThread.start();
+        }
     }
 
     @Override
@@ -140,7 +127,7 @@ public class TaskScheduleService implements SystemService, Runnable
     {
         synchronized (tasks)
         {
-            running = false;
+            shutdown = true;
             tasks.notify();
         }
     }
@@ -166,84 +153,113 @@ public class TaskScheduleService implements SystemService, Runnable
     @Override
     public void run()
     {
-        while (running)
+        try
         {
-            try
+            while (!shutdown)
             {
-                while (!newTasks.isEmpty())
+                try
                 {
-                    execute(newTasks.removeFirst());
-                }
+                    long now = System.currentTimeMillis();
+                    {
+                        // If there are new tasks to be added,
+                        // run the tasks and reschedule each task according
+                        // to the delay that the task requested
+                        Task execTask;
+                        do
+                        {
+                            synchronized (tasks)
+                            {
+                                execTask = newTasks.pollFirst();
+                            }
+                            if (execTask != null)
+                            {
+                                execute(execTask, now);
+                            }
+                        }
+                        while (execTask != null);
+                    }
 
-                if (tasks.isEmpty())
-                {
+                    Entry<Long, LinkedList<Task>> taskList = tasks.firstEntry();
+                    now = System.currentTimeMillis();
+                    // Default to a waitTime of zero if there are no task lists
+                    // to suspend this thread until new tasks are added
+                    long waitTime = 0;
+                    while (taskList != null)
+                    {
+                        long entryTime = taskList.getKey();
+                        // Recheck the current time only if the task's entryTime
+                        // is greater than the last known current time
+                        if (entryTime > now)
+                        {
+                            now = System.currentTimeMillis();
+                        }
+
+                        // If the task list's target time is in the past or is now,
+                        // remove the task list entry and run and reschedule all
+                        // tasks from the task list
+                        if (entryTime <= now)
+                        {
+                            // The tasks list did not change since the firstEntry() call,
+                            // so this will remove the same entry that firstEntry() selected,
+                            // and it is probably faster than calling remove()
+                            tasks.pollFirstEntry();
+                            for (Task execTask : taskList.getValue())
+                            {
+                                execute(execTask, now);
+                            }
+                        }
+                        else
+                        {
+                            // Set the waitTime to suspend this thread until the
+                            // next task list's target time is reached
+                            waitTime = entryTime - now;
+                            break;
+                        }
+                        taskList = tasks.firstEntry();
+                    }
+                    // Suspend until new tasks are added or the target time of an
+                    // existing task list is reached
                     synchronized (tasks)
                     {
-                        if (newTasks.isEmpty())
+                        if (!shutdown && newTasks.isEmpty())
                         {
-                            tasks.wait();
+                            tasks.wait(waitTime);
                         }
                     }
                 }
-                else
+                catch (InterruptedException ignored)
                 {
-                    Entry<Long, Task> nextEntry = tasks.firstEntry();
-                    while (nextEntry.getKey() < System.currentTimeMillis())
-                    {
-                        tasks.remove(nextEntry.getKey());
-
-                        execute(nextEntry.getValue());
-
-                        nextEntry = tasks.firstEntry();
-                    }
-
-                    Long sleepUntilTimestamp = nextEntry.getKey();
-                    long now = System.currentTimeMillis();
-                    long sleep = sleepUntilTimestamp - now;
-                    if (sleep > 0)
-                    {
-                        synchronized (tasks)
-                        {
-                            tasks.wait(sleep);
-                        }
-                    }
-                    // else: sleep == 0 is equals to tasks.wait()
-                    // sleep < 0 will throw IllegalArgumentException
                 }
             }
-            catch (InterruptedException e)
+        }
+        finally
+        {
+            synchronized (tasks)
             {
-                if (running)
-                {
-                    controller.getErrorReporter().reportProblem(
-                        Level.WARN,
-                        new DrbdManageException(
-                            "TaskScheduleService got interrupted unexpectedly",
-                            e
-                        ),
-                        null,
-                        null,
-                        "TaskScheduleService got interrupted unexpectedly"
-                    );
-                }
+                running = false;
             }
         }
     }
 
-    private void execute(Task task)
+    private void execute(Task task, long now)
     {
-        long reRun = task.run() + System.currentTimeMillis();
+        long delay = task.run();
 
-        long tmp = 0;
-        boolean added = false;
-        while (!added)
+        // Reschedule the task if a non-negative delay was requested
+        if (delay >= 0)
         {
-            if (!tasks.containsKey(reRun + tmp))
+            long targetTime = delay + now;
+            // If a task list exists for the calculated target time,
+            // add the task to the existing task list; otherwise, register
+            // a new task list for the calculated target time and
+            // add the task to the newly registered task list
+            LinkedList<Task> taskList = tasks.get(targetTime);
+            if (taskList == null)
             {
-                tasks.put(reRun + tmp, task);
-                added = true;
+                taskList = new LinkedList<>();
+                tasks.put(targetTime, taskList);
             }
-            tmp++;
+            taskList.add(task);
         }
     }
 }
