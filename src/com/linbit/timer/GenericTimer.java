@@ -463,11 +463,18 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
                         {
                             container.debugOut(GenericTimer.class, "Checking for expired timers");
                         }
+
+                        // Select the timer entry with the earliest wakeup time
                         Map.Entry<Long, TreeMap<K, V>> timerEntry = container.timerMap.firstEntry();
+                        long currentTime = 0;
                         while (timerEntry != null)
                         {
                             Long wakeupTime = timerEntry.getKey();
-                            long currentTime = System.currentTimeMillis();
+                            if (currentTime < wakeupTime)
+                            {
+                                currentTime = System.currentTimeMillis();
+                            }
+
                             if (currentTime >= wakeupTime)
                             {
                                 if (ENABLE_DEBUG)
@@ -478,12 +485,16 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
                                         currentTime, wakeupTime
                                     );
                                 }
+                                // Since the timerMap could have changed since the firstEntry() call,
+                                // pollFirstEntry() will remove the same element that firstEntry() selected,
+                                // and it is probably faster than calling remove()
+                                container.timerMap.pollFirstEntry();
+
+                                // Run all actions for this time slot
                                 TreeMap<K, V> timeSlotMap = timerEntry.getValue();
-                                Map.Entry<K, V> actionEntry = timeSlotMap.firstEntry();
-                                while (actionEntry != null)
+                                for (Map.Entry<K, V> actionEntry : timeSlotMap.entrySet())
                                 {
                                     K actionId = actionEntry.getKey();
-                                    timeSlotMap.remove(actionId);
                                     container.actionMap.remove(actionId);
                                     V actionObj = actionEntry.getValue();
 
@@ -494,9 +505,8 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
                                             wakeupTime, actionId
                                         );
                                     }
+                                    // The action object may add new timer entries
                                     actionObj.run();
-
-                                    actionEntry = timeSlotMap.firstEntry();
                                 }
                             }
                             else
@@ -513,61 +523,27 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
                                 }
                                 break;
                             }
-                            container.timerMap.remove(timerEntry.getKey());
+
+                            // Select the next timer entry with the earliest wakeup time
                             timerEntry = container.timerMap.firstEntry();
                         }
                     }
 
-                    boolean loopWait = false;
-                    do
+                    try
                     {
-                        try
+                        if (ENABLE_DEBUG)
                         {
-                            if (ENABLE_DEBUG)
-                            {
-                                container.debugOutFormat(
-                                    GenericTimer.class,
-                                    "container.wait(%d)",
-                                    waitTime
-                                );
-                            }
-                            container.wait(waitTime);
+                            container.debugOutFormat(
+                                GenericTimer.class,
+                                "container.wait(%d)",
+                                waitTime
+                            );
                         }
-                        catch (InterruptedException ex)
-                        {
-                            long currentTime = System.currentTimeMillis();
-                            if (container.schedWakeupTime == 0)
-                            {
-                                if (ENABLE_DEBUG)
-                                {
-                                    container.debugOutFormat(
-                                        GenericTimer.class,
-                                        "Interrupted while waiting for condition, resuming wait",
-                                        waitTime
-                                    );
-                                }
-                                loopWait = true;
-                            }
-                            else
-                            {
-                                if (currentTime < container.schedWakeupTime)
-                                {
-                                    loopWait = true;
-                                    waitTime = container.schedWakeupTime - currentTime;
-                                    if (ENABLE_DEBUG)
-                                    {
-                                        container.debugOutFormat(
-                                            GenericTimer.class,
-                                            "Interrupted while waiting for timeout, " +
-                                            "resuming with remaining wait time = %d",
-                                            waitTime
-                                        );
-                                    }
-                                }
-                            }
-                        }
+                        container.wait(waitTime);
                     }
-                    while (loopWait);
+                    catch (InterruptedException ex)
+                    {
+                    }
                     if (ENABLE_DEBUG)
                     {
                         container.debugOut(GenericTimer.class, "wakeup from wait()");
