@@ -174,7 +174,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
             stmt.executeUpdate();
         }
         errorReporter.logDebug(
-            "Updating AccessConrol entry from %s to %s %s",
+            "AccessConrol entry updated from %s to %s %s",
             parent.getAcl().getEntry(role),
             grantedAccess,
             getAclDebugId(parent, role)
