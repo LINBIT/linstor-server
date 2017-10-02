@@ -48,7 +48,7 @@ public class WorkerPoolTest
     @Test
     public void testCreatedThreadAmount()
     {
-        pool = WorkerPoolBuilder.create().build();
+        pool = new WorkerPoolBuilder().build();
 
         Assert.assertEquals("Unexpected worker count", DEFAULT_THREAD_COUNT, pool.getThreadCount());
     }
@@ -56,7 +56,7 @@ public class WorkerPoolTest
     @Test
     public void testQueueSize()
     {
-        pool = WorkerPoolBuilder.create().build();
+        pool = new WorkerPoolBuilder().build();
 
         Assert.assertEquals("Unexpected worker count", DEFAULT_QUEUE_SIZE, pool.getQueueSize());
     }
@@ -64,7 +64,7 @@ public class WorkerPoolTest
     @Test
     public void testFairness()
     {
-        pool = WorkerPoolBuilder.create().build();
+        pool = new WorkerPoolBuilder().build();
 
         Assert.assertEquals("Unexpected fairness", DEFAULT_FAIRNESS, pool.isFairQueue());
     }
@@ -72,30 +72,32 @@ public class WorkerPoolTest
     @Test
     public void testThreadPrefix()
     {
-        pool = WorkerPoolBuilder.create().build();
+        WorkerPoolBuilder workerPoolBuilder = new WorkerPoolBuilder();
+        pool = workerPoolBuilder.build();
 
-        int prefixedThreadCount = getPrefixedThreadCount();
+        int prefixedThreadCount = getPrefixedThreadCount(workerPoolBuilder.threadPrefix);
         Assert.assertEquals("Unexpected prefixed thread count", prefixedThreadCount, DEFAULT_THREAD_COUNT);
     }
 
     @Test
     public void testShutdown() throws InterruptedException, ExecutionException, TimeoutException
     {
-        pool = WorkerPoolBuilder.create().build();
+        WorkerPoolBuilder workerPoolBuilder = new WorkerPoolBuilder();
+        pool = workerPoolBuilder.build();
 
-        int prefixedThreadCount = getPrefixedThreadCount();
+        int prefixedThreadCount = getPrefixedThreadCount(workerPoolBuilder.threadPrefix);
         Assert.assertEquals("Unexpected prefixed thread count", prefixedThreadCount, DEFAULT_THREAD_COUNT);
 
         pool.shutdown();
 
         waitUntilPoolFinishes();
 
-        prefixedThreadCount = getPrefixedThreadCount();
+        prefixedThreadCount = getPrefixedThreadCount(workerPoolBuilder.threadPrefix);
         for (int waitTimes = 0; prefixedThreadCount > 0 && waitTimes < 10; waitTimes++)
         {
             // wait a little longer (max 1 sec)
             Thread.sleep(100);
-            prefixedThreadCount = getPrefixedThreadCount();
+            prefixedThreadCount = getPrefixedThreadCount(workerPoolBuilder.threadPrefix);
         }
         Assert.assertEquals("Worker threads still running", prefixedThreadCount, 0);
     }
@@ -104,7 +106,7 @@ public class WorkerPoolTest
     @Test
     public void testSumbitSimpleTask() throws InterruptedException, ExecutionException, TimeoutException
     {
-        pool = WorkerPoolBuilder.create().build();
+        pool = new WorkerPoolBuilder().build();
 
         final AtomicInteger finishedTasks = new AtomicInteger(0);
 
@@ -131,7 +133,7 @@ public class WorkerPoolTest
     public void testSubmitTaskWithException() throws InterruptedException
     {
         TestErrorReporter errorReporter = new TestErrorReporter();
-        pool = WorkerPoolBuilder.create().errorReporter(errorReporter).build();
+        pool = new WorkerPoolBuilder().errorReporter(errorReporter).build();
 
         final int exceptionId = 1;
         Runnable taks = new Runnable()
@@ -154,7 +156,7 @@ public class WorkerPoolTest
     public void testSubmitTaskWithImplementationError() throws InterruptedException
     {
         TestErrorReporter errorReporter = new TestErrorReporter();
-        pool = WorkerPoolBuilder.create().errorReporter(errorReporter).build();
+        pool = new WorkerPoolBuilder().errorReporter(errorReporter).build();
 
         final int exceptionId = 1;
         Runnable taks = new Runnable()
@@ -175,13 +177,13 @@ public class WorkerPoolTest
         Assert.assertEquals("Unexpected exception id received", ((TestException)cause).id, exceptionId);
     }
 
-    private int getPrefixedThreadCount()
+    private int getPrefixedThreadCount(String threadPrefix)
     {
         Set<Thread> threads = Thread.getAllStackTraces().keySet();
         int prefixedThreadCount = 0;
         for (Thread thread : threads)
         {
-            if (thread.getName().startsWith(DEFAULT_THREAD_PREFIX))
+            if (thread.getName().startsWith(threadPrefix))
             {
                 prefixedThreadCount++;
             }
@@ -298,19 +300,17 @@ public class WorkerPoolTest
 
     private static class WorkerPoolBuilder
     {
+        private static final AtomicInteger id = new AtomicInteger(0);
+
         private int parallelism = DEFAULT_THREAD_COUNT;
         private int queueSize = DEFAULT_QUEUE_SIZE;
         private boolean fairness = DEFAULT_FAIRNESS;
-        private String threadPrefix = DEFAULT_THREAD_PREFIX;
+        private String threadPrefix;
         private ErrorReporter errorReporter = DEFAULT_ERROR_REPORTER;
 
         private WorkerPoolBuilder()
         {
-        }
-
-        public static WorkerPoolBuilder create()
-        {
-            return new WorkerPoolBuilder();
+            threadPrefix = DEFAULT_THREAD_PREFIX  + "_" + Integer.toString(id.incrementAndGet());
         }
 
         public WorkerPool build()
