@@ -14,8 +14,8 @@ import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.drbdmanage.logging.ErrorReporter;
+import com.linbit.drbdmanage.testutils.DefaultErrorStreamErrorReporter;
 import com.linbit.drbdmanage.SatelliteCoreServices;
-import com.linbit.drbdmanage.debug.DebugErrorReporter;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
@@ -882,13 +882,13 @@ public abstract class NoSimDriverTest
     {
         private final GenericTimer<String, Action<String>> timerEventSvc ;
         private final FileSystemWatch fsEventSvc;
-        private DebugErrorReporter errorReporter;
+        private final ErrorReporter errorReporter;
 
         TestCoreServices() throws IOException
         {
             timerEventSvc = new GenericTimer<>();
             fsEventSvc = new FileSystemWatch();
-            errorReporter = new DebugErrorReporter(System.err);
+            errorReporter = new DefaultErrorStreamErrorReporter();
         }
 
         @Override

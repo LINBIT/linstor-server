@@ -223,6 +223,20 @@ public class WorkerPoolTest
         }
 
         @Override
+        public void reportError(Level logLevel, Throwable errorInfo)
+        {
+            unexpected.add(errorInfo);
+        }
+
+        @Override
+        public void reportError(
+            Level logLevel, Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo
+        )
+        {
+            unexpected.add(errorInfo);
+        }
+
+        @Override
         public void reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
         {
             unexpected.add(errorInfo);

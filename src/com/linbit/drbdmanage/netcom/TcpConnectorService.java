@@ -15,6 +15,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.slf4j.event.Level;
+
 import static java.nio.channels.SelectionKey.*;
 
 /**
@@ -513,7 +515,8 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                 // I/O error while selecting (likely), or an uncaught I/O error
                 // while performing I/O on a channel (should not happen)
                 // Log error and attempt to reinitialize.
-                coreSvcs.getErrorReporter().reportError(ioExc);
+                coreSvcs.getErrorReporter().logDebug("IOException: %s", ioExc.getLocalizedMessage());
+                coreSvcs.getErrorReporter().reportError(Level.TRACE, ioExc);
                 reinitialize();
             }
             catch (Exception exc)

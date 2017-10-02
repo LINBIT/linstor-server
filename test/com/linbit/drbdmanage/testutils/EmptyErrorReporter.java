@@ -22,6 +22,18 @@ public class EmptyErrorReporter implements ErrorReporter
     }
 
     @Override
+    public void reportError(Level logLevel, Throwable errorInfo)
+    {
+        // ignore
+    }
+
+    @Override
+    public void reportError(Level logLevel, Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+    {
+        // ignore
+    }
+
+    @Override
     public void logTrace(String format, Object... args)
     {
         // ignore

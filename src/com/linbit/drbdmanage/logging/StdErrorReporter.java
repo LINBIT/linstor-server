@@ -72,11 +72,30 @@ public final class StdErrorReporter implements ErrorReporter
     @Override
     public void reportError(Throwable errorInfo)
     {
-        reportError(errorInfo, null, null, null);
+        reportError(Level.ERROR, errorInfo, null, null, null);
+    }
+
+
+    @Override
+    public void reportError(Level logLevel, Throwable errorInfo)
+    {
+        reportError(logLevel, errorInfo, null, null, null);
     }
 
     @Override
     public void reportError(
+        Throwable errorInfo,
+        AccessContext accCtx,
+        Peer client,
+        String contextInfo
+    )
+    {
+        reportError(Level.ERROR, errorInfo, accCtx, client, contextInfo);
+    }
+
+    @Override
+    public void reportError(
+        Level logLevel,
         Throwable errorInfo,
         AccessContext accCtx,
         Peer client,
@@ -122,7 +141,35 @@ public final class StdErrorReporter implements ErrorReporter
 
             output.println("\nEND OF ERROR REPORT.");
 
-            mainLogger.error(logMsg);
+            switch (logLevel)
+            {
+                case ERROR:
+                    mainLogger.error(logMsg);
+                    break;
+                case WARN:
+                    mainLogger.warn(logMsg);
+                    break;
+                case INFO:
+                    mainLogger.info(logMsg);
+                    break;
+                case DEBUG:
+                    mainLogger.debug(logMsg);
+                    break;
+                case TRACE:
+                    mainLogger.trace(logMsg);
+                    break;
+                default:
+                    mainLogger.error(logMsg);
+                    reportError(
+                        new IllegalArgumentException(
+                            String.format(
+                                "Missing case label for enumeration value '%s'",
+                                logLevel.name()
+                            )
+                        )
+                    );
+                    break;
+            }
         }
         finally
         {
