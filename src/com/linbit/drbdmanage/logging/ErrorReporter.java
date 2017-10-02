@@ -40,8 +40,9 @@ public interface ErrorReporter
      * logLevel.
      *
      * @param errorInfo
+     * @return the logName of the generated report
      */
-    void reportError(Throwable errorInfo);
+    String reportError(Throwable errorInfo);
 
     /**
      * Reports any kind of error, especially ones that are not expected during normal operation
@@ -61,8 +62,10 @@ public interface ErrorReporter
      *
      * @param logLevel
      * @param errorInfo
+     *
+     * @return the logName of the generated report
     */
-    void reportError(Level logLevel, Throwable errorInfo);
+    String reportError(Level logLevel, Throwable errorInfo);
 
     /**
      * Reports any kind of error, especially ones that are not expected during normal operation.
@@ -73,8 +76,9 @@ public interface ErrorReporter
      * @param accCtx
      * @param client
      * @param contextInfo
+     * @return the logName of the generated report
      */
-    void reportError(
+    String reportError(
         Throwable errorInfo,
         AccessContext accCtx,
         Peer client,
@@ -90,8 +94,9 @@ public interface ErrorReporter
      * @param accCtx
      * @param client
      * @param contextInfo
+     * @return the logName of the generated report
      */
-    void reportError(
+    String reportError(
         Level logLevel,
         Throwable errorInfo,
         AccessContext accCtx,
@@ -110,8 +115,9 @@ public interface ErrorReporter
      * @param accCtx
      * @param client
      * @param contextInfo
+     * @return the logName of the generated report
      */
-    void reportProblem(
+    String reportProblem(
         Level logLevel,
         DrbdManageException errorInfo,
         AccessContext accCtx,

@@ -70,31 +70,31 @@ public final class StdErrorReporter implements ErrorReporter
     }
 
     @Override
-    public void reportError(Throwable errorInfo)
+    public String reportError(Throwable errorInfo)
     {
-        reportError(Level.ERROR, errorInfo, null, null, null);
+        return reportError(Level.ERROR, errorInfo, null, null, null);
     }
 
 
     @Override
-    public void reportError(Level logLevel, Throwable errorInfo)
+    public String reportError(Level logLevel, Throwable errorInfo)
     {
-        reportError(logLevel, errorInfo, null, null, null);
+        return reportError(logLevel, errorInfo, null, null, null);
     }
 
     @Override
-    public void reportError(
+    public String reportError(
         Throwable errorInfo,
         AccessContext accCtx,
         Peer client,
         String contextInfo
     )
     {
-        reportError(Level.ERROR, errorInfo, accCtx, client, contextInfo);
+        return reportError(Level.ERROR, errorInfo, accCtx, client, contextInfo);
     }
 
     @Override
-    public void reportError(
+    public String reportError(
         Level logLevel,
         Throwable errorInfo,
         AccessContext accCtx,
@@ -103,6 +103,7 @@ public final class StdErrorReporter implements ErrorReporter
     )
     {
         PrintStream output = null;
+        String logName = null;
         try
         {
             long reportNr = errorNr.getAndIncrement();
@@ -115,7 +116,8 @@ public final class StdErrorReporter implements ErrorReporter
                 errorInfo = new NullPointerException();
             }
 
-            output = openReportFile(reportNr);
+            logName = getLogName(reportNr);
+            output = openReportFile(logName);
 
             // Error report header
             reportHeader(output, reportNr);
@@ -175,10 +177,11 @@ public final class StdErrorReporter implements ErrorReporter
         {
             closeReportFile(output);
         }
+        return logName;
     }
 
     @Override
-    public void reportProblem(
+    public String reportProblem(
         Level logLevel,
         DrbdManageException errorInfo,
         AccessContext accCtx,
@@ -187,6 +190,7 @@ public final class StdErrorReporter implements ErrorReporter
     )
     {
         PrintStream output = null;
+        String logName = null;
         try
         {
             long reportNr = errorNr.getAndIncrement();
@@ -209,7 +213,8 @@ public final class StdErrorReporter implements ErrorReporter
 
             if (descriptionMsg != null)
             {
-                output = openReportFile(reportNr);
+                logName = getLogName(reportNr);
+                output = openReportFile(logName);
 
                 // Error report header
                 reportHeader(output, reportNr);
@@ -318,6 +323,7 @@ public final class StdErrorReporter implements ErrorReporter
         {
             closeReportFile(output);
         }
+        return logName;
     }
 
     private String formatLogMsg(long reportNr, Throwable errorInfo)
@@ -675,7 +681,15 @@ public final class StdErrorReporter implements ErrorReporter
         }
     }
 
-    private PrintStream openReportFile(long reportNr)
+    private String getLogName(long reportNr)
+    {
+        return String.format("%s-%06d",
+            instanceId,
+            reportNr
+        );
+    }
+
+    private PrintStream openReportFile(String logName)
     {
         OutputStream reportStream = null;
         PrintStream reportPrinter = null;
@@ -683,41 +697,18 @@ public final class StdErrorReporter implements ErrorReporter
         {
             reportStream = new FileOutputStream(
                 String.format(
-                    "%s/ErrorReport-%s-%06d.log",
-                    LOG_DIRECTORY, instanceId, reportNr
+                    "%s/ErrorReport-%s.log",
+                    LOG_DIRECTORY,
+                    logName
                 )
             );
             reportPrinter = new PrintStream(reportStream);
         }
         catch (IOException ioExc)
         {
-            System.err.printf("Unable to create error report file for error report %s-%06d:\n", instanceId, reportNr);
+            System.err.printf("Unable to create error report file for error report %s:\n", logName);
             System.err.println(ioExc.getMessage());
             System.err.println("The error report will be written to the standard error stream instead.\n");
-
-            if (reportPrinter != null)
-            {
-                try
-                {
-                    reportPrinter.close();
-                }
-                catch (Exception ignored)
-                {
-                }
-                reportPrinter = null;
-            }
-
-            if (reportStream != null)
-            {
-                try
-                {
-                    reportStream.close();
-                }
-                catch (Exception ignored)
-                {
-                }
-                reportStream = null;
-            }
         }
 
         if (reportPrinter == null)

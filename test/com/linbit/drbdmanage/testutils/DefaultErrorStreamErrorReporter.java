@@ -41,19 +41,21 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
     }
 
     @Override
-    public void reportError(Throwable errorInfo)
+    public String reportError(Throwable errorInfo)
     {
         errorInfo.printStackTrace(System.err);
+        return null; // no error report, no logName
     }
 
     @Override
-    public void reportError(Level logLevel, Throwable errorInfo)
+    public String reportError(Level logLevel, Throwable errorInfo)
     {
         errorInfo.printStackTrace(System.err);
+        return null; // no error report, no logName
     }
 
     @Override
-    public void reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+    public String reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
     {
         System.err.println("AccCtx: Identity      : " + accCtx.subjectId.name.value + "\n" +
                            "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
@@ -62,10 +64,12 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
         System.err.println("Peer id: " + client.getId());
         System.err.println(contextInfo);
         errorInfo.printStackTrace(System.err);
+
+        return null; // no error report, no logName
     }
 
     @Override
-    public void reportError(Level logLevel, Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+    public String reportError(Level logLevel, Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
     {
         System.err.println("AccCtx: Identity      : " + accCtx.subjectId.name.value + "\n" +
             "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
@@ -75,10 +79,11 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
         System.err.println(contextInfo);
         errorInfo.printStackTrace(System.err);
 
+        return null; // no error report, no logName
     }
 
     @Override
-    public void reportProblem(
+    public String reportProblem(
         Level logLevel,
         DrbdManageException errorInfo,
         AccessContext accCtx,
@@ -93,5 +98,7 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
         System.err.println("Peer id: " + client.getId());
         System.err.println(contextInfo);
         errorInfo.printStackTrace(System.err);
+
+        return null; // no error report, no logName
     }
 }

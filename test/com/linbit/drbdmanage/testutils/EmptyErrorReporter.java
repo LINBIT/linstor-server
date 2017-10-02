@@ -22,15 +22,17 @@ public class EmptyErrorReporter implements ErrorReporter
     }
 
     @Override
-    public void reportError(Level logLevel, Throwable errorInfo)
+    public String reportError(Level logLevel, Throwable errorInfo)
     {
         // ignore
+        return null; // no error report, no logName
     }
 
     @Override
-    public void reportError(Level logLevel, Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+    public String reportError(Level logLevel, Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
     {
         // ignore
+        return null; // no error report, no logName
     }
 
     @Override
@@ -64,25 +66,27 @@ public class EmptyErrorReporter implements ErrorReporter
     }
 
     @Override
-    public void reportError(Throwable errorInfo)
+    public String reportError(Throwable errorInfo)
     {
         if (printStacktraces)
         {
             errorInfo.printStackTrace();
         }
+        return null; // no error report, no logName
     }
 
     @Override
-    public void reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+    public String reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
     {
         if (printStacktraces)
         {
             errorInfo.printStackTrace();
         }
+        return null; // no error report, no logName
     }
 
     @Override
-    public void reportProblem(
+    public String reportProblem(
         Level logLevel, DrbdManageException errorInfo, AccessContext accCtx, Peer client, String contextInfo
     )
     {
@@ -90,5 +94,6 @@ public class EmptyErrorReporter implements ErrorReporter
         {
             errorInfo.printStackTrace();
         }
+        return null; // no error report, no logName
     }
 }

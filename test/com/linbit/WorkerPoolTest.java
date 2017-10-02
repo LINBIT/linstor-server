@@ -219,33 +219,37 @@ public class WorkerPoolTest
         private BlockingQueue<Throwable> unexpected = new LinkedBlockingQueue<>();
 
         @Override
-        public void reportError(Throwable throwable)
+        public String reportError(Throwable throwable)
         {
             unexpected.add(throwable);
+            return null; // no error report, no logName
         }
 
         @Override
-        public void reportError(Level logLevel, Throwable errorInfo)
+        public String reportError(Level logLevel, Throwable errorInfo)
         {
             unexpected.add(errorInfo);
+            return null; // no error report, no logName
         }
 
         @Override
-        public void reportError(
+        public String reportError(
             Level logLevel, Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo
         )
         {
             unexpected.add(errorInfo);
+            return null; // no error report, no logName
         }
 
         @Override
-        public void reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+        public String reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
         {
             unexpected.add(errorInfo);
+            return null; // no error report, no logName
         }
 
         @Override
-        public void reportProblem(
+        public String reportProblem(
             Level logLevel,
             DrbdManageException errorInfo,
             AccessContext accCtx,
@@ -254,6 +258,7 @@ public class WorkerPoolTest
         )
         {
             unexpected.add(errorInfo);
+            return null; // no error report, no logName
         }
 
         @Override
