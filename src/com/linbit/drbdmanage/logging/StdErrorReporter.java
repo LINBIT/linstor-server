@@ -408,7 +408,7 @@ public final class StdErrorReporter implements ErrorReporter
         {
             cal.setTimeInMillis(System.currentTimeMillis());
             year    = cal.get(Calendar.YEAR);
-            month   = cal.get(Calendar.MONTH);
+            month   = cal.get(Calendar.MONTH) + 1;
             day     = cal.get(Calendar.DAY_OF_MONTH);
 
             hour    = cal.get(Calendar.HOUR_OF_DAY);
