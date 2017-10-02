@@ -62,9 +62,9 @@ public interface VolumeDefinition extends TransactionObject
         }
     }
 
-    public static interface CreationData
+    public interface VlmDfnApiData
     {
-        int getId();
+        int getVolumeNr();
         int getMinorNr();
         long getSize();
         Map<String, String> getProps();

@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -57,5 +58,12 @@ public interface ResourceDefinition extends TransactionObject
         {
             return flagValue;
         }
+    }
+
+    public interface RscDfnApiData
+    {
+        String getName();
+        Map<String, String> getProps();
+        VolumeDefinition.VlmDfnApiData[] getVlmDfnList();
     }
 }

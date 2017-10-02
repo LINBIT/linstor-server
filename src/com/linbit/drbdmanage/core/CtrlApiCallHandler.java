@@ -244,7 +244,7 @@ class CtrlApiCallHandler
         Peer client,
         String resourceName,
         Map<String, String> props,
-        List<VolumeDefinition.CreationData> volDescrMap
+        List<VolumeDefinition.VlmDfnApiData> volDescrMap
     )
     {
         /*
@@ -263,7 +263,7 @@ class CtrlApiCallHandler
 
         VolumeNumber volNr = null;
         MinorNumber minorNr = null;
-        VolumeDefinition.CreationData currentVolCrtData = null;
+        VolumeDefinition.VlmDfnApiData currentVolCrtData = null;
         VolumeDefinition lastVolDfn = null;
 
         short peerCount = getAsShort(props, PROPS_RESOURCE_DEFINITION_PEER_COUNT_KEY, controller.getDefaultPeerCount());
@@ -283,7 +283,7 @@ class CtrlApiCallHandler
                 true
             );
 
-            for (VolumeDefinition.CreationData volCrtData : volDescrMap)
+            for (VolumeDefinition.VlmDfnApiData volCrtData : volDescrMap)
             {
                 currentVolCrtData = volCrtData;
 
@@ -291,7 +291,7 @@ class CtrlApiCallHandler
                 volNr = null;
                 minorNr = null;
 
-                volNr = new VolumeNumber(volCrtData.getId()); // valOORangeExc1
+                volNr = new VolumeNumber(volCrtData.getVolumeNr()); // valOORangeExc1
                 minorNr = new MinorNumber(volCrtData.getMinorNr()); // valOORangeExc2
 
                 long size = volCrtData.getSize();
@@ -316,7 +316,7 @@ class CtrlApiCallHandler
 
             rscDfnMap.put(rscDfn.getName(), rscDfn);
 
-            for (VolumeDefinition.CreationData volCrtData : volDescrMap)
+            for (VolumeDefinition.VlmDfnApiData volCrtData : volDescrMap)
             {
                 ApiCallRcEntry volSuccessEntry = new ApiCallRcEntry();
                 volSuccessEntry.setReturnCode(ApiCallRcConstants.RC_VOLUME_DEFINITION_CREATED);
@@ -327,7 +327,7 @@ class CtrlApiCallHandler
                         API_RC_VAR_VOlUME_MINOR_KEY
                     )
                 );
-                volSuccessEntry.putVariable(API_RC_VAR_VOlUME_NUMBER_KEY, Integer.toString(volCrtData.getId()));
+                volSuccessEntry.putVariable(API_RC_VAR_VOlUME_NUMBER_KEY, Integer.toString(volCrtData.getVolumeNr()));
                 volSuccessEntry.putVariable(API_RC_VAR_VOlUME_MINOR_KEY, Integer.toString(volCrtData.getMinorNr()));
 
                 apiCallRc.addEntry(volSuccessEntry);
@@ -399,7 +399,7 @@ class CtrlApiCallHandler
                 entry.setCauseFormat(sqlExc.getMessage());
                 if (currentVolCrtData != null)
                 {
-                    entry.putVariable(API_RC_VAR_VOlUME_NUMBER_KEY, Integer.toString(currentVolCrtData.getId()));
+                    entry.putVariable(API_RC_VAR_VOlUME_NUMBER_KEY, Integer.toString(currentVolCrtData.getVolumeNr()));
                     entry.putVariable(API_RC_VAR_VOlUME_MINOR_KEY, Integer.toString(currentVolCrtData.getMinorNr()));
                 }
                 apiCallRc.addEntry(entry);
@@ -508,7 +508,7 @@ class CtrlApiCallHandler
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat("Given volume number ${" + API_RC_VAR_VOlUME_NUMBER_KEY + "} was invalid");
-                entry.putVariable(API_RC_VAR_VOlUME_NUMBER_KEY, Integer.toString(currentVolCrtData.getId()));
+                entry.putVariable(API_RC_VAR_VOlUME_NUMBER_KEY, Integer.toString(currentVolCrtData.getVolumeNr()));
 
                 apiCallRc.addEntry(entry);
             }
@@ -526,7 +526,7 @@ class CtrlApiCallHandler
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat("Given minor number ${" + API_RC_VAR_VOlUME_MINOR_KEY + "} was invalid");
-                entry.putVariable(API_RC_VAR_VOlUME_MINOR_KEY, Integer.toString(currentVolCrtData.getId()));
+                entry.putVariable(API_RC_VAR_VOlUME_MINOR_KEY, Integer.toString(currentVolCrtData.getVolumeNr()));
 
                 apiCallRc.addEntry(entry);
             }

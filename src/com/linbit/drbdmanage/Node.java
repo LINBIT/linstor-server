@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -136,5 +137,11 @@ public interface Node extends TransactionObject
 
             return flags;
         }
+    }
+
+    public interface NodeApiData
+    {
+        String getName();
+        Map<String, String> getProps();
     }
 }
