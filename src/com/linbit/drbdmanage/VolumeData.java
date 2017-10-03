@@ -141,7 +141,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException, AccessDeniedException, DrbdDataAlreadyExistsException
     {
         resRef.getObjProt().requireAccess(accCtx, AccessType.USE);
         VolumeData volData = null;

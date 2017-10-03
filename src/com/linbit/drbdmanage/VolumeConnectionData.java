@@ -127,7 +127,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, SQLException, DrbdDataAlreadyExistsException
     {
         VolumeConnectionData volConData = null;
 

@@ -1,6 +1,6 @@
 package com.linbit.drbdmanage;
 
-public class DrbdDataAlreadyExistsException extends DrbdManageRuntimeException
+public class DrbdDataAlreadyExistsException extends DrbdManageException
 {
     private static final long serialVersionUID = -996556995066979100L;
 

@@ -150,7 +150,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException, AccessDeniedException, DrbdDataAlreadyExistsException
     {
         resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         ResourceData resData = null;

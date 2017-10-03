@@ -94,7 +94,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException, AccessDeniedException, DrbdDataAlreadyExistsException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 

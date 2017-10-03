@@ -123,7 +123,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException, AccessDeniedException, DrbdDataAlreadyExistsException
     {
         ResourceDefinitionDataDatabaseDriver driver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
 

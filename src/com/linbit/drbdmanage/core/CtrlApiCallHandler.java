@@ -25,6 +25,7 @@ import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.drbdmanage.DrbdDataAlreadyExistsException;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -85,7 +86,7 @@ public class CtrlApiCallHandler
 
             NodeType type = NodeType.valueOfIgnoreCase(props.get(PROPS_NODE_TYPE_KEY), NodeType.SATELLITE);
             NodeFlag[] flags = NodeFlag.valuesOfIgnoreCase(props.get(PROPS_NODE_FLAGS_KEY));
-            node = NodeData.getInstance( // sqlExc2, accDeniedExc1
+            node = NodeData.getInstance( // sqlExc2, accDeniedExc1, alreadyExists1
                 accCtx,
                 nodeName,
                 type,
@@ -196,6 +197,25 @@ public class CtrlApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
+        catch (DrbdDataAlreadyExistsException alreadyExistsExc)
+        {
+            // handle alreadyExists1
+
+            controller.getErrorReporter().reportError(
+                alreadyExistsExc,
+                accCtx,
+                client,
+                "The node which should be created already exists"
+            );
+
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+            entry.setMessageFormat("The node already exists");
+            entry.setCauseFormat(alreadyExistsExc.getMessage());
+
+            apiCallRc.addEntry(entry);
+
+        }
 
         if (transMgr != null && transMgr.isDirty())
         {
@@ -261,7 +281,7 @@ public class CtrlApiCallHandler
             transMgr = new TransactionMgr(controller.dbConnPool.getConnection()); // sqlExc1
 
             controller.rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE); // accDeniedExc1
-            rscDfn = ResourceDefinitionData.getInstance( // sqlExc2, accDeniedExc1 (same as last line)
+            rscDfn = ResourceDefinitionData.getInstance( // sqlExc2, accDeniedExc1 (same as last line), alreadyExistsExc1
                 accCtx,
                 new ResourceName(resourceName), // invalidNameExc1
                 null, // init flags
@@ -287,7 +307,7 @@ public class CtrlApiCallHandler
                 controller.getMetaDataApi().getGrossSize(size, peerCount, alStripes, alStripeSize);
                 // mdExc1
 
-                lastVolDfn = VolumeDefinitionData.getInstance( // mdExc2, sqlExc3, accDeniedExc2
+                lastVolDfn = VolumeDefinitionData.getInstance( // mdExc2, sqlExc3, accDeniedExc2, alreadyExistsExc2
                     accCtx,
                     rscDfn,
                     volNr,
@@ -537,6 +557,48 @@ public class CtrlApiCallHandler
             entry.putVariable(API_RC_VAR_VOlUME_SIZE_KEY, Long.toString(currentVolCrtData.getSize()));
 
             apiCallRc.addEntry(entry);
+        }
+        catch (DrbdDataAlreadyExistsException alreadyExistsExc)
+        {
+            if (rscDfn == null)
+            {
+                // handle alreadyExists1
+                controller.getErrorReporter().reportError(
+                    alreadyExistsExc,
+                    accCtx,
+                    client,
+                    "The ResourceDefinition which should be created already exists"
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat("The ResourceDefinition already exists");
+                entry.setCauseFormat(alreadyExistsExc.getMessage());
+
+                apiCallRc.addEntry(entry);
+            }
+            else
+            {
+                // handle alreadyExists2
+                controller.getErrorReporter().reportError(
+                    alreadyExistsExc,
+                    accCtx,
+                    client,
+                    "A VolumeDefinition which should be created already exists"
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setMessageFormat("A VolumeDefinition already exists");
+                entry.setCauseFormat(alreadyExistsExc.getMessage());
+                if (currentVolCrtData != null)
+                {
+                    entry.putVariable(API_RC_VAR_VOlUME_NUMBER_KEY, Integer.toString(currentVolCrtData.getId()));
+                    entry.putVariable(API_RC_VAR_VOlUME_MINOR_KEY, Integer.toString(currentVolCrtData.getMinorNr()));
+                }
+
+                apiCallRc.addEntry(entry);
+            }
         }
 
 

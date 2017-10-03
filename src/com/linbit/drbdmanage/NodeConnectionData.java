@@ -100,7 +100,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, SQLException, DrbdDataAlreadyExistsException
     {
         NodeConnectionData nodeConData = null;
 

@@ -119,7 +119,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, SQLException, DrbdDataAlreadyExistsException
     {
         ResourceConnectionData resConData = null;
 

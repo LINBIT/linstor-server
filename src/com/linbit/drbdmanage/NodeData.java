@@ -147,7 +147,7 @@ public class NodeData extends BaseTransactionObject implements Node
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException
+        throws SQLException, AccessDeniedException, DrbdDataAlreadyExistsException
     {
         NodeData nodeData = null;
 

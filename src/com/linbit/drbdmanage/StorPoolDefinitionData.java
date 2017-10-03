@@ -76,7 +76,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws AccessDeniedException, SQLException
+        throws AccessDeniedException, SQLException, DrbdDataAlreadyExistsException
     {
         StorPoolDefinitionData storPoolDfn = null;
 
