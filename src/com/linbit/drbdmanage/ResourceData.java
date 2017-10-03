@@ -147,7 +147,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
         NodeId nodeId,
         RscFlags[] initFlags,
         TransactionMgr transMgr,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException
     {
@@ -157,6 +158,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
         ResourceDataDatabaseDriver driver = DrbdManage.getResourceDataDatabaseDriver();
 
         resData = driver.load(node, resDfn.getName(), false, transMgr);
+
+        if (failIfExists && resData != null)
+        {
+            throw new DrbdDataAlreadyExistsException("The Resource already exists");
+        }
 
         if (resData == null && createIfNotExists)
         {

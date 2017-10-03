@@ -91,7 +91,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         DmIpAddress addr,
         TransactionMgr transMgr,
         NetInterfaceType netType,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException
     {
@@ -101,6 +102,11 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         NetInterfaceDataDatabaseDriver driver = DrbdManage.getNetInterfaceDataDatabaseDriver();
 
         netData = driver.load(node, name, false, transMgr);
+
+        if (failIfExists && netData != null)
+        {
+            throw new DrbdDataAlreadyExistsException("The NetInterface already exists");
+        }
 
         if (netData == null && createIfNotExists)
         {

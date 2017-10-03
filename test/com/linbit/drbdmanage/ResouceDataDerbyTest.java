@@ -59,8 +59,8 @@ public class ResouceDataDerbyTest extends DerbyBase
 
         transMgr = new TransactionMgr(getConnection());
 
-        node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true);
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true);
+        node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true, false);
 
         resUuid = randomUUID();
         objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPath(nodeName, resName), true, transMgr);
@@ -101,7 +101,8 @@ public class ResouceDataDerbyTest extends DerbyBase
             nodeId,
             new RscFlags[] { RscFlags.REMOVE },
             transMgr,
-            true
+            true,
+            false
         );
 
         transMgr.commit();
@@ -148,6 +149,7 @@ public class ResouceDataDerbyTest extends DerbyBase
             nodeId,
             null,
             transMgr,
+            false,
             false
         );
         assertNull(loadedRes);
@@ -161,6 +163,7 @@ public class ResouceDataDerbyTest extends DerbyBase
             nodeId,
             null,
             transMgr,
+            false,
             false
         );
 
@@ -204,7 +207,8 @@ public class ResouceDataDerbyTest extends DerbyBase
             nodeId,
             null,
             transMgr,
-            true
+            true,
+            false
         );
 
         // no clearCaches
@@ -285,7 +289,8 @@ public class ResouceDataDerbyTest extends DerbyBase
             nodeId,
             new RscFlags[] { RscFlags.CLEAN },
             null,
-            true
+            true,
+            false
         );
 
         assertEquals(node, resData.getAssignedNode());
@@ -315,6 +320,7 @@ public class ResouceDataDerbyTest extends DerbyBase
             nodeId,
             new RscFlags[] { RscFlags.CLEAN },
             null,
+            false,
             false
         );
 
@@ -325,5 +331,13 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
         stmt.close();
+    }
+
+    @Test (expected = DrbdDataAlreadyExistsException.class)
+    public void testAlreadyExists() throws Exception
+    {
+        driver.create(res, transMgr);
+
+        ResourceData.getInstance(sysCtx, resDfn, node, nodeId, null, transMgr, false, true);
     }
 }

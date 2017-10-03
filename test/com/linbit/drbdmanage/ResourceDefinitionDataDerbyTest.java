@@ -75,7 +75,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             null,
             null,
             transMgr,
-            true
+            true,
+            false
         );
         resDfn = new ResourceDefinitionData(
             resDfnUuid,
@@ -116,7 +117,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             new RscDfnFlags[] { RscDfnFlags.REMOVE },
             transMgr,
-            true
+            true,
+            false
         );
 
         transMgr.commit();
@@ -148,7 +150,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             node1Id,
             null,
             transMgr,
-            true
+            true,
+            false
         );
 
         ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
@@ -167,6 +170,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             new RscDfnFlags[] { RscDfnFlags.REMOVE },
             transMgr,
+            false,
             false
         );
 
@@ -181,7 +185,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             node1Id,
             null,
             transMgr,
-            true
+            true,
+            false
         );
 
         loadedResDfn = ResourceDefinitionData.getInstance(
@@ -189,6 +194,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             new RscDfnFlags[] { RscDfnFlags.REMOVE },
             transMgr,
+            false,
             false
         );
 
@@ -206,7 +212,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             null,
             transMgr,
-            true
+            true,
+            false
         );
 
         // no clearCaches
@@ -277,7 +284,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(resDfn, transMgr);
         NodeName nodeName = new NodeName("TestNodeName");
-        Node node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true);
+        Node node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true, false);
         NodeId nodeId = new NodeId(13);
         ResourceData res = ResourceData.getInstance(
             sysCtx,
@@ -286,7 +293,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             nodeId,
             new RscFlags[] { RscFlags.CLEAN },
             transMgr,
-            true
+            true,
+            false
         );
 
         ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
@@ -310,7 +318,17 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         VolumeNumber volNr = new VolumeNumber(13);
         MinorNumber minor = new MinorNumber(42);
         long volSize = 5_000;
-        VolumeDefinitionData volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true);
+        VolumeDefinitionData volDfn = VolumeDefinitionData.getInstance(
+            sysCtx,
+            resDfn,
+            volNr,
+            minor,
+            volSize,
+            null,
+            transMgr,
+            true,
+            false
+        );
 
         ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
         VolumeDefinition loadedVolDfn = loadedResDfn.getVolumeDfn(sysCtx, volNr);
@@ -362,7 +380,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             new RscDfnFlags[] { RscDfnFlags.REMOVE },
             null,
-            true
+            true,
+            false
         );
 
         assertNotNull(instance);
@@ -386,6 +405,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             new RscDfnFlags[] { RscDfnFlags.REMOVE },
             null,
+            false,
             false
         );
 
@@ -424,7 +444,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName2,
             null,
             transMgr,
-            true
+            true,
+            false
         );
 
         clearCaches();
@@ -435,5 +456,13 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull(resDfnMap.get(resName));
         assertNotNull(resDfnMap.get(resName2));
         assertNotEquals(resDfnMap.get(resName2), resDfnMap.get(resName));
+    }
+
+    @Test (expected = DrbdDataAlreadyExistsException.class)
+    public void testAlreadyExists() throws Exception
+    {
+        driver.create(resDfn, transMgr);
+
+        ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, false, true);
     }
 }

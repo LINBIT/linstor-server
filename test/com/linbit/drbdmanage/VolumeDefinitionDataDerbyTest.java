@@ -54,7 +54,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(getConnection());
 
         resName = new ResourceName("TestResource");
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true, false);
 
         uuid = randomUUID();
         volNr = new VolumeNumber(13);
@@ -117,7 +117,8 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volSize,
             new VlmDfnFlags[] { VlmDfnFlags.REMOVE },
             transMgr,
-            true
+            true,
+            false
         );
 
         resultSet = stmt.executeQuery();
@@ -162,6 +163,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volSize,
             null,
             transMgr,
+            false,
             false
         );
 
@@ -389,7 +391,8 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volSize,
             new VlmDfnFlags[] { VlmDfnFlags.REMOVE },
             null,
-            true
+            true,
+            false
         );
 
         assertNotNull(volDfnSat);
@@ -421,6 +424,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volSize,
             new VlmDfnFlags[] { VlmDfnFlags.REMOVE },
             null,
+            false,
             false
         );
 
@@ -433,5 +437,13 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         resultSet.close();
         stmt.close();
+    }
+
+    @Test (expected = DrbdDataAlreadyExistsException.class)
+    public void testAlreadyExists() throws Exception
+    {
+        driver.create(volDfn, transMgr);
+
+        VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, false, true);
     }
 }

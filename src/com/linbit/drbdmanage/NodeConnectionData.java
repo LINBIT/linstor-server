@@ -97,11 +97,12 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         Node node1,
         Node node2,
         TransactionMgr transMgr,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws AccessDeniedException, SQLException
     {
-        NodeConnectionData nodeConDfnData = null;
+        NodeConnectionData nodeConData = null;
 
         Node source;
         Node target;
@@ -120,30 +121,35 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         target.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         NodeConnectionDataDatabaseDriver dbDriver = DrbdManage.getNodeConnectionDatabaseDriver();
-        nodeConDfnData = dbDriver.load(
+        nodeConData = dbDriver.load(
             source,
             target,
             false,
             transMgr
         );
 
-        if (nodeConDfnData == null && createIfNotExists)
+        if (failIfExists && nodeConData != null)
         {
-            nodeConDfnData = new NodeConnectionData(
+            throw new DrbdDataAlreadyExistsException("The NodeConnection already exists");
+        }
+
+        if (nodeConData == null && createIfNotExists)
+        {
+            nodeConData = new NodeConnectionData(
                 source,
                 target,
                 transMgr
             );
-            dbDriver.create(nodeConDfnData, transMgr);
+            dbDriver.create(nodeConData, transMgr);
         }
-        if (nodeConDfnData != null)
+        if (nodeConData != null)
         {
-            source.setNodeConnection(accCtx, nodeConDfnData);
-            target.setNodeConnection(accCtx, nodeConDfnData);
+            source.setNodeConnection(accCtx, nodeConData);
+            target.setNodeConnection(accCtx, nodeConData);
 
-            nodeConDfnData.initialized();
+            nodeConData.initialized();
         }
-        return nodeConDfnData;
+        return nodeConData;
     }
 
     @Override

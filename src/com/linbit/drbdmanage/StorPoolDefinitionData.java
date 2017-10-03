@@ -73,7 +73,8 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         AccessContext accCtx,
         StorPoolName nameRef,
         TransactionMgr transMgr,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws AccessDeniedException, SQLException
     {
@@ -81,6 +82,11 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
 
         StorPoolDefinitionDataDatabaseDriver dbDriver = DrbdManage.getStorPoolDefinitionDataDriver();
         storPoolDfn = dbDriver.load(nameRef, false, transMgr);
+
+        if (failIfExists && storPoolDfn != null)
+        {
+            throw new DrbdDataAlreadyExistsException("The StorPoolDefinition already exists");
+        }
 
         if (storPoolDfn == null && createIfNotExists)
         {

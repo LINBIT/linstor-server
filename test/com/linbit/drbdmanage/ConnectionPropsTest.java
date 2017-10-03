@@ -72,22 +72,22 @@ public class ConnectionPropsTest extends DerbyBase
 
         transMgr = new TransactionMgr(getConnection());
 
-        node1 = NodeData.getInstance(sysCtx, nodeName1, NodeType.CONTROLLER, null, transMgr, true);
-        node2 = NodeData.getInstance(sysCtx, nodeName2, NodeType.CONTROLLER, null, transMgr, true);
+        node1 = NodeData.getInstance(sysCtx, nodeName1, NodeType.CONTROLLER, null, transMgr, true, false);
+        node2 = NodeData.getInstance(sysCtx, nodeName2, NodeType.CONTROLLER, null, transMgr, true, false);
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true, false);
 
-        res1 = ResourceData.getInstance(sysCtx, resDfn, node1, nodeId1, null, transMgr, true);
-        res2 = ResourceData.getInstance(sysCtx, resDfn, node2, nodeId2, null, transMgr, true);
+        res1 = ResourceData.getInstance(sysCtx, resDfn, node1, nodeId1, null, transMgr, true, false);
+        res2 = ResourceData.getInstance(sysCtx, resDfn, node2, nodeId2, null, transMgr, true, false);
 
-        volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true);
+        volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true, false);
 
-        vol1 = VolumeData.getInstance(sysCtx, res1, volDfn, blockDev1, metaDisk1, null, transMgr, true);
-        vol2 = VolumeData.getInstance(sysCtx, res1, volDfn, blockDev2, metaDisk2, null, transMgr, true);
+        vol1 = VolumeData.getInstance(sysCtx, res1, volDfn, blockDev1, metaDisk1, null, transMgr, true, false);
+        vol2 = VolumeData.getInstance(sysCtx, res1, volDfn, blockDev2, metaDisk2, null, transMgr, true, false);
 
-        nodeCon = NodeConnectionData.getInstance(sysCtx, node1, node2, transMgr, true);
-        resCon = ResourceConnectionData.getInstance(sysCtx, res1, res2, transMgr, true);
-        volCon = VolumeConnectionData.getInstance(sysCtx, vol1, vol2, transMgr, true);
+        nodeCon = NodeConnectionData.getInstance(sysCtx, node1, node2, transMgr, true, false);
+        resCon = ResourceConnectionData.getInstance(sysCtx, res1, res2, transMgr, true, false);
+        volCon = VolumeConnectionData.getInstance(sysCtx, vol1, vol2, transMgr, true, false);
 
         nodeConProps = nodeCon.getProps(sysCtx);
         resConProps = resCon.getProps(sysCtx);

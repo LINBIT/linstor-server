@@ -173,20 +173,26 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         long volSize,
         VlmDfnFlags[] initFlags,
         TransactionMgr transMgr,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException, MdException
     {
         resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
-        VolumeDefinitionData volDfn = null;
+        VolumeDefinitionData volDfnData = null;
 
         VolumeDefinitionDataDatabaseDriver driver = DrbdManage.getVolumeDefinitionDataDatabaseDriver();
 
-        volDfn = driver.load(resDfn, volNr, false, transMgr);
+        volDfnData = driver.load(resDfn, volNr, false, transMgr);
 
-        if (volDfn == null && createIfNotExists)
+        if (failIfExists && volDfnData != null)
         {
-            volDfn = new VolumeDefinitionData(
+            throw new DrbdDataAlreadyExistsException("The VolumeDefinition already exists");
+        }
+
+        if (volDfnData == null && createIfNotExists)
+        {
+            volDfnData = new VolumeDefinitionData(
                 accCtx,
                 resDfn,
                 volNr,
@@ -195,17 +201,17 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
                 StateFlagsBits.getMask(initFlags),
                 transMgr
             );
-            driver.create(volDfn, transMgr);
+            driver.create(volDfnData, transMgr);
         }
 
-        if (volDfn != null)
+        if (volDfnData != null)
         {
-            ((ResourceDefinitionData) resDfn).putVolumeDefinition(accCtx, volDfn);
-            volDfn.initialized();
+            ((ResourceDefinitionData) resDfn).putVolumeDefinition(accCtx, volDfnData);
+            volDfnData.initialized();
         }
 
 
-        return volDfn;
+        return volDfnData;
     }
 
     @Override

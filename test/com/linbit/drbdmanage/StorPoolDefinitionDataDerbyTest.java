@@ -64,7 +64,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        StorPoolDefinitionData spd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, true);
+        StorPoolDefinitionData spd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, true, false);
 
         assertNotNull(spd);
         assertNotNull(spd.getUuid());
@@ -102,7 +102,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(spdd, transMgr);
 
-        StorPoolDefinitionData loadedSpdd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, false);
+        StorPoolDefinitionData loadedSpdd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, false, false);
         assertNotNull(loadedSpdd);
         assertEquals(uuid, loadedSpdd.getUuid());
         assertEquals(spName, loadedSpdd.getName());
@@ -125,7 +125,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         driver.create(spdd, transMgr);
 
         // no clearCaches
-        assertEquals(spdd, StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, false));
+        assertEquals(spdd, StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, false, false));
     }
 
     @Test
@@ -157,7 +157,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     {
         satelliteMode();
 
-        StorPoolDefinitionData spddSat = StorPoolDefinitionData.getInstance(sysCtx, spName, null, true);
+        StorPoolDefinitionData spddSat = StorPoolDefinitionData.getInstance(sysCtx, spName, null, true, false);
 
         assertNotNull(spddSat);
         assertNotNull(spddSat.getUuid());
@@ -178,7 +178,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     {
         satelliteMode();
 
-        StorPoolDefinitionData spddSat = StorPoolDefinitionData.getInstance(sysCtx, spName, null, false);
+        StorPoolDefinitionData spddSat = StorPoolDefinitionData.getInstance(sysCtx, spName, null, false, false);
 
         assertNull(spddSat);
 
@@ -210,7 +210,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(spdd, transMgr);
         StorPoolName spName2 = new StorPoolName("StorPoolName2");
-        StorPoolDefinitionData.getInstance(sysCtx, spName2, transMgr, true);
+        StorPoolDefinitionData.getInstance(sysCtx, spName2, transMgr, true, false);
 
         driver.loadAll(transMgr);
 
@@ -218,5 +218,13 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         assertNotNull(storPoolDfnMap.get(spName));
         assertNotNull(storPoolDfnMap.get(spName2));
         assertNotEquals(storPoolDfnMap.get(spName2), storPoolDfnMap.get(spName));
+    }
+
+    @Test (expected = DrbdDataAlreadyExistsException.class)
+    public void testAlreadyExists() throws Exception
+    {
+        driver.create(spdd, transMgr);
+
+        StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, false, true);
     }
 }

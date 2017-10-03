@@ -90,7 +90,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDefinition storPoolDefRef,
         String storDriverSimpleClassNameRef,
         TransactionMgr transMgr,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException, ClassNotFoundException, InstantiationException, IllegalAccessException
     {
@@ -99,6 +100,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDataDatabaseDriver driver = DrbdManage.getStorPoolDataDatabaseDriver();
 
         storPoolData = driver.load(nodeRef, storPoolDefRef, false, transMgr);
+
+        if (failIfExists && storPoolData != null)
+        {
+            throw new DrbdDataAlreadyExistsException("The StorPool already exists");
+        }
+
         if (storPoolData == null && createIfNotExists)
         {
             storPoolData = new StorPoolData(

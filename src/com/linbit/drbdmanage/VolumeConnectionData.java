@@ -124,7 +124,8 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         Volume sourceVolume,
         Volume targetVolume,
         TransactionMgr transMgr,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws AccessDeniedException, SQLException
     {
@@ -155,6 +156,11 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
             false,
             transMgr
         );
+
+        if (failIfExists && volConData != null)
+        {
+            throw new DrbdDataAlreadyExistsException("The VolumeConnection already exists");
+        }
 
         if (volConData == null && createIfNotExists)
         {

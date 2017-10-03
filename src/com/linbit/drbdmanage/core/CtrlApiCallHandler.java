@@ -91,6 +91,7 @@ public class CtrlApiCallHandler
                 type,
                 flags,
                 transMgr,
+                true,
                 true
             );
 
@@ -265,6 +266,7 @@ public class CtrlApiCallHandler
                 new ResourceName(resourceName), // invalidNameExc1
                 null, // init flags
                 transMgr,
+                true,
                 true
             );
 
@@ -293,6 +295,7 @@ public class CtrlApiCallHandler
                     size,
                     null, // init flags
                     transMgr,
+                    true,
                     true
                 );
             }

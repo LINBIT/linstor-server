@@ -120,7 +120,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ResourceName resName,
         RscDfnFlags[] flags,
         TransactionMgr transMgr,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException
     {
@@ -128,6 +129,11 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
         ResourceDefinitionData resDfn = null;
         resDfn = driver.load(resName, false, transMgr);
+
+        if (failIfExists && resDfn != null)
+        {
+            throw new DrbdDataAlreadyExistsException("The ResourceDefinition already exists");
+        }
 
         if (resDfn == null && createIfNotExists)
         {

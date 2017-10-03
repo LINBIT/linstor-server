@@ -64,15 +64,15 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
 
         uuid = randomUUID();
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true);
-        nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true);
-        nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true, false);
+        nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
+        nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
 
         nodeIdSrc = new NodeId(13);
         nodeIdDst = new NodeId(14);
 
-        resSrc = ResourceData.getInstance(sysCtx, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true);
-        resDst = ResourceData.getInstance(sysCtx, resDfn, nodeDst, nodeIdDst, null, transMgr, true);
+        resSrc = ResourceData.getInstance(sysCtx, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true, false);
+        resDst = ResourceData.getInstance(sysCtx, resDfn, nodeDst, nodeIdDst, null, transMgr, true, false);
 
         resCon = new ResourceConnectionData(uuid, resSrc, resDst, transMgr);
         driver = (ResourceConnectionDataDerbyDriver) DrbdManage.getResourceConnectionDatabaseDriver();
@@ -89,7 +89,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        ResourceConnectionData.getInstance(sysCtx, resSrc, resDst, transMgr, true);
+        ResourceConnectionData.getInstance(sysCtx, resSrc, resDst, transMgr, true, false);
 
         checkDbPersist(false);
     }
@@ -131,6 +131,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
             resSrc,
             resDst,
             transMgr,
+            false,
             false
         );
 
@@ -145,7 +146,8 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
             resSrc,
             resDst,
             transMgr,
-            true
+            true,
+            false
         );
 
         // no clear-cache
@@ -184,7 +186,8 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
             resSrc,
             resDst,
             null,
-            true
+            true,
+            false
         );
 
         checkLoadedConDfn(satelliteConDfn, false);
@@ -206,6 +209,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
             resSrc,
             resDst,
             null,
+            false,
             false
         );
 
@@ -253,5 +257,13 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         assertEquals(sourceName, sourceResource.getAssignedNode().getName());
         assertEquals(targetName, targetResource.getAssignedNode().getName());
         assertEquals(sourceResource.getDefinition().getName(), targetResource.getDefinition().getName());
+    }
+
+    @Test (expected = DrbdDataAlreadyExistsException.class)
+    public void testAlreadyExists() throws Exception
+    {
+        driver.create(resCon, transMgr);
+
+        ResourceConnectionData.getInstance(sysCtx, resSrc, resDst, transMgr, false, true);
     }
 }

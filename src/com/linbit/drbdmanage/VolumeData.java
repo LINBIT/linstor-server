@@ -138,26 +138,32 @@ public class VolumeData extends BaseTransactionObject implements Volume
         String metaDiskPathRef,
         VlmFlags[] flags,
         TransactionMgr transMgr,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException
     {
         resRef.getObjProt().requireAccess(accCtx, AccessType.USE);
-        VolumeData vol = null;
+        VolumeData volData = null;
 
         VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver();
-        vol = driver.load(
+        volData = driver.load(
             resRef,
             volDfn,
             false,
             transMgr
         );
 
-        if (vol == null && createIfNotExists)
+        if (failIfExists && volData != null)
+        {
+            throw new DrbdDataAlreadyExistsException("The Volume already exists");
+        }
+
+        if (volData == null && createIfNotExists)
         {
             long initFlags = StateFlagsBits.getMask(flags);
 
-            vol = new VolumeData(
+            volData = new VolumeData(
                 resRef,
                 volDfn,
                 blockDevicePathRef,
@@ -166,14 +172,14 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 accCtx,
                 transMgr
             );
-            driver.create(vol, transMgr);
+            driver.create(volData, transMgr);
         }
-        if (vol != null)
+        if (volData != null)
         {
-            ((ResourceData) resRef).putVolume(accCtx, vol);
-            vol.initialized();
+            ((ResourceData) resRef).putVolume(accCtx, volData);
+            volData.initialized();
         }
-        return vol;
+        return volData;
     }
 
 

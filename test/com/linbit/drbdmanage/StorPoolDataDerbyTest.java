@@ -50,8 +50,8 @@ public class StorPoolDataDerbyTest extends DerbyBase
 
         transMgr = new TransactionMgr(getConnection());
 
-        node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true);
-        spdd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, true);
+        node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true, false);
+        spdd = StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, true, false);
 
         driver = new StorPoolDataDerbyDriver(sysCtx, errorReporter);
 
@@ -86,7 +86,8 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
-            true // create
+            true, // create
+            false
         );
         transMgr.commit();
 
@@ -151,7 +152,8 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
-            true
+            true,
+            false
         );
 
         // no clearCaches
@@ -168,6 +170,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
+            false,
             false
         );
 
@@ -180,6 +183,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
+            false,
             false
         );
 
@@ -200,7 +204,8 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
-            true // create
+            true, // create
+            false
         );
         transMgr.commit();
 
@@ -254,7 +259,8 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             null,
-            true
+            true,
+            false
         );
 
         assertNotNull(storPoolData);
@@ -285,6 +291,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             null,
+            false,
             false
         );
 
@@ -297,4 +304,11 @@ public class StorPoolDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
+    @Test (expected = DrbdDataAlreadyExistsException.class)
+    public void testAlreadyExists() throws Exception
+    {
+        driver.create(storPool, transMgr);
+
+        StorPoolData.getInstance(sysCtx, node, spdd, LvmDriver.class.getSimpleName(), transMgr, false, true);
+    }
 }

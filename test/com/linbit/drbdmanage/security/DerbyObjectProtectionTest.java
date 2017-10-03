@@ -22,6 +22,10 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
     private static final String ACL_SELECT =
         "SELECT * FROM " + TBL_SEC_ACL_MAP;
+    private static final String ACL_SELECT_BY_OBJPATH_AND_ROLE =
+        "SELECT * FROM " + TBL_SEC_ACL_MAP +
+        " WHERE " + OBJECT_PATH + " = ? AND " +
+                    ROLE_NAME   + " = ?";
     private static final String ACL_INSERT =
         "INSERT INTO " + TBL_SEC_ACL_MAP + " VALUES (?, ?, ?)";
 
@@ -163,7 +167,9 @@ public class DerbyObjectProtectionTest extends DerbyBase
         objProt.addAclEntry(sysCtx, testRole, AccessType.CHANGE);
         transMgr.commit();
 
-        stmt = con.prepareStatement(ACL_SELECT);
+        stmt = con.prepareStatement(ACL_SELECT_BY_OBJPATH_AND_ROLE);
+        stmt.setString(1, objPath);
+        stmt.setString(2, testRole.name.value);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue("Database did not persist acl entry", resultSet.next());

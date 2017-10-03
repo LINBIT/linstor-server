@@ -34,7 +34,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     private NodeData nodeSrc;
     private NodeData nodeDst;
 
-    private NodeConnectionData conDfn;
+    private NodeConnectionData nodeCon;
     private NodeConnectionDataDerbyDriver driver;
 
     public NodeConnectionDataDerbyTest() throws InvalidNameException
@@ -53,17 +53,17 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
 
         uuid = randomUUID();
 
-        nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true);
-        nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true);
+        nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
+        nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
 
-        conDfn = new NodeConnectionData(uuid, nodeSrc, nodeDst, transMgr);
+        nodeCon = new NodeConnectionData(uuid, nodeSrc, nodeDst, transMgr);
         driver = (NodeConnectionDataDerbyDriver) DrbdManage.getNodeConnectionDatabaseDriver();
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(nodeCon, transMgr);
 
         checkDbPersist(true);
     }
@@ -71,7 +71,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        NodeConnectionData.getInstance(sysCtx, nodeSrc, nodeDst, transMgr, true);
+        NodeConnectionData.getInstance(sysCtx, nodeSrc, nodeDst, transMgr, true, false);
 
         checkDbPersist(false);
     }
@@ -79,7 +79,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(nodeCon, transMgr);
 
         NodeConnectionData loadedConDfn = driver.load(nodeSrc , nodeDst, true, transMgr);
 
@@ -89,7 +89,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(nodeCon, transMgr);
 
         List<NodeConnectionData> cons = driver.loadAllByNode(nodeSrc, transMgr);
 
@@ -106,13 +106,14 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(nodeCon, transMgr);
 
         NodeConnectionData loadedConDfn = NodeConnectionData.getInstance(
             sysCtx,
             nodeSrc,
             nodeDst,
             transMgr,
+            false,
             false
         );
 
@@ -127,7 +128,8 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
             nodeSrc,
             nodeDst,
             transMgr,
-            true
+            true,
+            false
         );
 
         // no clear-cache
@@ -138,7 +140,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testDelete() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(nodeCon, transMgr);
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
@@ -147,7 +149,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.delete(conDfn, transMgr);
+        driver.delete(nodeCon, transMgr);
 
         resultSet = stmt.executeQuery();
 
@@ -166,7 +168,8 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
             nodeSrc,
             nodeDst,
             null,
-            true
+            true,
+            false
         );
 
         checkLoadedConDfn(satelliteConDfn, false);
@@ -188,6 +191,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
             nodeSrc,
             nodeDst,
             null,
+            false,
             false
         );
 
@@ -200,6 +204,15 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
         resultSet.close();
         stmt.close();
     }
+
+    @Test (expected = DrbdDataAlreadyExistsException.class)
+    public void testAlreadyExists() throws Exception
+    {
+        driver.create(nodeCon, transMgr);
+
+        NodeConnectionData.getInstance(sysCtx, nodeSrc, nodeDst, transMgr, false, true);
+    }
+
 
     private void checkDbPersist(boolean checkUuid) throws SQLException
     {

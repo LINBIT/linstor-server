@@ -117,7 +117,8 @@ public class NodeDataDerbyTest extends DerbyBase
             null,
             null,
             transMgr,
-            true
+            true,
+            false
         );
         transMgr.commit();
 
@@ -176,7 +177,7 @@ public class NodeDataDerbyTest extends DerbyBase
         insertNode(transMgr, uuid, nodeName, 0, NodeType.AUXILIARY);
         transMgr.commit();
 
-        NodeData loaded = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false);
+        NodeData loaded = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false, false);
 
         assertNotNull(loaded);
         loaded.setConnection(transMgr);
@@ -213,13 +214,13 @@ public class NodeDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false);
+        NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false, false);
         assertNull(loadedNode);
 
         insertNode(transMgr, uuid, nodeName, 0, NodeType.AUXILIARY);
         transMgr.commit();
 
-        loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false);
+        loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false, false);
 
         assertNotNull(loadedNode);
         assertEquals(nodeName, loadedNode.getName()); // NodeName class implements equals
@@ -403,8 +404,8 @@ public class NodeDataDerbyTest extends DerbyBase
 
         clearCaches();
 
-        NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false);
-        NodeData loadedNode2 = NodeData.getInstance(sysCtx, nodeName2, null, null, transMgr, false);
+        NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false, false);
+        NodeData loadedNode2 = NodeData.getInstance(sysCtx, nodeName2, null, null, transMgr, false, false);
 
         assertNotNull(loadedNode);
 
@@ -613,7 +614,8 @@ public class NodeDataDerbyTest extends DerbyBase
             null,
             null,
             null,
-            true
+            true,
+            false
         );
 
         assertNotNull(nodeData);
@@ -638,6 +640,7 @@ public class NodeDataDerbyTest extends DerbyBase
             null,
             null,
             null,
+            false,
             false
         );
 
@@ -675,7 +678,8 @@ public class NodeDataDerbyTest extends DerbyBase
             NodeType.CONTROLLER,
             null,
             transMgr,
-            true
+            true,
+            false
         );
 
         clearCaches();
@@ -687,4 +691,13 @@ public class NodeDataDerbyTest extends DerbyBase
         assertNotNull(nodesMap.get(nodeName2));
         assertNotEquals(nodesMap.get(nodeName2), nodesMap.get(nodeName));
     }
+
+    @Test (expected = DrbdDataAlreadyExistsException.class)
+    public void testAlreadyExists() throws Exception
+    {
+        dbDriver.create(node, transMgr);
+
+        NodeData.getInstance(sysCtx, nodeName, initialType, null, transMgr, false, true);
+    }
+
 }

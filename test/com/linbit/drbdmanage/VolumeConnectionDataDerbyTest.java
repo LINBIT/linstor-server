@@ -53,7 +53,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     private VolumeData volSrc;
     private VolumeData volDst;
 
-    private VolumeConnectionData conDfn;
+    private VolumeConnectionData volCon;
     private VolumeConnectionDataDerbyDriver driver;
 
     private NodeId nodeIdSrc;
@@ -85,29 +85,29 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
 
         uuid = randomUUID();
 
-        nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true);
-        nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true);
+        nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
+        nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true);
-        volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true, false);
+        volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true, false);
 
         nodeIdSrc = new NodeId(13);
         nodeIdDst = new NodeId(14);
 
-        resSrc = ResourceData.getInstance(sysCtx, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true);
-        resDst = ResourceData.getInstance(sysCtx, resDfn, nodeDst, nodeIdDst, null, transMgr, true);
+        resSrc = ResourceData.getInstance(sysCtx, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true, false);
+        resDst = ResourceData.getInstance(sysCtx, resDfn, nodeDst, nodeIdDst, null, transMgr, true, false);
 
-        volSrc = VolumeData.getInstance(sysCtx, resSrc, volDfn, volBlockDevSrc, volMetaDiskPathSrc, null, transMgr, true);
-        volDst = VolumeData.getInstance(sysCtx, resDst, volDfn, volBlockDevDst, volMetaDiskPathDst, null, transMgr, true);
+        volSrc = VolumeData.getInstance(sysCtx, resSrc, volDfn, volBlockDevSrc, volMetaDiskPathSrc, null, transMgr, true, false);
+        volDst = VolumeData.getInstance(sysCtx, resDst, volDfn, volBlockDevDst, volMetaDiskPathDst, null, transMgr, true, false);
 
-        conDfn = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
+        volCon = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
         driver = (VolumeConnectionDataDerbyDriver) DrbdManage.getVolumeConnectionDatabaseDriver();
     }
 
     @Test
     public void testPersist() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(volCon, transMgr);
 
         checkDbPersist(true);
     }
@@ -115,7 +115,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        VolumeConnectionData.getInstance(sysCtx, volSrc, volDst, transMgr, true);
+        VolumeConnectionData.getInstance(sysCtx, volSrc, volDst, transMgr, true, false);
 
         checkDbPersist(false);
     }
@@ -123,7 +123,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(volCon, transMgr);
 
         VolumeConnectionData loadedConDfn = driver.load(volSrc , volDst, true, transMgr);
 
@@ -133,7 +133,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(volCon, transMgr);
 
         List<VolumeConnectionData> cons = driver.loadAllByVolume(volSrc, transMgr);
 
@@ -150,13 +150,14 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(volCon, transMgr);
 
         VolumeConnectionData loadedConDfn = VolumeConnectionData.getInstance(
             sysCtx,
             volSrc,
             volDst,
             transMgr,
+            false,
             false
         );
 
@@ -171,7 +172,8 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
             volSrc,
             volDst,
             transMgr,
-            true
+            true,
+            false
         );
 
         // no clear-cache
@@ -182,7 +184,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testDelete() throws Exception
     {
-        driver.create(conDfn, transMgr);
+        driver.create(volCon, transMgr);
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
@@ -191,7 +193,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.delete(conDfn, transMgr);
+        driver.delete(volCon, transMgr);
 
         resultSet = stmt.executeQuery();
 
@@ -210,7 +212,8 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
             volSrc,
             volDst,
             null,
-            true
+            true,
+            false
         );
 
         checkLoadedConDfn(satelliteConDfn, false);
@@ -232,6 +235,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
             volSrc,
             volDst,
             null,
+            false,
             false
         );
 
@@ -280,5 +284,13 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         assertEquals(sourceVolume.getResourceDefinition(), targetVolume.getResourceDefinition());
         assertEquals(volNr, sourceVolume.getVolumeDefinition().getVolumeNumber(sysCtx));
         assertEquals(sourceVolume.getVolumeDefinition(), targetVolume.getVolumeDefinition());
+    }
+
+    @Test (expected = DrbdDataAlreadyExistsException.class)
+    public void testAlreadyExists() throws Exception
+    {
+        driver.create(volCon, transMgr);
+
+        VolumeConnectionData.getInstance(sysCtx, volSrc, volDst, transMgr, false, true);
     }
 }

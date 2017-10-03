@@ -144,7 +144,8 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeType type,
         NodeFlag[] flags,
         TransactionMgr transMgr,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws SQLException, AccessDeniedException
     {
@@ -152,6 +153,11 @@ public class NodeData extends BaseTransactionObject implements Node
 
         NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver();
         nodeData = dbDriver.load(nameRef, false, transMgr);
+
+        if (failIfExists && nodeData != null)
+        {
+            throw new DrbdDataAlreadyExistsException("The Node already exists");
+        }
 
         if (nodeData == null && createIfNotExists)
         {

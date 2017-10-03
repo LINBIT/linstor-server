@@ -116,11 +116,12 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         Resource sourceResource,
         Resource targetResource,
         TransactionMgr transMgr,
-        boolean createIfNotExists
+        boolean createIfNotExists,
+        boolean failIfExists
     )
         throws AccessDeniedException, SQLException
     {
-        ResourceConnectionData resConDfnData = null;
+        ResourceConnectionData resConData = null;
 
         Resource source;
         Resource target;
@@ -143,30 +144,35 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
         ResourceConnectionDataDatabaseDriver dbDriver = DrbdManage.getResourceConnectionDatabaseDriver();
 
-        resConDfnData = dbDriver.load(
+        resConData = dbDriver.load(
             source,
             target,
             false,
             transMgr
         );
 
-        if (resConDfnData == null && createIfNotExists)
+        if (failIfExists && resConData != null)
         {
-            resConDfnData = new ResourceConnectionData(
+            throw new DrbdDataAlreadyExistsException("The ResourceConnection already exists");
+        }
+
+        if (resConData == null && createIfNotExists)
+        {
+            resConData = new ResourceConnectionData(
                 source,
                 target,
                 transMgr
             );
-            dbDriver.create(resConDfnData, transMgr);
+            dbDriver.create(resConData, transMgr);
         }
-        if (resConDfnData != null)
+        if (resConData != null)
         {
-            sourceResource.setResourceConnection(accCtx, resConDfnData);
-            targetResource.setResourceConnection(accCtx, resConDfnData);
+            sourceResource.setResourceConnection(accCtx, resConData);
+            targetResource.setResourceConnection(accCtx, resConData);
 
-            resConDfnData.initialized();
+            resConData.initialized();
         }
-        return resConDfnData;
+        return resConData;
     }
 
     @Override

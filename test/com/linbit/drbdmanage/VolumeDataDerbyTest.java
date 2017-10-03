@@ -72,7 +72,8 @@ public class VolumeDataDerbyTest extends DerbyBase
             null,
             null,
             transMgr,
-            true
+            true,
+            false
         );
 
         resName = new ResourceName("TestResName");
@@ -81,7 +82,8 @@ public class VolumeDataDerbyTest extends DerbyBase
             resName,
             null,
             transMgr,
-            true
+            true,
+            false
         );
 
         nodeId = new NodeId(7);
@@ -92,7 +94,8 @@ public class VolumeDataDerbyTest extends DerbyBase
             nodeId,
             null,
             transMgr,
-            true
+            true,
+            false
         );
 
         volNr = new VolumeNumber(13);
@@ -106,8 +109,9 @@ public class VolumeDataDerbyTest extends DerbyBase
             volSize,
             null,
             transMgr,
-            true
-            );
+            true,
+            false
+        );
 
         uuid = randomUUID();
         blockDevicePath = "/dev/null";
@@ -160,7 +164,8 @@ public class VolumeDataDerbyTest extends DerbyBase
             metaDiskPath,
             new VlmFlags[] { VlmFlags.CLEAN },
             transMgr,
-            true
+            true,
+            false
         );
 
         assertNotNull(volData);
@@ -231,6 +236,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             metaDiskPath,
             null, // flags
             transMgr,
+            false,
             false
         );
         checkLoaded(loadedVol, uuid);
@@ -247,7 +253,8 @@ public class VolumeDataDerbyTest extends DerbyBase
             metaDiskPath,
             null,
             transMgr,
-            true
+            true,
+            false
         );
 
         // no clearCaches
@@ -348,7 +355,8 @@ public class VolumeDataDerbyTest extends DerbyBase
             metaDiskPath,
             new VlmFlags[] { VlmFlags.CLEAN },
             null, // transMgr
-            true
+            true,
+            false
         );
 
         checkLoaded(volData, null);
@@ -374,6 +382,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             metaDiskPath,
             new VlmFlags[] { VlmFlags.CLEAN },
             null, // transMgr
+            false,
             false
         );
 
@@ -410,5 +419,13 @@ public class VolumeDataDerbyTest extends DerbyBase
         assertEquals(volDfn.getVolumeNumber(sysCtx), loadedVol.getVolumeDefinition().getVolumeNumber(sysCtx));
         assertEquals(volDfn.getVolumeSize(sysCtx), loadedVol.getVolumeDefinition().getVolumeSize(sysCtx));
         assertEquals(volDfn.getUuid(), loadedVol.getVolumeDefinition().getUuid());
+    }
+
+    @Test (expected = DrbdDataAlreadyExistsException.class)
+    public void testAlreadyExists() throws Exception
+    {
+        driver.create(vol, transMgr);
+
+        VolumeData.getInstance(sysCtx, res, volDfn, blockDevicePath, metaDiskPath, null, transMgr, false, true);
     }
 }
