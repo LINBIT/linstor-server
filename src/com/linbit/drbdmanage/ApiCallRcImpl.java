@@ -28,7 +28,7 @@ public class ApiCallRcImpl implements ApiCallRc
         private String causeFormat;
         private String correctionFormat;
         private String detailsFormat;
-        private Map<String, String> variables;
+        private Map<String, String> variables = new HashMap<>();
 
         public void setReturnCode(long returnCode)
         {

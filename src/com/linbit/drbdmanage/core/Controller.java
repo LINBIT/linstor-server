@@ -124,13 +124,15 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private String[] args;
 
     // TODO
-    private MetaDataApi metaData;
+    final MetaDataApi metaData;
+
+    final CtrlApiCallHandler apiCallHandler;
 
     // ============================================================
     // Worker thread pool & message processing dispatcher
     //
     private WorkerPool workerThrPool = null;
-    private final CommonMessageProcessor msgProc;
+    private CommonMessageProcessor msgProc;
 
     // Authentication subsystem
     private Authentication auth = null;
@@ -212,6 +214,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
         metaData = new MetaData();
 
+
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
         {
@@ -237,35 +240,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         // the corresponding protectionObjects will be initialized in the initialize method
         // after the initialization of the database
 
-        // Initialize the worker thread pool
-        {
-            // errorLogRef.logInfo("Starting worker thread pool");
-            AccessContext initCtx = sysCtx.clone();
-            try
-            {
-                initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
-                int cpuCount = getCpuCount();
-                int thrCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
-                int qSize = thrCount * getWorkerQueueFactor();
-                qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
-                setWorkerThreadCount(initCtx, thrCount);
-                setWorkerQueueSize(initCtx, qSize);
-                workerThrPool = WorkerPool.initialize(
-                    thrCount, qSize, true, "MainWorkerPool", getErrorReporter()
-                );
-                // Initialize the message processor
-                // errorLogRef.logInfo("Initializing API call dispatcher");
-                msgProc = new CommonMessageProcessor(this, workerThrPool);
-            }
-            catch (AccessDeniedException accessDeniedException)
-            {
-                throw new ImplementationError(
-                    "Controllers constructor could not create system context",
-                    accessDeniedException
-                );
-            }
-        }
+        apiCallHandler = new CtrlApiCallHandler(this);
 
         // Initialize shutdown controls
         shutdownFinished = false;
@@ -286,6 +261,34 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
                 // Initialize the error & exception reporting facility
                 setErrorLog(initCtx, errorLogRef);
+
+
+                // Initialize the worker thread pool
+                try
+                {
+                    initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+                    int cpuCount = getCpuCount();
+                    int thrCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
+                    int qSize = thrCount * getWorkerQueueFactor();
+                    qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
+                    setWorkerThreadCount(initCtx, thrCount);
+                    setWorkerQueueSize(initCtx, qSize);
+                    workerThrPool = WorkerPool.initialize(
+                        thrCount, qSize, true, "MainWorkerPool", getErrorReporter()
+                    );
+                    // Initialize the message processor
+                    // errorLogRef.logInfo("Initializing API call dispatcher");
+                    msgProc = new CommonMessageProcessor(this, workerThrPool);
+                }
+                catch (AccessDeniedException accessDeniedException)
+                {
+                    throw new ImplementationError(
+                        "Controllers constructor could not create system context",
+                        accessDeniedException
+                    );
+                }
+
 
                 // Initialize the database connections
                 errorLogRef.logInfo("Initializing the database connection pool");
@@ -1120,5 +1123,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     public long getDefaultAlSize()
     {
         return defaultAlSize;
+    }
+
+    public CtrlApiCallHandler getApiCallHandler()
+    {
+        return apiCallHandler;
     }
 }

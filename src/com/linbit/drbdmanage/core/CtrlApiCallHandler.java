@@ -25,14 +25,12 @@ import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.ApiCallRcImpl.ApiCallRcEntry;
-import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
-import com.linbit.drbdmanage.security.ObjectProtection;
 
-class CtrlApiCallHandler
+public class CtrlApiCallHandler
 {
     public static final String PROPS_NODE_TYPE_KEY = "nodeType";
     public static final String PROPS_NODE_FLAGS_KEY = "nodeFlags";
@@ -53,24 +51,11 @@ class CtrlApiCallHandler
     public static final String API_RC_VAR_ACC_CTX_ROLE_KEY = "accCtxRole";
 
     private final Controller controller;
-    private final DbConnectionPool dbConnPool;
-    private final ObjectProtection rscDfnMapProt;
-    private final Map<ResourceName, ResourceDefinition> rscDfnMap;
 
-    CtrlApiCallHandler(
-        Controller controllerRef,
-        DbConnectionPool dbConnPoolRef,
-        ObjectProtection rscDfnMapProtRef,
-        Map<ResourceName, ResourceDefinition> rscDfnMapRef
-    )
+    CtrlApiCallHandler(Controller controllerRef)
     {
         controller = controllerRef;
-        dbConnPool = dbConnPoolRef;
-        rscDfnMapProt = rscDfnMapProtRef;
-        rscDfnMap = rscDfnMapRef;
     }
-
-
 
     public ApiCallRc createNode(
         AccessContext accCtx,
@@ -95,10 +80,10 @@ class CtrlApiCallHandler
         Node node = null;
         try
         {
-            transMgr = new TransactionMgr(dbConnPool.getConnection()); // sqlExc1
+            transMgr = new TransactionMgr(controller.dbConnPool.getConnection()); // sqlExc1
             NodeName nodeName = new NodeName(nodeNameStr); // invalidNameExc1
 
-            NodeType type = NodeType.valueOfIgnoreCase(props.get(PROPS_NODE_TYPE_KEY));
+            NodeType type = NodeType.valueOfIgnoreCase(props.get(PROPS_NODE_TYPE_KEY), NodeType.SATELLITE);
             NodeFlag[] flags = NodeFlag.valuesOfIgnoreCase(props.get(PROPS_NODE_FLAGS_KEY));
             node = NodeData.getInstance( // sqlExc2, accDeniedExc1
                 accCtx,
@@ -272,9 +257,9 @@ class CtrlApiCallHandler
 
         try
         {
-            transMgr = new TransactionMgr(dbConnPool.getConnection()); // sqlExc1
+            transMgr = new TransactionMgr(controller.dbConnPool.getConnection()); // sqlExc1
 
-            rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE); // accDeniedExc1
+            controller.rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE); // accDeniedExc1
             rscDfn = ResourceDefinitionData.getInstance( // sqlExc2, accDeniedExc1 (same as last line)
                 accCtx,
                 new ResourceName(resourceName), // invalidNameExc1
@@ -314,7 +299,7 @@ class CtrlApiCallHandler
 
             transMgr.commit(); // sqlExc4
 
-            rscDfnMap.put(rscDfn.getName(), rscDfn);
+            controller.rscDfnMap.put(rscDfn.getName(), rscDfn);
 
             for (VolumeDefinition.VlmDfnApiData volCrtData : volDescrMap)
             {

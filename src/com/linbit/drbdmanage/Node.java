@@ -101,9 +101,18 @@ public interface Node extends TransactionObject
             return ret;
         }
 
-        public static NodeType valueOfIgnoreCase(String string)
+        public static NodeType valueOfIgnoreCase(String string, NodeType defaultValue)
         {
-            return valueOf(string.toUpperCase());
+            NodeType ret = defaultValue;
+            if (string != null)
+            {
+                NodeType val = valueOf(string.toUpperCase());
+                if (val != null)
+                {
+                    ret = val;
+                }
+            }
+            return ret;
         }
     }
 
@@ -127,14 +136,21 @@ public interface Node extends TransactionObject
 
         public static NodeFlag[] valuesOfIgnoreCase(String string)
         {
-            String[] split = string.split(",");
-            NodeFlag[] flags = new NodeFlag[split.length];
-
-            for (int i = 0; i < split.length; i++)
+            NodeFlag[] flags;
+            if (string == null)
             {
-                flags[i] = NodeFlag.valueOf(split[i].toUpperCase().trim());
+                flags = new NodeFlag[0];
             }
+            else
+            {
+                String[] split = string.split(",");
+                flags = new NodeFlag[split.length];
 
+                for (int i = 0; i < split.length; i++)
+                {
+                    flags[i] = NodeFlag.valueOf(split[i].toUpperCase().trim());
+                }
+            }
             return flags;
         }
     }

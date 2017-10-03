@@ -90,6 +90,12 @@ public final class ObjectProtection extends BaseTransactionObject
         {
             objProt = new ObjectProtection(accCtx, objPath, dbDriver);
             dbDriver.insertOp(objProt, transMgr);
+            // as we just created a new ObjProt, we have to set the permissions
+            // use the *Impl to skip the access checks as there are no rules yet and would cause
+            // an exception
+            objProt.addAclEntryImpl(accCtx.subjectRole, AccessType.CONTROL);
+            // as we are not initialized yet, we have to add the acl entry manually in the DB
+            dbDriver.insertAcl(objProt, accCtx.subjectRole, AccessType.CONTROL, transMgr);
         }
 
         if (objProt != null)
@@ -281,8 +287,12 @@ public final class ObjectProtection extends BaseTransactionObject
                 );
             }
         }
-        AccessControlEntry oldValue = objectAcl.addEntry(entryRole, grantedAccess);
+        addAclEntryImpl(entryRole, grantedAccess);
+    }
 
+    private void addAclEntryImpl(Role entryRole, AccessType grantedAccess) throws SQLException
+    {
+        AccessControlEntry oldValue = objectAcl.addEntry(entryRole, grantedAccess);
         setAcl(entryRole, grantedAccess, oldValue);
     }
 
