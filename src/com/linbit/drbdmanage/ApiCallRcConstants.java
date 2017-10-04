@@ -11,15 +11,15 @@ public class ApiCallRcConstants
      * The next 4 significant bits are reserved for type (Node, ResDfn, Res,
      * VolDfn, Vol, ConDfn, NetInterface, ...)
      */
-    private static final long MASK_NODE                     = 0x3C_00000000000000L;
-    private static final long MASK_RESOURCE_DEFINITION      = 0x38_00000000000000L;
-    private static final long MASK_RESOURCE                 = 0x34_00000000000000L;
-    private static final long MASK_VOLUME_DEFINITION        = 0x30_00000000000000L;
-    private static final long MASK_VOLUME                   = 0x2C_00000000000000L;
-    private static final long MASK_CONNECTION_DEFINITION    = 0x28_00000000000000L;
-    private static final long MASK_NET_INTERFACE            = 0x24_00000000000000L;
-    private static final long MASK_STOR_POOL_DEFINITION     = 0x20_00000000000000L;
-    private static final long MASK_STOR_POOL                = 0x1C_00000000000000L;
+    private static final long MASK_NODE                     = 0x3C00000000000000L;
+    private static final long MASK_RESOURCE_DEFINITION      = 0x3800000000000000L;
+    private static final long MASK_RESOURCE                 = 0x3400000000000000L;
+    private static final long MASK_VOLUME_DEFINITION        = 0x3000000000000000L;
+    private static final long MASK_VOLUME                   = 0x2C00000000000000L;
+    private static final long MASK_CONNECTION_DEFINITION    = 0x2800000000000000L;
+    private static final long MASK_NET_INTERFACE            = 0x2400000000000000L;
+    private static final long MASK_STOR_POOL_DEFINITION     = 0x2000000000000000L;
+    private static final long MASK_STOR_POOL                = 0x1C00000000000000L;
     /*
      *  unused type masks:
       0x18_00000000000000L;
@@ -28,16 +28,18 @@ public class ApiCallRcConstants
       0x0C_00000000000000L;
       0x08_00000000000000L;
       0x04_00000000000000L;
-      0x00_00000000000000L; // caution with this one
+      0x00_00000000000000L; // this should be avoided
    */
-
 
     /*
      * Node return codes
      */
     public static final long RC_NODE_CREATED = 1 | MASK_NODE;
+    public static final long RC_NODE_DELETED = 2 | MASK_NODE;
+    public static final long RC_NODE_NOT_FOUND = 3 | MASK_NODE;
 
     public static final long RC_NODE_CREATION_FAILED = RC_NODE_CREATED | ApiCallRc.MASK_ERROR;
+    public static final long RC_NODE_DELETION_FAILED = RC_NODE_DELETED | ApiCallRc.MASK_ERROR;
 
     /*
      * ResourceDefinition return codes

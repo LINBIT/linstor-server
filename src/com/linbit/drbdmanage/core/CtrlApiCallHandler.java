@@ -30,21 +30,31 @@ public class CtrlApiCallHandler
 
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
     private final CtrlResourceApiCallHandler resourceApiCallHandler;
+    private final Controller controller;
 
-    CtrlApiCallHandler(Controller controller)
+    CtrlApiCallHandler(Controller controllerRef)
     {
-        nodeApiCallHandler = new CtrlNodeApiCallHandler(controller);
-        resourceApiCallHandler = new CtrlResourceApiCallHandler(controller);
+        controller = controllerRef;
+        nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef);
+        resourceApiCallHandler = new CtrlResourceApiCallHandler(controllerRef);
     }
 
     public ApiCallRc createNode(AccessContext accCtx, Peer client, String nodeNameStr, Map<String, String> props)
     {
-        return nodeApiCallHandler.createNode(accCtx, client, nodeNameStr, props);
+        controller.nodesMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = nodeApiCallHandler.createNode(accCtx, client, nodeNameStr, props);
+        controller.nodesMapLock.writeLock().unlock();
+
+        return apiCallRc;
     }
 
     public ApiCallRc deleteNode(AccessContext accCtx, Peer client, String nodeName)
     {
-        return nodeApiCallHandler.deleteNode(accCtx, client, nodeName);
+        controller.nodesMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = nodeApiCallHandler.deleteNode(accCtx, client, nodeName);
+        controller.nodesMapLock.writeLock().unlock();
+
+        return apiCallRc;
     }
 
     public ApiCallRc createResourceDefinition(

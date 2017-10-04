@@ -56,6 +56,9 @@ public final class ApiConsts
 
     public static final String API_SHTDWN           = "Shtdwn";
 
+    public static final String KEY_NODE             = "Node";
+    public static final String KEY_RSC_DFN          = "RscDfn";
+
     public static final String KEY_NODE_NAME        = "NodeName";
     public static final String KEY_NODE_TYPE        = "NodeType";
     public static final String KEY_NODE_FLAGS       = "NodeFlags";

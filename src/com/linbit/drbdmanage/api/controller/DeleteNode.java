@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.api.controller;
 import java.io.IOException;
 import java.io.InputStream;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.core.Controller;
@@ -43,13 +44,13 @@ public class DeleteNode extends BaseApiCall
 //            System.out.println("   " + msgDeleteNode.getNodeName());
 //
 //            System.out.println("deleting...");
-            controller.getApiCallHandler().deleteNode(
+            ApiCallRc apiCallRc = controller.getApiCallHandler().deleteNode(
                 accCtx,
                 client,
                 msgDeleteNode.getNodeName()
             );
 
-            // TODO: call super.answerApiCallRc when the returnValue of deleteNode is != null
+            super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
             errorReporter.logInfo("Node [%s] successfully deleted", msgDeleteNode.getNodeName());
         }
         catch (InvalidProtocolBufferException e)

@@ -27,6 +27,7 @@ public class ClientProtobuf implements Runnable
 
     private Thread thread;
     private boolean shutdown;
+    private StringBuilder readable = new StringBuilder();
 
     public ClientProtobuf(int port) throws UnknownHostException, IOException
     {
@@ -54,8 +55,6 @@ public class ClientProtobuf implements Runnable
     @Override
     public void run()
     {
-
-        StringBuilder readable = new StringBuilder();
         while (!shutdown)
         {
             int read;
@@ -87,7 +86,7 @@ public class ClientProtobuf implements Runnable
                 }
             }
         }
-        System.out.println(readable.toString() + "\nshutting down");
+        println("shutting down");
     }
 
     public int sendCreateNode(String nodeName, Map<String, String> props) throws IOException
@@ -101,7 +100,7 @@ public class ClientProtobuf implements Runnable
                 putAllNodeProps(props).
                 build()
         );
-        System.out.println("\n" + msgId + " create node");
+        println(msgId + " create node");
         return msgId;
     }
 
@@ -115,7 +114,7 @@ public class ClientProtobuf implements Runnable
                 setNodeName(nodeName).
                 build()
         );
-        System.out.println("\n" + msgId + " delete node");
+        println(msgId + " delete node");
         return msgId;
     }
 
@@ -149,6 +148,35 @@ public class ClientProtobuf implements Runnable
         outputStream.write(protoData);
     }
 
+    private boolean isPrintableChar(char c)
+    {
+        Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
+        return (!Character.isISOControl(c)) &&
+            c != KeyEvent.CHAR_UNDEFINED &&
+            block != null &&
+            block != Character.UnicodeBlock.SPECIALS;
+    }
+
+    private void println(String str)
+    {
+        // first flush the current readable
+        if (readable.length() > 0)
+        {
+            String format = "%" + (8-readable.length())*3 + "s%s%n%s%n";
+            System.out.printf(
+                format,
+                "",
+                readable.toString(),
+                str
+            );
+            readable.setLength(0);
+        }
+        else
+        {
+            System.out.println(str);
+        }
+    }
+
     public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException
     {
         ClientProtobuf client = new ClientProtobuf(9500);
@@ -165,13 +193,5 @@ public class ClientProtobuf implements Runnable
         Thread.sleep(1000);
 
         client.shutdown();
-    }
-
-    public static boolean isPrintableChar( char c ) {
-        Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
-        return (!Character.isISOControl(c)) &&
-                c != KeyEvent.CHAR_UNDEFINED &&
-                block != null &&
-                block != Character.UnicodeBlock.SPECIALS;
     }
 }

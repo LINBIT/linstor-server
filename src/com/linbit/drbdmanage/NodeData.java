@@ -408,6 +408,11 @@ public class NodeData extends BaseTransactionObject implements Node
         deleted = true;
     }
 
+    public boolean isDeleted()
+    {
+        return deleted;
+    }
+
     private void checkDeleted()
     {
         if (deleted)
