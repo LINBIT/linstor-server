@@ -32,6 +32,10 @@ public interface CommonDebugControl
     ObjectProtection getRscDfnMapProt();
     Props getConf();
     ObjectProtection getConfProt();
+    ReadWriteLock getReconfigurationLock();
     ReadWriteLock getConfLock();
+    ReadWriteLock getNodesMapLock();
+    ReadWriteLock getRscDfnMapLock();
+    ReadWriteLock getStorPoolDfnMapLock();
     void shutdown(AccessContext accCtx);
 }

@@ -141,9 +141,33 @@ class CtrlDebugControlImpl implements CtrlDebugControl
     }
 
     @Override
+    public ReadWriteLock getReconfigurationLock()
+    {
+        return controller.reconfigurationLock;
+    }
+
+    @Override
     public ReadWriteLock getConfLock()
     {
         return controller.ctrlConfLock;
+    }
+
+    @Override
+    public ReadWriteLock getNodesMapLock()
+    {
+        return controller.nodesMapLock;
+    }
+
+    @Override
+    public ReadWriteLock getRscDfnMapLock()
+    {
+        return controller.rscDfnMapLock;
+    }
+
+    @Override
+    public ReadWriteLock getStorPoolDfnMapLock()
+    {
+        return controller.storPoolDfnMapLock;
     }
 
     @Override
