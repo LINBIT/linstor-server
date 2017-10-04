@@ -15,6 +15,7 @@ import com.linbit.drbdmanage.security.AccessContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -108,7 +109,8 @@ public class CommonMessageProcessor implements MessageProcessor
     {
         try
         {
-            switch(msg.getType())
+            int msgType = msg.getType();
+            switch (msgType)
             {
                 case MessageTypes.DATA:
                     handleDataMessage(msg, connector, client);
@@ -119,13 +121,38 @@ public class CommonMessageProcessor implements MessageProcessor
                 case MessageTypes.PONG:
                     client.pongReceived();
                     break;
+                default:
+                    String peerAddress = null;
+                    int port = 0;
+                    InetSocketAddress peerSocketAddr = client.peerAddress();
+                    if (peerSocketAddr != null)
+                    {
+                        peerAddress = peerSocketAddr.getAddress().toString();
+                        port = peerSocketAddr.getPort();
+                    }
+                    // Reached when a message with an unknown message type is received
+                    if (peerAddress != null)
+                    {
+                        coreSvcs.getErrorReporter().logDebug(
+                            "Message of unknown type %d received on connector %s " +
+                            "from peer at endpoint %s:%d",
+                            msgType, client.getConnectorInstanceName(), peerAddress, port
+                        );
+                    }
+                    else
+                    {
+                        coreSvcs.getErrorReporter().logDebug(
+                            "Message of unknown type %d received on connector %s " +
+                            "from peer at unknown endpoint address",
+                            msgType, client.getConnectorInstanceName()
+                        );
+                    }
             }
         }
         catch (IllegalMessageStateException msgExc)
         {
             coreSvcs.getErrorReporter().reportError(msgExc);
         }
-
     }
 
     private void handleDataMessage(Message msg, TcpConnector connector, Peer client)
