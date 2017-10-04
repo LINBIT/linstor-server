@@ -1,6 +1,7 @@
 /*
 !src/
 !test/
+!sql-src/
 !build.xml
 !build.gradle
 !nbproject/
