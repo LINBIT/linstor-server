@@ -14,13 +14,18 @@ import java.util.Map;
 import com.google.protobuf.Message;
 import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode;
+import com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 
-public class ClientProtobuf
+public class ClientProtobuf implements Runnable
 {
     private Socket sock;
     private InputStream inputStream;
     private OutputStream outputStream;
+    private int msgId = 0;
+
+    private Thread thread;
+    private boolean shutdown;
 
     public ClientProtobuf(int port) throws UnknownHostException, IOException
     {
@@ -32,29 +37,78 @@ public class ClientProtobuf
         sock = new Socket(host, port);
         inputStream = sock.getInputStream();
         outputStream = sock.getOutputStream();
+
+        shutdown = false;
+        thread = new Thread(this, "ClientProtobuf");
+        thread.start();
     }
 
     public void shutdown() throws IOException
     {
         sock.close();
+        shutdown = true;
+        thread.interrupt();
     }
 
-    public void sendCreateNode(String nodeName, Map<String, String> props) throws IOException
+    @Override
+    public void run()
     {
+        while (!shutdown)
+        {
+            int read;
+            try
+            {
+                System.out.println("reading...");
+                read = inputStream.read();
+                System.out.println("recieved: " + Integer.toHexString(read));
+            }
+            catch (IOException e)
+            {
+                if (!shutdown)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }
+        System.out.println("shutting down");
+    }
+
+    public int sendCreateNode(String nodeName, Map<String, String> props) throws IOException
+    {
+        int msgId = this.msgId++;
         send(
-            MsgHeader.newBuilder().
-                setApiCall(ApiConsts.API_CRT_NODE).
-                setMsgId(0).
-                build(),
+            msgId,
+            ApiConsts.API_CRT_NODE,
             MsgCrtNode.newBuilder().
                 setNodeName(nodeName).
                 putAllNodeProps(props).
                 build()
         );
+        System.out.println(msgId + " create node");
+        return msgId;
     }
 
-    private void send(MsgHeader headerMsg, Message msg) throws IOException
+    public int sendDeleteNode(String nodeName) throws IOException
     {
+        int msgId = this.msgId++;
+        send(
+            msgId,
+            ApiConsts.API_DEL_NODE,
+            MsgDelNode.newBuilder().
+                setNodeName(nodeName).
+                build()
+        );
+        System.out.println(msgId + " delete node");
+        return msgId;
+    }
+
+    private void send(int msgId, String apiCall, Message msg) throws IOException
+    {
+        MsgHeader headerMsg = MsgHeader.newBuilder().
+            setApiCall(apiCall).
+            setMsgId(msgId).
+            build();
+
         ByteArrayOutputStream baos;
         baos = new ByteArrayOutputStream();
         headerMsg.writeDelimitedTo(baos);
@@ -84,9 +138,14 @@ public class ClientProtobuf
 
         Map<String, String> props = new HashMap<>();
         props.put("TestKey", "TestValue");
+
         client.sendCreateNode("TestNode", props);
+        Thread.sleep(500);
+        client.sendDeleteNode("TestNode");
 
         client.outputStream.flush();
+
+        Thread.sleep(1000);
 
         client.shutdown();
     }

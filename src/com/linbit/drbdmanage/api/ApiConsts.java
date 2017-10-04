@@ -56,11 +56,19 @@ public final class ApiConsts
 
     public static final String KEY_NODE_NAME        = "NodeName";
     public static final String KEY_NODE_TYPE        = "NodeType";
+    public static final String KEY_NODE_FLAGS       = "NodeFlags";
     public static final String KEY_RSC_NAME         = "RscName";
     public static final String KEY_STOR_POOL_NAME   = "StorPoolName";
     public static final String KEY_NET_IF_NAME      = "NetIfName";
     public static final String KEY_SNPSHT_NAME      = "SnpshtName";
     public static final String KEY_VLM_NR           = "VlmNr";
+    public static final String KEY_VLM_SIZE         = "VlmSize";
+    public static final String KEY_MINOR_NR         = "MinorNr";
+    public static final String KEY_PEER_COUNT       = "PeerCount";
+    public static final String KEY_AL_SIZE          = "AlSize";
+    public static final String KEY_AL_STRIPES       = "AlStripes";
+    public static final String KEY_ID               = "Id";
+    public static final String KEY_ROLE             = "Role";
 
     public static final String NAMESPC_NETCOM       = "NetCom";
     public static final String NAMESPC_DFLT         = "Default";
@@ -68,7 +76,6 @@ public final class ApiConsts
     public static final String NAMESPC_ALLOC        = "Allocation";
     public static final String NAMESPC_NETIF        = "NetIf";
 
-    public static final String KEY_MINOR_NR         = "MinorNr";
     public static final String KEY_PORT_NR          = "PortNr";
     public static final String KEY_IP_ADDR          = "IpAddr";
     public static final String KEY_BIND_ADDR        = "BindAddr";

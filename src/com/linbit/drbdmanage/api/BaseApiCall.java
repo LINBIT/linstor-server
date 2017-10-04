@@ -2,6 +2,8 @@ package com.linbit.drbdmanage.api;
 
 import com.google.protobuf.GeneratedMessageV3;
 import com.linbit.drbdmanage.ApiCall;
+import com.linbit.drbdmanage.ApiCallRc;
+import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 
 import java.io.IOException;
@@ -28,5 +30,10 @@ public abstract class BaseApiCall implements ApiCall
         throws IOException
     {
         protobufsMsg.writeDelimitedTo(out);
+    }
+
+    protected void answerApiCallRc(Peer peer, ApiCallRc apiCallRc)
+    {
+//        peer.sendMessage(msg);
     }
 }

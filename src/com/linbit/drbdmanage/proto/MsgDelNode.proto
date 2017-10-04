@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// drbdmanageNG - Delete node
+message MsgDelNode
+{
+    // Node name
+    string              node_name   = 1;
+}
