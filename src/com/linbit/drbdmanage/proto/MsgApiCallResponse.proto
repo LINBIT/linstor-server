@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// drbdmanageNG - ApiCallResponse
+message MsgApiCallResponse
+{
+    // return code (see ApiCallRcConstants)
+    sint64     			ret_code          = 1;
+
+    // object references
+    map<string, string> obj_refs          = 2;
+    
+    // message format
+    string				message_format    = 3;
+    
+    // cause format
+    string				cause_format      = 4;
+    
+    // correction format
+    string 				correction_format = 5;
+    
+    // details format
+    string				details_format    = 6;
+    
+    // referenced variables
+    map<string, string> variables		  = 7;
+}

@@ -29,6 +29,7 @@ public class DebugMakeSuperuser extends BaseApiCall
         CoreServices coreSvcsRef
     )
     {
+        super(ctrlRef.getErrorReporter());
         ctrl = ctrlRef;
         coreSvcs = coreSvcsRef;
     }

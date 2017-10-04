@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.testclient;
 
+import java.awt.event.KeyEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -53,14 +54,30 @@ public class ClientProtobuf implements Runnable
     @Override
     public void run()
     {
+
+        StringBuilder readable = new StringBuilder();
         while (!shutdown)
         {
             int read;
             try
             {
-                System.out.println("reading...");
                 read = inputStream.read();
-                System.out.println("recieved: " + Integer.toHexString(read));
+
+                System.out.printf("%02X ", read & 0xFF);
+                if (isPrintableChar((char) read))
+                {
+                    readable.append((char) read);
+                }
+                else
+                {
+                    readable.append('.');
+                }
+
+                if (readable.length() == 8)
+                {
+                    System.out.println(readable.toString());
+                    readable.setLength(0);
+                }
             }
             catch (IOException e)
             {
@@ -70,7 +87,7 @@ public class ClientProtobuf implements Runnable
                 }
             }
         }
-        System.out.println("shutting down");
+        System.out.println(readable.toString() + "\nshutting down");
     }
 
     public int sendCreateNode(String nodeName, Map<String, String> props) throws IOException
@@ -84,7 +101,7 @@ public class ClientProtobuf implements Runnable
                 putAllNodeProps(props).
                 build()
         );
-        System.out.println(msgId + " create node");
+        System.out.println("\n" + msgId + " create node");
         return msgId;
     }
 
@@ -98,7 +115,7 @@ public class ClientProtobuf implements Runnable
                 setNodeName(nodeName).
                 build()
         );
-        System.out.println(msgId + " delete node");
+        System.out.println("\n" + msgId + " delete node");
         return msgId;
     }
 
@@ -148,5 +165,13 @@ public class ClientProtobuf implements Runnable
         Thread.sleep(1000);
 
         client.shutdown();
+    }
+
+    public static boolean isPrintableChar( char c ) {
+        Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
+        return (!Character.isISOControl(c)) &&
+                c != KeyEvent.CHAR_UNDEFINED &&
+                block != null &&
+                block != Character.UnicodeBlock.SPECIALS;
     }
 }

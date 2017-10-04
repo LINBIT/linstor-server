@@ -17,6 +17,7 @@ public class DeleteNode extends BaseApiCall
 
     public DeleteNode(Controller controllerRef)
     {
+        super(controllerRef.getErrorReporter());
         controller = controllerRef;
     }
 
@@ -38,15 +39,18 @@ public class DeleteNode extends BaseApiCall
         try
         {
             MsgDelNode msgDeleteNode = MsgDelNode.parseDelimitedFrom(msgDataIn);
-            System.out.println("received msgDelNode: ");
-            System.out.println("   " + msgDeleteNode.getNodeName());
-
-            System.out.println("deleting...");
+//            System.out.println("received msgDelNode: ");
+//            System.out.println("   " + msgDeleteNode.getNodeName());
+//
+//            System.out.println("deleting...");
             controller.getApiCallHandler().deleteNode(
                 accCtx,
                 client,
                 msgDeleteNode.getNodeName()
             );
+
+            // TODO: call super.answerApiCallRc when the returnValue of deleteNode is != null
+            errorReporter.logInfo("Node [%s] successfully deleted", msgDeleteNode.getNodeName());
         }
         catch (InvalidProtocolBufferException e)
         {

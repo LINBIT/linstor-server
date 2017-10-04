@@ -2,9 +2,6 @@ package com.linbit.drbdmanage.api.controller;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiConsts;
@@ -21,6 +18,7 @@ public class CreateNode extends BaseApiCall
 
     public CreateNode(Controller controllerRef)
     {
+        super(controllerRef.getErrorReporter());
         controller = controllerRef;
     }
 
@@ -42,22 +40,24 @@ public class CreateNode extends BaseApiCall
         try
         {
             MsgCrtNode msgCreateNode = MsgCrtNode.parseDelimitedFrom(msgDataIn);
-            System.out.println("received msgCrtNode: ");
-            System.out.println("   " + msgCreateNode.getNodeName());
-            System.out.println("   " + msgCreateNode.getNodePropsCount());
-            Map<String, String> nodeProps = msgCreateNode.getNodePropsMap();
-            for (Entry<String, String> entry : nodeProps.entrySet())
-            {
-                System.out.println("   " + entry.getKey() + ": " + entry.getValue());
-            }
+//            System.out.println("received msgCrtNode: ");
+//            System.out.println("   " + msgCreateNode.getNodeName());
+//            System.out.println("   " + msgCreateNode.getNodePropsCount());
+//            Map<String, String> nodeProps = msgCreateNode.getNodePropsMap();
+//            for (Entry<String, String> entry : nodeProps.entrySet())
+//            {
+//                System.out.println("   " + entry.getKey() + ": " + entry.getValue());
+//            }
 
-            System.out.println("creating...");
             ApiCallRc apiCallRc = controller.getApiCallHandler().createNode(
                 accCtx,
                 client,
                 msgCreateNode.getNodeName(),
                 msgCreateNode.getNodePropsMap()
             );
+            answerApiCallRc(accCtx, client, msgId, apiCallRc);
+
+            errorReporter.logInfo("Node [%s] successfully created", msgCreateNode.getNodeName());
         }
         catch (InvalidProtocolBufferException e)
         {

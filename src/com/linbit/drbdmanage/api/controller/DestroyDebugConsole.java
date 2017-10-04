@@ -30,6 +30,7 @@ public class DestroyDebugConsole extends BaseApiCall
         CoreServices coreSvcsRef
     )
     {
+        super(ctrlRef.getErrorReporter());
         ctrl = ctrlRef;
         coreSvcs = coreSvcsRef;
     }

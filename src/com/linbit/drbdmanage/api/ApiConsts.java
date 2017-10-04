@@ -4,6 +4,8 @@ public final class ApiConsts
 {
     public static final String KEY_UUID             = "Uuid";
 
+    public static final String API_REPLY            = "Reply";
+
     public static final String API_CRT_NODE         = "CrtNode";
     public static final String API_CRT_RSC          = "CrtRsc";
     public static final String API_CRT_RSC_DFN      = "CrtRscDfn";

@@ -31,6 +31,7 @@ public class CreateDebugConsole extends BaseApiCall
         CoreServices coreSvcsRef
     )
     {
+        super(coreSvcsRef.getErrorReporter());
         ctrl = ctrlRef;
         coreSvcs = coreSvcsRef;
     }
