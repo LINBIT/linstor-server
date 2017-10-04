@@ -42,10 +42,12 @@ public class CmdDisplayModuleInfo extends BaseDebugCmd
     ) throws Exception
     {
         debugOut.printf(
-            "PROGRAM:   %s\n" +
-            "MODULE:    %s\n" +
-            "VERSION:   %s\n",
-            cmnDebugCtl.getProgramName(), cmnDebugCtl.getModuleType(), cmnDebugCtl.getVersion()
+            "PROGRAM:        %s\n" +
+            "MODULE:         %s\n" +
+            "VERSION:        %s\n" +
+            "INSTANCE ID:    %s\n",
+            cmnDebugCtl.getProgramName(), cmnDebugCtl.getModuleType(), cmnDebugCtl.getVersion(),
+            coreSvcs.getErrorReporter().getInstanceId()
         );
     }
 }
