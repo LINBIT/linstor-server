@@ -193,28 +193,32 @@ class CtrlNodeApiCallHandler
             controller.nodesMapLock.writeLock().unlock();
         }
 
-        if (transMgr != null && transMgr.isDirty())
+        if (transMgr != null)
         {
-            try
+            if (transMgr.isDirty())
             {
-                transMgr.rollback();
-            }
-            catch (SQLException sqlExc)
-            {
-                controller.getErrorReporter().reportError(
-                    sqlExc,
-                    null,
-                    null,
-                    "A database error occured while trying to rollback the transaction."
-                );
+                try
+                {
+                    transMgr.rollback();
+                }
+                catch (SQLException sqlExc)
+                {
+                    controller.getErrorReporter().reportError(
+                        sqlExc,
+                        null,
+                        null,
+                        "A database error occured while trying to rollback the transaction."
+                    );
 
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
-                entry.setMessageFormat("Failed to rollback database transaction");
-                entry.setCauseFormat(sqlExc.getMessage());
+                    ApiCallRcEntry entry = new ApiCallRcEntry();
+                    entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+                    entry.setMessageFormat("Failed to rollback database transaction");
+                    entry.setCauseFormat(sqlExc.getMessage());
 
-                apiCallRc.addEntry(entry);
+                    apiCallRc.addEntry(entry);
+                }
             }
+            controller.dbConnPool.returnConnection(transMgr.dbCon);
         }
         return apiCallRc;
     }
@@ -258,6 +262,12 @@ class CtrlNodeApiCallHandler
         {
             controller.getErrorReporter().reportError(new ImplementationError(dataAlreadyExistsExc));
         }
+
+        if (transMgr != null)
+        {
+            controller.dbConnPool.returnConnection(transMgr.dbCon);
+        }
+
         return null;
     }
 
