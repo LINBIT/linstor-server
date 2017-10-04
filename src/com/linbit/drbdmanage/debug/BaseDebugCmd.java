@@ -8,6 +8,7 @@ import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.core.DrbdManage;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +22,9 @@ import java.util.TreeSet;
  */
 public abstract class BaseDebugCmd implements CommonDebugCmd
 {
+    public static final int SPRT_TEXT_LENGTH = 78;
+    public static final char SPRT_TEXT_CHAR = '-';
+
     final Set<String> cmdNames;
     final String      cmdInfo;
     final String      cmdDescr;
@@ -31,6 +35,7 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
     final boolean acceptsUndeclared = false;
 
     private boolean initialized;
+    private String  sprtText;
 
     final Map<String, String> dspNameMap;
 
@@ -66,6 +71,7 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         undeclDescr = undeclDescrRef;
         initialized = false;
         coreSvcs    = null;
+        sprtText    = null;
     }
 
     @Override
@@ -253,5 +259,16 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
             debugErr.println("Error details:");
             AutoIndent.printWithIndent(debugErr, 4, errorDetailsText);
         }
+    }
+
+    public void printSectionSeparator(PrintStream output)
+    {
+        if (sprtText == null)
+        {
+            char[] sprtTextData = new char[SPRT_TEXT_LENGTH];
+            Arrays.fill(sprtTextData, SPRT_TEXT_CHAR);
+            sprtText = new String(sprtTextData);
+        }
+        output.println(sprtText);
     }
 }
