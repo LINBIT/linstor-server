@@ -4,7 +4,6 @@ import java.io.InputStream;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.security.AccessContext;
 
 public class Pong extends BaseApiCall
@@ -17,7 +16,11 @@ public class Pong extends BaseApiCall
 
     @Override
     public void execute(
-        AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, TcpConnector connector, Peer client
+        AccessContext accCtx,
+        Message msg,
+        int msgId,
+        InputStream msgDataIn,
+        Peer client
     )
     {
         client.pongReceived();

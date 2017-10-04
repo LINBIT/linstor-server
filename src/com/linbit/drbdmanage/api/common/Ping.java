@@ -7,7 +7,6 @@ import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.security.AccessContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -44,7 +43,6 @@ public class Ping extends BaseApiCall
         Message         msg,
         int             msgId,
         InputStream     msgDataIn,
-        TcpConnector    connector,
         Peer            client
     )
     {

@@ -159,7 +159,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     apiCallObj,
                     client.getAccessContext(),
                     msg, msgId, msgDataIn,
-                    connector, client
+                    client
                 );
                 workQ.submit(apiCallInv);
             }
@@ -187,7 +187,6 @@ public class CommonMessageProcessor implements MessageProcessor
         private Message         msg;
         private int             msgId;
         private InputStream     msgDataIn;
-        private TcpConnector    connector;
         private Peer            client;
 
         ApiCallInvocation(
@@ -196,7 +195,6 @@ public class CommonMessageProcessor implements MessageProcessor
             Message         msgRef,
             int             msgIdRef,
             InputStream     msgDataInRef,
-            TcpConnector    connectorRef,
             Peer            clientRef
         )
         {
@@ -205,14 +203,13 @@ public class CommonMessageProcessor implements MessageProcessor
             msg         = msgRef;
             msgId       = msgIdRef;
             msgDataIn   = msgDataInRef;
-            connector   = connectorRef;
             client      = clientRef;
         }
 
         @Override
         public void run()
         {
-            apiCallObj.execute(accCtx, msg, msgId, msgDataIn, connector, client);
+            apiCallObj.execute(accCtx, msg, msgId, msgDataIn, client);
         }
     }
 }

@@ -6,12 +6,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode;
 import com.linbit.drbdmanage.security.AccessContext;
 
@@ -36,7 +36,6 @@ public class CreateNode extends BaseApiCall
         Message msg,
         int msgId,
         InputStream msgDataIn,
-        TcpConnector connector,
         Peer client
     )
     {
@@ -53,7 +52,7 @@ public class CreateNode extends BaseApiCall
             }
 
             System.out.println("creating...");
-            controller.getApiCallHandler().createNode(
+            ApiCallRc apiCallRc = controller.getApiCallHandler().createNode(
                 accCtx,
                 client,
                 msgCreateNode.getNodeName(),

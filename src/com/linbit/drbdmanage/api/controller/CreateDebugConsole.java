@@ -7,7 +7,6 @@ import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.netcom.TcpConnector;
 import com.linbit.drbdmanage.proto.MsgDebugReplyOuterClass.MsgDebugReply;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -48,7 +47,6 @@ public class CreateDebugConsole extends BaseApiCall
         Message         msg,
         int             msgId,
         InputStream     msgDataIn,
-        TcpConnector    connector,
         Peer            client
     )
     {
