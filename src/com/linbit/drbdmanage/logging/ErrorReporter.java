@@ -21,6 +21,13 @@ public interface ErrorReporter
     void logError(String format, Object... args);
 
     /**
+     * Returns the instance ID of the error reporter instance
+     *
+     * @return Instance ID of this error reporter instance
+     */
+    String getInstanceId();
+
+    /**
      * Reports any kind of error, especially ones that are not expected during normal operation
      *
      * E.g., internal errors that may require debugging, detected implementation errors,
