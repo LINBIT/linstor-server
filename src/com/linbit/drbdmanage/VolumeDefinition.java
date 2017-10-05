@@ -46,7 +46,7 @@ public interface VolumeDefinition extends TransactionObject
 
     public enum VlmDfnFlags implements Flags
     {
-        REMOVE(1L);
+        DELETE(1L);
 
         public final long flagValue;
 
@@ -62,7 +62,7 @@ public interface VolumeDefinition extends TransactionObject
         }
     }
 
-    public interface VlmDfnApiData
+    public interface VlmDfnApi
     {
         int getVolumeNr();
         int getMinorNr();

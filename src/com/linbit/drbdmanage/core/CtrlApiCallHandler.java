@@ -62,12 +62,34 @@ public class CtrlApiCallHandler
         Peer client,
         String resourceName,
         Map<String, String> props,
-        List<VolumeDefinition.VlmDfnApiData> volDescrMap
+        List<VolumeDefinition.VlmDfnApi> volDescrMap
     )
     {
-        return resourceApiCallHandler.createResourceDefinition(accCtx, client, resourceName, props, volDescrMap);
+        controller.rscDfnMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = resourceApiCallHandler.createResourceDefinition(
+            accCtx,
+            client,
+            resourceName,
+            props,
+            volDescrMap
+        );
+        controller.rscDfnMapLock.writeLock().unlock();
+        return apiCallRc;
     }
 
-
-
+    public ApiCallRc deleteResourceDefinition(
+        AccessContext accCtx,
+        Peer client,
+        String resourceName
+    )
+    {
+        controller.rscDfnMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = resourceApiCallHandler.deleteResourceDefinition(
+            accCtx,
+            client,
+            resourceName
+        );
+        controller.rscDfnMapLock.writeLock().unlock();
+        return apiCallRc;
+    }
 }

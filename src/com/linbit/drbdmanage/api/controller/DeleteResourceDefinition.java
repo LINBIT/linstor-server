@@ -9,14 +9,14 @@ import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode;
+import com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn;
 import com.linbit.drbdmanage.security.AccessContext;
 
-public class DeleteNode extends BaseApiCall
+public class DeleteResourceDefinition extends BaseApiCall
 {
     private final Controller controller;
 
-    public DeleteNode(Controller controllerRef)
+    public DeleteResourceDefinition(Controller controllerRef)
     {
         super(controllerRef.getErrorReporter());
         controller = controllerRef;
@@ -25,7 +25,7 @@ public class DeleteNode extends BaseApiCall
     @Override
     public String getName()
     {
-        return ApiConsts.API_DEL_NODE;
+        return ApiConsts.API_DEL_RSC_DFN;
     }
 
     @Override
@@ -39,15 +39,15 @@ public class DeleteNode extends BaseApiCall
     {
         try
         {
-            MsgDelNode msgDeleteNode = MsgDelNode.parseDelimitedFrom(msgDataIn);
+            MsgDelRscDfn msgDeleteRscDfn = MsgDelRscDfn.parseDelimitedFrom(msgDataIn);
 //            System.out.println("received msgDelNode: ");
 //            System.out.println("   " + msgDeleteNode.getNodeName());
 //
 //            System.out.println("deleting...");
-            ApiCallRc apiCallRc = controller.getApiCallHandler().deleteNode(
+            ApiCallRc apiCallRc = controller.getApiCallHandler().deleteResourceDefinition(
                 accCtx,
                 client,
-                msgDeleteNode.getNodeName()
+                msgDeleteRscDfn.getRscName()
             );
 
             super.answerApiCallRc(accCtx, client, msgId, apiCallRc);

@@ -99,7 +99,7 @@ public class ResouceDataDerbyTest extends DerbyBase
             resDfn,
             node,
             nodeId,
-            new RscFlags[] { RscFlags.REMOVE },
+            new RscFlags[] { RscFlags.DELETE },
             transMgr,
             true,
             false
@@ -115,7 +115,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(nodeId.value, resultSet.getInt(NODE_ID));
-        assertEquals(RscFlags.REMOVE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(RscFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -236,13 +236,13 @@ public class ResouceDataDerbyTest extends DerbyBase
     {
         driver.create(res, transMgr);
         StateFlagsPersistence<ResourceData> stateFlagPersistence = driver.getStateFlagPersistence();
-        stateFlagPersistence.persist(res, StateFlagsBits.getMask(RscFlags.REMOVE), transMgr);
+        stateFlagPersistence.persist(res, StateFlagsBits.getMask(RscFlags.DELETE), transMgr);
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
-        assertEquals(RscFlags.REMOVE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(RscFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
 
         assertFalse(resultSet.next());
 

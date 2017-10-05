@@ -63,6 +63,9 @@ public interface Node extends TransactionObject
 
     public StateFlags<NodeFlag> getFlags();
 
+    public void markDeleted(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
@@ -118,7 +121,7 @@ public interface Node extends TransactionObject
 
     public enum NodeFlag implements Flags
     {
-        REMOVE(1L),
+        DELETE(1L),
         QIGNORE(0x10000L);
 
         public final long flagValue;

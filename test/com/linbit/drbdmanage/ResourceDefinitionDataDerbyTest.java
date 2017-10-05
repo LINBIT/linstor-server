@@ -82,7 +82,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resDfnUuid,
             resDfnObjProt,
             resName,
-            RscDfnFlags.REMOVE.flagValue,
+            RscDfnFlags.DELETE.flagValue,
             transMgr
         );
 
@@ -102,7 +102,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resDfnUuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
-        assertEquals(RscDfnFlags.REMOVE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -115,7 +115,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
-            new RscDfnFlags[] { RscDfnFlags.REMOVE },
+            new RscDfnFlags[] { RscDfnFlags.DELETE },
             transMgr,
             true,
             false
@@ -130,7 +130,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         // uuid is now != resUuid because getInstance create a new resData object
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
-        assertEquals(RscDfnFlags.REMOVE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -159,7 +159,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
-        assertEquals(RscDfnFlags.REMOVE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
+        assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinitionData loadedResDfn = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
-            new RscDfnFlags[] { RscDfnFlags.REMOVE },
+            new RscDfnFlags[] { RscDfnFlags.DELETE },
             transMgr,
             false,
             false
@@ -192,7 +192,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         loadedResDfn = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
-            new RscDfnFlags[] { RscDfnFlags.REMOVE },
+            new RscDfnFlags[] { RscDfnFlags.DELETE },
             transMgr,
             false,
             false
@@ -201,7 +201,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
-        assertEquals(RscDfnFlags.REMOVE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
+        assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
     }
 
     @Test
@@ -378,7 +378,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
-            new RscDfnFlags[] { RscDfnFlags.REMOVE },
+            new RscDfnFlags[] { RscDfnFlags.DELETE },
             null,
             true,
             false
@@ -403,7 +403,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
-            new RscDfnFlags[] { RscDfnFlags.REMOVE },
+            new RscDfnFlags[] { RscDfnFlags.DELETE },
             null,
             false,
             false

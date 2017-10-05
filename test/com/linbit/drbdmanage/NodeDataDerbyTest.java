@@ -181,7 +181,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
         assertNotNull(loaded);
         loaded.setConnection(transMgr);
-        loaded.getFlags().enableFlags(sysCtx, NodeFlag.REMOVE);
+        loaded.getFlags().enableFlags(sysCtx, NodeFlag.DELETE);
         transMgr.commit();
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
@@ -189,7 +189,7 @@ public class NodeDataDerbyTest extends DerbyBase
         assertTrue("Database deleted NodeData", resultSet.next());
         assertEquals(nodeName.value, resultSet.getString(NODE_NAME));
         assertEquals(nodeName.displayValue, resultSet.getString(NODE_DSP_NAME));
-        assertEquals(NodeFlag.REMOVE.flagValue, resultSet.getLong(NODE_FLAGS));
+        assertEquals(NodeFlag.DELETE.flagValue, resultSet.getLong(NODE_FLAGS));
         assertEquals(Node.NodeType.AUXILIARY.getFlagValue(), resultSet.getInt(NODE_TYPE));
         assertFalse("Database contains too many datasets", resultSet.next());
 
@@ -351,11 +351,11 @@ public class NodeDataDerbyTest extends DerbyBase
 
         // resDfn
         insertObjProt(transMgr, resDfnObjProtPath, sysCtx);
-        insertResDfn(transMgr, resDfnUuid, resName, RscDfnFlags.REMOVE);
+        insertResDfn(transMgr, resDfnUuid, resName, RscDfnFlags.DELETE);
         insertProp(transMgr, resDfnPropsPath, resDfnTestKey, resDfnTestValue);
 
         // volDfn
-        insertVolDfn(transMgr, volDfnUuid, resName, volDfnNr, volDfnSize, volDfnMinorNr, VlmDfnFlags.REMOVE.flagValue);
+        insertVolDfn(transMgr, volDfnUuid, resName, volDfnNr, volDfnSize, volDfnMinorNr, VlmDfnFlags.DELETE.flagValue);
         insertProp(transMgr, volDfnPropsPath, volDfnTestKey, volDfnTestValue);
 
         // storPoolDfn
@@ -440,7 +440,7 @@ public class NodeDataDerbyTest extends DerbyBase
             {
                 ResourceDefinition resDfn = res.getDefinition();
                 assertNotNull(resDfn);
-                assertEquals(RscDfnFlags.REMOVE.flagValue, resDfn.getFlags().getFlagsBits(sysCtx));
+                assertEquals(RscDfnFlags.DELETE.flagValue, resDfn.getFlags().getFlagsBits(sysCtx));
                 assertEquals(resName, resDfn.getName());
                 assertNotNull(resDfn.getObjProt());
                 {
@@ -467,7 +467,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 StateFlags<RscFlags> resStateFlags = res.getStateFlags();
                 assertNotNull(resStateFlags);
                 assertTrue(resStateFlags.isSet(sysCtx, RscFlags.CLEAN));
-                assertFalse(resStateFlags.isSet(sysCtx, RscFlags.REMOVE));
+                assertFalse(resStateFlags.isSet(sysCtx, RscFlags.DELETE));
             }
             assertEquals(res1Uuid, res.getUuid());
             {
@@ -489,7 +489,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 assertEquals(vol1Uuid, vol.getUuid());
                 {
                     VolumeDefinition volDfn = vol.getVolumeDefinition();
-                    assertTrue(volDfn.getFlags().isSet(sysCtx, VlmDfnFlags.REMOVE));
+                    assertTrue(volDfn.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
                     assertEquals(volDfnMinorNr, volDfn.getMinorNr(sysCtx).value);
                     {
                         Props volDfnProps = volDfn.getProps(sysCtx);

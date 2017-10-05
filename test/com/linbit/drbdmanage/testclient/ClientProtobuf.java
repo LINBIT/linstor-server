@@ -9,17 +9,25 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.protobuf.Message;
 import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode;
+import com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
+import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn;
 import com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode;
+import com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 
 public class ClientProtobuf implements Runnable
 {
+    private static final int PAIRS_PER_LINE = 16;
+    private static final int SPACE_AFTER_BYTES = 8;
+
     private Socket sock;
     private InputStream inputStream;
     private OutputStream outputStream;
@@ -55,6 +63,7 @@ public class ClientProtobuf implements Runnable
     @Override
     public void run()
     {
+        final int lineBrakeAfterBytes = PAIRS_PER_LINE + (PAIRS_PER_LINE > SPACE_AFTER_BYTES ? 1 : 0);
         while (!shutdown)
         {
             int read;
@@ -72,10 +81,16 @@ public class ClientProtobuf implements Runnable
                     readable.append('.');
                 }
 
-                if (readable.length() == 8)
+                if (readable.length() == lineBrakeAfterBytes)
                 {
                     System.out.println(readable.toString());
                     readable.setLength(0);
+                }
+                else
+                if (readable.length() == SPACE_AFTER_BYTES)
+                {
+                    readable.append(" ");
+                    System.out.print(" ");
                 }
             }
             catch (IOException e)
@@ -89,6 +104,40 @@ public class ClientProtobuf implements Runnable
         println("shutting down");
     }
 
+    private boolean isPrintableChar(char c)
+    {
+        Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
+        return (!Character.isISOControl(c)) &&
+            c != KeyEvent.CHAR_UNDEFINED &&
+            block != null &&
+            block != Character.UnicodeBlock.SPECIALS;
+    }
+
+    private void println(String str)
+    {
+        // first flush the current readable
+        if (readable.length() > 0)
+        {
+            int spaces = (PAIRS_PER_LINE-readable.length())*3;
+            if (PAIRS_PER_LINE > SPACE_AFTER_BYTES)
+            {
+                spaces++;
+            }
+            String format = "%" + spaces + "s%s%n%s%n";
+            System.out.printf(
+                format,
+                "",
+                readable.toString(),
+                str
+            );
+            readable.setLength(0);
+        }
+        else
+        {
+            System.out.println(str);
+        }
+    }
+
     public int sendCreateNode(String nodeName, Map<String, String> props) throws IOException
     {
         int msgId = this.msgId++;
@@ -100,7 +149,6 @@ public class ClientProtobuf implements Runnable
                 putAllNodeProps(props).
                 build()
         );
-        println(msgId + " create node");
         return msgId;
     }
 
@@ -114,7 +162,40 @@ public class ClientProtobuf implements Runnable
                 setNodeName(nodeName).
                 build()
         );
-        println(msgId + " delete node");
+        return msgId;
+    }
+
+    public int sendCreateRscDfn(
+        String resName,
+        Map<String, String> resDfnProps,
+        Iterable<? extends VlmDfn> vlmDfn
+    )
+        throws IOException
+    {
+        int msgId = this.msgId++;
+        send(
+            msgId,
+            ApiConsts.API_CRT_RSC_DFN,
+            MsgCrtRscDfn.newBuilder().
+                setRscName(resName).
+                putAllRscProps(resDfnProps).
+                addAllVlmDfnMap(vlmDfn).
+                build()
+        );
+        return msgId;
+    }
+
+    public int sendDeleteRscDfn(String resName)
+        throws IOException
+    {
+        int msgId = this.msgId++;
+        send(
+            msgId,
+            ApiConsts.API_DEL_RSC_DFN,
+            MsgDelRscDfn.newBuilder().
+                setRscName(resName).
+                build()
+        );
         return msgId;
     }
 
@@ -148,45 +229,50 @@ public class ClientProtobuf implements Runnable
         outputStream.write(protoData);
     }
 
-    private boolean isPrintableChar(char c)
+    public VlmDfn createVlmDfn(int vlmNr, int vlmSize)
     {
-        Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
-        return (!Character.isISOControl(c)) &&
-            c != KeyEvent.CHAR_UNDEFINED &&
-            block != null &&
-            block != Character.UnicodeBlock.SPECIALS;
-    }
-
-    private void println(String str)
-    {
-        // first flush the current readable
-        if (readable.length() > 0)
-        {
-            String format = "%" + (8-readable.length())*3 + "s%s%n%s%n";
-            System.out.printf(
-                format,
-                "",
-                readable.toString(),
-                str
-            );
-            readable.setLength(0);
-        }
-        else
-        {
-            System.out.println(str);
-        }
+        return
+            VlmDfn.newBuilder().
+            setVlmNr(vlmNr).
+            setVlmSize(vlmSize).
+            build();
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException
     {
         ClientProtobuf client = new ClientProtobuf(9500);
 
-        Map<String, String> props = new HashMap<>();
-        props.put("TestKey", "TestValue");
+        String nodePropsTestKey = "TestNodeKey";
+        String nodePropsTestValue = "TestNodeValue";
+        String nodeName = "TestNode";
 
-        client.sendCreateNode("TestNode", props);
+        String resName = "TestRes";
+        String resPropsTestKey = "TestResKey";
+        String resPropsTestValue = "TestResValue";
+
+        Map<String, String> nodeProps = new HashMap<>();
+        nodeProps.put(nodePropsTestKey, nodePropsTestValue);
+
+        int msgId = 0;
+
+        msgId = client.sendCreateNode(nodeName, nodeProps);
+        client.println(msgId + " create node");
         Thread.sleep(500);
-        client.sendDeleteNode("TestNode");
+
+        Map<String, String> resDfnProps = new HashMap<>();
+        resDfnProps.put(resPropsTestKey, resPropsTestValue);
+        List<VlmDfn> vlmDfn = new ArrayList<>();
+        vlmDfn.add(client.createVlmDfn(1, 1_000_000));
+        msgId = client.sendCreateRscDfn(resName, resDfnProps, vlmDfn);
+        client.println(msgId + " create rscDfn");
+        Thread.sleep(500);
+
+        msgId = client.sendDeleteRscDfn(resName);
+        client.println(msgId + " delete rscDfn");
+        Thread.sleep(500);
+
+        msgId = client.sendDeleteNode(nodeName);
+        client.println(msgId + " delete node");
 
         client.outputStream.flush();
 

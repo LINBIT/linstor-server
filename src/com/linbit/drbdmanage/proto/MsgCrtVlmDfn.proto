@@ -22,7 +22,10 @@ message VlmDfn
     // Volume size (in kiB)
     int64               vlm_size    = 2;
 
+    // Volume minor number
+    sint32				vlm_minor   = 3;
+
     // Volume properties map
-    map<string, string> vlm_props   = 3;
+    map<string, string> vlm_props   = 4;
 }
 

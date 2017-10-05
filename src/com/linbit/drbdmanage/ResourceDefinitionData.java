@@ -174,8 +174,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         return PropsAccess.secureGetProps(accCtx, objProt, rscDfnProps);
     }
 
-
-
     synchronized void putVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn)
         throws AccessDeniedException
     {
@@ -247,6 +245,11 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     {
         checkDeleted();
         return flags;
+    }
+
+    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        getFlags().enableFlags(accCtx, RscDfnFlags.DELETE);
     }
 
     @Override

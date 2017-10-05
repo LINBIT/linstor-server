@@ -18,10 +18,11 @@ import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.VolumeDefinition;
-import com.linbit.drbdmanage.VolumeDefinition.VlmDfnApiData;
+import com.linbit.drbdmanage.VolumeDefinition.VlmDfnApi;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
 import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -42,7 +43,7 @@ class CtrlResourceApiCallHandler
         Peer client,
         String resourceName,
         Map<String, String> props,
-        List<VlmDfnApiData> volDescrMap
+        List<VlmDfnApi> volDescrMap
     )
     {
         /*
@@ -61,7 +62,7 @@ class CtrlResourceApiCallHandler
 
         VolumeNumber volNr = null;
         MinorNumber minorNr = null;
-        VolumeDefinition.VlmDfnApiData currentVolCrtData = null;
+        VolumeDefinition.VlmDfnApi currentVolCrtData = null;
         VolumeDefinition lastVolDfn = null;
 
         short peerCount = getAsShort(props, ApiConsts.KEY_PEER_COUNT, controller.getDefaultPeerCount());
@@ -82,7 +83,7 @@ class CtrlResourceApiCallHandler
                 true
             );
 
-            for (VolumeDefinition.VlmDfnApiData volCrtData : volDescrMap)
+            for (VolumeDefinition.VlmDfnApi volCrtData : volDescrMap)
             {
                 currentVolCrtData = volCrtData;
 
@@ -116,10 +117,10 @@ class CtrlResourceApiCallHandler
 
             controller.rscDfnMap.put(rscDfn.getName(), rscDfn);
 
-            for (VolumeDefinition.VlmDfnApiData volCrtData : volDescrMap)
+            for (VolumeDefinition.VlmDfnApi volCrtData : volDescrMap)
             {
                 ApiCallRcEntry volSuccessEntry = new ApiCallRcEntry();
-                volSuccessEntry.setReturnCode(ApiCallRcConstants.RC_VOLUME_DEFINITION_CREATED);
+                volSuccessEntry.setReturnCode(ApiCallRcConstants.RC_VLM_DFN_CREATED);
                 volSuccessEntry.setMessageFormat(
                     String.format(
                         "Volume Definition with number ${%s} and minor number ${%s} successfully created",
@@ -135,7 +136,7 @@ class CtrlResourceApiCallHandler
 
             ApiCallRcEntry successEntry = new ApiCallRcEntry();
 
-            successEntry.setReturnCode(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATED);
+            successEntry.setReturnCode(ApiCallRcConstants.RC_RSC_DFN_CREATED);
             successEntry.setMessageFormat("Resource definition '${" + ApiConsts.KEY_RSC_NAME + "}' successfully created.");
             successEntry.putVariable(ApiConsts.KEY_RSC_NAME, resourceName);
             successEntry.putVariable(ApiConsts.KEY_PEER_COUNT, Short.toString(peerCount));
@@ -143,7 +144,10 @@ class CtrlResourceApiCallHandler
             successEntry.putVariable(ApiConsts.KEY_AL_SIZE, Long.toString(alStripeSize));
 
             apiCallRc.addEntry(successEntry);
-
+            controller.getErrorReporter().logInfo(
+                "Resource definition [%s] successfully created",
+                resourceName
+            );
         }
         catch (SQLException sqlExc)
         {
@@ -158,7 +162,7 @@ class CtrlResourceApiCallHandler
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(sqlExc.getMessage());
 
@@ -176,7 +180,7 @@ class CtrlResourceApiCallHandler
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(sqlExc.getMessage());
 
@@ -194,7 +198,7 @@ class CtrlResourceApiCallHandler
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(sqlExc.getMessage());
                 if (currentVolCrtData != null)
@@ -216,7 +220,7 @@ class CtrlResourceApiCallHandler
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(sqlExc.getMessage());
 
@@ -237,7 +241,7 @@ class CtrlResourceApiCallHandler
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(accExc.getMessage());
                 entry.setDetailsFormat("The access-context (user: ${acUser}, role: ${acRole}) "
@@ -262,7 +266,7 @@ class CtrlResourceApiCallHandler
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(accExc.getMessage());
                 entry.setDetailsFormat("The access-context (user: ${acUser}, role: ${acRole}) "
@@ -285,7 +289,7 @@ class CtrlResourceApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat("The given resource name '${" + ApiConsts.KEY_RSC_NAME + "}'is invalid");
             entry.putVariable(ApiConsts.KEY_RSC_NAME, resourceName);
@@ -305,7 +309,7 @@ class CtrlResourceApiCallHandler
                     errorMessage
                 );
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat("Given volume number ${" + ApiConsts.KEY_VLM_NR + "} was invalid");
                 entry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
@@ -323,7 +327,7 @@ class CtrlResourceApiCallHandler
                     errorMessage
                 );
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat("Given minor number ${" + ApiConsts.KEY_MINOR_NR + "} was invalid");
                 entry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
@@ -343,7 +347,7 @@ class CtrlResourceApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat("Given volume size ${" + ApiConsts.KEY_VLM_SIZE + "} was invalid");
             entry.putVariable(ApiConsts.KEY_VLM_SIZE, Long.toString(currentVolCrtData.getSize()));
@@ -363,7 +367,7 @@ class CtrlResourceApiCallHandler
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat("The ResourceDefinition already exists");
                 entry.setCauseFormat(alreadyExistsExc.getMessage());
 
@@ -380,7 +384,7 @@ class CtrlResourceApiCallHandler
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat("A VolumeDefinition already exists");
                 entry.setCauseFormat(alreadyExistsExc.getMessage());
                 if (currentVolCrtData != null)
@@ -412,12 +416,254 @@ class CtrlResourceApiCallHandler
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_RESOURCE_DEFINITION_CREATION_FAILED);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(sqlExc.getMessage());
 
                 apiCallRc.addEntry(entry);
             }
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteResourceDefinition(AccessContext accCtx, Peer client, String resNameStr)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        TransactionMgr transMgr = null;
+        ResourceName resName = null;
+        ResourceDefinitionData resDfn = null;
+
+        try
+        {
+            controller.rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE); // accDeniedExc1
+            transMgr = new TransactionMgr(controller.dbConnPool.getConnection()); // sqlExc1
+
+            resName = new ResourceName(resNameStr); // invalidNameExc1
+            resDfn = ResourceDefinitionData.getInstance( // accDeniedExc2, sqlExc2, dataAlreadyExistsExc1
+                accCtx,
+                resName,
+                null,
+                transMgr,
+                false,
+                false
+            );
+
+            if (resDfn != null)
+            {
+                resDfn.setConnection(transMgr);
+                resDfn.markDeleted(accCtx); // accDeniedExc3, sqlExc3
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_DELETED);
+                entry.setMessageFormat("Resource definition ${" + ApiConsts.KEY_RSC_NAME + "} successfully deleted");
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resNameStr);
+                entry.putVariable(ApiConsts.KEY_RSC_NAME, resNameStr);
+                apiCallRc.addEntry(entry);
+
+                transMgr.commit(); // sqlExc4
+
+                // TODO: tell satellites to remove all the corresponding resources
+                // TODO: if satellites are finished (or no satellite had such a resource deployed)
+                //       remove the rscDfn from the DB
+                controller.getErrorReporter().logInfo(
+                    "Resource definition [%s] marked to be deleted",
+                    resNameStr
+                );
+            }
+            else
+            {
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_NOT_FOUND);
+                entry.setMessageFormat("Resource definition ${" + ApiConsts.KEY_RSC_NAME + "} was not deleted as it was not found");
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resNameStr);
+                entry.putVariable(ApiConsts.KEY_RSC_NAME, resNameStr);
+                apiCallRc.addEntry(entry);
+
+                controller.getErrorReporter().logInfo(
+                    "Non existing reource definition [%s] could not be deleted",
+                    resNameStr
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        { // handle accDeniedExc1 && accDeniedExc2 && accDeniedExc3
+            controller.getErrorReporter().reportError(
+                accDeniedExc,
+                accCtx,
+                client,
+                "The given access context has no permission to create a new node"
+            );
+
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_DELETION_FAILED);
+            entry.setMessageFormat(
+                "The given access context has no permission to delete the resource definition ${" +
+                    ApiConsts.KEY_NODE_NAME + "}."
+            );
+            entry.setCauseFormat(accDeniedExc.getMessage());
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, resNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_NAME, resNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+        catch (SQLException sqlExc)
+        {
+            if (transMgr == null)
+            { // handle sqlExc1
+                controller.getErrorReporter().reportError(
+                    sqlExc,
+                    accCtx,
+                    client,
+                    "A database error occured while trying to create a new transaction."
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_DELETION_FAILED);
+                entry.setMessageFormat("Failed to create database transaction");
+                entry.setCauseFormat(sqlExc.getMessage());
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resNameStr);
+
+                apiCallRc.addEntry(entry);
+            }
+            else
+            if (resDfn == null)
+            { // handle sqlExc2
+                controller.getErrorReporter().reportError(
+                    sqlExc,
+                    accCtx,
+                    client,
+                    "A database error occured while trying to load the resource definition."
+                );
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
+                entry.setMessageFormat("Failed to load resource definition ${" + ApiConsts.KEY_RSC_NAME + "} for deletion.");
+                entry.setCauseFormat(sqlExc.getMessage());
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resNameStr);
+                entry.putVariable(ApiConsts.KEY_RSC_NAME, resNameStr);
+
+                apiCallRc.addEntry(entry);
+            }
+            else
+            {
+                Throwable ex = null;
+                try
+                {
+                    if (resDfn.getFlags().isSet(accCtx, RscDfnFlags.DELETE))
+                    { // handle sqlExc3
+                        ex = sqlExc;
+                    }
+                }
+                catch (AccessDeniedException accDeniedExc)
+                { // handle sqlExc3's accDeniedExc
+                    ex = new ImplementationError(
+                        "Mark delete was authorized (sqlExc, not accDeniedExc is thrown), but check mark deleted (getFlags) was not authorized",
+                        sqlExc
+                    );
+                }
+                if (ex != null)
+                {
+                    controller.getErrorReporter().reportError(
+                        ex,
+                        accCtx,
+                        client,
+                        "A database error occured while trying to mark the resource definition to be deleted."
+                    );
+
+                    ApiCallRcEntry entry = new ApiCallRcEntry();
+                    entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_DELETION_FAILED);
+                    entry.setMessageFormat("Failed to mark the resource definition ${" + ApiConsts.KEY_RSC_NAME + "} to be deleted.");
+                    entry.setCauseFormat(sqlExc.getMessage());
+                    entry.putObjRef(ApiConsts.KEY_RSC_DFN, resNameStr);
+                    entry.putVariable(ApiConsts.KEY_RSC_NAME, resNameStr);
+
+                    apiCallRc.addEntry(entry);
+
+                }
+                else
+                { // handle sqlExc4
+                    controller.getErrorReporter().reportError(
+                        sqlExc,
+                        accCtx,
+                        client,
+                        "A database error occured while trying to commit the transaction."
+                    );
+
+                    ApiCallRcEntry entry = new ApiCallRcEntry();
+                    entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_DELETION_FAILED);
+                    entry.setMessageFormat("Failed to commit transaction");
+                    entry.setCauseFormat(sqlExc.getMessage());
+                    entry.putObjRef(ApiConsts.KEY_RSC_DFN, resNameStr);
+
+                    apiCallRc.addEntry(entry);
+                }
+            }
+        }
+        catch (InvalidNameException invalidNameExc)
+        { // handle invalidNameExc1
+            controller.getErrorReporter().reportError(
+                invalidNameExc,
+                accCtx,
+                client,
+                "The given name for the resource definition is invalid"
+            );
+
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_DELETION_FAILED);
+            entry.setMessageFormat("The given resource definition name '${" + ApiConsts.KEY_RSC_NAME + "}' is invalid");
+            entry.setCauseFormat(invalidNameExc.getMessage());
+
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, resNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_NAME, resNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        { // handle drbdAlreadyExistsExc1
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    ".getInstance was called with failIfExists=false, still threw an AlreadyExistsException",
+                    dataAlreadyExistsExc
+                )
+            );
+
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_DELETION_FAILED);
+            entry.setMessageFormat("Failed to delete the resource definition ${" + ApiConsts.KEY_RSC_NAME + "} due to an implementation error.");
+            entry.setCauseFormat(dataAlreadyExistsExc.getMessage());
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, resNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_NAME, resNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+
+        if (transMgr != null)
+        {
+            if (transMgr.isDirty())
+            {
+                try
+                {
+                    transMgr.rollback();
+                }
+                catch (SQLException sqlExc)
+                {
+                    controller.getErrorReporter().reportError(
+                        sqlExc,
+                        accCtx,
+                        client,
+                        "A database error occured while trying to rollback the transaction."
+                    );
+
+                    ApiCallRcEntry entry = new ApiCallRcEntry();
+                    entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_DELETION_FAILED);
+                    entry.setMessageFormat("Failed to rollback database transaction");
+                    entry.setCauseFormat(sqlExc.getMessage());
+                    entry.putObjRef(ApiConsts.KEY_RSC_DFN, resNameStr);
+
+                    apiCallRc.addEntry(entry);
+                }
+            }
+            controller.dbConnPool.returnConnection(transMgr.dbCon);
         }
         return apiCallRc;
     }

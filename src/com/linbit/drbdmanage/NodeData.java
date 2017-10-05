@@ -397,6 +397,11 @@ public class NodeData extends BaseTransactionObject implements Node
         return flags;
     }
 
+    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        getFlags().enableFlags(accCtx, NodeFlag.DELETE);
+    }
+
     @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException

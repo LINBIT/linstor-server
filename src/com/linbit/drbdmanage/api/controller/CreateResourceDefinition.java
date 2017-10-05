@@ -2,21 +2,26 @@ package com.linbit.drbdmanage.api.controller;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.linbit.drbdmanage.ApiCallRc;
+import com.linbit.drbdmanage.VolumeDefinition.VlmDfnApi;
 import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode;
+import com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
+import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.apidata.VlmDfnApiData;
 import com.linbit.drbdmanage.security.AccessContext;
 
-public class DeleteNode extends BaseApiCall
+public class CreateResourceDefinition extends BaseApiCall
 {
     private final Controller controller;
 
-    public DeleteNode(Controller controllerRef)
+    public CreateResourceDefinition(Controller controllerRef)
     {
         super(controllerRef.getErrorReporter());
         controller = controllerRef;
@@ -25,7 +30,7 @@ public class DeleteNode extends BaseApiCall
     @Override
     public String getName()
     {
-        return ApiConsts.API_DEL_NODE;
+        return ApiConsts.API_CRT_RSC_DFN;
     }
 
     @Override
@@ -39,17 +44,21 @@ public class DeleteNode extends BaseApiCall
     {
         try
         {
-            MsgDelNode msgDeleteNode = MsgDelNode.parseDelimitedFrom(msgDataIn);
-//            System.out.println("received msgDelNode: ");
-//            System.out.println("   " + msgDeleteNode.getNodeName());
-//
-//            System.out.println("deleting...");
-            ApiCallRc apiCallRc = controller.getApiCallHandler().deleteNode(
+            MsgCrtRscDfn msgCreateRscDfn = MsgCrtRscDfn.parseDelimitedFrom(msgDataIn);
+
+            List<VlmDfnApi> vlmDfnApiList = new ArrayList<>();
+            for (final VlmDfn vlmDfn : msgCreateRscDfn.getVlmDfnMapList())
+            {
+                vlmDfnApiList.add(new VlmDfnApiData(vlmDfn));
+            }
+
+            ApiCallRc apiCallRc = controller.getApiCallHandler().createResourceDefinition(
                 accCtx,
                 client,
-                msgDeleteNode.getNodeName()
+                msgCreateRscDfn.getRscName(),
+                msgCreateRscDfn.getRscPropsMap(),
+                vlmDfnApiList
             );
-
             super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
         }
         catch (InvalidProtocolBufferException e)

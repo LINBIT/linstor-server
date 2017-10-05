@@ -56,8 +56,6 @@ public class CreateNode extends BaseApiCall
                 msgCreateNode.getNodePropsMap()
             );
             answerApiCallRc(accCtx, client, msgId, apiCallRc);
-
-            errorReporter.logInfo("Node [%s] successfully created", msgCreateNode.getNodeName());
         }
         catch (InvalidProtocolBufferException e)
         {

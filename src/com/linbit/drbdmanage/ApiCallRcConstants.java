@@ -12,7 +12,7 @@ public class ApiCallRcConstants
      * VolDfn, Vol, ConDfn, NetInterface, ...)
      */
     private static final long MASK_NODE                     = 0x3C00000000000000L;
-    private static final long MASK_RESOURCE_DEFINITION      = 0x3800000000000000L;
+    private static final long MASK_RSC_DFN                  = 0x3800000000000000L;
     private static final long MASK_RESOURCE                 = 0x3400000000000000L;
     private static final long MASK_VOLUME_DEFINITION        = 0x3000000000000000L;
     private static final long MASK_VOLUME                   = 0x2C00000000000000L;
@@ -44,9 +44,12 @@ public class ApiCallRcConstants
     /*
      * ResourceDefinition return codes
      */
-    public static final long RC_RESOURCE_DEFINITION_CREATED = 1 | MASK_RESOURCE_DEFINITION;
+    public static final long RC_RSC_DFN_CREATED = 1 | MASK_RSC_DFN;
+    public static final long RC_RSC_DFN_DELETED = 2 | MASK_RSC_DFN;
+    public static final long RC_RSC_DFN_NOT_FOUND = 3 | MASK_RSC_DFN;
 
-    public static final long RC_RESOURCE_DEFINITION_CREATION_FAILED = RC_RESOURCE_DEFINITION_CREATED | ApiCallRc.MASK_ERROR;
+    public static final long RC_RSC_DFN_CREATION_FAILED = RC_RSC_DFN_CREATED | ApiCallRc.MASK_ERROR;
+    public static final long RC_RSC_DFN_DELETION_FAILED = RC_RSC_DFN_DELETED | ApiCallRc.MASK_ERROR;
 
     /*
      * Resource return codes
@@ -55,7 +58,7 @@ public class ApiCallRcConstants
     /*
      * VolumeDefinition return codes
      */
-    public static final long RC_VOLUME_DEFINITION_CREATED = 1 | MASK_VOLUME_DEFINITION;
+    public static final long RC_VLM_DFN_CREATED = 1 | MASK_VOLUME_DEFINITION;
 
     /*
      * Volume return codes

@@ -39,12 +39,15 @@ public interface ResourceDefinition extends TransactionObject
 
     public StateFlags<RscDfnFlags> getFlags();
 
+    public void markDeleted(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
+
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
     public enum RscDfnFlags implements Flags
     {
-        REMOVE(1L);
+        DELETE(1L);
 
         public final long flagValue;
 
@@ -64,6 +67,6 @@ public interface ResourceDefinition extends TransactionObject
     {
         String getName();
         Map<String, String> getProps();
-        VolumeDefinition.VlmDfnApiData[] getVlmDfnList();
+        VolumeDefinition.VlmDfnApi[] getVlmDfnList();
     }
 }

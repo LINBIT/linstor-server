@@ -1070,10 +1070,19 @@ public final class MsgCrtVlmDfnOuterClass {
 
     /**
      * <pre>
+     * Volume minor number
+     * </pre>
+     *
+     * <code>sint32 vlm_minor = 3;</code>
+     */
+    int getVlmMinor();
+
+    /**
+     * <pre>
      * Volume properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+     * <code>map&lt;string, string&gt; vlm_props = 4;</code>
      */
     int getVlmPropsCount();
     /**
@@ -1081,7 +1090,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+     * <code>map&lt;string, string&gt; vlm_props = 4;</code>
      */
     boolean containsVlmProps(
         java.lang.String key);
@@ -1096,7 +1105,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+     * <code>map&lt;string, string&gt; vlm_props = 4;</code>
      */
     java.util.Map<java.lang.String, java.lang.String>
     getVlmPropsMap();
@@ -1105,7 +1114,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+     * <code>map&lt;string, string&gt; vlm_props = 4;</code>
      */
 
     java.lang.String getVlmPropsOrDefault(
@@ -1116,7 +1125,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+     * <code>map&lt;string, string&gt; vlm_props = 4;</code>
      */
 
     java.lang.String getVlmPropsOrThrow(
@@ -1140,6 +1149,7 @@ public final class MsgCrtVlmDfnOuterClass {
     private VlmDfn() {
       vlmNr_ = 0;
       vlmSize_ = 0L;
+      vlmMinor_ = 0;
     }
 
     @java.lang.Override
@@ -1177,11 +1187,16 @@ public final class MsgCrtVlmDfnOuterClass {
               vlmSize_ = input.readInt64();
               break;
             }
-            case 26: {
-              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+            case 24: {
+
+              vlmMinor_ = input.readSInt32();
+              break;
+            }
+            case 34: {
+              if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
                 vlmProps_ = com.google.protobuf.MapField.newMapField(
                     VlmPropsDefaultEntryHolder.defaultEntry);
-                mutable_bitField0_ |= 0x00000004;
+                mutable_bitField0_ |= 0x00000008;
               }
               com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
               vlmProps__ = input.readMessage(
@@ -1210,7 +1225,7 @@ public final class MsgCrtVlmDfnOuterClass {
     protected com.google.protobuf.MapField internalGetMapField(
         int number) {
       switch (number) {
-        case 3:
+        case 4:
           return internalGetVlmProps();
         default:
           throw new RuntimeException(
@@ -1252,7 +1267,20 @@ public final class MsgCrtVlmDfnOuterClass {
       return vlmSize_;
     }
 
-    public static final int VLM_PROPS_FIELD_NUMBER = 3;
+    public static final int VLM_MINOR_FIELD_NUMBER = 3;
+    private int vlmMinor_;
+    /**
+     * <pre>
+     * Volume minor number
+     * </pre>
+     *
+     * <code>sint32 vlm_minor = 3;</code>
+     */
+    public int getVlmMinor() {
+      return vlmMinor_;
+    }
+
+    public static final int VLM_PROPS_FIELD_NUMBER = 4;
     private static final class VlmPropsDefaultEntryHolder {
       static final com.google.protobuf.MapEntry<
           java.lang.String, java.lang.String> defaultEntry =
@@ -1283,7 +1311,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+     * <code>map&lt;string, string&gt; vlm_props = 4;</code>
      */
 
     public boolean containsVlmProps(
@@ -1303,7 +1331,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+     * <code>map&lt;string, string&gt; vlm_props = 4;</code>
      */
 
     public java.util.Map<java.lang.String, java.lang.String> getVlmPropsMap() {
@@ -1314,7 +1342,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+     * <code>map&lt;string, string&gt; vlm_props = 4;</code>
      */
 
     public java.lang.String getVlmPropsOrDefault(
@@ -1330,7 +1358,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+     * <code>map&lt;string, string&gt; vlm_props = 4;</code>
      */
 
     public java.lang.String getVlmPropsOrThrow(
@@ -1362,12 +1390,15 @@ public final class MsgCrtVlmDfnOuterClass {
       if (vlmSize_ != 0L) {
         output.writeInt64(2, vlmSize_);
       }
+      if (vlmMinor_ != 0) {
+        output.writeSInt32(3, vlmMinor_);
+      }
       com.google.protobuf.GeneratedMessageV3
         .serializeStringMapTo(
           output,
           internalGetVlmProps(),
           VlmPropsDefaultEntryHolder.defaultEntry,
-          3);
+          4);
     }
 
     public int getSerializedSize() {
@@ -1383,6 +1414,10 @@ public final class MsgCrtVlmDfnOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(2, vlmSize_);
       }
+      if (vlmMinor_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt32Size(3, vlmMinor_);
+      }
       for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
            : internalGetVlmProps().getMap().entrySet()) {
         com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
@@ -1391,7 +1426,7 @@ public final class MsgCrtVlmDfnOuterClass {
             .setValue(entry.getValue())
             .build();
         size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(3, vlmProps__);
+            .computeMessageSize(4, vlmProps__);
       }
       memoizedSize = size;
       return size;
@@ -1413,6 +1448,8 @@ public final class MsgCrtVlmDfnOuterClass {
           == other.getVlmNr());
       result = result && (getVlmSize()
           == other.getVlmSize());
+      result = result && (getVlmMinor()
+          == other.getVlmMinor());
       result = result && internalGetVlmProps().equals(
           other.internalGetVlmProps());
       return result;
@@ -1430,6 +1467,8 @@ public final class MsgCrtVlmDfnOuterClass {
       hash = (37 * hash) + VLM_SIZE_FIELD_NUMBER;
       hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
           getVlmSize());
+      hash = (37 * hash) + VLM_MINOR_FIELD_NUMBER;
+      hash = (53 * hash) + getVlmMinor();
       if (!internalGetVlmProps().getMap().isEmpty()) {
         hash = (37 * hash) + VLM_PROPS_FIELD_NUMBER;
         hash = (53 * hash) + internalGetVlmProps().hashCode();
@@ -1536,7 +1575,7 @@ public final class MsgCrtVlmDfnOuterClass {
       protected com.google.protobuf.MapField internalGetMapField(
           int number) {
         switch (number) {
-          case 3:
+          case 4:
             return internalGetVlmProps();
           default:
             throw new RuntimeException(
@@ -1547,7 +1586,7 @@ public final class MsgCrtVlmDfnOuterClass {
       protected com.google.protobuf.MapField internalGetMutableMapField(
           int number) {
         switch (number) {
-          case 3:
+          case 4:
             return internalGetMutableVlmProps();
           default:
             throw new RuntimeException(
@@ -1582,6 +1621,8 @@ public final class MsgCrtVlmDfnOuterClass {
 
         vlmSize_ = 0L;
 
+        vlmMinor_ = 0;
+
         internalGetMutableVlmProps().clear();
         return this;
       }
@@ -1609,6 +1650,7 @@ public final class MsgCrtVlmDfnOuterClass {
         int to_bitField0_ = 0;
         result.vlmNr_ = vlmNr_;
         result.vlmSize_ = vlmSize_;
+        result.vlmMinor_ = vlmMinor_;
         result.vlmProps_ = internalGetVlmProps();
         result.vlmProps_.makeImmutable();
         result.bitField0_ = to_bitField0_;
@@ -1658,6 +1700,9 @@ public final class MsgCrtVlmDfnOuterClass {
         }
         if (other.getVlmSize() != 0L) {
           setVlmSize(other.getVlmSize());
+        }
+        if (other.getVlmMinor() != 0) {
+          setVlmMinor(other.getVlmMinor());
         }
         internalGetMutableVlmProps().mergeFrom(
             other.internalGetVlmProps());
@@ -1767,6 +1812,44 @@ public final class MsgCrtVlmDfnOuterClass {
         return this;
       }
 
+      private int vlmMinor_ ;
+      /**
+       * <pre>
+       * Volume minor number
+       * </pre>
+       *
+       * <code>sint32 vlm_minor = 3;</code>
+       */
+      public int getVlmMinor() {
+        return vlmMinor_;
+      }
+      /**
+       * <pre>
+       * Volume minor number
+       * </pre>
+       *
+       * <code>sint32 vlm_minor = 3;</code>
+       */
+      public Builder setVlmMinor(int value) {
+        
+        vlmMinor_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Volume minor number
+       * </pre>
+       *
+       * <code>sint32 vlm_minor = 3;</code>
+       */
+      public Builder clearVlmMinor() {
+        
+        vlmMinor_ = 0;
+        onChanged();
+        return this;
+      }
+
       private com.google.protobuf.MapField<
           java.lang.String, java.lang.String> vlmProps_;
       private com.google.protobuf.MapField<java.lang.String, java.lang.String>
@@ -1798,7 +1881,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+       * <code>map&lt;string, string&gt; vlm_props = 4;</code>
        */
 
       public boolean containsVlmProps(
@@ -1818,7 +1901,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+       * <code>map&lt;string, string&gt; vlm_props = 4;</code>
        */
 
       public java.util.Map<java.lang.String, java.lang.String> getVlmPropsMap() {
@@ -1829,7 +1912,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+       * <code>map&lt;string, string&gt; vlm_props = 4;</code>
        */
 
       public java.lang.String getVlmPropsOrDefault(
@@ -1845,7 +1928,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+       * <code>map&lt;string, string&gt; vlm_props = 4;</code>
        */
 
       public java.lang.String getVlmPropsOrThrow(
@@ -1869,7 +1952,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+       * <code>map&lt;string, string&gt; vlm_props = 4;</code>
        */
 
       public Builder removeVlmProps(
@@ -1892,7 +1975,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+       * <code>map&lt;string, string&gt; vlm_props = 4;</code>
        */
       public Builder putVlmProps(
           java.lang.String key,
@@ -1908,7 +1991,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; vlm_props = 3;</code>
+       * <code>map&lt;string, string&gt; vlm_props = 4;</code>
        */
 
       public Builder putAllVlmProps(
@@ -1993,11 +2076,12 @@ public final class MsgCrtVlmDfnOuterClass {
       "\n\022MsgCrtVlmDfn.proto\022\033com.linbit.drbdman" +
       "age.proto\"Z\n\014MsgCrtVlmDfn\022\020\n\010rsc_name\030\001 " +
       "\001(\t\0228\n\013vlm_dfn_map\030\002 \003(\0132#.com.linbit.dr" +
-      "bdmanage.proto.VlmDfn\"\241\001\n\006VlmDfn\022\016\n\006vlm_" +
-      "nr\030\001 \001(\021\022\020\n\010vlm_size\030\002 \001(\003\022D\n\tvlm_props\030" +
-      "\003 \003(\01321.com.linbit.drbdmanage.proto.VlmD" +
-      "fn.VlmPropsEntry\032/\n\rVlmPropsEntry\022\013\n\003key" +
-      "\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001b\006proto3"
+      "bdmanage.proto.VlmDfn\"\264\001\n\006VlmDfn\022\016\n\006vlm_" +
+      "nr\030\001 \001(\021\022\020\n\010vlm_size\030\002 \001(\003\022\021\n\tvlm_minor\030" +
+      "\003 \001(\021\022D\n\tvlm_props\030\004 \003(\01321.com.linbit.dr" +
+      "bdmanage.proto.VlmDfn.VlmPropsEntry\032/\n\rV" +
+      "lmPropsEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t" +
+      ":\0028\001b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2022,7 +2106,7 @@ public final class MsgCrtVlmDfnOuterClass {
     internal_static_com_linbit_drbdmanage_proto_VlmDfn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_VlmDfn_descriptor,
-        new java.lang.String[] { "VlmNr", "VlmSize", "VlmProps", });
+        new java.lang.String[] { "VlmNr", "VlmSize", "VlmMinor", "VlmProps", });
     internal_static_com_linbit_drbdmanage_proto_VlmDfn_VlmPropsEntry_descriptor =
       internal_static_com_linbit_drbdmanage_proto_VlmDfn_descriptor.getNestedTypes().get(0);
     internal_static_com_linbit_drbdmanage_proto_VlmDfn_VlmPropsEntry_fieldAccessorTable = new

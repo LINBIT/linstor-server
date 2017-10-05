@@ -67,7 +67,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volNr,
             minor,
             volSize,
-            VlmDfnFlags.REMOVE.flagValue,
+            VlmDfnFlags.DELETE.flagValue,
             transMgr
         );
 
@@ -92,7 +92,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));
         assertEquals(minor.value, resultSet.getInt(VLM_MINOR_NR));
-        assertEquals(VlmDfnFlags.REMOVE.flagValue, resultSet.getLong(VLM_FLAGS));
+        assertEquals(VlmDfnFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
 
@@ -115,7 +115,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volNr,
             minor,
             volSize,
-            new VlmDfnFlags[] { VlmDfnFlags.REMOVE },
+            new VlmDfnFlags[] { VlmDfnFlags.DELETE },
             transMgr,
             true,
             false
@@ -127,7 +127,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));
         assertEquals(minor.value, resultSet.getInt(VLM_MINOR_NR));
-        assertEquals(VlmDfnFlags.REMOVE.flagValue, resultSet.getLong(VLM_FLAGS));
+        assertEquals(VlmDfnFlags.DELETE.flagValue, resultSet.getLong(VLM_FLAGS));
 
         assertFalse(resultSet.next());
 
@@ -147,7 +147,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals(volNr, loadedVd.getVolumeNumber(sysCtx));
         assertEquals(volSize, loadedVd.getVolumeSize(sysCtx));
         assertEquals(minor, loadedVd.getMinorNr(sysCtx));
-        assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.REMOVE));
+        assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
     }
 
     @Test
@@ -172,7 +172,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals(volNr, loadedVd.getVolumeNumber(sysCtx));
         assertEquals(volSize, loadedVd.getVolumeSize(sysCtx));
         assertEquals(minor, loadedVd.getMinorNr(sysCtx));
-        assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.REMOVE));
+        assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
     }
 
     @Test
@@ -195,7 +195,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals(volNr, loadedVd.getVolumeNumber(sysCtx));
         assertEquals(volSize, loadedVd.getVolumeSize(sysCtx));
         assertEquals(minor, loadedVd.getMinorNr(sysCtx));
-        assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.REMOVE));
+        assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
     }
 
     @Test
@@ -389,7 +389,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volNr,
             minor,
             volSize,
-            new VlmDfnFlags[] { VlmDfnFlags.REMOVE },
+            new VlmDfnFlags[] { VlmDfnFlags.DELETE },
             null,
             true,
             false
@@ -400,7 +400,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals(volNr, volDfnSat.getVolumeNumber(sysCtx));
         assertEquals(volSize, volDfnSat.getVolumeSize(sysCtx));
         assertEquals(minor, volDfnSat.getMinorNr(sysCtx));
-        assertTrue(volDfnSat.getFlags().isSet(sysCtx, VlmDfnFlags.REMOVE));
+        assertTrue(volDfnSat.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
@@ -422,7 +422,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             volNr,
             minor,
             volSize,
-            new VlmDfnFlags[] { VlmDfnFlags.REMOVE },
+            new VlmDfnFlags[] { VlmDfnFlags.DELETE },
             null,
             false,
             false

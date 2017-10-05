@@ -75,6 +75,10 @@ class CtrlNodeApiCallHandler
 
             apiCallRc.addEntry(entry);
             controller.nodesMap.put(nodeName, node);
+            controller.getErrorReporter().logInfo(
+                "Node [%s] successfully created",
+                nodeNameStr
+            );
         }
         catch (SQLException sqlExc)
         {
@@ -82,8 +86,8 @@ class CtrlNodeApiCallHandler
             { // handle sqlExc1
                 controller.getErrorReporter().reportError(
                     sqlExc,
-                    null,
-                    null,
+                    accCtx,
+                    client,
                     "A database error occured while trying to create a new transaction."
                 );
 
@@ -100,8 +104,8 @@ class CtrlNodeApiCallHandler
             { // handle sqlExc2
                 controller.getErrorReporter().reportError(
                     sqlExc,
-                    null,
-                    null,
+                    accCtx,
+                    client,
                     "A database error occured while trying to persist the node."
                 );
 
@@ -119,8 +123,8 @@ class CtrlNodeApiCallHandler
 
                 controller.getErrorReporter().reportError(
                     sqlExc,
-                    null,
-                    null,
+                    accCtx,
+                    client,
                     "A database error occured while trying to commit the transaction."
                 );
 
@@ -204,8 +208,8 @@ class CtrlNodeApiCallHandler
                 {
                     controller.getErrorReporter().reportError(
                         sqlExc,
-                        null,
-                        null,
+                        accCtx,
+                        client,
                         "A database error occured while trying to rollback the transaction."
                     );
 
@@ -246,7 +250,7 @@ class CtrlNodeApiCallHandler
             if (nodeData != null)
             {
                 nodeData.setConnection(transMgr);
-                nodeData.delete(accCtx); // sqlExc3, accDeniedExc3
+                nodeData.markDeleted(accCtx); // sqlExc3, accDeniedExc3
                 transMgr.commit(); // sqlExc4
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -255,6 +259,10 @@ class CtrlNodeApiCallHandler
                 entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
                 entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
+                controller.getErrorReporter().logInfo(
+                    "Node [%s] marked to be deleted",
+                    nodeNameStr
+                );
             }
             else
             {
@@ -264,6 +272,10 @@ class CtrlNodeApiCallHandler
                 entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
                 entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
+                controller.getErrorReporter().logInfo(
+                    "Non existing Node [%s] could not be deleted",
+                    nodeNameStr
+                );
             }
         }
         catch (SQLException sqlExc)
@@ -272,8 +284,8 @@ class CtrlNodeApiCallHandler
             { // handle sqlExc1
                 controller.getErrorReporter().reportError(
                     sqlExc,
-                    null,
-                    null,
+                    accCtx,
+                    client,
                     "A database error occured while trying to create a new transaction."
                 );
 
@@ -290,8 +302,8 @@ class CtrlNodeApiCallHandler
             { // handle sqlExc2
                 controller.getErrorReporter().reportError(
                     sqlExc,
-                    null,
-                    null,
+                    accCtx,
+                    client,
                     "A database error occured while trying to load the node."
                 );
 
@@ -309,8 +321,8 @@ class CtrlNodeApiCallHandler
             { // handle sqlExc3
                 controller.getErrorReporter().reportError(
                     sqlExc,
-                    null,
-                    null,
+                    accCtx,
+                    client,
                     "A database error occured while trying to delete the node."
                 );
 
@@ -327,8 +339,8 @@ class CtrlNodeApiCallHandler
             { // handle sqlExc4
                 controller.getErrorReporter().reportError(
                     sqlExc,
-                    null,
-                    null,
+                    accCtx,
+                    client,
                     "A database error occured while trying to commit the transaction."
                 );
 
@@ -385,6 +397,7 @@ class CtrlNodeApiCallHandler
         {
             controller.getErrorReporter().reportError(
                 new ImplementationError(
+                    ".getInstance was called with failIfExists=false, still threw an AlreadyExistsException",
                     dataAlreadyExistsExc
                 )
             );
@@ -411,8 +424,8 @@ class CtrlNodeApiCallHandler
                 {
                     controller.getErrorReporter().reportError(
                         sqlExc,
-                        null,
-                        null,
+                        accCtx,
+                        client,
                         "A database error occured while trying to rollback the transaction."
                     );
 
