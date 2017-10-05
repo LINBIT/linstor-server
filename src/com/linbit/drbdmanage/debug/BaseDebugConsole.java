@@ -108,11 +108,48 @@ public abstract class BaseDebugConsole implements DebugConsole
         }
         catch (IOException ioExc)
         {
-            dbgCoreSvcs.getErrorReporter().reportError(ioExc);
+            String reportId = dbgCoreSvcs.getErrorReporter().reportError(ioExc);
+            if (reportId != null)
+            {
+                debugErr.printf(
+                    "DebugConsole: An unhandled I/O exception was encountered while processing the debug command.\n" +
+                    "The report ID of the error report is %s\n",
+                    reportId
+                );
+                String excMsg = ioExc.getMessage();
+                if (excMsg != null)
+                {
+                    debugErr.printf(
+                        "The error description returned by the runtime environment or operating system is:\n" +
+                        "%s\n",
+                        excMsg
+                    );
+                }
+                debugErr.flush();
+            }
         }
         catch (Throwable error)
         {
-            dbgCoreSvcs.getErrorReporter().reportError(error);
+            String reportId = dbgCoreSvcs.getErrorReporter().reportError(error);
+            if (reportId != null)
+            {
+                debugErr.printf(
+                    "DebugConsole: An unhandled error was encountered while processing the debug command:\n" +
+                    "The error type is: %s\n" +
+                    "The report ID of the error report is: %s\n",
+                    error.getClass().getCanonicalName(), reportId
+                );
+                String excMsg = error.getMessage();
+                if (excMsg != null)
+                {
+                    debugErr.printf(
+                        "The error description returned by the runtime environment or operating system is:\n" +
+                        "%s\n",
+                        excMsg
+                    );
+                }
+                debugErr.flush();
+            }
         }
     }
 
@@ -224,7 +261,27 @@ public abstract class BaseDebugConsole implements DebugConsole
                 }
                 catch (Exception exc)
                 {
-                    dbgCoreSvcs.getErrorReporter().reportError(exc);
+                    String reportId = dbgCoreSvcs.getErrorReporter().reportError(exc);
+                    if (reportId != null)
+                    {
+                        debugErr.printf(
+                            "DebugConsole: An unhandled exception was encountered while processing " +
+                            "the debug command:\n" +
+                            "The exception type is: %s\n" +
+                            "The report ID of the error report is: %s\n",
+                            exc.getClass().getCanonicalName(), reportId
+                        );
+                        String excMsg = exc.getMessage();
+                        if (excMsg != null)
+                        {
+                            debugErr.printf(
+                                "The error description returned by the runtime environment or operating system is:\n" +
+                                "%s\n",
+                                excMsg
+                            );
+                        }
+                        debugErr.flush();
+                    }
                 }
             }
             else
