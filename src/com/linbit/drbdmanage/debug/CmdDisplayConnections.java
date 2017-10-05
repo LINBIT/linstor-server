@@ -253,7 +253,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
             String regex = parameters.get(paramName);
             if (regex != null)
             {
-                Pattern ptrn = Pattern.compile(regex);
+                Pattern ptrn = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
                 regexMatch = ptrn.matcher("");
             }
         }
