@@ -111,9 +111,10 @@ class CtrlNodeApiCallHandler
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
-                entry.setMessageFormat("Failed to persist node.");
+                entry.setMessageFormat("Failed to persist node '${" + ApiConsts.KEY_NODE_NAME + "}'.");
                 entry.setCauseFormat(sqlExc.getMessage());
                 entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+                entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
 
                 apiCallRc.addEntry(entry);
             }
@@ -184,13 +185,17 @@ class CtrlNodeApiCallHandler
                 alreadyExistsExc,
                 accCtx,
                 client,
-                "The node which should be created already exists"
+                String.format(
+                    "The node %s which should be created already exists",
+                    nodeNameStr
+                )
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
-            entry.setMessageFormat("The node already exists");
+            entry.setMessageFormat("The node ${" + ApiConsts.KEY_NODE_NAME + "} already exists");
             entry.setCauseFormat(alreadyExistsExc.getMessage());
+            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
@@ -255,7 +260,7 @@ class CtrlNodeApiCallHandler
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DELETED);
-                entry.setMessageFormat("Node ${" + ApiConsts.KEY_NODE_NAME + "} successfully deleted");
+                entry.setMessageFormat("Node ${" + ApiConsts.KEY_NODE_NAME + "} marked to be deleted");
                 entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
                 entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
@@ -263,6 +268,10 @@ class CtrlNodeApiCallHandler
                     "Node [%s] marked to be deleted",
                     nodeNameStr
                 );
+
+                // TODO: tell satellites to remove all the corresponding resources
+                // TODO: if satellites are finished (or no satellite had such a resource deployed)
+                //       remove the node from the DB
             }
             else
             {
@@ -304,7 +313,10 @@ class CtrlNodeApiCallHandler
                     sqlExc,
                     accCtx,
                     client,
-                    "A database error occured while trying to load the node."
+                    String.format(
+                        "A database error occured while trying to load the node '%s'.",
+                        nodeNameStr
+                    )
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -323,7 +335,10 @@ class CtrlNodeApiCallHandler
                     sqlExc,
                     accCtx,
                     client,
-                    "A database error occured while trying to delete the node."
+                    String.format(
+                        "A database error occured while trying to delete the node '%s'.",
+                        nodeNameStr
+                    )
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -361,7 +376,10 @@ class CtrlNodeApiCallHandler
                 invalidNameExc,
                 accCtx,
                 client,
-                "The given name for the node is invalid"
+                String.format(
+                    "The node name '%s' is invalid",
+                    nodeNameStr
+                )
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -397,7 +415,10 @@ class CtrlNodeApiCallHandler
         {
             controller.getErrorReporter().reportError(
                 new ImplementationError(
-                    ".getInstance was called with failIfExists=false, still threw an AlreadyExistsException",
+                    String.format(
+                        ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s",
+                        nodeNameStr
+                    ),
                     dataAlreadyExistsExc
                 )
             );

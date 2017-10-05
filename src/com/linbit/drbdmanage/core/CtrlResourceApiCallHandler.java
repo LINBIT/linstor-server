@@ -130,6 +130,8 @@ class CtrlResourceApiCallHandler
                 );
                 volSuccessEntry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(volCrtData.getVolumeNr()));
                 volSuccessEntry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(volCrtData.getMinorNr()));
+                volSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
+                volSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(volCrtData.getVolumeNr()));
 
                 apiCallRc.addEntry(volSuccessEntry);
             }
@@ -142,6 +144,7 @@ class CtrlResourceApiCallHandler
             successEntry.putVariable(ApiConsts.KEY_PEER_COUNT, Short.toString(peerCount));
             successEntry.putVariable(ApiConsts.KEY_AL_STRIPES, Integer.toString(alStripes));
             successEntry.putVariable(ApiConsts.KEY_AL_SIZE, Long.toString(alStripeSize));
+            successEntry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
 
             apiCallRc.addEntry(successEntry);
             controller.getErrorReporter().logInfo(
@@ -165,13 +168,15 @@ class CtrlResourceApiCallHandler
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(sqlExc.getMessage());
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
 
                 apiCallRc.addEntry(entry);
             }
             else
             if (rscDfn == null)
             { // handle sqlExc2
-                String errorMessage = "A database error occured while trying to create a new resource definition.";
+                String errorMessage = "A database error occured while trying to create a new resource definition. " +
+                    "Resource name: " + resourceName;
                 controller.getErrorReporter().reportError(
                     sqlExc,
                     accCtx,
@@ -183,13 +188,15 @@ class CtrlResourceApiCallHandler
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(sqlExc.getMessage());
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
 
                 apiCallRc.addEntry(entry);
             }
             else
             if (lastVolDfn == null)
             { // handle sqlExc3
-                String errorMessage = "A database error occured while trying to create a new volume definition.";
+                String errorMessage = "A database error occured while trying to create a new volume definition for resource definition: " +
+                    resourceName + ".";
                 controller.getErrorReporter().reportError(
                     sqlExc,
                     accCtx,
@@ -205,7 +212,10 @@ class CtrlResourceApiCallHandler
                 {
                     entry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
                     entry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(currentVolCrtData.getMinorNr()));
+                    entry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
                 }
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
+
                 apiCallRc.addEntry(entry);
             }
             else
@@ -223,6 +233,7 @@ class CtrlResourceApiCallHandler
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(sqlExc.getMessage());
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
 
                 apiCallRc.addEntry(entry);
             }
@@ -232,7 +243,7 @@ class CtrlResourceApiCallHandler
             if (rscDfn == null)
             { // handle accDeniedExc1
 
-                String errorMessage = "The given access context has no permission to create a resource definition";
+                String errorMessage = "The given access context has no permission to create a new resource definition";
                 controller.getErrorReporter().reportError(
                     accExc,
                     accCtx,
@@ -244,10 +255,11 @@ class CtrlResourceApiCallHandler
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(accExc.getMessage());
-                entry.setDetailsFormat("The access-context (user: ${acUser}, role: ${acRole}) "
-                    + "requires more rights to create a new resource definition ");
+                entry.setDetailsFormat("The access-context (user: ${" + ApiConsts.KEY_ID + " }, role: ${" + ApiConsts.KEY_ROLE + "}) "
+                    + "has not enough rights to create a new resource definition");
                 entry.putVariable(ApiConsts.KEY_ID, accCtx.subjectId.name.displayValue);
                 entry.putVariable(ApiConsts.KEY_ROLE, accCtx.subjectRole.name.displayValue);
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
 
                 apiCallRc.addEntry(entry);
             }
@@ -269,10 +281,11 @@ class CtrlResourceApiCallHandler
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(accExc.getMessage());
-                entry.setDetailsFormat("The access-context (user: ${acUser}, role: ${acRole}) "
-                    + "requires more rights to create a new resource definition ");
+                entry.setDetailsFormat("The access-context (user: ${" + ApiConsts.KEY_ID + " }, role: ${" + ApiConsts.KEY_ROLE + "}) "
+                    + "has not enough rights to create a new resource definition");
                 entry.putVariable(ApiConsts.KEY_ID, accCtx.subjectId.name.displayValue);
                 entry.putVariable(ApiConsts.KEY_ROLE, accCtx.subjectRole.name.displayValue);
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
 
                 apiCallRc.addEntry(entry);
             }
@@ -293,6 +306,7 @@ class CtrlResourceApiCallHandler
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat("The given resource name '${" + ApiConsts.KEY_RSC_NAME + "}'is invalid");
             entry.putVariable(ApiConsts.KEY_RSC_NAME, resourceName);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
 
             apiCallRc.addEntry(entry);
         }
@@ -313,6 +327,8 @@ class CtrlResourceApiCallHandler
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat("Given volume number ${" + ApiConsts.KEY_VLM_NR + "} was invalid");
                 entry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
+                entry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
 
                 apiCallRc.addEntry(entry);
             }
@@ -331,6 +347,8 @@ class CtrlResourceApiCallHandler
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat("Given minor number ${" + ApiConsts.KEY_MINOR_NR + "} was invalid");
                 entry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
+                entry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
 
                 apiCallRc.addEntry(entry);
             }
@@ -351,6 +369,8 @@ class CtrlResourceApiCallHandler
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat("Given volume size ${" + ApiConsts.KEY_VLM_SIZE + "} was invalid");
             entry.putVariable(ApiConsts.KEY_VLM_SIZE, Long.toString(currentVolCrtData.getSize()));
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
+            entry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
 
             apiCallRc.addEntry(entry);
         }
@@ -363,13 +383,18 @@ class CtrlResourceApiCallHandler
                     alreadyExistsExc,
                     accCtx,
                     client,
-                    "The ResourceDefinition which should be created already exists"
+                    String.format(
+                        "The resource definition '%s' be created already exists.",
+                        resourceName
+                    )
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
-                entry.setMessageFormat("The ResourceDefinition already exists");
+                entry.setMessageFormat("The resource definition '${" + ApiConsts.KEY_RSC_NAME + "}' already exists");
                 entry.setCauseFormat(alreadyExistsExc.getMessage());
+                entry.putVariable(ApiConsts.KEY_RSC_NAME, resourceName);
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
 
                 apiCallRc.addEntry(entry);
             }
@@ -380,23 +405,25 @@ class CtrlResourceApiCallHandler
                     alreadyExistsExc,
                     accCtx,
                     client,
-                    "A VolumeDefinition which should be created already exists"
+                    "A volume definition which should be created already exists"
                 );
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
-                entry.setMessageFormat("A VolumeDefinition already exists");
+                entry.setMessageFormat("A volume definition already exists in resource definition '${" + ApiConsts.KEY_RSC_NAME + "}'");
                 entry.setCauseFormat(alreadyExistsExc.getMessage());
                 if (currentVolCrtData != null)
                 {
                     entry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
                     entry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(currentVolCrtData.getMinorNr()));
+                    entry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
                 }
+                entry.putVariable(ApiConsts.KEY_RSC_NAME, resourceName);
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
 
                 apiCallRc.addEntry(entry);
             }
         }
-
 
         if (transMgr != null && transMgr.isDirty())
         {
@@ -419,6 +446,7 @@ class CtrlResourceApiCallHandler
                 entry.setReturnCodeBit(ApiCallRcConstants.RC_RSC_DFN_CREATION_FAILED);
                 entry.setMessageFormat(errorMessage);
                 entry.setCauseFormat(sqlExc.getMessage());
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, resourceName);
 
                 apiCallRc.addEntry(entry);
             }
@@ -491,7 +519,7 @@ class CtrlResourceApiCallHandler
                 accDeniedExc,
                 accCtx,
                 client,
-                "The given access context has no permission to create a new node"
+                "The given access context has no permission to create a new resource definition"
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
