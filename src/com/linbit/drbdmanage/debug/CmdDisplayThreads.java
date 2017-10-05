@@ -46,8 +46,9 @@ public class CmdDisplayThreads extends BaseDebugCmd
         String ruler = new String(rulerData);
 
         debugOut.printf(
-            "%-32s %18s %4s %-6s %-6s %-6s\n",
-            "Thread name", "Id", "Prio", "Alive", "Daemon", "Intr"
+            "\u001b[1;37mA\u001b[0m Alive / \u001b[1;37mD\u001b[0m Daemon / \u001b[1;37mI\u001b[0m Interrupted\n" +
+            "%-32s %18s %4s %-15s A D I\n",
+            "Thread name", "Id", "Prio", "State"
         );
         debugOut.println(ruler);
 
@@ -56,9 +57,10 @@ public class CmdDisplayThreads extends BaseDebugCmd
         int daemonCtr = 0;
         for (Thread thr : activeThreads)
         {
-            boolean alive   = thr.isAlive();
-            boolean daemon  = thr.isDaemon();
-            boolean intr    = thr.isInterrupted();
+            boolean alive       = thr.isAlive();
+            boolean daemon      = thr.isDaemon();
+            boolean intr        = thr.isInterrupted();
+            Thread.State state  = thr.getState();
 
             if (alive)
             {
@@ -71,10 +73,11 @@ public class CmdDisplayThreads extends BaseDebugCmd
             }
 
             debugOut.printf(
-                "%-32s %18d %4d %-6s %-6s %-6s\n",
+                "%-32s %18d %4d %-15s %-1s %-1s %-1s\n",
                 thr.getName(),
                 thr.getId(),
                 thr.getPriority(),
+                state.toString(),
                 alive ? "Y" : "N",
                 daemon ? "Y" : "N",
                 intr ? "Y" : "N"
