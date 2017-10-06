@@ -219,6 +219,14 @@ public class WorkerPoolTest
         private BlockingQueue<Throwable> unexpected = new LinkedBlockingQueue<>();
 
         @Override
+        public String getInstanceId()
+        {
+            // Hex instance ID of drbdmanageNG's error reporter
+            // Not significant for the test, just needs to return something to implement the interface
+            return "CAFEAFFE";
+        }
+
+        @Override
         public String reportError(Throwable throwable)
         {
             unexpected.add(throwable);
