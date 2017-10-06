@@ -309,6 +309,12 @@ public class WorkerPoolTest
                 )
             );
         }
+
+        @Override
+        public String getInstanceId()
+        {
+            return "WorkerPoolTest";
+        }
     }
 
     private static class WorkerPoolBuilder

@@ -38,10 +38,28 @@ public final class MsgCrtNodeOuterClass {
 
     /**
      * <pre>
+     * Node type
+     * </pre>
+     *
+     * <code>string node_type = 2;</code>
+     */
+    java.lang.String getNodeType();
+    /**
+     * <pre>
+     * Node type
+     * </pre>
+     *
+     * <code>string node_type = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getNodeTypeBytes();
+
+    /**
+     * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 2;</code>
+     * <code>map&lt;string, string&gt; node_props = 3;</code>
      */
     int getNodePropsCount();
     /**
@@ -49,7 +67,7 @@ public final class MsgCrtNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 2;</code>
+     * <code>map&lt;string, string&gt; node_props = 3;</code>
      */
     boolean containsNodeProps(
         java.lang.String key);
@@ -64,7 +82,7 @@ public final class MsgCrtNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 2;</code>
+     * <code>map&lt;string, string&gt; node_props = 3;</code>
      */
     java.util.Map<java.lang.String, java.lang.String>
     getNodePropsMap();
@@ -73,7 +91,7 @@ public final class MsgCrtNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 2;</code>
+     * <code>map&lt;string, string&gt; node_props = 3;</code>
      */
 
     java.lang.String getNodePropsOrDefault(
@@ -84,7 +102,7 @@ public final class MsgCrtNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 2;</code>
+     * <code>map&lt;string, string&gt; node_props = 3;</code>
      */
 
     java.lang.String getNodePropsOrThrow(
@@ -107,6 +125,7 @@ public final class MsgCrtNodeOuterClass {
     }
     private MsgCrtNode() {
       nodeName_ = "";
+      nodeType_ = "";
     }
 
     @java.lang.Override
@@ -141,10 +160,16 @@ public final class MsgCrtNodeOuterClass {
               break;
             }
             case 18: {
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              nodeType_ = s;
+              break;
+            }
+            case 26: {
+              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
                 nodeProps_ = com.google.protobuf.MapField.newMapField(
                     NodePropsDefaultEntryHolder.defaultEntry);
-                mutable_bitField0_ |= 0x00000002;
+                mutable_bitField0_ |= 0x00000004;
               }
               com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
               nodeProps__ = input.readMessage(
@@ -173,7 +198,7 @@ public final class MsgCrtNodeOuterClass {
     protected com.google.protobuf.MapField internalGetMapField(
         int number) {
       switch (number) {
-        case 2:
+        case 3:
           return internalGetNodeProps();
         default:
           throw new RuntimeException(
@@ -230,7 +255,49 @@ public final class MsgCrtNodeOuterClass {
       }
     }
 
-    public static final int NODE_PROPS_FIELD_NUMBER = 2;
+    public static final int NODE_TYPE_FIELD_NUMBER = 2;
+    private volatile java.lang.Object nodeType_;
+    /**
+     * <pre>
+     * Node type
+     * </pre>
+     *
+     * <code>string node_type = 2;</code>
+     */
+    public java.lang.String getNodeType() {
+      java.lang.Object ref = nodeType_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        nodeType_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Node type
+     * </pre>
+     *
+     * <code>string node_type = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNodeTypeBytes() {
+      java.lang.Object ref = nodeType_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        nodeType_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int NODE_PROPS_FIELD_NUMBER = 3;
     private static final class NodePropsDefaultEntryHolder {
       static final com.google.protobuf.MapEntry<
           java.lang.String, java.lang.String> defaultEntry =
@@ -261,7 +328,7 @@ public final class MsgCrtNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 2;</code>
+     * <code>map&lt;string, string&gt; node_props = 3;</code>
      */
 
     public boolean containsNodeProps(
@@ -281,7 +348,7 @@ public final class MsgCrtNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 2;</code>
+     * <code>map&lt;string, string&gt; node_props = 3;</code>
      */
 
     public java.util.Map<java.lang.String, java.lang.String> getNodePropsMap() {
@@ -292,7 +359,7 @@ public final class MsgCrtNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 2;</code>
+     * <code>map&lt;string, string&gt; node_props = 3;</code>
      */
 
     public java.lang.String getNodePropsOrDefault(
@@ -308,7 +375,7 @@ public final class MsgCrtNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 2;</code>
+     * <code>map&lt;string, string&gt; node_props = 3;</code>
      */
 
     public java.lang.String getNodePropsOrThrow(
@@ -337,12 +404,15 @@ public final class MsgCrtNodeOuterClass {
       if (!getNodeNameBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeName_);
       }
+      if (!getNodeTypeBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeType_);
+      }
       com.google.protobuf.GeneratedMessageV3
         .serializeStringMapTo(
           output,
           internalGetNodeProps(),
           NodePropsDefaultEntryHolder.defaultEntry,
-          2);
+          3);
     }
 
     public int getSerializedSize() {
@@ -353,6 +423,9 @@ public final class MsgCrtNodeOuterClass {
       if (!getNodeNameBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeName_);
       }
+      if (!getNodeTypeBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeType_);
+      }
       for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
            : internalGetNodeProps().getMap().entrySet()) {
         com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
@@ -361,7 +434,7 @@ public final class MsgCrtNodeOuterClass {
             .setValue(entry.getValue())
             .build();
         size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(2, nodeProps__);
+            .computeMessageSize(3, nodeProps__);
       }
       memoizedSize = size;
       return size;
@@ -381,6 +454,8 @@ public final class MsgCrtNodeOuterClass {
       boolean result = true;
       result = result && getNodeName()
           .equals(other.getNodeName());
+      result = result && getNodeType()
+          .equals(other.getNodeType());
       result = result && internalGetNodeProps().equals(
           other.internalGetNodeProps());
       return result;
@@ -395,6 +470,8 @@ public final class MsgCrtNodeOuterClass {
       hash = (19 * hash) + getDescriptor().hashCode();
       hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
       hash = (53 * hash) + getNodeName().hashCode();
+      hash = (37 * hash) + NODE_TYPE_FIELD_NUMBER;
+      hash = (53 * hash) + getNodeType().hashCode();
       if (!internalGetNodeProps().getMap().isEmpty()) {
         hash = (37 * hash) + NODE_PROPS_FIELD_NUMBER;
         hash = (53 * hash) + internalGetNodeProps().hashCode();
@@ -501,7 +578,7 @@ public final class MsgCrtNodeOuterClass {
       protected com.google.protobuf.MapField internalGetMapField(
           int number) {
         switch (number) {
-          case 2:
+          case 3:
             return internalGetNodeProps();
           default:
             throw new RuntimeException(
@@ -512,7 +589,7 @@ public final class MsgCrtNodeOuterClass {
       protected com.google.protobuf.MapField internalGetMutableMapField(
           int number) {
         switch (number) {
-          case 2:
+          case 3:
             return internalGetMutableNodeProps();
           default:
             throw new RuntimeException(
@@ -545,6 +622,8 @@ public final class MsgCrtNodeOuterClass {
         super.clear();
         nodeName_ = "";
 
+        nodeType_ = "";
+
         internalGetMutableNodeProps().clear();
         return this;
       }
@@ -571,6 +650,7 @@ public final class MsgCrtNodeOuterClass {
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
         result.nodeName_ = nodeName_;
+        result.nodeType_ = nodeType_;
         result.nodeProps_ = internalGetNodeProps();
         result.nodeProps_.makeImmutable();
         result.bitField0_ = to_bitField0_;
@@ -617,6 +697,10 @@ public final class MsgCrtNodeOuterClass {
         if (other == com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode.getDefaultInstance()) return this;
         if (!other.getNodeName().isEmpty()) {
           nodeName_ = other.nodeName_;
+          onChanged();
+        }
+        if (!other.getNodeType().isEmpty()) {
+          nodeType_ = other.nodeType_;
           onChanged();
         }
         internalGetMutableNodeProps().mergeFrom(
@@ -737,6 +821,95 @@ public final class MsgCrtNodeOuterClass {
         return this;
       }
 
+      private java.lang.Object nodeType_ = "";
+      /**
+       * <pre>
+       * Node type
+       * </pre>
+       *
+       * <code>string node_type = 2;</code>
+       */
+      public java.lang.String getNodeType() {
+        java.lang.Object ref = nodeType_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          nodeType_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Node type
+       * </pre>
+       *
+       * <code>string node_type = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNodeTypeBytes() {
+        java.lang.Object ref = nodeType_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          nodeType_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Node type
+       * </pre>
+       *
+       * <code>string node_type = 2;</code>
+       */
+      public Builder setNodeType(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        nodeType_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node type
+       * </pre>
+       *
+       * <code>string node_type = 2;</code>
+       */
+      public Builder clearNodeType() {
+        
+        nodeType_ = getDefaultInstance().getNodeType();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node type
+       * </pre>
+       *
+       * <code>string node_type = 2;</code>
+       */
+      public Builder setNodeTypeBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        nodeType_ = value;
+        onChanged();
+        return this;
+      }
+
       private com.google.protobuf.MapField<
           java.lang.String, java.lang.String> nodeProps_;
       private com.google.protobuf.MapField<java.lang.String, java.lang.String>
@@ -768,7 +941,7 @@ public final class MsgCrtNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_props = 2;</code>
+       * <code>map&lt;string, string&gt; node_props = 3;</code>
        */
 
       public boolean containsNodeProps(
@@ -788,7 +961,7 @@ public final class MsgCrtNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_props = 2;</code>
+       * <code>map&lt;string, string&gt; node_props = 3;</code>
        */
 
       public java.util.Map<java.lang.String, java.lang.String> getNodePropsMap() {
@@ -799,7 +972,7 @@ public final class MsgCrtNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_props = 2;</code>
+       * <code>map&lt;string, string&gt; node_props = 3;</code>
        */
 
       public java.lang.String getNodePropsOrDefault(
@@ -815,7 +988,7 @@ public final class MsgCrtNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_props = 2;</code>
+       * <code>map&lt;string, string&gt; node_props = 3;</code>
        */
 
       public java.lang.String getNodePropsOrThrow(
@@ -839,7 +1012,7 @@ public final class MsgCrtNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_props = 2;</code>
+       * <code>map&lt;string, string&gt; node_props = 3;</code>
        */
 
       public Builder removeNodeProps(
@@ -862,7 +1035,7 @@ public final class MsgCrtNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_props = 2;</code>
+       * <code>map&lt;string, string&gt; node_props = 3;</code>
        */
       public Builder putNodeProps(
           java.lang.String key,
@@ -878,7 +1051,7 @@ public final class MsgCrtNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_props = 2;</code>
+       * <code>map&lt;string, string&gt; node_props = 3;</code>
        */
 
       public Builder putAllNodeProps(
@@ -956,11 +1129,11 @@ public final class MsgCrtNodeOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\020MsgCrtNode.proto\022\033com.linbit.drbdmanag" +
-      "e.proto\"\235\001\n\nMsgCrtNode\022\021\n\tnode_name\030\001 \001(" +
-      "\t\022J\n\nnode_props\030\002 \003(\01326.com.linbit.drbdm" +
-      "anage.proto.MsgCrtNode.NodePropsEntry\0320\n" +
-      "\016NodePropsEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 " +
-      "\001(\t:\0028\001b\006proto3"
+      "e.proto\"\260\001\n\nMsgCrtNode\022\021\n\tnode_name\030\001 \001(" +
+      "\t\022\021\n\tnode_type\030\002 \001(\t\022J\n\nnode_props\030\003 \003(\013" +
+      "26.com.linbit.drbdmanage.proto.MsgCrtNod" +
+      "e.NodePropsEntry\0320\n\016NodePropsEntry\022\013\n\003ke" +
+      "y\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -979,7 +1152,7 @@ public final class MsgCrtNodeOuterClass {
     internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_descriptor,
-        new java.lang.String[] { "NodeName", "NodeProps", });
+        new java.lang.String[] { "NodeName", "NodeType", "NodeProps", });
     internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_NodePropsEntry_descriptor =
       internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_descriptor.getNestedTypes().get(0);
     internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_NodePropsEntry_fieldAccessorTable = new

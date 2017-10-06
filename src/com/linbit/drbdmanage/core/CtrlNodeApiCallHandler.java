@@ -31,7 +31,13 @@ class CtrlNodeApiCallHandler
         controller = controllerRef;
     }
 
-    public ApiCallRc createNode(AccessContext accCtx, Peer client, String nodeNameStr, Map<String, String> props)
+    public ApiCallRc createNode(
+        AccessContext accCtx,
+        Peer client,
+        String nodeNameStr,
+        String nodeTypeStr,
+        Map<String, String> props
+    )
     {
         /*
          * Usually its better to handle exceptions "close" to their appearance.
@@ -53,8 +59,9 @@ class CtrlNodeApiCallHandler
             transMgr = new TransactionMgr(controller.dbConnPool.getConnection()); // sqlExc1
             NodeName nodeName = new NodeName(nodeNameStr); // invalidNameExc1
 
-            NodeType type = NodeType.valueOfIgnoreCase(props.get(ApiConsts.KEY_NODE_TYPE), NodeType.SATELLITE);
-            NodeFlag[] flags = NodeFlag.valuesOfIgnoreCase(props.get(ApiConsts.KEY_NODE_FLAGS));
+            NodeType type = NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
+
+            NodeFlag[] flags = null;
             node = NodeData.getInstance( // sqlExc2, accDeniedExc2, alreadyExists1
                 accCtx,
                 nodeName,
@@ -270,13 +277,12 @@ class CtrlNodeApiCallHandler
                 );
 
                 // TODO: tell satellites to remove all the corresponding resources
-                // TODO: if satellites are finished (or no satellite had such a resource deployed)
-                //       remove the node from the DB
+                // TODO: if satellite is finished remove the node from the DB
             }
             else
             {
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_NOT_FOUND);
+                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DEL_NOT_FOUND);
                 entry.setMessageFormat("Node ${" + ApiConsts.KEY_NODE_NAME + "} was not deleted as it was not found");
                 entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
                 entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);

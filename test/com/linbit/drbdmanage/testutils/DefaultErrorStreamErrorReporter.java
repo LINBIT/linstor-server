@@ -108,4 +108,10 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
 
         return null; // no error report, no logName
     }
+
+    @Override
+    public String getInstanceId()
+    {
+        return "DefaultTestErrorReporter";
+    }
 }

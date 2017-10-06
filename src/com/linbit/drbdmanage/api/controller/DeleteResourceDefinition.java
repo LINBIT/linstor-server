@@ -54,12 +54,13 @@ public class DeleteResourceDefinition extends BaseApiCall
         }
         catch (InvalidProtocolBufferException e)
         {
+            // TODO: error reporting
             e.printStackTrace();
         }
         catch (IOException e)
         {
+            // TODO: error reporting
             e.printStackTrace();
         }
     }
-
 }

@@ -179,7 +179,7 @@ public class ClientProtobuf implements Runnable
             MsgCrtRscDfn.newBuilder().
                 setRscName(resName).
                 putAllRscProps(resDfnProps).
-                addAllVlmDfnMap(vlmDfn).
+                addAllVlmDfns(vlmDfn).
                 build()
         );
         return msgId;

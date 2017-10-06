@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.linbit.drbdmanage.ApiCallRc;
+import com.linbit.drbdmanage.Volume;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -39,10 +40,22 @@ public class CtrlApiCallHandler
         resourceApiCallHandler = new CtrlResourceApiCallHandler(controllerRef);
     }
 
-    public ApiCallRc createNode(AccessContext accCtx, Peer client, String nodeNameStr, Map<String, String> props)
+    public ApiCallRc createNode(
+        AccessContext accCtx,
+        Peer client,
+        String nodeNameStr,
+        String nodeTypeStr,
+        Map<String, String> props
+    )
     {
         controller.nodesMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = nodeApiCallHandler.createNode(accCtx, client, nodeNameStr, props);
+        ApiCallRc apiCallRc = nodeApiCallHandler.createNode(
+            accCtx,
+            client,
+            nodeNameStr,
+            nodeTypeStr,
+            props
+        );
         controller.nodesMapLock.writeLock().unlock();
 
         return apiCallRc;
@@ -90,6 +103,38 @@ public class CtrlApiCallHandler
             resourceName
         );
         controller.rscDfnMapLock.writeLock().unlock();
+        return apiCallRc;
+    }
+
+    public ApiCallRc createResource(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName,
+        String rscName,
+        int nodeId,
+        Map<String, String> rscPropsMap,
+        List<Volume.VlmApi> vlmApiDataList
+    )
+    {
+
+        controller.rscDfnMapLock.writeLock().lock();
+        controller.nodesMapLock.writeLock().lock();
+
+        ApiCallRc apiCallRc = resourceApiCallHandler.createResource(
+            accCtx,
+            client,
+            nodeName,
+            rscName,
+            nodeId,
+            rscPropsMap,
+            vlmApiDataList
+        );
+
+        controller.rscDfnMapLock.writeLock().unlock();
+        controller.nodesMapLock.writeLock().unlock();
+
+
+
         return apiCallRc;
     }
 }

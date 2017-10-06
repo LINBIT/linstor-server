@@ -62,6 +62,7 @@ public final class ApiConsts
     public static final String KEY_NODE_NAME        = "NodeName";
     public static final String KEY_NODE_TYPE        = "NodeType";
     public static final String KEY_NODE_FLAGS       = "NodeFlags";
+    public static final String KEY_NODE_ID          = "NodeId";
     public static final String KEY_RSC_NAME         = "RscName";
     public static final String KEY_STOR_POOL_NAME   = "StorPoolName";
     public static final String KEY_NET_IF_NAME      = "NetIfName";

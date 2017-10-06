@@ -8,12 +8,12 @@ import public "MsgCrtVlmDfn.proto";
 message MsgCrtRscDfn
 {
     // Resource name
-    string              rsc_name    = 1;
+    string              rsc_name  = 1;
 
     // Resource properties map
-    map<string, string> rsc_props   = 2;
+    map<string, string> rsc_props = 2;
 
-    // Volume definitions map
-    repeated VlmDfn     vlm_dfn_map = 3;
+    // Volume definitions list
+    repeated VlmDfn     vlm_dfns  = 3;
 }
 

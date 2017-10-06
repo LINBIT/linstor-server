@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// drbdmanageNG - Delete resource 
+message MsgDelRsc
+{
+	// Node name
+	string				node_name 	= 1;
+
+    // Resource name
+    string              rsc_name    = 2;
+}

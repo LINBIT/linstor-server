@@ -67,7 +67,4 @@ public interface Resource extends TransactionObject
             return flagValue;
         }
     }
-
-
-
 }

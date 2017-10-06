@@ -247,6 +247,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         return flags;
     }
 
+    @Override
     public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
         getFlags().enableFlags(accCtx, RscDfnFlags.DELETE);

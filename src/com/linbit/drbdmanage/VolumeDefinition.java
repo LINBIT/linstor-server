@@ -60,6 +60,26 @@ public interface VolumeDefinition extends TransactionObject
         {
             return flagValue;
         }
+
+        public static VlmDfnFlags[] valuesOfIgnoreCase(String string)
+        {
+            VlmDfnFlags[] flags;
+            if (string == null)
+            {
+                flags = new VlmDfnFlags[0];
+            }
+            else
+            {
+                String[] split = string.split(",");
+                flags = new VlmDfnFlags[split.length];
+
+                for (int i = 0; i < split.length; i++)
+                {
+                    flags[i] = VlmDfnFlags.valueOf(split[i].toUpperCase().trim());
+                }
+            }
+            return flags;
+        }
     }
 
     public interface VlmDfnApi

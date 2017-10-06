@@ -53,16 +53,19 @@ public class CreateNode extends BaseApiCall
                 accCtx,
                 client,
                 msgCreateNode.getNodeName(),
+                msgCreateNode.getNodeType(),
                 msgCreateNode.getNodePropsMap()
             );
             answerApiCallRc(accCtx, client, msgId, apiCallRc);
         }
         catch (InvalidProtocolBufferException e)
         {
+            // TODO: error reporting
             e.printStackTrace();
         }
         catch (IOException e)
         {
+            // TODO: error reporting
             e.printStackTrace();
         }
     }

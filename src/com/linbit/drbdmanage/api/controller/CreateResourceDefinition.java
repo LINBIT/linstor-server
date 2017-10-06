@@ -47,7 +47,7 @@ public class CreateResourceDefinition extends BaseApiCall
             MsgCrtRscDfn msgCreateRscDfn = MsgCrtRscDfn.parseDelimitedFrom(msgDataIn);
 
             List<VlmDfnApi> vlmDfnApiList = new ArrayList<>();
-            for (final VlmDfn vlmDfn : msgCreateRscDfn.getVlmDfnMapList())
+            for (final VlmDfn vlmDfn : msgCreateRscDfn.getVlmDfnsList())
             {
                 vlmDfnApiList.add(new VlmDfnApiData(vlmDfn));
             }
@@ -63,10 +63,12 @@ public class CreateResourceDefinition extends BaseApiCall
         }
         catch (InvalidProtocolBufferException e)
         {
+            // TODO: error reporting
             e.printStackTrace();
         }
         catch (IOException e)
         {
+            // TODO: error reporting
             e.printStackTrace();
         }
     }

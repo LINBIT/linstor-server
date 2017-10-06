@@ -8,6 +8,9 @@ message MsgCrtNode
     // Node name
     string              node_name   = 1;
 
+    // Node type
+    string              node_type   = 2;
+
     // Node properties map
-    map<string, string> node_props  = 2;
+    map<string, string> node_props  = 3;
 }

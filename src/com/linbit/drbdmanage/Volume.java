@@ -60,4 +60,11 @@ public interface Volume extends TransactionObject
             return flagValue;
         }
     }
+
+    public interface VlmApi
+    {
+        public String getBlockDevice();
+        public String getMetaDisk();
+        public int getVlmNr();
+    }
 }
