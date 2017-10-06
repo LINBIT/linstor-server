@@ -386,6 +386,8 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                         {
                             // Protocol error - I/O error while reading a message
                             // Close the connection
+                            // FIXME: This should only produce an error report when the system
+                            //        is at DEBUG or TRACE logging level
                             coreSvcs.getErrorReporter().reportError(ioExc);
                             closeConnection(currentKey);
                         }
