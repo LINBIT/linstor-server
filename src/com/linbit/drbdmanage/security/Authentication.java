@@ -115,46 +115,7 @@ public final class Authentication
                     );
                 }
 
-                byte[] enteredPasswordHash = null;
-                // Hash the password that was supplied for the signin
-                if (storedSalt != null && storedHash != null)
-                {
-                    synchronized (hashAlgo)
-                    {
-                        hashAlgo.update(storedSalt);
-                        enteredPasswordHash = hashAlgo.digest(password);
-                    }
-                    Arrays.fill(password, (byte) 0);
-                }
-                else
-                {
-                    // No password is set on the identity entry, cannot sign in
-                    Arrays.fill(password, (byte) 0);
-                    signInFailed();
-                }
-
-                boolean hashesMatch = false;
-                if (enteredPasswordHash != null && storedHash != null)
-                {
-                    if (enteredPasswordHash.length == storedHash.length)
-                    {
-                        int idx = 0;
-                        while (idx < storedHash.length)
-                        {
-                            if (enteredPasswordHash[idx] != storedHash[idx])
-                            {
-                                break;
-                            }
-                            ++idx;
-                        }
-                        if (idx == storedHash.length)
-                        {
-                            hashesMatch = true;
-                        }
-                    }
-                }
-
-                if (hashesMatch)
+                if (Authentication.passwordMatches(hashAlgo, password, storedSalt, storedHash))
                 {
                     Identity signInIdentity = Identity.get(storedIdName);
                     if (signInIdentity == null)
@@ -306,7 +267,12 @@ public final class Authentication
                         signInType,
                         new PrivilegeSet(signInPrivMask)
                     );
-
+                }
+                else
+                {
+                    // The password does not match the one that is stored in the database
+                    // Abort with an InvalidCredentialsException
+                    signInFailed();
                 }
             }
             else
@@ -335,6 +301,85 @@ public final class Authentication
             ctrlDb.returnConnection(dbConn);
         }
         return signInCtx;
+    }
+
+    /**
+     * Checks whether the hash created by salting and hashing the password
+     * matches the specified salted hash
+     *
+     * {@code password}, {@code storedSalt}, {@code storedHash} may be null.
+     *
+     * Upon exit from this method, the contents of any supplied {@code password},
+     * {@code storedSalt} and {@code storedHash} arrays will be cleared
+     * (all bytes in the array will be set to zero).
+     *
+     * @param dgstAlgo The digest algorithm used for hashing
+     * @param password The plaintext password to check
+     * @param storedSalt The salt used for hashing
+     * @param storedHash The stored hash to compare the password with
+     * @return True if the password matches (is correct), false otherwise
+     */
+    static boolean passwordMatches(
+        MessageDigest dgstAlgo,
+        byte[] password,
+        byte[] storedSalt,
+        byte[] storedHash
+    )
+    {
+        boolean matchFlag = false;
+
+        if (password != null && storedSalt != null && storedHash != null)
+        {
+            byte[] enteredPasswordHash = null;
+            // Hash the password that was supplied for the signin
+            synchronized (dgstAlgo)
+            {
+                dgstAlgo.update(storedSalt);
+                enteredPasswordHash = dgstAlgo.digest(password);
+            }
+
+            if (enteredPasswordHash != null)
+            {
+                if (enteredPasswordHash.length == storedHash.length)
+                {
+                    int idx = 0;
+                    while (idx < storedHash.length)
+                    {
+                        if (enteredPasswordHash[idx] != storedHash[idx])
+                        {
+                            break;
+                        }
+                        ++idx;
+                    }
+                    if (idx == storedHash.length)
+                    {
+                        matchFlag = true;
+                    }
+                }
+            }
+            clearDataFields(enteredPasswordHash);
+        }
+        clearDataFields(password, storedSalt, storedHash);
+
+        return matchFlag;
+    }
+
+    /**
+     * Clears the specified byte arrays by setting all elements to zero.
+     *
+     * Any element of {@code dataFieldList} may be a null reference.
+     * The {@code dataFieldList} argument itself may NOT be a null reference.
+     * @param dataFieldList The list of byte arrays to clear
+     */
+    static void clearDataFields(byte[]... dataFieldList)
+    {
+        for (byte[] dataField : dataFieldList)
+        {
+            if (dataField != null)
+            {
+                Arrays.fill(dataField, (byte) 0);
+            }
+        }
     }
 
     private static void signInFailed()
