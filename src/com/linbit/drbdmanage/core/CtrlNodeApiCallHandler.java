@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.core;
 
+import static com.linbit.drbdmanage.ApiCallRcConstants.*;
+
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -7,7 +9,6 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.ApiCallRc;
-import com.linbit.drbdmanage.ApiCallRcConstants;
 import com.linbit.drbdmanage.ApiCallRcImpl;
 import com.linbit.drbdmanage.DrbdDataAlreadyExistsException;
 import com.linbit.drbdmanage.Node;
@@ -53,13 +54,14 @@ class CtrlNodeApiCallHandler
 
         TransactionMgr transMgr = null;
         Node node = null;
+        NodeType type = null;
         try
         {
             controller.nodesMapProt.requireAccess(accCtx, AccessType.CHANGE);// accDeniedExc1
             transMgr = new TransactionMgr(controller.dbConnPool.getConnection()); // sqlExc1
             NodeName nodeName = new NodeName(nodeNameStr); // invalidNameExc1
 
-            NodeType type = NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
+            type = NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
 
             NodeFlag[] flags = null;
             node = NodeData.getInstance( // sqlExc2, accDeniedExc2, alreadyExists1
@@ -75,7 +77,7 @@ class CtrlNodeApiCallHandler
             transMgr.commit(); // sqlExc3
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATED);
+            entry.setReturnCodeBit(RC_NODE_CREATED);
             entry.setMessageFormat("Node ${" + ApiConsts.KEY_NODE_NAME + "} successfully created");
             entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
@@ -83,72 +85,31 @@ class CtrlNodeApiCallHandler
             apiCallRc.addEntry(entry);
             controller.nodesMap.put(nodeName, node);
             controller.getErrorReporter().logInfo(
-                "Node [%s] successfully created",
+                "Node '%s' successfully created",
                 nodeNameStr
             );
         }
         catch (SQLException sqlExc)
         {
-            if (transMgr == null)
-            { // handle sqlExc1
-                controller.getErrorReporter().reportError(
-                    sqlExc,
-                    accCtx,
-                    client,
-                    "A database error occured while trying to create a new transaction."
-                );
+            controller.getErrorReporter().reportError(
+                sqlExc,
+                accCtx,
+                client,
+                "A database error occured while trying to create a new node (Node name: " +
+                    nodeNameStr + ")."
+            );
 
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
-                entry.setMessageFormat("Failed to create database transaction");
-                entry.setCauseFormat(sqlExc.getMessage());
-                entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_SQL);
+            entry.setMessageFormat("Failed to create node '" + nodeNameStr + "' due to an sql exception.");
+            entry.setCauseFormat(sqlExc.getMessage());
+            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
 
-                apiCallRc.addEntry(entry);
-            }
-            else
-            if (node == null)
-            { // handle sqlExc2
-                controller.getErrorReporter().reportError(
-                    sqlExc,
-                    accCtx,
-                    client,
-                    "A database error occured while trying to persist the node."
-                );
-
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
-                entry.setMessageFormat("Failed to persist node '${" + ApiConsts.KEY_NODE_NAME + "}'.");
-                entry.setCauseFormat(sqlExc.getMessage());
-                entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-                entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-
-                apiCallRc.addEntry(entry);
-            }
-            else
-            {
-                // handle sqlExc3
-
-                controller.getErrorReporter().reportError(
-                    sqlExc,
-                    accCtx,
-                    client,
-                    "A database error occured while trying to commit the transaction."
-                );
-
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
-                entry.setMessageFormat("Failed to commit transaction");
-                entry.setCauseFormat(sqlExc.getMessage());
-                entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-
-                apiCallRc.addEntry(entry);
-            }
+            apiCallRc.addEntry(entry);
         }
         catch (InvalidNameException invalidNameExc)
         {
             // handle invalidNameExc1
-
             controller.getErrorReporter().reportError(
                 invalidNameExc,
                 accCtx,
@@ -157,7 +118,7 @@ class CtrlNodeApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NODE_NAME);
             entry.setMessageFormat("The given node name '${" + ApiConsts.KEY_NODE_NAME + "}' is invalid");
             entry.setCauseFormat(invalidNameExc.getMessage());
 
@@ -177,7 +138,7 @@ class CtrlNodeApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_ACC_DENIED_NODE);
             entry.setMessageFormat("The given access context has no permission to create a new node");
             entry.setCauseFormat(accDeniedExc.getMessage());
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
@@ -199,10 +160,29 @@ class CtrlNodeApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_EXISTS_NODE);
             entry.setMessageFormat("The node ${" + ApiConsts.KEY_NODE_NAME + "} already exists");
             entry.setCauseFormat(alreadyExistsExc.getMessage());
             entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+        catch (IllegalArgumentException illegalArgExc)
+        {
+            String errorMessage = String.format("Unknown node type '%s'.", nodeTypeStr);
+            controller.getErrorReporter().reportError(
+                illegalArgExc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NODE_TYPE);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(illegalArgExc.getMessage());
+            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+            entry.putVariable(ApiConsts.KEY_NODE_TYPE, nodeTypeStr);
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
@@ -226,7 +206,7 @@ class CtrlNodeApiCallHandler
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
+                    entry.setReturnCodeBit(RC_NODE_CRT_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat("Failed to rollback database transaction");
                     entry.setCauseFormat(sqlExc.getMessage());
                     entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
@@ -266,13 +246,13 @@ class CtrlNodeApiCallHandler
                 transMgr.commit(); // sqlExc4
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DELETED);
+                entry.setReturnCodeBit(RC_NODE_DELETED);
                 entry.setMessageFormat("Node ${" + ApiConsts.KEY_NODE_NAME + "} marked to be deleted");
                 entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
                 entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
                 controller.getErrorReporter().logInfo(
-                    "Node [%s] marked to be deleted",
+                    "Node '%s' marked to be deleted",
                     nodeNameStr
                 );
 
@@ -282,102 +262,38 @@ class CtrlNodeApiCallHandler
             else
             {
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DEL_NOT_FOUND);
+                entry.setReturnCodeBit(RC_NODE_DEL_NOT_FOUND);
                 entry.setMessageFormat("Node ${" + ApiConsts.KEY_NODE_NAME + "} was not deleted as it was not found");
                 entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
                 entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
                 controller.getErrorReporter().logInfo(
-                    "Non existing Node [%s] could not be deleted",
+                    "Non existing Node '%s' could not be deleted",
                     nodeNameStr
                 );
             }
         }
         catch (SQLException sqlExc)
         {
-            if (transMgr == null)
-            { // handle sqlExc1
-                controller.getErrorReporter().reportError(
-                    sqlExc,
-                    accCtx,
-                    client,
-                    "A database error occured while trying to create a new transaction."
-                );
+            controller.getErrorReporter().reportError(
+                sqlExc,
+                accCtx,
+                client,
+                "A database error occured while trying to delete a node (Node name: " +
+                    nodeNameStr + ")."
+            );
 
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DELETION_FAILED);
-                entry.setMessageFormat("Failed to create database transaction");
-                entry.setCauseFormat(sqlExc.getMessage());
-                entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_NODE_DEL_FAIL_SQL);
+            entry.setMessageFormat("Failed to delete node '" + nodeNameStr + "' due to an sql exception.");
+            entry.setCauseFormat(sqlExc.getMessage());
+            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
 
-                apiCallRc.addEntry(entry);
-            }
-            else
-            if (nodeData == null)
-            { // handle sqlExc2
-                controller.getErrorReporter().reportError(
-                    sqlExc,
-                    accCtx,
-                    client,
-                    String.format(
-                        "A database error occured while trying to load the node '%s'.",
-                        nodeNameStr
-                    )
-                );
-
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_CREATION_FAILED);
-                entry.setMessageFormat("Failed to load node ${" + ApiConsts.KEY_NODE_NAME + "} for deletion.");
-                entry.setCauseFormat(sqlExc.getMessage());
-                entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-                entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-
-                apiCallRc.addEntry(entry);
-            }
-            else
-            if (!nodeData.isDeleted())
-            { // handle sqlExc3
-                controller.getErrorReporter().reportError(
-                    sqlExc,
-                    accCtx,
-                    client,
-                    String.format(
-                        "A database error occured while trying to delete the node '%s'.",
-                        nodeNameStr
-                    )
-                );
-
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DELETION_FAILED);
-                entry.setMessageFormat("Failed to delete the node ${" + ApiConsts.KEY_NODE_NAME + "}.");
-                entry.setCauseFormat(sqlExc.getMessage());
-                entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-                entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-
-                apiCallRc.addEntry(entry);
-            }
-            else
-            { // handle sqlExc4
-                controller.getErrorReporter().reportError(
-                    sqlExc,
-                    accCtx,
-                    client,
-                    "A database error occured while trying to commit the transaction."
-                );
-
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DELETION_FAILED);
-                entry.setMessageFormat("Failed to commit transaction");
-                entry.setCauseFormat(sqlExc.getMessage());
-                entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-
-                apiCallRc.addEntry(entry);
-            }
+            apiCallRc.addEntry(entry);
         }
         catch (InvalidNameException invalidNameExc)
         {
             // handle invalidNameExc1
-
             controller.getErrorReporter().reportError(
                 invalidNameExc,
                 accCtx,
@@ -389,7 +305,7 @@ class CtrlNodeApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DELETION_FAILED);
+            entry.setReturnCodeBit(RC_NODE_DEL_FAIL_INVALID_NODE_NAME);
             entry.setMessageFormat("The given node name '${" + ApiConsts.KEY_NODE_NAME + "}' is invalid");
             entry.setCauseFormat(invalidNameExc.getMessage());
 
@@ -405,11 +321,11 @@ class CtrlNodeApiCallHandler
                 accDeniedExc,
                 accCtx,
                 client,
-                "The given access context has no permission to create a new node"
+                "The given access context has no permission to delete a node (Node name: " + nodeNameStr + ")"
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DELETION_FAILED);
+            entry.setReturnCodeBit(RC_NODE_DEL_FAIL_ACC_DENIED_NODE);
             entry.setMessageFormat("The given access context has no permission to delete the node ${" + ApiConsts.KEY_NODE_NAME + "}.");
             entry.setCauseFormat(accDeniedExc.getMessage());
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
@@ -430,7 +346,7 @@ class CtrlNodeApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DELETION_FAILED);
+            entry.setReturnCodeBit(RC_NODE_DEL_FAIL_EXISTS_IMPL_ERROR);
             entry.setMessageFormat("Failed to delete the node ${" + ApiConsts.KEY_NODE_NAME + "} due to an implementation error.");
             entry.setCauseFormat(dataAlreadyExistsExc.getMessage());
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
@@ -457,7 +373,7 @@ class CtrlNodeApiCallHandler
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(ApiCallRcConstants.RC_NODE_DELETION_FAILED);
+                    entry.setReturnCodeBit(RC_NODE_DEL_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat("Failed to rollback database transaction");
                     entry.setCauseFormat(sqlExc.getMessage());
                     entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);

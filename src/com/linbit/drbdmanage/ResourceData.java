@@ -330,6 +330,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
         return flags;
     }
 
+    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        getStateFlags().enableFlags(accCtx, RscFlags.DELETE);
+    }
+
     @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException

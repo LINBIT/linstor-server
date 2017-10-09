@@ -116,7 +116,6 @@ public class CtrlApiCallHandler
         List<Volume.VlmApi> vlmApiDataList
     )
     {
-
         controller.rscDfnMapLock.writeLock().lock();
         controller.nodesMapLock.writeLock().lock();
 
@@ -133,7 +132,28 @@ public class CtrlApiCallHandler
         controller.rscDfnMapLock.writeLock().unlock();
         controller.nodesMapLock.writeLock().unlock();
 
+        return apiCallRc;
+    }
 
+    public ApiCallRc deleteResource(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName,
+        String rscName
+    )
+    {
+        controller.rscDfnMapLock.writeLock().lock();
+        controller.nodesMapLock.writeLock().lock();
+
+        ApiCallRc apiCallRc = resourceApiCallHandler.deleteResource(
+            accCtx,
+            client,
+            nodeName,
+            rscName
+        );
+
+        controller.rscDfnMapLock.writeLock().unlock();
+        controller.nodesMapLock.writeLock().unlock();
 
         return apiCallRc;
     }

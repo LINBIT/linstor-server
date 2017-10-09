@@ -18,9 +18,12 @@ import com.google.protobuf.Message;
 import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode;
 import com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
+import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.MsgCrtRsc;
 import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.MsgCrtVlmOuterClass.Vlm;
 import com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode;
 import com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn;
+import com.linbit.drbdmanage.proto.MsgDelRscOuterClass.MsgDelRsc;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 
 public class ClientProtobuf implements Runnable
@@ -138,7 +141,8 @@ public class ClientProtobuf implements Runnable
         }
     }
 
-    public int sendCreateNode(String nodeName, Map<String, String> props) throws IOException
+    public int sendCreateNode(String nodeName, String nodeType, Map<String, String> props)
+        throws IOException
     {
         int msgId = this.msgId++;
         send(
@@ -146,6 +150,7 @@ public class ClientProtobuf implements Runnable
             ApiConsts.API_CRT_NODE,
             MsgCrtNode.newBuilder().
                 setNodeName(nodeName).
+                setNodeType(nodeType).
                 putAllNodeProps(props).
                 build()
         );
@@ -185,14 +190,49 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
-    public int sendDeleteRscDfn(String resName)
-        throws IOException
+    public int sendDeleteRscDfn(String resName) throws IOException
     {
         int msgId = this.msgId++;
         send(
             msgId,
             ApiConsts.API_DEL_RSC_DFN,
             MsgDelRscDfn.newBuilder().
+                setRscName(resName).
+                build()
+        );
+        return msgId;
+    }
+
+    public int sendCreateRsc(
+        String nodeName,
+        String resName,
+        Map<String, String> resProps,
+        Iterable<? extends Vlm> vlms
+    )
+        throws IOException
+    {
+        int msgId = this.msgId++;
+        send(
+            msgId,
+            ApiConsts.API_CRT_RSC,
+            MsgCrtRsc.newBuilder().
+                setNodeName(nodeName).
+                setRscName(resName).
+                putAllRscProps(resProps).
+                addAllVlms(vlms).
+                build()
+        );
+        return msgId;
+    }
+
+    public int sendDeleteRsc(String nodeName, String resName) throws IOException
+    {
+        int msgId = this.msgId++;
+        send(
+            msgId,
+            ApiConsts.API_DEL_RSC,
+            MsgDelRsc.newBuilder().
+                setNodeName(nodeName).
                 setRscName(resName).
                 build()
         );
@@ -238,6 +278,16 @@ public class ClientProtobuf implements Runnable
             build();
     }
 
+    public Vlm createVlmDfn(int vlmNr, String blockDevice, String metaDisk)
+    {
+        return
+            Vlm.newBuilder().
+            setVlmNr(vlmNr).
+            setBlockDevice(blockDevice).
+            setMetaDisk(metaDisk).
+            build();
+    }
+
     public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException
     {
         ClientProtobuf client = new ClientProtobuf(9500);
@@ -255,7 +305,7 @@ public class ClientProtobuf implements Runnable
 
         int msgId = 0;
 
-        msgId = client.sendCreateNode(nodeName, nodeProps);
+        msgId = client.sendCreateNode(nodeName, "satellite", nodeProps);
         client.println(msgId + " create node");
         Thread.sleep(500);
 
@@ -266,6 +316,16 @@ public class ClientProtobuf implements Runnable
         msgId = client.sendCreateRscDfn(resName, resDfnProps, vlmDfn);
         client.println(msgId + " create rscDfn");
         Thread.sleep(500);
+
+        Map<String, String> resProps = new HashMap<>();
+        List<Vlm> vlms = new ArrayList<>();
+        vlms.add(client.createVlmDfn(1, "blockDevice", "internal"));
+        msgId = client.sendCreateRsc(nodeName, resName, resProps, vlms);
+        client.println(msgId + " create rsc");
+        Thread.sleep(500);
+
+        msgId = client.sendDeleteRsc(nodeName, resName);
+        client.println(msgId + " delete rsc");
 
         msgId = client.sendDeleteRscDfn(resName);
         client.println(msgId + " delete rscDfn");

@@ -105,6 +105,7 @@ public interface Node extends TransactionObject
         }
 
         public static NodeType valueOfIgnoreCase(String string, NodeType defaultValue)
+            throws IllegalArgumentException
         {
             NodeType ret = defaultValue;
             if (string != null)
