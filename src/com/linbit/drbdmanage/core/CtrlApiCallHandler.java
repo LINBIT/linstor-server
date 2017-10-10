@@ -30,14 +30,16 @@ public class CtrlApiCallHandler
     public static final String API_RC_VAR_ACC_CTX_ROLE_KEY = "accCtxRole";
 
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
-    private final CtrlResourceApiCallHandler resourceApiCallHandler;
+    private final CtrlRscApiCallHandler resourceApiCallHandler;
+    private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
     private final Controller controller;
 
     CtrlApiCallHandler(Controller controllerRef)
     {
         controller = controllerRef;
         nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef);
-        resourceApiCallHandler = new CtrlResourceApiCallHandler(controllerRef);
+        resourceApiCallHandler = new CtrlRscApiCallHandler(controllerRef);
+        rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef);
     }
 
     public ApiCallRc createNode(
@@ -79,7 +81,7 @@ public class CtrlApiCallHandler
     )
     {
         controller.rscDfnMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = resourceApiCallHandler.createResourceDefinition(
+        ApiCallRc apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
             accCtx,
             client,
             resourceName,
@@ -97,7 +99,7 @@ public class CtrlApiCallHandler
     )
     {
         controller.rscDfnMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = resourceApiCallHandler.deleteResourceDefinition(
+        ApiCallRc apiCallRc = rscDfnApiCallHandler.deleteResourceDefinition(
             accCtx,
             client,
             resourceName

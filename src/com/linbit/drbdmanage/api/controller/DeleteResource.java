@@ -2,7 +2,6 @@ package com.linbit.drbdmanage.api.controller;
 
 import java.io.IOException;
 import java.io.InputStream;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.api.BaseApiCall;
@@ -29,35 +28,23 @@ public class DeleteResource extends BaseApiCall
     }
 
     @Override
-    public void execute(
+    public void executeImpl(
         AccessContext accCtx,
         Message msg,
         int msgId,
         InputStream msgDataIn,
         Peer client
     )
+        throws IOException
     {
-        try
-        {
-            MsgDelRsc msgDeleteRsc = MsgDelRsc.parseDelimitedFrom(msgDataIn);
-            ApiCallRc apiCallRc = controller.getApiCallHandler().deleteResource(
-                accCtx,
-                client,
-                msgDeleteRsc.getNodeName(),
-                msgDeleteRsc.getRscName()
-            );
+        MsgDelRsc msgDeleteRsc = MsgDelRsc.parseDelimitedFrom(msgDataIn);
+        ApiCallRc apiCallRc = controller.getApiCallHandler().deleteResource(
+            accCtx,
+            client,
+            msgDeleteRsc.getNodeName(),
+            msgDeleteRsc.getRscName()
+        );
 
-            super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
-        }
-        catch (InvalidProtocolBufferException e)
-        {
-            // TODO: error reporting
-            e.printStackTrace();
-        }
-        catch (IOException e)
-        {
-            // TODO: error reporting
-            e.printStackTrace();
-        }
+        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }
 }

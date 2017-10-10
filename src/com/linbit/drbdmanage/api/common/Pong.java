@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.api.common;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import com.linbit.drbdmanage.api.BaseApiCall;
@@ -22,13 +23,14 @@ public class Pong extends BaseApiCall
     }
 
     @Override
-    public void execute(
+    public void executeImpl(
         AccessContext accCtx,
         Message msg,
         int msgId,
         InputStream msgDataIn,
         Peer client
     )
+        throws IOException
     {
         client.pongReceived();
     }

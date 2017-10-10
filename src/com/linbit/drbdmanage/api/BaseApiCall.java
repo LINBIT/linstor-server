@@ -16,8 +16,11 @@ import com.linbit.drbdmanage.security.AccessContext;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+
+import org.slf4j.event.Level;
 
 /**
  * Base class for network APIs
@@ -48,6 +51,40 @@ public abstract class BaseApiCall implements ApiCall
     {
         protobufsMsg.writeDelimitedTo(out);
     }
+
+    @Override
+    public void execute(
+        AccessContext accCtx,
+        Message msg,
+        int msgId,
+        InputStream msgDataIn,
+        Peer client
+    )
+    {
+        try
+        {
+            executeImpl(accCtx, msg, msgId, msgDataIn, client);
+        }
+        catch (IOException ioExc)
+        {
+            errorReporter.reportError(
+                Level.ERROR,
+                ioExc,
+                accCtx,
+                client,
+                "IO error occured while executing the '" + getName() + "' API."
+            );
+        }
+    }
+
+    protected abstract void executeImpl(
+        AccessContext accCtx,
+        Message msg,
+        int msgId,
+        InputStream msgDataIn,
+        Peer client
+    )
+        throws IOException;
 
     protected void answerApiCallRc(
         AccessContext accCtx,

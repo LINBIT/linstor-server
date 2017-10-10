@@ -78,31 +78,36 @@ class CtrlNodeApiCallHandler
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_CREATED);
-            entry.setMessageFormat("Node ${" + ApiConsts.KEY_NODE_NAME + "} successfully created");
+            String successMessage = String.format(
+                "Node '%s' successfully created.",
+                nodeNameStr
+            );
+            entry.setMessageFormat(successMessage);
             entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
             controller.nodesMap.put(nodeName, node);
-            controller.getErrorReporter().logInfo(
-                "Node '%s' successfully created",
-                nodeNameStr
-            );
+            controller.getErrorReporter().logInfo(successMessage);
         }
         catch (SQLException sqlExc)
         {
+            String errorMessage = String.format(
+                "A database error occured while trying to create a new node '%s'.",
+                nodeNameStr
+            );
             controller.getErrorReporter().reportError(
                 sqlExc,
                 accCtx,
                 client,
-                "A database error occured while trying to create a new node (Node name: " +
-                    nodeNameStr + ")."
+                errorMessage
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_CRT_FAIL_SQL);
-            entry.setMessageFormat("Failed to create node '" + nodeNameStr + "' due to an sql exception.");
+            entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(sqlExc.getMessage());
+            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
@@ -110,16 +115,21 @@ class CtrlNodeApiCallHandler
         catch (InvalidNameException invalidNameExc)
         {
             // handle invalidNameExc1
+            String errorMessage = String.format(
+                "The given node name '%s' is invalid.",
+                nodeNameStr
+            );
+
             controller.getErrorReporter().reportError(
                 invalidNameExc,
                 accCtx,
                 client,
-                "The given name for the node is invalid"
+                errorMessage
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NODE_NAME);
-            entry.setMessageFormat("The given node name '${" + ApiConsts.KEY_NODE_NAME + "}' is invalid");
+            entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(invalidNameExc.getMessage());
 
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
@@ -130,16 +140,23 @@ class CtrlNodeApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             // handle accDeniedExc1 && accDeniedExc2
+            String errorMessage = String.format(
+                "The access context (user: %s, role: %s) has no permission to " +
+                    "create the new node '%s'.",
+                accCtx.subjectId.name.displayValue,
+                accCtx.subjectRole.name.displayValue,
+                nodeNameStr
+            );
             controller.getErrorReporter().reportError(
                 accDeniedExc,
                 accCtx,
                 client,
-                "The given access context has no permission to create a new node"
+                errorMessage
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_CRT_FAIL_ACC_DENIED_NODE);
-            entry.setMessageFormat("The given access context has no permission to create a new node");
+            entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(accDeniedExc.getMessage());
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
 
@@ -149,19 +166,21 @@ class CtrlNodeApiCallHandler
         {
             // handle alreadyExists1
 
+            String errorMessage = String.format(
+                "The node %s which should be created already exists",
+                nodeNameStr
+            );
+
             controller.getErrorReporter().reportError(
                 alreadyExistsExc,
                 accCtx,
                 client,
-                String.format(
-                    "The node %s which should be created already exists",
-                    nodeNameStr
-                )
+                errorMessage
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_CRT_FAIL_EXISTS_NODE);
-            entry.setMessageFormat("The node ${" + ApiConsts.KEY_NODE_NAME + "} already exists");
+            entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(alreadyExistsExc.getMessage());
             entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
@@ -202,7 +221,11 @@ class CtrlNodeApiCallHandler
                         sqlExc,
                         accCtx,
                         client,
-                        "A database error occured while trying to rollback the transaction."
+                        String.format(
+                            "A database error occured while trying to rollback the creation of " +
+                                "node '%s'.",
+                            nodeNameStr
+                        )
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -247,14 +270,15 @@ class CtrlNodeApiCallHandler
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(RC_NODE_DELETED);
-                entry.setMessageFormat("Node ${" + ApiConsts.KEY_NODE_NAME + "} marked to be deleted");
+                String successMessage = String.format(
+                    "Node '%s' marked to be deleted.",
+                    nodeNameStr
+                );
+                entry.setMessageFormat(successMessage);
                 entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
                 entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
-                controller.getErrorReporter().logInfo(
-                    "Node '%s' marked to be deleted",
-                    nodeNameStr
-                );
+                controller.getErrorReporter().logInfo(successMessage);
 
                 // TODO: tell satellites to remove all the corresponding resources
                 // TODO: if satellite is finished remove the node from the DB
@@ -263,50 +287,56 @@ class CtrlNodeApiCallHandler
             {
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(RC_NODE_DEL_NOT_FOUND);
-                entry.setMessageFormat("Node ${" + ApiConsts.KEY_NODE_NAME + "} was not deleted as it was not found");
+                String notFoundMessage = String.format(
+                    "Node '%s' was not deleted as it was not found",
+                    nodeNameStr
+                );
+                entry.setMessageFormat(notFoundMessage);
                 entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
                 entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
-                controller.getErrorReporter().logInfo(
-                    "Non existing Node '%s' could not be deleted",
-                    nodeNameStr
-                );
+                controller.getErrorReporter().logInfo(notFoundMessage);
             }
         }
         catch (SQLException sqlExc)
         {
+            String errorMessage = String.format(
+                "A database error occured while trying to delete node '%s'.",
+                nodeNameStr
+            );
             controller.getErrorReporter().reportError(
                 sqlExc,
                 accCtx,
                 client,
-                "A database error occured while trying to delete a node (Node name: " +
-                    nodeNameStr + ")."
+                errorMessage
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_DEL_FAIL_SQL);
-            entry.setMessageFormat("Failed to delete node '" + nodeNameStr + "' due to an sql exception.");
+            entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(sqlExc.getMessage());
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
         catch (InvalidNameException invalidNameExc)
         {
             // handle invalidNameExc1
+            String errorMessage = String.format(
+                "The node name '%s' is invalid",
+                nodeNameStr
+            );
             controller.getErrorReporter().reportError(
                 invalidNameExc,
                 accCtx,
                 client,
-                String.format(
-                    "The node name '%s' is invalid",
-                    nodeNameStr
-                )
+                errorMessage
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_DEL_FAIL_INVALID_NODE_NAME);
-            entry.setMessageFormat("The given node name '${" + ApiConsts.KEY_NODE_NAME + "}' is invalid");
+            entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(invalidNameExc.getMessage());
 
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
@@ -317,16 +347,20 @@ class CtrlNodeApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             // handle accDeniedExc1 && accDeniedExc2 && accDeniedExc3
+            String errormessage = String.format(
+                "The given access context has no permission to delete node '%s'.",
+                nodeNameStr
+            );
             controller.getErrorReporter().reportError(
                 accDeniedExc,
                 accCtx,
                 client,
-                "The given access context has no permission to delete a node (Node name: " + nodeNameStr + ")"
+                errormessage
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_DEL_FAIL_ACC_DENIED_NODE);
-            entry.setMessageFormat("The given access context has no permission to delete the node ${" + ApiConsts.KEY_NODE_NAME + "}.");
+            entry.setMessageFormat(errormessage);
             entry.setCauseFormat(accDeniedExc.getMessage());
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
             entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
@@ -369,7 +403,11 @@ class CtrlNodeApiCallHandler
                         sqlExc,
                         accCtx,
                         client,
-                        "A database error occured while trying to rollback the transaction."
+                        String.format(
+                            "A database error occured while trying to rollback the deletion of " +
+                                "node '%s'.",
+                            nodeNameStr
+                        )
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();

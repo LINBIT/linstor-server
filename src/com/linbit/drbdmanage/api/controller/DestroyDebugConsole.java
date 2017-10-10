@@ -42,13 +42,14 @@ public class DestroyDebugConsole extends BaseApiCall
     }
 
     @Override
-    public void execute(
+    public void executeImpl(
         AccessContext   accCtx,
         Message         msg,
         int             msgId,
         InputStream     msgDataIn,
         Peer            client
     )
+        throws IOException
     {
         try
         {
@@ -84,15 +85,13 @@ public class DestroyDebugConsole extends BaseApiCall
         }
         catch (IllegalMessageStateException msgExc)
         {
-            throw new ImplementationError(
-                Message.class.getName() + " object returned by the " + Peer.class.getName() +
-                    " class has an illegal state",
-                msgExc
+            coreSvcs.getErrorReporter().reportError(
+                new ImplementationError(
+                    Message.class.getName() + " object returned by the " + Peer.class.getName() +
+                        " class has an illegal state",
+                    msgExc
+                )
             );
-        }
-        catch (IOException ioExc)
-        {
-            coreSvcs.getErrorReporter().reportError(ioExc);
         }
     }
 }

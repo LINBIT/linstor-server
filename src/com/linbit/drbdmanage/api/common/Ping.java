@@ -39,13 +39,14 @@ public class Ping extends BaseApiCall
     }
 
     @Override
-    public void execute(
+    public void executeImpl(
         AccessContext   accCtx,
         Message         msg,
         int             msgId,
         InputStream     msgDataIn,
         Peer            client
     )
+        throws IOException
     {
         try
         {
@@ -56,16 +57,14 @@ public class Ping extends BaseApiCall
 
             client.sendMessage(pongMsg);
         }
-        catch (IOException ioExc)
-        {
-            coreSvcs.getErrorReporter().reportError(ioExc);
-        }
         catch (IllegalMessageStateException msgExc)
         {
-            throw new ImplementationError(
-                Message.class.getName() + " object returned by the " + Peer.class.getName() +
-                " class has an illegal state",
-                msgExc
+            coreSvcs.getErrorReporter().reportError(
+                new ImplementationError(
+                    Message.class.getName() + " object returned by the " + Peer.class.getName() +
+                    " class has an illegal state",
+                    msgExc
+                )
             );
         }
     }

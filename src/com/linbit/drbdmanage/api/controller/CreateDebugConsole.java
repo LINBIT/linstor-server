@@ -44,13 +44,14 @@ public class CreateDebugConsole extends BaseApiCall
     }
 
     @Override
-    public void execute(
+    public void executeImpl(
         AccessContext   accCtx,
         Message         msg,
         int             msgId,
         InputStream     msgDataIn,
         Peer            client
     )
+        throws IOException
     {
         try
         {
@@ -72,7 +73,8 @@ public class CreateDebugConsole extends BaseApiCall
                     DrbdManage.PROGRAM + ", Module " + Controller.MODULE + ", Release " + DrbdManage.VERSION
                 );
                 msgDbgReplyBld.addDebugOut("Debug console attached to peer connection");
-            } catch (AccessDeniedException accessExc)
+            }
+            catch (AccessDeniedException accessExc)
             {
                 coreSvcs.getErrorReporter().reportError(accessExc);
                 msgDbgReplyBld.addDebugErr(
@@ -93,15 +95,13 @@ public class CreateDebugConsole extends BaseApiCall
         }
         catch (IllegalMessageStateException msgExc)
         {
-            throw new ImplementationError(
-                Message.class.getName() + " object returned by the " + Peer.class.getName() +
-                " class has an illegal state",
-                msgExc
+            coreSvcs.getErrorReporter().reportError(
+                new ImplementationError(
+                    Message.class.getName() + " object returned by the " + Peer.class.getName() +
+                    " class has an illegal state",
+                    msgExc
+                )
             );
-        }
-        catch (IOException ioExc)
-        {
-            coreSvcs.getErrorReporter().reportError(ioExc);
         }
     }
 }

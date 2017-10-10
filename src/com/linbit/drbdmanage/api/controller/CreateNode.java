@@ -2,7 +2,6 @@ package com.linbit.drbdmanage.api.controller;
 
 import java.io.IOException;
 import java.io.InputStream;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.api.BaseApiCall;
@@ -29,45 +28,24 @@ public class CreateNode extends BaseApiCall
     }
 
     @Override
-    public void execute(
+    public void executeImpl(
         AccessContext accCtx,
         Message msg,
         int msgId,
         InputStream msgDataIn,
         Peer client
     )
+        throws IOException
     {
-        try
-        {
-            MsgCrtNode msgCreateNode = MsgCrtNode.parseDelimitedFrom(msgDataIn);
-//            System.out.println("received msgCrtNode: ");
-//            System.out.println("   " + msgCreateNode.getNodeName());
-//            System.out.println("   " + msgCreateNode.getNodePropsCount());
-//            Map<String, String> nodeProps = msgCreateNode.getNodePropsMap();
-//            for (Entry<String, String> entry : nodeProps.entrySet())
-//            {
-//                System.out.println("   " + entry.getKey() + ": " + entry.getValue());
-//            }
-
-            ApiCallRc apiCallRc = controller.getApiCallHandler().createNode(
-                accCtx,
-                client,
-                msgCreateNode.getNodeName(),
-                msgCreateNode.getNodeType(),
-                msgCreateNode.getNodePropsMap()
-            );
-            answerApiCallRc(accCtx, client, msgId, apiCallRc);
-        }
-        catch (InvalidProtocolBufferException e)
-        {
-            // TODO: error reporting
-            e.printStackTrace();
-        }
-        catch (IOException e)
-        {
-            // TODO: error reporting
-            e.printStackTrace();
-        }
+        MsgCrtNode msgCreateNode = MsgCrtNode.parseDelimitedFrom(msgDataIn);
+        ApiCallRc apiCallRc = controller.getApiCallHandler().createNode(
+            accCtx,
+            client,
+            msgCreateNode.getNodeName(),
+            msgCreateNode.getNodeType(),
+            msgCreateNode.getNodePropsMap()
+        );
+        answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }
 
 }

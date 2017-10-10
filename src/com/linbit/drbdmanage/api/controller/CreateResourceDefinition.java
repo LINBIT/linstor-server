@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnApi;
 import com.linbit.drbdmanage.api.ApiConsts;
@@ -34,43 +33,31 @@ public class CreateResourceDefinition extends BaseApiCall
     }
 
     @Override
-    public void execute(
+    public void executeImpl(
         AccessContext accCtx,
         Message msg,
         int msgId,
         InputStream msgDataIn,
         Peer client
     )
+        throws IOException
     {
-        try
-        {
-            MsgCrtRscDfn msgCreateRscDfn = MsgCrtRscDfn.parseDelimitedFrom(msgDataIn);
+        MsgCrtRscDfn msgCreateRscDfn = MsgCrtRscDfn.parseDelimitedFrom(msgDataIn);
 
-            List<VlmDfnApi> vlmDfnApiList = new ArrayList<>();
-            for (final VlmDfn vlmDfn : msgCreateRscDfn.getVlmDfnsList())
-            {
-                vlmDfnApiList.add(new VlmDfnApiData(vlmDfn));
-            }
+        List<VlmDfnApi> vlmDfnApiList = new ArrayList<>();
+        for (final VlmDfn vlmDfn : msgCreateRscDfn.getVlmDfnsList())
+        {
+            vlmDfnApiList.add(new VlmDfnApiData(vlmDfn));
+        }
 
-            ApiCallRc apiCallRc = controller.getApiCallHandler().createResourceDefinition(
-                accCtx,
-                client,
-                msgCreateRscDfn.getRscName(),
-                msgCreateRscDfn.getRscPropsMap(),
-                vlmDfnApiList
-            );
-            super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
-        }
-        catch (InvalidProtocolBufferException e)
-        {
-            // TODO: error reporting
-            e.printStackTrace();
-        }
-        catch (IOException e)
-        {
-            // TODO: error reporting
-            e.printStackTrace();
-        }
+        ApiCallRc apiCallRc = controller.getApiCallHandler().createResourceDefinition(
+            accCtx,
+            client,
+            msgCreateRscDfn.getRscName(),
+            msgCreateRscDfn.getRscPropsMap(),
+            vlmDfnApiList
+        );
+        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }
 
 }

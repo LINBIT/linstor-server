@@ -34,42 +34,34 @@ public class CreateResource extends BaseApiCall
     }
 
     @Override
-    public void execute(
+    public void executeImpl(
         AccessContext accCtx,
         Message msg,
         int msgId,
         InputStream msgDataIn,
         Peer client
     )
+        throws IOException
     {
-        try
+        MsgCrtRsc msgCrtRsc = MsgCrtRsc.parseDelimitedFrom(msgDataIn);
+
+        List<VlmApi> vlmApiDataList = new ArrayList<>();
+        for (Vlm vlm : msgCrtRsc.getVlmsList())
         {
-            MsgCrtRsc msgCrtRsc = MsgCrtRsc.parseDelimitedFrom(msgDataIn);
-
-            List<VlmApi> vlmApiDataList = new ArrayList<>();
-            for (Vlm vlm : msgCrtRsc.getVlmsList())
-            {
-                vlmApiDataList.add(new VlmApiData(vlm));
-            }
-
-            ApiCallRc apiCallRc = controller.getApiCallHandler().createResource(
-                accCtx,
-                client,
-                msgCrtRsc.getNodeName(),
-                msgCrtRsc.getRscName(),
-                msgCrtRsc.getNodeId(),
-                msgCrtRsc.getRscPropsMap(),
-                vlmApiDataList
-            );
-
-            super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
-        }
-        catch (IOException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            vlmApiDataList.add(new VlmApiData(vlm));
         }
 
+        ApiCallRc apiCallRc = controller.getApiCallHandler().createResource(
+            accCtx,
+            client,
+            msgCrtRsc.getNodeName(),
+            msgCrtRsc.getRscName(),
+            msgCrtRsc.getNodeId(),
+            msgCrtRsc.getRscPropsMap(),
+            vlmApiDataList
+        );
+
+        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }
 
 }
