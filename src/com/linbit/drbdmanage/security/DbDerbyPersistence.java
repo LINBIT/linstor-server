@@ -25,6 +25,7 @@ import static com.linbit.drbdmanage.security.SecurityDbFields.ROLE_NAME;
 import static com.linbit.drbdmanage.security.SecurityDbFields.DOMAIN_NAME;
 import static com.linbit.drbdmanage.security.SecurityDbFields.CONF_KEY;
 import static com.linbit.drbdmanage.security.SecurityDbFields.CONF_VALUE;
+import static com.linbit.drbdmanage.security.SecurityDbFields.ROLE_PRIVILEGES;
 
 import static com.linbit.drbdmanage.security.SecurityDbFields.KEY_SEC_LEVEL;
 import java.sql.Statement;
@@ -43,7 +44,8 @@ public class DbDerbyPersistence implements DbAccessor
         ID_LOCKED + ", " + ID_ENABLED + ", " +
         PASS_SALT + ", " + PASS_HASH + ", " +
         TBL_DFLT_ROLES + "." + ROLE_NAME + ", " +
-        TBL_ROLES + "." + DOMAIN_NAME + " " +
+        TBL_ROLES + "." + DOMAIN_NAME + ", " +
+        TBL_ROLES + "." + ROLE_PRIVILEGES + " " +
         "FROM " + TBL_IDENTITIES + "\n" +
         "    LEFT JOIN " + TBL_DFLT_ROLES + " ON " + TBL_IDENTITIES + "." + IDENTITY_NAME + " = " +
         TBL_DFLT_ROLES + "." + IDENTITY_NAME + "\n" +
@@ -158,7 +160,7 @@ public class DbDerbyPersistence implements DbAccessor
         PreparedStatement stmt = dbConn.prepareStatement(sqlQuery);
         for (int idx = 0; idx < arguments.length; ++idx)
         {
-            stmt.setString(idx, arguments[idx]);
+            stmt.setString(idx + 1, arguments[idx]);
         }
         return stmt.executeQuery();
     }
