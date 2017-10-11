@@ -118,7 +118,7 @@ public class CmdDisplayReport extends BaseDebugCmd
 
                     // If the entire file has been read without encountering errors,
                     // output the contents
-                    debugOut.printf(outputBuffer.toString());
+                    debugOut.print(outputBuffer.toString());
                     debugOut.flush();
                 }
                 catch (FileNotFoundException fnfExc)
