@@ -1,5 +1,6 @@
 package com.linbit.drbdmanage.security;
 
+import com.linbit.ErrorCheck;
 import com.linbit.drbdmanage.ControllerDatabase;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -18,6 +19,10 @@ public final class Authorization
     public Authorization(AccessContext accCtx, ControllerDatabase ctrlDbRef, DbAccessor dbDriverRef)
         throws AccessDeniedException
     {
+        ErrorCheck.ctorNotNull(Authentication.class, AccessContext.class, accCtx);
+        ErrorCheck.ctorNotNull(Authentication.class, ControllerDatabase.class, ctrlDbRef);
+        ErrorCheck.ctorNotNull(Authentication.class, DbAccessor.class, dbDriverRef);
+
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
 
         ctrlDb = ctrlDbRef;
