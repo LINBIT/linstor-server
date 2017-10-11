@@ -791,7 +791,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         {
             transMgr = new TransactionMgr(dbConnPool);
             config = PropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
-            dbConnPool.returnConnection(transMgr.dbCon);
         }
         catch (SQLException sqlExc)
         {
@@ -824,9 +823,13 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                         null,
                         null,
                         sqlExc
-                        )
-                    );
+                    )
+                );
             }
+        }
+        finally
+        {
+            dbConnPool.returnConnection(transMgr.dbCon);
         }
         return config;
     }
