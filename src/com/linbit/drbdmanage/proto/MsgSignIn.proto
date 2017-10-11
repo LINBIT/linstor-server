@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// SignIn - Authenticate identity
+message MsgSignIn
+{
+    // Name of the identity to sign in
+    string id_name = 1;
+
+    // Password associated with the identity
+    string password = 2;
+}
