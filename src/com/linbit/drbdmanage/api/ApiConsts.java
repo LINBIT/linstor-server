@@ -102,6 +102,12 @@ public final class ApiConsts
     public static final String VAL_NODE_TYPE_CMBD       = "Combined";
     public static final String VAL_NODE_TYPE_AUX        = "Auxiliary";
 
+    public static final String KEY_SEC_IDENTITY         = "SecIdentity";
+    public static final String KEY_SEC_ROLE             = "SecRole";
+    public static final String KEY_SEC_TYPE             = "SecType";
+    public static final String KEY_SEC_DOMAIN           = "SecDomain";
+    public static final String KEY_SEC_PASSWORD         = "SecPassword";
+
     public static final int DM_DFLT_SERVER_PORT_SSL     = 6996;
     public static final int DM_DFLT_SERVER_PORT_PLAIN   = 6995;
 }

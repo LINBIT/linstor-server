@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.core.Controller;
+import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
@@ -66,10 +67,11 @@ public class CreateDebugConsole extends BaseApiCall
                     privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
                     ctrl.createDebugConsole(privCtx, privCtx, client);
                 }
-                accCtx.getEffectivePrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
-                accCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_VIEW);
 
-                msgDbgReplyBld.addDebugOut("Debug console created");
+                msgDbgReplyBld.addDebugOut(
+                    DrbdManage.PROGRAM + ", Module " + Controller.MODULE + ", Release " + DrbdManage.VERSION
+                );
+                msgDbgReplyBld.addDebugOut("Debug console attached to peer connection");
             } catch (AccessDeniedException accessExc)
             {
                 coreSvcs.getErrorReporter().reportError(accessExc);

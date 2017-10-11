@@ -271,4 +271,7 @@ public class ApiCallRcConstants
      * StorPool return codes
      */
 
+    // API error codes
+    public static final long RC_SIGNIN_PASS = 0x0000000000000100L;
+    public static final long RC_SIGNIN_FAIL = 0xC000000000000100L;
 }

@@ -37,18 +37,21 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
 import com.linbit.drbdmanage.security.Authentication;
+import com.linbit.drbdmanage.security.Authorization;
 import com.linbit.drbdmanage.security.DbDerbyPersistence;
 import com.linbit.drbdmanage.security.Identity;
 import com.linbit.drbdmanage.security.IdentityName;
 import com.linbit.drbdmanage.security.Initializer;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.Privilege;
+import com.linbit.drbdmanage.security.SignInException;
 import com.linbit.drbdmanage.tasks.GarbageCollectorTask;
 import com.linbit.drbdmanage.tasks.PingTask;
 import com.linbit.drbdmanage.tasks.ReconnectorTask;
 import com.linbit.drbdmanage.tasks.TaskScheduleService;
 import com.linbit.drbdmanage.timer.CoreTimer;
 import com.linbit.utils.Base64;
+import com.linbit.utils.MathUtils;
 
 import java.io.FileInputStream;
 
@@ -95,6 +98,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // shared secret string will be (SECRET_LEN + 2) / 3 * 4
     private static final int DRBD_SHARED_SECRET_SIZE = 15;
 
+    // Maximum time to wait for services to shut down
+    private static final long SVC_SHUTDOWN_WAIT_TIME = 10000L;
+
     private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "CTRLCFG";
 
     private static final String PROPSCON_KEY_NETCOM = "netcom";
@@ -134,8 +140,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private WorkerPool workerThrPool = null;
     private CommonMessageProcessor msgProc;
 
-    // Authentication subsystem
-    private Authentication auth = null;
+    // Authentication & Authorization subsystems
+    private Authentication idAuthentication = null;
+    private Authorization roleAuthorization = null;
 
     // ============================================================
     // Core system services
@@ -284,11 +291,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 catch (AccessDeniedException accessDeniedException)
                 {
                     throw new ImplementationError(
-                        "Controllers constructor could not create system context",
+                        "Creation of the initialization access context failed",
                         accessDeniedException
                     );
                 }
-
 
                 // Initialize the database connections
                 errorLogRef.logInfo("Initializing the database connection pool");
@@ -332,21 +338,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     errorLogRef.reportError(sqlExc);
                 }
 
-                // Load security identities, roles, domains/types, etc.
-                errorLogRef.logInfo("Loading security objects");
-                try
-                {
-                    Initializer.load(initCtx, dbConnPool, securityDbDriver);
-                }
-                catch (SQLException | InvalidNameException | AccessDeniedException exc)
-                {
-                    errorLogRef.reportError(exc);
-                }
-
                 errorLogRef.logInfo("Initializing authentication subsystem");
                 try
                 {
-                    auth = new Authentication(initCtx, dbConnPool, securityDbDriver);
+                    idAuthentication = new Authentication(initCtx, dbConnPool, securityDbDriver, errorLogRef);
                 }
                 catch (AccessDeniedException accExc)
                 {
@@ -363,6 +358,31 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                         "required hashing algorithm is not supported on this platform",
                         algoExc
                     );
+                }
+
+                errorLogRef.logInfo("Initializing authorization subsystem");
+                try
+                {
+                    roleAuthorization = new Authorization(initCtx, dbConnPool, securityDbDriver);
+                }
+                catch (AccessDeniedException accExc)
+                {
+                    throw new ImplementationError(
+                        "The initialization security context does not have the necessary " +
+                        "privileges to create the authorization subsystem",
+                        accExc
+                    );
+                }
+
+                // Load security identities, roles, domains/types, etc.
+                errorLogRef.logInfo("Loading security objects");
+                try
+                {
+                    Initializer.load(initCtx, dbConnPool, securityDbDriver);
+                }
+                catch (SQLException | InvalidNameException | AccessDeniedException exc)
+                {
+                    errorLogRef.reportError(exc);
                 }
 
                 TransactionMgr transMgr = null;
@@ -577,13 +597,71 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     workerThrPool = null;
                 }
 
+                long exitTime = MathUtils.addExact(System.currentTimeMillis(), SVC_SHUTDOWN_WAIT_TIME);
+                for (SystemService svc  : systemServicesMap.values())
+                {
+                    long now = System.currentTimeMillis();
+                    if (now < exitTime)
+                    {
+                        long maxWaitTime = exitTime - now;
+                        if (maxWaitTime > SVC_SHUTDOWN_WAIT_TIME)
+                        {
+                            maxWaitTime = SVC_SHUTDOWN_WAIT_TIME;
+                        }
+
+                        try
+                        {
+                            svc.awaitShutdown(maxWaitTime);
+                        }
+                        catch (InterruptedException ignored)
+                        {
+                        }
+                        catch (Throwable error)
+                        {
+                            errLog.reportError(Level.ERROR, error);
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
                 errLog.logInfo("Shutdown complete");
             }
             shutdownFinished = true;
         }
+        catch (Throwable error)
+        {
+            errLog.reportError(Level.ERROR, error);
+        }
         finally
         {
             reconfigurationLock.writeLock().unlock();
+        }
+        System.exit(0);
+    }
+
+    public void peerSignIn(
+        Peer client,
+        IdentityName idName,
+        byte[] password
+    )
+        throws SignInException, InvalidNameException
+    {
+        AccessContext peerSignInCtx = idAuthentication.signIn(idName, password);
+        try
+        {
+            AccessContext privCtx = sysCtx.clone();
+            privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+            client.setAccessContext(privCtx, peerSignInCtx);
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ImplementationError(
+                "Enabling privileges on the system context failed",
+                accExc
+            );
         }
     }
 
