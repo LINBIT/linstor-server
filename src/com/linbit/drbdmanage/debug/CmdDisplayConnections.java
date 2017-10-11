@@ -1,17 +1,22 @@
 package com.linbit.drbdmanage.debug;
 
+import com.linbit.AutoIndent;
 import com.linbit.ServiceName;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.Identity;
+import com.linbit.drbdmanage.security.Privilege;
+import com.linbit.drbdmanage.security.PrivilegeSet;
 import com.linbit.drbdmanage.security.Role;
-import com.linbit.drbdmanage.security.SecurityLevel;
 import com.linbit.drbdmanage.security.SecurityType;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,9 +29,13 @@ import java.util.regex.PatternSyntaxException;
  */
 public class CmdDisplayConnections extends BaseDebugCmd
 {
-    private static final String PRM_DETAIL_NAME = "DETAIL";
-    private static final String PRM_DETAIL_DFLT = "DEFAULT";
-    private static final String PRM_DETAIL_FULL = "FULL";
+    private static final String PRM_DETAIL_NAME     = "DETAIL";
+    private static final String PRM_DETAIL_DFLT     = "DEFAULT";
+    private static final String PRM_DETAIL_ID       = "ID";
+    private static final String PRM_DETAIL_CONN     = "CONN";
+    private static final String PRM_DETAIL_CTXT     = "CONTEXT";
+    private static final String PRM_DETAIL_PRIVS    = "PRIVS";
+    private static final String PRM_DETAIL_FULL     = "FULL";
 
     private static final String PRM_CONNECTOR_MATCH = "CONNECTOR";
 
@@ -36,19 +45,24 @@ public class CmdDisplayConnections extends BaseDebugCmd
 
     private static final Map<String, String> PARAMETER_DESCRIPTIONS = new TreeMap<>();
 
-    private enum DetailLevel
-    {
-        DEFAULT,
-        FULL,
-        INVALID
-    }
-
     static
     {
         PARAMETER_DESCRIPTIONS.put(
             PRM_DETAIL_NAME,
-            "The level of detail to display; '" + PRM_DETAIL_DFLT +
-            "' or '" + PRM_DETAIL_FULL + "'"
+            "The level of detail to display\n" +
+            "    DEFAULT\n" +
+            "        Displays the peer address along with statistics\n" +
+            "    ID\n" +
+            "        Displays connection IDs\n" +
+            "    CONN\n" +
+            "        Displays additional information about the connection\n" +
+            "    CONTEXT\n" +
+            "        Displays access contexts\n" +
+            "    PRIVS\n" +
+            "        Displays the privilege sets associated with the\n" +
+            "        connection's access context\n" +
+            "    FULL\n" +
+            "        Displays all available information\n"
         );
         PARAMETER_DESCRIPTIONS.put(
             PRM_CONNECTOR_MATCH,
@@ -90,153 +104,194 @@ public class CmdDisplayConnections extends BaseDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
-        DetailLevel detail = DetailLevel.DEFAULT;
+        boolean detail_id = false;
+        boolean detail_conn = false;
+        boolean detail_ctxt = false;
+        boolean detail_privs = false;
 
-        String prmDetail = parameters.get(PRM_DETAIL_NAME);
-        if (prmDetail != null)
+        try
         {
-            prmDetail = prmDetail.toUpperCase();
-            if (prmDetail.equals(PRM_DETAIL_FULL))
+            String prmDetail = parameters.get(PRM_DETAIL_NAME);
+            if (prmDetail != null)
             {
-                detail = DetailLevel.FULL;
+                InvalidDetailsException detailsExc = null;
+                prmDetail = prmDetail.toUpperCase();
+                StringTokenizer prmDetailTokens = new StringTokenizer(prmDetail, ",");
+                while (prmDetailTokens.hasMoreTokens())
+                {
+                    String curToken = prmDetailTokens.nextToken().trim();
+                    switch (curToken)
+                    {
+                        case PRM_DETAIL_ID:
+                            detail_id = true;
+                            break;
+                        case PRM_DETAIL_CONN:
+                            detail_conn = true;
+                            break;
+                        case PRM_DETAIL_CTXT:
+                            detail_ctxt = true;
+                            break;
+                        case PRM_DETAIL_PRIVS:
+                            detail_privs = true;
+                            break;
+                        case PRM_DETAIL_FULL:
+                            detail_id = true;
+                            detail_conn = true;
+                            detail_ctxt = true;
+                            detail_privs = true;
+                            break;
+                        case PRM_DETAIL_DFLT:
+                            // fall-through
+                            break;
+                        default:
+                            if (detailsExc == null)
+                            {
+                                detailsExc = new InvalidDetailsException();
+                            }
+                            detailsExc.addInvalid(curToken);
+                            break;
+                    }
+                }
+                if (detailsExc != null)
+                {
+                    throw detailsExc;
+                }
             }
-            else
-            if (prmDetail.equals(PRM_DETAIL_DFLT))
-            {
-                detail = DetailLevel.DEFAULT;
-            }
-            else
-            {
-                printError(
-                    debugErr,
-                    String.format(
-                        "The value '%s' is not valid for the parameter '%s'.",
-                        prmDetail, PRM_DETAIL_NAME
-                    ),
-                    null,
-                    "Enter a valid value for the parameter.",
-                    String.format(
-                        "Valid values are '%s' and '%s'.",
-                        PRM_DETAIL_DFLT, PRM_DETAIL_FULL
-                    )
-                );
-                detail = DetailLevel.INVALID;
-            }
-        }
 
-        if (detail != DetailLevel.INVALID)
-        {
             Map<String, Peer> peerList = cmnDebugCtl.getAllPeers();
 
-            try
+            Matcher connSvcMatch = createMatcher(parameters, PRM_CONNECTOR_MATCH, debugErr);
+            Matcher addrMatch = createMatcher(parameters, PRM_ADDRESS_MATCH, debugErr);
+            Matcher connIdMatch = createMatcher(parameters, PRM_CONNID_MATCH, debugErr);
+
+            if (peerList.size() > 0)
             {
-                Matcher connSvcMatch = createMatcher(parameters, PRM_CONNECTOR_MATCH, debugErr);
-                Matcher addrMatch = createMatcher(parameters, PRM_ADDRESS_MATCH, debugErr);
-                Matcher connIdMatch = createMatcher(parameters, PRM_CONNID_MATCH, debugErr);
+                char[] rulerData = new char[78];
+                Arrays.fill(rulerData, '-');
+                String ruler = new String(rulerData);
+                debugOut.printf(
+                    "%-46s %5s %8s %8s\n",
+                    "Endpoint address",
+                    "OutQ",
+                    "MsgRecv",
+                    "MsgSent"
+                );
+                debugOut.println(ruler);
 
-                if (peerList.size() > 0)
+                int count = 0;
+                for (Peer curPeer : peerList.values())
                 {
-                    char[] rulerData = new char[78];
-                    Arrays.fill(rulerData, '-');
-                    String ruler = new String(rulerData);
-                    debugOut.printf(
-                        "%-46s %5s %8s %8s\n",
-                        "Endpoint address",
-                        "OutQ",
-                        "MsgRecv",
-                        "MsgSent"
-                    );
-                    debugOut.println(ruler);
-
-                    int count = 0;
-                    for (Peer curPeer : peerList.values())
+                    String connId = curPeer.getId();
+                    String address = "<unknown>";
+                    InetSocketAddress peerAddr = curPeer.peerAddress();
+                    if (peerAddr != null)
                     {
-                        String connId = curPeer.getId();
-                        String address = "<unknown>";
-                        InetSocketAddress peerAddr = curPeer.peerAddress();
-                        if (peerAddr != null)
+                        InetAddress inetAddr = peerAddr.getAddress();
+                        if (inetAddr != null)
                         {
-                            InetAddress inetAddr = peerAddr.getAddress();
-                            if (inetAddr != null)
-                            {
-                                address = inetAddr.getHostAddress() + ":" + peerAddr.getPort();
-                            }
+                            address = inetAddr.getHostAddress() + ":" + peerAddr.getPort();
                         }
-                        String connector = "<unknown>";
+                    }
+                    String connector = "<unknown>";
+                    {
+                        ServiceName connectorInstance = curPeer.getConnectorInstanceName();
+                        if (connectorInstance != null)
                         {
-                            ServiceName connectorInstance = curPeer.getConnectorInstanceName();
-                            if (connectorInstance != null)
-                            {
-                                connector = connectorInstance.displayValue;
-                            }
+                            connector = connectorInstance.displayValue;
                         }
+                    }
 
-                        boolean selected = (
-                            match(connSvcMatch, connector) &&
-                            match(addrMatch, address) &&
-                            match(connIdMatch, connId)
+                    boolean selected = (
+                        match(connSvcMatch, connector) &&
+                        match(addrMatch, address) &&
+                        match(connIdMatch, connId)
+                    );
+
+                    if (selected)
+                    {
+                        AccessContext peerAccCtx = curPeer.getAccessContext();
+                        debugOut.printf(
+                            "%-46s %5d %8d %8d\n",
+                            address,
+                            curPeer.outQueueCount(),
+                            curPeer.msgRecvCount(),
+                            curPeer.msgSentCount()
                         );
-
-                        if (selected)
+                        if (detail_id)
                         {
                             debugOut.printf(
-                                "%-46s %5d %8d %8d\n",
-                                address,
-                                curPeer.outQueueCount(),
-                                curPeer.msgRecvCount(),
-                                curPeer.msgSentCount()
+                                "    Id:        %-64s\n",
+                                curPeer.getId()
                             );
-                            if (detail == DetailLevel.FULL)
-                            {
-                                AccessContext peerAccCtx = curPeer.getAccessContext();
-                                Identity peerIdentity = peerAccCtx.getIdentity();
-                                Role peerRole = peerAccCtx.getRole();
-                                if (SecurityLevel.get() == SecurityLevel.MAC)
-                                {
-                                    SecurityType peerDomain = peerAccCtx.getDomain();
-                                    debugOut.printf(
-                                        "  Id:        %-64s\n"+
-                                        "  Connector: %-24s QCap: %4d\n" +
-                                        "  Identity:  %-24s Role: %-24s\n" +
-                                        "  Security domain: %-24s\n",
-                                        curPeer.getId(), connector,
-                                        curPeer.outQueueCapacity(),
-                                        peerIdentity, peerRole, peerDomain
-                                    );
-                                }
-                                else
-                                {
-                                    debugOut.printf(
-                                        "  %-64s QCap: %4d\n" +
-                                        "Identity: %-24s Role: %-24s\n",
-                                        curPeer.getId(), curPeer.outQueueCapacity(),
-                                        peerIdentity, peerRole
-                                    );
-                                }
-                            }
-                            ++count;
                         }
+                        if (detail_conn)
+                        {
+                            debugOut.printf(
+                                "    Connector: %-24s QCap: %4d\n",
+                                connector, curPeer.outQueueCapacity()
+                            );
+                        }
+                        if (detail_ctxt)
+                        {
+                            Identity peerIdentity = peerAccCtx.getIdentity();
+                            Role peerRole = peerAccCtx.getRole();
+                            SecurityType peerDomain = peerAccCtx.getDomain();
+                            debugOut.printf(
+                                "    Identity:  %-24s Role: %-24s\n" +
+                                "    Security domain: %-24s\n",
+                                peerIdentity, peerRole, peerDomain
+                            );
+                        }
+                        if (detail_privs)
+                        {
+                            debugOut.println("    Limit privileges:");
+                            printPrivString(debugOut, peerAccCtx.getLimitPrivs());
+                            debugOut.println("    Effective privileges:");
+                            printPrivString(debugOut, peerAccCtx.getEffectivePrivs());
+                        }
+                        ++count;
                     }
+                }
 
-                    debugOut.println(ruler);
-                    if (count == 1)
-                    {
-                        debugOut.println("1 connection");
-                    }
-                    else
-                    {
-                        debugOut.printf("%d connections\n", count);
-                    }
+                debugOut.println(ruler);
+                if (count == 1)
+                {
+                    debugOut.println("1 connection");
                 }
                 else
                 {
-                    debugOut.println("There are no connections registered at this time.");
+                    debugOut.printf("%d connections\n", count);
                 }
             }
-            catch (PatternSyntaxException patternExc)
+            else
             {
-                // Error reported already, no-op
+                debugOut.println("There are no connections registered at this time.");
             }
+        }
+        catch (InvalidDetailsException detailsExc)
+        {
+            printError(
+                debugErr,
+                String.format(
+                    "The following values are not valid for the parameter %s:\n%s",
+                    PRM_DETAIL_NAME, detailsExc.list()
+                ),
+                null,
+                "Enter a valid value for the parameter.",
+                String.format(
+                    "Valid values are:\n" +
+                    "    " + PRM_DETAIL_DFLT + "\n" +
+                    "    " + PRM_DETAIL_ID + "\n" +
+                    "    " + PRM_DETAIL_CONN + "\n" +
+                    "    " + PRM_DETAIL_CTXT + "\n" +
+                    "    " + PRM_DETAIL_PRIVS + "\n" +
+                    "    " + PRM_DETAIL_FULL
+                )
+            );
+        }
+        catch (PatternSyntaxException patternExc)
+        {
+            // Error reported already, no-op
         }
     }
 
@@ -295,5 +350,45 @@ public class CmdDisplayConnections extends BaseDebugCmd
             result = true;
         }
         return result;
+    }
+
+    private void  printPrivString(PrintStream output, PrivilegeSet privSet)
+    {
+        List<Privilege> privList = privSet.getEnabledPrivileges();
+        if (privList.size() == 0)
+        {
+            AutoIndent.printWithIndent(output, 8, "NONE");
+        }
+        else
+        {
+            for (Privilege priv : privList)
+            {
+                AutoIndent.printWithIndent(output, 8, priv.name);
+            }
+        }
+    }
+
+    private static class InvalidDetailsException extends Exception
+    {
+        private final List<String> invalidDetails = new LinkedList<>();
+
+        void addInvalid(String value)
+        {
+            invalidDetails.add(value);
+        }
+
+        String list()
+        {
+            StringBuilder invList = new StringBuilder();
+            for (String detail : invalidDetails)
+            {
+                if (invList.length() > 0)
+                {
+                    invList.append('\n');
+                }
+                invList.append(detail);
+            }
+            return invList.toString();
+        }
     }
 }
