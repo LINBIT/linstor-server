@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// drbdmanageNG - Delete storage pool definition
+message MsgDelStorPoolDfn
+{
+    // Storage pool name
+    string              stor_pool_name  = 1;
+}

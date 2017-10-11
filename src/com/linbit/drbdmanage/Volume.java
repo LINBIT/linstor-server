@@ -31,11 +31,13 @@ public interface Volume extends TransactionObject
     public VolumeConnection getVolumeConnection(AccessContext dbCtx, Volume otherVol)
         throws AccessDeniedException;
 
-    void setVolumeConnection(AccessContext accCtx, VolumeConnectionData volumeConnection)
+    public void setVolumeConnection(AccessContext accCtx, VolumeConnectionData volumeConnection)
         throws AccessDeniedException;
 
-    void removeVolumeConnection(AccessContext accCtx, VolumeConnectionData volumeConnection)
+    public void removeVolumeConnection(AccessContext accCtx, VolumeConnectionData volumeConnection)
         throws AccessDeniedException;
+
+    public StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException;
 
     public String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException;
 
@@ -63,8 +65,10 @@ public interface Volume extends TransactionObject
 
     public interface VlmApi
     {
+        public String getStorPoolName();
         public String getBlockDevice();
         public String getMetaDisk();
         public int getVlmNr();
     }
+
 }

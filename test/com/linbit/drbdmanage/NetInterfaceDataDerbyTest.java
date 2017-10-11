@@ -124,8 +124,8 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             node,
             netInterfaceName,
             niAddr,
-            transMgr,
             NetInterfaceType.IP,
+            transMgr,
             true,
             false
         );
@@ -186,7 +186,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         niData.initialized();
         dbDriver.create(niData, transMgr);
 
-        NetInterfaceData netData1 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, transMgr, niInterfaceType, false, false);
+        NetInterfaceData netData1 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, niInterfaceType, transMgr, false, false);
 
         assertNotNull(netData1);
         assertEquals(niUuid, netData1.getUuid());
@@ -196,7 +196,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niAddrStr, netData1.getAddress(sysCtx).getAddress());
         assertEquals(niInterfaceType, netData1.getNetInterfaceType(sysCtx));
 
-        NetInterfaceData netData2 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, transMgr, niInterfaceType, false, false);
+        NetInterfaceData netData2 = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, niInterfaceType, transMgr, false, false);
         assertTrue(netData1 == netData2);
     }
 
@@ -227,8 +227,8 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             node,
             niName,
             niAddr,
-            transMgr,
             niInterfaceType,
+            transMgr,
             true,
             false
         );
@@ -358,7 +358,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         satelliteMode();
 
-        NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, null, niInterfaceType, true, false);
+        NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, niInterfaceType, null, true, false);
 
         assertNotNull(netData);
         assertEquals(niAddr, netData.getAddress(sysCtx));
@@ -380,7 +380,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         satelliteMode();
 
-        NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, null, niInterfaceType, false, false);
+        NetInterfaceData netData = NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, niInterfaceType, null, false, false);
 
         assertNull(netData);
 
@@ -411,6 +411,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         dbDriver.create(niData, transMgr);
 
-        NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, transMgr, niInterfaceType, false, true);
+        NetInterfaceData.getInstance(sysCtx, node, niName, niAddr, niInterfaceType, transMgr, false, true);
     }
 }

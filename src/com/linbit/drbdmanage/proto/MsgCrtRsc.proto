@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package com.linbit.drbdmanage.proto;
 
-import public "MsgCrtVlm.proto";
-
 // drbdmanageNG - Create resource 
 message MsgCrtRsc
 {
@@ -21,4 +19,24 @@ message MsgCrtRsc
     
     // Volume 
     repeated Vlm        vlms        = 5;
+}
+
+// Embedded volume
+message Vlm
+{
+    // Volume number
+    sint32              vlm_nr         = 1;
+
+    // Block device path
+    string              block_device   = 2;
+
+    // Meta disk path (might be "internal")
+    string              meta_disk      = 3;
+
+    // Storage pool name
+    // if null, vlmDfn, rsc and node is asked (in this order)
+    string              stor_pool_name = 4;
+
+    // Volume properties map
+    map<string, string> vlm_props      = 5;
 }

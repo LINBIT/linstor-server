@@ -217,20 +217,21 @@ class CtrlNodeApiCallHandler
                 }
                 catch (SQLException sqlExc)
                 {
+                    String errorMessage = String.format(
+                        "A database error occured while trying to rollback the creation of " +
+                            "node '%s'.",
+                        nodeNameStr
+                    );
                     controller.getErrorReporter().reportError(
                         sqlExc,
                         accCtx,
                         client,
-                        String.format(
-                            "A database error occured while trying to rollback the creation of " +
-                                "node '%s'.",
-                            nodeNameStr
-                        )
+                        errorMessage
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();
                     entry.setReturnCodeBit(RC_NODE_CRT_FAIL_SQL_ROLLBACK);
-                    entry.setMessageFormat("Failed to rollback database transaction");
+                    entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
                     entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
 
@@ -381,7 +382,12 @@ class CtrlNodeApiCallHandler
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_DEL_FAIL_EXISTS_IMPL_ERROR);
-            entry.setMessageFormat("Failed to delete the node ${" + ApiConsts.KEY_NODE_NAME + "} due to an implementation error.");
+            entry.setMessageFormat(
+                String.format(
+                    "Failed to delete the node '%s' due to an implementation error.",
+                    nodeNameStr
+                )
+            );
             entry.setCauseFormat(dataAlreadyExistsExc.getMessage());
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
             entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
@@ -399,20 +405,21 @@ class CtrlNodeApiCallHandler
                 }
                 catch (SQLException sqlExc)
                 {
+                    String errorMessage = String.format(
+                        "A database error occured while trying to rollback the deletion of " +
+                            "node '%s'.",
+                        nodeNameStr
+                    );
                     controller.getErrorReporter().reportError(
                         sqlExc,
                         accCtx,
                         client,
-                        String.format(
-                            "A database error occured while trying to rollback the deletion of " +
-                                "node '%s'.",
-                            nodeNameStr
-                        )
+                        errorMessage
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();
                     entry.setReturnCodeBit(RC_NODE_DEL_FAIL_SQL_ROLLBACK);
-                    entry.setMessageFormat("Failed to rollback database transaction");
+                    entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
                     entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
 

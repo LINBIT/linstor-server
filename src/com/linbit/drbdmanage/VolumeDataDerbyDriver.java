@@ -8,12 +8,15 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
+import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.ErrorReporter;
@@ -31,21 +34,30 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     private static final String VOL_NODE_NAME = DerbyConstants.NODE_NAME;
     private static final String VOL_RES_NAME = DerbyConstants.RESOURCE_NAME;
     private static final String VOL_ID = DerbyConstants.VLM_NR;
+    private static final String VOL_STOR_POOL = DerbyConstants.STOR_POOL_NAME;
     private static final String VOL_BLOCK_DEVICE = DerbyConstants.BLOCK_DEVICE_PATH;
     private static final String VOL_META_DISK = DerbyConstants.META_DISK_PATH;
     private static final String VOL_FLAGS = DerbyConstants.VLM_FLAGS;
 
     private static final String SELECT_BY_RES =
-        " SELECT " +  VOL_UUID + ", " + VOL_ID + ", " + VOL_BLOCK_DEVICE + ", " +
-                    VOL_META_DISK + ", " + VOL_FLAGS +
+        " SELECT " + VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
+                     VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_BLOCK_DEVICE + ", " +
+                     VOL_META_DISK + ", " + VOL_FLAGS +
         " FROM " + TBL_VOL +
         " WHERE " + VOL_NODE_NAME + " = ? AND " +
                     VOL_RES_NAME  + " = ?";
     private static final String SELECT =  SELECT_BY_RES +
         " AND " +   VOL_ID +        " = ?";
+    private static final String SELECT_BY_STOR_POOL =
+        " SELECT " + VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
+                     VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_BLOCK_DEVICE + ", " +
+                     VOL_META_DISK + ", " + VOL_FLAGS +
+        " FROM " + TBL_VOL +
+        " WHERE " + VOL_NODE_NAME + " = ? AND " +
+                    VOL_STOR_POOL + " = ?";
     private static final String INSERT =
         " INSERT INTO " + TBL_VOL +
-        " VALUES (?, ?, ?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String UPDATE_FLAGS =
         " UPDATE " + TBL_VOL +
         " SET " + VOL_FLAGS + " = ? " +
@@ -63,9 +75,12 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
     private final StateFlagsPersistence<VolumeData> flagPersistenceDriver;
 
+    private NodeDataDerbyDriver             nodeDriver;
+    private ResourceDataDerbyDriver         resourceDriver;
     private VolumeConnectionDataDerbyDriver volumeConnectionDriver;
 
     private HashMap<VolPrimaryKey, VolumeData> volCache;
+    private boolean cacheCleared = false;
 
     public VolumeDataDerbyDriver(AccessContext privCtx, ErrorReporter errorReporterRef)
     {
@@ -76,8 +91,14 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         volCache = new HashMap<>();
     }
 
-    public void initialize(VolumeConnectionDataDerbyDriver volumeConnectionDataDerbyDriverRef)
+    public void initialize(
+        NodeDataDerbyDriver nodeDriverRef,
+        ResourceDataDerbyDriver resourceDriverRef,
+        VolumeConnectionDataDerbyDriver volumeConnectionDataDerbyDriverRef
+    )
     {
+        nodeDriver = nodeDriverRef;
+        resourceDriver = resourceDriverRef;
         volumeConnectionDriver = volumeConnectionDataDerbyDriverRef;
     }
 
@@ -138,8 +159,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
     public List<VolumeData> loadAllVolumesByResource(
         Resource resRef,
-        TransactionMgr transMgr,
-        AccessContext accCtx
+        TransactionMgr transMgr
     )
         throws SQLException
     {
@@ -154,13 +174,34 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setString(2, resRef.getDefinition().getName().value);
             try (ResultSet resultSet = stmt.executeQuery())
             {
-                ret = load(accCtx, resRef, resultSet, transMgr);
+                ret = load(dbCtx, resRef, resultSet, transMgr);
             }
         }
-        for (VolumeData vol : ret)
+        errorReporter.logDebug("%d volumes loaded for resource %s", ret.size(), getDebugId(resRef));
+        return ret;
+    }
+
+    public List<VolumeData> getVolumesByStorPool(
+        StorPoolData storPoolData,
+        TransactionMgr transMgr
+    )
+        throws SQLException
+    {
+        List<VolumeData> ret;
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_BY_STOR_POOL))
         {
-            errorReporter.logDebug("Volume loaded %s", getDebugId(vol));
+            errorReporter.logTrace(
+                "Loading all Volumes by StorPool %s",
+                getTraceId(storPoolData)
+            );
+            stmt.setString(1, storPoolData.getNode().getName().value);
+            stmt.setString(2, getStorPoolDfn(storPoolData).getName().value);
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                ret = load(dbCtx, null, resultSet, transMgr);
+            }
         }
+        errorReporter.logDebug("%d volumes loaded for StorPool %s", ret.size(), getDebugId(storPoolData));
         return ret;
     }
 
@@ -177,9 +218,61 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         {
             VolumeDefinition volDfn = null;
             VolumeNumber volNr;
+            StorPoolName storPoolName;
+
+            Resource res;
+            if (resRef != null)
+            {
+                res = resRef;
+            }
+            else
+            {
+                NodeName nodeName = null;
+                ResourceName resName;
+                try
+                {
+                    nodeName = new NodeName(resultSet.getString(VOL_NODE_NAME));
+                    resName = new ResourceName(resultSet.getString(VOL_RES_NAME));
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    if (nodeName == null)
+                    {
+                        throw new DrbdSqlRuntimeException(
+                            String.format(
+                                "A NodeName of a stored Volume in table %s could not be restored. " +
+                                    "(invalid NodeName=%s, ResName=%s, VolumeNumber=%d)",
+                                TBL_VOL,
+                                resultSet.getString(VOL_NODE_NAME),
+                                resultSet.getString(VOL_RES_NAME),
+                                resultSet.getInt(VOL_ID)
+                            ),
+                            invalidNameExc
+                        );
+                    }
+                    else
+                    {
+                        throw new DrbdSqlRuntimeException(
+                            String.format(
+                                "A ResourceName of a stored Volume in table %s could not be restored. " +
+                                    "(NodeName=%s, invalid ResName=%s, VolumeNumber=%d)",
+                                TBL_VOL,
+                                resultSet.getString(VOL_NODE_NAME),
+                                resultSet.getString(VOL_RES_NAME),
+                                resultSet.getInt(VOL_ID)
+                            ),
+                            invalidNameExc
+                        );
+                    }
+                }
+                Node node = nodeDriver.load(nodeName, true, transMgr);
+                res = resourceDriver.load(node, resName, true, transMgr);
+            }
+
             try
             {
                 volNr = new VolumeNumber(resultSet.getInt(VOL_ID));
+                storPoolName = new StorPoolName(resultSet.getString(VOL_STOR_POOL));
             }
             catch (ValueOutOfRangeException valueOutOfRangeExc)
             {
@@ -188,25 +281,56 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         "A VolumeNumber of a stored Volume in table %s could not be restored. " +
                             "(NodeName=%s, ResName=%s, invalid VolumeNumber=%d)",
                         TBL_VOL,
-                        resRef.getAssignedNode().getName().value,
-                        resRef.getDefinition().getName().value,
-                        resultSet.getInt(VOL_ID)),
+                        res.getAssignedNode().getName().value,
+                        res.getDefinition().getName().value,
+                        resultSet.getInt(VOL_ID)
+                    ),
                     valueOutOfRangeExc
+                );
+            }
+            catch (InvalidNameException invalidNameExc)
+            {
+                throw new DrbdSqlRuntimeException(
+                    String.format(
+                        "A StorPoolName of a stored Volume in table %s could not be restored. " +
+                            "(NodeName=%s, ResName=%s, VolumeNumber=%d, invalid StorPoolName=%s)",
+                        TBL_VOL,
+                        res.getAssignedNode().getName().value,
+                        res.getDefinition().getName().value,
+                        resultSet.getInt(VOL_ID),
+                        resultSet.getString(VOL_STOR_POOL)
+                    ),
+                    invalidNameExc
                 );
             }
             VolumeDefinitionDataDatabaseDriver volDfnDriver = DrbdManage.getVolumeDefinitionDataDatabaseDriver();
             volDfn = volDfnDriver.load(
-                resRef.getDefinition(),
+                res.getDefinition(),
                 volNr,
                 true,
                 transMgr
             );
 
-            VolumeData volData = cacheGet(resRef.getAssignedNode(), resRef.getDefinition(), volNr);
+            StorPoolDefinitionDataDatabaseDriver storPoolDfnDriver = DrbdManage.getStorPoolDefinitionDataDatabaseDriver();
+            StorPoolDefinitionData storPoolDfn = storPoolDfnDriver.load(
+                storPoolName,
+                true,
+                transMgr
+            );
+
+            StorPoolDataDatabaseDriver storPoolDriver = DrbdManage.getStorPoolDataDatabaseDriver();
+            StorPoolData storPool = storPoolDriver.load(
+                res.getAssignedNode(),
+                storPoolDfn,
+                true,
+                transMgr
+            );
+
+            VolumeData volData = cacheGet(res.getAssignedNode(), res.getDefinition(), volNr);
             VolPrimaryKey primaryKey = null;
-            if (volData == null)
+            if (volData == null && !cacheCleared)
             {
-                primaryKey = new VolPrimaryKey(resRef, volDfn);
+                primaryKey = new VolPrimaryKey(res, volDfn);
                 volData = volCache.get(primaryKey);
             }
             if (volData == null)
@@ -215,8 +339,9 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 {
                     volData = new VolumeData(
                         UuidUtils.asUuid(resultSet.getBytes(VOL_UUID)),
-                        resRef,
+                        res,
                         volDfn,
+                        storPool,
                         resultSet.getString(VOL_BLOCK_DEVICE),
                         resultSet.getString(VOL_META_DISK),
                         resultSet.getLong(VOL_FLAGS),
@@ -224,7 +349,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         transMgr
                     );
                     errorReporter.logTrace("Volume created %s", getTraceId(volData));
-                    volCache.put(primaryKey, volData);
+                    if (!cacheCleared)
+                    {
+                        volCache.put(primaryKey, volData);
+                    }
 
                     // restore flags
                     StateFlags<VlmFlags> flags = volData.getFlags();
@@ -283,9 +411,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setString(2, vol.getResource().getAssignedNode().getName().value);
             stmt.setString(3, vol.getResourceDefinition().getName().value);
             stmt.setInt(4, vol.getVolumeDefinition().getVolumeNumber(dbCtx).value);
-            stmt.setString(5, vol.getBlockDevicePath(dbCtx));
-            stmt.setString(6, vol.getMetaDiskPath(dbCtx));
-            stmt.setLong(7, vol.getFlags().getFlagsBits(dbCtx));
+            stmt.setString(5, vol.getStorPool(dbCtx).getName().value);
+            stmt.setString(6, vol.getBlockDevicePath(dbCtx));
+            stmt.setString(7, vol.getMetaDiskPath(dbCtx));
+            stmt.setLong(8, vol.getFlags().getFlagsBits(dbCtx));
             stmt.executeUpdate();
 
             errorReporter.logDebug("Volume created %s", getDebugId(vol));
@@ -397,9 +526,56 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         );
     }
 
+    private String getDebugId(Resource resRef)
+    {
+        return getResId(
+            resRef.getAssignedNode().getName().displayValue,
+            resRef.getDefinition().getName().displayValue
+        );
+    }
+
     private String getResId(String nodeName, String resName)
     {
         return "(NodeName=" + nodeName + " ResName=" + resName+ ")";
+    }
+
+    private String getTraceId(StorPoolData storPool)
+    {
+        return getStorPoolId(
+            getStorPoolDfn(storPool).getName().value
+        );
+    }
+
+    private String getDebugId(StorPoolData storPool)
+    {
+        return getStorPoolId(
+            getStorPoolDfn(storPool).getName().displayValue
+        );
+    }
+
+    private String getStorPoolId(String name)
+    {
+        return "(StorPoolName=" + name + ")";
+    }
+
+    private StorPoolDefinitionData getStorPoolDfn(StorPoolData storPool)
+    {
+        StorPoolDefinitionData ret = null;
+        try
+        {
+            ret = (StorPoolDefinitionData) storPool.getDefinition(dbCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            DerbyDriver.handleAccessDeniedException(accDeniedExc);
+        }
+        return ret;
+    }
+
+    public void clearCache()
+    {
+        cacheCleared = true;
+        volCache.clear();
     }
 
     private class VolFlagsPersistence implements StateFlagsPersistence<VolumeData>
@@ -435,11 +611,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 DerbyDriver.handleAccessDeniedException(accessDeniedExc);
             }
         }
-    }
-
-    public void clearCache()
-    {
-        volCache.clear();
     }
 
     public static class VolPrimaryKey

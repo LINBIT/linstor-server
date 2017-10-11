@@ -1071,6 +1071,7 @@ public final class MsgCrtVlmDfnOuterClass {
     /**
      * <pre>
      * Volume minor number
+     * -1 for automatic assignment
      * </pre>
      *
      * <code>sint32 vlm_minor = 3;</code>
@@ -1272,6 +1273,7 @@ public final class MsgCrtVlmDfnOuterClass {
     /**
      * <pre>
      * Volume minor number
+     * -1 for automatic assignment
      * </pre>
      *
      * <code>sint32 vlm_minor = 3;</code>
@@ -1816,6 +1818,7 @@ public final class MsgCrtVlmDfnOuterClass {
       /**
        * <pre>
        * Volume minor number
+       * -1 for automatic assignment
        * </pre>
        *
        * <code>sint32 vlm_minor = 3;</code>
@@ -1826,6 +1829,7 @@ public final class MsgCrtVlmDfnOuterClass {
       /**
        * <pre>
        * Volume minor number
+       * -1 for automatic assignment
        * </pre>
        *
        * <code>sint32 vlm_minor = 3;</code>
@@ -1839,6 +1843,7 @@ public final class MsgCrtVlmDfnOuterClass {
       /**
        * <pre>
        * Volume minor number
+       * -1 for automatic assignment
        * </pre>
        *
        * <code>sint32 vlm_minor = 3;</code>

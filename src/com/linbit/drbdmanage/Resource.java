@@ -46,7 +46,8 @@ public interface Resource extends TransactionObject
 
     public StateFlags<RscFlags> getStateFlags();
 
-    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    public void markDeleted(AccessContext accCtx)
+        throws AccessDeniedException, SQLException;
 
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;

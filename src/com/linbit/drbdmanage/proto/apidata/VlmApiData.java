@@ -1,8 +1,7 @@
 package com.linbit.drbdmanage.proto.apidata;
 
-import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.Volume.VlmApi;
-import com.linbit.drbdmanage.proto.MsgCrtVlmOuterClass.Vlm;
+import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
 
 public class VlmApiData implements VlmApi
 {
@@ -11,6 +10,12 @@ public class VlmApiData implements VlmApi
     public VlmApiData(Vlm vlm)
     {
         this.vlm = vlm;
+    }
+
+    @Override
+    public String getStorPoolName()
+    {
+        return vlm.getStorPoolName();
     }
 
     @Override

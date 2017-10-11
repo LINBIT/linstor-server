@@ -3,6 +3,7 @@ package com.linbit.drbdmanage;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -30,6 +31,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final Props props;
     private final Node node;
     private final StorPoolDataDatabaseDriver dbDriver;
+
+    private final Map<String, Volume> volumeMap;
 
     private boolean deleted = false;
 
@@ -73,6 +76,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         storDriver = storDriverRef;
         storDriverSimpleClassName = storDriverSimpleClassNameRef;
         node = nodeRef;
+        volumeMap = new TreeMap<>();
 
         props = PropsContainer.getInstance(
             PropsContainer.buildPath(storPoolDef.getName(), node.getName()),
@@ -90,12 +94,14 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDefinition storPoolDefRef,
         String storDriverSimpleClassNameRef,
         TransactionMgr transMgr,
+        boolean createStorageDriverInstance,
         boolean createIfNotExists,
         boolean failIfExists
     )
         throws SQLException, AccessDeniedException, ClassNotFoundException, InstantiationException, IllegalAccessException, DrbdDataAlreadyExistsException
     {
         nodeRef.getObjProt().requireAccess(accCtx, AccessType.USE);
+        storPoolDefRef.getObjProt().requireAccess(accCtx, AccessType.USE);
         StorPoolData storPoolData = null;
         StorPoolDataDatabaseDriver driver = DrbdManage.getStorPoolDataDatabaseDriver();
 
@@ -108,10 +114,15 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
         if (storPoolData == null && createIfNotExists)
         {
+            StorageDriver storDriver = null;
+            if (createStorageDriverInstance)
+            {
+                storDriver = StorageDriverUtils.createInstance(storDriverSimpleClassNameRef);
+            }
             storPoolData = new StorPoolData(
                 nodeRef,
                 storPoolDefRef,
-                StorageDriverUtils.createInstance(storDriverSimpleClassNameRef),
+                storDriver,
                 storDriverSimpleClassNameRef,
                 transMgr
             );
@@ -120,6 +131,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         if (storPoolData != null)
         {
             ((NodeData) nodeRef).addStorPool(accCtx, storPoolData);
+            ((StorPoolDefinitionData)storPoolDefRef).addStorPool(accCtx, storPoolData);
             storPoolData.initialized();
         }
         return storPoolData;
@@ -150,6 +162,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     {
         checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return storPoolDef;
     }
 
@@ -192,14 +205,40 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         return storDriverSimpleClassName;
     }
 
+    public void putVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.USE);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        volumeMap.put(getVolumeKey(accCtx, volume), volume);
+    }
+
+    public void removeVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.USE);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        volumeMap.remove(getVolumeKey(accCtx, volume));
+    }
+
+    private String getVolumeKey(AccessContext accCtx, Volume volume) throws AccessDeniedException
+    {
+        NodeName nodeName = volume.getResource().getAssignedNode().getName();
+        ResourceName rscName = volume.getResourceDefinition().getName();
+        VolumeNumber volNr = volume.getVolumeDefinition().getVolumeNumber(accCtx);
+        return nodeName.value + "/" + rscName.value + "/" + volNr.value;
+    }
+
     @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         ((NodeData) node).removeStorPool(accCtx, this);
+        ((StorPoolDefinitionData) storPoolDef).removeStorPool(accCtx, this);
         dbDriver.delete(this, transMgr);
         deleted = true;
     }

@@ -21,6 +21,7 @@ import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.DerbyBase;
+import com.linbit.drbdmanage.storage.LvmDriver;
 import com.linbit.utils.UuidUtils;
 
 public class VolumeDataDerbyTest extends DerbyBase
@@ -42,6 +43,10 @@ public class VolumeDataDerbyTest extends DerbyBase
     private NodeId nodeId;
     private ResourceData res;
 
+    private StorPoolName storPoolName;
+    private StorPoolDefinitionData storPoolDfn;
+    private StorPoolData storPool;
+
     private VolumeNumber volNr;
     private MinorNumber minor;
     private long volSize;
@@ -59,7 +64,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         super.setUp();
         assertEquals(TBL_VOLUMES + " table's column count has changed. Update tests accordingly!",
-            7,
+            8,
             TBL_COL_COUNT_VOLUMES
         );
 
@@ -98,6 +103,26 @@ public class VolumeDataDerbyTest extends DerbyBase
             false
         );
 
+        storPoolName = new StorPoolName("TestStorPoolName");
+        storPoolDfn = StorPoolDefinitionData.getInstance(
+            sysCtx,
+            storPoolName,
+            transMgr,
+            true,
+            false
+        );
+
+        storPool = StorPoolData.getInstance(
+            sysCtx,
+            node,
+            storPoolDfn,
+            LvmDriver.class.getSimpleName(),
+            transMgr,
+            false,
+            true,
+            false
+        );
+
         volNr = new VolumeNumber(13);
         minor = new MinorNumber(42);
         volSize = 5_000_000;
@@ -120,6 +145,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             uuid,
             res,
             volDfn,
+            storPool,
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
@@ -160,6 +186,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             sysCtx,
             res,
             volDfn,
+            storPool,
             blockDevicePath,
             metaDiskPath,
             new VlmFlags[] { VlmFlags.CLEAN },
@@ -213,8 +240,7 @@ public class VolumeDataDerbyTest extends DerbyBase
 
         List<VolumeData> volList = driver.loadAllVolumesByResource(
             res,
-            transMgr,
-            sysCtx
+            transMgr
         );
 
         assertEquals(1, volList.size());
@@ -232,6 +258,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             sysCtx,
             res,
             volDfn,
+            storPool,
             blockDevicePath,
             metaDiskPath,
             null, // flags
@@ -249,6 +276,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             sysCtx,
             res,
             volDfn,
+            storPool,
             blockDevicePath,
             metaDiskPath,
             null,
@@ -351,6 +379,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             sysCtx,
             res,
             volDfn,
+            storPool,
             blockDevicePath,
             metaDiskPath,
             new VlmFlags[] { VlmFlags.CLEAN },
@@ -378,6 +407,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             sysCtx,
             res,
             volDfn,
+            storPool,
             blockDevicePath,
             metaDiskPath,
             new VlmFlags[] { VlmFlags.CLEAN },
@@ -426,6 +456,17 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         driver.create(vol, transMgr);
 
-        VolumeData.getInstance(sysCtx, res, volDfn, blockDevicePath, metaDiskPath, null, transMgr, false, true);
+        VolumeData.getInstance(
+            sysCtx,
+            res,
+            volDfn,
+            storPool,
+            blockDevicePath,
+            metaDiskPath,
+            null,
+            transMgr,
+            false,
+            true
+        );
     }
 }

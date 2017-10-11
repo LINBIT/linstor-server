@@ -16,4 +16,3 @@ message MsgCrtRscDfn
     // Volume definitions list
     repeated VlmDfn     vlm_dfns  = 3;
 }
-

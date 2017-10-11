@@ -58,6 +58,7 @@ public final class ApiConsts
 
     public static final String KEY_NODE             = "Node";
     public static final String KEY_RSC_DFN          = "RscDfn";
+    public static final String KEY_STOR_POOL_DFN    = "StorPoolDfn";
 
     public static final String KEY_NODE_NAME        = "NodeName";
     public static final String KEY_NODE_TYPE        = "NodeType";

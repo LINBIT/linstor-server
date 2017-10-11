@@ -627,7 +627,7 @@ public abstract class DrbdManage
         return persistenceDbDriver.getStorPoolDataDatabaseDriver();
     }
 
-    public static StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDriver()
+    public static StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver()
     {
         return persistenceDbDriver.getStorPoolDefinitionDataDatabaseDriver();
     }

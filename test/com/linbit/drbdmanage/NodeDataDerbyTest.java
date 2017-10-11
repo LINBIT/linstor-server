@@ -16,7 +16,6 @@ import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.propscon.Props;
-import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.security.DerbyBase;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.stateflags.StateFlags;
@@ -233,176 +232,286 @@ public class NodeDataDerbyTest extends DerbyBase
     public void testLoadGetInstanceComplete() throws Exception
     {
         // node1
-        java.util.UUID nodeUuid = randomUUID();
-        String node1PropsPath = PropsContainer.buildPath(nodeName);
+        java.util.UUID node1Uuid;
         String node1TestKey = "nodeTestKey";
         String node1TestValue = "nodeTestValue";
 
         // node1 netName
-        java.util.UUID netIfUuid = randomUUID();
+        java.util.UUID netIfUuid;
         NetInterfaceName netName = new NetInterfaceName("TestNetName");
         String netHost = "127.0.0.1";
         String netType = "IP";
 
         // node2
         NodeName nodeName2 = new NodeName("TestTargetNodeName");
-        java.util.UUID node2Uuid = randomUUID();
-        String node2objProtPath = ObjectProtection.buildPath(nodeName2);
 
         // resDfn
         ResourceName resName = new ResourceName("TestResName");
-        java.util.UUID resDfnUuid = randomUUID();
-        String resDfnObjProtPath = ObjectProtection.buildPath(resName);
-        String resDfnPropsPath = PropsContainer.buildPath(resName);
+        java.util.UUID resDfnUuid;
         String resDfnTestKey = "resDfnTestKey";
         String resDfnTestValue = "resDfnTestValue";
 
         // node1 res
-        java.util.UUID res1Uuid = randomUUID();
-        String res1ObjProtPath = ObjectProtection.buildPath(nodeName, resName);
-        String res1PropsPath = PropsContainer.buildPath(nodeName, resName);
+        java.util.UUID res1Uuid;
         String res1TestKey = "res1TestKey";
         String res1TestValue = "res1TestValue";
         NodeId node1Id = new NodeId(13);
 
         // node2 res
-        java.util.UUID res2Uuid = randomUUID();
-        String res2ObjProtPath = ObjectProtection.buildPath(nodeName2, resName);
-        String res2PropsPath = PropsContainer.buildPath(nodeName2, resName);
+        java.util.UUID res2Uuid;
         String res2TestKey = "res2TestKey";
         String res2TestValue = "res2TestValue";
         NodeId node2Id = new NodeId(14);
 
         // volDfn
-        java.util.UUID volDfnUuid = randomUUID();
+        java.util.UUID volDfnUuid;
         VolumeNumber volDfnNr = new VolumeNumber(42);
         long volDfnSize = 5_000_000L;
         int volDfnMinorNr = 10;
-        String volDfnPropsPath = PropsContainer.buildPath(resName, volDfnNr);
         String volDfnTestKey = "volDfnTestKey";
         String volDfnTestValue = "volDfnTestValue";
 
         // node1 vol
-        java.util.UUID vol1Uuid = randomUUID();
+        java.util.UUID vol1Uuid;
         String vol1TestBlockDev = "/dev/do/not/use/me1";
         String vol1TestMetaDisk = "/dev/do/not/use/me1/neither";
-        String vol1PropsInstance = PropsContainer.buildPath(nodeName, resName, volDfnNr);
         String vol1TestKey = "vol1TestKey";
         String vol1TestValue = "vol1TestValue";
 
         // node1 vol
-        java.util.UUID vol2Uuid = randomUUID();
+        java.util.UUID vol2Uuid;
         String vol2TestBlockDev = "/dev/do/not/use/me2";
         String vol2TestMetaDisk = "/dev/do/not/use/me2/neither";
-        String vol2PropsInstance = PropsContainer.buildPath(nodeName2, resName, volDfnNr);
         String vol2TestKey = "vol2TestKey";
         String vol2TestValue = "vol2TestValue";
 
         // storPoolDfn
-        java.util.UUID storPoolDfnId = randomUUID();
+        java.util.UUID storPoolDfnUuid;
         StorPoolName poolName = new StorPoolName("TestPoolName");
 
         // storPool
-        java.util.UUID storPool1Id = randomUUID();
         String storPoolDriver1 = LvmDriver.class.getSimpleName();
-        String storPool1PropsInstance = PropsContainer.buildPath(poolName, nodeName);
         String storPool1TestKey = "storPool1TestKey";
         String storPool1TestValue = "storPool1TestValue";
 
         // storPool
-        java.util.UUID storPool2Id = randomUUID();
         String storPoolDriver2 = LvmDriver.class.getSimpleName();
-        String storPool2PropsInstance = PropsContainer.buildPath(poolName, nodeName2);
         String storPool2TestKey = "storPool2TestKey";
         String storPool2TestValue = "storPool2TestValue";
 
         // nodeCon
-        java.util.UUID nodeConUuid = randomUUID();
-        String nodeConPropsPath = PropsContainer.buildPath(nodeName, nodeName2);
+        java.util.UUID nodeConUuid;
         String nodeConTestKey = "nodeConTestKey";
         String nodeConTestValue = "nodeConTestValue";
 
         // resCon
-        java.util.UUID resConUuid = randomUUID();
-        String resConPropPath = PropsContainer.buildPath(nodeName, nodeName2, resName);
+        java.util.UUID resConUuid;
         String resConTestKey = "resConTestKey";
         String resConTestValue = "resConTestValue";
 
         // volCon
-        java.util.UUID volConUuid = randomUUID();
-        String volConPropPath = PropsContainer.buildPath(nodeName, nodeName2, resName, volDfnNr);
+        java.util.UUID volConUuid;
         String volConTestKey = "volConTestKey";
         String volConTestValue = "volConTestValue";
 
+        {
+            // node1
+            NodeData node1 = NodeData.getInstance(
+                sysCtx,
+                nodeName,
+                NodeType.AUXILIARY,
+                new NodeFlag[] {NodeFlag.QIGNORE},
+                transMgr,
+                true,
+                true
+            );
+            node1.getProps(sysCtx).setProp(node1TestKey, node1TestValue);
+            node1Uuid = node1.getUuid();
 
+            // node1's netIface
+            NetInterfaceData netIf = NetInterfaceData.getInstance(
+                sysCtx,
+                node1,
+                netName,
+                new DmIpAddress(netHost),
+                NetInterfaceType.IP,
+                transMgr,
+                true,
+                true
+            );
+            netIfUuid = netIf.getUuid();
 
+            // node2
+            NodeData node2 = NodeData.getInstance(
+                sysCtx,
+                nodeName2,
+                NodeType.AUXILIARY,
+                null,
+                transMgr,
+                true,
+                true
+            );
 
-        // node1
-        // objProt already created in startUp method
-        insertNode(transMgr, nodeUuid, nodeName, NodeFlag.QIGNORE.getFlagValue(), NodeType.AUXILIARY);
-        insertProp(transMgr, node1PropsPath, node1TestKey, node1TestValue);
+            // resDfn
+            ResourceDefinitionData resDfn = ResourceDefinitionData.getInstance(
+                sysCtx,
+                resName,
+                new RscDfnFlags[] {RscDfnFlags.DELETE},
+                transMgr,
+                true,
+                true
+            );
+            resDfn.getProps(sysCtx).setProp(resDfnTestKey, resDfnTestValue);
+            resDfnUuid = resDfn.getUuid();
 
-        // node1's netIface
-        insertNetInterface(transMgr, netIfUuid, nodeName, netName, netHost, netType);
+            // volDfn
+            VolumeDefinitionData volDfn = VolumeDefinitionData.getInstance(
+                sysCtx,
+                resDfn,
+                volDfnNr,
+                new MinorNumber(volDfnMinorNr),
+                volDfnSize,
+                new VlmDfnFlags[] {VlmDfnFlags.DELETE},
+                transMgr,
+                true,
+                true
+            );
+            volDfn.getProps(sysCtx).setProp(volDfnTestKey, volDfnTestValue);
+            volDfnUuid = volDfn.getUuid();
 
-        // node2
-        insertObjProt(transMgr, node2objProtPath, sysCtx);
-        insertNode(transMgr, node2Uuid, nodeName2, 0, NodeType.AUXILIARY);
+            // storPoolDfn
+            StorPoolDefinitionData storPoolDfn = StorPoolDefinitionData.getInstance(
+                sysCtx,
+                poolName,
+                transMgr,
+                true,
+                true
+            );
+            storPoolDfnUuid = storPoolDfn.getUuid();
 
-        // resDfn
-        insertObjProt(transMgr, resDfnObjProtPath, sysCtx);
-        insertResDfn(transMgr, resDfnUuid, resName, RscDfnFlags.DELETE);
-        insertProp(transMgr, resDfnPropsPath, resDfnTestKey, resDfnTestValue);
+            // node1 storPool
+            StorPoolData storPool1 = StorPoolData.getInstance(
+                sysCtx,
+                node1,
+                storPoolDfn,
+                storPoolDriver1,
+                transMgr,
+                false,
+                true,
+                true
+            );
+            storPool1.getConfiguration(sysCtx).setProp(storPool1TestKey, storPool1TestValue);
 
-        // volDfn
-        insertVolDfn(transMgr, volDfnUuid, resName, volDfnNr, volDfnSize, volDfnMinorNr, VlmDfnFlags.DELETE.flagValue);
-        insertProp(transMgr, volDfnPropsPath, volDfnTestKey, volDfnTestValue);
+            // node2 storPool
+            StorPoolData storPool2 = StorPoolData.getInstance(
+                sysCtx,
+                node2,
+                storPoolDfn,
+                storPoolDriver2,
+                transMgr,
+                false,
+                true,
+                true
+            );
+            storPool2.getConfiguration(sysCtx).setProp(storPool2TestKey, storPool2TestValue);
 
-        // storPoolDfn
-        insertObjProt(transMgr, ObjectProtection.buildPathSPD(poolName), sysCtx);
-        insertStorPoolDfn(transMgr, storPoolDfnId, poolName);
+            // node1 res
+            ResourceData res1 = ResourceData.getInstance(
+                sysCtx,
+                resDfn,
+                node1,
+                node1Id,
+                new RscFlags[] {RscFlags.CLEAN},
+                transMgr,
+                true,
+                true
+            );
+            res1.getProps(sysCtx).setProp(res1TestKey, res1TestValue);
+            res1Uuid = res1.getUuid();
 
-        // node1 res
-        insertObjProt(transMgr, res1ObjProtPath, sysCtx);
-        insertRes(transMgr, res1Uuid, nodeName, resName, node1Id, Resource.RscFlags.CLEAN);
-        insertProp(transMgr, res1PropsPath, res1TestKey, res1TestValue);
+            // node1 vol
+            VolumeData vol1 = VolumeData.getInstance(
+                sysCtx,
+                res1,
+                volDfn,
+                storPool1,
+                vol1TestBlockDev,
+                vol1TestMetaDisk,
+                new VlmFlags[] {VlmFlags.CLEAN},
+                transMgr,
+                true,
+                true
+            );
+            vol1.getProps(sysCtx).setProp(vol1TestKey, vol1TestValue);
+            vol1Uuid = vol1.getUuid();
 
-        // node1 vol
-        insertVol(transMgr, vol1Uuid, nodeName, resName, volDfnNr, vol1TestBlockDev, vol1TestMetaDisk, Volume.VlmFlags.CLEAN);
-        insertProp(transMgr, vol1PropsInstance, vol1TestKey, vol1TestValue);
+            // node2 res
+            ResourceData res2 = ResourceData.getInstance(
+                sysCtx,
+                resDfn,
+                node2,
+                node2Id,
+                new RscFlags[] {RscFlags.CLEAN},
+                transMgr,
+                true,
+                true
+            );
+            res2.getProps(sysCtx).setProp(res2TestKey, res2TestValue);
 
-        // node2 res
-        insertObjProt(transMgr, res2ObjProtPath, sysCtx);
-        insertRes(transMgr, res2Uuid, nodeName2, resName, node2Id, Resource.RscFlags.CLEAN);
-        insertProp(transMgr, res2PropsPath, res2TestKey, res2TestValue);
+            // node2 vol
+            VolumeData vol2 = VolumeData.getInstance(
+                sysCtx,
+                res2,
+                volDfn,
+                storPool2,
+                vol2TestBlockDev,
+                vol2TestMetaDisk,
+                new VlmFlags[] {VlmFlags.CLEAN},
+                transMgr,
+                true,
+                true
+            );
+            vol2.getProps(sysCtx).setProp(vol2TestKey, vol2TestValue);
 
-        // node2 vol
-        insertVol(transMgr, vol2Uuid, nodeName2, resName, volDfnNr, vol2TestBlockDev, vol2TestMetaDisk, Volume.VlmFlags.CLEAN);
-        insertProp(transMgr, vol2PropsInstance, vol2TestKey, vol2TestValue);
+            // nodeCon node1 <-> node2
+            NodeConnectionData nodeCon = NodeConnectionData.getInstance(
+                sysCtx,
+                node1,
+                node2,
+                transMgr,
+                true,
+                true
+            );
+            nodeCon.getProps(sysCtx).setProp(nodeConTestKey, nodeConTestValue);
+            nodeConUuid = nodeCon.getUuid();
 
-        // node1 storPool
-        insertStorPool(transMgr, storPool1Id, nodeName, poolName, storPoolDriver1);
-        insertProp(transMgr, storPool1PropsInstance, storPool1TestKey, storPool1TestValue);
+            // resCon res1 <-> res2
+            ResourceConnectionData resCon = ResourceConnectionData.getInstance(
+                sysCtx,
+                res1,
+                res2,
+                transMgr,
+                true,
+                true
+            );
+            resCon.getProps(sysCtx).setProp(resConTestKey, resConTestValue);
+            resConUuid = resCon.getUuid();
 
-        // node2 storPool
-        insertStorPool(transMgr, storPool2Id, nodeName2, poolName, storPoolDriver2);
-        insertProp(transMgr, storPool2PropsInstance, storPool2TestKey, storPool2TestValue);
+            // volCon vol1 <-> vol2
+            VolumeConnectionData volCon = VolumeConnectionData.getInstance(
+                sysCtx,
+                vol1,
+                vol2,
+                transMgr,
+                true,
+                true
+            );
+            volCon.getProps(sysCtx).setProp(volConTestKey, volConTestValue);
+            volConUuid = volCon.getUuid();
 
-        // nodeCon node1 <-> node2
-        insertNodeCon(transMgr, nodeConUuid, nodeName, nodeName2);
-        insertProp(transMgr, nodeConPropsPath, nodeConTestKey, nodeConTestValue);
-
-        // resCon res1 <-> res2
-        insertResCon(transMgr, resConUuid, nodeName, nodeName2, resName);
-        insertProp(transMgr, resConPropPath, resConTestKey, resConTestValue);
-
-        // volCon vol1 <-> vol2
-        insertVolCon(transMgr, volConUuid, nodeName, nodeName2, resName, volDfnNr);
-        insertProp(transMgr, volConPropPath, volConTestKey, volConTestValue);
-
-        transMgr.commit();
-
-        clearCaches();
+            transMgr.commit();
+        }
+//        clearCaches();
 
         NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false, false);
         NodeData loadedNode2 = NodeData.getInstance(sysCtx, nodeName2, null, null, transMgr, false, false);
@@ -550,7 +659,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 assertNotNull(storPoolDefinition);
                 assertEquals(poolName, storPoolDefinition.getName());
                 assertNotNull(storPoolDefinition.getObjProt());
-                assertEquals(storPoolDfnId, storPoolDefinition.getUuid());
+                assertEquals(storPoolDfnUuid, storPoolDefinition.getUuid());
             }
             {
                 StorageDriver storageDriver = storPool.getDriver(sysCtx);
@@ -560,7 +669,7 @@ public class NodeDataDerbyTest extends DerbyBase
             assertEquals(storPoolDriver2, storPool.getDriverName());
             assertEquals(poolName, storPool.getName());
         }
-        assertEquals(nodeUuid, loadedNode.getUuid());
+        assertEquals(node1Uuid, loadedNode.getUuid());
 
         NodeConnection nodeCon = loadedNode.getNodeConnection(sysCtx, loadedNode2);
         assertNotNull(nodeCon);

@@ -18,6 +18,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.DerbyBase;
+import com.linbit.drbdmanage.storage.LvmDriver;
 import com.linbit.utils.UuidUtils;
 
 public class VolumeConnectionDataDerbyTest extends DerbyBase
@@ -30,6 +31,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     private final NodeName sourceName;
     private final NodeName targetName;
     private final ResourceName resName;
+    private final StorPoolName storPoolName;
     private final VolumeNumber volNr;
 
     private final MinorNumber minor;
@@ -50,6 +52,9 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     private VolumeDefinitionData volDfn;
     private ResourceData resSrc;
     private ResourceData resDst;
+    private StorPoolDefinitionData storPoolDfn;
+    private StorPoolData storPool1;
+    private StorPoolData storPool2;
     private VolumeData volSrc;
     private VolumeData volDst;
 
@@ -64,6 +69,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
         resName = new ResourceName("testResourceName");
+        storPoolName = new StorPoolName("testStorPool");
         volNr = new VolumeNumber(42);
 
         minor = new MinorNumber(43);
@@ -97,8 +103,13 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         resSrc = ResourceData.getInstance(sysCtx, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true, false);
         resDst = ResourceData.getInstance(sysCtx, resDfn, nodeDst, nodeIdDst, null, transMgr, true, false);
 
-        volSrc = VolumeData.getInstance(sysCtx, resSrc, volDfn, volBlockDevSrc, volMetaDiskPathSrc, null, transMgr, true, false);
-        volDst = VolumeData.getInstance(sysCtx, resDst, volDfn, volBlockDevDst, volMetaDiskPathDst, null, transMgr, true, false);
+        storPoolDfn = StorPoolDefinitionData.getInstance(sysCtx, storPoolName, transMgr, true, false);
+
+        storPool1 = StorPoolData.getInstance(sysCtx, nodeSrc, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, false, true, false);
+        storPool2 = StorPoolData.getInstance(sysCtx, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, false, true, false);
+
+        volSrc = VolumeData.getInstance(sysCtx, resSrc, volDfn, storPool1, volBlockDevSrc, volMetaDiskPathSrc, null, transMgr, true, false);
+        volDst = VolumeData.getInstance(sysCtx, resDst, volDfn, storPool1, volBlockDevDst, volMetaDiskPathDst, null, transMgr, true, false);
 
         volCon = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
         driver = (VolumeConnectionDataDerbyDriver) DrbdManage.getVolumeConnectionDatabaseDriver();

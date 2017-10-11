@@ -119,6 +119,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private static final short DEFAULT_PEER_COUNT = 31;
     private static final long DEFAULT_AL_SIZE = 32;
     private static final int DEFAULT_AL_STRIPES = 1;
+    private static final String DEFAULT_STOR_POOL_NAME = "DfltStorPool";
 
     // System security context
     private AccessContext sysCtx;
@@ -199,6 +200,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private short defaultPeerCount = DEFAULT_PEER_COUNT;
     private long defaultAlSize = DEFAULT_AL_SIZE;
     private int defaultAlStripes = DEFAULT_AL_STRIPES;
+    private String defaultStorPoolName = DEFAULT_STOR_POOL_NAME;
 
     private ReconnectorTask reconnectorTask;
     private PingTask pingTask;
@@ -1204,6 +1206,11 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     public long getDefaultAlSize()
     {
         return defaultAlSize;
+    }
+
+    public String getDefaultStorPoolName()
+    {
+        return defaultStorPoolName;
     }
 
     public CtrlApiCallHandler getApiCallHandler()

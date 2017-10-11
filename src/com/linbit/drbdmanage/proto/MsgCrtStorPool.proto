@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// drbdmanageNG - Create storage pool 
+message MsgCrtStorPool
+{
+    // Node name
+    string              node_name       = 1;
+
+    // Storage pool name
+    string              stor_pool_name  = 2;
+
+    // Driver name
+    string              driver          = 3;
+
+    // Storage pool properties map
+    map<string, string> stor_pool_props = 4;
+}

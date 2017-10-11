@@ -2,6 +2,8 @@ package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -20,6 +22,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     private final StorPoolName name;
     private final ObjectProtection objProt;
     private final StorPoolDefinitionDataDatabaseDriver dbDriver;
+    private final Map<NodeName, StorPool> storPools;
 
     private boolean deleted = false;
 
@@ -63,8 +66,9 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         uuid = id;
         objProt = objProtRef;
         name = nameRef;
+        storPools = new TreeMap<>();
 
-        dbDriver = DrbdManage.getStorPoolDefinitionDataDriver();
+        dbDriver = DrbdManage.getStorPoolDefinitionDataDatabaseDriver();
 
         transObjs = Arrays.<TransactionObject>asList(objProt);
     }
@@ -80,7 +84,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     {
         StorPoolDefinitionData storPoolDfn = null;
 
-        StorPoolDefinitionDataDatabaseDriver dbDriver = DrbdManage.getStorPoolDefinitionDataDriver();
+        StorPoolDefinitionDataDatabaseDriver dbDriver = DrbdManage.getStorPoolDefinitionDataDatabaseDriver();
         storPoolDfn = dbDriver.load(nameRef, false, transMgr);
 
         if (failIfExists && storPoolDfn != null)
@@ -122,6 +126,20 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     {
         checkDeleted();
         return name;
+    }
+
+    void addStorPool(AccessContext accCtx, StorPoolData storPoolData) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        storPools.put(storPoolData.getNode().getName(), storPoolData);
+    }
+
+    void removeStorPool(AccessContext accCtx, StorPoolData storPoolData) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        storPools.remove(storPoolData.getNode().getName());
     }
 
     @Override

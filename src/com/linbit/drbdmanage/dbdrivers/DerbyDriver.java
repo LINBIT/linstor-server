@@ -117,9 +117,9 @@ public class DerbyDriver implements DatabaseDriver
         resesourceDefinitionDriver.initialize(resourceDriver, volumeDefinitionDriver);
         resourceDriver.initialize(resourceConnectionDriver, volumeDriver);
         // volumeDefinitionDriver.initialize();
-        volumeDriver.initialize(volumeConnectionDriver);
+        volumeDriver.initialize(nodeDriver, resourceDriver, volumeConnectionDriver);
         // storPoolDefinitionDriver.initialize();
-        // storPoolDriver.initialize();
+        storPoolDriver.initialize(volumeDriver);
         // netInterfaceDriver.initialize();
         nodeConnectionDriver.initialize(nodeDriver);
         resourceConnectionDriver.initialize(nodeDriver, resourceDriver);
@@ -141,6 +141,7 @@ public class DerbyDriver implements DatabaseDriver
 
         resourceDriver.clearCache();
         volumeDriver.clearCache();
+        storPoolDriver.clearCache();
     }
 
     @Override

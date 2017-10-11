@@ -19,6 +19,9 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestName;
+
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.NetInterfaceName;
@@ -44,6 +47,9 @@ import com.linbit.utils.UuidUtils;
 
 public abstract class DerbyBase implements DerbyConstants
 {
+    @Rule
+    public TestName testMethodName = new TestName();
+
     private static final String SELECT_PROPS_BY_INSTANCE =
         " SELECT " + PROPS_INSTANCE + ", " + PROP_KEY + ", " + PROP_VALUE +
         " FROM " + TBL_PROPS_CONTAINERS +
@@ -160,8 +166,15 @@ public abstract class DerbyBase implements DerbyConstants
     @Before
     public void setUp() throws Exception
     {
+        errorReporter.logTrace("Running cleanups for next method: %s", testMethodName.getMethodName());
         truncateTables();
         insertDefaults();
+
+        Connection tmpCon = dbConnPool.getConnection();
+        // make sure to seal the internal caches
+        persistenceDbDriver.loadAll(new TransactionMgr(tmpCon));
+        System.out.println("derbybase: " + persistenceDbDriver.getStorPoolDataDatabaseDriver());
+        tmpCon.close();
 
         clearCaches();
 
@@ -169,6 +182,7 @@ public abstract class DerbyBase implements DerbyConstants
             secureDbDriver,
             persistenceDbDriver
         );
+        errorReporter.logTrace("cleanups done, running method: %s", testMethodName.getMethodName());
     }
 
     protected void clearCaches()
@@ -537,6 +551,7 @@ public abstract class DerbyBase implements DerbyConstants
         NodeName nodeName,
         ResourceName resName,
         VolumeNumber volNr,
+        StorPoolName storPoolName,
         String blockDev,
         String metaDisk,
         VlmFlags... flags
@@ -548,9 +563,10 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.setString(2, nodeName.value);
         stmt.setString(3, resName.value);
         stmt.setInt(4, volNr.value);
-        stmt.setString(5, blockDev);
-        stmt.setString(6, metaDisk);
-        stmt.setLong(7, StateFlagsBits.getMask(flags));
+        stmt.setString(5, storPoolName.value);
+        stmt.setString(6, blockDev);
+        stmt.setString(7, metaDisk);
+        stmt.setLong(8, StateFlagsBits.getMask(flags));
         stmt.executeUpdate();
         stmt.close();
     }

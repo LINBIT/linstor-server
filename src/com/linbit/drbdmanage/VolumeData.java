@@ -39,6 +39,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
     // Reference to the volume definition that defines this volume
     private final VolumeDefinition volumeDfn;
 
+    private final StorPool storPool;
+
     // Properties container for this volume
     private final Props volumeProps;
 
@@ -55,12 +57,14 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private boolean deleted = false;
 
+
     /*
      * used by getInstance
      */
     private VolumeData(
         Resource resRef,
         VolumeDefinition volDfn,
+        StorPool storPool,
         String blockDevicePathRef,
         String metaDiskPathRef,
         long initFlags,
@@ -73,6 +77,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             UUID.randomUUID(),
             resRef,
             volDfn,
+            storPool,
             blockDevicePathRef,
             metaDiskPathRef,
             initFlags,
@@ -88,6 +93,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         UUID uuid,
         Resource resRef,
         VolumeDefinition volDfnRef,
+        StorPool storPoolRef,
         String blockDevicePathRef,
         String metaDiskPathRef,
         long initFlags,
@@ -100,6 +106,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         resourceRef = resRef;
         resourceDfn = resRef.getDefinition();
         volumeDfn = volDfnRef;
+        storPool = storPoolRef;
         blockDevicePath = blockDevicePathRef;
         metaDiskPath = metaDiskPathRef;
 
@@ -134,6 +141,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         AccessContext accCtx,
         Resource resRef,
         VolumeDefinition volDfn,
+        StorPool storPool,
         String blockDevicePathRef,
         String metaDiskPathRef,
         VlmFlags[] flags,
@@ -166,6 +174,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             volData = new VolumeData(
                 resRef,
                 volDfn,
+                storPool,
                 blockDevicePathRef,
                 metaDiskPathRef,
                 initFlags,
@@ -177,6 +186,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         if (volData != null)
         {
             ((ResourceData) resRef).putVolume(accCtx, volData);
+            ((StorPoolData) storPool).putVolume(accCtx, volData);
             volData.initialized();
         }
         return volData;
@@ -272,6 +282,12 @@ public class VolumeData extends BaseTransactionObject implements Volume
         }
     }
 
+    public StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return storPool;
+    }
 
     @Override
     public StateFlags<VlmFlags> getFlags()

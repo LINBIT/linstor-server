@@ -68,6 +68,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private ResourceConnectionDataDerbyDriver resourceConnectionDriver;
 
     private HashMap<ResPrimaryKey, ResourceData> resCache;
+    private boolean cacheCleared = false;
 
     public ResourceDataDerbyDriver(AccessContext accCtx, ErrorReporter errorReporterRef)
     {
@@ -282,7 +283,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     Resource loadedRes = resDfn.getResource(dbCtx, node.getName());
                     // although we just asked the cache, we also just loaded the resDfn.
                     // which loads all its resources.
-                    if (loadedRes == null)
+                    if (loadedRes == null && !cacheCleared)
                     {
                         // additionally we have to as our own cache in order to prevent
                         // endless recursion with loadResourceConnection -> loadResource -> ...
@@ -323,7 +324,10 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                             transMgr
                         );
 
-                        resCache.put(new ResPrimaryKey(node, resDfn), resData);
+                        if (!cacheCleared)
+                        {
+                            resCache.put(new ResPrimaryKey(node, resDfn), resData);
+                        }
 
                         errorReporter.logTrace("Resource instance created %s", getTraceId(resData));
 
@@ -342,7 +346,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         );
 
                         // restore volumes
-                        List<VolumeData> volList = volumeDriver.loadAllVolumesByResource(resData, transMgr, dbCtx);
+                        List<VolumeData> volList = volumeDriver.loadAllVolumesByResource(resData, transMgr);
                         for (VolumeData volData : volList)
                         {
                             resData.putVolume(dbCtx, volData);
@@ -506,6 +510,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
     public void clearCache()
     {
+        cacheCleared = true;
         resCache.clear();
     }
 

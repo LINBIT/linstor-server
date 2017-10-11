@@ -24,10 +24,10 @@ public interface DerbyConstants
     public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
     public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
     public static final String TBL_RESOURCES             = "RESOURCES";
-    public static final String TBL_VOLUME_DEFINITIONS    = "VOLUME_DEFINITIONS";
-    public static final String TBL_VOLUMES               = "VOLUMES";
     public static final String TBL_STOR_POOL_DEFINITIONS = "STOR_POOL_DEFINITIONS";
     public static final String TBL_NODE_STOR_POOL        = "NODE_STOR_POOL";
+    public static final String TBL_VOLUME_DEFINITIONS    = "VOLUME_DEFINITIONS";
+    public static final String TBL_VOLUMES               = "VOLUMES";
     public static final String TBL_NODE_CONNECTIONS      = "NODE_CONNECTIONS";
     public static final String TBL_RESOURCE_CONNECTIONS  = "RESOURCE_CONNECTIONS";
     public static final String TBL_VOLUME_CONNECTIONS    = "VOLUME_CONNECTIONS";
@@ -92,6 +92,13 @@ public interface DerbyConstants
     // RESOURCES column names
     public static final String NODE_ID        = "NODE_ID";
 
+    // STOR_POOL_DEFINITIONS column names
+    public static final String POOL_NAME     = "POOL_NAME";
+    public static final String POOL_DSP_NAME = "POOL_DSP_NAME";
+
+    // NODE_STOR_POOL column names
+    public static final String DRIVER_NAME = "DRIVER_NAME";
+
     // VOLUME_DEFINITIONS column names
     public static final String VLM_NR        = "VLM_NR";
     public static final String VLM_SIZE      = "VLM_SIZE";
@@ -99,15 +106,9 @@ public interface DerbyConstants
     public static final String VLM_FLAGS     = "VLM_FLAGS";
 
     // VOLUMES column names
+    public static final String STOR_POOL_NAME    = "STOR_POOL_NAME";
     public static final String BLOCK_DEVICE_PATH = "BLOCK_DEVICE_PATH";
     public static final String META_DISK_PATH    = "META_DISK_PATH";
-
-    // STOR_POOL_DEFINITIONS column names
-    public static final String POOL_NAME     = "POOL_NAME";
-    public static final String POOL_DSP_NAME = "POOL_DSP_NAME";
-
-    // NODE_STOR_POOL column names
-    public static final String DRIVER_NAME = "DRIVER_NAME";
 
     // NODE_CONNECTIONS column names
     public static final String NODE_NAME_SRC = "NODE_NAME_SRC";
@@ -134,10 +135,10 @@ public interface DerbyConstants
     public static final int TBL_COL_COUNT_NODE_NET_INTERFACES   = 6;
     public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 4;
     public static final int TBL_COL_COUNT_RESOURCES             = 5;
-    public static final int TBL_COL_COUNT_VOLUME_DEFINITIONS    = 6;
-    public static final int TBL_COL_COUNT_VOLUMES               = 7;
     public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS = 3;
     public static final int TBL_COL_COUNT_NODE_STOR_POOL        = 4;
+    public static final int TBL_COL_COUNT_VOLUME_DEFINITIONS    = 6;
+    public static final int TBL_COL_COUNT_VOLUMES               = 8;
     public static final int TBL_COL_COUNT_NODE_CONNECTIONS      = 3;
     public static final int TBL_COL_COUNT_RESOURCE_CONNECTIONS  = 4;
     public static final int TBL_COL_COUNT_VOLUME_CONNECTIONS    = 5;
@@ -255,7 +256,7 @@ public interface DerbyConstants
     public static final String CREATE_TABLE_NODES =
         "CREATE TABLE NODES \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
         "    NODE_NAME VARCHAR(255) NOT NULL PRIMARY KEY \n" +
         "        CONSTRAINT NODES_CHKNAME CHECK (UPPER(NODE_NAME) = NODE_NAME AND LENGTH(NODE_NAME) >= 2), \n" +
         "    NODE_DSP_NAME VARCHAR(255) NOT NULL, \n" +
@@ -266,8 +267,8 @@ public interface DerbyConstants
     public static final String CREATE_TABLE_NODE_NET_INTERFACES =
         "CREATE TABLE NODE_NET_INTERFACES \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" +
-        "    NODE_NAME VARCHAR(255) NOT NULL,  \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
         "    NODE_NET_NAME VARCHAR(255) NOT NULL, \n" +
         "    NODE_NET_DSP_NAME VARCHAR(255) NOT NULL, \n" +
         "    INET_ADDRESS VARCHAR(45) NOT NULL, \n" +
@@ -278,7 +279,7 @@ public interface DerbyConstants
     public static final String CREATE_TABLE_RESOURCE_DEFINITIONS =
         "CREATE TABLE RESOURCE_DEFINITIONS \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
         "    RESOURCE_NAME VARCHAR(48) NOT NULL PRIMARY KEY \n" +
         "        CONSTRAINT RSC_DFN_CHKNAME CHECK (UPPER(RESOURCE_NAME) = RESOURCE_NAME AND LENGTH(RESOURCE_NAME) >= 3), \n" +
         "    RESOURCE_DSP_NAME VARCHAR(48) NOT NULL, \n" +
@@ -288,7 +289,7 @@ public interface DerbyConstants
     public static final String CREATE_TABLE_RESOURCES =
         "CREATE TABLE RESOURCES \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
         "    NODE_ID INT NOT NULL, \n" +
@@ -297,10 +298,30 @@ public interface DerbyConstants
         "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" +
         "    FOREIGN KEY (RESOURCE_NAME) REFERENCES RESOURCE_DEFINITIONS(RESOURCE_NAME) ON DELETE CASCADE \n" +
         ")";
+    public static final String CREATE_TABLE_STOR_POOL_DEFINITIONS =
+        "CREATE TABLE STOR_POOL_DEFINITIONS \n" +
+        "( \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    POOL_NAME VARCHAR(32) NOT NULL PRIMARY KEY \n" +
+        "        CONSTRAINT STOR_POOL_CHKNAME CHECK (UPPER(POOL_NAME) = POOL_NAME AND LENGTH(POOL_NAME) >= 3), \n" +
+        "    POOL_DSP_NAME VARCHAR(32) NOT NULL, \n" +
+        "    CONSTRAINT STOR_POOL_CHKDSPNAME CHECK (UPPER(POOL_DSP_NAME) = POOL_NAME) \n" +
+        ")";
+    public static final String CREATE_TABLE_NODE_STOR_POOL =
+        "CREATE TABLE NODE_STOR_POOL \n" +
+        "( \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL UNIQUE, \n" +
+        "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
+        "    POOL_NAME VARCHAR(32) NOT NULL, \n" +
+        "    DRIVER_NAME VARCHAR(256) NOT NULL, \n" +
+        "    PRIMARY KEY (NODE_NAME, POOL_NAME), \n" +
+        "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (POOL_NAME) REFERENCES STOR_POOL_DEFINITIONS(POOL_NAME) ON DELETE CASCADE \n" +
+        ")";
     public static final String CREATE_TABLE_VOLUME_DEFINITIONS =
         "CREATE TABLE VOLUME_DEFINITIONS \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
         "    VLM_NR INT NOT NULL, \n" +
         "    VLM_SIZE BIGINT NOT NULL, \n" +
@@ -312,36 +333,18 @@ public interface DerbyConstants
     public static final String CREATE_TABLE_VOLUMES =
         "CREATE TABLE VOLUMES \n" +
         "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
         "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
         "    VLM_NR INT NOT NULL, \n" +
+        "    STOR_POOL_NAME VARCHAR(32) NOT NULL, \n" +
         "    BLOCK_DEVICE_PATH VARCHAR(255), -- null == diskless \n" +
         "    META_DISK_PATH VARCHAR(255),  -- null == internal \n" +
         "    VLM_FLAGS BIGINT NOT NULL, \n" +
         "    PRIMARY KEY (NODE_NAME, RESOURCE_NAME, VLM_NR), \n" +
         "    FOREIGN KEY (NODE_NAME, RESOURCE_NAME) REFERENCES RESOURCES(NODE_NAME, RESOURCE_NAME) ON DELETE CASCADE, \n" +
-        "    FOREIGN KEY (RESOURCE_NAME, VLM_NR) REFERENCES VOLUME_DEFINITIONS(RESOURCE_NAME, VLM_NR) ON DELETE CASCADE \n" +
-        ")";
-    public static final String CREATE_TABLE_STOR_POOL_DEFINITIONS =
-        "CREATE TABLE STOR_POOL_DEFINITIONS \n" +
-        "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL,  \n" +
-        "    POOL_NAME VARCHAR(32) NOT NULL PRIMARY KEY \n" +
-        "        CONSTRAINT STOR_POOL_CHKNAME CHECK (UPPER(POOL_NAME) = POOL_NAME AND LENGTH(POOL_NAME) >= 3), \n" +
-        "    POOL_DSP_NAME VARCHAR(32) NOT NULL, \n" +
-        "    CONSTRAINT STOR_POOL_CHKDSPNAME CHECK (UPPER(POOL_DSP_NAME) = POOL_NAME) \n" +
-        ")";
-    public static final String CREATE_TABLE_NODE_STOR_POOL =
-        "CREATE TABLE NODE_STOR_POOL \n" +
-        "( \n" +
-        "    UUID CHAR(16) FOR BIT DATA NOT NULL UNIQUE,  \n" +
-        "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
-        "    POOL_NAME VARCHAR(32) NOT NULL, \n" +
-        "    DRIVER_NAME VARCHAR(256) NOT NULL, \n" +
-        "    PRIMARY KEY (NODE_NAME, POOL_NAME), \n" +
-        "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE, \n" +
-        "    FOREIGN KEY (POOL_NAME) REFERENCES STOR_POOL_DEFINITIONS(POOL_NAME) ON DELETE CASCADE \n" +
+        "    FOREIGN KEY (RESOURCE_NAME, VLM_NR) REFERENCES VOLUME_DEFINITIONS(RESOURCE_NAME, VLM_NR) ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (STOR_POOL_NAME) REFERENCES STOR_POOL_DEFINITIONS(POOL_NAME) ON DELETE CASCADE \n" +
         ")";
     public static final String CREATE_TABLE_NODE_CONNECTIONS =
         "CREATE TABLE NODE_CONNECTIONS \n" +
@@ -415,10 +418,10 @@ public interface DerbyConstants
     public static final String DROP_TBL_VOLUME_CONNECTIONS    = "DROP TABLE " + TBL_VOLUME_CONNECTIONS;
     public static final String DROP_TBL_RESOURCE_CONNECTIONS  = "DROP TABLE " + TBL_RESOURCE_CONNECTIONS;
     public static final String DROP_TBL_NODE_CONNECTIONS      = "DROP TABLE " + TBL_NODE_CONNECTIONS;
-    public static final String DROP_TBL_NODE_STOR_POOL        = "DROP TABLE " + TBL_NODE_STOR_POOL;
-    public static final String DROP_TBL_STOR_POOL_DEFINITIONS = "DROP TABLE " + TBL_STOR_POOL_DEFINITIONS;
     public static final String DROP_TBL_VOLUMES               = "DROP TABLE " + TBL_VOLUMES;
     public static final String DROP_TBL_VOLUME_DEFINITIONS    = "DROP TABLE " + TBL_VOLUME_DEFINITIONS;
+    public static final String DROP_TBL_NODE_STOR_POOL        = "DROP TABLE " + TBL_NODE_STOR_POOL;
+    public static final String DROP_TBL_STOR_POOL_DEFINITIONS = "DROP TABLE " + TBL_STOR_POOL_DEFINITIONS;
     public static final String DROP_TBL_RESOURCES             = "DROP TABLE " + TBL_RESOURCES;
     public static final String DROP_TBL_RESOURCE_DEFINITIONS  = "DROP TABLE " + TBL_RESOURCE_DEFINITIONS;
     public static final String DROP_TBL_NODE_NET_INTERFACES   = "DROP TABLE " + TBL_NODE_NET_INTERFACES;
@@ -440,10 +443,10 @@ public interface DerbyConstants
     public static final String TRUNCATE_VOLUME_CONNECTIONS    = "DELETE FROM " + TBL_VOLUME_CONNECTIONS;
     public static final String TRUNCATE_RESOURCE_CONNECTIONS  = "DELETE FROM " + TBL_RESOURCE_CONNECTIONS;
     public static final String TRUNCATE_NODE_CONNECTIONS      = "DELETE FROM " + TBL_NODE_CONNECTIONS;
-    public static final String TRUNCATE_NODE_STOR_POOL        = "DELETE FROM " + TBL_NODE_STOR_POOL;
-    public static final String TRUNCATE_STOR_POOL_DEFINITIONS = "DELETE FROM " + TBL_STOR_POOL_DEFINITIONS;
     public static final String TRUNCATE_VOLUMES               = "DELETE FROM " + TBL_VOLUMES;
     public static final String TRUNCATE_VOLUME_DEFINITIONS    = "DELETE FROM " + TBL_VOLUME_DEFINITIONS;
+    public static final String TRUNCATE_NODE_STOR_POOL        = "DELETE FROM " + TBL_NODE_STOR_POOL;
+    public static final String TRUNCATE_STOR_POOL_DEFINITIONS = "DELETE FROM " + TBL_STOR_POOL_DEFINITIONS;
     public static final String TRUNCATE_RESOURCES             = "DELETE FROM " + TBL_RESOURCES;
     public static final String TRUNCATE_RESOURCE_DEFINITIONS  = "DELETE FROM " + TBL_RESOURCE_DEFINITIONS;
     public static final String TRUNCATE_NODE_NET_INTERFACES   = "DELETE FROM " + TBL_NODE_NET_INTERFACES;
@@ -478,10 +481,10 @@ public interface DerbyConstants
         CREATE_TABLE_NODE_NET_INTERFACES,
         CREATE_TABLE_RESOURCE_DEFINITIONS,
         CREATE_TABLE_RESOURCES,
-        CREATE_TABLE_VOLUME_DEFINITIONS,
-        CREATE_TABLE_VOLUMES,
         CREATE_TABLE_STOR_POOL_DEFINITIONS,
         CREATE_TABLE_NODE_STOR_POOL,
+        CREATE_TABLE_VOLUME_DEFINITIONS,
+        CREATE_TABLE_VOLUMES,
         CREATE_TABLE_NODE_CONNECTIONS,
         CREATE_TABLE_RESOURCE_CONNECTIONS,
         CREATE_TABLE_VOLUME_CONNECTIONS,
@@ -576,18 +579,18 @@ public interface DerbyConstants
     public static final String INSERT_RESOURCES =
         " INSERT INTO " + TBL_RESOURCES +
         " VALUES (?, ?, ?, ?, ?)";
-    public static final String INSERT_VOLUME_DEFINITIONS =
-        " INSERT INTO " + TBL_VOLUME_DEFINITIONS +
-        " VALUES (?, ?, ?, ?, ?, ?)";
-    public static final String INSERT_VOLUMES =
-        " INSERT INTO " + TBL_VOLUMES +
-        " VALUES (?, ?, ?, ?, ?, ?, ?)";
     public static final String INSERT_STOR_POOL_DEFINITIONS =
         " INSERT INTO " + TBL_STOR_POOL_DEFINITIONS +
         " VALUES (?, ?, ?)";
     public static final String INSERT_NODE_STOR_POOL =
         " INSERT INTO " + TBL_NODE_STOR_POOL +
         " VALUES (?, ?, ?, ?)";
+    public static final String INSERT_VOLUME_DEFINITIONS =
+        " INSERT INTO " + TBL_VOLUME_DEFINITIONS +
+        " VALUES (?, ?, ?, ?, ?, ?)";
+    public static final String INSERT_VOLUMES =
+        " INSERT INTO " + TBL_VOLUMES +
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     public static final String INSERT_NODE_CONNECTIONS =
         " INSERT INTO " + TBL_NODE_CONNECTIONS +
         " VALUES (?, ?, ?)";
@@ -612,10 +615,10 @@ public interface DerbyConstants
         DROP_TBL_VOLUME_CONNECTIONS,
         DROP_TBL_RESOURCE_CONNECTIONS,
         DROP_TBL_NODE_CONNECTIONS,
-        DROP_TBL_NODE_STOR_POOL,
-        DROP_TBL_STOR_POOL_DEFINITIONS,
         DROP_TBL_VOLUMES,
         DROP_TBL_VOLUME_DEFINITIONS,
+        DROP_TBL_NODE_STOR_POOL,
+        DROP_TBL_STOR_POOL_DEFINITIONS,
         DROP_TBL_RESOURCES,
         DROP_TBL_RESOURCE_DEFINITIONS,
         DROP_TBL_NODE_NET_INTERFACES,
@@ -640,10 +643,10 @@ public interface DerbyConstants
         TRUNCATE_VOLUME_CONNECTIONS,
         TRUNCATE_RESOURCE_CONNECTIONS,
         TRUNCATE_NODE_CONNECTIONS,
-        TRUNCATE_NODE_STOR_POOL,
-        TRUNCATE_STOR_POOL_DEFINITIONS,
         TRUNCATE_VOLUMES,
         TRUNCATE_VOLUME_DEFINITIONS,
+        TRUNCATE_NODE_STOR_POOL,
+        TRUNCATE_STOR_POOL_DEFINITIONS,
         TRUNCATE_RESOURCES,
         TRUNCATE_RESOURCE_DEFINITIONS,
         TRUNCATE_NODE_NET_INTERFACES,

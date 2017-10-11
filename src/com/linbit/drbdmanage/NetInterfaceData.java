@@ -89,8 +89,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         Node node,
         NetInterfaceName name,
         DmIpAddress addr,
-        TransactionMgr transMgr,
         NetInterfaceType netType,
+        TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
     )

@@ -14,12 +14,14 @@ import com.linbit.drbdmanage.propscon.InvalidValueException;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.DerbyBase;
+import com.linbit.drbdmanage.storage.LvmDriver;
 
 public class ConnectionPropsTest extends DerbyBase
 {
     private NodeName nodeName1;
     private NodeName nodeName2;
     private ResourceName resName;
+    private StorPoolName storPoolName;
     private NodeId nodeId1;
     private NodeId nodeId2;
     private VolumeNumber volNr;
@@ -37,6 +39,9 @@ public class ConnectionPropsTest extends DerbyBase
     private ResourceDefinitionData resDfn;
     private ResourceData res1;
     private ResourceData res2;
+    private StorPoolDefinitionData storPoolDfn;
+    private StorPoolData storPool1;
+    private StorPoolData storPool2;
     private VolumeDefinitionData volDfn;
     private VolumeData vol1;
     private VolumeData vol2;
@@ -49,7 +54,7 @@ public class ConnectionPropsTest extends DerbyBase
     private Props resConProps;
     private Props volConProps;
 
-    private ConnectionProps conProps;
+    private PriorityProps conProps;
 
     @Override
     @Before
@@ -60,6 +65,7 @@ public class ConnectionPropsTest extends DerbyBase
         nodeName1 = new NodeName("Node1");
         nodeName2 = new NodeName("Node2");
         resName = new ResourceName("ResName");
+        storPoolName = new StorPoolName("StorPool");
         nodeId1 = new NodeId(1);
         nodeId2 = new NodeId(2);
         volNr = new VolumeNumber(13);
@@ -80,10 +86,15 @@ public class ConnectionPropsTest extends DerbyBase
         res1 = ResourceData.getInstance(sysCtx, resDfn, node1, nodeId1, null, transMgr, true, false);
         res2 = ResourceData.getInstance(sysCtx, resDfn, node2, nodeId2, null, transMgr, true, false);
 
+        storPoolDfn = StorPoolDefinitionData.getInstance(sysCtx, storPoolName, transMgr, true, false);
+
+        storPool1 = StorPoolData.getInstance(sysCtx, node1, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, false, true, false);
+        storPool2 = StorPoolData.getInstance(sysCtx, node2, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, false, true, false);
+
         volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true, false);
 
-        vol1 = VolumeData.getInstance(sysCtx, res1, volDfn, blockDev1, metaDisk1, null, transMgr, true, false);
-        vol2 = VolumeData.getInstance(sysCtx, res1, volDfn, blockDev2, metaDisk2, null, transMgr, true, false);
+        vol1 = VolumeData.getInstance(sysCtx, res1, volDfn, storPool1, blockDev1, metaDisk1, null, transMgr, true, false);
+        vol2 = VolumeData.getInstance(sysCtx, res1, volDfn, storPool2, blockDev2, metaDisk2, null, transMgr, true, false);
 
         nodeCon = NodeConnectionData.getInstance(sysCtx, node1, node2, transMgr, true, false);
         resCon = ResourceConnectionData.getInstance(sysCtx, res1, res2, transMgr, true, false);
@@ -93,7 +104,7 @@ public class ConnectionPropsTest extends DerbyBase
         resConProps = resCon.getProps(sysCtx);
         volConProps = volCon.getProps(sysCtx);
 
-        conProps = new ConnectionProps(sysCtx, nodeCon, resCon, volCon);
+        conProps = new PriorityProps(sysCtx, nodeCon, resCon, volCon);
     }
 
     @Test

@@ -23,6 +23,7 @@ message VlmDfn
     int64               vlm_size    = 2;
 
     // Volume minor number
+    // -1 for automatic assignment
     sint32              vlm_minor   = 3;
 
     // Volume definition properties map

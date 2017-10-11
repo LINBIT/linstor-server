@@ -24,10 +24,10 @@ public class DerbyConstants
     public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
     public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
     public static final String TBL_RESOURCES             = "RESOURCES";
-    public static final String TBL_VOLUME_DEFINITIONS    = "VOLUME_DEFINITIONS";
-    public static final String TBL_VOLUMES               = "VOLUMES";
     public static final String TBL_STOR_POOL_DEFINITIONS = "STOR_POOL_DEFINITIONS";
     public static final String TBL_NODE_STOR_POOL        = "NODE_STOR_POOL";
+    public static final String TBL_VOLUME_DEFINITIONS    = "VOLUME_DEFINITIONS";
+    public static final String TBL_VOLUMES               = "VOLUMES";
     public static final String TBL_NODE_CONNECTIONS      = "NODE_CONNECTIONS";
     public static final String TBL_RESOURCE_CONNECTIONS  = "RESOURCE_CONNECTIONS";
     public static final String TBL_VOLUME_CONNECTIONS    = "VOLUME_CONNECTIONS";
@@ -92,6 +92,13 @@ public class DerbyConstants
     // RESOURCES column names
     public static final String NODE_ID        = "NODE_ID";
 
+    // STOR_POOL_DEFINITIONS column names
+    public static final String POOL_NAME     = "POOL_NAME";
+    public static final String POOL_DSP_NAME = "POOL_DSP_NAME";
+
+    // NODE_STOR_POOL column names
+    public static final String DRIVER_NAME = "DRIVER_NAME";
+
     // VOLUME_DEFINITIONS column names
     public static final String VLM_NR        = "VLM_NR";
     public static final String VLM_SIZE      = "VLM_SIZE";
@@ -99,15 +106,9 @@ public class DerbyConstants
     public static final String VLM_FLAGS     = "VLM_FLAGS";
 
     // VOLUMES column names
+    public static final String STOR_POOL_NAME    = "STOR_POOL_NAME";
     public static final String BLOCK_DEVICE_PATH = "BLOCK_DEVICE_PATH";
     public static final String META_DISK_PATH    = "META_DISK_PATH";
-
-    // STOR_POOL_DEFINITIONS column names
-    public static final String POOL_NAME     = "POOL_NAME";
-    public static final String POOL_DSP_NAME = "POOL_DSP_NAME";
-
-    // NODE_STOR_POOL column names
-    public static final String DRIVER_NAME = "DRIVER_NAME";
 
     // NODE_CONNECTIONS column names
     public static final String NODE_NAME_SRC = "NODE_NAME_SRC";
