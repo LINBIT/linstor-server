@@ -138,7 +138,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     )
         throws SQLException
     {
-        errorReporter.logTrace("Creating AccessConrol entry %s", getAclTraceId(parent, role, grantedAccess));
+        errorReporter.logTrace("Creating AccessControl entry %s", getAclTraceId(parent, role, grantedAccess));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(ACL_INSERT))
         {
             stmt.setString(1, parent.getObjectProtectionPath());
@@ -147,7 +147,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("AccessConrol entry created %s", getAclDebugId(parent, role, grantedAccess));
+        errorReporter.logDebug("AccessControl entry created %s", getAclDebugId(parent, role, grantedAccess));
     }
 
     @Override
@@ -160,7 +160,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         throws SQLException
     {
         errorReporter.logTrace(
-            "Updating AccessConrol entry from %s to %s %s",
+            "Updating AccessControl entry from %s to %s %s",
             parent.getAcl().getEntry(role),
             grantedAccess,
             getAclTraceId(parent, role)
@@ -174,7 +174,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
             stmt.executeUpdate();
         }
         errorReporter.logDebug(
-            "AccessConrol entry updated from %s to %s %s",
+            "AccessControl entry updated from %s to %s %s",
             parent.getAcl().getEntry(role),
             grantedAccess,
             getAclDebugId(parent, role)
