@@ -202,7 +202,7 @@ class CtrlRscApiCallHandler
                     vlmDfn = rscDfn.getVolumeDfn(accCtx, volNr); // accDeniedExc4
 
                     storPoolNameStr = vlmApi.getStorPoolName();
-                    if (storPoolNameStr == null)
+                    if (storPoolNameStr == null || "".equals(storPoolNameStr))
                     {
                         vlmProps = vlmDfn.getProps(accCtx); // accDeniedExc5
                         rscProps = rsc.getProps(accCtx); // accDeniedExc6
@@ -214,7 +214,7 @@ class CtrlRscApiCallHandler
                         );
                         storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
                     }
-                    if  (storPoolNameStr == null)
+                    if (storPoolNameStr == null || "".equals(storPoolNameStr))
                     {
                         storPoolNameStr = controller.getDefaultStorPoolName();
                     }
@@ -265,7 +265,7 @@ class CtrlRscApiCallHandler
                             entry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL);
                         }
                         controller.getErrorReporter().reportError(
-                            null,
+                            new NullPointerException("Dependency not found"),
                             accCtx,
                             client,
                             errorMessage
@@ -596,7 +596,6 @@ class CtrlRscApiCallHandler
                 errorMessage = String.format(
                     "A dynamic class instantiation related exception occured while this method shoud "+
                         "not create such instances (Node name: %s, resource name: %s, volNr: %d, stor pool name: %s)",
-                    KEY_STOR_POOL_NAME,
                     nodeNameStr,
                     rscNameStr,
                     volNr.value,
@@ -927,7 +926,7 @@ class CtrlRscApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DEL_FAIL_EXISTS_IMPL_ERROR);
+            entry.setReturnCodeBit(RC_RSC_DEL_FAIL_IMPL_ERROR);
             entry.setMessageFormat(
                 String.format(
                     "Failed to delete the resource '%s' on node '%s' due to an implementation error.",

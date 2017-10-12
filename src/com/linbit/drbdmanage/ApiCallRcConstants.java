@@ -65,7 +65,7 @@ public class ApiCallRcConstants
     /*
      * Codes 110-119: invalid * creation failures
      */
-    public static final long CRT_FAIL_INVLD_NODE            = 110 | MASK_ERROR;
+    public static final long CRT_FAIL_INVLD_NODE_NAME       = 110 | MASK_ERROR;
     public static final long CRT_FAIL_INVLD_NODE_TYPE       = 111 | MASK_ERROR;
     public static final long CRT_FAIL_INVLD_RSC_NAME        = 112 | MASK_ERROR;
     public static final long CRT_FAIL_INVLD_NODE_ID         = 113 | MASK_ERROR;
@@ -122,7 +122,7 @@ public class ApiCallRcConstants
     public static final long DEL_FAIL_SQL               = 200 | MASK_ERROR;
     public static final long DEL_FAIL_SQL_ROLLBACK      = 201 | MASK_ERROR;
 
-    public static final long DEL_FAIL_INVLD_NODE            = 210 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_NODE_NAME       = 210 | MASK_ERROR;
     public static final long DEL_FAIL_INVLD_NODE_TYPE       = 211 | MASK_ERROR;
     public static final long DEL_FAIL_INVLD_RSC_NAME        = 212 | MASK_ERROR;
     public static final long DEL_FAIL_INVLD_NODE_ID         = 213 | MASK_ERROR;
@@ -151,6 +151,7 @@ public class ApiCallRcConstants
     public static final long DEL_FAIL_ACC_DENIED_STOR_POOL_DFN  = 245 | MASK_ERROR;
     public static final long DEL_FAIL_ACC_DENIED_STOR_POOL      = 246 | MASK_ERROR;
 
+    public static final long DEL_FAIL_IN_USE                = 298 | MASK_ERROR;
     public static final long DEL_FAIL_IMPL_ERROR            = 299 | MASK_ERROR;
 
     /*
@@ -163,16 +164,16 @@ public class ApiCallRcConstants
 
     public static final long RC_NODE_CRT_FAIL_SQL               = MASK_NODE | CRT_FAIL_SQL;
     public static final long RC_NODE_CRT_FAIL_SQL_ROLLBACK      = MASK_NODE | CRT_FAIL_SQL_ROLLBACK;
-    public static final long RC_NODE_CRT_FAIL_INVLD_NODE_NAME   = MASK_NODE | CRT_FAIL_INVLD_NODE;
+    public static final long RC_NODE_CRT_FAIL_INVLD_NODE_NAME   = MASK_NODE | CRT_FAIL_INVLD_NODE_NAME;
     public static final long RC_NODE_CRT_FAIL_INVLD_NODE_TYPE   = MASK_NODE | CRT_FAIL_INVLD_NODE_TYPE;
     public static final long RC_NODE_CRT_FAIL_EXISTS_NODE       = MASK_NODE | CRT_FAIL_EXISTS_NODE;
     public static final long RC_NODE_CRT_FAIL_ACC_DENIED_NODE   = MASK_NODE | CRT_FAIL_ACC_DENIED_NODE;
 
     public static final long RC_NODE_DEL_FAIL_SQL               = MASK_NODE | DEL_FAIL_SQL;
     public static final long RC_NODE_DEL_FAIL_SQL_ROLLBACK      = MASK_NODE | DEL_FAIL_SQL_ROLLBACK;
-    public static final long RC_NODE_DEL_FAIL_INVALID_NODE_NAME = MASK_NODE | DEL_FAIL_INVLD_NODE;
-    public static final long RC_NODE_DEL_FAIL_EXISTS_IMPL_ERROR = MASK_NODE | DEL_FAIL_IMPL_ERROR;
+    public static final long RC_NODE_DEL_FAIL_INVALID_NODE_NAME = MASK_NODE | DEL_FAIL_INVLD_NODE_NAME;
     public static final long RC_NODE_DEL_FAIL_ACC_DENIED_NODE   = MASK_NODE | DEL_FAIL_ACC_DENIED_NODE;
+    public static final long RC_NODE_DEL_FAIL_IMPL_ERROR        = MASK_NODE | DEL_FAIL_IMPL_ERROR;
 
     /*
      * ResourceDefinition return codes
@@ -197,7 +198,7 @@ public class ApiCallRcConstants
     public static final long RC_RSC_DFN_DEL_FAIL_SQL                = MASK_RSC_DFN | DEL_FAIL_SQL;
     public static final long RC_RSC_DFN_DEL_FAIL_SQL_ROLLBACK       = MASK_RSC_DFN | DEL_FAIL_SQL_ROLLBACK;
     public static final long RC_RSC_DFN_DEL_FAIL_ACC_DENIED_RSC_DFN = MASK_RSC_DFN | DEL_FAIL_ACC_DENIED_RSC_DFN;
-    public static final long RC_RSC_DFN_DEL_FAIL_EXISTS_IMPL_ERROR  = MASK_RSC_DFN | DEL_FAIL_IMPL_ERROR;
+    public static final long RC_RSC_DFN_DEL_FAIL_IMPL_ERROR         = MASK_RSC_DFN | DEL_FAIL_IMPL_ERROR;
 
 
     /*
@@ -211,7 +212,7 @@ public class ApiCallRcConstants
     public static final long RC_RSC_CRT_FAIL_SQL                = MASK_RSC | CRT_FAIL_SQL;
     public static final long RC_RSC_CRT_FAIL_SQL_ROLLBACK       = MASK_RSC | CRT_FAIL_SQL_ROLLBACK;
 
-    public static final long RC_RSC_CRT_FAIL_INVALID_NODE_NAME      = MASK_RSC | CRT_FAIL_INVLD_NODE;
+    public static final long RC_RSC_CRT_FAIL_INVALID_NODE_NAME      = MASK_RSC | CRT_FAIL_INVLD_NODE_NAME;
     public static final long RC_RSC_CRT_FAIL_INVALID_RSC_NAME       = MASK_RSC | CRT_FAIL_INVLD_RSC_NAME;
     public static final long RC_RSC_CRT_FAIL_INVALID_NODE_ID        = MASK_RSC | CRT_FAIL_INVLD_NODE_ID;
     public static final long RC_RSC_CRT_FAIL_INVALID_VLM_NR         = MASK_RSC | CRT_FAIL_INVLD_VLM_NR;
@@ -227,8 +228,8 @@ public class ApiCallRcConstants
     public static final long RC_RSC_CRT_FAIL_ACC_DENIED_RSC             = MASK_RSC | CRT_FAIL_ACC_DENIED_RSC;
     public static final long RC_RSC_CRT_FAIL_ACC_DENIED_VLM_DFN         = MASK_RSC | CRT_FAIL_ACC_DENIED_VLM_DFN;
     public static final long RC_RSC_CRT_FAIL_ACC_DENIED_VLM             = MASK_RSC | CRT_FAIL_ACC_DENIED_VLM;
-    public static final long RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL_DFN   = MASK_RSC | CRT_FAIL_ACC_DENIED_VLM;
-    public static final long RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL       = MASK_RSC | CRT_FAIL_ACC_DENIED_VLM;
+    public static final long RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL_DFN   = MASK_RSC | CRT_FAIL_ACC_DENIED_STOR_POOL_DFN;
+    public static final long RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL       = MASK_RSC | CRT_FAIL_ACC_DENIED_STOR_POOL;
 
     public static final long RC_RSC_CRT_FAIL_EXISTS_NODE        = MASK_RSC | CRT_FAIL_EXISTS_NODE;
     public static final long RC_RSC_CRT_FAIL_EXISTS_RSC         = MASK_RSC | CRT_FAIL_EXISTS_RSC;
@@ -237,7 +238,7 @@ public class ApiCallRcConstants
     public static final long RC_RSC_DEL_FAIL_SQL                = MASK_RSC | DEL_FAIL_SQL;
     public static final long RC_RSC_DEL_FAIL_SQL_ROLLBACK       = MASK_RSC | DEL_FAIL_SQL_ROLLBACK;
 
-    public static final long RC_RSC_DEL_FAIL_INVALID_NODE_NAME  = MASK_RSC | DEL_FAIL_INVLD_NODE;
+    public static final long RC_RSC_DEL_FAIL_INVALID_NODE_NAME  = MASK_RSC | DEL_FAIL_INVLD_NODE_NAME;
     public static final long RC_RSC_DEL_FAIL_INVALID_RSC_NAME   = MASK_RSC | DEL_FAIL_INVLD_RSC_NAME;
 
     public static final long RC_RSC_DEL_FAIL_NOT_FOUND_NODE     = MASK_RSC | DEL_FAIL_NOT_FOUND_NODE;
@@ -248,7 +249,7 @@ public class ApiCallRcConstants
     public static final long RC_RSC_DEL_FAIL_ACC_DENIED_RSC     = MASK_RSC | DEL_FAIL_ACC_DENIED_RSC;
     public static final long RC_RSC_DEL_FAIL_ACC_DENIED_VLM_DFN = MASK_RSC | DEL_FAIL_ACC_DENIED_VLM_DFN;
 
-    public static final long RC_RSC_DEL_FAIL_EXISTS_IMPL_ERROR  = MASK_RSC | DEL_FAIL_IMPL_ERROR;
+    public static final long RC_RSC_DEL_FAIL_IMPL_ERROR         = MASK_RSC | DEL_FAIL_IMPL_ERROR;
 
 
     /*
@@ -297,25 +298,48 @@ public class ApiCallRcConstants
 
     public static final long RC_STOR_POOL_DFN_CRT_FAIL_SQL                      = MASK_STOR_POOL_DFN | CRT_FAIL_SQL;
     public static final long RC_STOR_POOL_DFN_CRT_FAIL_SQL_ROLLBACK             = MASK_STOR_POOL_DFN | CRT_FAIL_SQL_ROLLBACK;
-
     public static final long RC_STOR_POOL_DFN_CRT_FAIL_INVLD_STOR_POOL_NAME     = MASK_STOR_POOL_DFN | CRT_FAIL_INVLD_STOR_POOL_NAME;
-
     public static final long RC_STOR_POOL_DFN_CRT_FAIL_ACC_DENIED_STOR_POOL_DFN = MASK_STOR_POOL_DFN | CRT_FAIL_ACC_DENIED_STOR_POOL_DFN;
-
     public static final long RC_STOR_POOL_DFN_CRT_FAIL_EXISTS_STOR_POOL_DFN     = MASK_STOR_POOL_DFN | CRT_FAIL_EXISTS_STOR_POOL_DFN;
 
     public static final long RC_STOR_POOL_DFN_DEL_FAIL_SQL                      = MASK_STOR_POOL_DFN | DEL_FAIL_SQL;
     public static final long RC_STOR_POOL_DFN_DEL_FAIL_SQL_ROLLBACK             = MASK_STOR_POOL_DFN | DEL_FAIL_SQL_ROLLBACK;
-
     public static final long RC_STOR_POOL_DFN_DEL_FAIL_INVLD_STOR_POOL_NAME     = MASK_STOR_POOL_DFN | DEL_FAIL_INVLD_STOR_POOL_NAME;
-
     public static final long RC_STOR_POOL_DFN_DEL_FAIL_ACC_DENIED_STOR_POOL_DFN = MASK_STOR_POOL_DFN | DEL_FAIL_ACC_DENIED_STOR_POOL_DFN;
-
-    public static final long RC_STOR_POOL_DFN_DEL_FAIL_EXISTS_IMPL_ERROR        = MASK_STOR_POOL_DFN | DEL_FAIL_IMPL_ERROR;
+    public static final long RC_STOR_POOL_DFN_DEL_FAIL_IMPL_ERROR               = MASK_STOR_POOL_DFN | DEL_FAIL_IMPL_ERROR;
 
     /*
      * StorPool return codes
      */
+    public static final long RC_STOR_POOL_CREATED                           = MASK_STOR_POOL | CREATED;
+    public static final long RC_STOR_POOL_DELETED                           = MASK_STOR_POOL | DELETED;
+
+    public static final long RC_STOR_POOL_DEL_NOT_FOUND                     = MASK_STOR_POOL | DEL_NOT_FOUND;
+
+    public static final long RC_STOR_POOL_CRT_FAIL_SQL                      = MASK_STOR_POOL | CRT_FAIL_SQL;
+    public static final long RC_STOR_POOL_CRT_FAIL_SQL_ROLLBACK             = MASK_STOR_POOL | CRT_FAIL_SQL_ROLLBACK;
+    public static final long RC_STOR_POOL_CRT_FAIL_NOT_FOUND_NODE           = MASK_STOR_POOL | CRT_FAIL_NOT_FOUND_NODE;
+    public static final long RC_STOR_POOL_CRT_FAIL_NOT_FOUND_STOR_POOL_DFN  = MASK_STOR_POOL | CRT_FAIL_NOT_FOUND_STOR_POOL_DFN;
+    public static final long RC_STOR_POOL_CRT_FAIL_INVLD_NODE_NAME          = MASK_STOR_POOL | CRT_FAIL_INVLD_NODE_NAME;
+    public static final long RC_STOR_POOL_CRT_FAIL_INVLD_STOR_POOL_NAME     = MASK_STOR_POOL | CRT_FAIL_INVLD_STOR_POOL_NAME;
+    public static final long RC_STOR_POOL_CRT_FAIL_ACC_DENIED_NODE          = MASK_STOR_POOL | CRT_FAIL_ACC_DENIED_NODE;
+    public static final long RC_STOR_POOL_CRT_FAIL_ACC_DENIED_STOR_POOL_DFN = MASK_STOR_POOL | CRT_FAIL_ACC_DENIED_STOR_POOL_DFN;
+    public static final long RC_STOR_POOL_CRT_FAIL_ACC_DENIED_STOR_POOL     = MASK_STOR_POOL | CRT_FAIL_ACC_DENIED_STOR_POOL;
+    public static final long RC_STOR_POOL_CRT_FAIL_EXISTS_STOR_POOL         = MASK_STOR_POOL | CRT_FAIL_EXISTS_STOR_POOL;
+    public static final long RC_STOR_POOL_CRT_FAIL_IMPL_ERROR               = MASK_STOR_POOL | CRT_FAIL_IMPL_ERROR;
+
+    public static final long RC_STOR_POOL_DEL_FAIL_SQL                      = MASK_STOR_POOL | DEL_FAIL_SQL;
+    public static final long RC_STOR_POOL_DEL_FAIL_SQL_ROLLBACK             = MASK_STOR_POOL | DEL_FAIL_SQL_ROLLBACK;
+    public static final long RC_STOR_POOL_DEL_FAIL_NOT_FOUND_NODE           = MASK_STOR_POOL | DEL_FAIL_NOT_FOUND_NODE;
+    public static final long RC_STOR_POOL_DEL_FAIL_NOT_FOUND_STOR_POOL_DFN  = MASK_STOR_POOL | DEL_FAIL_NOT_FOUND_STOR_POOL_DFN;
+    public static final long RC_STOR_POOL_DEL_FAIL_INVLD_STOR_POOL_NAME     = MASK_STOR_POOL | DEL_FAIL_INVLD_STOR_POOL_NAME;
+    public static final long RC_STOR_POOL_DEL_FAIL_INVLD_NODE_NAME          = MASK_STOR_POOL | DEL_FAIL_INVLD_NODE_NAME;
+    public static final long RC_STOR_POOL_DEL_FAIL_ACC_DENIED_NODE          = MASK_STOR_POOL | DEL_FAIL_ACC_DENIED_NODE;
+    public static final long RC_STOR_POOL_DEL_FAIL_ACC_DENIED_STOR_POOL_DFN = MASK_STOR_POOL | DEL_FAIL_ACC_DENIED_STOR_POOL_DFN;
+    public static final long RC_STOR_POOL_DEL_FAIL_ACC_DENIED_STOR_POOL     = MASK_STOR_POOL | DEL_FAIL_ACC_DENIED_STOR_POOL;
+    public static final long RC_STOR_POOL_DEL_FAIL_IN_USE                   = MASK_STOR_POOL | DEL_FAIL_IN_USE;
+    public static final long RC_STOR_POOL_DEL_FAIL_IMPL_ERROR               = MASK_STOR_POOL | DEL_FAIL_IMPL_ERROR;
+
 
     // API error codes
     public static final long RC_SIGNIN_PASS = 0x0000000000000100L;

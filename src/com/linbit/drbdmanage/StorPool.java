@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.UUID;
 
 import com.linbit.TransactionObject;
@@ -57,6 +58,24 @@ public interface StorPool extends TransactionObject
      * Returns the configuration {@link Props}. This {@link Props} is also used to configure the {@link StorageDriver}.
      */
     public Props getConfiguration(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    /**
+     * Registers the volume to this storPool
+     */
+    public void putVolume(AccessContext accCtx, Volume volume)
+        throws AccessDeniedException;
+
+    /**
+     * Removes the volume from this storPool
+     */
+    public void removeVolume(AccessContext accCtx, Volume volume)
+        throws AccessDeniedException;
+
+    /**
+     * Returns all currently registered volumes
+     */
+    public Collection<Volume> getVolumes(AccessContext accCtx)
         throws AccessDeniedException;
 
     /**

@@ -32,7 +32,7 @@ public class SignIn extends BaseApiCall
     }
 
     @Override
-    public void execute(
+    public void executeImpl(
         AccessContext accCtx,
         Message msg,
         int msgId,

@@ -30,16 +30,21 @@ public class CtrlApiCallHandler
     public static final String API_RC_VAR_ACC_CTX_ROLE_KEY = "accCtxRole";
 
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
-    private final CtrlRscApiCallHandler resourceApiCallHandler;
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
+    private final CtrlRscApiCallHandler rscApiCallHandler;
+    private final CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandler;
+    private final CtrlStorPoolApiCallHandler storPoolApiCallHandler;
+
     private final Controller controller;
 
     CtrlApiCallHandler(Controller controllerRef)
     {
         controller = controllerRef;
         nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef);
-        resourceApiCallHandler = new CtrlRscApiCallHandler(controllerRef);
+        rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef);
+        storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef);
+        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef);
     }
 
     public ApiCallRc createNode(
@@ -121,7 +126,7 @@ public class CtrlApiCallHandler
         controller.rscDfnMapLock.writeLock().lock();
         controller.nodesMapLock.writeLock().lock();
 
-        ApiCallRc apiCallRc = resourceApiCallHandler.createResource(
+        ApiCallRc apiCallRc = rscApiCallHandler.createResource(
             accCtx,
             client,
             nodeName,
@@ -147,7 +152,7 @@ public class CtrlApiCallHandler
         controller.rscDfnMapLock.writeLock().lock();
         controller.nodesMapLock.writeLock().lock();
 
-        ApiCallRc apiCallRc = resourceApiCallHandler.deleteResource(
+        ApiCallRc apiCallRc = rscApiCallHandler.deleteResource(
             accCtx,
             client,
             nodeName,
@@ -155,6 +160,90 @@ public class CtrlApiCallHandler
         );
 
         controller.rscDfnMapLock.writeLock().unlock();
+        controller.nodesMapLock.writeLock().unlock();
+
+        return apiCallRc;
+    }
+
+    public ApiCallRc createStoragePoolDefinition(
+        AccessContext accCtx,
+        Peer client,
+        String storPoolName,
+        Map<String, String> storPoolDfnPropsMap
+    )
+    {
+        controller.storPoolDfnMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = storPoolDfnApiCallHandler.createStorPoolDfn(
+            accCtx,
+            client,
+            storPoolName,
+            storPoolDfnPropsMap
+        );
+        controller.storPoolDfnMapLock.writeLock().unlock();
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteStoragePoolDefinition(
+        AccessContext accCtx,
+        Peer client,
+        String storPoolName
+    )
+    {
+        controller.storPoolDfnMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = storPoolDfnApiCallHandler.deleteStorPoolDfn(
+            accCtx,
+            client,
+            storPoolName
+        );
+        controller.storPoolDfnMapLock.writeLock().unlock();
+        return apiCallRc;
+    }
+
+    public ApiCallRc createStoragePool(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName,
+        String storPoolName,
+        String driver,
+        Map<String, String> storPoolPropsMap
+    )
+    {
+        controller.nodesMapLock.writeLock().lock();
+        controller.storPoolDfnMapLock.writeLock().lock();
+
+        ApiCallRc apiCallRc = storPoolApiCallHandler.createStorPool(
+            accCtx,
+            client,
+            nodeName,
+            storPoolName,
+            driver,
+            storPoolPropsMap
+        );
+
+        controller.storPoolDfnMapLock.writeLock().unlock();
+        controller.nodesMapLock.writeLock().unlock();
+
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteStoragePool(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName,
+        String storPoolName
+    )
+    {
+        controller.nodesMapLock.writeLock().lock();
+        controller.storPoolDfnMapLock.writeLock().lock();
+
+        ApiCallRc apiCallRc = storPoolApiCallHandler.deleteStorPool(
+            accCtx,
+            client,
+            nodeName,
+            storPoolName
+        );
+
+        controller.storPoolDfnMapLock.writeLock().unlock();
         controller.nodesMapLock.writeLock().unlock();
 
         return apiCallRc;

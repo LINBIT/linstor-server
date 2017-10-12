@@ -340,22 +340,31 @@ public final class StdErrorReporter implements ErrorReporter
 
     private String formatLogMsg(long reportNr, Throwable errorInfo)
     {
-        // FIXME: check errorInfo == null
         String logMsg;
-        String excMsg = errorInfo.getMessage();
-        if (excMsg == null)
+        if (errorInfo == null)
         {
             logMsg = String.format(
-                "Problem of type '%s' logged to report number %s-%06d\n",
-                errorInfo.getClass().getName(), instanceId, reportNr
+                "Problem logged to report number %s-%06d\n",
+                instanceId, reportNr
             );
         }
         else
         {
-            logMsg = excMsg + String.format(
-                " [Report number %s-%06d]\n",
-                instanceId, reportNr
-            );
+            String excMsg = errorInfo.getMessage();
+            if (excMsg == null)
+            {
+                logMsg = String.format(
+                    "Problem of type '%s' logged to report number %s-%06d\n",
+                    errorInfo.getClass().getName(), instanceId, reportNr
+                );
+            }
+            else
+            {
+                logMsg = excMsg + String.format(
+                    " [Report number %s-%06d]\n",
+                    instanceId, reportNr
+                );
+            }
         }
         return logMsg;
     }

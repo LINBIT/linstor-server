@@ -13,7 +13,7 @@ import static com.linbit.drbdmanage.ApiCallRcConstants.RC_RSC_DFN_CRT_FAIL_SQL;
 import static com.linbit.drbdmanage.ApiCallRcConstants.RC_RSC_DFN_CRT_FAIL_SQL_ROLLBACK;
 import static com.linbit.drbdmanage.ApiCallRcConstants.RC_RSC_DFN_DELETED;
 import static com.linbit.drbdmanage.ApiCallRcConstants.RC_RSC_DFN_DEL_FAIL_ACC_DENIED_RSC_DFN;
-import static com.linbit.drbdmanage.ApiCallRcConstants.RC_RSC_DFN_DEL_FAIL_EXISTS_IMPL_ERROR;
+import static com.linbit.drbdmanage.ApiCallRcConstants.RC_RSC_DFN_DEL_FAIL_IMPL_ERROR;
 import static com.linbit.drbdmanage.ApiCallRcConstants.RC_RSC_DFN_DEL_FAIL_INVLD_RSC_NAME;
 import static com.linbit.drbdmanage.ApiCallRcConstants.RC_RSC_DFN_DEL_FAIL_SQL;
 import static com.linbit.drbdmanage.ApiCallRcConstants.RC_RSC_DFN_DEL_FAIL_SQL_ROLLBACK;
@@ -267,7 +267,7 @@ class CtrlRscDfnApiCallHandler
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_INVLD_RSC_NAME);
             entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(errorMessage);
+            entry.setCauseFormat(nameExc.getMessage());
             entry.putVariable(KEY_RSC_NAME, resourceName);
             entry.putObjRef(KEY_RSC_DFN, resourceName);
 
@@ -553,7 +553,7 @@ class CtrlRscDfnApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DFN_DEL_FAIL_EXISTS_IMPL_ERROR);
+            entry.setReturnCodeBit(RC_RSC_DFN_DEL_FAIL_IMPL_ERROR);
             entry.setMessageFormat(
                 String.format(
                     "Failed to delete the resource definition '%s' due to an implementation error.",

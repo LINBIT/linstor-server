@@ -133,7 +133,7 @@ class CtrlStorPoolDfnApiCallHandler
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_STOR_POOL_DFN_CRT_FAIL_INVLD_STOR_POOL_NAME);
             entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(errorMessage);
+            entry.setCauseFormat(invalidNameExc.getMessage());
             entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
             entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
 
@@ -186,7 +186,8 @@ class CtrlStorPoolDfnApiCallHandler
                     entry.setReturnCodeBit(RC_STOR_POOL_DFN_CRT_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
-                    entry.putObjRef(ApiConsts.KEY_NODE, storPoolNameStr);
+                    entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
+                    entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
 
                     apiCallRc.addEntry(entry);
                 }
@@ -233,6 +234,7 @@ class CtrlStorPoolDfnApiCallHandler
             }
             else
             {
+                storPoolDefinitionData.setConnection(transMgr);
 //                storPoolDefinitionData.markDeleted(accCtx);
                 // TODO: check if there are still storpools open, if not, delete this storpooldefinition
                 transMgr.commit();
@@ -311,7 +313,7 @@ class CtrlStorPoolDfnApiCallHandler
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_FAIL_INVLD_STOR_POOL_NAME);
             entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(errorMessage);
+            entry.setCauseFormat(invalidNameExc.getMessage());
             entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
             entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
 
@@ -331,7 +333,7 @@ class CtrlStorPoolDfnApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_FAIL_EXISTS_IMPL_ERROR);
+            entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_FAIL_IMPL_ERROR);
             entry.setMessageFormat(
                 String.format(
                     "Failed to delete the storage pool definition '%s' due to an implementation error.",

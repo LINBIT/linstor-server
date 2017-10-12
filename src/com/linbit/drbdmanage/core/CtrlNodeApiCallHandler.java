@@ -381,7 +381,7 @@ class CtrlNodeApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_DEL_FAIL_EXISTS_IMPL_ERROR);
+            entry.setReturnCodeBit(RC_NODE_DEL_FAIL_IMPL_ERROR);
             entry.setMessageFormat(
                 String.format(
                     "Failed to delete the node '%s' due to an implementation error.",

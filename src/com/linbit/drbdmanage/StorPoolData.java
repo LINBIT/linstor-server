@@ -2,6 +2,7 @@ package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -205,6 +206,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         return storDriverSimpleClassName;
     }
 
+    @Override
     public void putVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
@@ -213,12 +215,22 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         volumeMap.put(getVolumeKey(accCtx, volume), volume);
     }
 
+    @Override
     public void removeVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         volumeMap.remove(getVolumeKey(accCtx, volume));
+    }
+
+    @Override
+    public Collection<Volume> getVolumes(AccessContext accCtx) throws AccessDeniedException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.USE);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        return volumeMap.values();
     }
 
     private String getVolumeKey(AccessContext accCtx, Volume volume) throws AccessDeniedException

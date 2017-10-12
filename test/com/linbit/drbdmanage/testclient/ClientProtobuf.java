@@ -20,10 +20,14 @@ import com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode;
 import com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
 import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.MsgCrtRsc;
 import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
+import com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn;
+import com.linbit.drbdmanage.proto.MsgCrtStorPoolOuterClass.MsgCrtStorPool;
 import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn;
 import com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode;
 import com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn;
 import com.linbit.drbdmanage.proto.MsgDelRscOuterClass.MsgDelRsc;
+import com.linbit.drbdmanage.proto.MsgDelStorPoolDfnOuterClass.MsgDelStorPoolDfn;
+import com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 
 public class ClientProtobuf implements Runnable
@@ -203,6 +207,61 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    public int sendCreateStorPoolDfn(String storPoolName) throws IOException
+    {
+        int msgId = this.msgId++;
+        send(
+            msgId,
+            ApiConsts.API_CRT_STOR_POOL_DFN,
+            MsgCrtStorPoolDfn.newBuilder().
+                setStorPoolName(storPoolName).
+                build()
+        );
+        return msgId;
+    }
+
+    public int sendDeleteStorPoolDfn(String storPoolName) throws IOException
+    {
+        int msgId = this.msgId++;
+        send(
+            msgId,
+            ApiConsts.API_DEL_STOR_POOL_DFN,
+            MsgDelStorPoolDfn.newBuilder().
+                setStorPoolName(storPoolName).
+                build()
+        );
+        return msgId;
+    }
+
+    public int sendCreateStorPool(String nodeName, String storPoolName, String driver) throws IOException
+    {
+        int msgId = this.msgId++;
+        send(
+            msgId,
+            ApiConsts.API_CRT_STOR_POOL,
+            MsgCrtStorPool.newBuilder().
+                setNodeName(nodeName).
+                setStorPoolName(storPoolName).
+                setDriver(driver).
+                build()
+        );
+        return msgId;
+    }
+
+    public int sendDeleteStorPool(String nodeName, String storPoolName) throws IOException
+    {
+        int msgId = this.msgId++;
+        send(
+            msgId,
+            ApiConsts.API_DEL_STOR_POOL,
+            MsgDelStorPool.newBuilder().
+                setNodeName(nodeName).
+                setStorPoolName(storPoolName).
+                build()
+        );
+        return msgId;
+    }
+
     public int sendCreateRsc(
         String nodeName,
         String resName,
@@ -278,11 +337,12 @@ public class ClientProtobuf implements Runnable
             build();
     }
 
-    public Vlm createVlmDfn(int vlmNr, String blockDevice, String metaDisk)
+    public Vlm createVlmDfn(int vlmNr, String storPoolName, String blockDevice, String metaDisk)
     {
         return
             Vlm.newBuilder().
             setVlmNr(vlmNr).
+            setStorPoolName(storPoolName).
             setBlockDevice(blockDevice).
             setMetaDisk(metaDisk).
             build();
@@ -300,6 +360,8 @@ public class ClientProtobuf implements Runnable
         String resPropsTestKey = "TestResKey";
         String resPropsTestValue = "TestResValue";
 
+        String storPoolName = "TestStorPool";
+
         Map<String, String> nodeProps = new HashMap<>();
         nodeProps.put(nodePropsTestKey, nodePropsTestValue);
 
@@ -309,6 +371,7 @@ public class ClientProtobuf implements Runnable
         client.println(msgId + " create node");
         Thread.sleep(500);
 
+
         Map<String, String> resDfnProps = new HashMap<>();
         resDfnProps.put(resPropsTestKey, resPropsTestValue);
         List<VlmDfn> vlmDfn = new ArrayList<>();
@@ -317,27 +380,50 @@ public class ClientProtobuf implements Runnable
         client.println(msgId + " create rscDfn");
         Thread.sleep(500);
 
+
+        msgId = client.sendCreateStorPoolDfn(storPoolName);
+        client.println(msgId + " create storPoolDfn");
+        Thread.sleep(500);
+
+
+        msgId = client.sendCreateStorPool(nodeName, storPoolName, "LvmDriver");
+        client.println(msgId + " create storPool");
+        Thread.sleep(500);
+
+
         Map<String, String> resProps = new HashMap<>();
         List<Vlm> vlms = new ArrayList<>();
-        vlms.add(client.createVlmDfn(1, "blockDevice", "internal"));
+        vlms.add(client.createVlmDfn(1, storPoolName, "blockDevice", "internal"));
         msgId = client.sendCreateRsc(nodeName, resName, resProps, vlms);
         client.println(msgId + " create rsc");
         Thread.sleep(500);
 
+
         msgId = client.sendDeleteRsc(nodeName, resName);
         client.println(msgId + " delete rsc");
+
+
+        msgId = client.sendDeleteStorPool(nodeName, storPoolName);
+        client.println(msgId + " delete storPool");
+        Thread.sleep(500);
+
+
+        msgId = client.sendDeleteStorPoolDfn(storPoolName);
+        client.println(msgId + " delete storPoolDfn");
+        Thread.sleep(500);
+
 
         msgId = client.sendDeleteRscDfn(resName);
         client.println(msgId + " delete rscDfn");
         Thread.sleep(500);
 
+
         msgId = client.sendDeleteNode(nodeName);
         client.println(msgId + " delete node");
 
+
         client.outputStream.flush();
-
         Thread.sleep(1000);
-
         client.shutdown();
     }
 }
