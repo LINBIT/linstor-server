@@ -455,16 +455,15 @@ class CtrlStorPoolApiCallHandler
                 storPoolInUse.setReturnCode(RC_STOR_POOL_DEL_FAIL_IN_USE);
                 storPoolInUse.setCauseFormat(String.format(
                     "The specified storage pool '%s' on node '%s' can not be deleted as the following " +
-                        "volumes are still using it: '%s'",
+                        "volumes are still using it: %s",
                     storPoolNameStr,
                     nodeNameStr,
                     volListSb.toString()
                 ));
                 storPoolInUse.setCorrectionFormat(
-                    String.format(
-                        "Delete the listed volumes first.",
-                        storPoolNameStr
-                    )
+                    volumes.size() == 1 ?
+                        "Delete the listed volume first." :
+                        "Delete the listed volumes first."
                 );
                 storPoolInUse.putVariable(KEY_NODE_NAME, nodeNameStr);
                 storPoolInUse.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);

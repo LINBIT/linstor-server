@@ -14,6 +14,9 @@ public final class ApiConsts
     public static final String API_CRT_SNPSHT        = "CrtSnpsht";
     public static final String API_CRT_STOR_POOL_DFN = "CrtStorPoolDfn";
     public static final String API_CRT_STOR_POOL     = "CrtStorPool";
+    public static final String API_CRT_NODE_CONN     = "CrtNodeConn";
+    public static final String API_CRT_RSC_CONN      = "CrtRscConn";
+    public static final String API_CRT_VLM_CONN      = "CrtVlmConn";
     public static final String API_MFY_NODE          = "MfyNode";
     public static final String API_MFY_RSC           = "MfyRsc";
     public static final String API_MFY_RSC_DFN       = "MfyRscDfn";
@@ -27,6 +30,9 @@ public final class ApiConsts
     public static final String API_DEL_VLM_DFN       = "DelVlmDfn";
     public static final String API_DEL_STOR_POOL_DFN = "DelStorPoolDfn";
     public static final String API_DEL_STOR_POOL     = "DelStorPool";
+    public static final String API_DEL_NODE_CONN     = "DelNodeConn";
+    public static final String API_DEL_RSC_CONN      = "DelRscConn";
+    public static final String API_DEL_VLM_CONN      = "DelVlmConn";
     public static final String API_DEL_SNPSHT        = "DelSnpsht";
     public static final String API_RST_SNPSHT        = "RstSnpsht";
     public static final String API_AUTO_DPLY_RSC     = "AutoDplyRsc";
@@ -62,6 +68,8 @@ public final class ApiConsts
     public static final String KEY_NODE              = "Node";
     public static final String KEY_RSC_DFN           = "RscDfn";
     public static final String KEY_STOR_POOL_DFN     = "StorPoolDfn";
+    public static final String KEY_1ST_NODE          = "FirstNode";
+    public static final String KEY_2ND_NODE          = "SecondNode";
 
     public static final String KEY_NODE_NAME         = "NodeName";
     public static final String KEY_NODE_TYPE         = "NodeType";

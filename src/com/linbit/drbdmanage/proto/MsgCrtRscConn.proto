@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto;
+
+// drbdmanageNG - Create resource connection
+message MsgCrtRscConn
+{
+    // Node 1 name
+    string              node_name_1         = 1;
+
+    // Node 2 name
+    string              node_name_2         = 2;
+
+    // Resource name
+    string              resource_name       = 3;
+
+    // Resource connection properties map
+    map<string, string> resource_conn_props = 4;
+}

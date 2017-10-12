@@ -18,7 +18,7 @@ public class ApiCallRcConstants
 
     /*
      * The next 4 significant bits are reserved for type (Node, ResDfn, Res,
-     * VolDfn, Vol, ConDfn, NetInterface, ...)
+     * VolDfn, Vol, NetInterface, ...)
      */
     public static final long MASK_NODE          = 0x3C00000000000000L;
     public static final long MASK_RSC_DFN       = 0x3800000000000000L;
@@ -43,7 +43,6 @@ public class ApiCallRcConstants
     /*
      * Codes 1-9: success
      */
-
     public static final long CREATED                    = 1 | MASK_INFO;
     public static final long DELETED                    = 2 | MASK_INFO;
 

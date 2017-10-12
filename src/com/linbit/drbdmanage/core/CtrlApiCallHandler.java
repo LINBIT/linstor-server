@@ -34,6 +34,10 @@ public class CtrlApiCallHandler
     private final CtrlRscApiCallHandler rscApiCallHandler;
     private final CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandler;
     private final CtrlStorPoolApiCallHandler storPoolApiCallHandler;
+    private final CtrlNodeConnectionApiCallHandler nodeConnApiCallHandler;
+    private final CtrlRscConnectionApiCallHandler rscConnApiCallHandler;
+    private final CtrlVlmConnectionApiCallHandler vlmConnApiCallHandler;
+
 
     private final Controller controller;
 
@@ -45,6 +49,9 @@ public class CtrlApiCallHandler
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef);
         storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef);
+        nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
+        rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef);
+        vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef);
     }
 
     public ApiCallRc createNode(
@@ -248,4 +255,139 @@ public class CtrlApiCallHandler
 
         return apiCallRc;
     }
+
+    public ApiCallRc createNodeConnection(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName1,
+        String nodeName2,
+        Map<String, String> nodeConnPropsMap
+    )
+    {
+        controller.nodesMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = nodeConnApiCallHandler.createNodeConnection(
+            accCtx,
+            client,
+            nodeName1,
+            nodeName2,
+            nodeConnPropsMap
+        );
+        controller.nodesMapLock.writeLock().unlock();
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteNodeConnection(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName1,
+        String nodeName2
+    )
+    {
+        controller.nodesMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = nodeConnApiCallHandler.deleteNodeConnection(
+            accCtx,
+            client,
+            nodeName1,
+            nodeName2
+        );
+        controller.nodesMapLock.writeLock().unlock();
+        return apiCallRc;
+    }
+
+    public ApiCallRc createResourceConnection(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName1,
+        String nodeName2,
+        String rscName,
+        Map<String, String> rscConnPropsMap
+    )
+    {
+        controller.nodesMapLock.writeLock().lock();
+        controller.rscDfnMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = rscConnApiCallHandler.createResourceConnection(
+            accCtx,
+            client,
+            nodeName1,
+            nodeName2,
+            rscName,
+            rscConnPropsMap
+        );
+        controller.rscDfnMapLock.writeLock().unlock();
+        controller.nodesMapLock.writeLock().unlock();
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteResourceConnection(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName1,
+        String nodeName2,
+        String rscName
+    )
+    {
+        controller.nodesMapLock.writeLock().lock();
+        controller.rscDfnMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = rscConnApiCallHandler.deleteResourceConnection(
+            accCtx,
+            client,
+            nodeName1,
+            nodeName2,
+            rscName
+        );
+        controller.rscDfnMapLock.writeLock().unlock();
+        controller.nodesMapLock.writeLock().unlock();
+        return apiCallRc;
+    }
+
+    public ApiCallRc createVolumeConnection(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName1,
+        String nodeName2,
+        String rscName,
+        int vlmNr,
+        Map<String, String> vlmConnPropsMap
+    )
+    {
+        controller.nodesMapLock.writeLock().lock();
+        controller.rscDfnMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = vlmConnApiCallHandler.createVolumeConnection(
+            accCtx,
+            client,
+            nodeName1,
+            nodeName2,
+            rscName,
+            vlmNr,
+            vlmConnPropsMap
+        );
+        controller.rscDfnMapLock.writeLock().unlock();
+        controller.nodesMapLock.writeLock().unlock();
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteVolumeConnection(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName1,
+        String nodeName2,
+        String rscName,
+        int vlmNr
+    )
+    {
+        controller.nodesMapLock.writeLock().lock();
+        controller.rscDfnMapLock.writeLock().lock();
+        ApiCallRc apiCallRc = vlmConnApiCallHandler.deleteVolumeConnection(
+            accCtx,
+            client,
+            nodeName1,
+            nodeName2,
+            rscName,
+            vlmNr
+        );
+        controller.rscDfnMapLock.writeLock().unlock();
+        controller.nodesMapLock.writeLock().unlock();
+        return apiCallRc;
+    }
+
 }

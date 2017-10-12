@@ -304,6 +304,7 @@ class CtrlRscApiCallHandler
                                 rscNameStr
                             )
                         );
+                        vlmSuccess.setReturnCode(RC_VLM_CREATED);
                         vlmSuccess.putVariable(KEY_NODE_NAME, nodeNameStr);
                         vlmSuccess.putVariable(KEY_RSC_NAME, rscNameStr);
                         vlmSuccess.putVariable(KEY_VLM_NR, Integer.toString(vlmApi.getVlmNr()));
