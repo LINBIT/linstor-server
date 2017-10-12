@@ -1,6 +1,9 @@
 package com.linbit.drbdmanage.testclient;
 
-import java.awt.event.KeyEvent;
+import static com.linbit.drbdmanage.ApiCallRcConstants.*;
+import static com.linbit.drbdmanage.api.ApiConsts.*;
+
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,9 +16,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.google.protobuf.Message;
-import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode;
 import com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
 import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.MsgCrtRsc;
@@ -32,8 +36,27 @@ import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 
 public class ClientProtobuf implements Runnable
 {
-    private static final int PAIRS_PER_LINE = 16;
-    private static final int SPACE_AFTER_BYTES = 8;
+    private static final Map<Long, String> RET_CODES_TYPE = new HashMap<>();
+    private static final Map<Long, String> RET_CODES_OBJ = new HashMap<>();
+
+    static
+    {
+        RET_CODES_TYPE.put(MASK_ERROR, "Error");
+        RET_CODES_TYPE.put(MASK_WARN, "Warn");
+        RET_CODES_TYPE.put(MASK_INFO, "Info");
+
+        RET_CODES_OBJ.put(MASK_NODE, "Node");
+        RET_CODES_OBJ.put(MASK_RSC_DFN, "RscDfn");
+        RET_CODES_OBJ.put(MASK_RSC, "Rsc");
+        RET_CODES_OBJ.put(MASK_VLM_DFN, "VlmDfn");
+        RET_CODES_OBJ.put(MASK_VLM, "Vlm");
+        RET_CODES_OBJ.put(MASK_STOR_POOL_DFN, "StorPoolDfn");
+        RET_CODES_OBJ.put(MASK_STOR_POOL, "StorPool");
+        RET_CODES_OBJ.put(MASK_NODE_CONN, "NodeConn");
+        RET_CODES_OBJ.put(MASK_RSC_CONN, "RscConn");
+        RET_CODES_OBJ.put(MASK_VLM_CONN, "VlmConn");
+        RET_CODES_OBJ.put(MASK_NET_IF, "NetIf");
+    }
 
     private Socket sock;
     private InputStream inputStream;
@@ -42,7 +65,6 @@ public class ClientProtobuf implements Runnable
 
     private Thread thread;
     private boolean shutdown;
-    private StringBuilder readable = new StringBuilder();
 
     public ClientProtobuf(int port) throws UnknownHostException, IOException
     {
@@ -62,87 +84,160 @@ public class ClientProtobuf implements Runnable
 
     public void shutdown() throws IOException
     {
-        sock.close();
         shutdown = true;
+        sock.close();
         thread.interrupt();
     }
 
     @Override
     public void run()
     {
-        final int lineBrakeAfterBytes = PAIRS_PER_LINE + (PAIRS_PER_LINE > SPACE_AFTER_BYTES ? 1 : 0);
+        StringBuilder sb = new StringBuilder();
+        byte[] header = new byte[16];
+        int read;
+        int offset = 0;
+        int protoLen;
         while (!shutdown)
         {
-            int read;
             try
             {
-                read = inputStream.read();
+                offset = 0;
+                while (offset != header.length)
+                {
+                    read = inputStream.read(header, offset, header.length - offset);
+                    if (read == -1)
+                    {
+                        println("End of stream.");
+                        return; // not very clean, but enough for this prototype
+                    }
+                    offset += read;
+                }
 
-                System.out.printf("%02X ", read & 0xFF);
-                if (isPrintableChar((char) read))
-                {
-                    readable.append((char) read);
-                }
-                else
-                {
-                    readable.append('.');
-                }
+                protoLen = (header[4] & 0xFF) << 24 |
+                           (header[5] & 0xFF) << 16 |
+                           (header[6] & 0xFF) << 8  |
+                           (header[7] & 0xFF);
+                offset = 0;
+                byte[] data = new byte[protoLen];
 
-                if (readable.length() == lineBrakeAfterBytes)
+                while (offset != protoLen)
                 {
-                    System.out.println(readable.toString());
-                    readable.setLength(0);
+                    read = inputStream.read(data, offset, protoLen - offset);
+                    if (read == -1)
+                    {
+                        println("End of stream.");
+                        return; // not very clean, but enough for this prototype
+                    }
+                    offset += read;
                 }
-                else
-                if (readable.length() == SPACE_AFTER_BYTES)
+                ByteArrayInputStream bais = new ByteArrayInputStream(data);
+
+                MsgHeader protoHeader = MsgHeader.parseDelimitedFrom(bais);
+
+                sb.setLength(0);
+                sb.append("MsgId: ")
+                    .append(protoHeader.getMsgId())
+                    .append("\n");
+                int responseIdx = 1;
+                while (bais.available() > 0)
                 {
-                    readable.append(" ");
-                    System.out.print(" ");
+                    MsgApiCallResponse response = MsgApiCallResponse.parseDelimitedFrom(bais);
+                    long retCode = response.getRetCode();
+                    String message = response.getMessageFormat();
+                    String cause = response.getCauseFormat();
+                    String correction = response.getCorrectionFormat();
+                    String details = response.getDetailsFormat();
+                    Map<String, String> objRefsMap = response.getObjRefsMap();
+                    Map<String, String> variablesMap = response.getVariablesMap();
+                    sb.append("Response ")
+                        .append(responseIdx++)
+                        .append(": \n   RetCode   : ");
+                    decodeRetValue(sb, retCode);
+                    if (message != null && !"".equals(message))
+                    {
+                        sb.append("\n   Message   : ").append(format(message));
+                    }
+                    if (details != null && !"".equals(details))
+                    {
+                        sb.append("\n   Details   : ").append(format(details));
+                    }
+                    if (cause != null && !"".equals(cause))
+                    {
+                        sb.append("\n   Cause     : ").append(format(cause));
+                    }
+                    if (correction != null && !"".equals(correction))
+                    {
+                        sb.append("\n   Correction: ").append(format(correction));
+                    }
+                    if (objRefsMap != null && !objRefsMap.isEmpty())
+                    {
+                        sb.append("\n   ObjRefs: ");
+                        for (Entry<String, String> entry : objRefsMap.entrySet())
+                        {
+                            sb.append("\n      ").append(entry.getKey()).append("=").append(entry.getValue());
+                        }
+                    }
+                    else
+                    {
+                        sb.append("\n   No ObjRefs defined! Report this to the dev - this should not happen!");
+                    }
+                    if (variablesMap != null && !variablesMap.isEmpty())
+                    {
+                        sb.append("\n   Variables: ");
+                        for (Entry<String, String> entry : variablesMap.entrySet())
+                        {
+                            sb.append("\n      ").append(entry.getKey()).append("=").append(entry.getValue());
+                        }
+                    }
+                    else
+                    {
+                        sb.append("\n   No Variables");
+                    }
+                    sb.append("\n");
                 }
+                println(sb.toString());
             }
-            catch (IOException e)
+            catch (IOException ioExc)
             {
                 if (!shutdown)
                 {
-                    e.printStackTrace();
+                    ioExc.printStackTrace();
                 }
             }
         }
         println("shutting down");
     }
 
-    private boolean isPrintableChar(char c)
+    private String format(String msg)
     {
-        Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
-        return (!Character.isISOControl(c)) &&
-            c != KeyEvent.CHAR_UNDEFINED &&
-            block != null &&
-            block != Character.UnicodeBlock.SPECIALS;
+        return msg.replaceAll("\\n", "\n               ");
+    }
+
+    private void decodeRetValue(StringBuilder sb, long retCode)
+    {
+        decode(sb, retCode, 0xC000000000000000L, RET_CODES_TYPE);
+        decode(sb, retCode, 0x3C00000000000000L, RET_CODES_OBJ);
+        sb.append(retCode & 0x00FFFFFFFFFFFFFFL);
+        if ((retCode & 0x00FFFFFFFFFFFFFFL) == 0)
+        {
+            sb.append(" This looks wrong - please report to developer");
+        }
+    }
+
+    private void decode(StringBuilder sb, long retCode, long mask, Map<Long, String> retCodes)
+    {
+        for (Entry<Long, String> entry : retCodes.entrySet())
+        {
+            if ((retCode & mask) == entry.getKey())
+            {
+                sb.append(entry.getValue()).append(" ");
+            }
+        }
     }
 
     private void println(String str)
     {
-        // first flush the current readable
-        if (readable.length() > 0)
-        {
-            int spaces = (PAIRS_PER_LINE-readable.length())*3;
-            if (PAIRS_PER_LINE > SPACE_AFTER_BYTES)
-            {
-                spaces++;
-            }
-            String format = "%" + spaces + "s%s%n%s%n";
-            System.out.printf(
-                format,
-                "",
-                readable.toString(),
-                str
-            );
-            readable.setLength(0);
-        }
-        else
-        {
-            System.out.println(str);
-        }
+        System.out.println(str);
     }
 
     public int sendCreateNode(String nodeName, String nodeType, Map<String, String> props)
@@ -151,7 +246,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId++;
         send(
             msgId,
-            ApiConsts.API_CRT_NODE,
+            API_CRT_NODE,
             MsgCrtNode.newBuilder().
                 setNodeName(nodeName).
                 setNodeType(nodeType).
@@ -166,7 +261,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId++;
         send(
             msgId,
-            ApiConsts.API_DEL_NODE,
+            API_DEL_NODE,
             MsgDelNode.newBuilder().
                 setNodeName(nodeName).
                 build()
@@ -184,7 +279,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId++;
         send(
             msgId,
-            ApiConsts.API_CRT_RSC_DFN,
+            API_CRT_RSC_DFN,
             MsgCrtRscDfn.newBuilder().
                 setRscName(resName).
                 putAllRscProps(resDfnProps).
@@ -199,7 +294,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId++;
         send(
             msgId,
-            ApiConsts.API_DEL_RSC_DFN,
+            API_DEL_RSC_DFN,
             MsgDelRscDfn.newBuilder().
                 setRscName(resName).
                 build()
@@ -212,7 +307,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId++;
         send(
             msgId,
-            ApiConsts.API_CRT_STOR_POOL_DFN,
+            API_CRT_STOR_POOL_DFN,
             MsgCrtStorPoolDfn.newBuilder().
                 setStorPoolName(storPoolName).
                 build()
@@ -225,7 +320,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId++;
         send(
             msgId,
-            ApiConsts.API_DEL_STOR_POOL_DFN,
+            API_DEL_STOR_POOL_DFN,
             MsgDelStorPoolDfn.newBuilder().
                 setStorPoolName(storPoolName).
                 build()
@@ -238,7 +333,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId++;
         send(
             msgId,
-            ApiConsts.API_CRT_STOR_POOL,
+            API_CRT_STOR_POOL,
             MsgCrtStorPool.newBuilder().
                 setNodeName(nodeName).
                 setStorPoolName(storPoolName).
@@ -253,7 +348,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId++;
         send(
             msgId,
-            ApiConsts.API_DEL_STOR_POOL,
+            API_DEL_STOR_POOL,
             MsgDelStorPool.newBuilder().
                 setNodeName(nodeName).
                 setStorPoolName(storPoolName).
@@ -273,7 +368,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId++;
         send(
             msgId,
-            ApiConsts.API_CRT_RSC,
+            API_CRT_RSC,
             MsgCrtRsc.newBuilder().
                 setNodeName(nodeName).
                 setRscName(resName).
@@ -289,7 +384,7 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId++;
         send(
             msgId,
-            ApiConsts.API_DEL_RSC,
+            API_DEL_RSC,
             MsgDelRsc.newBuilder().
                 setNodeName(nodeName).
                 setRscName(resName).
@@ -320,11 +415,11 @@ public class ClientProtobuf implements Runnable
         byteBuffer.putInt(0, 0); // message type
         byteBuffer.putInt(4, protoHeader.length + protoData.length);
 
-//        System.out.println("sending header: " + header.length);
+//        println("sending header: " + header.length);
         outputStream.write(header);
-//        System.out.println("sending protoHeader:" + protoHeader.length);
+//        println("sending protoHeader:" + protoHeader.length);
         outputStream.write(protoHeader);
-//        System.out.println("sending protoData:" + protoData.length);
+//        println("sending protoData:" + protoData.length);
         outputStream.write(protoData);
     }
 
@@ -401,6 +496,7 @@ public class ClientProtobuf implements Runnable
 
         msgId = client.sendDeleteRsc(nodeName, resName);
         client.println(msgId + " delete rsc");
+        Thread.sleep(500);
 
 
         msgId = client.sendDeleteStorPool(nodeName, storPoolName);
