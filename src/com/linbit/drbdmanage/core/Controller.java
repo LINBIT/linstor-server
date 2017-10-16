@@ -538,6 +538,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             AccessContext privCtx = sysCtx.clone();
             AccessContext debugCtx = sysCtx.clone();
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+            debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
             DebugConsole dbgConsole = createDebugConsole(privCtx, debugCtx, null);
             dbgConsole.stdStreamsConsole(CtrlDebugConsoleImpl.CONSOLE_PROMPT);
