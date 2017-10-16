@@ -31,7 +31,7 @@ public class CmdSetSecLevel extends BaseDebugCmd
             "        Role based access controls.\n" +
             "        Objects are protected by access control lists that a certain type of access\n" +
             "        to specific roles. Sign-in is required to assume any other role than the\n" +
-            "        PUBLIC role." +
+            "        PUBLIC role.\n" +
             "    MAC\n" +
             "        Mandatory access controls.\n" +
             "        In addition to RBAC security, objects and roles are compartmentalized, and\n" +
@@ -40,7 +40,7 @@ public class CmdSetSecLevel extends BaseDebugCmd
             );
     }
 
-    CmdSetSecLevel()
+    public CmdSetSecLevel()
     {
         super(
             new String[]
@@ -49,7 +49,7 @@ public class CmdSetSecLevel extends BaseDebugCmd
             },
             "Set security level",
             "Sets the global security level",
-            null,
+            PARAMETER_DESCRIPTIONS,
             null,
             false
         );

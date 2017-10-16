@@ -32,6 +32,7 @@ class CtrlDebugConsoleImpl extends BaseDebugConsole
         "CmdDisplayContextInfo",
         "CmdDisplayServices",
         "CmdDisplaySecLevel",
+        "CmdSetSecLevel",
         "CmdDisplayModuleInfo",
         "CmdDisplayVersion",
         "CmdStartService",
