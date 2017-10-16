@@ -708,40 +708,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         return peerDbgConsole;
     }
 
-    /**
-     * FIXME: DEBUG CODE, Overrides security -- Remove before production use
-     *
-     * @param client The peer client to set a privileged security context on
-     * @return True if the operation succeeded, false otherwise
-     */
-    public boolean debugMakePeerPrivileged(Peer client)
-    {
-        boolean successFlag = false;
-        try
-        {
-            AccessContext impCtx = sysCtx.clone();
-            impCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
-            AccessContext privPeerCtx = impCtx.impersonate(
-                Identity.create(impCtx, new IdentityName("DebugClient")),
-                sysCtx.getRole(),
-                sysCtx.getDomain(),
-                Privilege.PRIV_SYS_ALL
-            );
-            client.setAccessContext(impCtx, privPeerCtx);
-            successFlag = true;
-        }
-        catch (InvalidNameException nameExc)
-        {
-            getErrorReporter().reportError(nameExc);
-        }
-        catch (AccessDeniedException accessExc)
-        {
-            getErrorReporter().reportError(accessExc);
-        }
-        return successFlag;
-    }
-
     public static void printField(String fieldName, String fieldContent)
     {
         System.out.printf("  %-32s: %s\n", fieldName, fieldContent);
