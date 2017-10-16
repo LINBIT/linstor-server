@@ -17,21 +17,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.protobuf.Message;
 import com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
+import com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn;
 import com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode;
+import com.linbit.drbdmanage.proto.MsgCrtRscConnOuterClass.MsgCrtRscConn;
 import com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
 import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.MsgCrtRsc;
 import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
 import com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn;
 import com.linbit.drbdmanage.proto.MsgCrtStorPoolOuterClass.MsgCrtStorPool;
+import com.linbit.drbdmanage.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn;
 import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.MsgDelNodeConnOuterClass.MsgDelNodeConn;
 import com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode;
+import com.linbit.drbdmanage.proto.MsgDelRscConnOuterClass.MsgDelRscConn;
 import com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn;
 import com.linbit.drbdmanage.proto.MsgDelRscOuterClass.MsgDelRsc;
 import com.linbit.drbdmanage.proto.MsgDelStorPoolDfnOuterClass.MsgDelStorPoolDfn;
 import com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool;
+import com.linbit.drbdmanage.proto.MsgDelVlmConnOuterClass.MsgDelVlmConn;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 
 public class ClientProtobuf implements Runnable
@@ -61,7 +68,7 @@ public class ClientProtobuf implements Runnable
     private Socket sock;
     private InputStream inputStream;
     private OutputStream outputStream;
-    private int msgId = 0;
+    private AtomicInteger msgId = new AtomicInteger(0);
 
     private Thread thread;
     private boolean shutdown;
@@ -243,14 +250,18 @@ public class ClientProtobuf implements Runnable
     public int sendCreateNode(String nodeName, String nodeType, Map<String, String> props)
         throws IOException
     {
-        int msgId = this.msgId++;
+        int msgId = this.msgId.incrementAndGet();
+        MsgCrtNode.Builder msgBuilder = MsgCrtNode.newBuilder().
+            setNodeName(nodeName).
+            setNodeType(nodeType);
+        if (props != null)
+        {
+            msgBuilder.putAllNodeProps(props);
+        }
         send(
             msgId,
             API_CRT_NODE,
-            MsgCrtNode.newBuilder().
-                setNodeName(nodeName).
-                setNodeType(nodeType).
-                putAllNodeProps(props).
+            msgBuilder.
                 build()
         );
         return msgId;
@@ -258,7 +269,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendDeleteNode(String nodeName) throws IOException
     {
-        int msgId = this.msgId++;
+        int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
             API_DEL_NODE,
@@ -276,22 +287,28 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId++;
+        int msgId = this.msgId.incrementAndGet();
+        MsgCrtRscDfn.Builder msgBuilder = MsgCrtRscDfn.newBuilder().
+            setRscName(resName);
+        if (resDfnProps != null)
+        {
+            msgBuilder.putAllRscProps(resDfnProps);
+        }
+        if (vlmDfn != null)
+        {
+            msgBuilder.addAllVlmDfns(vlmDfn);
+        }
         send(
             msgId,
             API_CRT_RSC_DFN,
-            MsgCrtRscDfn.newBuilder().
-                setRscName(resName).
-                putAllRscProps(resDfnProps).
-                addAllVlmDfns(vlmDfn).
-                build()
+            msgBuilder.build()
         );
         return msgId;
     }
 
     public int sendDeleteRscDfn(String resName) throws IOException
     {
-        int msgId = this.msgId++;
+        int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
             API_DEL_RSC_DFN,
@@ -304,7 +321,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendCreateStorPoolDfn(String storPoolName) throws IOException
     {
-        int msgId = this.msgId++;
+        int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
             API_CRT_STOR_POOL_DFN,
@@ -317,7 +334,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendDeleteStorPoolDfn(String storPoolName) throws IOException
     {
-        int msgId = this.msgId++;
+        int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
             API_DEL_STOR_POOL_DFN,
@@ -330,7 +347,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendCreateStorPool(String nodeName, String storPoolName, String driver) throws IOException
     {
-        int msgId = this.msgId++;
+        int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
             API_CRT_STOR_POOL,
@@ -345,7 +362,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendDeleteStorPool(String nodeName, String storPoolName) throws IOException
     {
-        int msgId = this.msgId++;
+        int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
             API_DEL_STOR_POOL,
@@ -365,23 +382,29 @@ public class ClientProtobuf implements Runnable
     )
         throws IOException
     {
-        int msgId = this.msgId++;
+        int msgId = this.msgId.incrementAndGet();
+        MsgCrtRsc.Builder msgBuilder = MsgCrtRsc.newBuilder().
+            setNodeName(nodeName).
+            setRscName(resName);
+        if (resProps != null)
+        {
+            msgBuilder.putAllRscProps(resProps);
+        }
+        if (vlms != null)
+        {
+            msgBuilder.addAllVlms(vlms);
+        }
         send(
             msgId,
             API_CRT_RSC,
-            MsgCrtRsc.newBuilder().
-                setNodeName(nodeName).
-                setRscName(resName).
-                putAllRscProps(resProps).
-                addAllVlms(vlms).
-                build()
+            msgBuilder.build()
         );
         return msgId;
     }
 
     public int sendDeleteRsc(String nodeName, String resName) throws IOException
     {
-        int msgId = this.msgId++;
+        int msgId = this.msgId.incrementAndGet();
         send(
             msgId,
             API_DEL_RSC,
@@ -392,6 +415,121 @@ public class ClientProtobuf implements Runnable
         );
         return msgId;
     }
+
+    public int sendCreateNodeConn(String nodeName1, String nodeName2, Map<String, String> props)
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgCrtNodeConn.Builder msgBuilder = MsgCrtNodeConn.newBuilder().
+            setNodeName1(nodeName1).
+            setNodeName2(nodeName2);
+        if (props != null)
+        {
+            msgBuilder.putAllNodeConnProps(props);
+        }
+        send(
+            msgId,
+            API_CRT_NODE_CONN,
+            msgBuilder.build()
+        );
+        return msgId;
+    }
+
+    public int sendDeleteNodeConn(String nodeName1, String nodeName2)
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        send(
+            msgId,
+            API_DEL_NODE_CONN,
+            MsgDelNodeConn.newBuilder().
+                setNodeName1(nodeName1).
+                setNodeName2(nodeName2).
+                build()
+        );
+        return msgId;
+    }
+
+    public int sendCreateRscConn(String nodeName1, String NodeName2, String rscName, Map<String, String> props)
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgCrtRscConn.Builder msgBuilder = MsgCrtRscConn.newBuilder().
+            setNodeName1(nodeName1).
+            setNodeName2(NodeName2).
+            setResourceName(rscName);
+        if (props != null)
+        {
+            msgBuilder.putAllResourceConnProps(props);
+        }
+        send(
+            msgId,
+            API_CRT_RSC_CONN,
+            msgBuilder.build()
+        );
+        return msgId;
+    }
+
+    public int sendDeleteRscConn(String nodeName1, String NodeName2, String rscName)
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        send(
+            msgId,
+            API_DEL_RSC_CONN,
+            MsgDelRscConn.newBuilder().
+                setNodeName1(nodeName1).
+                setNodeName2(NodeName2).
+                setResourceName(rscName).
+                build()
+        );
+        return msgId;
+    }
+
+    public int sendCreateVlmConn(
+        String nodeName1,
+        String NodeName2,
+        String rscName,
+        int vlmNr,
+        Map<String, String> props
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgCrtVlmConn.Builder msgBuilder = MsgCrtVlmConn.newBuilder().
+            setNodeName1(nodeName1).
+            setNodeName2(NodeName2).
+            setResourceName(rscName).
+            setVolumeNr(vlmNr);
+        if (props != null)
+        {
+            msgBuilder.putAllVolumeConnProps(props);
+        }
+        send(
+            msgId,
+            API_CRT_VLM_CONN,
+            msgBuilder.build()
+        );
+        return msgId;
+    }
+
+    public int sendDeleteVlmConn(String nodeName1, String NodeName2, String rscName, int vlmNr)
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        send(
+            msgId,
+            API_DEL_VLM_CONN,
+            MsgDelVlmConn.newBuilder().
+                setNodeName1(nodeName1).
+                setNodeName2(NodeName2).
+                setResourceName(rscName).
+                setVolumeNr(vlmNr).
+                build()
+        );
+        return msgId;
+    }
+
 
     private void send(int msgId, String apiCall, Message msg) throws IOException
     {
@@ -446,7 +584,115 @@ public class ClientProtobuf implements Runnable
     public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException
     {
         ClientProtobuf client = new ClientProtobuf(9500);
+        // creaeNodeRscVlmDelete(client);
+        createNodeConnRscConnVlmConnDelete(client);
+    }
 
+    private static void createNodeConnRscConnVlmConnDelete(ClientProtobuf client)
+        throws IOException, InterruptedException
+    {
+        String nodeName1 = "TestNode1";
+        String nodeName2 = "TestNode2";
+        String rscName = "TestRes";
+        String storPoolName = "TestStorPool";
+        int vlmNr = 13;
+
+        String nodeConnTestKey = "TestKeyNodeConn";
+        String nodeconnTestValue = "TestValueNodeConn";
+        String rscConnTestKey = "TestKeyRscConn";
+        String rscConnTestValue = "TestValueRscConn";
+        String vlmConnTestKey = "TestKeyVlmConn";
+        String vlmConnTestValue = "TestValueVlmConn";
+
+        int msgId = 0;
+
+        msgId = client.sendCreateNode(nodeName1, "satellite", null);
+        client.println(msgId + " create first node");
+        Thread.sleep(500);
+
+        msgId = client.sendCreateNode(nodeName2, "satellite", null);
+        client.println(msgId + " create second node");
+        Thread.sleep(500);
+
+        msgId = client.sendCreateRscDfn(rscName, null, null);
+        client.println(msgId + " create rscDfn");
+        Thread.sleep(500);
+
+        msgId = client.sendCreateStorPoolDfn(storPoolName);
+        client.println(msgId + " create storPoolDfn");
+        Thread.sleep(500);
+
+        msgId = client.sendCreateStorPool(nodeName1, storPoolName, "LvmDriver");
+        client.println(msgId + " create first storPool");
+        Thread.sleep(500);
+
+        msgId = client.sendCreateStorPool(nodeName2, storPoolName, "LvmDriver");
+        client.println(msgId + " create second storPool");
+        Thread.sleep(500);
+
+        List<Vlm> vlms = new ArrayList<>();
+        vlms.add(client.createVlmDfn(1, storPoolName, "blockDevice", "internal"));
+        msgId = client.sendCreateRsc(nodeName1, rscName, null, vlms);
+        client.println(msgId + " create first rsc");
+        Thread.sleep(500);
+
+        msgId = client.sendCreateRsc(nodeName2, rscName, null, vlms);
+        client.println(msgId + " create second rsc");
+        Thread.sleep(500);
+
+
+
+        Map<String, String> nodeConnProps = new HashMap<>();
+        nodeConnProps.put(nodeConnTestKey, nodeconnTestValue);
+        msgId = client.sendCreateNodeConn(nodeName1, nodeName2, nodeConnProps);
+        client.println(msgId + " create node connection");
+        Thread.sleep(500);
+
+        Map<String, String> rscConnProps = new HashMap<>();
+        rscConnProps.put(rscConnTestKey, rscConnTestValue);
+        msgId = client.sendCreateRscConn(nodeName1, nodeName2, rscName, rscConnProps);
+        client.println(msgId + " create rsc connection");
+        Thread.sleep(500);
+
+        Map<String, String> vlmConnProps = new HashMap<>();
+        vlmConnProps.put(vlmConnTestKey, vlmConnTestValue);
+        msgId = client.sendCreateVlmConn(nodeName1, nodeName2, rscName, vlmNr, vlmConnProps);
+        client.println(msgId + " create vlm connection");
+        Thread.sleep(500);
+
+
+
+
+
+        msgId = client.sendDeleteVlmConn(nodeName1, nodeName2, rscName, vlmNr);
+        client.println(msgId + " delete vlm connection");
+        Thread.sleep(500);
+
+        msgId = client.sendDeleteRscConn(nodeName1, nodeName2, rscName);
+        client.println(msgId + " delete rsc connection");
+        Thread.sleep(500);
+
+        msgId = client.sendDeleteNodeConn(nodeName1, nodeName2);
+        client.println(msgId + " delete node connection");
+        Thread.sleep(500);
+
+
+
+        msgId = client.sendDeleteNode(nodeName1);
+        client.println(msgId + " delete first node");
+        Thread.sleep(500);
+
+        msgId = client.sendDeleteNode(nodeName2);
+        client.println(msgId + " delete second node");
+
+        client.outputStream.flush();
+        Thread.sleep(1000);
+        client.shutdown();
+    }
+
+    private static void creaeNodeRscVlmDelete(ClientProtobuf client)
+        throws UnknownHostException, IOException, InterruptedException
+    {
         String nodePropsTestKey = "TestNodeKey";
         String nodePropsTestValue = "TestNodeValue";
         String nodeName = "TestNode";

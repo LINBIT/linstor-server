@@ -231,7 +231,7 @@ class CtrlRscDfnApiCallHandler
                 entry.putObjRef(KEY_VLM_NR, Integer.toString(currentVolCrtData.getVolumeNr()));
             }
             String errorMessage = String.format(
-                "The access context (user: %s, role: %s) has no permission to %s",
+                "The access context (user: '%s', role: '%s') has no permission to %s",
                 accCtx.subjectId.name.displayValue,
                 accCtx.subjectRole.name.displayValue,
                 action
@@ -472,7 +472,7 @@ class CtrlRscDfnApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             String errorMessage = String.format(
-                "The access context (user: %s, role: %s) has no permission to " +
+                "The access context (user: '%s', role: '%s') has no permission to " +
                     "delete the resource definition '%s'.",
                 accCtx.subjectId.name.displayValue,
                 accCtx.subjectRole.name.displayValue,
@@ -545,7 +545,7 @@ class CtrlRscDfnApiCallHandler
                 new ImplementationError(
                     String.format(
                         ".getInstance was called with failIfExists=false, still threw an AlreadyExistsException "+
-                            "(Resource name: %s)",
+                            "(Resource name: '%s')",
                         resNameStr
                     ),
                     dataAlreadyExistsExc

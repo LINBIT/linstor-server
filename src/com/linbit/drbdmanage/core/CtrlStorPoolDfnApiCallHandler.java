@@ -97,7 +97,7 @@ class CtrlStorPoolDfnApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             String errorMessage = String.format(
-                "The access context (user: %s, role: %s) has no permission to create storage pool " +
+                "The access context (user: '%s', role: '%s') has no permission to create storage pool " +
                     "definition '%s'.",
                     accCtx.subjectId.name.displayValue,
                     accCtx.subjectRole.name.displayValue,
@@ -277,7 +277,7 @@ class CtrlStorPoolDfnApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             String errorMessage = String.format(
-                "The access context (user: %s, role: %s) has no permission to delete storage pool " +
+                "The access context (user: '%s', role: '%s') has no permission to delete storage pool " +
                     "definition '%s'.",
                     accCtx.subjectId.name.displayValue,
                     accCtx.subjectRole.name.displayValue,
@@ -325,7 +325,7 @@ class CtrlStorPoolDfnApiCallHandler
                 new ImplementationError(
                     String.format(
                         ".getInstance was called with failIfExists=false, still threw an AlreadyExistsException "+
-                            "(storage pool name: %s)",
+                            "(storage pool name: '%s')",
                         storPoolNameStr
                     ),
                     dataAlreadyExistsExc

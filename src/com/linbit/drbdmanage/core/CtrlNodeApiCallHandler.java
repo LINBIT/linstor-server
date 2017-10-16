@@ -141,7 +141,7 @@ class CtrlNodeApiCallHandler
         {
             // handle accDeniedExc1 && accDeniedExc2
             String errorMessage = String.format(
-                "The access context (user: %s, role: %s) has no permission to " +
+                "The access context (user: '%s', role: '%s') has no permission to " +
                     "create the new node '%s'.",
                 accCtx.subjectId.name.displayValue,
                 accCtx.subjectRole.name.displayValue,
@@ -167,7 +167,7 @@ class CtrlNodeApiCallHandler
             // handle alreadyExists1
 
             String errorMessage = String.format(
-                "The node %s which should be created already exists",
+                "A node with the name '%s' already exists",
                 nodeNameStr
             );
 
@@ -336,7 +336,7 @@ class CtrlNodeApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_DEL_FAIL_INVALID_NODE_NAME);
+            entry.setReturnCodeBit(RC_NODE_DEL_FAIL_INVLD_NODE_NAME);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(invalidNameExc.getMessage());
 

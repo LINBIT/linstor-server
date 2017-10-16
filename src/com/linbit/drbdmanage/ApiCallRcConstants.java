@@ -98,6 +98,9 @@ public class ApiCallRcConstants
     public static final long CRT_FAIL_ACC_DENIED_VLM            = 144 | MASK_ERROR;
     public static final long CRT_FAIL_ACC_DENIED_STOR_POOL_DFN  = 145 | MASK_ERROR;
     public static final long CRT_FAIL_ACC_DENIED_STOR_POOL      = 146 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_NODE_CONN      = 147 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_RSC_CONN       = 148 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_VLM_CONN       = 149 | MASK_ERROR;
 
     /*
      * Codes 150-169: data already exists creation failures
@@ -149,6 +152,9 @@ public class ApiCallRcConstants
     public static final long DEL_FAIL_ACC_DENIED_VLM            = 244 | MASK_ERROR;
     public static final long DEL_FAIL_ACC_DENIED_STOR_POOL_DFN  = 245 | MASK_ERROR;
     public static final long DEL_FAIL_ACC_DENIED_STOR_POOL      = 246 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_NODE_CONN      = 247 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_RSC_CONN       = 248 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_VLM_CONN       = 249 | MASK_ERROR;
 
     public static final long DEL_FAIL_IN_USE                = 298 | MASK_ERROR;
     public static final long DEL_FAIL_IMPL_ERROR            = 299 | MASK_ERROR;
@@ -170,7 +176,7 @@ public class ApiCallRcConstants
 
     public static final long RC_NODE_DEL_FAIL_SQL               = MASK_NODE | DEL_FAIL_SQL;
     public static final long RC_NODE_DEL_FAIL_SQL_ROLLBACK      = MASK_NODE | DEL_FAIL_SQL_ROLLBACK;
-    public static final long RC_NODE_DEL_FAIL_INVALID_NODE_NAME = MASK_NODE | DEL_FAIL_INVLD_NODE_NAME;
+    public static final long RC_NODE_DEL_FAIL_INVLD_NODE_NAME   = MASK_NODE | DEL_FAIL_INVLD_NODE_NAME;
     public static final long RC_NODE_DEL_FAIL_ACC_DENIED_NODE   = MASK_NODE | DEL_FAIL_ACC_DENIED_NODE;
     public static final long RC_NODE_DEL_FAIL_IMPL_ERROR        = MASK_NODE | DEL_FAIL_IMPL_ERROR;
 
@@ -211,11 +217,11 @@ public class ApiCallRcConstants
     public static final long RC_RSC_CRT_FAIL_SQL                = MASK_RSC | CRT_FAIL_SQL;
     public static final long RC_RSC_CRT_FAIL_SQL_ROLLBACK       = MASK_RSC | CRT_FAIL_SQL_ROLLBACK;
 
-    public static final long RC_RSC_CRT_FAIL_INVALID_NODE_NAME      = MASK_RSC | CRT_FAIL_INVLD_NODE_NAME;
-    public static final long RC_RSC_CRT_FAIL_INVALID_RSC_NAME       = MASK_RSC | CRT_FAIL_INVLD_RSC_NAME;
-    public static final long RC_RSC_CRT_FAIL_INVALID_NODE_ID        = MASK_RSC | CRT_FAIL_INVLD_NODE_ID;
-    public static final long RC_RSC_CRT_FAIL_INVALID_VLM_NR         = MASK_RSC | CRT_FAIL_INVLD_VLM_NR;
-    public static final long RC_RSC_CRT_FAIL_INVALID_STOR_POOL_NAME = MASK_RSC | CRT_FAIL_INVLD_STOR_POOL_NAME;
+    public static final long RC_RSC_CRT_FAIL_INVLD_NODE_NAME        = MASK_RSC | CRT_FAIL_INVLD_NODE_NAME;
+    public static final long RC_RSC_CRT_FAIL_INVLD_RSC_NAME         = MASK_RSC | CRT_FAIL_INVLD_RSC_NAME;
+    public static final long RC_RSC_CRT_FAIL_INVLD_NODE_ID          = MASK_RSC | CRT_FAIL_INVLD_NODE_ID;
+    public static final long RC_RSC_CRT_FAIL_INVLD_VLM_NR           = MASK_RSC | CRT_FAIL_INVLD_VLM_NR;
+    public static final long RC_RSC_CRT_FAIL_INVLD_STOR_POOL_NAME   = MASK_RSC | CRT_FAIL_INVLD_STOR_POOL_NAME;
 
     public static final long RC_RSC_CRT_FAIL_NOT_FOUND_NODE             = MASK_RSC | CRT_FAIL_NOT_FOUND_NODE;
     public static final long RC_RSC_CRT_FAIL_NOT_FOUND_RSC_DFN          = MASK_RSC | CRT_FAIL_NOT_FOUND_RSC_DFN;
@@ -237,8 +243,8 @@ public class ApiCallRcConstants
     public static final long RC_RSC_DEL_FAIL_SQL                = MASK_RSC | DEL_FAIL_SQL;
     public static final long RC_RSC_DEL_FAIL_SQL_ROLLBACK       = MASK_RSC | DEL_FAIL_SQL_ROLLBACK;
 
-    public static final long RC_RSC_DEL_FAIL_INVALID_NODE_NAME  = MASK_RSC | DEL_FAIL_INVLD_NODE_NAME;
-    public static final long RC_RSC_DEL_FAIL_INVALID_RSC_NAME   = MASK_RSC | DEL_FAIL_INVLD_RSC_NAME;
+    public static final long RC_RSC_DEL_FAIL_INVLD_NODE_NAME    = MASK_RSC | DEL_FAIL_INVLD_NODE_NAME;
+    public static final long RC_RSC_DEL_FAIL_INVLD_RSC_NAME     = MASK_RSC | DEL_FAIL_INVLD_RSC_NAME;
 
     public static final long RC_RSC_DEL_FAIL_NOT_FOUND_NODE     = MASK_RSC | DEL_FAIL_NOT_FOUND_NODE;
     public static final long RC_RSC_DEL_FAIL_NOT_FOUND_RSC_DFN  = MASK_RSC | DEL_FAIL_NOT_FOUND_RSC_DFN;
@@ -268,6 +274,23 @@ public class ApiCallRcConstants
      */
     public static final long RC_NODE_CONN_CREATED   = MASK_NODE_CONN | CREATED;
     public static final long RC_NODE_CONN_DELETED   = MASK_NODE_CONN | DELETED;
+
+    public static final long RC_NODE_CONN_CRT_FAIL_SQL                  = MASK_NODE_CONN | CRT_FAIL_SQL;
+    public static final long RC_NODE_CONN_CRT_FAIL_SQL_ROLLBACK         = MASK_NODE_CONN | CRT_FAIL_SQL_ROLLBACK;
+    public static final long RC_NODE_CONN_CRT_FAIL_NOT_FOUND_NODE       = MASK_NODE_CONN | CRT_FAIL_NOT_FOUND_NODE;
+    public static final long RC_NODE_CONN_CRT_FAIL_INVLD_NODE_NAME      = MASK_NODE_CONN | CRT_FAIL_INVLD_NODE_NAME;
+    public static final long RC_NODE_CONN_CRT_FAIL_ACC_DENIED_NODE      = MASK_NODE_CONN | CRT_FAIL_ACC_DENIED_NODE;
+    public static final long RC_NODE_CONN_CRT_FAIL_ACC_DENIED_NODE_CONN = MASK_NODE_CONN | CRT_FAIL_ACC_DENIED_NODE_CONN;
+    public static final long RC_NODE_CONN_CRT_FAIL_EXISTS_NODE_CONN     = MASK_NODE_CONN | CRT_FAIL_EXISTS_NODE_CONN;
+    public static final long RC_NODE_CONN_CRT_FAIL_IMPL_ERROR           = MASK_NODE_CONN | CRT_FAIL_IMPL_ERROR;
+
+    public static final long RC_NODE_CONN_DEL_FAIL_SQL                  = MASK_NODE_CONN | DEL_FAIL_SQL;
+    public static final long RC_NODE_CONN_DEL_FAIL_SQL_ROLLBACK         = MASK_NODE_CONN | DEL_FAIL_SQL_ROLLBACK;
+    public static final long RC_NODE_CONN_DEL_FAIL_NOT_FOUND_NODE       = MASK_NODE_CONN | DEL_FAIL_NOT_FOUND_NODE;
+    public static final long RC_NODE_CONN_DEL_FAIL_INVLD_NODE_NAME      = MASK_NODE_CONN | DEL_FAIL_INVLD_NODE_NAME;
+    public static final long RC_NODE_CONN_DEL_FAIL_ACC_DENIED_NODE      = MASK_NODE_CONN | DEL_FAIL_ACC_DENIED_NODE;
+    public static final long RC_NODE_CONN_DEL_FAIL_ACC_DENIED_NODE_CONN = MASK_NODE_CONN | DEL_FAIL_ACC_DENIED_NODE_CONN;
+    public static final long RC_NODE_CONN_DEL_FAIL_IMPL_ERROR           = MASK_NODE_CONN | DEL_FAIL_IMPL_ERROR;
 
     /*
      * ResourceConnection return codes

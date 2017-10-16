@@ -363,20 +363,20 @@ class CtrlRscApiCallHandler
             { // invalidNameExc1
                 errorMessage = String.format("Given node name '%s' is invalid.", nodeNameStr);
                 entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_INVALID_NODE_NAME);
+                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_INVLD_NODE_NAME);
             }
             else
             if (rscName == null)
             { // invalidNameExc2
                 errorMessage = String.format("Given resource name '%s' is invalid.", rscNameStr);
                 entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_INVALID_RSC_NAME);
+                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_INVLD_RSC_NAME);
             }
             else
             { // invalidNameExc3
                 errorMessage = String.format("Given storage pool name '%s' is invalid.", storPoolNameStr);
                 entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_INVALID_STOR_POOL_NAME);
+                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_INVLD_STOR_POOL_NAME);
 
             }
             controller.getErrorReporter().reportError(
@@ -554,7 +554,7 @@ class CtrlRscApiCallHandler
                     NodeId.NODE_ID_MAX
                 );
                 entry.putVariable(KEY_NODE_ID, Integer.toString(nodeIdRaw));
-                entry.setReturnCode(RC_RSC_CRT_FAIL_INVALID_NODE_ID);
+                entry.setReturnCode(RC_RSC_CRT_FAIL_INVLD_NODE_ID);
             }
             else
             { // valueOutOfRangeExc2
@@ -565,7 +565,7 @@ class CtrlRscApiCallHandler
                     VolumeNumber.VOLUME_NR_MAX
                 );
                 entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmApi.getVlmNr()));
-                entry.setReturnCode(RC_RSC_CRT_FAIL_INVALID_VLM_NR);
+                entry.setReturnCode(RC_RSC_CRT_FAIL_INVLD_VLM_NR);
             }
             controller.getErrorReporter().reportError(
                 valueOutOfRangeExc,
@@ -586,7 +586,7 @@ class CtrlRscApiCallHandler
             {
                 errorMessage = String.format(
                     "The property key '%s' has thrown an InvalidKeyException "+
-                        "(Node name: %s, resource name: %s)",
+                        "(Node name: '%s', resource name: '%s')",
                     KEY_STOR_POOL_NAME,
                     nodeNameStr,
                     rscNameStr
@@ -596,7 +596,7 @@ class CtrlRscApiCallHandler
             {
                 errorMessage = String.format(
                     "A dynamic class instantiation related exception occured while this method shoud "+
-                        "not create such instances (Node name: %s, resource name: %s, volNr: %d, stor pool name: %s)",
+                        "not create such instances (Node name: '%s', resource name: '%s', volNr: %d, stor pool name: '%s')",
                     nodeNameStr,
                     rscNameStr,
                     volNr.value,
@@ -832,13 +832,13 @@ class CtrlRscApiCallHandler
             {
                 errorMessage = String.format("Given node name '%s' is invalid.", nodeNameStr);
                 entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.setReturnCodeBit(RC_RSC_DEL_FAIL_INVALID_NODE_NAME);
+                entry.setReturnCodeBit(RC_RSC_DEL_FAIL_INVLD_NODE_NAME);
             }
             else
             {
                 errorMessage = String.format("Given resource name '%s' is invalid.", rscNameStr);
                 entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                entry.setReturnCodeBit(RC_RSC_DEL_FAIL_INVALID_RSC_NAME);
+                entry.setReturnCodeBit(RC_RSC_DEL_FAIL_INVLD_RSC_NAME);
             }
             controller.getErrorReporter().reportError(
                 invalidNameExc,
@@ -918,7 +918,7 @@ class CtrlRscApiCallHandler
                 new ImplementationError(
                     String.format(
                         ".getInstance was called with failIfExists=false, still threw an AlreadyExistsException "+
-                            "(Node name: %s, resource name: %s)",
+                            "(Node name: '%s', resource name: '%s')",
                         nodeNameStr,
                         rscNameStr
                     ),

@@ -204,7 +204,7 @@ class CtrlStorPoolApiCallHandler
             }
 
             String errorMessage = String.format(
-                "The access context (user: %s, role: %s) has no permission to %s",
+                "The access context (user: '%s', role: '%s') has no permission to %s",
                     accCtx.subjectId.name.displayValue,
                     accCtx.subjectRole.name.displayValue,
                     action
@@ -288,7 +288,7 @@ class CtrlStorPoolApiCallHandler
         {
             String errorMessage = String.format(
                 "A dynamic class instantiation related exception occured while this method shoud "+
-                    "not create such instances (Node name: %s, storage pool name: %)",
+                    "not create such instances (Node name: '%s', storage pool name: '%s')",
                 nodeNameStr,
                 storPoolNameStr
             );
@@ -551,7 +551,7 @@ class CtrlStorPoolApiCallHandler
             }
 
             String errorMessage = String.format(
-                "The access context (user: %s, role: %s) has no permission to %s",
+                "The access context (user: '%s', role: '%s') has no permission to %s",
                     accCtx.subjectId.name.displayValue,
                     accCtx.subjectRole.name.displayValue,
                     action
@@ -623,7 +623,7 @@ class CtrlStorPoolApiCallHandler
             {
                 errorMessage= String.format(
                     "A dynamic class instantiation related exception occured while this method shoud "+
-                        "not create such instances (Node name: %s, storage pool name: %)",
+                        "not create such instances (Node name: '%s', storage pool name: '%s')",
                     nodeNameStr,
                     storPoolNameStr
                 );
