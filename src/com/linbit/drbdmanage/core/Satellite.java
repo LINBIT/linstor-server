@@ -299,6 +299,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             AccessContext privCtx = sysCtx.clone();
             AccessContext debugCtx = sysCtx.clone();
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+            debugCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
             DebugConsole dbgConsole = createDebugConsole(privCtx, debugCtx, null);
             dbgConsole.stdStreamsConsole(StltDebugConsoleImpl.CONSOLE_PROMPT);
