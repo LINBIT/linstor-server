@@ -6,6 +6,7 @@ import com.linbit.drbdmanage.security.SecurityLevel;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReadWriteLock;
 
 
 public class CmdSetSecLevel extends BaseDebugCmd
@@ -64,55 +65,65 @@ public class CmdSetSecLevel extends BaseDebugCmd
     )
         throws Exception
     {
-        String secLevelText = parameters.get(PRM_SECLEVEL_NAME);
-        if (secLevelText != null)
+        ReadWriteLock rcfgLock = cmnDebugCtl.getReconfigurationLock();
+        try
         {
-            try
+            rcfgLock.writeLock().lock();
+
+            String secLevelText = parameters.get(PRM_SECLEVEL_NAME);
+            if (secLevelText != null)
             {
-                secLevelText = secLevelText.toUpperCase();
-                switch (secLevelText)
+                try
                 {
-                    case PRM_SECLEVEL_NO_SECURITY:
-                        SecurityLevel.set(accCtx, SecurityLevel.NO_SECURITY);
-                        debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLEVEL_NO_SECURITY);
-                        break;
-                    case PRM_SECLEVEL_RBAC:
-                        SecurityLevel.set(accCtx, SecurityLevel.RBAC);
-                        debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLEVEL_RBAC);
-                        break;
-                    case PRM_SECLEVEL_MAC:
-                        SecurityLevel.set(accCtx, SecurityLevel.MAC);
-                        debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLEVEL_MAC);
-                        break;
-                    default:
-                        printError(
-                            debugErr,
-                            "The specified security level is not valid.",
-                            String.format(
-                                "The value '%s' specified for the parameter %s is not a valid security level name",
-                                secLevelText, PRM_SECLEVEL_NAME
-                            ),
-                            String.format(
-                                "Specify a valid security level.\n" +
-                                "Valid security levels are:\n" +
-                                "    %s\n" +
-                                "    %s\n" +
-                                "    %s\n",
-                                PRM_SECLEVEL_NO_SECURITY, PRM_SECLEVEL_RBAC, PRM_SECLEVEL_MAC
-                            ),
-                            null
-                        );
-                        break;
+                    secLevelText = secLevelText.toUpperCase();
+                    switch (secLevelText)
+                    {
+                        case PRM_SECLEVEL_NO_SECURITY:
+                            SecurityLevel.set(accCtx, SecurityLevel.NO_SECURITY);
+                            debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLEVEL_NO_SECURITY);
+                            break;
+                        case PRM_SECLEVEL_RBAC:
+                            SecurityLevel.set(accCtx, SecurityLevel.RBAC);
+                            debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLEVEL_RBAC);
+                            break;
+                        case PRM_SECLEVEL_MAC:
+                            SecurityLevel.set(accCtx, SecurityLevel.MAC);
+                            debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLEVEL_MAC);
+                            break;
+                        default:
+                            printError(
+                                debugErr,
+                                "The specified security level is not valid.",
+                                String.format(
+                                    "The value '%s' specified for the parameter %s is not a valid security level name",
+                                    secLevelText, PRM_SECLEVEL_NAME
+                                ),
+                                String.format(
+                                    "Specify a valid security level.\n" +
+                                    "Valid security levels are:\n" +
+                                    "    %s\n" +
+                                    "    %s\n" +
+                                    "    %s\n",
+                                    PRM_SECLEVEL_NO_SECURITY, PRM_SECLEVEL_RBAC, PRM_SECLEVEL_MAC
+                                ),
+                                null
+                            );
+                            break;
+                    }
+                }
+                catch (AccessDeniedException accExc)
+                {
+                    printDmException(debugErr, accExc);
                 }
             }
-            catch (AccessDeniedException accExc)
+            else
             {
-                printDmException(debugErr, accExc);
+                this.printMissingParamError(debugErr, PRM_SECLEVEL_NAME);
             }
         }
-        else
+        finally
         {
-            this.printMissingParamError(debugErr, PRM_SECLEVEL_NAME);
+            rcfgLock.writeLock().unlock();
         }
     }
 }
