@@ -78,11 +78,11 @@ public class CmdSetSecLevel extends BaseDebugCmd
                         break;
                     case PRM_SECLEVEL_RBAC:
                         SecurityLevel.set(accCtx, SecurityLevel.RBAC);
-                        debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLEVEL_NO_SECURITY);
+                        debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLEVEL_RBAC);
                         break;
                     case PRM_SECLEVEL_MAC:
                         SecurityLevel.set(accCtx, SecurityLevel.MAC);
-                        debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLEVEL_NO_SECURITY);
+                        debugOut.printf(LEVEL_SET_FORMAT, PRM_SECLEVEL_MAC);
                         break;
                     default:
                         printError(
