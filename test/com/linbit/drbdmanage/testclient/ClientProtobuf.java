@@ -565,26 +565,26 @@ public class ClientProtobuf implements Runnable
     {
         return
             VlmDfn.newBuilder().
-            setVlmNr(vlmNr).
-            setVlmSize(vlmSize).
-            build();
+                setVlmNr(vlmNr).
+                setVlmSize(vlmSize).
+                build();
     }
 
-    public Vlm createVlmDfn(int vlmNr, String storPoolName, String blockDevice, String metaDisk)
+    public Vlm createVlm(int vlmNr, String storPoolName, String blockDevice, String metaDisk)
     {
         return
             Vlm.newBuilder().
-            setVlmNr(vlmNr).
-            setStorPoolName(storPoolName).
-            setBlockDevice(blockDevice).
-            setMetaDisk(metaDisk).
-            build();
+                setVlmNr(vlmNr).
+                setStorPoolName(storPoolName).
+                setBlockDevice(blockDevice).
+                setMetaDisk(metaDisk).
+                build();
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException
     {
         ClientProtobuf client = new ClientProtobuf(9500);
-        // creaeNodeRscVlmDelete(client);
+//         creaeNodeRscVlmDelete(client);
         createNodeConnRscConnVlmConnDelete(client);
     }
 
@@ -614,7 +614,9 @@ public class ClientProtobuf implements Runnable
         client.println(msgId + " create second node");
         Thread.sleep(500);
 
-        msgId = client.sendCreateRscDfn(rscName, null, null);
+        List<VlmDfn> vlmDfns = new ArrayList<>();
+        vlmDfns.add(client.createVlmDfn(vlmNr, 9001));
+        msgId = client.sendCreateRscDfn(rscName, null, vlmDfns);
         client.println(msgId + " create rscDfn");
         Thread.sleep(500);
 
@@ -631,7 +633,7 @@ public class ClientProtobuf implements Runnable
         Thread.sleep(500);
 
         List<Vlm> vlms = new ArrayList<>();
-        vlms.add(client.createVlmDfn(1, storPoolName, "blockDevice", "internal"));
+        vlms.add(client.createVlm(vlmNr, storPoolName, "blockDevice", "internal"));
         msgId = client.sendCreateRsc(nodeName1, rscName, null, vlms);
         client.println(msgId + " create first rsc");
         Thread.sleep(500);
@@ -734,7 +736,7 @@ public class ClientProtobuf implements Runnable
 
         Map<String, String> resProps = new HashMap<>();
         List<Vlm> vlms = new ArrayList<>();
-        vlms.add(client.createVlmDfn(1, storPoolName, "blockDevice", "internal"));
+        vlms.add(client.createVlm(1, storPoolName, "blockDevice", "internal"));
         msgId = client.sendCreateRsc(nodeName, resName, resProps, vlms);
         client.println(msgId + " create rsc");
         Thread.sleep(500);

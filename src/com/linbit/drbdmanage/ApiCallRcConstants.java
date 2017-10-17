@@ -227,6 +227,7 @@ public class ApiCallRcConstants
     public static final long RC_RSC_CRT_FAIL_NOT_FOUND_RSC_DFN          = MASK_RSC | CRT_FAIL_NOT_FOUND_RSC_DFN;
     public static final long RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL_DFN    = MASK_RSC | CRT_FAIL_NOT_FOUND_STOR_POOL_DFN;
     public static final long RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL        = MASK_RSC | CRT_FAIL_NOT_FOUND_STOR_POOL;
+    public static final long RC_RSC_CRT_FAIL_NOT_FOUND_VLM_DFN          = MASK_RSC | CRT_FAIL_NOT_FOUND_VLM_DFN;
 
     public static final long RC_RSC_CRT_FAIL_ACC_DENIED_NODE            = MASK_RSC | CRT_FAIL_ACC_DENIED_NODE;
     public static final long RC_RSC_CRT_FAIL_ACC_DENIED_RSC_DFN         = MASK_RSC | CRT_FAIL_ACC_DENIED_RSC_DFN;
@@ -275,6 +276,8 @@ public class ApiCallRcConstants
     public static final long RC_NODE_CONN_CREATED   = MASK_NODE_CONN | CREATED;
     public static final long RC_NODE_CONN_DELETED   = MASK_NODE_CONN | DELETED;
 
+    public static final long RC_NODE_CONN_DEL_NOT_FOUND                 = MASK_NODE_CONN | DEL_NOT_FOUND;
+
     public static final long RC_NODE_CONN_CRT_FAIL_SQL                  = MASK_NODE_CONN | CRT_FAIL_SQL;
     public static final long RC_NODE_CONN_CRT_FAIL_SQL_ROLLBACK         = MASK_NODE_CONN | CRT_FAIL_SQL_ROLLBACK;
     public static final long RC_NODE_CONN_CRT_FAIL_NOT_FOUND_NODE       = MASK_NODE_CONN | CRT_FAIL_NOT_FOUND_NODE;
@@ -298,11 +301,79 @@ public class ApiCallRcConstants
     public static final long RC_RSC_CONN_CREATED    = MASK_RSC_CONN | CREATED;
     public static final long RC_RSC_CONN_DELETED    = MASK_RSC_CONN | DELETED;
 
+    public static final long RC_RSC_CONN_DEL_NOT_FOUND                 = MASK_RSC_CONN | DEL_NOT_FOUND;
+
+    public static final long RC_RSC_CONN_CRT_FAIL_SQL                  = MASK_RSC_CONN | CRT_FAIL_SQL;
+    public static final long RC_RSC_CONN_CRT_FAIL_SQL_ROLLBACK         = MASK_RSC_CONN | CRT_FAIL_SQL_ROLLBACK;
+    public static final long RC_RSC_CONN_CRT_FAIL_NOT_FOUND_NODE       = MASK_RSC_CONN | CRT_FAIL_NOT_FOUND_NODE;
+    public static final long RC_RSC_CONN_CRT_FAIL_NOT_FOUND_RSC_DFN    = MASK_RSC_CONN | CRT_FAIL_NOT_FOUND_RSC_DFN;
+    public static final long RC_RSC_CONN_CRT_FAIL_NOT_FOUND_RSC        = MASK_RSC_CONN | CRT_FAIL_NOT_FOUND_RSC;
+    public static final long RC_RSC_CONN_CRT_FAIL_INVLD_NODE_NAME      = MASK_RSC_CONN | CRT_FAIL_INVLD_NODE_NAME;
+    public static final long RC_RSC_CONN_CRT_FAIL_INVLD_RSC_NAME       = MASK_RSC_CONN | CRT_FAIL_INVLD_RSC_NAME;
+    public static final long RC_RSC_CONN_CRT_FAIL_ACC_DENIED_NODE      = MASK_RSC_CONN | CRT_FAIL_ACC_DENIED_NODE;
+    public static final long RC_RSC_CONN_CRT_FAIL_ACC_DENIED_RSC_DFN   = MASK_RSC_CONN | CRT_FAIL_ACC_DENIED_RSC_DFN;
+    public static final long RC_RSC_CONN_CRT_FAIL_ACC_DENIED_RSC       = MASK_RSC_CONN | CRT_FAIL_ACC_DENIED_RSC;
+    public static final long RC_RSC_CONN_CRT_FAIL_ACC_DENIED_RSC_CONN  = MASK_RSC_CONN | CRT_FAIL_ACC_DENIED_RSC_CONN;
+    public static final long RC_RSC_CONN_CRT_FAIL_EXISTS_RSC_CONN      = MASK_RSC_CONN | CRT_FAIL_EXISTS_RSC_CONN;
+    public static final long RC_RSC_CONN_CRT_FAIL_IMPL_ERROR           = MASK_RSC_CONN | CRT_FAIL_IMPL_ERROR;
+
+    public static final long RC_RSC_CONN_DEL_FAIL_SQL                  = MASK_RSC_CONN | DEL_FAIL_SQL;
+    public static final long RC_RSC_CONN_DEL_FAIL_SQL_ROLLBACK         = MASK_RSC_CONN | DEL_FAIL_SQL_ROLLBACK;
+    public static final long RC_RSC_CONN_DEL_FAIL_NOT_FOUND_NODE       = MASK_RSC_CONN | DEL_FAIL_NOT_FOUND_NODE;
+    public static final long RC_RSC_CONN_DEL_FAIL_NOT_FOUND_RSC_DFN    = MASK_RSC_CONN | DEL_FAIL_NOT_FOUND_RSC_DFN;
+    public static final long RC_RSC_CONN_DEL_FAIL_NOT_FOUND_RSC        = MASK_RSC_CONN | DEL_FAIL_NOT_FOUND_RSC;
+    public static final long RC_RSC_CONN_DEL_FAIL_INVLD_NODE_NAME      = MASK_RSC_CONN | DEL_FAIL_INVLD_NODE_NAME;
+    public static final long RC_RSC_CONN_DEL_FAIL_INVLD_RSC_NAME       = MASK_RSC_CONN | DEL_FAIL_INVLD_RSC_NAME;
+    public static final long RC_RSC_CONN_DEL_FAIL_ACC_DENIED_NODE      = MASK_RSC_CONN | DEL_FAIL_ACC_DENIED_NODE;
+    public static final long RC_RSC_CONN_DEL_FAIL_ACC_DENIED_RSC_DFN   = MASK_RSC_CONN | DEL_FAIL_ACC_DENIED_RSC_DFN;
+    public static final long RC_RSC_CONN_DEL_FAIL_ACC_DENIED_RSC       = MASK_RSC_CONN | DEL_FAIL_ACC_DENIED_RSC;
+    public static final long RC_RSC_CONN_DEL_FAIL_ACC_DENIED_RSC_CONN  = MASK_RSC_CONN | DEL_FAIL_ACC_DENIED_RSC_CONN;
+    public static final long RC_RSC_CONN_DEL_FAIL_IMPL_ERROR           = MASK_RSC_CONN | DEL_FAIL_IMPL_ERROR;
+
     /*
      * VolumeConnection return codes
      */
     public static final long RC_VLM_CONN_CREATED    = MASK_VLM_CONN | CREATED;
     public static final long RC_VLM_CONN_DELETED    = MASK_VLM_CONN | DELETED;
+
+    public static final long RC_VLM_CONN_DEL_NOT_FOUND                 = MASK_VLM_CONN | DEL_NOT_FOUND;
+
+    public static final long RC_VLM_CONN_CRT_FAIL_SQL                  = MASK_VLM_CONN | CRT_FAIL_SQL;
+    public static final long RC_VLM_CONN_CRT_FAIL_SQL_ROLLBACK         = MASK_VLM_CONN | CRT_FAIL_SQL_ROLLBACK;
+    public static final long RC_VLM_CONN_CRT_FAIL_NOT_FOUND_NODE       = MASK_VLM_CONN | CRT_FAIL_NOT_FOUND_NODE;
+    public static final long RC_VLM_CONN_CRT_FAIL_NOT_FOUND_RSC_DFN    = MASK_VLM_CONN | CRT_FAIL_NOT_FOUND_RSC_DFN;
+    public static final long RC_VLM_CONN_CRT_FAIL_NOT_FOUND_RSC        = MASK_VLM_CONN | CRT_FAIL_NOT_FOUND_RSC;
+    public static final long RC_VLM_CONN_CRT_FAIL_NOT_FOUND_VLM_DFN    = MASK_VLM_CONN | CRT_FAIL_NOT_FOUND_VLM_DFN;
+    public static final long RC_VLM_CONN_CRT_FAIL_NOT_FOUND_VLM        = MASK_VLM_CONN | CRT_FAIL_NOT_FOUND_VLM;
+    public static final long RC_VLM_CONN_CRT_FAIL_INVLD_NODE_NAME      = MASK_VLM_CONN | CRT_FAIL_INVLD_NODE_NAME;
+    public static final long RC_VLM_CONN_CRT_FAIL_INVLD_RSC_NAME       = MASK_VLM_CONN | CRT_FAIL_INVLD_RSC_NAME;
+    public static final long RC_VLM_CONN_CRT_FAIL_INVLD_VLM_NR         = MASK_VLM_CONN | CRT_FAIL_INVLD_VLM_NR;
+    public static final long RC_VLM_CONN_CRT_FAIL_ACC_DENIED_NODE      = MASK_VLM_CONN | CRT_FAIL_ACC_DENIED_NODE;
+    public static final long RC_VLM_CONN_CRT_FAIL_ACC_DENIED_RSC_DFN   = MASK_VLM_CONN | CRT_FAIL_ACC_DENIED_RSC_DFN;
+    public static final long RC_VLM_CONN_CRT_FAIL_ACC_DENIED_RSC       = MASK_VLM_CONN | CRT_FAIL_ACC_DENIED_RSC;
+    public static final long RC_VLM_CONN_CRT_FAIL_ACC_DENIED_VLM_DFN   = MASK_VLM_CONN | CRT_FAIL_ACC_DENIED_VLM_DFN;
+    public static final long RC_VLM_CONN_CRT_FAIL_ACC_DENIED_VLM       = MASK_VLM_CONN | CRT_FAIL_ACC_DENIED_VLM;
+    public static final long RC_VLM_CONN_CRT_FAIL_ACC_DENIED_VLM_CONN  = MASK_VLM_CONN | CRT_FAIL_ACC_DENIED_VLM_CONN;
+    public static final long RC_VLM_CONN_CRT_FAIL_EXISTS_VLM_CONN      = MASK_VLM_CONN | CRT_FAIL_EXISTS_VLM_CONN;
+    public static final long RC_VLM_CONN_CRT_FAIL_IMPL_ERROR           = MASK_VLM_CONN | CRT_FAIL_IMPL_ERROR;
+
+    public static final long RC_VLM_CONN_DEL_FAIL_SQL                  = MASK_VLM_CONN | DEL_FAIL_SQL;
+    public static final long RC_VLM_CONN_DEL_FAIL_SQL_ROLLBACK         = MASK_VLM_CONN | DEL_FAIL_SQL_ROLLBACK;
+    public static final long RC_VLM_CONN_DEL_FAIL_NOT_FOUND_NODE       = MASK_VLM_CONN | DEL_FAIL_NOT_FOUND_NODE;
+    public static final long RC_VLM_CONN_DEL_FAIL_NOT_FOUND_RSC_DFN    = MASK_VLM_CONN | DEL_FAIL_NOT_FOUND_RSC_DFN;
+    public static final long RC_VLM_CONN_DEL_FAIL_NOT_FOUND_RSC        = MASK_VLM_CONN | DEL_FAIL_NOT_FOUND_RSC;
+    public static final long RC_VLM_CONN_DEL_FAIL_NOT_FOUND_VLM_DFN    = MASK_VLM_CONN | DEL_FAIL_NOT_FOUND_VLM_DFN;
+    public static final long RC_VLM_CONN_DEL_FAIL_NOT_FOUND_VLM        = MASK_VLM_CONN | DEL_FAIL_NOT_FOUND_VLM;
+    public static final long RC_VLM_CONN_DEL_FAIL_INVLD_NODE_NAME      = MASK_VLM_CONN | DEL_FAIL_INVLD_NODE_NAME;
+    public static final long RC_VLM_CONN_DEL_FAIL_INVLD_RSC_NAME       = MASK_VLM_CONN | DEL_FAIL_INVLD_RSC_NAME;
+    public static final long RC_VLM_CONN_DEL_FAIL_INVLD_VLM_NR         = MASK_VLM_CONN | DEL_FAIL_INVLD_VLM_NR;
+    public static final long RC_VLM_CONN_DEL_FAIL_ACC_DENIED_NODE      = MASK_VLM_CONN | DEL_FAIL_ACC_DENIED_NODE;
+    public static final long RC_VLM_CONN_DEL_FAIL_ACC_DENIED_RSC_DFN   = MASK_VLM_CONN | DEL_FAIL_ACC_DENIED_RSC_DFN;
+    public static final long RC_VLM_CONN_DEL_FAIL_ACC_DENIED_RSC       = MASK_VLM_CONN | DEL_FAIL_ACC_DENIED_RSC;
+    public static final long RC_VLM_CONN_DEL_FAIL_ACC_DENIED_VLM_DFN   = MASK_VLM_CONN | DEL_FAIL_ACC_DENIED_VLM_DFN;
+    public static final long RC_VLM_CONN_DEL_FAIL_ACC_DENIED_VLM       = MASK_VLM_CONN | DEL_FAIL_ACC_DENIED_VLM;
+    public static final long RC_VLM_CONN_DEL_FAIL_ACC_DENIED_VLM_CONN  = MASK_VLM_CONN | DEL_FAIL_ACC_DENIED_VLM_CONN;
+    public static final long RC_VLM_CONN_DEL_FAIL_IMPL_ERROR           = MASK_VLM_CONN | DEL_FAIL_IMPL_ERROR;
 
     /*
      * NetInterface return codes

@@ -168,6 +168,7 @@ class CtrlRscApiCallHandler
                     true,
                     true
                 );
+                rsc.setConnection(transMgr); // maybe volumes will be created
 
                 ApiCallRcEntry rscSuccess = new ApiCallRcEntry();
                 String rscSuccessMsg = String.format(
@@ -200,6 +201,31 @@ class CtrlRscApiCallHandler
 
                     volNr = new VolumeNumber(vlmApi.getVlmNr()); // valueOutOfRangeExc2
                     vlmDfn = rscDfn.getVolumeDfn(accCtx, volNr); // accDeniedExc4
+
+                    if (vlmDfn == null)
+                    {
+                        success = false;
+                        ApiCallRcEntry entry = new ApiCallRcEntry();
+                        String errorMessage = String.format(
+                            "Volume definition with volume number %d could not be found.",
+                            volNr.value
+                        );
+                        entry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_VLM_DFN);
+                        controller.getErrorReporter().reportError(
+                            new NullPointerException("Dependency not found"),
+                            accCtx,
+                            client,
+                            errorMessage
+                        );
+                        entry.setMessageFormat(errorMessage);
+                        entry.putObjRef(KEY_NODE, nodeNameStr);
+                        entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                        entry.putObjRef(KEY_VLM_NR, Integer.toString(volNr.value));
+                        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+                        entry.putVariable(KEY_RSC_NAME, rscNameStr);
+                        entry.putVariable(KEY_VLM_NR, Integer.toString(volNr.value));
+                        break;
+                    }
 
                     storPoolNameStr = vlmApi.getStorPoolName();
                     if (storPoolNameStr == null || "".equals(storPoolNameStr))
@@ -298,7 +324,7 @@ class CtrlRscApiCallHandler
                         ApiCallRcEntry vlmSuccess = new ApiCallRcEntry();
                         vlmSuccess.setMessageFormat(
                             String.format(
-                                "Volume with number %d created successfully on node '%s' for resource '%s'.",
+                                "Volume with number %d created successfully on node '%s' on resource '%s'.",
                                 vlmApi.getVlmNr(),
                                 nodeNameStr,
                                 rscNameStr

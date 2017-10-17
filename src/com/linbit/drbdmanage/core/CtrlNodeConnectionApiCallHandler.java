@@ -55,7 +55,7 @@ class CtrlNodeConnectionApiCallHandler
                 accCtx,
                 nodeName1,
                 null, // nodeType only needed if we want to persist this entry
-                null, // nodeFlags are only needed if we want to persist this entry
+                null, // nodeFlags only needed if we want to persist this entry
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists
@@ -64,7 +64,7 @@ class CtrlNodeConnectionApiCallHandler
                 accCtx,
                 nodeName2,
                 null, // nodeType only needed if we want to persist this entry
-                null, // nodeFlags are only needed if we want to persist this entry
+                null, // nodeFlags only needed if we want to persist this entry
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists
@@ -89,8 +89,7 @@ class CtrlNodeConnectionApiCallHandler
                         missingNode
                     )
                 );
-                nodeNotFoundEntry.putVariable(KEY_1ST_NODE_NAME, nodeName1Str);
-                nodeNotFoundEntry.putVariable(KEY_2ND_NODE_NAME, nodeName2Str);
+                nodeNotFoundEntry.putVariable(KEY_NODE_NAME, missingNode);
                 nodeNotFoundEntry.putObjRef(KEY_1ST_NODE, nodeName1Str);
                 nodeNotFoundEntry.putObjRef(KEY_2ND_NODE, nodeName2Str);
 
@@ -115,10 +114,10 @@ class CtrlNodeConnectionApiCallHandler
                     nodeName2Str
                 );
                 entry.setMessageFormat(successMessage);
-                entry.putVariable(ApiConsts.KEY_1ST_NODE_NAME, nodeName1Str);
-                entry.putVariable(ApiConsts.KEY_2ND_NODE_NAME, nodeName2Str);
-                entry.putObjRef(ApiConsts.KEY_1ST_NODE, nodeName1Str);
-                entry.putObjRef(ApiConsts.KEY_2ND_NODE, nodeName2Str);
+                entry.putVariable(KEY_1ST_NODE_NAME, nodeName1Str);
+                entry.putVariable(KEY_2ND_NODE_NAME, nodeName2Str);
+                entry.putObjRef(KEY_1ST_NODE, nodeName1Str);
+                entry.putObjRef(KEY_2ND_NODE, nodeName2Str);
 
                 apiCallRc.addEntry(entry);
                 controller.getErrorReporter().logInfo(successMessage);
@@ -211,8 +210,7 @@ class CtrlNodeConnectionApiCallHandler
             }
 
             String errorMessage = String.format(
-                "The access context (user: '%s', role: '%s') has no permission to %s" +
-                    "create the new node '%s'.",
+                "The access context (user: '%s', role: '%s') has no permission to %s",
                 accCtx.subjectId.name.displayValue,
                 accCtx.subjectRole.name.displayValue,
                 action
@@ -251,8 +249,9 @@ class CtrlNodeConnectionApiCallHandler
                 );
                 entry.setReturnCodeBit(RC_NODE_CONN_CRT_FAIL_IMPL_ERROR);
                 errorMessage = String.format(
-                    "Failed to delete the node '%s' due to an implementation error.",
-                    failedNodeNameStr
+                    "Failed to create the node connection between the nodes '%s' and '%s' due to an implementation error.",
+                    nodeName1Str,
+                    nodeName2Str
                 );
             }
             else
@@ -342,7 +341,7 @@ class CtrlNodeConnectionApiCallHandler
                 accCtx,
                 nodeName1,
                 null, // nodeType only needed if we want to persist this entry
-                null, // nodeFlags are only needed if we want to persist this entry
+                null, // nodeFlags only needed if we want to persist this entry
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists
@@ -351,7 +350,7 @@ class CtrlNodeConnectionApiCallHandler
                 accCtx,
                 nodeName2,
                 null, // nodeType only needed if we want to persist this entry
-                null, // nodeFlags are only needed if we want to persist this entry
+                null, // nodeFlags only needed if we want to persist this entry
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists
@@ -397,7 +396,7 @@ class CtrlNodeConnectionApiCallHandler
                 {
                     ApiCallRcEntry nodeConnNotFoundEntry = new ApiCallRcEntry();
 
-                    nodeConnNotFoundEntry.setReturnCode(RC_NODE_CONN_DEL_FAIL_NOT_FOUND_NODE);
+                    nodeConnNotFoundEntry.setReturnCode(RC_NODE_CONN_DEL_NOT_FOUND);
                     nodeConnNotFoundEntry.setCauseFormat(
                         String.format(
                             "The specified node connection between nodes '%s' and '%s' could not "+

@@ -113,6 +113,7 @@ class CtrlRscDfnApiCallHandler
                 true,
                 true
             );
+            rscDfn.setConnection(transMgr); // in case we will create vlmDfns
 
             for (VolumeDefinition.VlmDfnApi volCrtData : volDescrMap)
             {
@@ -222,7 +223,7 @@ class CtrlRscDfnApiCallHandler
             else
             { // handle accDeniedExc2
                 action = String.format(
-                    "create a new volume definition for resource definition '%s'.",
+                    "create a new volume definition on resource definition '%s'.",
                     resourceName
                 );
                 entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_ACC_DENIED_VLM_DFN);
