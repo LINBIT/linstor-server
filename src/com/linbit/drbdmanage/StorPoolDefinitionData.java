@@ -2,11 +2,11 @@ package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.core.DrbdManage;
@@ -22,7 +22,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     private final StorPoolName name;
     private final ObjectProtection objProt;
     private final StorPoolDefinitionDataDatabaseDriver dbDriver;
-    private final Map<NodeName, StorPool> storPools;
+    private final TransactionMap<NodeName, StorPool> storPools;
 
     private boolean deleted = false;
 
@@ -66,11 +66,14 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         uuid = id;
         objProt = objProtRef;
         name = nameRef;
-        storPools = new TreeMap<>();
+        storPools = new TransactionMap<>(new TreeMap<NodeName, StorPool>(), null);
 
         dbDriver = DrbdManage.getStorPoolDefinitionDataDatabaseDriver();
 
-        transObjs = Arrays.<TransactionObject>asList(objProt);
+        transObjs = Arrays.<TransactionObject>asList(
+            objProt,
+            storPools
+        );
     }
 
     public static StorPoolDefinitionData getInstance(

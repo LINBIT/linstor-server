@@ -37,6 +37,10 @@ public abstract class BaseTransactionObject implements TransactionObject
     @Override
     public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
+        if (isDbCacheDirty())
+        {
+            throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
+        }
         if (transMgrRef != null)
         {
             transMgrRef.register(this);
@@ -90,6 +94,21 @@ public abstract class BaseTransactionObject implements TransactionObject
         for (TransactionObject transObj : transObjs)
         {
             if (transObj.isDirty())
+            {
+                dirty = true;
+                break;
+            }
+        }
+        return dirty;
+    }
+
+    @Override
+    public boolean isDbCacheDirty()
+    {
+        boolean dirty = false;
+        for (TransactionObject transObj : transObjs)
+        {
+            if (transObj.isDbCacheDirty())
             {
                 dirty = true;
                 break;

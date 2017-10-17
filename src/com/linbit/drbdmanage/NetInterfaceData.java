@@ -34,15 +34,18 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
     // used by getInstance
     private NetInterfaceData(
+        AccessContext accCtx,
         Node node,
         NetInterfaceName name,
         DmIpAddress addr,
         TransactionMgr transMgr,
         NetInterfaceType netType
     )
+        throws AccessDeniedException
     {
         this(
             UUID.randomUUID(),
+            accCtx,
             name,
             node,
             addr,
@@ -55,11 +58,13 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     // used by db drivers and tests
     NetInterfaceData(
         UUID uuid,
+        AccessContext accCtx,
         NetInterfaceName netName,
         Node node,
         DmIpAddress addr,
         NetInterfaceType netType
     )
+        throws AccessDeniedException
     {
         niUuid = uuid;
         niNode = node;
@@ -82,6 +87,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             niAddress,
             niType
         );
+        ((NodeData) node).addNetInterface(accCtx, this);
     }
 
     public static NetInterfaceData getInstance(
@@ -110,12 +116,11 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         if (netData == null && createIfNotExists)
         {
-            netData = new NetInterfaceData(node, name, addr, transMgr, netType);
+            netData = new NetInterfaceData(accCtx, node, name, addr, transMgr, netType);
             driver.create(netData, transMgr);
         }
         if (netData != null)
         {
-            ((NodeData) node).addNetInterface(accCtx, netData);
             netData.initialized();
         }
 

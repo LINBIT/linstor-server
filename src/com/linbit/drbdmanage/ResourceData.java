@@ -5,12 +5,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
@@ -39,10 +39,10 @@ public class ResourceData extends BaseTransactionObject implements Resource
     private final ResourceDefinition resourceDfn;
 
     // Connections to the peer resources
-    private final Map<Resource, ResourceConnection> resourceConnections;
+    private final TransactionMap<Resource, ResourceConnection> resourceConnections;
 
     // List of volumes of this resource
-    private final Map<VolumeNumber, Volume> volumeMap;
+    private final TransactionMap<VolumeNumber, Volume> volumeMap;
 
     // Reference to the node this resource is assigned to
     private final Node assgNode;
@@ -78,6 +78,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         this(
             UUID.randomUUID(),
+            accCtx,
             ObjectProtection.getInstance(
                 accCtx,
                 ObjectProtection.buildPath(
@@ -97,9 +98,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     /**
      * used by database drivers and tests
+     * @throws AccessDeniedException
      */
     ResourceData(
         UUID objIdRef,
+        AccessContext accCtx,
         ObjectProtection objProtRef,
         ResourceDefinition resDfnRef,
         Node nodeRef,
@@ -107,7 +110,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         long initFlags,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         ErrorCheck.ctorNotNull(ResourceData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(ResourceData.class, Node.class, nodeRef);
@@ -118,8 +121,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         dbDriver = DrbdManage.getResourceDataDatabaseDriver();
 
-        resourceConnections = new HashMap<>();
-        volumeMap = new TreeMap<>();
+        resourceConnections = new TransactionMap<>(new HashMap<Resource, ResourceConnection>(), null);
+        volumeMap = new TransactionMap<>(new TreeMap<VolumeNumber, Volume>(), null);
         resourceProps = PropsContainer.getInstance(
             PropsContainer.buildPath(
                 nodeRef.getName(),
@@ -136,8 +139,13 @@ public class ResourceData extends BaseTransactionObject implements Resource
             assgNode,
             flags,
             objProt,
+            resourceConnections,
+            volumeMap,
             resourceProps
         );
+
+        ((NodeData) nodeRef).addResource(accCtx, this);
+        ((ResourceDefinitionData) resDfnRef).addResource(accCtx, this);
     }
 
     public static ResourceData getInstance(
@@ -179,18 +187,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         if (resData != null)
         {
-            NodeData nodeData = (NodeData) node;
-            nodeData.addResource(accCtx, resData);
-            try
-            {
-                ((ResourceDefinitionData) resDfn).addResource(accCtx, resData);
-            }
-            catch (AccessDeniedException accExc)
-            {
-                // Rollback adding the resource to the node
-                nodeData.removeResource(accCtx, resData);
-                throw accExc;
-            }
             resData.initialized();
         }
         return resData;
@@ -330,6 +326,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         return flags;
     }
 
+    @Override
     public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
         getStateFlags().enableFlags(accCtx, RscFlags.DELETE);

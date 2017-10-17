@@ -291,13 +291,21 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                     invalidIpAddressExc
                 );
             }
-            ret = new NetInterfaceData(
-                uuid,
-                netName,
-                node,
-                addr,
-                NetInterfaceType.byValue(type)
-            );
+            try
+            {
+                ret = new NetInterfaceData(
+                    uuid,
+                    dbCtx,
+                    netName,
+                    node,
+                    addr,
+                    NetInterfaceType.byValue(type)
+                );
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                DerbyDriver.handleAccessDeniedException(accDeniedExc);
+            }
         }
 
         return ret;

@@ -8,6 +8,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.core.DrbdManage;
@@ -33,7 +34,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final Node node;
     private final StorPoolDataDatabaseDriver dbDriver;
 
-    private final Map<String, Volume> volumeMap;
+    private final TransactionMap<String, Volume> volumeMap;
 
     private boolean deleted = false;
 
@@ -41,16 +42,18 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
      * used only by getInstance
      */
     private StorPoolData(
+        AccessContext accCtx,
         Node nodeRef,
         StorPoolDefinition storPoolDef,
         StorageDriver storDriver,
         String storDriverSimpleClassName,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         this(
             UUID.randomUUID(),
+            accCtx,
             nodeRef,
             storPoolDef,
             storDriver,
@@ -64,20 +67,21 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
      */
     StorPoolData(
         UUID id,
+        AccessContext accCtx,
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
         StorageDriver storDriverRef,
         String storDriverSimpleClassNameRef,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         uuid = id;
         storPoolDef = storPoolDefRef;
         storDriver = storDriverRef;
         storDriverSimpleClassName = storDriverSimpleClassNameRef;
         node = nodeRef;
-        volumeMap = new TreeMap<>();
+        volumeMap = new TransactionMap<>(new TreeMap<String, Volume>(), null);
 
         props = PropsContainer.getInstance(
             PropsContainer.buildPath(storPoolDef.getName(), node.getName()),
@@ -86,7 +90,13 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
         dbDriver = DrbdManage.getStorPoolDataDatabaseDriver();
 
-        transObjs = Arrays.<TransactionObject>asList(props);
+        transObjs = Arrays.<TransactionObject>asList(
+            volumeMap,
+            props
+        );
+
+        ((NodeData) nodeRef).addStorPool(accCtx, this);
+        ((StorPoolDefinitionData)storPoolDefRef).addStorPool(accCtx, this);
     }
 
     public static StorPoolData getInstance(
@@ -121,6 +131,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                 storDriver = StorageDriverUtils.createInstance(storDriverSimpleClassNameRef);
             }
             storPoolData = new StorPoolData(
+                accCtx,
                 nodeRef,
                 storPoolDefRef,
                 storDriver,
@@ -131,8 +142,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         }
         if (storPoolData != null)
         {
-            ((NodeData) nodeRef).addStorPool(accCtx, storPoolData);
-            ((StorPoolDefinitionData)storPoolDefRef).addStorPool(accCtx, storPoolData);
             storPoolData.initialized();
         }
         return storPoolData;

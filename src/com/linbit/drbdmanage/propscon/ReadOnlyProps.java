@@ -188,6 +188,12 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
+    public boolean isDbCacheDirty()
+    {
+        return propsMap.isDbCacheDirty();
+    }
+
+    @Override
     public void commit()
     {
         // ignore - ReadOnlyProps cannot be changed. If the changes should be persisted,

@@ -57,7 +57,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         driver = (StorPoolDataDerbyDriver) DrbdManage.getStorPoolDataDatabaseDriver();
 
         uuid = randomUUID();
-        storPool = new StorPoolData(uuid, node, spdd, null, LvmDriver.class.getSimpleName(), transMgr);
+        storPool = new StorPoolData(uuid, sysCtx, node, spdd, null, LvmDriver.class.getSimpleName(), transMgr);
     }
 
     @Test

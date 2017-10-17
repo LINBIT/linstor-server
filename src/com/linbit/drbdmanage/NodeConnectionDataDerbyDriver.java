@@ -186,12 +186,20 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
         NodeConnectionData nodeConData = cacheGet(sourceNode, targetNode);
         if (nodeConData == null)
         {
-            nodeConData = new NodeConnectionData(
-                UuidUtils.asUuid(resultSet.getBytes(UUID)),
-                sourceNode,
-                targetNode,
-                transMgr
-            );
+            try
+            {
+                nodeConData = new NodeConnectionData(
+                    UuidUtils.asUuid(resultSet.getBytes(UUID)),
+                    dbCtx,
+                    sourceNode,
+                    targetNode,
+                    transMgr
+                );
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                DerbyDriver.handleAccessDeniedException(accDeniedExc);
+            }
             errorReporter.logDebug("ResourceConnection loaded from DB %s", getDebugId(nodeConData));
         }
         else

@@ -56,7 +56,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
         nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
         nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
 
-        nodeCon = new NodeConnectionData(uuid, nodeSrc, nodeDst, transMgr);
+        nodeCon = new NodeConnectionData(uuid, sysCtx, nodeSrc, nodeDst, transMgr);
         driver = (NodeConnectionDataDerbyDriver) DrbdManage.getNodeConnectionDatabaseDriver();
     }
 

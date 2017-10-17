@@ -58,7 +58,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
      */
     VolumeConnectionData(
         UUID uuid,
-        AccessContext doNotStoreMe_VolNrAccCtx,
+        AccessContext accCtx,
         Volume sourceVolumeRef,
         Volume targetVolumeRef,
         TransactionMgr transMgr
@@ -75,10 +75,10 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
                         "Volume2: NodeName=%s, ResName=%s, VolNr=%d.",
                         sourceVolumeRef.getResource().getAssignedNode().getName().value,
                         sourceVolumeRef.getResourceDefinition().getName().value,
-                        sourceVolumeRef.getVolumeDefinition().getVolumeNumber(doNotStoreMe_VolNrAccCtx).value,
+                        sourceVolumeRef.getVolumeDefinition().getVolumeNumber(accCtx).value,
                         targetVolumeRef.getResource().getAssignedNode().getName().value,
                         targetVolumeRef.getResourceDefinition().getName().value,
-                        targetVolumeRef.getVolumeDefinition().getVolumeNumber(doNotStoreMe_VolNrAccCtx).value
+                        targetVolumeRef.getVolumeDefinition().getVolumeNumber(accCtx).value
                     ),
                 null
             );
@@ -105,7 +105,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
                 sourceNodeName,
                 targetNodeName,
                 sourceVolumeRef.getResourceDefinition().getName(),
-                sourceVolumeRef.getVolumeDefinition().getVolumeNumber(doNotStoreMe_VolNrAccCtx)
+                sourceVolumeRef.getVolumeDefinition().getVolumeNumber(accCtx)
             ),
             transMgr
         );
@@ -117,6 +117,9 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
             targetVolume,
             props
         );
+
+        sourceVolume.setVolumeConnection(accCtx, this);
+        targetVolume.setVolumeConnection(accCtx, this);
     }
 
     public static VolumeConnectionData getInstance(
@@ -175,9 +178,6 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         }
         if (volConData != null)
         {
-            source.setVolumeConnection(accCtx, volConData);
-            target.setVolumeConnection(accCtx, volConData);
-
             volConData.initialized();
         }
         return volConData;

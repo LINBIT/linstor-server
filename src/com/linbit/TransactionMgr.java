@@ -24,10 +24,9 @@ public class TransactionMgr
         transObjects = new LinkedHashSet<>(); // preserves the order but removes duplicates
     }
 
-
     public void register(TransactionObject transObj)
     {
-        if (transObj.isDirty())
+        if (transObj.isDbCacheDirty())
         {
             throw new ImplementationError(
                 "Connection set after TransactionObject modified",

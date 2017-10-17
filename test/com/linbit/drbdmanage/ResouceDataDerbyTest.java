@@ -67,7 +67,7 @@ public class ResouceDataDerbyTest extends DerbyBase
 
         initFlags = RscFlags.CLEAN.flagValue;
 
-        res = new ResourceData(resUuid, objProt, resDfn, node, nodeId, initFlags, transMgr);
+        res = new ResourceData(resUuid, sysCtx, objProt, resDfn, node, nodeId, initFlags, transMgr);
         driver = (ResourceDataDerbyDriver) DrbdManage.getResourceDataDatabaseDriver();
     }
 

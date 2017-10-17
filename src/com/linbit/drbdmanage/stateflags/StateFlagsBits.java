@@ -203,8 +203,18 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
     }
 
     @Override
+    public boolean isDbCacheDirty()
+    {
+        return persistence != null && isDirty();
+    }
+
+    @Override
     public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
+        if (isDirty())
+        {
+            throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
+        }
         if (transMgrRef != null)
         {
             transMgrRef.register(this);

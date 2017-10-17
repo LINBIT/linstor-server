@@ -179,12 +179,20 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         ResourceConnectionData resConData = cacheGet(sourceResource, targetResource);
         if (resConData == null)
         {
-            resConData = new ResourceConnectionData(
-                UuidUtils.asUuid(resultSet.getBytes(UUID)),
-                sourceResource,
-                targetResource,
-                transMgr
-            );
+            try
+            {
+                resConData = new ResourceConnectionData(
+                    UuidUtils.asUuid(resultSet.getBytes(UUID)),
+                    dbCtx,
+                    sourceResource,
+                    targetResource,
+                    transMgr
+                );
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                DerbyDriver.handleAccessDeniedException(accDeniedExc);
+            }
             errorReporter.logDebug("ResourceConnection loaded from DB %s", getDebugId(resConData));
         }
         else

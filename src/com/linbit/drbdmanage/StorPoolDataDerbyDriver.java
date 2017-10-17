@@ -223,14 +223,22 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                     transMgr
                 );
 
-                storPoolData = new StorPoolData(
-                    UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
-                    node,
-                    storPoolDef,
-                    null, // controller should not have an instance of storage driver.
-                    resultSet.getString(NSP_DRIVER),
-                    transMgr
-                );
+                try
+                {
+                    storPoolData = new StorPoolData(
+                        UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
+                        dbCtx,
+                        node,
+                        storPoolDef,
+                        null, // controller should not have an instance of storage driver.
+                        resultSet.getString(NSP_DRIVER),
+                        transMgr
+                    );
+                }
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    DerbyDriver.handleAccessDeniedException(accDeniedExc);
+                }
 
                 if (!cacheCleared)
                 {

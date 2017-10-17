@@ -926,6 +926,10 @@ public class PropsContainer implements Props
     @Override
     public void setConnection(TransactionMgr transMgrRef)
     {
+        if (isDbCacheDirty())
+        {
+            throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
+        }
         if (transMgrRef != null)
         {
             transMgrRef.register(rootContainer);
@@ -937,6 +941,12 @@ public class PropsContainer implements Props
     public boolean isDirty()
     {
         return !rootContainer.cachedPropMap.isEmpty();
+    }
+
+    @Override
+    public boolean isDbCacheDirty()
+    {
+        return isDirty();
     }
 
     private void cache(String key, String value)

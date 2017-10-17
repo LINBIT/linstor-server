@@ -4,12 +4,12 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
@@ -45,13 +45,16 @@ public class NodeData extends BaseTransactionObject implements Node
     private final TransactionSimpleObject<NodeData, NodeType> nodeType;
 
     // List of resources assigned to this cluster node
-    private final Map<ResourceName, Resource> resourceMap;
+    private final TransactionMap<ResourceName, Resource> resourceMap;
 
     // List of network interfaces used for replication on this cluster node
-    private final Map<NetInterfaceName, NetInterface> netInterfaceMap;
+    private final TransactionMap<NetInterfaceName, NetInterface> netInterfaceMap;
 
     // List of storage pools
-    private final Map<StorPoolName, StorPool> storPoolMap;
+    private final TransactionMap<StorPoolName, StorPool> storPoolMap;
+
+    // Map to the other endpoint of a node connection (this is NOT necessarily the source!)
+    private final TransactionMap<Node, NodeConnection> nodeConnections;
 
     // Access controls for this object
     private final ObjectProtection objProt;
@@ -60,8 +63,6 @@ public class NodeData extends BaseTransactionObject implements Node
     private final Props nodeProps;
 
     private final NodeDataDatabaseDriver dbDriver;
-
-    private final Map<Node, NodeConnection> nodeConnections;
 
     private boolean deleted = false;
 
@@ -112,15 +113,15 @@ public class NodeData extends BaseTransactionObject implements Node
         clNodeName = nameRef;
         dbDriver = DrbdManage.getNodeDataDatabaseDriver();
 
-        resourceMap = new TreeMap<>();
-        netInterfaceMap = new TreeMap<>();
-        storPoolMap = new TreeMap<>();
+        resourceMap = new TransactionMap<>(new TreeMap<ResourceName, Resource>(), null);
+        netInterfaceMap = new TransactionMap<>(new TreeMap<NetInterfaceName, NetInterface>(), null);
+        storPoolMap = new TransactionMap<>(new TreeMap<StorPoolName, StorPool>(), null);
 
         nodeProps = PropsContainer.getInstance(
             PropsContainer.buildPath(nameRef),
             transMgr
         );
-        nodeConnections = new HashMap<>();
+        nodeConnections = new TransactionMap<>(new HashMap<Node, NodeConnection>(), null);
 
         flags = new NodeFlagsImpl(this, objProt, dbDriver.getStateFlagPersistence(), initialFlags);
         if (type == null)
@@ -134,6 +135,10 @@ public class NodeData extends BaseTransactionObject implements Node
             flags,
             nodeType,
             objProt,
+            resourceMap,
+            netInterfaceMap,
+            storPoolMap,
+            nodeConnections,
             nodeProps
         );
     }

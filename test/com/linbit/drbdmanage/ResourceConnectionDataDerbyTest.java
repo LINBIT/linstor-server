@@ -74,7 +74,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         resSrc = ResourceData.getInstance(sysCtx, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true, false);
         resDst = ResourceData.getInstance(sysCtx, resDfn, nodeDst, nodeIdDst, null, transMgr, true, false);
 
-        resCon = new ResourceConnectionData(uuid, resSrc, resDst, transMgr);
+        resCon = new ResourceConnectionData(uuid, sysCtx, resSrc, resDst, transMgr);
         driver = (ResourceConnectionDataDerbyDriver) DrbdManage.getResourceConnectionDatabaseDriver();
     }
 

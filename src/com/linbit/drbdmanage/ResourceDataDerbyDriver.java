@@ -316,6 +316,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
                         resData = new ResourceData(
                             UuidUtils.asUuid(resultSet.getBytes(RES_UUID)),
+                            dbCtx,
                             objProt,
                             resDfn,
                             node,

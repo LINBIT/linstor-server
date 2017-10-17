@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
@@ -333,6 +334,14 @@ public final class ObjectProtection extends BaseTransactionObject
     public boolean isDirty()
     {
         return super.isDirty() || !cachedAcl.isEmpty();
+    }
+
+    @Override
+    public boolean isDbCacheDirty()
+    {
+        return dbDriver != null &&
+            !(dbDriver instanceof NoOpObjectDatabaseDriver) &&
+            isDirty();
     }
 
     @Override

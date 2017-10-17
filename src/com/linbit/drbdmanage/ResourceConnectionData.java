@@ -37,14 +37,16 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
      * used by getInstance
      */
     private ResourceConnectionData(
+        AccessContext accCtx,
         Resource sourceResource,
         Resource targetResource,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         this(
             UUID.randomUUID(),
+            accCtx,
             sourceResource,
             targetResource,
             transMgr
@@ -56,11 +58,12 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
      */
     ResourceConnectionData(
         UUID uuid,
+        AccessContext accCtx,
         Resource sourceResourceRef,
         Resource targetResourceRef,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         NodeName sourceNodeName = sourceResourceRef.getAssignedNode().getName();
         NodeName targetNodeName = targetResourceRef.getAssignedNode().getName();
@@ -109,6 +112,9 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             targetResource,
             props
         );
+
+        sourceResource.setResourceConnection(accCtx, this);
+        targetResource.setResourceConnection(accCtx, this);
     }
 
     public static ResourceConnectionData getInstance(
@@ -159,6 +165,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         if (resConData == null && createIfNotExists)
         {
             resConData = new ResourceConnectionData(
+                accCtx,
                 source,
                 target,
                 transMgr
@@ -167,9 +174,6 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         }
         if (resConData != null)
         {
-            sourceResource.setResourceConnection(accCtx, resConData);
-            targetResource.setResourceConnection(accCtx, resConData);
-
             resConData.initialized();
         }
         return resConData;

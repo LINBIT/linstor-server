@@ -3,10 +3,10 @@ package com.linbit.drbdmanage;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
@@ -31,7 +31,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     private final UUID objId;
 
     // Reference to the resource this volume belongs to
-    private final Resource resourceRef;
+    private final Resource resource;
 
     // Reference to the resource definition that defines the resource this volume belongs to
     private final ResourceDefinition resourceDfn;
@@ -47,7 +47,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     // State flags
     private final StateFlags<VlmFlags> flags;
 
-    private final Map<Volume, VolumeConnection> volumeConnections;
+    private final TransactionMap<Volume, VolumeConnection> volumeConnections;
 
     private final String blockDevicePath;
 
@@ -103,7 +103,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         throws SQLException, AccessDeniedException
     {
         objId = uuid;
-        resourceRef = resRef;
+        resource = resRef;
         resourceDfn = resRef.getDefinition();
         volumeDfn = volDfnRef;
         storPool = storPoolRef;
@@ -119,7 +119,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             initFlags
         );
 
-        volumeConnections = new HashMap<>();
+        volumeConnections = new TransactionMap<>(new HashMap<Volume, VolumeConnection>(), null);
         volumeProps = PropsContainer.getInstance(
             PropsContainer.buildPath(
                 resRef.getAssignedNode().getName(),
@@ -130,11 +130,17 @@ public class VolumeData extends BaseTransactionObject implements Volume
         );
 
         transObjs = Arrays.asList(
-            resourceRef,
+            resource,
             volumeDfn,
+            storPool,
+            volumeConnections,
             volumeProps,
             flags
         );
+
+        ((ResourceData) resRef).putVolume(accCtx, this);
+        ((StorPoolData) storPoolRef).putVolume(accCtx, this);
+        ((VolumeDefinitionData) volDfnRef).putVolume(accCtx, this);
     }
 
     public static VolumeData getInstance(
@@ -169,15 +175,13 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
         if (volData == null && createIfNotExists)
         {
-            long initFlags = StateFlagsBits.getMask(flags);
-
             volData = new VolumeData(
                 resRef,
                 volDfn,
                 storPool,
                 blockDevicePathRef,
                 metaDiskPathRef,
-                initFlags,
+                StateFlagsBits.getMask(flags),
                 accCtx,
                 transMgr
             );
@@ -185,8 +189,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         }
         if (volData != null)
         {
-            ((ResourceData) resRef).putVolume(accCtx, volData);
-            ((StorPoolData) storPool).putVolume(accCtx, volData);
             volData.initialized();
         }
         return volData;
@@ -205,14 +207,14 @@ public class VolumeData extends BaseTransactionObject implements Volume
         throws AccessDeniedException
     {
         checkDeleted();
-        return PropsAccess.secureGetProps(accCtx, resourceRef.getObjProt(), volumeProps);
+        return PropsAccess.secureGetProps(accCtx, resource.getObjProt(), volumeProps);
     }
 
     @Override
     public Resource getResource()
     {
         checkDeleted();
-        return resourceRef;
+        return resource;
     }
 
     @Override
@@ -234,7 +236,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         throws AccessDeniedException
     {
         checkDeleted();
-        resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumeConnections.get(othervolume);
     }
 
@@ -282,10 +284,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
         }
     }
 
+    @Override
     public StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return storPool;
     }
 
@@ -300,7 +303,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     public String getBlockDevicePath(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return blockDevicePath;
     }
 
@@ -308,7 +311,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     public String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        resourceRef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return metaDiskPath;
     }
 
@@ -317,9 +320,9 @@ public class VolumeData extends BaseTransactionObject implements Volume
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
-        resourceRef.getObjProt().requireAccess(accCtx, AccessType.USE);
+        resource.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        ((ResourceData) resourceRef).removeVolume(accCtx, this);
+        ((ResourceData) resource).removeVolume(accCtx, this);
         dbDriver.delete(this, transMgr);
         deleted = true;
     }

@@ -55,4 +55,10 @@ public interface TransactionObject
      * @return
      */
     boolean isDirty();
+
+    /**
+     * Returns true if there are uncommited changes which should have been persisted
+     * (this method is mostly used for internal purposes)
+     */
+    boolean isDbCacheDirty();
 }

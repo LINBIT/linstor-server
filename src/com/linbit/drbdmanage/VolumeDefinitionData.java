@@ -2,11 +2,13 @@ package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.ValueOutOfRangeException;
@@ -53,6 +55,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     // State flags
     private final StateFlags<VlmDfnFlags> flags;
+
+    private final TransactionMap<String, Volume> volumes;
 
     private final VolumeDefinitionDataDatabaseDriver dbDriver;
 
@@ -148,6 +152,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             PropsContainer.buildPath(resDfnRef.getName(), volumeNr),
             transMgr
         );
+
+        volumes = new TransactionMap<>(new TreeMap<String, Volume>(), null);
 
         flags = new VlmDfnFlagsImpl(
             resDfnRef.getObjProt(),
@@ -286,6 +292,24 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         checkDeleted();
         return flags;
+    }
+
+    public void putVolume(AccessContext accCtx, VolumeData volumeData) throws AccessDeniedException
+    {
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        volumes.put(getResourceId(volumeData.getResource()), volumeData);
+    }
+
+    public void removeVolume(AccessContext accCtx, VolumeData volumeData) throws AccessDeniedException
+    {
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        volumes.remove(getResourceId(volumeData.getResource()));
+    }
+
+    private String getResourceId(Resource rsc)
+    {
+        return rsc.getAssignedNode().getName().value + "/" +
+            rsc.getDefinition().getName().value;
     }
 
     @Override

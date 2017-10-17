@@ -3,12 +3,12 @@ package com.linbit.drbdmanage;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
@@ -36,10 +36,10 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     private final ResourceName resourceName;
 
     // Volumes of the resource
-    private final Map<VolumeNumber, VolumeDefinition> volumeMap;
+    private final TransactionMap<VolumeNumber, VolumeDefinition> volumeMap;
 
     // Resources defined by this ResourceDefinition
-    private final Map<NodeName, Resource> resourceMap;
+    private final TransactionMap<NodeName, Resource> resourceMap;
 
     // State flags
     private final StateFlags<RscDfnFlags> flags;
@@ -99,8 +99,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
         dbDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
 
-        volumeMap = new TreeMap<>();
-        resourceMap = new TreeMap<>();
+        volumeMap = new TransactionMap<>(new TreeMap<VolumeNumber, VolumeDefinition>(), null);
+        resourceMap = new TransactionMap<>(new TreeMap<NodeName, Resource>(), null);
 
         rscDfnProps = PropsContainer.getInstance(
             PropsContainer.buildPath(resName),
@@ -111,6 +111,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         transObjs = Arrays.asList(
             flags,
             objProt,
+            volumeMap,
+            resourceMap,
             rscDfnProps
         );
     }

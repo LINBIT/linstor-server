@@ -37,14 +37,16 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
      * used by getInstance
      */
     private NodeConnectionData(
+        AccessContext accCtx,
         Node node1,
         Node node2,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         this(
             UUID.randomUUID(),
+            accCtx,
             node1,
             node2,
             transMgr
@@ -56,11 +58,12 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
      */
     NodeConnectionData(
         UUID uuid,
+        AccessContext accCtx,
         Node node1,
         Node node2,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         objId = uuid;
 
@@ -90,6 +93,8 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
             targetNode,
             props
         );
+        sourceNode.setNodeConnection(accCtx, this);
+        targetNode.setNodeConnection(accCtx, this);
     }
 
     public static NodeConnectionData getInstance(
@@ -136,6 +141,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         if (nodeConData == null && createIfNotExists)
         {
             nodeConData = new NodeConnectionData(
+                accCtx,
                 source,
                 target,
                 transMgr
@@ -144,9 +150,6 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         }
         if (nodeConData != null)
         {
-            source.setNodeConnection(accCtx, nodeConData);
-            target.setNodeConnection(accCtx, nodeConData);
-
             nodeConData.initialized();
         }
         return nodeConData;
