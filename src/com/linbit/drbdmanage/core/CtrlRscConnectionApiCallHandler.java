@@ -187,7 +187,7 @@ class CtrlRscConnectionApiCallHandler
                 }
                 else
                 {
-                    ResourceConnectionData.getInstance( // accDeniedExc3
+                    ResourceConnectionData rscConn = ResourceConnectionData.getInstance( // accDeniedExc3
                         accCtx,
                         rsc1,
                         rsc2,
@@ -195,6 +195,9 @@ class CtrlRscConnectionApiCallHandler
                         true, // persist this entry
                         true // throw exception if the entry exists
                     );
+                    rscConn.setConnection(transMgr);
+                    rscConn.getProps(accCtx).map().putAll(rscConnPropsMap);
+
                     transMgr.commit();
 
                     ApiCallRcEntry successEntry = new ApiCallRcEntry();
@@ -431,7 +434,35 @@ class CtrlRscConnectionApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while creating resource connection between nodes '%s' " +
+                    " and '%s' for resource '%s'.",
+                nodeName1Str,
+                nodeName2Str,
+                rscNameStr
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_RSC_CONN_CRT_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
+            entry.putVariable(KEY_1ST_NODE_NAME, nodeName1Str);
+            entry.putVariable(KEY_2ND_NODE_NAME, nodeName2Str);
+            entry.putVariable(KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(KEY_1ST_NODE, nodeName1Str);
+            entry.putObjRef(KEY_2ND_NODE, nodeName2Str);
+            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
 
+            apiCallRc.addEntry(entry);
+        }
 
         if (transMgr != null)
         {
@@ -898,6 +929,35 @@ class CtrlRscConnectionApiCallHandler
             entry.putObjRef(ApiConsts.KEY_1ST_NODE, nodeName1Str);
             entry.putObjRef(ApiConsts.KEY_2ND_NODE, nodeName2Str);
             entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while deleting resource connection between nodes '%s' " +
+                    " and '%s' for resource '%s'.",
+                nodeName1Str,
+                nodeName2Str,
+                rscNameStr
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_RSC_CONN_DEL_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
+            entry.putVariable(KEY_1ST_NODE_NAME, nodeName1Str);
+            entry.putVariable(KEY_2ND_NODE_NAME, nodeName2Str);
+            entry.putVariable(KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(KEY_1ST_NODE, nodeName1Str);
+            entry.putObjRef(KEY_2ND_NODE, nodeName2Str);
+            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }

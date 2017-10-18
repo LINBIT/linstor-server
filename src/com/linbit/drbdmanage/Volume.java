@@ -8,6 +8,7 @@ import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -69,6 +70,7 @@ public interface Volume extends TransactionObject
         public String getBlockDevice();
         public String getMetaDisk();
         public int getVlmNr();
+        public Map<String, String> getVlmProps();
     }
 
 }

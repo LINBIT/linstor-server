@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.TransactionObject;
+import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
@@ -21,6 +22,10 @@ public interface StorPoolDefinition extends TransactionObject
 
     public StorPoolName getName();
 
+    public Props getConfiguration(AccessContext accCtx)
+        throws AccessDeniedException;
+
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
+
 }

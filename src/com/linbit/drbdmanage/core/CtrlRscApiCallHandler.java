@@ -169,6 +169,7 @@ class CtrlRscApiCallHandler
                     true
                 );
                 rsc.setConnection(transMgr); // maybe volumes will be created
+                rsc.getProps(accCtx).map().putAll(rscPropsMap); // accDeniedExc4
 
                 ApiCallRcEntry rscSuccess = new ApiCallRcEntry();
                 String rscSuccessMsg = String.format(
@@ -200,7 +201,7 @@ class CtrlRscApiCallHandler
                     nodeProps = null;
 
                     volNr = new VolumeNumber(vlmApi.getVlmNr()); // valueOutOfRangeExc2
-                    vlmDfn = rscDfn.getVolumeDfn(accCtx, volNr); // accDeniedExc4
+                    vlmDfn = rscDfn.getVolumeDfn(accCtx, volNr); // accDeniedExc5
 
                     if (vlmDfn == null)
                     {
@@ -230,9 +231,9 @@ class CtrlRscApiCallHandler
                     storPoolNameStr = vlmApi.getStorPoolName();
                     if (storPoolNameStr == null || "".equals(storPoolNameStr))
                     {
-                        vlmProps = vlmDfn.getProps(accCtx); // accDeniedExc5
-                        rscProps = rsc.getProps(accCtx); // accDeniedExc6
-                        nodeProps = node.getProps(accCtx); // accDeniedExc7
+                        vlmProps = vlmDfn.getProps(accCtx); // accDeniedExc6
+                        rscProps = rsc.getProps(accCtx); // accDeniedExc7
+                        nodeProps = node.getProps(accCtx); // accDeniedExc8
                         PriorityProps prioProps = new PriorityProps(
                             vlmProps,
                             rscProps,
@@ -247,7 +248,7 @@ class CtrlRscApiCallHandler
 
                     storPoolName = new StorPoolName(storPoolNameStr); // invalidNameExc3
 
-                    storPoolDfn = StorPoolDefinitionData.getInstance( // accDeniedExc8, dataAlreadyExistsExc0
+                    storPoolDfn = StorPoolDefinitionData.getInstance( // accDeniedExc9, dataAlreadyExistsExc0
                         accCtx,
                         storPoolName,
                         transMgr,
@@ -256,7 +257,7 @@ class CtrlRscApiCallHandler
                     );
                     if (storPoolDfn != null)
                     {
-                        storPool = StorPoolData.getInstance( // accDeniedExc9, dataAlreadyExistsExc0
+                        storPool = StorPoolData.getInstance( // accDeniedExc10, dataAlreadyExistsExc0
                             accCtx,
                             node,
                             storPoolDfn,
@@ -309,7 +310,7 @@ class CtrlRscApiCallHandler
                     {
                         VlmFlags[] vlmFlags = null;
 
-                        VolumeData.getInstance( // accDeniedExc10, dataAlreadyExistsExc2
+                        VolumeData vlmData = VolumeData.getInstance( // accDeniedExc11, dataAlreadyExistsExc2
                             accCtx,
                             rsc,
                             vlmDfn,
@@ -321,6 +322,9 @@ class CtrlRscApiCallHandler
                             true,
                             true
                         );
+                        vlmData.setConnection(transMgr);
+                        vlmData.getProps(accCtx).map().putAll(vlmApi.getVlmProps());
+
                         ApiCallRcEntry vlmSuccess = new ApiCallRcEntry();
                         vlmSuccess.setMessageFormat(
                             String.format(
@@ -442,8 +446,8 @@ class CtrlRscApiCallHandler
                 entry.setReturnCodeBit(RC_RSC_CRT_FAIL_ACC_DENIED_RSC_DFN);
             }
             else
-            if (rsc == null)
-            { // accDeniedExc3
+            if (rsc == null || currentVlmApi == null)
+            { // accDeniedExc3 & accDeniedExc4
                 action += String.format(
                     "access the resource '%s' on node '%s'.",
                     rscNameStr,
@@ -455,7 +459,7 @@ class CtrlRscApiCallHandler
             }
             else
             if (vlmDfn == null)
-            { // accDeniedExc4
+            { // accDeniedExc5
                 action += String.format(
                     "access the volume definition with volume number %d on resource '%s' on node '%s'.",
                     currentVlmApi.getVlmNr(),
@@ -469,10 +473,10 @@ class CtrlRscApiCallHandler
                 entry.setReturnCodeBit(RC_RSC_CRT_FAIL_ACC_DENIED_VLM_DFN);
             }
             else
-            // accDeniedExc5, 6 or 7 cannot happen as those should have triggered
-            // accDeniedExc4, 3 or 1 respectively
+            // accDeniedExc6, 7 or 8 cannot happen as those should have triggered
+            // accDeniedExc5, 4 or 1 respectively
             if (storPoolDfn == null)
-            { // accDeniedExc8
+            { // accDeniedExc9
                 action += String.format(
                     "access the storage pool definition '%s'.",
                     storPoolNameStr
@@ -483,7 +487,7 @@ class CtrlRscApiCallHandler
             }
             else
             if (storPool == null)
-            { // accDeniedExc9
+            { // accDeniedExc10
                 action += String.format(
                     "access the storage pool '%s' on node '%s'.",
                     storPoolNameStr,
@@ -495,7 +499,7 @@ class CtrlRscApiCallHandler
                 entry.setReturnCodeBit(RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL);
             }
             else
-            { // accDeniedExc10
+            { // accDeniedExc11
                 action += String.format(
                     "create a new volume with volume number %d on resource '%s' on node '%s'.",
                     currentVlmApi.getVlmNr(),
@@ -652,8 +656,33 @@ class CtrlRscApiCallHandler
             entry.putVariable(KEY_NODE_NAME, nodeNameStr);
 
             apiCallRc.addEntry(entry);
-
         }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while creating resource '%s' on node '%s'.",
+                rscNameStr,
+                nodeNameStr
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_NODE_CONN_CRT_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+            entry.putVariable(KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
+            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+
 
         if (transMgr != null)
         {
@@ -966,6 +995,31 @@ class CtrlRscApiCallHandler
             entry.putObjRef(KEY_NODE, nodeNameStr);
             entry.putVariable(KEY_RSC_NAME, rscNameStr);
             entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while deleting resource '%s' on node '%s'.",
+                rscNameStr,
+                nodeNameStr
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_NODE_CONN_DEL_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+            entry.putVariable(KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
+            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }

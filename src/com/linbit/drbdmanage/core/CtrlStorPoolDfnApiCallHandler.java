@@ -56,6 +56,8 @@ class CtrlStorPoolDfnApiCallHandler
                 true,
                 true
             );
+            storPoolDfn.setConnection(transMgr);
+            storPoolDfn.getConfiguration(accCtx).map().putAll(storPoolDfnProps);
 
             transMgr.commit();
 
@@ -157,6 +159,28 @@ class CtrlStorPoolDfnApiCallHandler
             entry.setCauseFormat(alreadyExistsExc.getMessage());
             entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
             entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+            apiCallRc.addEntry(entry);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while creating a storage pool definition '%s'. ",
+                storPoolNameStr
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_STOR_POOL_DFN_CRT_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
+            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+
             apiCallRc.addEntry(entry);
         }
 
@@ -346,6 +370,29 @@ class CtrlStorPoolDfnApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while deleting a storage pool definition '%s'. ",
+                storPoolNameStr
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
+            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+
 
         if (transMgr != null)
         {

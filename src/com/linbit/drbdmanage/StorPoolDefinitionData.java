@@ -11,6 +11,9 @@ import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
+import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.PropsAccess;
+import com.linbit.drbdmanage.propscon.PropsContainer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -23,6 +26,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     private final ObjectProtection objProt;
     private final StorPoolDefinitionDataDatabaseDriver dbDriver;
     private final TransactionMap<NodeName, StorPool> storPools;
+    private final Props props;
 
     private boolean deleted = false;
 
@@ -62,17 +66,24 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
      * @throws SQLException
      */
     StorPoolDefinitionData(UUID id, ObjectProtection objProtRef, StorPoolName nameRef)
+        throws SQLException
     {
         uuid = id;
         objProt = objProtRef;
         name = nameRef;
         storPools = new TransactionMap<>(new TreeMap<NodeName, StorPool>(), null);
 
+        props = PropsContainer.getInstance(
+            PropsContainer.buildPath(nameRef),
+            transMgr
+        );
+
         dbDriver = DrbdManage.getStorPoolDefinitionDataDatabaseDriver();
 
         transObjs = Arrays.<TransactionObject>asList(
             objProt,
-            storPools
+            storPools,
+            props
         );
     }
 
@@ -143,6 +154,13 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
         storPools.remove(storPoolData.getNode().getName());
+    }
+
+    @Override
+    public Props getConfiguration(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        return PropsAccess.secureGetProps(accCtx, objProt, props);
     }
 
     @Override

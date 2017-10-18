@@ -124,7 +124,7 @@ class CtrlStorPoolApiCallHandler
             }
             if (!fail)
             {
-                StorPoolData.getInstance( // accDeniedExc3, dataAlreadyExistsExc1
+                StorPoolData storPool = StorPoolData.getInstance( // accDeniedExc3, dataAlreadyExistsExc1
                     accCtx,
                     node,
                     storPoolDfn,
@@ -134,6 +134,8 @@ class CtrlStorPoolApiCallHandler
                     true,  // persist to db
                     true   // throw exception if already exists
                 );
+                storPool.setConnection(transMgr);
+                storPool.getConfiguration(accCtx).map().putAll(storPoolPropsMap);
                 transMgr.commit();
 
                 String successMessage = String.format(
@@ -306,6 +308,31 @@ class CtrlStorPoolApiCallHandler
                 )
             );
             entry.setReturnCode(RC_STOR_POOL_CRT_FAIL_IMPL_ERROR);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
+            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while creating a storage pool '%s' on node '%s'. ",
+                storPoolNameStr,
+                nodeNameStr
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_STOR_POOL_CRT_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
             entry.putVariable(KEY_NODE_NAME, nodeNameStr);
             entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
             entry.putObjRef(KEY_NODE, nodeNameStr);
@@ -642,6 +669,31 @@ class CtrlStorPoolApiCallHandler
                 )
             );
             entry.setReturnCode(RC_STOR_POOL_DEL_FAIL_IMPL_ERROR);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
+            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while deleting a storage pool '%s' on node '%s'. ",
+                storPoolNameStr,
+                nodeNameStr
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_STOR_POOL_DEL_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
             entry.putVariable(KEY_NODE_NAME, nodeNameStr);
             entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
             entry.putObjRef(KEY_NODE, nodeNameStr);

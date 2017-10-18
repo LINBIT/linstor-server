@@ -44,6 +44,7 @@ class CtrlNodeConnectionApiCallHandler
         NodeName nodeName2 = null;
         NodeData node1 = null;
         NodeData node2 = null;
+        NodeConnectionData nodeConn = null;
         try
         {
             transMgr = new TransactionMgr(controller.dbConnPool);
@@ -97,7 +98,7 @@ class CtrlNodeConnectionApiCallHandler
             }
             else
             {
-                NodeConnectionData.getInstance( // accDeniedExc3
+                nodeConn = NodeConnectionData.getInstance( // accDeniedExc3
                     accCtx,
                     node1,
                     node2,
@@ -105,7 +106,11 @@ class CtrlNodeConnectionApiCallHandler
                     true, // persist this entry
                     true // throw exception if the entry exists
                 );
+                nodeConn.setConnection(transMgr);
+                nodeConn.getProps(accCtx).map().putAll(nodeConnPropsMap); // accDeniedExc4
+
                 transMgr.commit();
+
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(RC_NODE_CONN_CREATED);
                 String successMessage = String.format(
@@ -200,7 +205,7 @@ class CtrlNodeConnectionApiCallHandler
                 entry.setReturnCodeBit(RC_NODE_CONN_CRT_FAIL_ACC_DENIED_NODE);
             }
             else
-            { // handle accDeniedExc3
+            { // handle accDeniedExc3, accDeniedExc4
                 action = String.format(
                     "create the new node connection between '%s' and '%s'.",
                     nodeName1Str,
@@ -266,6 +271,31 @@ class CtrlNodeConnectionApiCallHandler
 
             entry.setCauseFormat(dataAlreadyExistsExc.getMessage());
             entry.setMessageFormat(errorMessage);
+            entry.putVariable(ApiConsts.KEY_1ST_NODE_NAME, nodeName1Str);
+            entry.putVariable(ApiConsts.KEY_2ND_NODE_NAME, nodeName2Str);
+            entry.putObjRef(ApiConsts.KEY_1ST_NODE, nodeName1Str);
+            entry.putObjRef(ApiConsts.KEY_2ND_NODE, nodeName2Str);
+
+            apiCallRc.addEntry(entry);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while creating a node connection between nodes '%s' and '%s'.",
+                nodeName1Str,
+                nodeName2Str
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_NODE_CONN_CRT_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
             entry.putVariable(ApiConsts.KEY_1ST_NODE_NAME, nodeName1Str);
             entry.putVariable(ApiConsts.KEY_2ND_NODE_NAME, nodeName2Str);
             entry.putObjRef(ApiConsts.KEY_1ST_NODE, nodeName1Str);
@@ -594,6 +624,32 @@ class CtrlNodeConnectionApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while deleting node connection between nodes '%s' and '%s'.",
+                nodeName1Str,
+                nodeName2Str
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_NODE_CONN_DEL_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
+            entry.putVariable(ApiConsts.KEY_1ST_NODE_NAME, nodeName1Str);
+            entry.putVariable(ApiConsts.KEY_2ND_NODE_NAME, nodeName2Str);
+            entry.putObjRef(ApiConsts.KEY_1ST_NODE, nodeName1Str);
+            entry.putObjRef(ApiConsts.KEY_2ND_NODE, nodeName2Str);
+
+            apiCallRc.addEntry(entry);
+        }
+
 
         if (transMgr != null)
         {

@@ -73,7 +73,8 @@ class CtrlNodeApiCallHandler
                 true,
                 true
             );
-
+            node.setConnection(transMgr);
+            node.getProps(accCtx).map().putAll(props); // accDeniedExc3
             transMgr.commit(); // sqlExc3
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -202,6 +203,27 @@ class CtrlNodeApiCallHandler
             entry.setCauseFormat(illegalArgExc.getMessage());
             entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
             entry.putVariable(ApiConsts.KEY_NODE_TYPE, nodeTypeStr);
+            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            String errorMessage = String.format(
+                "An unknown exception occured while creating node '%s'.",
+                nodeNameStr
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
+            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
             entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
@@ -394,6 +416,29 @@ class CtrlNodeApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
+        catch (Exception | ImplementationError exc)
+        {
+            // handle any other exception
+            String errorMessage = String.format(
+                "An unknown exception occured while deleting node '%s'.",
+                nodeNameStr
+            );
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(RC_NODE_DEL_FAIL_UNKNOWN_ERROR);
+            entry.setMessageFormat(errorMessage);
+            entry.setCauseFormat(exc.getMessage());
+            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+
+            apiCallRc.addEntry(entry);
+        }
+
 
         if (transMgr != null)
         {

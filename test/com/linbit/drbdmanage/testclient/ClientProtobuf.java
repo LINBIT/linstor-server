@@ -73,6 +73,11 @@ public class ClientProtobuf implements Runnable
     private Thread thread;
     private boolean shutdown;
 
+    private int sentCount;
+    private int infoCount;
+    private int warnCount;
+    private int errorCount;
+
     public ClientProtobuf(int port) throws UnknownHostException, IOException
     {
         this("127.0.0.1", port);
@@ -84,9 +89,38 @@ public class ClientProtobuf implements Runnable
         inputStream = sock.getInputStream();
         outputStream = sock.getOutputStream();
 
+        resetAllCounts();
+
         shutdown = false;
         thread = new Thread(this, "ClientProtobuf");
         thread.start();
+    }
+
+    public void resetAllCounts()
+    {
+        resetInfoCount();
+        resetWarnCount();
+        resetErrorCount();
+    }
+
+    public void resetSentCount()
+    {
+        sentCount = 0;
+    }
+
+    public void resetInfoCount()
+    {
+        infoCount = 0;
+    }
+
+    public void resetWarnCount()
+    {
+        warnCount = 0;
+    }
+
+    public void resetErrorCount()
+    {
+        errorCount = 0;
     }
 
     public void shutdown() throws IOException
@@ -213,6 +247,13 @@ public class ClientProtobuf implements Runnable
             }
         }
         println("shutting down");
+
+        println("");
+        println("Sent messages: " + sentCount);
+        println("Responses    : " + (infoCount + warnCount + errorCount));
+        println("   info : " + infoCount);
+        println("   warn : " + warnCount);
+        println("   error: " + errorCount);
     }
 
     private String format(String msg)
@@ -222,6 +263,21 @@ public class ClientProtobuf implements Runnable
 
     private void decodeRetValue(StringBuilder sb, long retCode)
     {
+        if ((retCode & MASK_ERROR) == MASK_ERROR)
+        {
+            errorCount++;
+        }
+        else
+        if ((retCode & MASK_WARN) == MASK_WARN)
+        {
+            warnCount++;
+        }
+        else
+        if ((retCode & MASK_INFO) == MASK_INFO)
+        {
+            infoCount++;
+        }
+
         decode(sb, retCode, 0xC000000000000000L, RET_CODES_TYPE);
         decode(sb, retCode, 0x3C00000000000000L, RET_CODES_OBJ);
         sb.append(retCode & 0x00FFFFFFFFFFFFFFL);
@@ -559,6 +615,8 @@ public class ClientProtobuf implements Runnable
         outputStream.write(protoHeader);
 //        println("sending protoData:" + protoData.length);
         outputStream.write(protoData);
+
+        sentCount++;
     }
 
     public VlmDfn createVlmDfn(int vlmNr, int vlmSize)

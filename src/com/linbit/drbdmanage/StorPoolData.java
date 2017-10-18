@@ -188,7 +188,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     public Props getConfiguration(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        return PropsAccess.secureGetProps(accCtx, node.getObjProt(), props);
+        return PropsAccess.secureGetProps(accCtx, node.getObjProt(), storPoolDef.getObjProt(), props);
     }
 
     @Override

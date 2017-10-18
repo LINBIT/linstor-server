@@ -50,6 +50,7 @@ public class PropsContainer implements Props
 {
     private static final String PATH_SEPARATOR                = "/";
     private static final String PATH_STOR_POOL                = "/storPoolConf/";
+    private static final String PATH_STOR_POOL_DFN            = "/storPoolDfnConf/";
     private static final String PATH_NODES                    = "/nodes/";
     private static final String PATH_RESOURCE_DEFINITIONS     = "/resourcedefinitions/";
     private static final String PATH_RESOURCES                = "/resources/";
@@ -2573,6 +2574,14 @@ public class PropsContainer implements Props
     {
         return PATH_STOR_POOL + nodeName.value +
             PATH_SEPARATOR + storPoolName.value;
+    }
+
+    /**
+     * PropsCon-path for StorPoolDefinitionData
+     */
+    public static String buildPath(StorPoolName storPoolName)
+    {
+        return PATH_STOR_POOL_DFN + storPoolName.value;
     }
 
     /**

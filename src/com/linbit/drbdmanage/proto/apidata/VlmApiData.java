@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage.proto.apidata;
 
+import java.util.Map;
+
 import com.linbit.drbdmanage.Volume.VlmApi;
 import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
 
@@ -34,6 +36,12 @@ public class VlmApiData implements VlmApi
     public int getVlmNr()
     {
         return vlm.getVlmNr();
+    }
+
+    @Override
+    public Map<String, String> getVlmProps()
+    {
+        return vlm.getVlmPropsMap();
     }
 
 }

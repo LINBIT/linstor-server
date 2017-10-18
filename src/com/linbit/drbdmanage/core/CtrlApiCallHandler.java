@@ -38,7 +38,6 @@ public class CtrlApiCallHandler
     private final CtrlRscConnectionApiCallHandler rscConnApiCallHandler;
     private final CtrlVlmConnectionApiCallHandler vlmConnApiCallHandler;
 
-
     private final Controller controller;
 
     CtrlApiCallHandler(Controller controllerRef)
@@ -62,25 +61,38 @@ public class CtrlApiCallHandler
         Map<String, String> props
     )
     {
-        controller.nodesMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = nodeApiCallHandler.createNode(
-            accCtx,
-            client,
-            nodeNameStr,
-            nodeTypeStr,
-            props
-        );
-        controller.nodesMapLock.writeLock().unlock();
-
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            apiCallRc = nodeApiCallHandler.createNode(
+                accCtx,
+                client,
+                nodeNameStr,
+                nodeTypeStr,
+                props
+            );
+        }
+        finally
+        {
+            controller.nodesMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
     public ApiCallRc deleteNode(AccessContext accCtx, Peer client, String nodeName)
     {
-        controller.nodesMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = nodeApiCallHandler.deleteNode(accCtx, client, nodeName);
-        controller.nodesMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            apiCallRc = nodeApiCallHandler.deleteNode(accCtx, client, nodeName);
+        }
+        finally
+        {
+            controller.nodesMapLock.writeLock().unlock();
 
+        }
         return apiCallRc;
     }
 
@@ -92,15 +104,22 @@ public class CtrlApiCallHandler
         List<VolumeDefinition.VlmDfnApi> volDescrMap
     )
     {
-        controller.rscDfnMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
-            accCtx,
-            client,
-            resourceName,
-            props,
-            volDescrMap
-        );
-        controller.rscDfnMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
+                accCtx,
+                client,
+                resourceName,
+                props,
+                volDescrMap
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
@@ -110,13 +129,20 @@ public class CtrlApiCallHandler
         String resourceName
     )
     {
-        controller.rscDfnMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = rscDfnApiCallHandler.deleteResourceDefinition(
-            accCtx,
-            client,
-            resourceName
-        );
-        controller.rscDfnMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = rscDfnApiCallHandler.deleteResourceDefinition(
+                accCtx,
+                client,
+                resourceName
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
@@ -130,21 +156,27 @@ public class CtrlApiCallHandler
         List<Volume.VlmApi> vlmApiDataList
     )
     {
-        controller.rscDfnMapLock.writeLock().lock();
-        controller.nodesMapLock.writeLock().lock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
 
-        ApiCallRc apiCallRc = rscApiCallHandler.createResource(
-            accCtx,
-            client,
-            nodeName,
-            rscName,
-            nodeId,
-            rscPropsMap,
-            vlmApiDataList
-        );
-
-        controller.rscDfnMapLock.writeLock().unlock();
-        controller.nodesMapLock.writeLock().unlock();
+            apiCallRc = rscApiCallHandler.createResource(
+                accCtx,
+                client,
+                nodeName,
+                rscName,
+                nodeId,
+                rscPropsMap,
+                vlmApiDataList
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
+        }
 
         return apiCallRc;
     }
@@ -156,18 +188,24 @@ public class CtrlApiCallHandler
         String rscName
     )
     {
-        controller.rscDfnMapLock.writeLock().lock();
-        controller.nodesMapLock.writeLock().lock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
 
-        ApiCallRc apiCallRc = rscApiCallHandler.deleteResource(
-            accCtx,
-            client,
-            nodeName,
-            rscName
-        );
-
-        controller.rscDfnMapLock.writeLock().unlock();
-        controller.nodesMapLock.writeLock().unlock();
+            apiCallRc = rscApiCallHandler.deleteResource(
+                accCtx,
+                client,
+                nodeName,
+                rscName
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
+        }
 
         return apiCallRc;
     }
@@ -179,14 +217,21 @@ public class CtrlApiCallHandler
         Map<String, String> storPoolDfnPropsMap
     )
     {
-        controller.storPoolDfnMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = storPoolDfnApiCallHandler.createStorPoolDfn(
-            accCtx,
-            client,
-            storPoolName,
-            storPoolDfnPropsMap
-        );
-        controller.storPoolDfnMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.storPoolDfnMapLock.writeLock().lock();
+            apiCallRc = storPoolDfnApiCallHandler.createStorPoolDfn(
+                accCtx,
+                client,
+                storPoolName,
+                storPoolDfnPropsMap
+            );
+        }
+        finally
+        {
+            controller.storPoolDfnMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
@@ -196,13 +241,20 @@ public class CtrlApiCallHandler
         String storPoolName
     )
     {
-        controller.storPoolDfnMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = storPoolDfnApiCallHandler.deleteStorPoolDfn(
-            accCtx,
-            client,
-            storPoolName
-        );
-        controller.storPoolDfnMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.storPoolDfnMapLock.writeLock().lock();
+            apiCallRc = storPoolDfnApiCallHandler.deleteStorPoolDfn(
+                accCtx,
+                client,
+                storPoolName
+            );
+        }
+        finally
+        {
+            controller.storPoolDfnMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
@@ -215,20 +267,26 @@ public class CtrlApiCallHandler
         Map<String, String> storPoolPropsMap
     )
     {
-        controller.nodesMapLock.writeLock().lock();
-        controller.storPoolDfnMapLock.writeLock().lock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.storPoolDfnMapLock.writeLock().lock();
 
-        ApiCallRc apiCallRc = storPoolApiCallHandler.createStorPool(
-            accCtx,
-            client,
-            nodeName,
-            storPoolName,
-            driver,
-            storPoolPropsMap
-        );
-
-        controller.storPoolDfnMapLock.writeLock().unlock();
-        controller.nodesMapLock.writeLock().unlock();
+            apiCallRc = storPoolApiCallHandler.createStorPool(
+                accCtx,
+                client,
+                nodeName,
+                storPoolName,
+                driver,
+                storPoolPropsMap
+            );
+        }
+        finally
+        {
+            controller.storPoolDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
+        }
 
         return apiCallRc;
     }
@@ -240,18 +298,24 @@ public class CtrlApiCallHandler
         String storPoolName
     )
     {
-        controller.nodesMapLock.writeLock().lock();
-        controller.storPoolDfnMapLock.writeLock().lock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.storPoolDfnMapLock.writeLock().lock();
 
-        ApiCallRc apiCallRc = storPoolApiCallHandler.deleteStorPool(
-            accCtx,
-            client,
-            nodeName,
-            storPoolName
-        );
-
-        controller.storPoolDfnMapLock.writeLock().unlock();
-        controller.nodesMapLock.writeLock().unlock();
+            apiCallRc = storPoolApiCallHandler.deleteStorPool(
+                accCtx,
+                client,
+                nodeName,
+                storPoolName
+            );
+        }
+        finally
+        {
+            controller.storPoolDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
+        }
 
         return apiCallRc;
     }
@@ -264,15 +328,22 @@ public class CtrlApiCallHandler
         Map<String, String> nodeConnPropsMap
     )
     {
-        controller.nodesMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = nodeConnApiCallHandler.createNodeConnection(
-            accCtx,
-            client,
-            nodeName1,
-            nodeName2,
-            nodeConnPropsMap
-        );
-        controller.nodesMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            apiCallRc = nodeConnApiCallHandler.createNodeConnection(
+                accCtx,
+                client,
+                nodeName1,
+                nodeName2,
+                nodeConnPropsMap
+            );
+        }
+        finally
+        {
+            controller.nodesMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
@@ -283,14 +354,21 @@ public class CtrlApiCallHandler
         String nodeName2
     )
     {
-        controller.nodesMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = nodeConnApiCallHandler.deleteNodeConnection(
-            accCtx,
-            client,
-            nodeName1,
-            nodeName2
-        );
-        controller.nodesMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            apiCallRc = nodeConnApiCallHandler.deleteNodeConnection(
+                accCtx,
+                client,
+                nodeName1,
+                nodeName2
+            );
+        }
+        finally
+        {
+            controller.nodesMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
@@ -303,18 +381,25 @@ public class CtrlApiCallHandler
         Map<String, String> rscConnPropsMap
     )
     {
-        controller.nodesMapLock.writeLock().lock();
-        controller.rscDfnMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = rscConnApiCallHandler.createResourceConnection(
-            accCtx,
-            client,
-            nodeName1,
-            nodeName2,
-            rscName,
-            rscConnPropsMap
-        );
-        controller.rscDfnMapLock.writeLock().unlock();
-        controller.nodesMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = rscConnApiCallHandler.createResourceConnection(
+                accCtx,
+                client,
+                nodeName1,
+                nodeName2,
+                rscName,
+                rscConnPropsMap
+            );
+		}
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
@@ -326,17 +411,24 @@ public class CtrlApiCallHandler
         String rscName
     )
     {
-        controller.nodesMapLock.writeLock().lock();
-        controller.rscDfnMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = rscConnApiCallHandler.deleteResourceConnection(
-            accCtx,
-            client,
-            nodeName1,
-            nodeName2,
-            rscName
-        );
-        controller.rscDfnMapLock.writeLock().unlock();
-        controller.nodesMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = rscConnApiCallHandler.deleteResourceConnection(
+                accCtx,
+                client,
+                nodeName1,
+                nodeName2,
+                rscName
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
@@ -350,19 +442,26 @@ public class CtrlApiCallHandler
         Map<String, String> vlmConnPropsMap
     )
     {
-        controller.nodesMapLock.writeLock().lock();
-        controller.rscDfnMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = vlmConnApiCallHandler.createVolumeConnection(
-            accCtx,
-            client,
-            nodeName1,
-            nodeName2,
-            rscName,
-            vlmNr,
-            vlmConnPropsMap
-        );
-        controller.rscDfnMapLock.writeLock().unlock();
-        controller.nodesMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = vlmConnApiCallHandler.createVolumeConnection(
+                accCtx,
+                client,
+                nodeName1,
+                nodeName2,
+                rscName,
+                vlmNr,
+                vlmConnPropsMap
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
@@ -375,18 +474,25 @@ public class CtrlApiCallHandler
         int vlmNr
     )
     {
-        controller.nodesMapLock.writeLock().lock();
-        controller.rscDfnMapLock.writeLock().lock();
-        ApiCallRc apiCallRc = vlmConnApiCallHandler.deleteVolumeConnection(
-            accCtx,
-            client,
-            nodeName1,
-            nodeName2,
-            rscName,
-            vlmNr
-        );
-        controller.rscDfnMapLock.writeLock().unlock();
-        controller.nodesMapLock.writeLock().unlock();
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = vlmConnApiCallHandler.deleteVolumeConnection(
+                accCtx,
+                client,
+                nodeName1,
+                nodeName2,
+                rscName,
+                vlmNr
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
