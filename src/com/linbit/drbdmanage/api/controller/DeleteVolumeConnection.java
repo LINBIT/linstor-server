@@ -29,6 +29,12 @@ public class DeleteVolumeConnection extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Deletes volume connection options";
+    }
+
+    @Override
     protected void executeImpl(
         AccessContext accCtx,
         Message msg,

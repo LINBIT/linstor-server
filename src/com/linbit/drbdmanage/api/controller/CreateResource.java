@@ -34,6 +34,12 @@ public class CreateResource extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Creates a resource from a resource definition and assigns it to a node";
+    }
+
+    @Override
     public void executeImpl(
         AccessContext accCtx,
         Message msg,

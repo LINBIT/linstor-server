@@ -44,6 +44,12 @@ public class CreateDebugConsole extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Creates a debug console and attaches it to the peer connection";
+    }
+
+    @Override
     public void executeImpl(
         AccessContext   accCtx,
         Message         msg,

@@ -29,6 +29,12 @@ public class CreateNodeConnection extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Defines node connection options";
+    }
+
+    @Override
     protected void executeImpl(
         AccessContext accCtx,
         Message msg,

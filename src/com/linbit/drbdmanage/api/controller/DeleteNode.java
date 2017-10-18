@@ -28,6 +28,12 @@ public class DeleteNode extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Marks a node for deletion";
+    }
+
+    @Override
     public void executeImpl(
         AccessContext accCtx,
         Message msg,

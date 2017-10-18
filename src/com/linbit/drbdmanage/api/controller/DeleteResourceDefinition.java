@@ -28,6 +28,12 @@ public class DeleteResourceDefinition extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Deletes a resource definition";
+    }
+
+    @Override
     public void executeImpl(
         AccessContext accCtx,
         Message msg,

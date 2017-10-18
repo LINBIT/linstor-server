@@ -28,6 +28,12 @@ public class CreateStorPool extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Creates a storage pool name registration";
+    }
+
+    @Override
     protected void executeImpl(
         AccessContext accCtx,
         Message msg,

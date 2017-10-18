@@ -29,6 +29,12 @@ public class CreateVolumeConnection extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Defines volume connection options";
+    }
+
+    @Override
     protected void executeImpl(
         AccessContext accCtx,
         Message msg,

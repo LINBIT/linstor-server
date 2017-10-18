@@ -16,6 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -102,6 +103,26 @@ public class CommonMessageProcessor implements MessageProcessor
             readLock.unlock();
         }
         return apiNames;
+    }
+
+    public Map<String, ApiCall> getApiCallObjects()
+    {
+        Lock readLock = apiLock.readLock();
+        Map<String, ApiCall> objList;
+        try
+        {
+            readLock.lock();
+            objList = new TreeMap<>();
+            for (ApiCall apiObj : apiCallMap.values())
+            {
+                objList.put(apiObj.getName(), apiObj);
+            }
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+        return objList;
     }
 
     @Override

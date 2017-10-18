@@ -20,6 +20,13 @@ public interface ApiCall
     String getName();
 
     /**
+     * Returns the description of the API call's function
+     *
+     * @return Description of the API call's function
+     */
+    String getDescription();
+
+    /**
      * Executes the API call
      *
      * @param accCtx    The security context to use for execution

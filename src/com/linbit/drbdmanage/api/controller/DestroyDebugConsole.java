@@ -36,6 +36,12 @@ public class DestroyDebugConsole extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Detaches a debug console from a peer connection and destroys the debug console object";
+    }
+
+    @Override
     public String getName()
     {
         return DestroyDebugConsole.class.getSimpleName();

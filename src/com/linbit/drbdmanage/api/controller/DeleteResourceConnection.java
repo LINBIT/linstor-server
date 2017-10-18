@@ -29,6 +29,12 @@ public class DeleteResourceConnection extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Deletes resource connection options";
+    }
+
+    @Override
     protected void executeImpl(
         AccessContext accCtx,
         Message msg,

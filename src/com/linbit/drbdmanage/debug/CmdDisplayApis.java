@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.debug;
 
 import com.linbit.AutoIndent;
+import com.linbit.drbdmanage.ApiCall;
 import com.linbit.drbdmanage.security.AccessContext;
 import java.io.PrintStream;
 import java.util.Map;
@@ -38,9 +39,18 @@ public class CmdDisplayApis extends BaseDebugCmd
         throws Exception
     {
         int count = 0;
-        for (String apiName : cmnDebugCtl.getApiCallNames())
+        for (ApiCall apiObj : cmnDebugCtl.getApiCallObjects().values())
         {
-            AutoIndent.printWithIndent(debugOut, 4, apiName);
+            debugOut.printf("\u001b[1;37m%s\u001b[0m\n", apiObj.getName());
+            String description = apiObj.getDescription();
+            if (description != null)
+            {
+                AutoIndent.printWithIndent(debugOut, 4, description);
+            }
+            AutoIndent.printWithIndent(
+                debugOut, 4,
+                "Provider: " + apiObj.getClass().getCanonicalName()
+            );
             ++count;
         }
         if (count == 0)

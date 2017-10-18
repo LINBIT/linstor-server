@@ -26,6 +26,7 @@ public interface CommonDebugControl
     Peer getPeer(String peerId);
     Map<String, Peer> getAllPeers();
     Set<String> getApiCallNames();
+    Map<String, ApiCall> getApiCallObjects();
     Map<NodeName, Node> getNodesMap();
     ObjectProtection getNodesMapProt();
     Map<ResourceName, ResourceDefinition> getRscDfnMap();

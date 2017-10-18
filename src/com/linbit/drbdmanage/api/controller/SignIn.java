@@ -32,6 +32,12 @@ public class SignIn extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Performs a sign-in with the specified credentials";
+    }
+
+    @Override
     public void executeImpl(
         AccessContext accCtx,
         Message msg,

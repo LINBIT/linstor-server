@@ -39,6 +39,13 @@ public class DebugCommand extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Submits a debug command to an active debug console attached to the peer.\n" +
+            "The debug console typically answers with a DebugReply message.\n";
+    }
+
+    @Override
     public String getName()
     {
         return DebugCommand.class.getSimpleName();

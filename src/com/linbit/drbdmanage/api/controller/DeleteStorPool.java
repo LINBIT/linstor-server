@@ -29,6 +29,12 @@ public class DeleteStorPool extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Deletes a storage pool name registration";
+    }
+
+    @Override
     protected void executeImpl(
         AccessContext accCtx,
         Message msg,

@@ -28,6 +28,12 @@ public class CreateNode extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Creates a node";
+    }
+
+    @Override
     public void executeImpl(
         AccessContext accCtx,
         Message msg,

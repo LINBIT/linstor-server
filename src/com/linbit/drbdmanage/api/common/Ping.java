@@ -27,6 +27,12 @@ public class Ping extends BaseApiCall
     {
         return Ping.class.getSimpleName();
     }
+    
+    @Override
+    public String getDescription()
+    {
+        return "Ping: Communication test. Responds with a Pong message.";
+    }
 
     public Ping(
         DrbdManage      ctrlRef,

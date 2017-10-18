@@ -29,6 +29,12 @@ public class CreateStorPoolDfn extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Creates a storage pool definition";
+    }
+
+    @Override
     protected void executeImpl(
         AccessContext accCtx,
         Message msg,

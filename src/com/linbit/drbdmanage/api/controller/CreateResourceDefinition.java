@@ -33,6 +33,12 @@ public class CreateResourceDefinition extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Creates a resource definition";
+    }
+
+    @Override
     public void executeImpl(
         AccessContext accCtx,
         Message msg,

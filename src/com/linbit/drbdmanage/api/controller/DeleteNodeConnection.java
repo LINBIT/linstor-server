@@ -29,6 +29,12 @@ public class DeleteNodeConnection extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Deletes node connection options";
+    }
+
+    @Override
     protected void executeImpl(
         AccessContext accCtx,
         Message msg,

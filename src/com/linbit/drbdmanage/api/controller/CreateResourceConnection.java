@@ -29,6 +29,12 @@ public class CreateResourceConnection extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Defines resource connection options";
+    }
+
+    @Override
     protected void executeImpl(
         AccessContext accCtx,
         Message msg,

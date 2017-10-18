@@ -29,6 +29,12 @@ public class DeleteStorPoolDfn extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Deletes a storage pool definition";
+    }
+
+    @Override
     protected void executeImpl(
         AccessContext accCtx,
         Message msg,

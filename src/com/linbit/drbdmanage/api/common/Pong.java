@@ -23,6 +23,12 @@ public class Pong extends BaseApiCall
     }
 
     @Override
+    public String getDescription()
+    {
+        return "Updates the Pong-received timestamp";
+    }
+
+    @Override
     public void executeImpl(
         AccessContext accCtx,
         Message msg,
