@@ -1,6 +1,8 @@
 package com.linbit;
 
+import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.logging.ErrorReporter;
+
 import java.util.ArrayDeque;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,13 +21,15 @@ public class WorkerPool implements WorkQueue
     private final String threadNamePrefix;
 
     private ErrorReporter errorLog;
+    private DbConnectionPool dbConnPool;
 
     private WorkerPool(
         int parallelism,
         int queueSize,
         boolean fair,
         String namePrefix,
-        ErrorReporter errorLogRef
+        ErrorReporter errorLogRef,
+        DbConnectionPool dbConnPoolRef
     )
     {
         workQueue = new ArrayDeque<>(queueSize);
@@ -36,6 +40,7 @@ public class WorkerPool implements WorkQueue
         workQueueSize = queueSize;
         threadNamePrefix = namePrefix;
         errorLog = errorLogRef;
+        dbConnPool = dbConnPoolRef;
     }
 
     public static WorkerPool initialize(
@@ -43,10 +48,11 @@ public class WorkerPool implements WorkQueue
         int queueSize,
         boolean fair,
         String namePrefix,
-        ErrorReporter errorLogRef
+        ErrorReporter errorLogRef,
+        DbConnectionPool dbConnPool
     )
     {
-        WorkerPool pool = new WorkerPool(parallelism, queueSize, fair, namePrefix, errorLogRef);
+        WorkerPool pool = new WorkerPool(parallelism, queueSize, fair, namePrefix, errorLogRef, dbConnPool);
 
         for (int threadIndex = 0; threadIndex < parallelism; ++threadIndex)
         {
@@ -185,6 +191,21 @@ public class WorkerPool implements WorkQueue
                         synchronized (pool)
                         {
                             pool.notifyAll();
+                        }
+                    }
+                    if (pool.dbConnPool != null)
+                    {
+                        if (pool.dbConnPool.closeAllThreadLocalConnections())
+                        {
+                            pool.errorLog.reportError(
+                                new ImplementationError(
+                                    String.format(
+                                        "Task of class %s did not close all db connections.",
+                                        task.getClass().getCanonicalName()
+                                    ),
+                                    null
+                                )
+                            );
                         }
                     }
                 }

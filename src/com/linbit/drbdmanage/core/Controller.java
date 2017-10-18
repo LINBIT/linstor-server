@@ -284,7 +284,8 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     setWorkerThreadCount(initCtx, thrCount);
                     setWorkerQueueSize(initCtx, qSize);
                     workerThrPool = WorkerPool.initialize(
-                        thrCount, qSize, true, "MainWorkerPool", getErrorReporter()
+                        thrCount, qSize, true, "MainWorkerPool", getErrorReporter(),
+                        dbConnPool
                     );
                     // Initialize the message processor
                     // errorLogRef.logInfo("Initializing API call dispatcher");

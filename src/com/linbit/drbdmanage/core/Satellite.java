@@ -184,7 +184,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             setWorkerThreadCount(initCtx, thrCount);
             setWorkerQueueSize(initCtx, qSize);
             workerThrPool = WorkerPool.initialize(
-                thrCount, qSize, true, "MainWorkerPool", getErrorReporter()
+                thrCount, qSize, true, "MainWorkerPool", getErrorReporter(), null
             );
 
             // Initialize the message processor

@@ -9,6 +9,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.ControllerDatabase;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
@@ -44,6 +46,8 @@ public class DbConnectionPool implements ControllerDatabase
     private Properties props;
     private boolean started = false;
 
+    private ThreadLocal<List<Connection>> threadLocalConnections;
+
     static
     {
         try
@@ -59,6 +63,7 @@ public class DbConnectionPool implements ControllerDatabase
     public DbConnectionPool()
     {
         serviceNameInstance = SERVICE_NAME;
+        threadLocalConnections = new ThreadLocal<>();
     }
 
     @Override
@@ -114,6 +119,13 @@ public class DbConnectionPool implements ControllerDatabase
         if (dataSource != null)
         {
             dbConn = dataSource.getConnection();
+            List<Connection> connections = threadLocalConnections.get();
+            if (connections == null)
+            {
+                connections = new ArrayList<>();
+                threadLocalConnections.set(connections);
+            }
+            connections.add(dbConn);
         }
         return dbConn;
     }
@@ -126,11 +138,42 @@ public class DbConnectionPool implements ControllerDatabase
             if (dbConn != null)
             {
                 dbConn.close();
+                List<Connection> list = threadLocalConnections.get();
+                if (list != null)
+                {
+                    list.remove(dbConn);
+                }
             }
         }
         catch (SQLException ignored)
         {
         }
+    }
+
+    /**
+     * Closes all db connections the calling thread had not closed yet.
+     * @return True if there was at least one open connection, false otherwise.
+     */
+    public boolean closeAllThreadLocalConnections()
+    {
+        boolean ret = false;
+        List<Connection> list = threadLocalConnections.get();
+        if (list != null)
+        {
+            for (Connection conn : list)
+            {
+                ret = true;
+                try
+                {
+                    conn.close();
+                }
+                catch (SQLException e)
+                {
+                }
+            }
+            list.clear();
+        }
+        return ret;
     }
 
     @Override

@@ -328,7 +328,7 @@ public class WorkerPoolTest
 
         public WorkerPool build()
         {
-            return WorkerPool.initialize(parallelism, queueSize, fairness, threadPrefix, errorReporter);
+            return WorkerPool.initialize(parallelism, queueSize, fairness, threadPrefix, errorReporter, null);
         }
 
         public WorkerPoolBuilder parallelism(int parallelism)
