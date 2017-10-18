@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.api.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.core.DrbdManage;
@@ -40,7 +41,7 @@ public class CreateDebugConsole extends BaseApiCall
     @Override
     public String getName()
     {
-        return CreateDebugConsole.class.getSimpleName();
+        return ApiConsts.API_CRT_DBG_CNSL;
     }
 
     @Override

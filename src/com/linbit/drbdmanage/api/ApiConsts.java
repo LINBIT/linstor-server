@@ -38,6 +38,9 @@ public final class ApiConsts
     public static final String API_AUTO_DPLY_RSC     = "AutoDplyRsc";
     public static final String API_LOST_NODE         = "LostNode";
     public static final String API_CHK_STATE         = "ChkState";
+    public static final String API_SIGN_IN           = "SignIn";
+    public static final String API_CRT_DBG_CNSL      = "CrtDbgCnsl";
+    public static final String API_DSTR_DBG_CNSL     = "DstrDbgCnsl";
 
     public static final String API_LST_NODE          = "LstNode";
     public static final String API_LST_RSC           = "LstRsc";
