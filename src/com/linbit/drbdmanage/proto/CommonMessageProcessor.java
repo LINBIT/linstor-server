@@ -184,37 +184,38 @@ public class CommonMessageProcessor implements MessageProcessor
             byte[] msgData = msg.getData();
             ByteArrayInputStream msgDataIn = new ByteArrayInputStream(msgData);
 
-
             MsgHeader header = MsgHeader.parseDelimitedFrom(msgDataIn);
+            if (header != null)
+            {
+                int msgId = header.getMsgId();
+                String apiCallName = header.getApiCall();
 
-            int msgId = header.getMsgId();
-            String apiCallName = header.getApiCall();
-
-            Lock readLock = apiLock.readLock();
-            ApiCall apiCallObj;
-            try
-            {
-                readLock.lock();
-                apiCallObj = apiCallMap.get(apiCallName);
-            }
-            finally
-            {
-                readLock.unlock();
-            }
-            if (apiCallObj != null)
-            {
-                ApiCallInvocation apiCallInv = new ApiCallInvocation(
-                    apiCallObj,
-                    client.getAccessContext(),
-                    msg, msgId, msgDataIn,
-                    client
-                );
-                workQ.submit(apiCallInv);
-            }
-            else
-            {
-                // FIXME: Debug code
-                System.err.printf("Unknown API call '%s'\n", apiCallName);
+                Lock readLock = apiLock.readLock();
+                ApiCall apiCallObj;
+                try
+                {
+                    readLock.lock();
+                    apiCallObj = apiCallMap.get(apiCallName);
+                }
+                finally
+                {
+                    readLock.unlock();
+                }
+                if (apiCallObj != null)
+                {
+                    ApiCallInvocation apiCallInv = new ApiCallInvocation(
+                        apiCallObj,
+                        client.getAccessContext(),
+                        msg, msgId, msgDataIn,
+                        client
+                    );
+                    workQ.submit(apiCallInv);
+                }
+                else
+                {
+                    // FIXME: Debug code
+                    System.err.printf("Unknown API call '%s'\n", apiCallName);
+                }
             }
         }
         catch (IOException ioExc)
