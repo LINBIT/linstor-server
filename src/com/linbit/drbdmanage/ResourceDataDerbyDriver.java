@@ -110,7 +110,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         {
             DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
-        errorReporter.logDebug("Resource created %s", getDebugId(res));
+        errorReporter.logTrace("Resource created %s", getDebugId(res));
     }
 
     public void ensureResExists(AccessContext accCtx, ResourceData res, TransactionMgr transMgr)
@@ -353,7 +353,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                             resData.putVolume(dbCtx, volData);
                         }
                         errorReporter.logTrace("Resource's Volumes restored %s", getTraceId(resData));
-                        errorReporter.logDebug("Resource loaded from DB %s", getTraceId(resData));
+                        errorReporter.logTrace("Resource loaded from DB %s", getTraceId(resData));
                     }
                     else
                     {
@@ -362,7 +362,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 }
                 else
                 {
-                    errorReporter.logDebug("Resource loaded from cache %s", getDebugId(resData));
+                    errorReporter.logTrace("Resource loaded from cache %s", getDebugId(resData));
                 }
                 resList.add(resData);
             }
@@ -404,7 +404,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("Resource deleted %s", getTraceId(resource));
+        errorReporter.logTrace("Resource deleted %s", getTraceId(resource));
     }
 
     @Override
@@ -495,7 +495,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
                     stmt.executeUpdate();
 
-                    errorReporter.logDebug("Reource's flags updated from [%s] to [%s] %s",
+                    errorReporter.logTrace("Reource's flags updated from [%s] to [%s] %s",
                         Long.toBinaryString(resource.getStateFlags().getFlagsBits(dbCtx)),
                         Long.toBinaryString(flags),
                         getDebugId(resource)

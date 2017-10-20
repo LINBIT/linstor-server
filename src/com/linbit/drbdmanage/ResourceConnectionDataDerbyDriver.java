@@ -193,11 +193,11 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             {
                 DerbyDriver.handleAccessDeniedException(accDeniedExc);
             }
-            errorReporter.logDebug("ResourceConnection loaded from DB %s", getDebugId(resConData));
+            errorReporter.logTrace("ResourceConnection loaded from DB %s", getDebugId(resConData));
         }
         else
         {
-            errorReporter.logDebug("ResourceConnection loaded from cache %s", getDebugId(resConData));
+            errorReporter.logTrace("ResourceConnection loaded from cache %s", getDebugId(resConData));
         }
 
         return resConData;
@@ -235,7 +235,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             }
         }
 
-        errorReporter.logDebug(
+        errorReporter.logTrace(
             "%d ResourceConnections loaded for Resource %s",
             connections.size(),
             getResourceDebugId(resource)
@@ -260,7 +260,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
 
             stmt.executeUpdate();
 
-            errorReporter.logDebug("ResourceConnection created s", getDebugId(conDfnData));
+            errorReporter.logTrace("ResourceConnection created s", getDebugId(conDfnData));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -286,7 +286,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
 
                 stmt.executeUpdate();
             }
-            errorReporter.logDebug("ResourceConnection deleted %s", getDebugId(conDfnData));
+            errorReporter.logTrace("ResourceConnection deleted %s", getDebugId(conDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {

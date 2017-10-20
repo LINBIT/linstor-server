@@ -148,7 +148,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                             resultSet,
                             transMgr
                         );
-                        errorReporter.logDebug(
+                        errorReporter.logTrace(
                             "VolumeConnection loaded %s",
                             getDebugId(ret)
                         );
@@ -205,7 +205,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             }
         }
 
-        errorReporter.logDebug(
+        errorReporter.logTrace(
             "%d VolumeConnections loaded for Resource %s",
             connections.size(),
             getVolumeDebugId(volume)
@@ -342,7 +342,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
 
             stmt.executeUpdate();
 
-            errorReporter.logDebug("VolumeConnection created %s", getDebugId(conDfnData));
+            errorReporter.logTrace("VolumeConnection created %s", getDebugId(conDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -367,7 +367,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
 
             stmt.executeUpdate();
 
-            errorReporter.logDebug("VolumeConnection deleted %s", getDebugId(conDfnData));
+            errorReporter.logTrace("VolumeConnection deleted %s", getDebugId(conDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {

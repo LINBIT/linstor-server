@@ -77,7 +77,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             stmt.setString(4, storPoolData.getDriverName());
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("StorPool created %s", getDebugId(storPoolData));
+        errorReporter.logTrace("StorPool created %s", getDebugId(storPoolData));
     }
 
     @Override
@@ -118,14 +118,14 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                     else
                     {
                         sp = list.get(0);
-                        errorReporter.logDebug("StorPool loaded from DB", getDebugId(sp));
+                        errorReporter.logTrace("StorPool loaded from DB", getDebugId(sp));
                     }
                 }
             }
         }
         else
         {
-            errorReporter.logDebug("StorPool loaded from cache %s", getDebugId(sp));
+            errorReporter.logTrace("StorPool loaded from cache %s", getDebugId(sp));
         }
         return sp;
     }
@@ -147,7 +147,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 storPoolList = restore(node, resultSet, transMgr);
             }
         }
-        errorReporter.logDebug(
+        errorReporter.logTrace(
             "%d StorPools loaded for Node (NodeName=%s)",
             storPoolList.size(),
             node.getName().displayValue
@@ -267,16 +267,16 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 {
                     DerbyDriver.handleAccessDeniedException(accDeniedExc);
                 }
-                errorReporter.logDebug("%d Volumes restored for StorPool %s",
+                errorReporter.logTrace("%d Volumes restored for StorPool %s",
                     volumes.size(),
                     getDebugId(storPoolData)
                 );
 
-                errorReporter.logDebug("Loaded StorPool from DB %s", getDebugId(storPoolData));
+                errorReporter.logTrace("Loaded StorPool from DB %s", getDebugId(storPoolData));
             }
             else
             {
-                errorReporter.logDebug("Loaded StorPool from cache %s", getDebugId(storPoolData));
+                errorReporter.logTrace("Loaded StorPool from cache %s", getDebugId(storPoolData));
             }
             storPoolList.add(storPoolData);
         }
@@ -296,7 +296,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             stmt.setString(2, storPoolDfn.getName().value);
 
             stmt.executeUpdate();
-            errorReporter.logDebug("StorPool deleted %s", getDebugId(storPool));
+            errorReporter.logTrace("StorPool deleted %s", getDebugId(storPool));
         }
         catch (AccessDeniedException accDeniedExc)
         {

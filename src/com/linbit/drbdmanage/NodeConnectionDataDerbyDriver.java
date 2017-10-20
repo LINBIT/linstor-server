@@ -130,7 +130,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
             }
         }
 
-        errorReporter.logDebug(
+        errorReporter.logTrace(
             "%d NodeConnections loaded for Node %s",
             connections.size(),
             getNodeDebugId(node)
@@ -200,11 +200,11 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
             {
                 DerbyDriver.handleAccessDeniedException(accDeniedExc);
             }
-            errorReporter.logDebug("ResourceConnection loaded from DB %s", getDebugId(nodeConData));
+            errorReporter.logTrace("ResourceConnection loaded from DB %s", getDebugId(nodeConData));
         }
         else
         {
-            errorReporter.logDebug("ResourceConnection loaded from cache %s", getDebugId(nodeConData));
+            errorReporter.logTrace("ResourceConnection loaded from cache %s", getDebugId(nodeConData));
         }
 
         return nodeConData;
@@ -225,7 +225,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
 
             stmt.executeUpdate();
 
-            errorReporter.logDebug("NodeConnection created s", getDebugId(nodeConDfnData));
+            errorReporter.logTrace("NodeConnection created s", getDebugId(nodeConDfnData));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -249,7 +249,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
 
                 stmt.executeUpdate();
             }
-            errorReporter.logDebug("NodeConnection deleted %s", getDebugId(nodeConDfnData));
+            errorReporter.logTrace("NodeConnection deleted %s", getDebugId(nodeConDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {

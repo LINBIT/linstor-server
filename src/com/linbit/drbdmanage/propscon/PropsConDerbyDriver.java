@@ -96,7 +96,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
                 }
             }
         }
-        errorReporter.logDebug("Property stored %s", getId(instanceName, key, value));
+        errorReporter.logTrace("Property stored %s", getId(instanceName, key, value));
     }
 
     @Override
@@ -112,7 +112,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
             stmt.executeUpdate();
         }
 
-        errorReporter.logDebug("Property removed %s", getId(instanceName, key));
+        errorReporter.logTrace("Property removed %s", getId(instanceName, key));
     }
 
     @Override
@@ -128,7 +128,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
                 stmt.setString(2, key);
                 stmt.executeUpdate();
 
-                errorReporter.logDebug("Property removed %s", getId(instanceName, key));
+                errorReporter.logTrace("Property removed %s", getId(instanceName, key));
             }
         }
     }
@@ -144,7 +144,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
             stmt.setString(1, instanceName.toUpperCase());
             rowsUpdated = stmt.executeUpdate();
         }
-        errorReporter.logDebug(
+        errorReporter.logTrace(
             "Removed all (%d) properties by instance %s",
             rowsUpdated,
             getId(instanceName)
@@ -171,7 +171,7 @@ public class PropsConDerbyDriver implements PropsConDatabaseDriver
                 }
             }
         }
-        errorReporter.logDebug(
+        errorReporter.logTrace(
             "Loaded all (%d) properties for instance %s",
             ret.size(),
             getId(instanceName)

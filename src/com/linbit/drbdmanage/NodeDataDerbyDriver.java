@@ -110,7 +110,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             stmt.executeUpdate();
             cache(node);
 
-            errorReporter.logDebug("Node created %s", getDebugId(node));
+            errorReporter.logTrace("Node created %s", getDebugId(node));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -133,7 +133,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 }
             }
         }
-        errorReporter.logDebug("Loaded %d Nodes", nodeCache.size());
+        errorReporter.logTrace("Loaded %d Nodes", nodeCache.size());
     }
 
     @Override
@@ -258,7 +258,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                         nodeConDfnList.size()
                     );
 
-                    errorReporter.logDebug("Node loaded from DB %s", getDebugId(node));
+                    errorReporter.logTrace("Node loaded from DB %s", getDebugId(node));
                 }
                 catch (AccessDeniedException accessDeniedExc)
                 {
@@ -268,12 +268,12 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             else
             {
                 node = cacheGet(nodeName);
-                errorReporter.logDebug("Node loaded from Cache %s", getDebugId(node));
+                errorReporter.logTrace("Node loaded from Cache %s", getDebugId(node));
             }
         }
         else
         {
-            errorReporter.logDebug("Node loaded from cache %s", getDebugId(node));
+            errorReporter.logTrace("Node loaded from cache %s", getDebugId(node));
         }
         return node;
     }
@@ -307,7 +307,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             stmt.executeUpdate();
         }
         cacheRemove(node.getName());
-        errorReporter.logDebug("Node deleted %s", getDebugId(node));
+        errorReporter.logTrace("Node deleted %s", getDebugId(node));
     }
 
     private boolean cache(NodeData node)
@@ -395,7 +395,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 
                     stmt.executeUpdate();
                 }
-                errorReporter.logDebug("Node's flags updated from [%s] to [%s] %s",
+                errorReporter.logTrace("Node's flags updated from [%s] to [%s] %s",
                     Long.toBinaryString(node.getFlags().getFlagsBits(dbCtx)),
                     Long.toBinaryString(flags),
                     getDebugId(node)
@@ -427,7 +427,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 
                     stmt.executeUpdate();
                 }
-                errorReporter.logDebug("Node's NodeType updated from [%s] to [%s] %s",
+                errorReporter.logTrace("Node's NodeType updated from [%s] to [%s] %s",
                     parent.getNodeType(dbCtx).name(),
                     element.name(),
                     getDebugId(parent)

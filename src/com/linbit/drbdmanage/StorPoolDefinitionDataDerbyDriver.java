@@ -66,7 +66,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
 
         cache(storPoolDefinitionData);
 
-        errorReporter.logDebug("StorPoolDefinition created %s", getDebugId(storPoolDefinitionData));
+        errorReporter.logTrace("StorPoolDefinition created %s", getDebugId(storPoolDefinitionData));
     }
 
     @Override
@@ -117,7 +117,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
                 }
             }
         }
-        errorReporter.logDebug("Loaded %d StorPoolDefinitions", storPoolDfnMap.size());
+        errorReporter.logTrace("Loaded %d StorPoolDefinitions", storPoolDfnMap.size());
     }
 
     public StorPoolDefinitionData load(ResultSet resultSet, TransactionMgr transMgr) throws SQLException
@@ -150,11 +150,11 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
 
             storPoolDefinition = new StorPoolDefinitionData(uuid, objProt, storPoolName);
             cache(storPoolDefinition);
-            errorReporter.logDebug("StorPoolDefinition loaded from DB %s", getDebugId(storPoolName));
+            errorReporter.logTrace("StorPoolDefinition loaded from DB %s", getDebugId(storPoolName));
         }
         else
         {
-            errorReporter.logDebug("StorPoolDefinition loaded from cache %s", getDebugId(storPoolName));
+            errorReporter.logTrace("StorPoolDefinition loaded from cache %s", getDebugId(storPoolName));
         }
         return storPoolDefinition;
     }
@@ -187,7 +187,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
             stmt.setString(1, storPoolDefinitionData.getName().value);
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("StorPoolDefinition deleted %s", getDebugId(storPoolDefinitionData));
+        errorReporter.logTrace("StorPoolDefinition deleted %s", getDebugId(storPoolDefinitionData));
     }
 
     private void cache(StorPoolDefinitionData spdd)

@@ -93,7 +93,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
 
             resDfnMap.put(resourceDefinition.getName(), resourceDefinition);
 
-            errorReporter.logDebug("ResourceDefinition created %s", getDebugId(resourceDefinition));
+            errorReporter.logTrace("ResourceDefinition created %s", getDebugId(resourceDefinition));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -160,7 +160,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 }
             }
         }
-        errorReporter.logDebug("Loaded %d ResourceDefinitions", resDfnMap.size());
+        errorReporter.logTrace("Loaded %d ResourceDefinitions", resDfnMap.size());
     }
 
     private ResourceDefinitionData load(ResultSet resultSet, TransactionMgr transMgr) throws SQLException
@@ -242,7 +242,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         }
         else
         {
-            errorReporter.logDebug("ResourceDefinition loaded from cache %s", getDebugId(resDfn));
+            errorReporter.logTrace("ResourceDefinition loaded from cache %s", getDebugId(resDfn));
         }
         return resDfn;
     }
@@ -275,7 +275,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
             stmt.setString(1, resourceDefinition.getName().value);
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("ResourceDfinition deleted %s", getDebugId(resourceDefinition));
+        errorReporter.logTrace("ResourceDfinition deleted %s", getDebugId(resourceDefinition));
     }
 
     @Override
@@ -328,7 +328,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     stmt.setString(2, resourceDefinition.getName().value);
                     stmt.executeUpdate();
                 }
-                errorReporter.logDebug(
+                errorReporter.logTrace(
                     "ResourceDefinition's flags updated from [%s] to [%s] %s",
                     Long.toBinaryString(resourceDefinition.getFlags().getFlagsBits(dbCtx)),
                     Long.toBinaryString(flags),

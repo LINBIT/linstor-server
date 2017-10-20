@@ -113,7 +113,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("ObjectProtection created %s", getObjProtId(objProt.getObjectProtectionPath()));
+        errorReporter.logTrace("ObjectProtection created %s", getObjProtId(objProt.getObjectProtectionPath()));
     }
 
     @Override
@@ -126,7 +126,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("ObjectProtection deleted %s", getObjProtId(objectPath));
+        errorReporter.logTrace("ObjectProtection deleted %s", getObjProtId(objectPath));
     }
 
     @Override
@@ -147,7 +147,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("AccessControl entry created %s", getAclDebugId(parent, role, grantedAccess));
+        errorReporter.logTrace("AccessControl entry created %s", getAclDebugId(parent, role, grantedAccess));
     }
 
     @Override
@@ -173,7 +173,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
             stmt.executeUpdate();
         }
-        errorReporter.logDebug(
+        errorReporter.logTrace(
             "AccessControl entry updated from %s to %s %s",
             parent.getAcl().getEntry(role),
             grantedAccess,
@@ -192,7 +192,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("AccessControl entry deleted %s", getAclDebugId(parent, role));
+        errorReporter.logTrace("AccessControl entry deleted %s", getAclDebugId(parent, role));
     }
 
     @Override
@@ -301,7 +301,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
             }
             errorReporter.logTrace("AccessControl entries restored %s", getObjProtId(objPath));
 
-            errorReporter.logDebug("ObjectProtection loaded %s", getObjProtId(objPath));
+            errorReporter.logTrace("ObjectProtection loaded %s", getObjProtId(objPath));
         }
         else
         if (logWarnIfNotExists)
@@ -396,7 +396,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
                 stmt.executeUpdate();
             }
-            errorReporter.logDebug(
+            errorReporter.logTrace(
                 "ObjectProtection's Creator updated from %s to %s. %s",
                 parent.getCreator().name.displayValue,
                 creator.name.displayValue,
@@ -423,7 +423,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
                 stmt.executeUpdate();
             }
-            errorReporter.logDebug(
+            errorReporter.logTrace(
                 "ObjectProtection's Creator updated from %s to %s. %s",
                 parent.getCreator().name.displayValue,
                 owner.name.displayValue,
@@ -450,7 +450,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
 
                 stmt.executeUpdate();
             }
-            errorReporter.logDebug(
+            errorReporter.logTrace(
                 "ObjectProtection's SecurityType updated from %s to %s. %s",
                 parent.getCreator().name.displayValue,
                 secType.name.displayValue,

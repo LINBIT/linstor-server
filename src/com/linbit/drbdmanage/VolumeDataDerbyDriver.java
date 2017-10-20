@@ -135,7 +135,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 if (!volList.isEmpty())
                 {
                     ret = volList.get(0);
-                    errorReporter.logDebug("Volume loaded from DB %s", getDebugId(ret));
+                    errorReporter.logTrace("Volume loaded from DB %s", getDebugId(ret));
                 }
                 else
                 if (logWarnIfNotExists)
@@ -177,7 +177,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 ret = load(dbCtx, resRef, resultSet, transMgr);
             }
         }
-        errorReporter.logDebug("%d volumes loaded for resource %s", ret.size(), getDebugId(resRef));
+        errorReporter.logTrace("%d volumes loaded for resource %s", ret.size(), getDebugId(resRef));
         return ret;
     }
 
@@ -201,7 +201,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 ret = load(dbCtx, null, resultSet, transMgr);
             }
         }
-        errorReporter.logDebug("%d volumes loaded for StorPool %s", ret.size(), getDebugId(storPoolData));
+        errorReporter.logTrace("%d volumes loaded for StorPool %s", ret.size(), getDebugId(storPoolData));
         return ret;
     }
 
@@ -417,7 +417,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setLong(8, vol.getFlags().getFlagsBits(dbCtx));
             stmt.executeUpdate();
 
-            errorReporter.logDebug("Volume created %s", getDebugId(vol));
+            errorReporter.logTrace("Volume created %s", getDebugId(vol));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -437,7 +437,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setInt(3, volume.getVolumeDefinition().getVolumeNumber(dbCtx).value);
             stmt.executeUpdate();
 
-            errorReporter.logDebug("Volume deleted %s", getDebugId(volume));
+            errorReporter.logTrace("Volume deleted %s", getDebugId(volume));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -599,7 +599,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 stmt.setInt(4, volume.getVolumeDefinition().getVolumeNumber(dbCtx).value);
                 stmt.executeUpdate();
 
-                errorReporter.logDebug(
+                errorReporter.logTrace(
                     "Volume's flags updated from [%s] to [%s] %s",
                     Long.toBinaryString(volume.getFlags().getFlagsBits(dbCtx)),
                     Long.toBinaryString(flags),

@@ -143,7 +143,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("NetInterface created %s", getDebugId(netInterfaceData));
+        errorReporter.logTrace("NetInterface created %s", getDebugId(netInterfaceData));
     }
 
     public void ensureEntryExists(NetInterfaceData netIfData, TransactionMgr transMgr) throws SQLException
@@ -175,7 +175,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
             stmt.executeUpdate();
         }
-        errorReporter.logDebug("NetInterface deleted %s", getDebugId(netInterfaceData));
+        errorReporter.logTrace("NetInterface deleted %s", getDebugId(netInterfaceData));
     }
 
     @Override
@@ -225,7 +225,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                 }
             }
         }
-        errorReporter.logDebug(
+        errorReporter.logTrace(
             "Loaded %d NetInterfaces for node %s",
             netIfDataList.size(),
             getDebugId(node)
@@ -396,7 +396,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
                 stmt.executeUpdate();
             }
-            errorReporter.logDebug(
+            errorReporter.logTrace(
                 "NetInterface's address updated from [%s] to [%s] %s",
                 getAddress(parent).getAddress(),
                 inetAddress.getAddress(),
@@ -425,7 +425,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
                 stmt.executeUpdate();
             }
-            errorReporter.logDebug(
+            errorReporter.logTrace(
                 "NetInterface's Type updated from [%s] to [%s] %s",
                 getNetInterfaceType(parent).name(),
                 type.name(),

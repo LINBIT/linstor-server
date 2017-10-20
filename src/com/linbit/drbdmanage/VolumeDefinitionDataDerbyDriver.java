@@ -96,7 +96,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
             stmt.executeUpdate();
 
-            errorReporter.logDebug("VolumeDefinition created %s", getDebugId(volumeDefinition));
+            errorReporter.logTrace("VolumeDefinition created %s", getDebugId(volumeDefinition));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -131,7 +131,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                         transMgr,
                         dbCtx
                     );
-                    errorReporter.logDebug("VolumeDefinition loaded %s", getDebugId(resourceDefinition, volumeNumber));
+                    errorReporter.logTrace("VolumeDefinition loaded %s", getDebugId(resourceDefinition, volumeNumber));
                 }
                 else
                 if (logWarnIfNotExists)
@@ -280,7 +280,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             stmt.setString(1, volumeDefinition.getResourceDefinition().getName().value);
             stmt.setInt(2, volumeDefinition.getVolumeNumber(dbCtx).value);
             stmt.executeUpdate();
-            errorReporter.logDebug("VolumeDefinition deleted %s", getDebugId(volumeDefinition));
+            errorReporter.logTrace("VolumeDefinition deleted %s", getDebugId(volumeDefinition));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -392,7 +392,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
                 stmt.executeUpdate();
 
-                errorReporter.logDebug(
+                errorReporter.logTrace(
                     "VolumeDefinition's flags updated from [%s] to [%s] %s",
                     Long.toBinaryString(volumeDefinition.getFlags().getFlagsBits(dbCtx)),
                     Long.toBinaryString(flags),
@@ -425,7 +425,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
                 stmt.executeUpdate();
 
-                errorReporter.logDebug(
+                errorReporter.logTrace(
                     "VolumeDefinition's MinorNumber updated from [%d] to [%d] %s",
                     volumeDefinition.getMinorNr(dbCtx).value,
                     newNumber.value,
@@ -458,7 +458,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
                 stmt.executeUpdate();
 
-                errorReporter.logDebug(
+                errorReporter.logTrace(
                     "VolumeDefinition's Size updated from [%d] to [%d] %s",
                     volumeDefinition.getVolumeSize(dbCtx),
                     size,
