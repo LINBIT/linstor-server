@@ -10,7 +10,7 @@ import com.linbit.drbdmanage.propscon.Props;
 /**
  * Database driver for {@link Props}.
  *
- * @author Gabor Hernadi <gabor.hernadi@linbit.com>
+ * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
 public interface PropsConDatabaseDriver
 {

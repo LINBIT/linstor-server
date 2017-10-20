@@ -288,8 +288,6 @@ public abstract class DrbdManage
      *
      * @param msgProc
      * @param componentRef
-     * @param isController
-     * @throws IOException
      */
     protected static void loadApiCalls(
         final CommonMessageProcessor msgProc,
@@ -329,7 +327,7 @@ public abstract class DrbdManage
 
             if (!pkgPath.toFile().exists())
             {
-                componentRef.errorLog.logDebug(
+                componentRef.errorLog.logError(
                     "Package '%s' does not exist - skipping dynamic load of ApiCalls",
                     pkgPath
                 );

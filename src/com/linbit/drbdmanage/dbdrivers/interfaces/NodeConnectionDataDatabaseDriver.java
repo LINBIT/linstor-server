@@ -14,24 +14,25 @@ import com.linbit.drbdmanage.NodeName;
 /**
  * Database driver for {@link NodeConnectionData}.
  *
- * @author Gabor Hernadi <gabor.hernadi@linbit.com>
+ * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
 public interface NodeConnectionDataDatabaseDriver
 {
     /**
      * Loads the {@link NodeConnectionData} specified by the parameters
      * {@code sourceNode} and {@code targetNode}.
-     * <br />
+     * <br>
      * By convention the {@link NodeName} of {@code sourceNode} has to be alphanumerically
      * smaller than the {@link NodeName} of {@code targetNode}
      * @param sourceNode
      *  Part of the primary key specifying the database entry
      * @param targetNode
      *  Part of the primary key specifying the database entry
-     * @param logWarnIfNoTExists
+     * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
-     *  Used to restore references, like {@link Node}, {@link Resource}, and so on
+     *  Used to restore references, like {@link com.linbit.drbdmanage.Node}, {@link com.linbit.drbdmanage.Resource},
+     *  etc.
      *
      * @return
      *  An instance which contains valid references, but is not
@@ -48,22 +49,17 @@ public interface NodeConnectionDataDatabaseDriver
         throws SQLException;
 
     /**
-     * Loads all {@link NodeConnectionData} specified by the parameter
+     * Loads all {@link com.linbit.drbdmanage.NodeConnectionData} specified by the parameter
      * {@code node}, regardless if {@code node} is the source or the target of the
-     * specific {@link NodeConnection}.
-     * <br />
-     * By convention the {@link NodeName} of {@code sourceNode} has to be alphanumerically
-     * smaller than the {@link NodeName} of {@code targetNode}
-     * @param sourceNode
-     *  Part of the primary key specifying the database entry
-     * @param targetNode
-     *  Part of the primary key specifying the database entry
+     * specific {@link com.linbit.drbdmanage.NodeConnection}.
+     * <br>
      * @param transMgr
-     *  Used to restore references, like {@link Node}, {@link Resource}, and so on
+     *  Used to restore references, like {@link com.linbit.drbdmanage.Node}, {@link com.linbit.drbdmanage.Resource},
+     *  etc.
      *
      * @return
      *  A list of instances which contain valid references, but are not
-     *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
+     *  initialized yet in regards of {@link com.linbit.drbdmanage.BaseTransactionObject#initialized()}
      *
      * @throws SQLException
      */
@@ -74,12 +70,12 @@ public interface NodeConnectionDataDatabaseDriver
         throws SQLException;
 
     /**
-     * Persists the given {@link NodeConnectionData} into the database.
+     * Persists the given {@link com.linbit.drbdmanage.NodeConnectionData} into the database.
      *
      * @param nodeConDfnData
      *  The data to be stored (including the primary key)
      * @param transMgr
-     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
     public void create(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException;
@@ -90,7 +86,7 @@ public interface NodeConnectionDataDatabaseDriver
      * @param nodeConDfnData
      *  The data identifying the database entry to delete
      * @param transMgr
-     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
     public void delete(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException;

@@ -115,7 +115,7 @@ public interface StorageDriver
      * If this method returns false, every snapshot method is expected to throw an
      * {@link UnsupportedOperationException}
      *
-     * @returns true if and only if snapshots are supported by the driver
+     * @return true if and only if snapshots are supported by the driver
      */
     boolean isSnapshotSupported();
 

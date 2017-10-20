@@ -417,7 +417,7 @@ public class GenericTimer<K extends Comparable<K>, V extends Action<K>>
     /**
      * Sets the name of this timer and its action scheduler thread
      *
-     * @param name The name for this timer and its action scheduler thread
+     * @param instanceName The name for this timer and its action scheduler thread
      */
     @Override
     public synchronized void setServiceInstanceName(ServiceName instanceName)

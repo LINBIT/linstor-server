@@ -248,7 +248,7 @@ public class PropsContainer implements Props
      *
      * getProp("a", "b/c") has the same effect as getProp("b/c/a", null)
      *
-     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * Also, if the dbCon class variable is set (via {@link PropsContainer#setConnection(Connection)})
      * this operation is also persisted to the database
      *
      * @param key
@@ -277,7 +277,7 @@ public class PropsContainer implements Props
      *
      * setProp("a", "value", "b/c") has the same effect as setProp("b/c/a", "value", null)
      *
-     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * Also, if the dbCon class variable is set (via {@link PropsContainer#setConnection(Connection)})
      * this operation is also persisted to the database
      *
      * @param key
@@ -316,7 +316,7 @@ public class PropsContainer implements Props
      *
      * removeProp("a", "b/c") has the same effect as removeProp("b/c/a", null)
      *
-     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * Also, if the dbCon class variable is set (via {@link PropsContainer#setConnection(Connection)})
      * this operation is also persisted to the database
      *
      * @param key
@@ -354,7 +354,7 @@ public class PropsContainer implements Props
      *
      * Returns true if any property has been modified by this method.
      *
-     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * Also, if the dbCon class variable is set (via {@link PropsContainer#setConnection(Connection)})
      * this operation is also persisted to the database
      *
      * @param entryMap
@@ -398,7 +398,7 @@ public class PropsContainer implements Props
      *
      * Returns true if any property has been modified by this method
      *
-     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * Also, if the dbCon class variable is set (via {@link PropsContainer#setConnection(Connection)})
      * this operation is also persisted to the database
      *
      * @param selection
@@ -444,7 +444,7 @@ public class PropsContainer implements Props
      *
      * Returns true if any property has been modified by this method
      *
-     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * Also, if the dbCon class variable is set (via {@link PropsContainer#setConnection(Connection)})
      * this operation is also persisted to the database
      * @param selection
      * @param namespace
@@ -470,7 +470,7 @@ public class PropsContainer implements Props
     /**
      * Removes all properties from this instance.
      *
-     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * Also, if the dbCon class variable is set (via {@link PropsContainer#setConnection(Connection)})
      * this operation is also persisted to the database
      *
      * @throws SQLException
@@ -494,7 +494,7 @@ public class PropsContainer implements Props
      *
      * getProp("a") has the same effect as getProp("a", null)
      *
-     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * Also, if the dbCon class variable is set (via {@link PropsContainer#setConnection(Connection)})
      * this operation is also persisted to the database
      *
      * @param key
@@ -513,7 +513,7 @@ public class PropsContainer implements Props
      *
      * setProp("a", "value") has the same effect as setProp("a", "value", null)
      *
-     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * Also, if the dbCon class variable is set (via {@link PropsContainer#setConnection(Connection)})
      * this operation is also persisted to the database
      *
      * @param key
@@ -535,7 +535,7 @@ public class PropsContainer implements Props
      *
      * removeProp("a") has the same effect as removeProp("a", null)
      *
-     * Also, if the dbCon class variable is set (via {@link #setConnection(Connection)})
+     * Also, if the dbCon class variable is set (via {@link PropsContainer#setConnection(Connection)})
      * this operation is also persisted to the database
      *
      * @param key

@@ -674,7 +674,6 @@ public abstract class AbsStorageDriver implements StorageDriver
      *
      * @param map
      * @param key
-     * @param exFormat
      * @throws StorageException
      */
     protected void checkCommand(

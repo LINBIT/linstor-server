@@ -31,7 +31,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     private boolean deleted = false;
 
     /**
-     * Constructor used by {@link #getInstance(AccessContext, StorPoolName, TransactionMgr, boolean)}
+     * Constructor used by {@link StorPoolDefinition#getInstance(AccessContext, StorPoolName, TransactionMgr, boolean)}
      *
      * @param accCtx
      * @param nameRef

@@ -12,26 +12,26 @@ import com.linbit.drbdmanage.Volume;
 import com.linbit.drbdmanage.VolumeConnectionData;
 
 /**
- * Database driver for {@link VolumeConnectionData}.
+ * Database driver for {@link com.linbit.drbdmanage.VolumeConnectionData}.
  *
- * @author Gabor Hernadi <gabor.hernadi@linbit.com>
+ * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
 public interface VolumeConnectionDataDatabaseDriver
 {
     /**
-     * Loads the {@link VolumeConnectionData} specified by the parameters
+     * Loads the {@link com.linbit.drbdmanage.VolumeConnectionData} specified by the parameters
      * {@code resourceName}, {@code sourceNodeName} and {@code targetNodeName}.
-     * <br />
+     * <br>
      * By convention the {@link NodeName} of @{@code sourceVolume} has to be
      * alphanumerically smaller than the {@link NodeName} of {@code targetVolume}
      * @param sourceVolume
      *  Part of the primary key specifying the database entry
      * @param targetVolume
      *  Part of the primary key specifying the database entry
-     * @param logWarnIfNoTExists
+     * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
-     *  Used to restore references, like {@link Node}, {@link Resource}, and so on
+     *  Used to restore references, like {@link com.linbit.drbdmanage.Node}, {@link com.linbit.drbdmanage.Resource}, and so on
      *
      * @return
      *  An instance which contains valid references, but is not
@@ -48,14 +48,14 @@ public interface VolumeConnectionDataDatabaseDriver
         throws SQLException;
 
     /**
-     * Loads all {@link VolumeConnectionData} specified by the parameter
+     * Loads all {@link com.linbit.drbdmanage.VolumeConnectionData} specified by the parameter
      * {@code volume}, regardless if the {@code volume} is the source of the target of the
-     * specific {@link VolumeConnection}.
-     * <br />
+     * specific {@link com.linbit.drbdmanage.VolumeConnection}.
+     * <br>
      * @param volume
      *  Part of the primary key specifying the database entry
      * @param transMgr
-     *  Used to restore references, like {@link Node}, {@link Resource}, and so on
+     *  Used to restore references, like {@link com.linbit.drbdmanage.Node}, {@link com.linbit.drbdmanage.Resource}, and so on
      *
      * @return
      *  A list of instances which contain valid references, but are not
@@ -71,23 +71,23 @@ public interface VolumeConnectionDataDatabaseDriver
 
 
     /**
-     * Persists the given {@link VolumeConnectionData} into the database.
+     * Persists the given {@link com.linbit.drbdmanage.VolumeConnectionData} into the database.
      *
      * @param conDfnData
      *  The data to be stored (including the primary key)
      * @param transMgr
-     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
     public void create(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException;
 
     /**
-     * Removes the given {@link VolumeConnectionData} from the database
+     * Removes the given {@link com.linbit.drbdmanage.VolumeConnectionData} from the database
      *
      * @param conDfnData
      *  The data identifying the database entry to delete
      * @param transMgr
-     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
     public void delete(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException;

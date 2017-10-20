@@ -17,11 +17,11 @@ public class TaskScheduleService implements SystemService, Runnable
     {
         /**
          * When a {@link Task} gets registered in {@link TaskScheduleService}, it will be
-         * Immediately executed (calling {@link Task#run()}). <br />
-         * <br />
+         * Immediately executed (calling {@link Task#run()}). <br>
+         * <br>
          * This method gets called again after approximately X milliseconds after the previous
-         * call (relative time, not absolute timestamp), where X is the return value of the previous call. <br />
-         * <br />
+         * call (relative time, not absolute timestamp), where X is the return value of the previous call. <br>
+         * <br>
          * Any negative return value will cancel the Task.
          */
         public long run();

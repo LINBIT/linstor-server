@@ -36,7 +36,7 @@ public interface DatabaseDriver
     ServiceName getDefaultServiceInstanceName();
 
     /**
-     * Fetches all {@link Node}s, {@link ResourceDefinition}s and {@link StorPoolDefinition}s from
+     * Fetches all {@link com.linbit.drbdmanage.Node}s, {@link ResourceDefinition}s and {@link com.linbit.drbdmanage.StorPoolDefinition}s from
      * the database.
      *
      * @param transMgr
@@ -53,64 +53,74 @@ public interface DatabaseDriver
     String getDefaultConnectionUrl();
 
     /**
-     * Returns the database driver specific implementation for {@link PropsContainer}-IO.
-     * @throws SQLException
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.propscon.PropsContainer}-IO.
      */
     PropsConDatabaseDriver getPropsDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link NodeData}-IO
-     * @param nodeName
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.NodeData}-IO
      */
     NodeDataDatabaseDriver getNodeDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link ResourceData}-IO
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.ResourceData}-IO
      */
     ResourceDataDatabaseDriver getResourceDataDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link ResourceDefinitionData}-IO
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.ResourceDefinitionData}-IO
      */
     ResourceDefinitionDataDatabaseDriver getResourceDefinitionDataDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link VolumeData}-IO
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.VolumeData}-IO
      */
     VolumeDataDatabaseDriver getVolumeDataDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link VolumeDefinitionData}-IO
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.VolumeDefinitionData}-IO
      */
     VolumeDefinitionDataDatabaseDriver getVolumeDefinitionDataDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link StorPoolDefinitionData}-IO
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.StorPoolDefinitionData}-IO
      */
     StorPoolDefinitionDataDatabaseDriver getStorPoolDefinitionDataDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link StorPoolData}-IO
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.StorPoolData}-IO
      */
     StorPoolDataDatabaseDriver getStorPoolDataDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link NetInterfaceData}-IO
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.NetInterfaceData}-IO
      */
     NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link NodeConnectionData}-IO
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.NodeConnectionData}-IO
      */
     NodeConnectionDataDatabaseDriver getNodeConnectionDataDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link ResourceConnectionData}-IO
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.ResourceConnectionData}-IO
      */
     ResourceConnectionDataDatabaseDriver getResourceConnectionDataDatabaseDriver();
 
     /**
-     * Returns the database driver specific implementation for {@link VolumeConnectionData}-IO
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.drbdmanage.VolumeConnectionData}-IO
      */
     VolumeConnectionDataDatabaseDriver getVolumeConnectionDataDatabaseDriver();
 }

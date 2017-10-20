@@ -9,7 +9,7 @@ import java.sql.SQLException;
 /**
  * Active role selection
  *
- * @author Robert Altnoeder <robert.altnoeder@linbit.com>
+ * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 public final class Authorization
 {

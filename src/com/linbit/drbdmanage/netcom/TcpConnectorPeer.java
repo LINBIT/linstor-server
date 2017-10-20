@@ -193,7 +193,9 @@ public class TcpConnectorPeer implements Peer
 
     /**
      * Closes the connection to the peer
-     * @throws SSLException
+     *
+     * FIXME: This said "throws SSLException", but JavaDoc complains. Check whether it actually throw SSLException
+     *        and whether it is even a good idea to do that.
      */
     @Override
     public void closeConnection()

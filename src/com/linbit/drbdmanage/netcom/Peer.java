@@ -39,7 +39,8 @@ public interface Peer
     /**
      * Sets a new access context for the connected peer
      *
-     * @return AccessContext object representing the connected peer's security context
+     * @param privilegedCtx The access context of the subject changing the peer's access context
+     * @param newAccCtx The new access context to associate with the peer
      */
     void setAccessContext(AccessContext privilegedCtx, AccessContext newAccCtx)
         throws AccessDeniedException;
@@ -75,7 +76,9 @@ public interface Peer
 
     /**
      * Closes the connection to the peer
-     * @throws SSLException
+     *
+     * FIXME: This said "throws SSLException", but JavaDoc complains. Check whether it actually throw SSLException
+     *        and whether it is even a good idea to do that.
      */
     void closeConnection();
 
@@ -153,14 +156,16 @@ public interface Peer
     void pongReceived();
 
     /**
-     * Returns a timestamp in milliseconds when the last ping message was sent (e.g. {@link #sendPing()} was called)
+     * Returns a timestamp in milliseconds when the last ping message was sent
+     * (e.g. {@link Peer#sendPing()} was called)
      *
      * @return
      */
     long getLastPingSent();
 
     /**
-     * Returns a timestamp in milliseconds when the last ping message was received (e.g. {@link #pongReceived()} was called)
+     * Returns a timestamp in milliseconds when the last ping message was received
+     * (e.g. {@link Peer#pongReceived()} was called)
      *
      * @return
      */

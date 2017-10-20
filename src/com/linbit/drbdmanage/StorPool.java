@@ -26,18 +26,18 @@ public interface StorPool extends TransactionObject
     public UUID getUuid();
 
     /**
-     * Returns the {@link StorPoolName}. This call is the same as <code>getDefinition(accCtx).getName()</code>
+     * Returns the {@link com.linbit.drbdmanage.StorPoolName}. This call is the same as <code>getDefinition(accCtx).getName()</code>
      * but does not require special access.
      */
     public StorPoolName getName();
 
     /**
-     * Returns the {@link Node} this StorPool is associated with.
+     * Returns the {@link com.linbit.drbdmanage.Node} this StorPool is associated with.
      */
     public Node getNode();
 
     /**
-     * Returns the {@link StorPoolDefinition}.
+     * Returns the {@link com.linbit.drbdmanage.StorPoolDefinition}.
      */
     public StorPoolDefinition getDefinition(AccessContext accCtx)
         throws AccessDeniedException;

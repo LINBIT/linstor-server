@@ -4,10 +4,10 @@ import java.sql.Connection;
 
 /**
  * Interface for objects that can apply or undo one or multiple
- * previously performed changes.<br />
- * <br />
+ * previously performed changes.<br>
+ * <br>
  * It is highly recommended to manually commit the database-transaction
- * (which is used by the {@link #setConnection(Connection)} method)
+ * (which is used by the {@link TransactionObject#setConnection(Connection)} method)
  * once all changes are done to the object(s) and if that database-commit
  * passed, call the commit method(s) of the modified object(s).
  *
@@ -24,7 +24,7 @@ public interface TransactionObject
     void initialized();
 
     /**
-     * Returns true if {@link #initialized()} was called
+     * Returns true if {@link TransactionObject#initialized()} was called
      */
     boolean isInitialized();
 

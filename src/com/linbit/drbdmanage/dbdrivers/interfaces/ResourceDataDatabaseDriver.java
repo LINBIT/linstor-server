@@ -15,7 +15,7 @@ import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 /**
  * Database driver for {@link ResourceData}.
  *
- * @author Gabor Hernadi <gabor.hernadi@linbit.com>
+ * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
 public interface ResourceDataDatabaseDriver
 {
@@ -29,8 +29,8 @@ public interface ResourceDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
-     *  The {@link TransactionMgr}, used to restore references, like {@link Node},
-     *  {@link Resource}, and so on
+     *  The {@link com.linbit.TransactionMgr}, used to restore references, like {@link com.linbit.drbdmanage.Node},
+     *  {@link com.linbit.drbdmanage.Resource}, and so on
      * @return
      *  A {@link ResourceConnectionData} which contains valid references, but is not
      *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
@@ -55,7 +55,7 @@ public interface ResourceDataDatabaseDriver
      * @param resource
      *  The data to be stored (including the primary key)
      * @param transMgr
-     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
     void create(ResourceData resource, TransactionMgr transMgr) throws SQLException;
@@ -66,7 +66,7 @@ public interface ResourceDataDatabaseDriver
      * @param resource
      *  The data identifying the row to delete
      * @param transMgr
-     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
     void delete(ResourceData resource, TransactionMgr transMgr) throws SQLException;

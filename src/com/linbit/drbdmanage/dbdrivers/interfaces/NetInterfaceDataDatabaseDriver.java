@@ -14,7 +14,7 @@ import com.linbit.drbdmanage.Node;
 /**
  * Database driver for {@link NetInterfaceData}.
  *
- * @author Gabor Hernadi <gabor.hernadi@linbit.com>
+ * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
 public interface NetInterfaceDataDatabaseDriver
 {
@@ -26,10 +26,10 @@ public interface NetInterfaceDataDatabaseDriver
      *  Part of the primary key specifying the database entry
      * @param netInterfaceName
      *  Part of the primary key specifying the database entry
-     * @param logWarnIfNoTExists
+     * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
-     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @return
      *  An instance which contains valid references, but is not
      *  initialized yet in regards of {@link BaseTransactionObject#initialized()}
@@ -50,7 +50,7 @@ public interface NetInterfaceDataDatabaseDriver
      * @param netInterfaceData
      *  The data to be stored (including the primary key)
      * @param transMgr
-     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
     public void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException;
@@ -61,7 +61,7 @@ public interface NetInterfaceDataDatabaseDriver
      * @param netInterfaceData
      *  The data identifying the database entry to delete
      * @param transMgr
-     *  The {@link TransactionMgr} containing the used database {@link Connection}
+     *  The {@link com.linbit.TransactionMgr} containing the used database {@link Connection}
      * @throws SQLException
      */
     public void delete(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException;

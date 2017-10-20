@@ -54,7 +54,7 @@ public interface ErrorReporter
      * by whatever component of the program is trying to use the respective ErrorReporter
      * implementation.
      *
-     * This method calls {@link #reportError(Level, Throwable)} with {@link Level#ERROR} as default
+     * This method calls {@link ErrorReporter#reportError(Level, Throwable)} with {@link Level#ERROR} as default
      * logLevel.
      *
      * @param errorInfo
@@ -87,7 +87,7 @@ public interface ErrorReporter
 
     /**
      * Reports any kind of error, especially ones that are not expected during normal operation.
-     * Calls {@link #reportError(Level, Throwable, AccessContext, Peer, String)} with {@link Level#ERROR}
+     * Calls {@link ErrorReporter#reportError(Level, Throwable, AccessContext, Peer, String)} with {@link Level#ERROR}
      * as default logLevel.
      *
      * @param errorInfo
