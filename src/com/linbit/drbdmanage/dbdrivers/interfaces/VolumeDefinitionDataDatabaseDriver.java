@@ -7,8 +7,6 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.drbdmanage.MinorNumber;
-import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.VolumeNumber;

@@ -5,7 +5,6 @@ import java.sql.SQLException;
 
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.BaseTransactionObject;
-import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.VolumeData;
 import com.linbit.drbdmanage.VolumeDefinition;

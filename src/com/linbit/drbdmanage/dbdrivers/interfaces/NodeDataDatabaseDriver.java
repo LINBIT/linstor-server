@@ -8,7 +8,6 @@ import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.Node.NodeFlag;
 import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.BaseTransactionObject;
-import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;

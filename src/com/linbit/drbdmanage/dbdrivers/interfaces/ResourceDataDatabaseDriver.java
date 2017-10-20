@@ -7,7 +7,6 @@ import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.drbdmanage.ResourceConnectionData;
 import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.ResourceData;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;

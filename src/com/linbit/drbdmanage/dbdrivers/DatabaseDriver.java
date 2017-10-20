@@ -3,14 +3,7 @@ package com.linbit.drbdmanage.dbdrivers;
 import java.sql.SQLException;
 import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.ResourceConnectionData;
-import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.NodeData;
-import com.linbit.drbdmanage.ResourceData;
 import com.linbit.drbdmanage.ResourceDefinition;
-import com.linbit.drbdmanage.StorPoolDefinition;
-import com.linbit.drbdmanage.VolumeData;
-import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
@@ -23,7 +16,6 @@ import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabase
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
-import com.linbit.drbdmanage.propscon.PropsContainer;
 
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;

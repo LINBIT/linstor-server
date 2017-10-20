@@ -7,7 +7,6 @@ import java.util.List;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.drbdmanage.NodeName;
-import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.Volume;
 import com.linbit.drbdmanage.VolumeConnectionData;
 

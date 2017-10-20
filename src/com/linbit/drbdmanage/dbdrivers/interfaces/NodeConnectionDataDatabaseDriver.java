@@ -7,7 +7,6 @@ import java.util.List;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.BaseTransactionObject;
 import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.NodeConnection;
 import com.linbit.drbdmanage.NodeConnectionData;
 import com.linbit.drbdmanage.NodeName;
 
