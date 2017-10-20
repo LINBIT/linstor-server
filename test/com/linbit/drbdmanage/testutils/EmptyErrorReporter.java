@@ -6,6 +6,7 @@ import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 
 public class EmptyErrorReporter implements ErrorReporter
 {
@@ -103,5 +104,11 @@ public class EmptyErrorReporter implements ErrorReporter
             errorInfo.printStackTrace();
         }
         return null; // no error report, no logName
+    }
+
+    @Override
+    public void setTraceEnabled(AccessContext accCtx, boolean flag) throws AccessDeniedException
+    {
+        // Tracing on/off not implemented, no-op
     }
 }
