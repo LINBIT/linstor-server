@@ -108,7 +108,7 @@ public class LvmDriver extends AbsStorageDriver
 
     /**
      * Runs an <code>lvs</code> command, fetches the results and returns
-     * the {@link LvsInfo} of the specified identifier. <br />
+     * the {@link LvsInfo} of the specified identifier. <br>
      *
      * If the identifier could not be found in the list, a
      * {@link StorageException}
