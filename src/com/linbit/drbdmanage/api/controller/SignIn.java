@@ -78,7 +78,10 @@ public class SignIn extends BaseApiCall
                 "If this problem persists, refer to the problem report on the server system for more detailed " +
                 "information about the problem and possible solutions"
             );
-            rcEntry.setDetailsFormat("A problem report was filed under report ID " + reportId);
+            if (reportId != null)
+            {
+                rcEntry.setDetailsFormat("A problem report was filed under report ID " + reportId);
+            }
             if (idNameText != null)
             {
                 rcEntry.putVariable(ApiConsts.KEY_SEC_IDENTITY, idNameText);
