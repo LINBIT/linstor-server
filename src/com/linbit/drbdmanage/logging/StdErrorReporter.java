@@ -5,6 +5,8 @@ import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.Privilege;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,6 +38,10 @@ public final class StdErrorReporter implements ErrorReporter
 
     private static final String SECTION_SEPARATOR;
     private static final int SEPARATOR_WIDTH = 60;
+
+    private static final String RPT_ID_TRACE_DISABLED = "TRACE_LEVEL_REPORTING_DISABLED";
+
+    private boolean traceEnabled = false;
 
     static
     {
@@ -82,6 +88,14 @@ public final class StdErrorReporter implements ErrorReporter
     }
 
     @Override
+    public void setTraceEnabled(AccessContext accCtx, boolean flag)
+        throws AccessDeniedException
+    {
+        accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
+        traceEnabled = flag;
+    }
+
+    @Override
     public String reportError(Throwable errorInfo)
     {
         return reportError(Level.ERROR, errorInfo, null, null, null);
@@ -102,11 +116,27 @@ public final class StdErrorReporter implements ErrorReporter
         String contextInfo
     )
     {
-        return reportError(Level.ERROR, errorInfo, accCtx, client, contextInfo);
+        return reportErrorImpl(Level.ERROR, errorInfo, accCtx, client, contextInfo);
     }
 
     @Override
     public String reportError(
+        Level logLevel,
+        Throwable errorInfo,
+        AccessContext accCtx,
+        Peer client,
+        String contextInfo
+    )
+    {
+        String reportId = RPT_ID_TRACE_DISABLED;
+        if (traceEnabled || logLevel != Level.TRACE )
+        {
+            reportId = reportErrorImpl(logLevel, errorInfo, accCtx, client, contextInfo);
+        }
+        return reportId;
+    }
+
+    private String reportErrorImpl(
         Level logLevel,
         Throwable errorInfo,
         AccessContext accCtx,
@@ -194,6 +224,22 @@ public final class StdErrorReporter implements ErrorReporter
 
     @Override
     public String reportProblem(
+        Level logLevel,
+        DrbdManageException errorInfo,
+        AccessContext accCtx,
+        Peer client,
+        String contextInfo
+    )
+    {
+        String reportId = RPT_ID_TRACE_DISABLED;
+        if (traceEnabled || logLevel != Level.TRACE)
+        {
+            reportId = reportProblemImpl(logLevel, errorInfo, accCtx, client, contextInfo);
+        }
+        return reportId;
+    }
+
+    private String reportProblemImpl(
         Level logLevel,
         DrbdManageException errorInfo,
         AccessContext accCtx,
@@ -757,7 +803,10 @@ public final class StdErrorReporter implements ErrorReporter
     @Override
     public void logTrace(String format, Object... args)
     {
-        mainLogger.trace(String.format(format, args));
+        if (traceEnabled)
+        {
+            mainLogger.trace(String.format(format, args));
+        }
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.logging;
 import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
 import org.slf4j.event.Level;
 
 /**
@@ -13,6 +14,16 @@ import org.slf4j.event.Level;
 public interface ErrorReporter
 {
     // TODO: javadoc
+
+    /**
+     * Enables or disables logging and reporting at the TRACE log level
+     *
+     * @param accCtx The access context of the subject performing the change
+     * @param flag {@code true} to enable tracing, {@code false} to disable tracing
+     * @throws AccessDeniedException if the access context is not authorized to perform the change
+     */
+    void setTraceEnabled(AccessContext accCtx, boolean flag)
+        throws AccessDeniedException;
 
     void logTrace(String format, Object... args);
     void logDebug(String format, Object... args);
@@ -47,7 +58,7 @@ public interface ErrorReporter
      * logLevel.
      *
      * @param errorInfo
-     * @return the logName of the generated report
+     * @return the logName of the generated report; may be null if no report was created
      */
     String reportError(Throwable errorInfo);
 
@@ -70,7 +81,7 @@ public interface ErrorReporter
      * @param logLevel
      * @param errorInfo
      *
-     * @return the logName of the generated report
+     * @return the logName of the generated report; may be null if no report was created
     */
     String reportError(Level logLevel, Throwable errorInfo);
 
@@ -83,7 +94,7 @@ public interface ErrorReporter
      * @param accCtx
      * @param client
      * @param contextInfo
-     * @return the logName of the generated report
+     * @return the logName of the generated report; may be null if no report was created
      */
     String reportError(
         Throwable errorInfo,
@@ -101,7 +112,7 @@ public interface ErrorReporter
      * @param accCtx
      * @param client
      * @param contextInfo
-     * @return the logName of the generated report
+     * @return the logName of the generated report; may be null if no report was created
      */
     String reportError(
         Level logLevel,
@@ -122,7 +133,7 @@ public interface ErrorReporter
      * @param accCtx
      * @param client
      * @param contextInfo
-     * @return the logName of the generated report
+     * @return the logName of the generated report; may be null if no report was created
      */
     String reportProblem(
         Level logLevel,
