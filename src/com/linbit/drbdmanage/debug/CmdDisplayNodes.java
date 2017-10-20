@@ -113,9 +113,9 @@ public class CmdDisplayNodes extends BaseDebugCmd
                         "The parameters " + PRM_NODE_NAME + " and " + PRM_FILTER_NAME + " were combined " +
                         "in the command line.\n" +
                         "Combining the two parameters is not supported.",
-                        "Specify either the " + PRM_NODE_NAME + " parameter to display information about a single node, " +
-                        "or specify the " + PRM_FILTER_NAME + " parameter to display information about all nodes " +
-                        "that have a naming matching the specified filter.",
+                        "Specify either the " + PRM_NODE_NAME + " parameter to display information " +
+                        "about a single node, or specify the " + PRM_FILTER_NAME + " parameter to display " +
+                        "information about all nodes that have a name matching the specified filter.",
                         null
                     );
                 }
@@ -144,30 +144,33 @@ public class CmdDisplayNodes extends BaseDebugCmd
                         nameMatcher = namePattern.matcher("");
                     }
 
+                    Iterator<Node> nodeIter = nodesMap.values().iterator();
                     if (nameMatcher == null)
                     {
-                        Iterator<Node> nodesIter = nodesMap.values().iterator();
-                        while (nodesIter.hasNext())
+                        while (nodeIter.hasNext())
                         {
                             if (count == 0)
                             {
                                 printSectionSeparator(debugOut);
                             }
-                            displayNode(debugOut, nodesIter.next(), accCtx);
+                            displayNode(debugOut, nodeIter.next(), accCtx);
                             ++count;
                         }
                     }
                     else
                     {
-                        Iterator<Map.Entry<NodeName, Node>> nodesEntryIter = nodesMap.entrySet().iterator();
-                        while (nodesEntryIter.hasNext())
+                        while (nodeIter.hasNext())
                         {
-                            Map.Entry<NodeName, Node> entry = nodesEntryIter.next();
-                            NodeName name = entry.getKey();
+                            Node nodeRef = nodeIter.next();
+                            NodeName name = nodeRef.getName();
                             nameMatcher.reset(name.value);
                             if (nameMatcher.find())
                             {
-                                displayNode(debugOut, entry.getValue(), accCtx);
+                                if (count == 0)
+                                {
+                                    printSectionSeparator(debugOut);
+                                }
+                                displayNode(debugOut, nodeRef, accCtx);
                                 ++count;
                             }
                         }
