@@ -1,8 +1,10 @@
 package com.linbit.drbdmanage.debug;
 
+import com.linbit.AutoIndent;
 import com.linbit.InvalidNameException;
-import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.ResourceDefinition;
+import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -16,35 +18,35 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-public class CmdDisplayNodes extends BaseDebugCmd
+public class CmdDisplayResourceDfn extends BaseDebugCmd
 {
     private static final Map<String, String> PARAMETER_DESCRIPTIONS = new TreeMap<>();
 
-    private static final String PRM_NODE_NAME = "NAME";
+    private static final String PRM_RSCDFN_NAME = "NAME";
     private static final String PRM_FILTER_NAME = "MATCHNAME";
 
     static
     {
         PARAMETER_DESCRIPTIONS.put(
-            PRM_NODE_NAME,
-            "Name of the node(s) to display"
+            PRM_RSCDFN_NAME,
+            "Name of the resource definition(s) to display"
         );
         PARAMETER_DESCRIPTIONS.put(
             PRM_FILTER_NAME,
-            "Filter pattern to apply to the node name.\n" +
-            "Nodes with a name matching the pattern will be displayed."
+            "Filter pattern to apply to the resource definition name.\n" +
+            "Resource definitions with a name matching the pattern will be displayed."
         );
     }
 
-    public CmdDisplayNodes()
+    public CmdDisplayResourceDfn()
     {
         super(
             new String[]
             {
-                "DspNode"
+                "DspRscDfn"
             },
-            "Display node(s)",
-            "Displays information about one or multiple nodes",
+            "Display resource definition(s)",
+            "Displays information about one or multiple resource definition(s)",
             PARAMETER_DESCRIPTIONS,
             null,
             false
@@ -60,12 +62,12 @@ public class CmdDisplayNodes extends BaseDebugCmd
     )
         throws Exception
     {
-        String prmName = parameters.get(PRM_NODE_NAME);
+        String prmName = parameters.get(PRM_RSCDFN_NAME);
         String prmFilter = parameters.get(PRM_FILTER_NAME);
 
-        final Map<NodeName, Node> nodesMap = cmnDebugCtl.getNodesMap();
+        final Map<ResourceName, ResourceDefinition> rscDfnMap = cmnDebugCtl.getRscDfnMap();
         final Lock sysReadLock = cmnDebugCtl.getReconfigurationLock().readLock();
-        final Lock nodesReadLock = cmnDebugCtl.getNodesMapLock().readLock();
+        final Lock rscDfnMapReadLock = cmnDebugCtl.getRscDfnMapLock().readLock();
 
         try
         {
@@ -73,35 +75,35 @@ public class CmdDisplayNodes extends BaseDebugCmd
             {
                 if (prmFilter == null)
                 {
-                    NodeName prmNodeName = new NodeName(prmName);
+                    ResourceName prmResName = new ResourceName(prmName);
                     try
                     {
                         sysReadLock.lock();
-                        nodesReadLock.lock();
+                        rscDfnMapReadLock.lock();
 
                         {
-                            ObjectProtection nodesMapProt = cmnDebugCtl.getNodesMapProt();
-                            if (nodesMapProt != null)
+                            ObjectProtection rscDfnMapProt = cmnDebugCtl.getRscDfnMapProt();
+                            if (rscDfnMapProt != null)
                             {
-                                nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+                                rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
                             }
                         }
 
-                        Node nodeRef = nodesMap.get(prmNodeName);
-                        if (nodeRef != null)
+                        ResourceDefinition rscDfnRef = rscDfnMap.get(prmResName);
+                        if (rscDfnRef != null)
                         {
                             printSectionSeparator(debugOut);
-                            displayNode(debugOut, nodeRef, accCtx);
+                            displayRscDfn(debugOut, rscDfnRef, accCtx);
                             printSectionSeparator(debugOut);
                         }
                         else
                         {
-                            debugOut.printf("The node '%s' does not exist\n", prmName);
+                            debugOut.printf("The resource definition '%s' does not exist\n", prmName);
                         }
                     }
                     finally
                     {
-                        nodesReadLock.unlock();
+                        rscDfnMapReadLock.unlock();
                         sysReadLock.unlock();
                     }
                 }
@@ -110,12 +112,13 @@ public class CmdDisplayNodes extends BaseDebugCmd
                     printError(
                         debugErr,
                         "The command line contains conflicting parameters",
-                        "The parameters " + PRM_NODE_NAME + " and " + PRM_FILTER_NAME + " were combined " +
+                        "The parameters " + PRM_RSCDFN_NAME + " and " + PRM_FILTER_NAME + " were combined " +
                         "in the command line.\n" +
                         "Combining the two parameters is not supported.",
-                        "Specify either the " + PRM_NODE_NAME + " parameter to display information about a single node, " +
-                        "or specify the " + PRM_FILTER_NAME + " parameter to display information about all nodes " +
-                        "that have a naming matching the specified filter.",
+                        "Specify either the " + PRM_RSCDFN_NAME + " parameter to display information " +
+                        "about a single resource definition, or specify the " + PRM_FILTER_NAME +
+                        " parameter to display information about all resource definitions " +
+                        "that have a name matching the specified filter.",
                         null
                     );
                 }
@@ -127,13 +130,13 @@ public class CmdDisplayNodes extends BaseDebugCmd
                 try
                 {
                     sysReadLock.lock();
-                    nodesReadLock.lock();
+                    rscDfnMapReadLock.lock();
 
                     {
-                        ObjectProtection nodesMapProt = cmnDebugCtl.getNodesMapProt();
-                        if (nodesMapProt != null)
+                        ObjectProtection rscDfnMapProt = cmnDebugCtl.getRscDfnMapProt();
+                        if (rscDfnMapProt != null)
                         {
-                            nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+                            rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);
                         }
                     }
 
@@ -144,30 +147,33 @@ public class CmdDisplayNodes extends BaseDebugCmd
                         nameMatcher = namePattern.matcher("");
                     }
 
+                    Iterator<ResourceDefinition> rscDfnIter = rscDfnMap.values().iterator();
                     if (nameMatcher == null)
                     {
-                        Iterator<Node> nodesIter = nodesMap.values().iterator();
-                        while (nodesIter.hasNext())
+                        while (rscDfnIter.hasNext())
                         {
                             if (count == 0)
                             {
                                 printSectionSeparator(debugOut);
                             }
-                            displayNode(debugOut, nodesIter.next(), accCtx);
+                            displayRscDfn(debugOut, rscDfnIter.next(), accCtx);
                             ++count;
                         }
                     }
                     else
                     {
-                        Iterator<Map.Entry<NodeName, Node>> nodesEntryIter = nodesMap.entrySet().iterator();
-                        while (nodesEntryIter.hasNext())
+                        while (rscDfnIter.hasNext())
                         {
-                            Map.Entry<NodeName, Node> entry = nodesEntryIter.next();
-                            NodeName name = entry.getKey();
+                            ResourceDefinition rscDfnRef = rscDfnIter.next();
+                            ResourceName name = rscDfnRef.getName();
                             nameMatcher.reset(name.value);
                             if (nameMatcher.find())
                             {
-                                displayNode(debugOut, entry.getValue(), accCtx);
+                                if (count == 0)
+                                {
+                                    printSectionSeparator(debugOut);
+                                }
+                                displayRscDfn(debugOut, rscDfnRef, accCtx);
                                 ++count;
                             }
                         }
@@ -175,7 +181,7 @@ public class CmdDisplayNodes extends BaseDebugCmd
                 }
                 finally
                 {
-                    nodesReadLock.unlock();
+                    rscDfnMapReadLock.unlock();
                     sysReadLock.unlock();
                 }
                 if (count > 0)
@@ -184,11 +190,11 @@ public class CmdDisplayNodes extends BaseDebugCmd
                     String format;
                     if (count == 1)
                     {
-                        format = "%d node\n";
+                        format = "%d resource definition\n";
                     }
                     else
                     {
-                        format = "%d nodes\n";
+                        format = "%d resource definitions\n";
                     }
                     debugOut.printf(format, count);
                 }
@@ -196,11 +202,11 @@ public class CmdDisplayNodes extends BaseDebugCmd
                 {
                     if (prmFilter == null)
                     {
-                        debugOut.println("The list of registered nodes is empty");
+                        debugOut.println("The list of registered resource definitions is empty");
                     }
                     else
                     {
-                        debugOut.println("No matching node entries were found");
+                        debugOut.println("No matching resource definition entries were found");
                     }
                 }
             }
@@ -213,11 +219,13 @@ public class CmdDisplayNodes extends BaseDebugCmd
         {
             printError(
                 debugErr,
-                "The value specified for the parameter " + PRM_NODE_NAME + " is not a valid node name",
+                "The value specified for the parameter " + PRM_RSCDFN_NAME + " is not a valid " +
+                "resource definition name",
                 null,
-                "Specify a valid node name to display information about a single node, or set a filter pattern " +
-                "using the " + PRM_FILTER_NAME + " parameter to display information about all nodes that have a " +
-                "name that matches the pattern.",
+                "Specify a valid resource definition name to display information about a " +
+                "single resource definition, or set a filter pattern " +
+                "using the " + PRM_FILTER_NAME + " parameter to display information about all resource definitions " +
+                "that have a name that matches the pattern.",
                 String.format(
                     "The specified value was '%s'.",
                     prmName
@@ -237,24 +245,41 @@ public class CmdDisplayNodes extends BaseDebugCmd
         }
     }
 
-    private void displayNode(PrintStream output, Node nodeRef, AccessContext accCtx)
+    private void displayRscDfn(PrintStream output, ResourceDefinition rscDfnRef, AccessContext accCtx)
     {
         try
         {
-            ObjectProtection objProt = nodeRef.getObjProt();
+            ObjectProtection objProt = rscDfnRef.getObjProt();
             objProt.requireAccess(accCtx, AccessType.VIEW);
             output.printf(
                 "%-40s %-36s\n" +
                 "    Flags: %016x\n" +
                 "    Creator: %-24s Owner: %-24s\n" +
                 "    Security type: %-24s\n",
-                nodeRef.getName().displayValue,
-                nodeRef.getUuid().toString().toUpperCase(),
-                nodeRef.getFlags().getFlagsBits(accCtx),
+                rscDfnRef.getName().displayValue,
+                rscDfnRef.getUuid().toString().toUpperCase(),
+                rscDfnRef.getFlags().getFlagsBits(accCtx),
                 objProt.getCreator().name.displayValue,
                 objProt.getOwner().name.displayValue,
                 objProt.getSecurityType().name.displayValue
             );
+            Iterator<VolumeDefinition> vlmDfnIter = rscDfnRef.iterateVolumeDfn(accCtx);
+            while (vlmDfnIter.hasNext())
+            {
+                VolumeDefinition vlmDfnRef = vlmDfnIter.next();
+                AutoIndent.printWithIndent(
+                    output, 4,
+                    String.format(
+                        "Volume %6d %-36s\n" +
+                        "    Flags: %016x " +
+                        "    Size: %13d\n",
+                        vlmDfnRef.getVolumeNumber(accCtx).value,
+                        vlmDfnRef.getUuid().toString().toUpperCase(),
+                        vlmDfnRef.getVolumeSize(accCtx),
+                        vlmDfnRef.getFlags().getFlagsBits(accCtx)
+                    )
+                );
+            }
         }
         catch (AccessDeniedException accExc)
         {
