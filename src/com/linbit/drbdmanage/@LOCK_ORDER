@@ -7,9 +7,47 @@ in the same order.
 The current lock order, from the outer-most (taken first) lock to the
 inner-most (taken last) lock, is:
 
-1. Node
-2. ResourceDefinition
-3. VolumeDefinition
-4. Resource
-5. Volume
+1. WorkerPool.workQueueGuard (Semaphore)
+   Do not queue WorkerPool tasks recursively.
+   (Queuing tasks in the WorkerPool from within a task that is being
+    run by the WorkerPool may result in deadlocks)
+   Many tasks run by the WorkerPool will take other locks,
+   such as the ctrlConfLock/stltConfLock or the nodesMapLock/rscDfnMapLock/etc.,
+   therefore a task holding one of those locks must not queue tasks
+   in the WorkerPool.
 
+2. Controller: ctrlConfLock (ReadWriteLock)
+   Satellite:  stltConfLock (ReadWriteLock)
+
+3. CommonMessageProcessor.apiLock (ReadWriteLock)
+
+4. nodesMapLock (ReadWriteLock)
+   Must be held in reader mode while performing lookups in nodesMap,
+   or while iterating over nodesMap items.
+   Must be held in writer mode while modifying the nodesMap.
+
+5. rscDfnMapLock (ReadWriteLock)
+   Must be held in reader mode while performing lookups in rscDfnMap,
+   or while iterating over rscDfnMap items.
+   Must be held in writer mode while modifying the rscDfnMap.
+
+6. storPoolDfnMapLock (ReadWriteLock)
+   Must be held in reader mode while performing lookups in storPoolDfnMap,
+   or while iterating over storPoolDfnMap items.
+   Must be held in writer mode while modifying the storPoolDfnMap.
+
+7. Node (class Object internal mutex)
+
+8. ResourceDefinition (class Object internal mutex)
+
+9. ResourceDefinition.volList (class Object internal mutex)
+
+10. ResourceDefinition.connList (class Object internal mutex)
+
+11. VolumeDefinition (class Object internal mutex)
+
+12. Resource (class Object internal mutex)
+
+13. Volume (class Object internal mutex)
+
+14. CoreTimer (class Object internal mutex)
