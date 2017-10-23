@@ -80,7 +80,7 @@ public class ClientProtobuf implements Runnable
 
     public ClientProtobuf(int port) throws UnknownHostException, IOException
     {
-        this("open", 4995);
+        this("localhost", port);
     }
 
     public ClientProtobuf(String host, int port) throws UnknownHostException, IOException
