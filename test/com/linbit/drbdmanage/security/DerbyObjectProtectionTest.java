@@ -16,12 +16,14 @@ import com.linbit.TransactionMgr;
 public class DerbyObjectProtectionTest extends DerbyBase
 {
     private static final String OP_SELECT =
-        "SELECT * FROM " + TBL_SEC_OBJECT_PROTECTION;
+        "SELECT * FROM " + TBL_SEC_OBJECT_PROTECTION +
+        " WHERE " + OBJECT_PATH + " <> '/storpooldefinitions/DFLTSTORPOOL'";
     private static final String OP_INSERT =
         "INSERT INTO " + TBL_SEC_OBJECT_PROTECTION + " VALUES (?, ?, ?, ?)";
 
     private static final String ACL_SELECT =
-        "SELECT * FROM " + TBL_SEC_ACL_MAP;
+        "SELECT * FROM " + TBL_SEC_ACL_MAP +
+        " WHERE " + OBJECT_PATH + " <> '/storpooldefinitions/DFLTSTORPOOL'";
     private static final String ACL_SELECT_BY_OBJPATH_AND_ROLE =
         "SELECT * FROM " + TBL_SEC_ACL_MAP +
         " WHERE " + OBJECT_PATH + " = ? AND " +
