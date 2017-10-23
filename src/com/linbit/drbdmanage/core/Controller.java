@@ -17,18 +17,13 @@ import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.InitializationException;
 import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDefinition;
-import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
-import com.linbit.drbdmanage.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.netcom.TcpConnector;
@@ -69,9 +64,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -539,78 +532,33 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     public void loadCoreObjects(AccessContext initCtx)
         throws AccessDeniedException
     {
-        ErrorReporter errLog = getErrorReporter();
         TransactionMgr transMgr = null;
         try
         {
             transMgr = new TransactionMgr(dbConnPool);
             if (dbConnPool != null)
             {
-                // FIXME: Experimental. This should be moved somewhere else,
-                //        e.g. a static method in the respective objects
-                NodeDataDatabaseDriver nodeDbDrv = DrbdManage.getNodeDataDatabaseDriver();
-                ResourceDefinitionDataDatabaseDriver rscDfnDbDrv =
-                    DrbdManage.getResourceDefinitionDataDatabaseDriver();
-                StorPoolDefinitionDataDatabaseDriver storPoolDfnDbDrv =
-                    DrbdManage.getStorPoolDefinitionDataDatabaseDriver();
-
-                errLog.logDebug("%s", "Database load: Nodes");
                 try
                 {
+                    nodesMapProt.requireAccess(initCtx, AccessType.CONTROL);
+                    rscDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
+                    storPoolDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
+
                     nodesMapLock.writeLock().lock();
-                    Statement stmt = transMgr.dbCon.createStatement();
-                    ResultSet nodeNames = stmt.executeQuery("SELECT NODE_NAME FROM NODES");
-                    while (nodeNames.next())
-                    {
-                        NodeData loadedNode = nodeDbDrv.load(
-                            new NodeName(nodeNames.getString(1)), false, transMgr
-                        );
-                        nodesMap.put(loadedNode.getName(), loadedNode);
-                    }
-                }
-                finally
-                {
-                    nodesMapLock.writeLock().unlock();
-                }
-
-                errLog.logDebug("%s", "Database load: Resource definitions");
-                try
-                {
                     rscDfnMapLock.writeLock().lock();
-                    Statement stmt = transMgr.dbCon.createStatement();
-                    ResultSet rscDfnNames = stmt.executeQuery("SELECT RESOURCE_NAME FROM RESOURCE_DEFINITIONS");
-                    while (rscDfnNames.next())
-                    {
-                        ResourceDefinitionData loadedRscDfn = rscDfnDbDrv.load(
-                            new ResourceName(rscDfnNames.getString(1)), false, transMgr
-                        );
-                    }
-                }
-                finally
-                {
-                    rscDfnMapLock.writeLock().unlock();
-                }
-
-                errLog.logDebug("%s", "Database load: Storage pool definitions");
-                try
-                {
                     storPoolDfnMapLock.writeLock().lock();
-                    Statement stmt = transMgr.dbCon.createStatement();
-                    ResultSet storPoolDfnNames = stmt.executeQuery("SELECT POOL_NAME FROM STOR_POOL_DEFINITIONS");
-                    while (storPoolDfnNames.next())
-                    {
-                        StorPoolDefinition loadedStorPoolDfn = storPoolDfnDbDrv.load(
-                            new StorPoolName(storPoolDfnNames.getString(1)), false, transMgr
-                        );
-                    }
+
+                    persistenceDbDriver.loadAll(transMgr);
                 }
                 finally
                 {
                     storPoolDfnMapLock.writeLock().unlock();
+                    rscDfnMapLock.writeLock().unlock();
+                    nodesMapLock.writeLock().unlock();
                 }
             }
         }
-        catch (SQLException | InvalidNameException exc)
+        catch (SQLException exc)
         {
             getErrorReporter().reportError(
                 Level.ERROR,
