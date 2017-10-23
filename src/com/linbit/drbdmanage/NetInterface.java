@@ -31,6 +31,12 @@ public interface NetInterface extends TransactionObject
     public void setNetInterfaceType(AccessContext accCtx, NetInterfaceType type)
         throws AccessDeniedException, SQLException;
 
+    public int getNetInterfacePort(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    public void setNetInterfacePort(AccessContext accCtx, int port)
+        throws AccessDeniedException, SQLException;
+
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
@@ -54,6 +60,21 @@ public interface NetInterface extends TransactionObject
                     break;
             }
             return type;
+        }
+
+        public static NetInterfaceType valueOfIgnoreCase(String string, NetInterfaceType defaultValue)
+            throws IllegalArgumentException
+        {
+            NetInterfaceType ret = defaultValue;
+            if (string != null)
+            {
+                NetInterfaceType val = valueOf(string.toUpperCase());
+                if (val != null)
+                {
+                    ret = val;
+                }
+            }
+            return ret;
         }
     }
 }

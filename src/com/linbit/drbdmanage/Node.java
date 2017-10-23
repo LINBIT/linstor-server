@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage;
 
 import com.linbit.TransactionObject;
+import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -62,6 +63,10 @@ public interface Node extends TransactionObject
         throws AccessDeniedException;
 
     public StateFlags<NodeFlag> getFlags();
+
+    public void setPeer(AccessContext accCtx, Peer peer) throws AccessDeniedException;
+
+    public Peer getPeer(AccessContext accCtx) throws AccessDeniedException;
 
     public void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;

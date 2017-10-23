@@ -4,7 +4,6 @@ import static org.junit.Assert.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
@@ -14,9 +13,10 @@ import com.linbit.utils.UuidUtils;
 
 public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 {
-    private static final String SELECT_ALL_STOR_POOL_DFNS =
+    private static final String SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT =
         " SELECT " + UUID + ", " + POOL_NAME + ", " + POOL_DSP_NAME +
-        " FROM " + TBL_STOR_POOL_DEFINITIONS;
+        " FROM " + TBL_STOR_POOL_DEFINITIONS +
+        " WHERE " + UUID + " <> x'f51611c6528f4793a87a866d09e6733a'"; // default storage pool
 
     private TransactionMgr transMgr;
     private StorPoolName spName;
@@ -48,7 +48,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(spdd, transMgr);
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -71,7 +71,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         assertEquals(spName, spd.getName());
         assertNotNull(spd.getObjProt());
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -133,7 +133,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(spdd, transMgr);
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -164,7 +164,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         assertEquals(spName, spddSat.getName());
         assertNotNull(spddSat.getObjProt());
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
@@ -182,7 +182,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         assertNull(spddSat);
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
@@ -214,7 +214,8 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         driver.loadAll(transMgr);
 
-        assertEquals(2, storPoolDfnMap.size());
+        assertEquals(3, storPoolDfnMap.size());
+        assertNotNull(storPoolDfnMap.get(new StorPoolName("DfltStorPool")));
         assertNotNull(storPoolDfnMap.get(spName));
         assertNotNull(storPoolDfnMap.get(spName2));
         assertNotEquals(storPoolDfnMap.get(spName2), storPoolDfnMap.get(spName));

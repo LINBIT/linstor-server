@@ -672,7 +672,7 @@ class CtrlRscApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_CONN_CRT_FAIL_UNKNOWN_ERROR);
+            entry.setReturnCodeBit(RC_RSC_CRT_FAIL_UNKNOWN_ERROR);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(exc.getMessage());
             entry.putVariable(KEY_NODE_NAME, nodeNameStr);
@@ -1013,7 +1013,7 @@ class CtrlRscApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_CONN_DEL_FAIL_UNKNOWN_ERROR);
+            entry.setReturnCodeBit(RC_RSC_DEL_FAIL_UNKNOWN_ERROR);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(exc.getMessage());
             entry.putVariable(KEY_NODE_NAME, nodeNameStr);

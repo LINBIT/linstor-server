@@ -55,7 +55,6 @@ public class VolumeDataDerbyTest extends DerbyBase
     private java.util.UUID uuid;
     private String blockDevicePath;
     private String metaDiskPath;
-    private VolumeData vol;
 
     private VolumeDataDerbyDriver driver;
 
@@ -141,7 +140,14 @@ public class VolumeDataDerbyTest extends DerbyBase
         uuid = randomUUID();
         blockDevicePath = "/dev/null";
         metaDiskPath = "/dev/not-null";
-        vol = new VolumeData(
+
+        driver = (VolumeDataDerbyDriver) DrbdManage.getVolumeDataDatabaseDriver();
+    }
+
+    @Test
+    public void testPersist() throws Exception
+    {
+        VolumeData vol = new VolumeData(
             uuid,
             res,
             volDfn,
@@ -152,13 +158,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             sysCtx,
             transMgr
         );
-
-        driver = (VolumeDataDerbyDriver) DrbdManage.getVolumeDataDatabaseDriver();
-    }
-
-    @Test
-    public void testPersist() throws Exception
-    {
         driver.create(vol, transMgr);
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOLS);
@@ -226,6 +225,17 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
+        VolumeData vol = new VolumeData(
+            uuid,
+            res,
+            volDfn,
+            storPool,
+            blockDevicePath,
+            metaDiskPath,
+            VlmFlags.CLEAN.flagValue,
+            sysCtx,
+            transMgr
+        );
         driver.create(vol, transMgr);
 
         VolumeData loadedVol = driver.load(res, volDfn, true, transMgr);
@@ -236,6 +246,17 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
+        VolumeData vol = new VolumeData(
+            uuid,
+            res,
+            volDfn,
+            storPool,
+            blockDevicePath,
+            metaDiskPath,
+            VlmFlags.CLEAN.flagValue,
+            sysCtx,
+            transMgr
+        );
         driver.create(vol, transMgr);
 
         List<VolumeData> volList = driver.loadAllVolumesByResource(
@@ -252,6 +273,17 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
+        VolumeData vol = new VolumeData(
+            uuid,
+            res,
+            volDfn,
+            storPool,
+            blockDevicePath,
+            metaDiskPath,
+            VlmFlags.CLEAN.flagValue,
+            sysCtx,
+            transMgr
+        );
         driver.create(vol, transMgr);
 
         VolumeData loadedVol = VolumeData.getInstance(
@@ -293,6 +325,17 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Test
     public void testDelete() throws Exception
     {
+        VolumeData vol = new VolumeData(
+            uuid,
+            res,
+            volDfn,
+            storPool,
+            blockDevicePath,
+            metaDiskPath,
+            VlmFlags.CLEAN.flagValue,
+            sysCtx,
+            transMgr
+        );
         driver.create(vol, transMgr);
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOLS);
@@ -316,6 +359,17 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Test
     public void testPropsConPersist() throws Exception
     {
+        VolumeData vol = new VolumeData(
+            uuid,
+            res,
+            volDfn,
+            storPool,
+            blockDevicePath,
+            metaDiskPath,
+            VlmFlags.CLEAN.flagValue,
+            sysCtx,
+            transMgr
+        );
         driver.create(vol, transMgr);
         vol.initialized();
         vol.setConnection(transMgr);
@@ -333,12 +387,43 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Test
     public void testPropsConLoad() throws Exception
     {
+        VolumeData vol = new VolumeData(
+            uuid,
+            res,
+            volDfn,
+            storPool,
+            blockDevicePath,
+            metaDiskPath,
+            VlmFlags.CLEAN.flagValue,
+            sysCtx,
+            transMgr
+        );
         driver.create(vol, transMgr);
         String testKey = "TestKey";
         String testValue = "TestValue";
         insertProp(transMgr, PropsContainer.buildPath(nodeName, resName, volNr), testKey, testValue);
 
+        /*
+         * This test is a bit hacky.
+         * In "new VolumeData(...)" the volume registered itself in volDfn, res and storPool.
+         * After that, the driver is told to insert the entry into the database, and the database is also extended with
+         * props entry for that volume.
+         *
+         * The problems start with the load. "driver.load(...)" will try to use the resource as a cache, asking it if
+         * it knows about the volume which should be loaded. As "new VolumeData(...)" registered itself, the resource
+         * does know about the volume, so the database uses that cached instance and returns.
+         * As it assumes the cached instance is valid, it does NOT load the manually inserted props.
+         *
+         * To avoid this problem, we have to "unregister" the volume.
+         */
+        res.removeVolume(sysCtx, vol);
+
         VolumeData loadedVol = driver.load(res, volDfn, true, transMgr);
+
+        /*
+         *  NOTE: as the "driver.load(...)" has to create a new instance of VolumeData,
+         *  the loaded volume is re-registered now.
+         */
 
         assertNotNull(loadedVol);
         Props props = loadedVol.getProps(sysCtx);
@@ -349,6 +434,17 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Test
     public void testFlagsUpdate() throws Exception
     {
+        VolumeData vol = new VolumeData(
+            uuid,
+            res,
+            volDfn,
+            storPool,
+            blockDevicePath,
+            metaDiskPath,
+            VlmFlags.CLEAN.flagValue,
+            sysCtx,
+            transMgr
+        );
         driver.create(vol, transMgr);
 
         vol.initialized();
@@ -454,6 +550,17 @@ public class VolumeDataDerbyTest extends DerbyBase
     @Test (expected = DrbdDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
+        VolumeData vol = new VolumeData(
+            uuid,
+            res,
+            volDfn,
+            storPool,
+            blockDevicePath,
+            metaDiskPath,
+            VlmFlags.CLEAN.flagValue,
+            sysCtx,
+            transMgr
+        );
         driver.create(vol, transMgr);
 
         VolumeData.getInstance(

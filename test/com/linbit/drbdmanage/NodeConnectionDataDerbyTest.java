@@ -186,10 +186,16 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     public void testSatelliteNoCreate() throws Exception
     {
         satelliteMode();
+
+        NodeName sourceName2 = new NodeName("OtherSourceNode");
+        NodeName targetName2 = new NodeName("OtherTargetNode");
+        NodeData nodeSrc2 = NodeData.getInstance(sysCtx, sourceName2, null, null, transMgr, true, false);
+        NodeData nodeDst2 = NodeData.getInstance(sysCtx, targetName2, null, null, transMgr, true, false);
+
         NodeConnectionData satelliteConDfn = NodeConnectionData.getInstance(
             sysCtx,
-            nodeSrc,
-            nodeDst,
+            nodeSrc2,
+            nodeDst2,
             null,
             false,
             false

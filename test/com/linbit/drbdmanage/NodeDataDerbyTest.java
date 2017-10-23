@@ -241,6 +241,7 @@ public class NodeDataDerbyTest extends DerbyBase
         NetInterfaceName netName = new NetInterfaceName("TestNetName");
         String netHost = "127.0.0.1";
         String netType = "IP";
+        int netPort = 9001;
 
         // node2
         NodeName nodeName2 = new NodeName("TestTargetNodeName");
@@ -334,6 +335,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 node1,
                 netName,
                 new DmIpAddress(netHost),
+                netPort,
                 NetInterfaceType.IP,
                 transMgr,
                 true,
@@ -457,6 +459,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 true
             );
             res2.getProps(sysCtx).setProp(res2TestKey, res2TestValue);
+            res2Uuid = res2.getUuid();
 
             // node2 vol
             VolumeData vol2 = VolumeData.getInstance(
@@ -472,6 +475,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 true
             );
             vol2.getProps(sysCtx).setProp(vol2TestKey, vol2TestValue);
+            vol2Uuid = vol2.getUuid();
 
             // nodeCon node1 <-> node2
             NodeConnectionData nodeCon = NodeConnectionData.getInstance(
@@ -527,6 +531,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 DmIpAddress address = netIf.getAddress(sysCtx);
                 assertNotNull(address);
                 assertEquals(netHost, address.getAddress());
+                assertEquals(netPort, netIf.getNetInterfacePort(sysCtx));
             }
             assertEquals(netName, netIf.getName());
             assertEquals(NetInterfaceType.byValue(netType), netIf.getNetInterfaceType(sysCtx));
@@ -613,6 +618,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 }
                 {
                     Volume vol2 = loadedNode2.getResource(sysCtx, resName).getVolume(volDfnNr);
+                    assertEquals(vol2Uuid, vol2.getUuid());
                     assertNotNull(vol2);
 
                     VolumeConnection volCon = vol.getVolumeConnection(sysCtx, vol2);
@@ -631,6 +637,7 @@ public class NodeDataDerbyTest extends DerbyBase
             {
                 Resource res2 = loadedNode2.getResource(sysCtx, resName);
                 assertNotNull(res2);
+                assertEquals(res2Uuid, res2.getUuid());
                 ResourceConnection resCon = res.getResourceConnection(sysCtx, res2);
                 assertNotNull(resCon);
 

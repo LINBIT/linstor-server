@@ -1,9 +1,11 @@
 package com.linbit.drbdmanage.core;
 
 import static com.linbit.drbdmanage.ApiCallRcConstants.*;
+import static com.linbit.drbdmanage.api.ApiConsts.*;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -11,14 +13,18 @@ import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.ApiCallRcImpl;
 import com.linbit.drbdmanage.DrbdDataAlreadyExistsException;
+import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
+import com.linbit.drbdmanage.NetInterfaceData;
+import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.drbdmanage.DmIpAddress;
 import com.linbit.drbdmanage.Node.NodeFlag;
 import com.linbit.drbdmanage.Node.NodeType;
-import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.AccessType;
@@ -37,7 +43,7 @@ class CtrlNodeApiCallHandler
         Peer client,
         String nodeNameStr,
         String nodeTypeStr,
-        Map<String, String> props
+        Map<String, String> propsMap
     )
     {
         /*
@@ -55,11 +61,19 @@ class CtrlNodeApiCallHandler
         TransactionMgr transMgr = null;
         Node node = null;
         NodeType type = null;
+        NodeName nodeName = null;
+        Props nodeProps = null;
+        String currentNetIfNameStr = null;
+        String portStr = null;
+        Integer port = null;
+        String netTypeStr = null;
+        NetInterfaceType netType = null;
+        Props netIfProps = null;
         try
         {
             controller.nodesMapProt.requireAccess(accCtx, AccessType.CHANGE);// accDeniedExc1
             transMgr = new TransactionMgr(controller.dbConnPool.getConnection()); // sqlExc1
-            NodeName nodeName = new NodeName(nodeNameStr); // invalidNameExc1
+            nodeName = new NodeName(nodeNameStr); // invalidNameExc1
 
             type = NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
 
@@ -74,8 +88,54 @@ class CtrlNodeApiCallHandler
                 true
             );
             node.setConnection(transMgr);
-            node.getProps(accCtx).map().putAll(props); // accDeniedExc3
-            transMgr.commit(); // sqlExc3
+
+            nodeProps = node.getProps(accCtx); // accDeniedExc0 (implError)
+            nodeProps.map().putAll(propsMap);
+
+            netIfProps = nodeProps.getNamespace(NAMESPC_NETIF);
+            Set<String> netIfNames = netIfProps.keySet();
+            for (String netIfNameStr : netIfNames)
+            {
+                currentNetIfNameStr = netIfNameStr;
+                portStr = null;
+                port = null;
+                netTypeStr = null;
+                netType = null;
+
+                NetInterfaceName netName = new NetInterfaceName(netIfNameStr); // invalidnameExc2
+                DmIpAddress addr = new DmIpAddress(
+                    netIfProps.getProp(
+                        KEY_IP_ADDR,
+                        netIfNameStr
+                    )
+                );
+                portStr = netIfProps.getProp(
+                    KEY_PORT_NR,
+                    netIfNameStr
+                );
+                port = Integer.parseInt(portStr);
+                netTypeStr = netIfProps.getProp(
+                    KEY_NETIF_TYPE,
+                    netIfNameStr
+                );
+                netType = NetInterfaceType.valueOfIgnoreCase(
+                    netTypeStr,
+                    NetInterfaceType.IP
+                );
+                NetInterfaceData.getInstance( // sqlExc3, accDeniedExc4, alreadyExists2
+                    accCtx,
+                    node,
+                    netName,
+                    addr,
+                    port,
+                    netType,
+                    transMgr,
+                    true,
+                    true
+                );
+            }
+
+            transMgr.commit(); // sqlExc4
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_CREATED);
@@ -84,8 +144,8 @@ class CtrlNodeApiCallHandler
                 nodeNameStr
             );
             entry.setMessageFormat(successMessage);
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
             controller.nodesMap.put(nodeName, node);
@@ -108,70 +168,109 @@ class CtrlNodeApiCallHandler
             entry.setReturnCodeBit(RC_NODE_CRT_FAIL_SQL);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(sqlExc.getMessage());
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
         catch (InvalidNameException invalidNameExc)
         {
-            // handle invalidNameExc1
-            String errorMessage = String.format(
-                "The given node name '%s' is invalid.",
-                nodeNameStr
-            );
+            String errorMessage;
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            if (nodeName == null)
+            { // handle invalidNameExc1
+                errorMessage = String.format(
+                    "The given node name '%s' is invalid.",
+                    nodeNameStr
+                );
 
+                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NODE_NAME);
+            }
+            else
+            { // handle invalidNameExc2
+                errorMessage = String.format(
+                    "The given network interface name '%s' is invalid",
+                    currentNetIfNameStr
+                );
+                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NET_NAME);
+                entry.putVariable(KEY_NET_IF_NAME, currentNetIfNameStr);
+            }
             controller.getErrorReporter().reportError(
                 invalidNameExc,
                 accCtx,
                 client,
                 errorMessage
             );
-
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NODE_NAME);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(invalidNameExc.getMessage());
 
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            // handle accDeniedExc1 && accDeniedExc2
-            String errorMessage = String.format(
-                "The access context (user: '%s', role: '%s') has no permission to " +
-                    "create the new node '%s'.",
-                accCtx.subjectId.name.displayValue,
-                accCtx.subjectRole.name.displayValue,
-                nodeNameStr
-            );
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            Throwable exc;
+            String errorMessage;
+            if (node == null)
+            { // handle accDeniedExc1 && accDeniedExc2
+                errorMessage = String.format(
+                    "The access context (user: '%s', role: '%s') has no permission to " +
+                        "create the new node '%s'.",
+                    accCtx.subjectId.name.displayValue,
+                    accCtx.subjectRole.name.displayValue,
+                    nodeNameStr
+                );
+                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_ACC_DENIED_NODE);
+                exc = accDeniedExc;
+            }
+            else
+            { // handle accDeniedExc3 && accDeniedExc4
+                errorMessage = String.format(
+                    "The node '%s' could not be created due to an implementation error",
+                    nodeNameStr
+                );
+                entry.setReturnCode(RC_NODE_CRT_FAIL_IMPL_ERROR);
+                exc = new ImplementationError(errorMessage, accDeniedExc);
+            }
             controller.getErrorReporter().reportError(
-                accDeniedExc,
+                exc,
                 accCtx,
                 client,
                 errorMessage
             );
 
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_ACC_DENIED_NODE);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(accDeniedExc.getMessage());
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
         catch (DrbdDataAlreadyExistsException alreadyExistsExc)
         {
-            // handle alreadyExists1
-
-            String errorMessage = String.format(
-                "A node with the name '%s' already exists",
-                nodeNameStr
-            );
-
+            String errorMessage;
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            Throwable exc;
+            if (node == null)
+            { // handle alreadyExists1
+                errorMessage = String.format(
+                    "A node with the name '%s' already exists",
+                    nodeNameStr
+                );
+                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_EXISTS_NODE);
+                exc = alreadyExistsExc;
+            }
+            else
+            {
+                errorMessage = String.format(
+                    "The node '%s' could not be created due to an implementation error",
+                    nodeNameStr
+                );
+                entry.setReturnCode(RC_NODE_CRT_FAIL_IMPL_ERROR);
+                exc = new ImplementationError(errorMessage, alreadyExistsExc);
+            }
             controller.getErrorReporter().reportError(
                 alreadyExistsExc,
                 accCtx,
@@ -179,31 +278,52 @@ class CtrlNodeApiCallHandler
                 errorMessage
             );
 
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_EXISTS_NODE);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(alreadyExistsExc.getMessage());
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
         catch (IllegalArgumentException illegalArgExc)
         {
-            String errorMessage = String.format("Unknown node type '%s'.", nodeTypeStr);
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            String errorMessage;
+            if (type == null)
+            {
+                errorMessage = String.format("Unknown node type '%s'.", nodeTypeStr);
+                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NODE_TYPE);
+            }
+            else
+            if (port == null)
+            {
+                errorMessage = String.format(
+                    "Invalid port '%s' for net name '%s'.",
+                    portStr,
+                    currentNetIfNameStr
+                );
+                entry.setReturnCode(RC_NODE_CRT_FAIL_INVLD_NET_PORT);
+            }
+            else
+            {
+                errorMessage = String.format(
+                    "Invalid network interface type '%s' for net name '%s'.",
+                    netTypeStr,
+                    currentNetIfNameStr
+                );
+                entry.setReturnCode(RC_NODE_CRT_FAIL_INVLD_NET_TYPE);
+            }
             controller.getErrorReporter().reportError(
                 illegalArgExc,
                 accCtx,
                 client,
                 errorMessage
             );
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NODE_TYPE);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(illegalArgExc.getMessage());
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-            entry.putVariable(ApiConsts.KEY_NODE_TYPE, nodeTypeStr);
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+            entry.putVariable(KEY_NODE_TYPE, nodeTypeStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -223,8 +343,8 @@ class CtrlNodeApiCallHandler
             entry.setReturnCodeBit(RC_NODE_CRT_FAIL_UNKNOWN_ERROR);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(exc.getMessage());
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -255,7 +375,7 @@ class CtrlNodeApiCallHandler
                     entry.setReturnCodeBit(RC_NODE_CRT_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
-                    entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+                    entry.putObjRef(KEY_NODE, nodeNameStr);
 
                     apiCallRc.addEntry(entry);
                 }
@@ -298,8 +418,8 @@ class CtrlNodeApiCallHandler
                     nodeNameStr
                 );
                 entry.setMessageFormat(successMessage);
-                entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-                entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+                entry.putObjRef(KEY_NODE, nodeNameStr);
+                entry.putVariable(KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
                 controller.getErrorReporter().logInfo(successMessage);
 
@@ -315,8 +435,8 @@ class CtrlNodeApiCallHandler
                     nodeNameStr
                 );
                 entry.setMessageFormat(notFoundMessage);
-                entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-                entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+                entry.putObjRef(KEY_NODE, nodeNameStr);
+                entry.putVariable(KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
                 controller.getErrorReporter().logInfo(notFoundMessage);
             }
@@ -338,8 +458,8 @@ class CtrlNodeApiCallHandler
             entry.setReturnCodeBit(RC_NODE_DEL_FAIL_SQL);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(sqlExc.getMessage());
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -362,8 +482,8 @@ class CtrlNodeApiCallHandler
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(invalidNameExc.getMessage());
 
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -385,8 +505,8 @@ class CtrlNodeApiCallHandler
             entry.setReturnCodeBit(RC_NODE_DEL_FAIL_ACC_DENIED_NODE);
             entry.setMessageFormat(errormessage);
             entry.setCauseFormat(accDeniedExc.getMessage());
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -411,8 +531,8 @@ class CtrlNodeApiCallHandler
                 )
             );
             entry.setCauseFormat(dataAlreadyExistsExc.getMessage());
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -433,8 +553,8 @@ class CtrlNodeApiCallHandler
             entry.setReturnCodeBit(RC_NODE_DEL_FAIL_UNKNOWN_ERROR);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(exc.getMessage());
-            entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-            entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+            entry.putObjRef(KEY_NODE, nodeNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -466,7 +586,7 @@ class CtrlNodeApiCallHandler
                     entry.setReturnCodeBit(RC_NODE_DEL_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
-                    entry.putObjRef(ApiConsts.KEY_NODE, nodeNameStr);
+                    entry.putObjRef(KEY_NODE, nodeNameStr);
 
                     apiCallRc.addEntry(entry);
                 }

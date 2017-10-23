@@ -103,6 +103,7 @@ public final class ApiConsts
     public static final String KEY_IP_ADDR           = "IpAddr";
     public static final String KEY_BIND_ADDR         = "BindAddr";
     public static final String KEY_NETCOM_TYPE       = "NetComType";
+    public static final String KEY_NETIF_TYPE        = "NetIfType";
     public static final String KEY_KEYSTORE          = "Keystore";
     public static final String KEY_TRUSTSTORE        = "Truststore";
     public static final String KEY_KEY_PWD           = "KeyPwd";

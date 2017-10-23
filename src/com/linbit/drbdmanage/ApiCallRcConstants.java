@@ -3,14 +3,16 @@ package com.linbit.drbdmanage;
 public class ApiCallRcConstants
 {
     // Mask for return codes that describe an error
-    public static final long MASK_ERROR = 0xC000000000000000L;
+    public static final long MASK_ERROR   = 0xC000000000000000L;
 
     // Mask for return codes that describe a warning
-    public static final long MASK_WARN  = 0x8000000000000000L;
+    public static final long MASK_WARN    = 0x8000000000000000L;
 
     // Mask for return codes that describe contain detail information
     // about the result of an operation
-    public static final long MASK_INFO  = 0x4000000000000000L;
+    public static final long MASK_INFO    = 0x4000000000000000L;
+
+    public static final long MASK_SUCCESS = 0x0000000000000000L;
     /*
      * The most significant 2 bits are reserved for MASK_ERROR, MASK_WARN,
      * MASK_INFO and MASK_SUCCESS
@@ -43,8 +45,8 @@ public class ApiCallRcConstants
     /*
      * Codes 1-9: success
      */
-    public static final long CREATED                    = 1 | MASK_INFO;
-    public static final long DELETED                    = 2 | MASK_INFO;
+    public static final long CREATED                    = 1 | MASK_SUCCESS;
+    public static final long DELETED                    = 2 | MASK_SUCCESS;
 
     /*
      * Codes 10-99: special cases (like "failed to delete non existent data")
@@ -72,50 +74,53 @@ public class ApiCallRcConstants
     public static final long CRT_FAIL_INVLD_VLM_SIZE        = 115 | MASK_ERROR;
     public static final long CRT_FAIL_INVLD_MINOR_NR        = 116 | MASK_ERROR;
     public static final long CRT_FAIL_INVLD_STOR_POOL_NAME  = 117 | MASK_ERROR;
+    public static final long CRT_FAIL_INVLD_NET_NAME        = 118 | MASK_ERROR;
+    public static final long CRT_FAIL_INVLD_NET_PORT        = 119 | MASK_ERROR;
+    public static final long CRT_FAIL_INVLD_NET_TYPE        = 120 | MASK_ERROR;
 
     /*
-     * Codes 120-139: dependency not found creation failures
+     * Codes 130-149: dependency not found creation failures
      */
-    public static final long CRT_FAIL_NOT_FOUND_NODE            = 120 | MASK_ERROR;
-    public static final long CRT_FAIL_NOT_FOUND_RSC_DFN         = 121 | MASK_ERROR;
-    public static final long CRT_FAIL_NOT_FOUND_RSC             = 122 | MASK_ERROR;
-    public static final long CRT_FAIL_NOT_FOUND_VLM_DFN         = 123 | MASK_ERROR;
-    public static final long CRT_FAIL_NOT_FOUND_VLM             = 124 | MASK_ERROR;
-    public static final long CRT_FAIL_NOT_FOUND_NET_IF          = 125 | MASK_ERROR;
-    public static final long CRT_FAIL_NOT_FOUND_NODE_CONN       = 126 | MASK_ERROR;
-    public static final long CRT_FAIL_NOT_FOUND_RSC_CONN        = 127 | MASK_ERROR;
-    public static final long CRT_FAIL_NOT_FOUND_VLM_CONN        = 128 | MASK_ERROR;
-    public static final long CRT_FAIL_NOT_FOUND_STOR_POOL_DFN   = 129 | MASK_ERROR;
-    public static final long CRT_FAIL_NOT_FOUND_STOR_POOL       = 130 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_NODE            = 130 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_RSC_DFN         = 131 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_RSC             = 132 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_VLM_DFN         = 133 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_VLM             = 134 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_NET_IF          = 135 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_NODE_CONN       = 136 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_RSC_CONN        = 137 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_VLM_CONN        = 138 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_STOR_POOL_DFN   = 139 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_STOR_POOL       = 140 | MASK_ERROR;
 
     /*
-     * Codes 140-149: access denied creation failures
+     * Codes 150-159: access denied creation failures
      */
-    public static final long CRT_FAIL_ACC_DENIED_NODE           = 140 | MASK_ERROR;
-    public static final long CRT_FAIL_ACC_DENIED_RSC_DFN        = 141 | MASK_ERROR;
-    public static final long CRT_FAIL_ACC_DENIED_RSC            = 142 | MASK_ERROR;
-    public static final long CRT_FAIL_ACC_DENIED_VLM_DFN        = 143 | MASK_ERROR;
-    public static final long CRT_FAIL_ACC_DENIED_VLM            = 144 | MASK_ERROR;
-    public static final long CRT_FAIL_ACC_DENIED_STOR_POOL_DFN  = 145 | MASK_ERROR;
-    public static final long CRT_FAIL_ACC_DENIED_STOR_POOL      = 146 | MASK_ERROR;
-    public static final long CRT_FAIL_ACC_DENIED_NODE_CONN      = 147 | MASK_ERROR;
-    public static final long CRT_FAIL_ACC_DENIED_RSC_CONN       = 148 | MASK_ERROR;
-    public static final long CRT_FAIL_ACC_DENIED_VLM_CONN       = 149 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_NODE           = 150 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_RSC_DFN        = 151 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_RSC            = 152 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_VLM_DFN        = 153 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_VLM            = 154 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_STOR_POOL_DFN  = 155 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_STOR_POOL      = 156 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_NODE_CONN      = 157 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_RSC_CONN       = 158 | MASK_ERROR;
+    public static final long CRT_FAIL_ACC_DENIED_VLM_CONN       = 159 | MASK_ERROR;
 
     /*
-     * Codes 150-169: data already exists creation failures
+     * Codes 160-179: data already exists creation failures
      */
-    public static final long CRT_FAIL_EXISTS_NODE           = 150 | MASK_ERROR;
-    public static final long CRT_FAIL_EXISTS_RSC_DFN        = 151 | MASK_ERROR;
-    public static final long CRT_FAIL_EXISTS_RSC            = 152 | MASK_ERROR;
-    public static final long CRT_FAIL_EXISTS_VLM_DFN        = 153 | MASK_ERROR;
-    public static final long CRT_FAIL_EXISTS_VLM            = 154 | MASK_ERROR;
-    public static final long CRT_FAIL_EXISTS_NET_IF         = 155 | MASK_ERROR;
-    public static final long CRT_FAIL_EXISTS_NODE_CONN      = 156 | MASK_ERROR;
-    public static final long CRT_FAIL_EXISTS_RSC_CONN       = 157 | MASK_ERROR;
-    public static final long CRT_FAIL_EXISTS_VLM_CONN       = 158 | MASK_ERROR;
-    public static final long CRT_FAIL_EXISTS_STOR_POOL_DFN  = 159 | MASK_ERROR;
-    public static final long CRT_FAIL_EXISTS_STOR_POOL      = 160 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_NODE           = 160 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_RSC_DFN        = 161 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_RSC            = 162 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_VLM_DFN        = 163 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_VLM            = 164 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_NET_IF         = 165 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_NODE_CONN      = 166 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_RSC_CONN       = 167 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_VLM_CONN       = 168 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_STOR_POOL_DFN  = 169 | MASK_ERROR;
+    public static final long CRT_FAIL_EXISTS_STOR_POOL      = 170 | MASK_ERROR;
 
     public static final long CRT_FAIL_UNKNOWN_ERROR         = 197 | MASK_ERROR;
 
@@ -134,33 +139,38 @@ public class ApiCallRcConstants
     public static final long DEL_FAIL_INVLD_VLM_SIZE        = 215 | MASK_ERROR;
     public static final long DEL_FAIL_INVLD_MINOR_NR        = 216 | MASK_ERROR;
     public static final long DEL_FAIL_INVLD_STOR_POOL_NAME  = 217 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_NET_NAME        = 218 | MASK_ERROR;
 
-    public static final long DEL_FAIL_NOT_FOUND_NODE            = 220 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_RSC_DFN         = 221 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_RSC             = 222 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_VLM_DFN         = 223 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_VLM             = 224 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_NET_IF          = 225 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_NODE_CONN       = 226 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_RSC_CONN        = 227 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_VLM_CONN        = 228 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_STOR_POOL_DFN   = 229 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_STOR_POOL       = 230 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_NODE            = 230 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_RSC_DFN         = 231 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_RSC             = 232 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_VLM_DFN         = 233 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_VLM             = 234 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_NET_IF          = 235 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_NODE_CONN       = 236 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_RSC_CONN        = 237 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_VLM_CONN        = 238 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_STOR_POOL_DFN   = 239 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_STOR_POOL       = 240 | MASK_ERROR;
 
-    public static final long DEL_FAIL_ACC_DENIED_NODE           = 240 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_RSC_DFN        = 241 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_RSC            = 242 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_VLM_DFN        = 243 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_VLM            = 244 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_STOR_POOL_DFN  = 245 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_STOR_POOL      = 246 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_NODE_CONN      = 247 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_RSC_CONN       = 248 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_VLM_CONN       = 249 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_NODE           = 250 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_RSC_DFN        = 251 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_RSC            = 252 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_VLM_DFN        = 253 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_VLM            = 254 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_STOR_POOL_DFN  = 255 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_STOR_POOL      = 256 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_NODE_CONN      = 257 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_RSC_CONN       = 258 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_VLM_CONN       = 259 | MASK_ERROR;
 
     public static final long DEL_FAIL_UNKNOWN_ERROR         = 297 | MASK_ERROR;
     public static final long DEL_FAIL_IN_USE                = 298 | MASK_ERROR;
     public static final long DEL_FAIL_IMPL_ERROR            = 299 | MASK_ERROR;
+
+    // Sign in codes
+    public static final long RC_SIGNIN_PASS = 300 | MASK_SUCCESS;
+    public static final long RC_SIGNIN_FAIL = 300 | MASK_ERROR;
 
     /*
      * Node return codes
@@ -174,9 +184,13 @@ public class ApiCallRcConstants
     public static final long RC_NODE_CRT_FAIL_SQL_ROLLBACK      = MASK_NODE | CRT_FAIL_SQL_ROLLBACK;
     public static final long RC_NODE_CRT_FAIL_INVLD_NODE_NAME   = MASK_NODE | CRT_FAIL_INVLD_NODE_NAME;
     public static final long RC_NODE_CRT_FAIL_INVLD_NODE_TYPE   = MASK_NODE | CRT_FAIL_INVLD_NODE_TYPE;
+    public static final long RC_NODE_CRT_FAIL_INVLD_NET_PORT    = MASK_NODE | CRT_FAIL_INVLD_NET_PORT;
+    public static final long RC_NODE_CRT_FAIL_INVLD_NET_TYPE    = MASK_NODE | CRT_FAIL_INVLD_NET_TYPE;
+    public static final long RC_NODE_CRT_FAIL_INVLD_NET_NAME    = MASK_NODE | CRT_FAIL_INVLD_NET_NAME;
     public static final long RC_NODE_CRT_FAIL_EXISTS_NODE       = MASK_NODE | CRT_FAIL_EXISTS_NODE;
     public static final long RC_NODE_CRT_FAIL_ACC_DENIED_NODE   = MASK_NODE | CRT_FAIL_ACC_DENIED_NODE;
     public static final long RC_NODE_CRT_FAIL_UNKNOWN_ERROR     = MASK_NODE | CRT_FAIL_UNKNOWN_ERROR;
+    public static final long RC_NODE_CRT_FAIL_IMPL_ERROR        = MASK_NODE | CRT_FAIL_IMPL_ERROR;
 
     public static final long RC_NODE_DEL_FAIL_SQL               = MASK_NODE | DEL_FAIL_SQL;
     public static final long RC_NODE_DEL_FAIL_SQL_ROLLBACK      = MASK_NODE | DEL_FAIL_SQL_ROLLBACK;
@@ -451,9 +465,4 @@ public class ApiCallRcConstants
     public static final long RC_STOR_POOL_DEL_FAIL_IN_USE                   = MASK_STOR_POOL | DEL_FAIL_IN_USE;
     public static final long RC_STOR_POOL_DEL_FAIL_UNKNOWN_ERROR            = MASK_STOR_POOL | DEL_FAIL_UNKNOWN_ERROR;
     public static final long RC_STOR_POOL_DEL_FAIL_IMPL_ERROR               = MASK_STOR_POOL | DEL_FAIL_IMPL_ERROR;
-
-
-    // API error codes
-    public static final long RC_SIGNIN_PASS = 0x0000000000000100L;
-    public static final long RC_SIGNIN_FAIL = 0xC000000000000100L;
 }

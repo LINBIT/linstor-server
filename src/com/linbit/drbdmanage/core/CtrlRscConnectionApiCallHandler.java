@@ -577,7 +577,7 @@ class CtrlRscConnectionApiCallHandler
                     missingNode = nodeName2Str;
                 }
 
-                nodeNotFoundEntry.setReturnCode(RC_RSC_CONN_CRT_FAIL_NOT_FOUND_NODE);
+                nodeNotFoundEntry.setReturnCode(RC_RSC_CONN_DEL_FAIL_NOT_FOUND_NODE);
                 nodeNotFoundEntry.setCauseFormat(
                     String.format(
                         "The specified node '%s' could not be found in the database",
@@ -595,7 +595,7 @@ class CtrlRscConnectionApiCallHandler
             if (rscDfn == null)
             {
                 ApiCallRcEntry rscDfnNotFoundEntry = new ApiCallRcEntry();
-                rscDfnNotFoundEntry.setReturnCode(RC_RSC_CONN_CRT_FAIL_NOT_FOUND_RSC_DFN);
+                rscDfnNotFoundEntry.setReturnCode(RC_RSC_CONN_DEL_FAIL_NOT_FOUND_RSC_DFN);
                 rscDfnNotFoundEntry.setCauseFormat(
                     String.format(
                         "The specified resource definition '%s' could not be found in the database",
@@ -645,7 +645,7 @@ class CtrlRscConnectionApiCallHandler
                     }
 
                     ApiCallRcEntry rscNotFoundEntry = new ApiCallRcEntry();
-                    rscNotFoundEntry.setReturnCode(RC_RSC_CONN_CRT_FAIL_NOT_FOUND_RSC);
+                    rscNotFoundEntry.setReturnCode(RC_RSC_CONN_DEL_FAIL_NOT_FOUND_RSC);
                     rscNotFoundEntry.setCauseFormat(
                         String.format(
                             "The specified resource '%s' on node '%s' could not be found in the database",

@@ -1390,7 +1390,7 @@ class CtrlVlmConnectionApiCallHandler
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(RC_RSC_CONN_DEL_FAIL_SQL_ROLLBACK);
+                    entry.setReturnCodeBit(RC_VLM_CONN_DEL_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
                     entry.putVariable(KEY_1ST_NODE_NAME, nodeName1Str);

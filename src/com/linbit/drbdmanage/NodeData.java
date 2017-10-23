@@ -15,6 +15,7 @@ import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeDataDatabaseDriver;
+import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.PropsContainer;
@@ -63,6 +64,8 @@ public class NodeData extends BaseTransactionObject implements Node
     private final Props nodeProps;
 
     private final NodeDataDatabaseDriver dbDriver;
+
+    private transient Peer peer;
 
     private boolean deleted = false;
 
@@ -400,6 +403,20 @@ public class NodeData extends BaseTransactionObject implements Node
     {
         checkDeleted();
         return flags;
+    }
+
+    @Override
+    public void setPeer(AccessContext accCtx, Peer peerRef) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+        peer = peerRef;
+    }
+
+    @Override
+    public Peer getPeer(AccessContext accCtx) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+        return peer;
     }
 
     @Override

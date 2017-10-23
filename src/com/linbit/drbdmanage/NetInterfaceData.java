@@ -26,6 +26,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     private final NetInterfaceName niName;
 
     private final TransactionSimpleObject<NetInterfaceData, DmIpAddress> niAddress;
+    private final TransactionSimpleObject<NetInterfaceData, Integer> niPort;
     private final TransactionSimpleObject<NetInterfaceData, NetInterfaceType> niType;
 
     private final NetInterfaceDataDatabaseDriver dbDriver;
@@ -38,8 +39,9 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         Node node,
         NetInterfaceName name,
         DmIpAddress addr,
-        TransactionMgr transMgr,
-        NetInterfaceType netType
+        int port,
+        NetInterfaceType netType,
+        TransactionMgr transMgr
     )
         throws AccessDeniedException
     {
@@ -49,6 +51,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             name,
             node,
             addr,
+            port,
             netType
         );
 
@@ -62,6 +65,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         NetInterfaceName netName,
         Node node,
         DmIpAddress addr,
+        int port,
         NetInterfaceType netType
     )
         throws AccessDeniedException
@@ -76,6 +80,11 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             this,
             addr,
             dbDriver.getNetInterfaceAddressDriver()
+        );
+        niPort = new TransactionSimpleObject<NetInterfaceData, Integer>(
+            this,
+            port,
+            dbDriver.getNetInterfacePortDriver()
         );
         niType = new TransactionSimpleObject<>(
             this,
@@ -95,6 +104,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         Node node,
         NetInterfaceName name,
         DmIpAddress addr,
+        int port,
         NetInterfaceType netType,
         TransactionMgr transMgr,
         boolean createIfNotExists,
@@ -116,7 +126,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         if (netData == null && createIfNotExists)
         {
-            netData = new NetInterfaceData(accCtx, node, name, addr, transMgr, netType);
+            netData = new NetInterfaceData(accCtx, node, name, addr, port, netType, transMgr);
             driver.create(netData, transMgr);
         }
         if (netData != null)
@@ -182,6 +192,24 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         checkDeleted();
         niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         niType.set(type);
+    }
+
+    @Override
+    public int getNetInterfacePort(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        niNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return niPort.get();
+    }
+
+    @Override
+    public void setNetInterfacePort(AccessContext accCtx, int port)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        niPort.set(port);
     }
 
     @Override

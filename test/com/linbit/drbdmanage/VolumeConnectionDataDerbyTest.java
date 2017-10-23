@@ -23,7 +23,7 @@ import com.linbit.utils.UuidUtils;
 
 public class VolumeConnectionDataDerbyTest extends DerbyBase
 {
-    private static final String SELECT_ALL_RES_CON_DFNS =
+    private static final String SELECT_ALL_VLM_CON_DFNS =
         " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " + NODE_NAME_DST + ", " +
                      RESOURCE_NAME + ", " + VLM_NR +
         " FROM " + TBL_VOLUME_CONNECTIONS;
@@ -58,7 +58,6 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     private VolumeData volSrc;
     private VolumeData volDst;
 
-    private VolumeConnectionData volCon;
     private VolumeConnectionDataDerbyDriver driver;
 
     private NodeId nodeIdSrc;
@@ -109,15 +108,15 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         storPool2 = StorPoolData.getInstance(sysCtx, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, false, true, false);
 
         volSrc = VolumeData.getInstance(sysCtx, resSrc, volDfn, storPool1, volBlockDevSrc, volMetaDiskPathSrc, null, transMgr, true, false);
-        volDst = VolumeData.getInstance(sysCtx, resDst, volDfn, storPool1, volBlockDevDst, volMetaDiskPathDst, null, transMgr, true, false);
+        volDst = VolumeData.getInstance(sysCtx, resDst, volDfn, storPool2, volBlockDevDst, volMetaDiskPathDst, null, transMgr, true, false);
 
-        volCon = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
         driver = (VolumeConnectionDataDerbyDriver) DrbdManage.getVolumeConnectionDatabaseDriver();
     }
 
     @Test
     public void testPersist() throws Exception
     {
+        VolumeConnectionData volCon = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
         driver.create(volCon, transMgr);
 
         checkDbPersist(true);
@@ -134,6 +133,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
+        VolumeConnectionData volCon = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
         driver.create(volCon, transMgr);
 
         VolumeConnectionData loadedConDfn = driver.load(volSrc , volDst, true, transMgr);
@@ -144,6 +144,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadAll() throws Exception
     {
+        VolumeConnectionData volCon = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
         driver.create(volCon, transMgr);
 
         List<VolumeConnectionData> cons = driver.loadAllByVolume(volSrc, transMgr);
@@ -161,6 +162,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
+        VolumeConnectionData volCon = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
         driver.create(volCon, transMgr);
 
         VolumeConnectionData loadedConDfn = VolumeConnectionData.getInstance(
@@ -195,9 +197,10 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testDelete() throws Exception
     {
+        VolumeConnectionData volCon = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
         driver.create(volCon, transMgr);
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VLM_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -229,7 +232,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
 
         checkLoadedConDfn(satelliteConDfn, false);
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VLM_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
@@ -252,7 +255,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
 
         assertNull(satelliteConDfn);
 
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VLM_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse(resultSet.next());
@@ -262,7 +265,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
 
     private void checkDbPersist(boolean checkUuid) throws SQLException
     {
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RES_CON_DFNS);
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VLM_CON_DFNS);
         ResultSet resultSet = stmt.executeQuery();
 
         assertTrue(resultSet.next());
@@ -300,7 +303,8 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     @Test (expected = DrbdDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        driver.create(volCon, transMgr);
+        VolumeConnectionData volCon = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);
+       driver.create(volCon, transMgr);
 
         VolumeConnectionData.getInstance(sysCtx, volSrc, volDst, transMgr, false, true);
     }

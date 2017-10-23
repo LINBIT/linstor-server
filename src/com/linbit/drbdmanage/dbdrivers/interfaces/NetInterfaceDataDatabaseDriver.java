@@ -75,4 +75,9 @@ public interface NetInterfaceDataDatabaseDriver
      * A special sub-driver to update the persisted transportType.
      */
     public SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> getNetInterfaceTypeDriver();
+
+    /**
+     * A special sub-driver to update the persisted port.
+     */
+    public SingleColumnDatabaseDriver<NetInterfaceData, Integer> getNetInterfacePortDriver();
 }

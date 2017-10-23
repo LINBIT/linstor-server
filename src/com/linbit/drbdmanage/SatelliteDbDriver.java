@@ -516,6 +516,13 @@ public class SatelliteDbDriver implements DatabaseDriver
             return (SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType>) singleColDriver;
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public SingleColumnDatabaseDriver<NetInterfaceData, Integer> getNetInterfacePortDriver()
+        {
+            return (SingleColumnDatabaseDriver<NetInterfaceData, Integer>) singleColDriver;
+        }
+
         @Override
         public NetInterfaceData load(
             Node node,

@@ -172,16 +172,15 @@ public abstract class DerbyBase implements DerbyConstants
 
         Connection tmpCon = dbConnPool.getConnection();
         // make sure to seal the internal caches
-        persistenceDbDriver.loadAll(new TransactionMgr(tmpCon));
-        System.out.println("derbybase: " + persistenceDbDriver.getStorPoolDataDatabaseDriver());
-        tmpCon.close();
-
-        clearCaches();
-
         CoreUtils.setDatabaseClasses(
             secureDbDriver,
             persistenceDbDriver
         );
+        persistenceDbDriver.loadAll(new TransactionMgr(tmpCon));
+        tmpCon.close();
+
+        clearCaches();
+
         errorReporter.logTrace("cleanups done, running method: %s", testMethodName.getMethodName());
     }
 

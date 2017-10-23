@@ -82,6 +82,7 @@ public class DerbyConstants
     public static final String NODE_NET_NAME       = "NODE_NET_NAME";
     public static final String NODE_NET_DSP_NAME   = "NODE_NET_DSP_NAME";
     public static final String INET_ADDRESS        = "INET_ADDRESS";
+    public static final String INET_PORT           = "INET_PORT";
     public static final String INET_TRANSPORT_TYPE = "INET_TRANSPORT_TYPE";
 
     // RESOURCE_DEFINITIONS column names

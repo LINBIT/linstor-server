@@ -82,6 +82,7 @@ public interface DerbyConstants
     public static final String NODE_NET_NAME       = "NODE_NET_NAME";
     public static final String NODE_NET_DSP_NAME   = "NODE_NET_DSP_NAME";
     public static final String INET_ADDRESS        = "INET_ADDRESS";
+    public static final String INET_PORT           = "INET_PORT";
     public static final String INET_TRANSPORT_TYPE = "INET_TRANSPORT_TYPE";
 
     // RESOURCE_DEFINITIONS column names
@@ -132,7 +133,7 @@ public interface DerbyConstants
     public static final int TBL_COL_COUNT_SEC_ACL_MAP           = 3;
     public static final int TBL_COL_COUNT_CTRL_CONFIGURATION    = 3;
     public static final int TBL_COL_COUNT_NODES                 = 5;
-    public static final int TBL_COL_COUNT_NODE_NET_INTERFACES   = 6;
+    public static final int TBL_COL_COUNT_NODE_NET_INTERFACES   = 7;
     public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 4;
     public static final int TBL_COL_COUNT_RESOURCES             = 5;
     public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS = 3;
@@ -272,6 +273,7 @@ public interface DerbyConstants
         "    NODE_NET_NAME VARCHAR(255) NOT NULL, \n" +
         "    NODE_NET_DSP_NAME VARCHAR(255) NOT NULL, \n" +
         "    INET_ADDRESS VARCHAR(45) NOT NULL, \n" +
+        "    INET_PORT SMALLINT NOT NULL, \n" +
         "    INET_TRANSPORT_TYPE VARCHAR(40) NOT NULL, \n" +
         "    PRIMARY KEY (NODE_NAME, NODE_NET_NAME), \n" +
         "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE \n" +
@@ -531,6 +533,11 @@ public interface DerbyConstants
         "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/tcp0/bindaddress', 'localhost')",
         "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/tcp0/port', '9500')",
         "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/tcp0/type', 'plain')",
+        "INSERT INTO STOR_POOL_DEFINITIONS VALUES (x'f51611c6528f4793a87a866d09e6733a', 'DFLTSTORPOOL', 'DfltStorPool')",
+        "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
+        "    VALUES('/storpooldefinitions/DFLTSTORPOOL', 'PUBLIC', 'PUBLIC', 'PUBLIC')",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES('/storpooldefinitions/DFLTSTORPOOL', 'PUBLIC', 7)",
     };
 
     // insert statements (parameterized)
@@ -572,7 +579,7 @@ public interface DerbyConstants
         " VALUES (?, ?, ?, ?, ?)";
     public static final String INSERT_NODE_NET_INTERFACES =
         " INSERT INTO " + TBL_NODE_NET_INTERFACES +
-        " VALUES (?, ?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?, ?)";
     public static final String INSERT_RESOURCE_DEFINITIONS =
         " INSERT INTO " + TBL_RESOURCE_DEFINITIONS +
         " VALUES (?, ?, ?, ?)";
