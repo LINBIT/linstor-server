@@ -241,6 +241,7 @@ public class TcpConnectorMessage implements Message
                     // Finished sending the message
                     state = WriteState.FINISHED;
                 }
+                break;
             case PROCESS:
                 throw new IllegalMessageStateException(
                     "Attempt to write a message that is in process mode"
