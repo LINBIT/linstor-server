@@ -72,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -539,28 +540,45 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         throws AccessDeniedException
     {
         TransactionMgr transMgr = null;
+        Lock recfgWriteLock = reconfigurationLock.writeLock();
         try
         {
             transMgr = new TransactionMgr(dbConnPool);
             if (dbConnPool != null)
             {
+                nodesMapProt.requireAccess(initCtx, AccessType.CONTROL);
+                rscDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
+                storPoolDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
+
                 try
                 {
-                    nodesMapProt.requireAccess(initCtx, AccessType.CONTROL);
-                    rscDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
-                    storPoolDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
 
-                    nodesMapLock.writeLock().lock();
-                    rscDfnMapLock.writeLock().lock();
-                    storPoolDfnMapLock.writeLock().lock();
+                    // Replacing the entire configuration requires locking out all other tasks
+                    //
+                    // Since others task that use the configuration must hold the reconfiguration lock
+                    // in read mode before locking any of the other system objects, locking the maps
+                    // for nodes, resource definition, storage pool definitions, etc. can be skipped.
+                    recfgWriteLock.lock();
 
+                    // Clear the maps of any existing objects
+                    //
+                    // TODO: It would be better to keep the current configuration while trying to
+                    //       load a new configuration, and only if loading the new configuration succeeded,
+                    //       clear the old configuration and replace it with the new one
+                    nodesMap.clear();
+                    rscDfnMap.clear();
+                    storPoolDfnMap.clear();
+
+                    // Reload all objects
+                    //
+                    // FIXME: Loading or reloading the configuration must ensure to either load everything
+                    //        or nothing to prevent ending up with a half-loaded configuration.
+                    //        See also the TODO above.
                     persistenceDbDriver.loadAll(transMgr);
                 }
                 finally
                 {
-                    storPoolDfnMapLock.writeLock().unlock();
-                    rscDfnMapLock.writeLock().unlock();
-                    nodesMapLock.writeLock().unlock();
+                    recfgWriteLock.unlock();
                 }
             }
         }
