@@ -79,7 +79,12 @@ public final class ObjectProtection extends BaseTransactionObject
      * @throws SQLException
      * @throws AccessDeniedException
      */
-    public static ObjectProtection getInstance(AccessContext accCtx, String objPath, boolean createIfNotExists, TransactionMgr transMgr)
+    public static ObjectProtection getInstance(
+        AccessContext accCtx,
+        String objPath,
+        boolean createIfNotExists,
+        TransactionMgr transMgr
+    )
         throws SQLException, AccessDeniedException
     {
         ObjectProtectionDatabaseDriver dbDriver = DrbdManage.getObjectProtectionDatabaseDriver();
@@ -101,7 +106,7 @@ public final class ObjectProtection extends BaseTransactionObject
 
         if (objProt != null)
         {
-            objProt.requireAccess(accCtx, AccessType.CONTROL);
+            objProt.requireAccess(accCtx, AccessType.CHANGE);
             objProt.objPath = objPath;
             objProt.dbDriver = dbDriver;
 
