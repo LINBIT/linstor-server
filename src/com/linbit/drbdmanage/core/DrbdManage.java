@@ -29,6 +29,7 @@ import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.DbAccessor;
 import com.linbit.drbdmanage.security.ObjectProtectionDatabaseDriver;
 import com.linbit.drbdmanage.security.Privilege;
+import com.linbit.drbdmanage.security.SecurityLevel;
 import com.linbit.drbdmanage.timer.CoreTimer;
 import com.linbit.drbdmanage.timer.CoreTimerImpl;
 
@@ -44,6 +45,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.sql.SQLException;
 import java.util.Properties;
 import org.slf4j.event.Level;
 
@@ -649,4 +651,7 @@ public abstract class DrbdManage
     {
         return persistenceDbDriver.getVolumeConnectionDataDatabaseDriver();
     }
+
+    public abstract void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
+        throws AccessDeniedException, SQLException;
 }

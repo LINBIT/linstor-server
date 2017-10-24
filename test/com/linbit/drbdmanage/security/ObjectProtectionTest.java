@@ -54,7 +54,7 @@ public class ObjectProtectionTest
         userSecDomain = new SecurityType(new SecTypeName("UserSecType"));
         someOtherUserSecDomain = new SecurityType(new SecTypeName("SomeOtherUserSecType"));
 
-        SecurityLevel.set(rootCtx, SecurityLevel.MAC);
+        SecurityLevel.set(rootCtx, SecurityLevel.MAC, null, null);
     }
 
     @Test

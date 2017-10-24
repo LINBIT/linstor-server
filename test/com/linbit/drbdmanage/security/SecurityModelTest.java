@@ -28,7 +28,7 @@ public class SecurityModelTest
         throws Throwable
     {
         // Restore the global security level to MAC before each test
-        SecurityLevel.set(sysCtx, SecurityLevel.MAC);
+        SecurityLevel.set(sysCtx, SecurityLevel.MAC, null, null);
     }
 
     @After
@@ -115,7 +115,7 @@ public class SecurityModelTest
     public void testSecLevelRbacObjProtAclDeny()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
 
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -188,7 +188,7 @@ public class SecurityModelTest
     public void testSecLevelRbacBuddyAclModify()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
 
         AccessContext buddyCtx = sysCtx.impersonate(
             buddyId, buddyRole, creatorCtx.getDomain()
@@ -233,7 +233,7 @@ public class SecurityModelTest
     public void testSecLevelRbacBanditAclModify()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
 
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -302,7 +302,7 @@ public class SecurityModelTest
     public void testSecLevelRbacBanditTypeModify()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
 
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -368,7 +368,7 @@ public class SecurityModelTest
     public void testSecLevelRbacBanditOwnerModify()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
 
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -560,7 +560,7 @@ public class SecurityModelTest
     public void testSecLevelRbacImpersonateDeny()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
 
         publicCtx.impersonate(Identity.SYSTEM_ID, Role.SYSTEM_ROLE, userType);
     }
@@ -569,7 +569,7 @@ public class SecurityModelTest
     public void testSecLevelRbacTypeOvrd()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC);
+        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
 
         ObjectProtection prot = null;
         AccessContext otherDomainCtx = null;
@@ -625,7 +625,7 @@ public class SecurityModelTest
     public void testSecLevelNoneObjProtOvrd()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.NO_SECURITY);
+        SecurityLevel.set(sysCtx, SecurityLevel.NO_SECURITY, null, null);
 
         ObjectProtection prot = null;
         // Create the object as creator
@@ -640,7 +640,7 @@ public class SecurityModelTest
         AccessContext banditCtx = sysCtx.impersonate(
             banditId, banditRole, publicCtx.getDomain()
         );
-        SecurityLevel.set(banditCtx, SecurityLevel.NO_SECURITY);
+        SecurityLevel.set(banditCtx, SecurityLevel.NO_SECURITY, null, null);
         fail("SecurityLevel change by unauthorized role succeeded");
     }
 }

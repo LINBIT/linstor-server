@@ -9,7 +9,7 @@ import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_IDENTITIES;
 import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ROLES;
 import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ID_ROLE_MAP;
 import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_DFLT_ROLES;
-import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_ACL_MAP;
+import static com.linbit.drbdmanage.security.SecurityDbFields.TBL_SEC_CFG;
 
 import static com.linbit.drbdmanage.security.SecurityDbFields.VW_IDENTITIES_LOAD;
 import static com.linbit.drbdmanage.security.SecurityDbFields.VW_ROLES_LOAD;
@@ -31,6 +31,8 @@ import static com.linbit.drbdmanage.security.SecurityDbFields.KEY_SEC_LEVEL;
 import java.sql.Statement;
 
 import com.linbit.drbdmanage.logging.ErrorReporter;
+import static com.linbit.drbdmanage.security.SecurityDbFields.CONF_DSP_KEY;
+import static com.linbit.drbdmanage.security.SecurityDbFields.KEY_DSP_SEC_LEVEL;
 
 /**
  *
@@ -76,8 +78,15 @@ public class DbDerbyPersistence implements DbAccessor
 
     private static final String SLCT_SEC_LEVEL =
         "SELECT " + CONF_KEY + ", " + CONF_VALUE +
-        " FROM " + TBL_ACL_MAP +
-        " WHERE " + CONF_KEY + " = " + KEY_SEC_LEVEL;
+        " FROM " + TBL_SEC_CFG +
+        " WHERE " + CONF_KEY + " = '" + KEY_SEC_LEVEL + "'";
+
+    private static final String DEL_SEC_LEVEL =
+        "DELETE FROM " + TBL_SEC_CFG + " WHERE " + CONF_KEY + " = '" + KEY_SEC_LEVEL + "'";
+
+    private static final String INS_SEC_LEVEL =
+        "INSERT INTO " + TBL_SEC_CFG + " (" + CONF_KEY + ", " + CONF_DSP_KEY + ", " + CONF_VALUE +
+        ") VALUES('" + KEY_SEC_LEVEL + "', '" + KEY_DSP_SEC_LEVEL + "', ?)";
 
     private final ObjectProtectionDatabaseDriver objProtDriver;
 
@@ -141,6 +150,24 @@ public class DbDerbyPersistence implements DbAccessor
     public ResultSet loadSecurityLevel(Connection dbConn) throws SQLException
     {
         return dbQuery(dbConn, SLCT_SEC_LEVEL);
+    }
+
+    public void setSecurityLevel(Connection dbConn, SecurityLevel newLevel) throws SQLException
+    {
+        // Delete any existing security level entry
+        {
+            Statement delStmt = dbConn.createStatement();
+            delStmt.execute(DEL_SEC_LEVEL);
+        }
+
+        // Insert the new security level entry
+        {
+            PreparedStatement insStmt = dbConn.prepareStatement(INS_SEC_LEVEL);
+            insStmt.setString(1, newLevel.name().toUpperCase());
+            insStmt.execute();
+        }
+
+        dbConn.commit();
     }
 
     @Override

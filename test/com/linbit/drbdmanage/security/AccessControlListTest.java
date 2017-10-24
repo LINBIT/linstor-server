@@ -37,7 +37,7 @@ public class AccessControlListTest
 
         userSecDomain = new SecurityType(new SecTypeName("UserSecType"));
 
-        SecurityLevel.set(rootCtx, SecurityLevel.MAC);
+        SecurityLevel.set(rootCtx, SecurityLevel.MAC, null, null);
     }
 
     @Test

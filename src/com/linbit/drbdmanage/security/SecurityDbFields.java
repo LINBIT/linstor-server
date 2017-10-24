@@ -15,6 +15,7 @@ public class SecurityDbFields
     static final String TBL_DFLT_ROLES      = "SEC_DFLT_ROLES";
     static final String TBL_OBJ_PROT        = "SEC_OBJECT_PROTECTION";
     static final String TBL_ACL_MAP         = "SEC_ACL_MAP";
+    static final String TBL_SEC_CFG         = "SEC_CONFIGURATION";
 
     static final String VW_IDENTITIES_LOAD  = "SEC_IDENTITIES_LOAD";
     static final String VW_ROLES_LOAD       = "SEC_ROLES_LOAD";
@@ -48,6 +49,7 @@ public class SecurityDbFields
     static final String CONF_VALUE          = "ENTRY_VALUE";
 
     static final String KEY_SEC_LEVEL       = "SECURITYLEVEL";
+    static final String KEY_DSP_SEC_LEVEL   = "SecurityLevel";
 
     private SecurityDbFields()
     {

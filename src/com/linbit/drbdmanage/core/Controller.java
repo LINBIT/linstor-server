@@ -43,6 +43,7 @@ import com.linbit.drbdmanage.security.IdentityName;
 import com.linbit.drbdmanage.security.Initializer;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.Privilege;
+import com.linbit.drbdmanage.security.SecurityLevel;
 import com.linbit.drbdmanage.security.SignInException;
 import com.linbit.drbdmanage.tasks.GarbageCollectorTask;
 import com.linbit.drbdmanage.tasks.PingTask;
@@ -387,6 +388,11 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     errorLogRef.reportError(exc);
                 }
 
+                errorLogRef.logInfo(
+                    "Current security level is %s",
+                    SecurityLevel.get().name()
+                );
+
                 TransactionMgr transMgr = null;
                 try
                 {
@@ -585,6 +591,15 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 }
             }
         }
+    }
+
+    @Override
+    public void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
+        throws AccessDeniedException, SQLException
+    {
+        SecurityLevel.set(
+            accCtx, newLevel, dbConnPool, securityDbDriver
+        );
     }
 
     @Override

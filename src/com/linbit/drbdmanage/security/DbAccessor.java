@@ -29,6 +29,8 @@ public interface DbAccessor
 
     ResultSet loadSecurityLevel(Connection dbConn)
         throws SQLException;
+    void setSecurityLevel(Connection dbConn, SecurityLevel newLevel)
+        throws SQLException;
 
     ObjectProtectionDatabaseDriver getObjectProtectionDatabaseDriver();
 }

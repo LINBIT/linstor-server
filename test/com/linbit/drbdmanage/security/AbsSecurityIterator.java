@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.security;
 
 import com.linbit.testutils.AbsIterator;
+import java.sql.SQLException;
 
 public abstract class AbsSecurityIterator <T> extends AbsIterator<T>
 {
@@ -62,11 +63,18 @@ public abstract class AbsSecurityIterator <T> extends AbsIterator<T>
         {
             try
             {
-                SecurityLevel.set(rootCtx, currentSecLevel);
+                SecurityLevel.set(rootCtx, currentSecLevel, null, null);
             }
-            catch (AccessDeniedException e)
+            catch (AccessDeniedException exc)
             {
-                throw new RuntimeException("rootCtx cannot change securityLevel...", e);
+                throw new RuntimeException("rootCtx cannot change securityLevel...", exc);
+            }
+            catch (SQLException exc)
+            {
+                throw new RuntimeException(
+                    "Database error while changing the securityLevel, although no database is being used",
+                    exc
+                );
             }
         }
         return next;

@@ -32,7 +32,7 @@ public class StateFlagBitsTest
     private SecurityType someOtherUserSecDomain;
 
     @Before
-    public void setUp() throws InvalidNameException, AccessDeniedException
+    public void setUp() throws InvalidNameException, AccessDeniedException, SQLException
     {
         sysCtx = new AccessContext(
             new Identity(new IdentityName("SYSTEM")),
@@ -53,7 +53,7 @@ public class StateFlagBitsTest
         userSecDomain = new SecurityType(new SecTypeName("UserSecType"));
         someOtherUserSecDomain = new SecurityType(new SecTypeName("SomeOtherUserSecType"));
 
-        SecurityLevel.set(rootCtx, SecurityLevel.MAC);
+        SecurityLevel.set(rootCtx, SecurityLevel.MAC, null, null);
     }
 
     @Test

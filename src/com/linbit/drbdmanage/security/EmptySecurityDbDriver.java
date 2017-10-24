@@ -66,6 +66,12 @@ public class EmptySecurityDbDriver implements DbAccessor
         return new EmptyObjectProtectionDatabaseDriver();
     }
 
+    @Override
+    public void setSecurityLevel(Connection dbConn, SecurityLevel newLevel) throws SQLException
+    {
+        // no-op
+    }
+
     private static class EmptyObjectProtectionDatabaseDriver implements ObjectProtectionDatabaseDriver
     {
         public EmptyObjectProtectionDatabaseDriver()

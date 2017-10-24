@@ -74,6 +74,12 @@ public class NoOpSecurityDriver implements DbAccessor
         return NoOpObjProtDriver;
     }
 
+    @Override
+    public void setSecurityLevel(Connection dbConn, SecurityLevel newLevel) throws SQLException
+    {
+        // no-op
+    }
+
     private class NoOpObjectProtectionDriver implements ObjectProtectionDatabaseDriver
     {
 

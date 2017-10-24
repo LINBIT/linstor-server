@@ -31,6 +31,7 @@ import com.linbit.drbdmanage.security.EmptySecurityDbDriver;
 import com.linbit.drbdmanage.security.Initializer;
 import com.linbit.drbdmanage.security.ObjectProtection;
 import com.linbit.drbdmanage.security.Privilege;
+import com.linbit.drbdmanage.security.SecurityLevel;
 import com.linbit.drbdmanage.timer.CoreTimer;
 import com.linbit.fsevent.FileSystemWatch;
 
@@ -286,6 +287,13 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         {
             reconfigurationLock.writeLock().unlock();
         }
+    }
+
+    @Override
+    public void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)
+        throws AccessDeniedException, SQLException
+    {
+        SecurityLevel.set(accCtx, newLevel, null, null);
     }
 
     @Override
