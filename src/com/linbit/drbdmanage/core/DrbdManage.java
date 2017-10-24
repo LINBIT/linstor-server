@@ -60,7 +60,7 @@ public abstract class DrbdManage
     // Product and version information
     //
     public static final String PROGRAM = "drbdmanageNG";
-    public static final String VERSION = "experimental 2017-04-19_001";
+    public static final String VERSION = "0.1.0-experimental [2017-10-24_001]";
 
     // ============================================================
     // Worker thread pool defaults
