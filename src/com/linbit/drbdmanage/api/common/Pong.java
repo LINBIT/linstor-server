@@ -3,17 +3,17 @@ package com.linbit.drbdmanage.api.common;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.api.BaseApiCall;
-import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 
 public class Pong extends BaseApiCall
 {
-    public Pong(Controller controller)
+    public Pong(CoreServices coreServices)
     {
-        super(controller.getErrorReporter());
+        super(coreServices.getErrorReporter());
     }
 
     @Override

@@ -327,9 +327,9 @@ public abstract class DrbdManage
 
             if (!pkgPath.toFile().exists())
             {
-                componentRef.errorLog.logError(
+                componentRef.errorLog.logWarning(
                     "Package '%s' does not exist - skipping dynamic load of ApiCalls",
-                    pkgPath
+                    pkgToLoad
                 );
             }
             else
