@@ -142,7 +142,7 @@ public class SslTcpConnectorMessage extends TcpConnectorMessage
                 encryptedBuffer.flip();
             }
             channel.write(encryptedBuffer);
-            flushed = !encryptedBuffer.hasRemaining();
+            flushed = !buffer.hasRemaining() && !encryptedBuffer.hasRemaining();
         }
         return flushed;
     }
