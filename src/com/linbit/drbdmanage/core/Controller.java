@@ -665,6 +665,11 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
     public void shutdown(AccessContext accCtx) throws AccessDeniedException
     {
+        shutdown(accCtx, true);
+    }
+
+    public void shutdown(AccessContext accCtx, boolean sysExit) throws AccessDeniedException
+    {
         shutdownProt.requireAccess(accCtx, AccessType.USE);
 
         ErrorReporter errLog = getErrorReporter();
@@ -735,7 +740,10 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         {
             reconfigurationLock.writeLock().unlock();
         }
-        System.exit(0);
+        if (sysExit)
+        {
+            System.exit(0);
+        }
     }
 
     public void peerSignIn(
