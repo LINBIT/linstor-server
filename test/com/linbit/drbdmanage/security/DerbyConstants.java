@@ -19,7 +19,6 @@ public interface DerbyConstants
     public static final String TBL_SEC_DFLT_ROLES        = "SEC_DFLT_ROLES";
     public static final String TBL_SEC_OBJECT_PROTECTION = "SEC_OBJECT_PROTECTION";
     public static final String TBL_SEC_ACL_MAP           = "SEC_ACL_MAP";
-    public static final String TBL_CTRL_CONFIGURATION    = "CTRL_CONFIGURATION";
     public static final String TBL_NODES                 = "NODES";
     public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
     public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
@@ -131,7 +130,6 @@ public interface DerbyConstants
     public static final int TBL_COL_COUNT_SEC_DFLT_ROLES        = 2;
     public static final int TBL_COL_COUNT_SEC_OBJECT_PROTECTION = 4;
     public static final int TBL_COL_COUNT_SEC_ACL_MAP           = 3;
-    public static final int TBL_COL_COUNT_CTRL_CONFIGURATION    = 3;
     public static final int TBL_COL_COUNT_NODES                 = 5;
     public static final int TBL_COL_COUNT_NODE_NET_INTERFACES   = 7;
     public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 4;
@@ -230,12 +228,9 @@ public interface DerbyConstants
         "    CREATOR_IDENTITY_NAME VARCHAR(24) NOT NULL, \n" +
         "    OWNER_ROLE_NAME VARCHAR(24) NOT NULL, \n" +
         "    SECURITY_TYPE_NAME VARCHAR(24) NOT NULL, \n" +
-        "    CONSTRAINT OP_FK_ID_NAME FOREIGN KEY (CREATOR_IDENTITY_NAME) REFERENCES SEC_IDENTITIES(IDENTITY_NAME)  \n" +
-        "        ON DELETE RESTRICT, \n" +
-        "    CONSTRAINT OP_FK_ROLE_NAME FOREIGN KEY (OWNER_ROLE_NAME) REFERENCES SEC_ROLES(ROLE_NAME)  \n" +
-        "        ON DELETE RESTRICT, \n" +
-        "    CONSTRAINT OP_FK_SEC_TYPE FOREIGN KEY (SECURITY_TYPE_NAME) REFERENCES SEC_TYPES(TYPE_NAME)  \n" +
-        "        ON DELETE RESTRICT \n" +
+        "    FOREIGN KEY (CREATOR_IDENTITY_NAME) REFERENCES SEC_IDENTITIES(IDENTITY_NAME) ON DELETE RESTRICT, \n" +
+        "    FOREIGN KEY (OWNER_ROLE_NAME) REFERENCES SEC_ROLES(ROLE_NAME) ON DELETE RESTRICT, \n" +
+        "    FOREIGN KEY (SECURITY_TYPE_NAME) REFERENCES SEC_TYPES(TYPE_NAME) ON DELETE RESTRICT \n" +
         ")";
     public static final String CREATE_TABLE_SEC_ACL_MAP =
         "CREATE TABLE SEC_ACL_MAP \n" +
@@ -247,15 +242,6 @@ public interface DerbyConstants
         "    FOREIGN KEY (OBJECT_PATH) REFERENCES SEC_OBJECT_PROTECTION(OBJECT_PATH) ON DELETE CASCADE, \n" +
         "    FOREIGN KEY (ROLE_NAME) REFERENCES SEC_ROLES(ROLE_NAME) ON DELETE RESTRICT, \n" +
         "    FOREIGN KEY (ACCESS_TYPE) REFERENCES SEC_ACCESS_TYPES(ACCESS_TYPE_VALUE) ON DELETE RESTRICT \n" +
-        ")";
-    public static final String CREATE_TABLE_CTRL_CONFIGURATION =
-        "CREATE TABLE CTRL_CONFIGURATION \n" +
-        "( \n" +
-        "    ENTRY_KEY VARCHAR(512) NOT NULL PRIMARY KEY \n" +
-        "        CONSTRAINT CTRL_CONF_CHKKEY CHECK (UPPER(ENTRY_KEY) = ENTRY_KEY AND LENGTH(ENTRY_KEY) >= 1), \n" +
-        "    ENTRY_VALUE VARCHAR(512) NOT NULL, \n" +
-        "    ENTRY_DSP_KEY VARCHAR(512) NOT NULL, \n" +
-        "        CONSTRAINT CTRL_CONF_CHKDSPNAME CHECK (UPPER(ENTRY_DSP_KEY) = ENTRY_KEY) \n" +
         ")";
     public static final String CREATE_TABLE_NODES =
         "CREATE TABLE NODES \n" +
@@ -381,8 +367,10 @@ public interface DerbyConstants
         "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
         "    VLM_NR INT NOT NULL, \n" +
         "    PRIMARY KEY (NODE_NAME_SRC, NODE_NAME_DST, RESOURCE_NAME, VLM_NR), \n" +
-        "    FOREIGN KEY (NODE_NAME_SRC, RESOURCE_NAME, VLM_NR) REFERENCES VOLUMES(NODE_NAME, RESOURCE_NAME, VLM_NR) ON DELETE CASCADE, \n" +
-        "    FOREIGN KEY (NODE_NAME_DST, RESOURCE_NAME, VLM_NR) REFERENCES VOLUMES(NODE_NAME, RESOURCE_NAME, VLM_NR) ON DELETE CASCADE \n" +
+        "    FOREIGN KEY (NODE_NAME_SRC, RESOURCE_NAME, VLM_NR) REFERENCES VOLUMES(NODE_NAME, RESOURCE_NAME, VLM_NR) \n" +
+        "        ON DELETE CASCADE, \n" +
+        "    FOREIGN KEY (NODE_NAME_DST, RESOURCE_NAME, VLM_NR) REFERENCES VOLUMES(NODE_NAME, RESOURCE_NAME, VLM_NR) \n" +
+        "        ON DELETE CASCADE \n" +
         ")";
     public static final String CREATE_TABLE_PROPS_CONTAINERS =
         "CREATE TABLE PROPS_CONTAINERS \n" +
@@ -431,7 +419,6 @@ public interface DerbyConstants
     public static final String DROP_TBL_RESOURCE_DEFINITIONS  = "DROP TABLE " + TBL_RESOURCE_DEFINITIONS;
     public static final String DROP_TBL_NODE_NET_INTERFACES   = "DROP TABLE " + TBL_NODE_NET_INTERFACES;
     public static final String DROP_TBL_NODES                 = "DROP TABLE " + TBL_NODES;
-    public static final String DROP_TBL_CTRL_CONFIGURATION    = "DROP TABLE " + TBL_CTRL_CONFIGURATION;
     public static final String DROP_TBL_SEC_ACL_MAP           = "DROP TABLE " + TBL_SEC_ACL_MAP;
     public static final String DROP_TBL_SEC_OBJECT_PROTECTION = "DROP TABLE " + TBL_SEC_OBJECT_PROTECTION;
     public static final String DROP_TBL_SEC_DFLT_ROLES        = "DROP TABLE " + TBL_SEC_DFLT_ROLES;
@@ -456,7 +443,6 @@ public interface DerbyConstants
     public static final String TRUNCATE_RESOURCE_DEFINITIONS  = "DELETE FROM " + TBL_RESOURCE_DEFINITIONS;
     public static final String TRUNCATE_NODE_NET_INTERFACES   = "DELETE FROM " + TBL_NODE_NET_INTERFACES;
     public static final String TRUNCATE_NODES                 = "DELETE FROM " + TBL_NODES;
-    public static final String TRUNCATE_CTRL_CONFIGURATION    = "DELETE FROM " + TBL_CTRL_CONFIGURATION;
     public static final String TRUNCATE_SEC_ACL_MAP           = "DELETE FROM " + TBL_SEC_ACL_MAP;
     public static final String TRUNCATE_SEC_OBJECT_PROTECTION = "DELETE FROM " + TBL_SEC_OBJECT_PROTECTION;
     public static final String TRUNCATE_SEC_DFLT_ROLES        = "DELETE FROM " + TBL_SEC_DFLT_ROLES;
@@ -481,7 +467,6 @@ public interface DerbyConstants
         CREATE_TABLE_SEC_DFLT_ROLES,
         CREATE_TABLE_SEC_OBJECT_PROTECTION,
         CREATE_TABLE_SEC_ACL_MAP,
-        CREATE_TABLE_CTRL_CONFIGURATION,
         CREATE_TABLE_NODES,
         CREATE_TABLE_NODE_NET_INTERFACES,
         CREATE_TABLE_RESOURCE_DEFINITIONS,
@@ -503,6 +488,8 @@ public interface DerbyConstants
     // insert statements (default values)
     public static final String[] INSERT_DEFAULT_VALUES =
     {
+        "INSERT INTO SEC_CONFIGURATION (ENTRY_KEY, ENTRY_DSP_KEY, ENTRY_VALUE) \n" +
+        "    VALUES ('SECURITYLEVEL', 'SecurityLevel', 'MAC')",
         "INSERT INTO SEC_ACCESS_TYPES (ACCESS_TYPE_NAME, ACCESS_TYPE_VALUE) \n" +
         "    VALUES ('CONTROL', 15)",
         "INSERT INTO SEC_ACCESS_TYPES (ACCESS_TYPE_NAME, ACCESS_TYPE_VALUE) \n" +
@@ -512,18 +499,67 @@ public interface DerbyConstants
         "INSERT INTO SEC_ACCESS_TYPES (ACCESS_TYPE_NAME, ACCESS_TYPE_VALUE) \n" +
         "    VALUES ('VIEW', 1)",
         "INSERT INTO SEC_IDENTITIES (IDENTITY_NAME, IDENTITY_DSP_NAME, ID_ENABLED, ID_LOCKED) \n" +
-        "    VALUES('SYSTEM', 'SYSTEM', TRUE, TRUE)",
+        "    VALUES ('SYSTEM', 'SYSTEM', TRUE, TRUE)",
         "INSERT INTO SEC_IDENTITIES (IDENTITY_NAME, IDENTITY_DSP_NAME, ID_ENABLED, ID_LOCKED) \n" +
-        "    VALUES('PUBLIC', 'PUBLIC', TRUE, TRUE)",
+        "    VALUES ('PUBLIC', 'PUBLIC', TRUE, TRUE)",
         "INSERT INTO SEC_TYPES (TYPE_NAME, TYPE_DSP_NAME, TYPE_ENABLED) \n" +
         "    VALUES ('SYSTEM', 'SYSTEM', TRUE)",
         "INSERT INTO SEC_TYPES (TYPE_NAME, TYPE_DSP_NAME, TYPE_ENABLED) \n" +
         "    VALUES ('PUBLIC', 'PUBLIC', TRUE)",
+        "INSERT INTO SEC_TYPES (TYPE_NAME, TYPE_DSP_NAME, TYPE_ENABLED) \n" +
+        "    VALUES ('SHARED', 'SHARED', TRUE)",
+        "INSERT INTO SEC_TYPES (TYPE_NAME, TYPE_DSP_NAME, TYPE_ENABLED) \n" +
+        "    VALUES ('SYSADM', 'SysAdm', TRUE)",
+        "INSERT INTO SEC_TYPES (TYPE_NAME, TYPE_DSP_NAME, TYPE_ENABLED) \n" +
+        "    VALUES ('USER', 'User', TRUE)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('SYSTEM', 'SYSTEM', 15)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('SYSTEM', 'PUBLIC', 15)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('SYSTEM', 'SHARED', 15)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('SYSTEM', 'SYSADM', 15)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('SYSTEM', 'USER', 15)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('PUBLIC', 'SYSTEM', 3)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('PUBLIC', 'PUBLIC', 7)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('PUBLIC', 'SHARED', 7)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('PUBLIC', 'SYSADM', 3)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('PUBLIC', 'USER', 3)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('SYSADM', 'SYSTEM', 15)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('SYSADM', 'PUBLIC', 15)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('SYSADM', 'SHARED', 15)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('SYSADM', 'SYSADM', 15)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('SYSADM', 'USER', 15)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('USER', 'SYSTEM', 3)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('USER', 'PUBLIC', 7)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('USER', 'SHARED', 7)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('USER', 'SYSADM', 3)",
+        "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('USER', 'USER', 15)",
         "INSERT INTO SEC_ROLES (ROLE_NAME, ROLE_DSP_NAME, DOMAIN_NAME, ROLE_ENABLED, ROLE_PRIVILEGES) \n" +
-        "    VALUES('SYSTEM', 'SYSTEM', 'SYSTEM', TRUE, -9223372036854775808)",
+        "    VALUES ('SYSTEM', 'SYSTEM', 'SYSTEM', TRUE, -1)",
         "INSERT INTO SEC_ROLES (ROLE_NAME, ROLE_DSP_NAME, DOMAIN_NAME, ROLE_ENABLED, ROLE_PRIVILEGES) \n" +
-        "    VALUES('PUBLIC', 'PUBLIC', 'PUBLIC', TRUE, 0);  \n" +
-        " \n" +
+        "    VALUES ('PUBLIC', 'PUBLIC', 'PUBLIC', TRUE, 0)",
+        "INSERT INTO SEC_ROLES (ROLE_NAME, ROLE_DSP_NAME, DOMAIN_NAME, ROLE_ENABLED, ROLE_PRIVILEGES) \n" +
+        "    VALUES ('SYSADM', 'SysAdm', 'SYSADM', TRUE, -1)",
+        "INSERT INTO SEC_ROLES (ROLE_NAME, ROLE_DSP_NAME, DOMAIN_NAME, ROLE_ENABLED, ROLE_PRIVILEGES) \n" +
+        "    VALUES ('USER', 'User', 'USER', TRUE, 0)",
         "INSERT INTO SEC_ID_ROLE_MAP (IDENTITY_NAME, ROLE_NAME) \n" +
         "    VALUES ('SYSTEM', 'SYSTEM')",
         "INSERT INTO SEC_ID_ROLE_MAP (IDENTITY_NAME, ROLE_NAME) \n" +
@@ -532,16 +568,59 @@ public interface DerbyConstants
         "    VALUES ('SYSTEM', 'SYSTEM')",
         "INSERT INTO SEC_DFLT_ROLES (IDENTITY_NAME, ROLE_NAME) \n" +
         "    VALUES ('PUBLIC', 'PUBLIC')",
-        "INSERT INTO SEC_CONFIGURATION (ENTRY_KEY, ENTRY_DSP_KEY, ENTRY_VALUE) \n" +
-        "    VALUES ('SECURITYLEVEL', 'SecurityLevel', 'MAC')",
-        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/tcp0/bindaddress', '0.0.0.0')",
-        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/tcp0/port', '9500')",
-        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/tcp0/type', 'plain')",
-        "INSERT INTO STOR_POOL_DEFINITIONS VALUES (x'f51611c6528f4793a87a866d09e6733a', 'DFLTSTORPOOL', 'DfltStorPool')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/PlainConnector/type', 'plain')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/PlainConnector/bindaddress', '::0')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/PlainConnector/port', '3376')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/type', 'ssl')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/bindaddress', '::0')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/port', '3377')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/keyPasswd', 'dmngdemo')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/keyStorePasswd', 'dmngdemo')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/trustStorePasswd', 'dmngdemo')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/trustStore', 'ssl/certificates.jks')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/sslProtocol', 'TLSv1')",
+        "INSERT INTO PROPS_CONTAINERS VALUES ('CTRLCFG', 'netcom/SslConnector/keyStore', 'ssl/keystore.jks')",
         "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
-        "    VALUES('/storpooldefinitions/DFLTSTORPOOL', 'PUBLIC', 'PUBLIC', 'PUBLIC')",
+        "    VALUES ('/sys/controller/nodesMap', 'SYSTEM', 'SYSADM', 'SHARED')",
         "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
-        "    VALUES('/storpooldefinitions/DFLTSTORPOOL', 'PUBLIC', 7)",
+        "	VALUES ('/sys/controller/nodesMap', 'SYSTEM', 15)",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/nodesMap', 'USER', 7)",
+        "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
+        "    VALUES ('/sys/controller/rscDfnMap', 'SYSTEM', 'SYSADM', 'SHARED')",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/rscDfnMap', 'SYSTEM', 15)",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/rscDfnMap', 'USER', 7)",
+        "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
+        "    VALUES ('/sys/controller/storPoolMap', 'SYSTEM', 'SYSADM', 'SHARED')",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/storPoolMap', 'SYSTEM', 15)",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/storPoolMap', 'USER', 7)",
+        "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
+        "    VALUES ('/sys/controller/conf', 'SYSTEM', 'SYSADM', 'SYSTEM')",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/conf', 'SYSTEM', 15)",
+        "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
+        "    VALUES ('/sys/controller/shutdown', 'SYSTEM', 'SYSADM', 'SYSTEM')",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/shutdown', 'SYSTEM', 15)",
+        "INSERT INTO STOR_POOL_DEFINITIONS VALUES (x'f51611c6528f4793a87a866d09e6733a', 'DEFAULT', 'Default')",
+        "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME) \n" +
+        "    VALUES ('/storpooldefinitions/DEFAULT', 'SYSTEM', 'SYSADM', 'SHARED')",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('/storpooldefinitions/DEFAULT', 'PUBLIC', 3)",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "    VALUES ('/storpooldefinitions/DEFAULT', 'USER', 7)",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/nodesMap', 'PUBLIC', 7)",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/rscDfnMap', 'PUBLIC', 7)",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/storPoolMap', 'PUBLIC', 7)",
+        "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
+        "	VALUES ('/sys/controller/conf', 'PUBLIC', 1)",
     };
 
     // insert statements (parameterized)
@@ -574,9 +653,6 @@ public interface DerbyConstants
         " VALUES (?, ?, ?, ?)";
     public static final String INSERT_SEC_ACL_MAP =
         " INSERT INTO " + TBL_SEC_ACL_MAP +
-        " VALUES (?, ?, ?)";
-    public static final String INSERT_CTRL_CONFIGURATION =
-        " INSERT INTO " + TBL_CTRL_CONFIGURATION +
         " VALUES (?, ?, ?)";
     public static final String INSERT_NODES =
         " INSERT INTO " + TBL_NODES +
@@ -634,7 +710,6 @@ public interface DerbyConstants
         DROP_TBL_RESOURCE_DEFINITIONS,
         DROP_TBL_NODE_NET_INTERFACES,
         DROP_TBL_NODES,
-        DROP_TBL_CTRL_CONFIGURATION,
         DROP_TBL_SEC_ACL_MAP,
         DROP_TBL_SEC_OBJECT_PROTECTION,
         DROP_TBL_SEC_DFLT_ROLES,
@@ -662,7 +737,6 @@ public interface DerbyConstants
         TRUNCATE_RESOURCE_DEFINITIONS,
         TRUNCATE_NODE_NET_INTERFACES,
         TRUNCATE_NODES,
-        TRUNCATE_CTRL_CONFIGURATION,
         TRUNCATE_SEC_ACL_MAP,
         TRUNCATE_SEC_OBJECT_PROTECTION,
         TRUNCATE_SEC_DFLT_ROLES,

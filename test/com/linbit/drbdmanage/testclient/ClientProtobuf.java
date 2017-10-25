@@ -587,8 +587,7 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
-
-    private void send(int msgId, String apiCall, Message msg) throws IOException
+    public void send(int msgId, String apiCall, Message msg) throws IOException
     {
         MsgHeader headerMsg = MsgHeader.newBuilder().
             setApiCall(apiCall).
@@ -601,7 +600,10 @@ public class ClientProtobuf implements Runnable
         byte[] protoHeader = baos.toByteArray();
         baos.close();
         baos = new ByteArrayOutputStream();
-        msg.writeDelimitedTo(baos);
+        if (msg != null)
+        {
+            msg.writeDelimitedTo(baos);
+        }
         byte[] protoData = baos.toByteArray();
         baos.close();
 

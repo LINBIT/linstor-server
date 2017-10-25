@@ -19,7 +19,6 @@ public class DerbyConstants
     public static final String TBL_SEC_DFLT_ROLES        = "SEC_DFLT_ROLES";
     public static final String TBL_SEC_OBJECT_PROTECTION = "SEC_OBJECT_PROTECTION";
     public static final String TBL_SEC_ACL_MAP           = "SEC_ACL_MAP";
-    public static final String TBL_CTRL_CONFIGURATION    = "CTRL_CONFIGURATION";
     public static final String TBL_NODES                 = "NODES";
     public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
     public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
