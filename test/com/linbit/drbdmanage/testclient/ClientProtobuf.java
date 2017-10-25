@@ -51,6 +51,7 @@ public class ClientProtobuf implements Runnable
         RET_CODES_TYPE.put(MASK_ERROR, "Error");
         RET_CODES_TYPE.put(MASK_WARN, "Warn");
         RET_CODES_TYPE.put(MASK_INFO, "Info");
+        RET_CODES_TYPE.put(MASK_SUCCESS, "Success");
 
         RET_CODES_OBJ.put(MASK_NODE, "Node");
         RET_CODES_OBJ.put(MASK_RSC_DFN, "RscDfn");

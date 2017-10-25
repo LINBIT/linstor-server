@@ -122,6 +122,8 @@ public class ApiCallRcConstants
     public static final long CRT_FAIL_EXISTS_STOR_POOL_DFN  = 169 | MASK_ERROR;
     public static final long CRT_FAIL_EXISTS_STOR_POOL      = 170 | MASK_ERROR;
 
+    public static final long CRT_FAIL_MISSING_PROPS         = 180 | MASK_ERROR;
+
     public static final long CRT_FAIL_UNKNOWN_ERROR         = 197 | MASK_ERROR;
 
     /*
@@ -188,6 +190,7 @@ public class ApiCallRcConstants
     public static final long RC_NODE_CRT_FAIL_INVLD_NET_TYPE    = MASK_NODE | CRT_FAIL_INVLD_NET_TYPE;
     public static final long RC_NODE_CRT_FAIL_INVLD_NET_NAME    = MASK_NODE | CRT_FAIL_INVLD_NET_NAME;
     public static final long RC_NODE_CRT_FAIL_EXISTS_NODE       = MASK_NODE | CRT_FAIL_EXISTS_NODE;
+    public static final long RC_NODE_CRT_FAIL_MISSING_PROPS     = MASK_NODE | CRT_FAIL_MISSING_PROPS;
     public static final long RC_NODE_CRT_FAIL_ACC_DENIED_NODE   = MASK_NODE | CRT_FAIL_ACC_DENIED_NODE;
     public static final long RC_NODE_CRT_FAIL_UNKNOWN_ERROR     = MASK_NODE | CRT_FAIL_UNKNOWN_ERROR;
     public static final long RC_NODE_CRT_FAIL_IMPL_ERROR        = MASK_NODE | CRT_FAIL_IMPL_ERROR;

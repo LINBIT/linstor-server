@@ -4,9 +4,8 @@ import static com.linbit.drbdmanage.ApiCallRcConstants.*;
 import static com.linbit.drbdmanage.api.ApiConsts.*;
 
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
@@ -92,64 +91,87 @@ class CtrlNodeApiCallHandler
             nodeProps = node.getProps(accCtx); // accDeniedExc0 (implError)
             nodeProps.map().putAll(propsMap);
 
+
             netIfProps = nodeProps.getNamespace(NAMESPC_NETIF);
-            Set<String> netIfNames = netIfProps.keySet();
-            for (String netIfNameStr : netIfNames)
+            if (netIfProps == null)
             {
-                currentNetIfNameStr = netIfNameStr;
-                portStr = null;
-                port = null;
-                netTypeStr = null;
-                netType = null;
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_MISSING_PROPS);
 
-                NetInterfaceName netName = new NetInterfaceName(netIfNameStr); // invalidnameExc2
-                DmIpAddress addr = new DmIpAddress(
-                    netIfProps.getProp(
-                        KEY_IP_ADDR,
-                        netIfNameStr
-                    )
+                String errorMessage = String.format(
+                    "Node '%s' is missing the props-namespace '%s'.",
+                    nodeNameStr,
+                    NAMESPC_NETIF
                 );
-                portStr = netIfProps.getProp(
-                    KEY_PORT_NR,
-                    netIfNameStr
+                entry.setMessageFormat(errorMessage);
+                entry.setDetailsFormat("Example: \n" +
+                    NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 0.0.0.0\n" +
+                    NAMESPC_NETIF + "/netIfName0/" + KEY_PORT_NR + " = 9501\n" +
+                    NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_TYPE + " = " + VAL_NETCOM_TYPE_PLAIN
                 );
-                port = Integer.parseInt(portStr);
-                netTypeStr = netIfProps.getProp(
-                    KEY_NETIF_TYPE,
-                    netIfNameStr
-                );
-                netType = NetInterfaceType.valueOfIgnoreCase(
-                    netTypeStr,
-                    NetInterfaceType.IP
-                );
-                NetInterfaceData.getInstance( // sqlExc3, accDeniedExc4, alreadyExists2
-                    accCtx,
-                    node,
-                    netName,
-                    addr,
-                    port,
-                    netType,
-                    transMgr,
-                    true,
-                    true
-                );
+                entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+                entry.putVariable(KEY_MISSING_NAMESPC, NAMESPC_NETCOM);
+                entry.putObjRef(KEY_NODE, nodeNameStr);
+
+                apiCallRc.addEntry(entry);
             }
+            else
+            {
+                Iterator<String> netIfNamesIterator = netIfProps.iterateNamespaces();
+                while (netIfNamesIterator.hasNext()) {
+                    currentNetIfNameStr = netIfNamesIterator.next();
+                    portStr = null;
+                    port = null;
+                    netTypeStr = null;
+                    netType = null;
 
-            transMgr.commit(); // sqlExc4
+                    NetInterfaceName netName = new NetInterfaceName(currentNetIfNameStr); // invalidnameExc2
+                    String ipStr = netIfProps.getProp(KEY_IP_ADDR, currentNetIfNameStr);
+                    DmIpAddress addr = new DmIpAddress(
+                        ipStr
+                    );
+                    portStr = netIfProps.getProp(
+                        KEY_PORT_NR,
+                        currentNetIfNameStr
+                    );
+                    port = Integer.parseInt(portStr);
+                    netTypeStr = netIfProps.getProp(
+                        KEY_NETIF_TYPE,
+                        currentNetIfNameStr
+                    );
+                    netType = NetInterfaceType.valueOfIgnoreCase(
+                        netTypeStr,
+                        NetInterfaceType.IP
+                    );
+                    NetInterfaceData.getInstance( // sqlExc3, accDeniedExc4, alreadyExists2
+                        accCtx,
+                        node,
+                        netName,
+                        addr,
+                        port,
+                        netType,
+                        transMgr,
+                        true,
+                        true
+                    );
+                }
 
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_CREATED);
-            String successMessage = String.format(
-                "Node '%s' successfully created.",
-                nodeNameStr
-            );
-            entry.setMessageFormat(successMessage);
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
+                transMgr.commit(); // sqlExc4
 
-            apiCallRc.addEntry(entry);
-            controller.nodesMap.put(nodeName, node);
-            controller.getErrorReporter().logInfo(successMessage);
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(RC_NODE_CREATED);
+                String successMessage = String.format(
+                    "Node '%s' successfully created.",
+                    nodeNameStr
+                );
+                entry.setMessageFormat(successMessage);
+                entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+                entry.putObjRef(KEY_NODE, nodeNameStr);
+
+                apiCallRc.addEntry(entry);
+                controller.nodesMap.put(nodeName, node);
+                controller.getErrorReporter().logInfo(successMessage);
+            }
         }
         catch (SQLException sqlExc)
         {

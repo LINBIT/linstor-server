@@ -92,6 +92,7 @@ public final class ApiConsts
     public static final String KEY_AL_STRIPES        = "AlStripes";
     public static final String KEY_ID                = "Id";
     public static final String KEY_ROLE              = "Role";
+    public static final String KEY_MISSING_NAMESPC   = "MissingNameSpace";
 
     public static final String NAMESPC_NETCOM        = "NetCom";
     public static final String NAMESPC_DFLT          = "Default";

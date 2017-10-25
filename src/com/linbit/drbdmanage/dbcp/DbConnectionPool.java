@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
+import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.ControllerDatabase;
 import java.sql.Connection;
@@ -128,6 +129,14 @@ public class DbConnectionPool implements ControllerDatabase
             connections.add(dbConn);
         }
         return dbConn;
+    }
+
+    public void returnConnection(TransactionMgr transMgr)
+    {
+        if (transMgr != null)
+        {
+            returnConnection(transMgr.dbCon);
+        }
     }
 
     @Override
