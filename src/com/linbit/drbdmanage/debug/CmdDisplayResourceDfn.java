@@ -311,11 +311,13 @@ public class CmdDisplayResourceDfn extends BaseDebugCmd
                     output, 4,
                     String.format(
                         "%s  \u001b[1;37mVolume %6d\u001b[0m %-36s\n" +
-                        "%s  %s  Size: %13d\n" +
-                        "%s  %s  Flags: %016x ",
+                        "%s  %s  Size:     %16d\n" +
+                        "%s  %s  Minor Nr: %16d\n" +
+                        "%s  %s  Flags:    %016x\n",
                         itemPfx, vlmDfnRef.getVolumeNumber(accCtx).value,
                         vlmDfnRef.getUuid().toString().toUpperCase(),
                         treePfx, PFX_SUB, vlmDfnRef.getVolumeSize(accCtx),
+                        treePfx, PFX_SUB, vlmDfnRef.getMinorNr(accCtx).value,
                         treePfx, PFX_SUB_LAST, vlmDfnRef.getFlags().getFlagsBits(accCtx)
                     )
                 );
