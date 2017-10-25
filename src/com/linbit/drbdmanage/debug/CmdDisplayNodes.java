@@ -124,10 +124,13 @@ public class CmdDisplayNodes extends BaseDebugCmd
             {
                 // Filter matching nodes
                 int count = 0;
+                int total = 0;
                 try
                 {
                     sysReadLock.lock();
                     nodesReadLock.lock();
+
+                    total = nodesMap.size();
 
                     {
                         ObjectProtection nodesMapProt = cmnDebugCtl.getNodesMapProt();
@@ -181,29 +184,50 @@ public class CmdDisplayNodes extends BaseDebugCmd
                     nodesReadLock.unlock();
                     sysReadLock.unlock();
                 }
-                if (count > 0)
+
+                String totalFormat;
+                if (total == 1)
                 {
-                    printSectionSeparator(debugOut);
-                    String format;
-                    if (count == 1)
-                    {
-                        format = "%d node\n";
-                    }
-                    else
-                    {
-                        format = "%d nodes\n";
-                    }
-                    debugOut.printf(format, count);
+                    totalFormat = "%d node entry is registered in the database\n";
                 }
                 else
                 {
+                    totalFormat = "%d node entries are registered in the database\n";
+                }
+
+                if (count > 0)
+                {
+                    printSectionSeparator(debugOut);
                     if (prmFilter == null)
                     {
-                        debugOut.println("The list of registered nodes is empty");
+                        debugOut.printf(totalFormat, total);
                     }
                     else
                     {
+                        String countFormat;
+                        if (count == 1)
+                        {
+                            countFormat = "%d node entry was selected by the filter\n";
+                        }
+                        else
+                        {
+                            countFormat = "%d node entries were selected by the filter\n";
+                        }
+                        debugOut.printf(countFormat, count);
+                        debugOut.printf(totalFormat, total);
+                    }
+                }
+                else
+                {
+                    if (total == 0)
+                    {
+                        debugOut.println("The database contains no node entries");
+                    }
+                    else
+                    {
+
                         debugOut.println("No matching node entries were found");
+                        debugOut.printf(totalFormat, total);
                     }
                 }
             }
@@ -248,15 +272,15 @@ public class CmdDisplayNodes extends BaseDebugCmd
             objProt.requireAccess(accCtx, AccessType.VIEW);
             output.printf(
                 "%-40s %-36s\n" +
-                "    Flags: %016x\n" +
-                "    Creator: %-24s Owner: %-24s\n" +
-                "    Security type: %-24s\n",
+                "%s  Flags: %016x\n" +
+                "%s  Creator: %-24s Owner: %-24s\n" +
+                "%s  Security type: %-24s\n",
                 nodeRef.getName().displayValue,
                 nodeRef.getUuid().toString().toUpperCase(),
-                nodeRef.getFlags().getFlagsBits(accCtx),
-                objProt.getCreator().name.displayValue,
+                PFX_SUB, nodeRef.getFlags().getFlagsBits(accCtx),
+                PFX_SUB, objProt.getCreator().name.displayValue,
                 objProt.getOwner().name.displayValue,
-                objProt.getSecurityType().name.displayValue
+                PFX_SUB_LAST, objProt.getSecurityType().name.displayValue
             );
         }
         catch (AccessDeniedException accExc)

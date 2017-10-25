@@ -127,10 +127,13 @@ public class CmdDisplayResourceDfn extends BaseDebugCmd
             {
                 // Filter matching nodes
                 int count = 0;
+                int total = 0;
                 try
                 {
                     sysReadLock.lock();
                     rscDfnMapReadLock.lock();
+
+                    total = rscDfnMap.size();
 
                     {
                         ObjectProtection rscDfnMapProt = cmnDebugCtl.getRscDfnMapProt();
@@ -184,29 +187,50 @@ public class CmdDisplayResourceDfn extends BaseDebugCmd
                     rscDfnMapReadLock.unlock();
                     sysReadLock.unlock();
                 }
-                if (count > 0)
+
+                String totalFormat;
+                if (total == 1)
                 {
-                    printSectionSeparator(debugOut);
-                    String format;
-                    if (count == 1)
-                    {
-                        format = "%d resource definition\n";
-                    }
-                    else
-                    {
-                        format = "%d resource definitions\n";
-                    }
-                    debugOut.printf(format, count);
+                    totalFormat = "%d resource definition entry is registered in the database\n";
                 }
                 else
                 {
+                    totalFormat = "%d resource definition entries are registered in the database\n";
+                }
+
+                if (count > 0)
+                {
+                    printSectionSeparator(debugOut);
                     if (prmFilter == null)
                     {
-                        debugOut.println("The list of registered resource definitions is empty");
+                        debugOut.printf(totalFormat, total);
                     }
                     else
                     {
+                        String countFormat;
+                        if (count == 1)
+                        {
+                            countFormat = "%d resource definition entry was selected by the filter\n";
+                        }
+                        else
+                        {
+                            countFormat = "%d resource definition entries were selected by the filter\n";
+                        }
+                        debugOut.printf(countFormat, count);
+                        debugOut.printf(totalFormat, total);
+                    }
+                }
+                else
+                {
+                    if (total == 0)
+                    {
+                        debugOut.println("The database contains no resource definition entries");
+                    }
+                    else
+                    {
+
                         debugOut.println("No matching resource definition entries were found");
+                        debugOut.printf(totalFormat, total);
                     }
                 }
             }
@@ -252,31 +276,47 @@ public class CmdDisplayResourceDfn extends BaseDebugCmd
             ObjectProtection objProt = rscDfnRef.getObjProt();
             objProt.requireAccess(accCtx, AccessType.VIEW);
             output.printf(
-                "%-40s %-36s\n" +
-                "    Flags: %016x\n" +
-                "    Creator: %-24s Owner: %-24s\n" +
-                "    Security type: %-24s\n",
+                "\u001b[1;37m%-40s\u001b[0m %-36s\n" +
+                "%s  Flags: %016x\n" +
+                "%s  Creator: %-24s Owner: %-24s\n" +
+                "%s  Security type: %-24s\n",
                 rscDfnRef.getName().displayValue,
                 rscDfnRef.getUuid().toString().toUpperCase(),
-                rscDfnRef.getFlags().getFlagsBits(accCtx),
-                objProt.getCreator().name.displayValue,
+                PFX_SUB, rscDfnRef.getFlags().getFlagsBits(accCtx),
+                PFX_SUB, objProt.getCreator().name.displayValue,
                 objProt.getOwner().name.displayValue,
-                objProt.getSecurityType().name.displayValue
+                PFX_SUB_LAST, objProt.getSecurityType().name.displayValue
             );
             Iterator<VolumeDefinition> vlmDfnIter = rscDfnRef.iterateVolumeDfn(accCtx);
+            if (vlmDfnIter.hasNext())
+            {
+                output.println("    Volume definitions");
+            }
             while (vlmDfnIter.hasNext())
             {
                 VolumeDefinition vlmDfnRef = vlmDfnIter.next();
+                String itemPfx;
+                String treePfx;
+                if (vlmDfnIter.hasNext())
+                {
+                    itemPfx = PFX_SUB;
+                    treePfx = PFX_VLINE;
+                }
+                else
+                {
+                    itemPfx = PFX_SUB_LAST;
+                    treePfx = "  ";
+                }
                 AutoIndent.printWithIndent(
                     output, 4,
                     String.format(
-                        "Volume %6d %-36s\n" +
-                        "    Flags: %016x " +
-                        "    Size: %13d\n",
-                        vlmDfnRef.getVolumeNumber(accCtx).value,
+                        "%s  \u001b[1;37mVolume %6d\u001b[0m %-36s\n" +
+                        "%s  %s  Size: %13d\n" +
+                        "%s  %s  Flags: %016x ",
+                        itemPfx, vlmDfnRef.getVolumeNumber(accCtx).value,
                         vlmDfnRef.getUuid().toString().toUpperCase(),
-                        vlmDfnRef.getVolumeSize(accCtx),
-                        vlmDfnRef.getFlags().getFlagsBits(accCtx)
+                        treePfx, PFX_SUB, vlmDfnRef.getVolumeSize(accCtx),
+                        treePfx, PFX_SUB_LAST, vlmDfnRef.getFlags().getFlagsBits(accCtx)
                     )
                 );
             }
