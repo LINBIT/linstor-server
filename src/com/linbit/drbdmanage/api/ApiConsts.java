@@ -2,10 +2,9 @@ package com.linbit.drbdmanage.api;
 
 public final class ApiConsts
 {
-    public static final String KEY_UUID              = "Uuid";
-
     public static final String API_REPLY             = "Reply";
 
+    // Create object APIs
     public static final String API_CRT_NODE          = "CrtNode";
     public static final String API_CRT_RSC           = "CrtRsc";
     public static final String API_CRT_RSC_DFN       = "CrtRscDfn";
@@ -17,12 +16,16 @@ public final class ApiConsts
     public static final String API_CRT_NODE_CONN     = "CrtNodeConn";
     public static final String API_CRT_RSC_CONN      = "CrtRscConn";
     public static final String API_CRT_VLM_CONN      = "CrtVlmConn";
+
+    // Modify object APIs
     public static final String API_MFY_NODE          = "MfyNode";
     public static final String API_MFY_RSC           = "MfyRsc";
     public static final String API_MFY_RSC_DFN       = "MfyRscDfn";
     public static final String API_MFY_NET_IF        = "MfyNetIf";
     public static final String API_MFY_VLM_DFN       = "MfyVlmDfn";
     public static final String API_MFY_SNPSHT        = "MfySnpsht";
+
+    // Delete object APIs
     public static final String API_DEL_NODE          = "DelNode";
     public static final String API_DEL_RSC           = "DelRsc";
     public static final String API_DEL_RSC_DFN       = "DelRscDfn";
@@ -34,14 +37,21 @@ public final class ApiConsts
     public static final String API_DEL_RSC_CONN      = "DelRscConn";
     public static final String API_DEL_VLM_CONN      = "DelVlmConn";
     public static final String API_DEL_SNPSHT        = "DelSnpsht";
+
+    //
     public static final String API_RST_SNPSHT        = "RstSnpsht";
     public static final String API_AUTO_DPLY_RSC     = "AutoDplyRsc";
     public static final String API_LOST_NODE         = "LostNode";
     public static final String API_CHK_STATE         = "ChkState";
+
+    // Authentication APIs
     public static final String API_SIGN_IN           = "SignIn";
+
+    // Debug APIs
     public static final String API_CRT_DBG_CNSL      = "CrtDbgCnsl";
     public static final String API_DSTR_DBG_CNSL     = "DstrDbgCnsl";
 
+    // List object APIs
     public static final String API_LST_NODE          = "LstNode";
     public static final String API_LST_RSC           = "LstRsc";
     public static final String API_LST_RSC_DFN       = "LstRscDfn";
@@ -51,9 +61,11 @@ public final class ApiConsts
     public static final String API_LST_SNPSHT        = "LstSnpsht";
     public static final String API_LST_STOR_POOL     = "LstStorPool";
 
+    // Subscription APIs
     public static final String API_CRT_SUBSCR        = "CrtSubscr";
     public static final String API_DEL_SUBSCR        = "DelSubscr";
 
+    //
     public static final String API_RPT_SPC           = "RptSpc";
 
     public static final String API_PING              = "Ping";
@@ -68,6 +80,8 @@ public final class ApiConsts
 
     public static final String API_SHTDWN            = "Shtdwn";
 
+    // Object property keys
+    public static final String KEY_UUID              = "Uuid";
     public static final String KEY_NODE              = "Node";
     public static final String KEY_RSC_DFN           = "RscDfn";
     public static final String KEY_STOR_POOL_DFN     = "StorPoolDfn";
@@ -94,12 +108,14 @@ public final class ApiConsts
     public static final String KEY_ROLE              = "Role";
     public static final String KEY_MISSING_NAMESPC   = "MissingNameSpace";
 
+    // Property namespaces
     public static final String NAMESPC_NETCOM        = "NetCom";
     public static final String NAMESPC_DFLT          = "Default";
     public static final String NAMESPC_LOGGING       = "Logging";
     public static final String NAMESPC_ALLOC         = "Allocation";
     public static final String NAMESPC_NETIF         = "NetIf";
 
+    // Property keys
     public static final String KEY_PORT_NR           = "PortNr";
     public static final String KEY_IP_ADDR           = "IpAddr";
     public static final String KEY_BIND_ADDR         = "BindAddr";
@@ -112,23 +128,25 @@ public final class ApiConsts
     public static final String KEY_TRUSTSTORE_PWD    = "TruststorePwd";
     public static final String KEY_SSL_PROTO         = "SslProto";
 
+    // Property values
     public static final String VAL_NETCOM_TYPE_SSL      = "Ssl";
     public static final String VAL_NETCOM_TYPE_PLAIN    = "Plain";
     public static final String VAL_SSL_PROTO_TLSv1      = "TLSv1";
 
+    // Node Type values
     public static final String VAL_NODE_TYPE_CTRL       = "Controller";
     public static final String VAL_NODE_TYPE_STLT       = "Satellite";
     public static final String VAL_NODE_TYPE_CMBD       = "Combined";
     public static final String VAL_NODE_TYPE_AUX        = "Auxiliary";
 
+    // Authentication keys
     public static final String KEY_SEC_IDENTITY         = "SecIdentity";
     public static final String KEY_SEC_ROLE             = "SecRole";
     public static final String KEY_SEC_TYPE             = "SecType";
     public static final String KEY_SEC_DOMAIN           = "SecDomain";
     public static final String KEY_SEC_PASSWORD         = "SecPassword";
 
+    // Default ports
     public static final int DM_DFLT_SERVER_PORT_SSL     = 6996;
     public static final int DM_DFLT_SERVER_PORT_PLAIN   = 6995;
-
-
 }

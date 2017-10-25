@@ -8,15 +8,13 @@ public class ApiCallRcConstants
     // Mask for return codes that describe a warning
     public static final long MASK_WARN    = 0x8000000000000000L;
 
-    // Mask for return codes that describe contain detail information
-    // about the result of an operation
+    /*
+     * Mask for return codes that describe contain detail information
+     * about the result of an operation
+     */
     public static final long MASK_INFO    = 0x4000000000000000L;
 
     public static final long MASK_SUCCESS = 0x0000000000000000L;
-    /*
-     * The most significant 2 bits are reserved for MASK_ERROR, MASK_WARN,
-     * MASK_INFO and MASK_SUCCESS
-     */
 
     /*
      * The next 4 significant bits are reserved for type (Node, ResDfn, Res,
@@ -35,12 +33,11 @@ public class ApiCallRcConstants
     public static final long MASK_STOR_POOL     = 0x1400000000000000L;
     /*
      *  unused type masks:
-      0x10_00000000000000L;
-      0x0C_00000000000000L;
-      0x08_00000000000000L;
-      0x04_00000000000000L;
-      0x00_00000000000000L; // this should be avoided
-   */
+     *  0x10_00000000000000L;
+     *  0x0C_00000000000000L;
+     *  0x08_00000000000000L;
+     *  0x04_00000000000000L;
+     */
 
     /*
      * Codes 1-9: success
