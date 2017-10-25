@@ -254,18 +254,34 @@ public class CmdDisplayConnections extends BaseDebugCmd
                 }
 
                 debugOut.println(ruler);
-                if (count == 1)
+                if (connIdMatch != null || connSvcMatch != null || addrMatch != null)
                 {
-                    debugOut.println("1 connection");
+                    String countFormat;
+                    if (count == 1)
+                    {
+                        countFormat = "%d connection listed\n";
+                    }
+                    else
+                    {
+                        countFormat = "%d connections listed\n";
+                    }
+                    debugOut.printf(countFormat, count);
+                }
+                int total = peerList.size();
+                String totalFormat;
+                if (total == 1)
+                {
+                    totalFormat = "%d active connection\n";
                 }
                 else
                 {
-                    debugOut.printf("%d connections\n", count);
+                    totalFormat = "%d active connections\n";
                 }
+                debugOut.printf(totalFormat, total);
             }
             else
             {
-                debugOut.println("There are no connections registered at this time.");
+                debugOut.println("No active connections");
             }
         }
         catch (InvalidDetailsException detailsExc)
