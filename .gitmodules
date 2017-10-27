@@ -1,0 +1,3 @@
+[submodule "linstor-common"]
+	path = linstor-common
+	url = gitolite@bk:linstor-common
