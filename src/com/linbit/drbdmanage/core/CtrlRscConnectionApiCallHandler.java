@@ -1,7 +1,6 @@
 package com.linbit.drbdmanage.core;
 
-import static com.linbit.drbdmanage.ApiCallRcConstants.*;
-import static com.linbit.drbdmanage.api.ApiConsts.*;
+import static com.linbit.drbdmanage.ApiConsts.*;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -19,7 +18,7 @@ import com.linbit.drbdmanage.ResourceConnectionData;
 import com.linbit.drbdmanage.ResourceData;
 import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.ResourceName;
-import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.ApiConsts;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;

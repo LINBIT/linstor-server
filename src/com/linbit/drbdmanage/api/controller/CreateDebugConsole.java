@@ -2,7 +2,7 @@ package com.linbit.drbdmanage.api.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.CoreServices;
-import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.ApiConsts;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.core.DrbdManage;

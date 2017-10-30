@@ -1,10 +1,9 @@
 package com.linbit.drbdmanage.api.controller;
 
 import com.linbit.InvalidNameException;
-import com.linbit.drbdmanage.ApiCallRcConstants;
 import com.linbit.drbdmanage.ApiCallRcImpl;
 import com.linbit.drbdmanage.ApiCallRcImpl.ApiCallRcEntry;
-import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.ApiConsts;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.Message;
@@ -71,7 +70,7 @@ public class SignIn extends BaseApiCall
         {
             String reportId = errorReporter.reportError(ioExc, accCtx, client, "Sign-in");
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
-            rcEntry.setReturnCode(ApiCallRcConstants.RC_SIGNIN_FAIL);
+            rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
             rcEntry.setMessageFormat("Sgn-in failed");
             rcEntry.setCauseFormat("The sign-in request could not be processed due to an I/O error");
             rcEntry.setCorrectionFormat(
@@ -91,7 +90,7 @@ public class SignIn extends BaseApiCall
         catch (InvalidNameException nameExc)
         {
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
-            rcEntry.setReturnCode(ApiCallRcConstants.RC_SIGNIN_FAIL);
+            rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
             rcEntry.setMessageFormat(nameExc.getMessage());
             if (idNameText != null)
             {
@@ -102,7 +101,7 @@ public class SignIn extends BaseApiCall
         catch (SignInException signInExc)
         {
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
-            rcEntry.setReturnCode(ApiCallRcConstants.RC_SIGNIN_FAIL);
+            rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
             rcEntry.setMessageFormat(signInExc.getDescriptionText());
             rcEntry.setCauseFormat(signInExc.getCauseText());
             rcEntry.setCorrectionFormat(signInExc.getCorrectionText());

@@ -3,7 +3,7 @@ package com.linbit.drbdmanage.api.controller;
 import java.io.IOException;
 import java.io.InputStream;
 import com.linbit.drbdmanage.ApiCallRc;
-import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.ApiConsts;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.Message;

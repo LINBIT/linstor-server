@@ -1,7 +1,6 @@
 package com.linbit.drbdmanage.core;
 
-import static com.linbit.drbdmanage.ApiCallRcConstants.*;
-import static com.linbit.drbdmanage.api.ApiConsts.*;
+import static com.linbit.drbdmanage.ApiConsts.*;
 
 import java.sql.SQLException;
 import java.util.List;

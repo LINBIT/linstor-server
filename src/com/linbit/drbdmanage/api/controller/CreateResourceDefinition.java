@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnApi;
-import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.ApiConsts;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.Message;

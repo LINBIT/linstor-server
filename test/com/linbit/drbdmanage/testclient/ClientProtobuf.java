@@ -1,7 +1,6 @@
 package com.linbit.drbdmanage.testclient;
 
-import static com.linbit.drbdmanage.ApiCallRcConstants.*;
-import static com.linbit.drbdmanage.api.ApiConsts.*;
+import static com.linbit.drbdmanage.ApiConsts.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

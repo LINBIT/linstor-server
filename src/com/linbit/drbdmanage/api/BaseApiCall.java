@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.ApiCall;
 import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.ApiCallRc.RcEntry;
+import com.linbit.drbdmanage.ApiConsts;
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;

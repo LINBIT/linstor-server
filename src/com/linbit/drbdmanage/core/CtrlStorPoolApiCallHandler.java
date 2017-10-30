@@ -1,7 +1,6 @@
 package com.linbit.drbdmanage.core;
 
-import static com.linbit.drbdmanage.ApiCallRcConstants.*;
-import static com.linbit.drbdmanage.api.ApiConsts.*;
+import static com.linbit.drbdmanage.ApiConsts.*;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
@@ -19,7 +18,7 @@ import com.linbit.drbdmanage.StorPoolData;
 import com.linbit.drbdmanage.StorPoolDefinitionData;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.Volume;
-import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.ApiConsts;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
