@@ -1,60 +1,6 @@
 package com.linbit.drbdmanage.core;
 
-import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.ServiceName;
-import com.linbit.SystemService;
-import com.linbit.SystemServiceStartException;
-import com.linbit.SystemServiceStopException;
-import com.linbit.TransactionMgr;
-import com.linbit.WorkerPool;
-import com.linbit.drbd.md.MetaData;
-import com.linbit.drbd.md.MetaDataApi;
-import com.linbit.drbdmanage.debug.DebugConsole;
-import com.linbit.drbdmanage.ControllerPeerCtx;
-import com.linbit.drbdmanage.CoreServices;
-import com.linbit.drbdmanage.DrbdManageException;
-import com.linbit.drbdmanage.InitializationException;
-import com.linbit.drbdmanage.Node;
-import com.linbit.drbdmanage.NodeName;
-import com.linbit.drbdmanage.ResourceDefinition;
-import com.linbit.drbdmanage.ResourceName;
-import com.linbit.drbdmanage.StorPoolDefinition;
-import com.linbit.drbdmanage.StorPoolName;
-import com.linbit.drbdmanage.dbcp.DbConnectionPool;
-import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
-import com.linbit.drbdmanage.logging.StdErrorReporter;
-import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.netcom.TcpConnector;
-import com.linbit.drbdmanage.netcom.TcpConnectorService;
-import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
-import com.linbit.drbdmanage.propscon.InvalidKeyException;
-import com.linbit.drbdmanage.propscon.Props;
-import com.linbit.drbdmanage.propscon.PropsContainer;
-import com.linbit.drbdmanage.proto.CommonMessageProcessor;
-import com.linbit.drbdmanage.security.AccessContext;
-import com.linbit.drbdmanage.security.AccessDeniedException;
-import com.linbit.drbdmanage.security.AccessType;
-import com.linbit.drbdmanage.security.Authentication;
-import com.linbit.drbdmanage.security.Authorization;
-import com.linbit.drbdmanage.security.DbDerbyPersistence;
-import com.linbit.drbdmanage.security.IdentityName;
-import com.linbit.drbdmanage.security.Initializer;
-import com.linbit.drbdmanage.security.ObjectProtection;
-import com.linbit.drbdmanage.security.Privilege;
-import com.linbit.drbdmanage.security.SecurityLevel;
-import com.linbit.drbdmanage.security.SignInException;
-import com.linbit.drbdmanage.tasks.GarbageCollectorTask;
-import com.linbit.drbdmanage.tasks.PingTask;
-import com.linbit.drbdmanage.tasks.ReconnectorTask;
-import com.linbit.drbdmanage.tasks.TaskScheduleService;
-import com.linbit.drbdmanage.timer.CoreTimer;
-import com.linbit.utils.Base64;
-import com.linbit.utils.MathUtils;
-
 import java.io.FileInputStream;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -77,6 +23,60 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.slf4j.event.Level;
+
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ServiceName;
+import com.linbit.SystemService;
+import com.linbit.SystemServiceStartException;
+import com.linbit.SystemServiceStopException;
+import com.linbit.TransactionMgr;
+import com.linbit.WorkerPool;
+import com.linbit.drbd.md.MetaData;
+import com.linbit.drbd.md.MetaDataApi;
+import com.linbit.drbdmanage.ControllerPeerCtx;
+import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.drbdmanage.InitializationException;
+import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.ResourceDefinition;
+import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.StorPoolDefinition;
+import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.dbcp.DbConnectionPool;
+import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
+import com.linbit.drbdmanage.debug.DebugConsole;
+import com.linbit.drbdmanage.logging.ErrorReporter;
+import com.linbit.drbdmanage.logging.StdErrorReporter;
+import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.netcom.TcpConnector;
+import com.linbit.drbdmanage.netcom.TcpConnectorService;
+import com.linbit.drbdmanage.netcom.ssl.SslTcpConnectorService;
+import com.linbit.drbdmanage.propscon.InvalidKeyException;
+import com.linbit.drbdmanage.propscon.InvalidValueException;
+import com.linbit.drbdmanage.propscon.Props;
+import com.linbit.drbdmanage.propscon.PropsContainer;
+import com.linbit.drbdmanage.proto.CommonMessageProcessor;
+import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.drbdmanage.security.AccessType;
+import com.linbit.drbdmanage.security.Authentication;
+import com.linbit.drbdmanage.security.Authorization;
+import com.linbit.drbdmanage.security.DbDerbyPersistence;
+import com.linbit.drbdmanage.security.IdentityName;
+import com.linbit.drbdmanage.security.Initializer;
+import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.security.Privilege;
+import com.linbit.drbdmanage.security.SecurityLevel;
+import com.linbit.drbdmanage.security.SignInException;
+import com.linbit.drbdmanage.tasks.GarbageCollectorTask;
+import com.linbit.drbdmanage.tasks.PingTask;
+import com.linbit.drbdmanage.tasks.ReconnectorTask;
+import com.linbit.drbdmanage.tasks.TaskScheduleService;
+import com.linbit.drbdmanage.timer.CoreTimer;
+import com.linbit.utils.Base64;
+import com.linbit.utils.MathUtils;
 
 /**
  * drbdmanageNG controller prototype
@@ -116,6 +116,8 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private static final String PROPSCON_KEY_NETCOM_SSL_PROTOCOL = "sslProtocol";
     private static final String PROPSCON_NETCOM_TYPE_PLAIN = "plain";
     private static final String PROPSCON_NETCOM_TYPE_SSL = "ssl";
+    static final String PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC = "defaultPlainConSvc";
+    static final String PROPSCON_KEY_DEFAULT_SSL_CON_SVC = "defaultSslConSvc";
 
     private static final short DEFAULT_PEER_COUNT = 31;
     private static final long DEFAULT_AL_SIZE = 32;
@@ -162,7 +164,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     private final Map<String, Peer> peerMap;
 
     // Map of network communications connectors
-    private final Map<ServiceName, TcpConnector> netComConnectors;
+    final Map<ServiceName, TcpConnector> netComConnectors;
 
     // Shutdown controls
     private boolean shutdownFinished;
@@ -1011,6 +1013,58 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     reconnectorTask
                 )
             );
+            try
+            {
+                if (ctrlConf.getProp(PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC) == null)
+                {
+                    TransactionMgr transMgr = null;
+                    try
+                    {
+                        transMgr = new TransactionMgr(dbConnPool);
+                        ctrlConf.setConnection(transMgr);
+                        ctrlConf.setProp(PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, serviceName.displayValue);
+                        transMgr.commit();
+                    }
+                    catch (SQLException sqlExc)
+                    {
+                        errorLogRef.reportError(
+                            sqlExc,
+                            sysCtx,
+                            null,
+                            "An SQL exception was thrown while trying to persist the default plain connector"
+                        );
+                    }
+                    finally
+                    {
+                        if (transMgr != null)
+                        {
+                            try
+                            {
+                                transMgr.rollback();
+                            }
+                            catch (SQLException sqlExc2)
+                            {
+                                errorLogRef.reportError(
+                                    sqlExc2,
+                                    sysCtx,
+                                    null,
+                                    "An SQL exception was thrown while trying to rollback a transaction"
+                                );
+                            }
+                            dbConnPool.returnConnection(transMgr);
+                        }
+                    }
+                }
+            }
+            catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
+            {
+                errorLogRef.reportError(
+                    new ImplementationError(
+                        "Storing default plain connector service caused exception",
+                        exc
+                    )
+                );
+            }
         }
         else
         if (type.equals(PROPSCON_NETCOM_TYPE_SSL))
@@ -1034,6 +1088,61 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                     loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE),
                     loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TRUSTSTORE_PASSWD).toCharArray()
                 );
+                try
+                {
+                    if (ctrlConf.getProp(PROPSCON_KEY_DEFAULT_SSL_CON_SVC) == null)
+                    {
+
+                        TransactionMgr transMgr = null;
+                        try
+                        {
+                            transMgr = new TransactionMgr(dbConnPool);
+                            ctrlConf.setConnection(transMgr);
+                            ctrlConf.setProp(PROPSCON_KEY_DEFAULT_SSL_CON_SVC, serviceName.displayValue);
+                            transMgr.commit();
+                        }
+                        catch (SQLException sqlExc)
+                        {
+                            errorLogRef.reportError(
+                                sqlExc,
+                                sysCtx,
+                                null,
+                                "An SQL exception was thrown while trying to persist the default ssl connector"
+                            );
+                        }
+                        finally
+                        {
+                            if (transMgr != null)
+                            {
+                                try
+                                {
+                                    transMgr.rollback();
+                                }
+                                catch (SQLException sqlExc2)
+                                {
+                                    errorLogRef.reportError(
+                                        sqlExc2,
+                                        sysCtx,
+                                        null,
+                                        "An SQL exception was thrown while trying to rollback a transaction"
+                                    );
+                                }
+                                dbConnPool.returnConnection(transMgr);
+                            }
+                        }
+
+
+                    }
+                }
+                catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
+                {
+                    errorLogRef.reportError(
+                        new ImplementationError(
+                            "Storing default ssl connector service caused exception",
+                            exc
+                        )
+                    );
+                }
             }
             catch (
                 KeyManagementException | UnrecoverableKeyException |

@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -42,6 +43,18 @@ import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 
 public class ClientProtobuf implements Runnable
 {
+    public static interface MessageCallback
+    {
+        public void error(long retCode, String message, String cause, String correction, String details,
+            Map<String, String> objRefsMap, Map<String, String> variablesMap);
+        public void warn(long retCode, String message, String cause, String correction, String details,
+            Map<String, String> objRefsMap, Map<String, String> variablesMap);
+        public void info(long retCode, String message, String cause, String correction, String details,
+            Map<String, String> objRefsMap, Map<String, String> variablesMap);
+        public void success(long retCode, String message, String cause, String correction, String details,
+            Map<String, String> objRefsMap, Map<String, String> variablesMap);
+    }
+
     private static final Map<Long, String> RET_CODES_TYPE = new HashMap<>();
     private static final Map<Long, String> RET_CODES_OBJ = new HashMap<>();
 
@@ -77,18 +90,26 @@ public class ClientProtobuf implements Runnable
     private int infoCount;
     private int warnCount;
     private int errorCount;
+    private PrintStream outStream;
+
+    private List<MessageCallback> callbacks = new ArrayList<>();
 
     public ClientProtobuf(int port) throws UnknownHostException, IOException
     {
-        this("localhost", port);
+        this("localhost", port, System.out);
     }
 
     public ClientProtobuf(String host, int port) throws UnknownHostException, IOException
     {
+        this(host, port, System.out);
+    }
+
+    public ClientProtobuf(String host, int port, PrintStream out) throws UnknownHostException, IOException
+    {
+        outStream = out;
         sock = new Socket(host, port);
         inputStream = sock.getInputStream();
         outputStream = sock.getOutputStream();
-
         resetAllCounts();
 
         shutdown = false;
@@ -190,6 +211,9 @@ public class ClientProtobuf implements Runnable
                     String details = response.getDetailsFormat();
                     Map<String, String> objRefsMap = response.getObjRefsMap();
                     Map<String, String> variablesMap = response.getVariablesMap();
+
+                    callback(retCode, message, cause, correction, details, objRefsMap, variablesMap);
+
                     sb.append("Response ")
                         .append(responseIdx++)
                         .append(": \n   RetCode   : ");
@@ -256,6 +280,48 @@ public class ClientProtobuf implements Runnable
         println("   error: " + errorCount);
     }
 
+    public void registerCallback(MessageCallback callback)
+    {
+        callbacks.add(callback);
+    }
+
+    private void callback(
+        long retCode, String message, String cause, String correction, String details,
+        Map<String, String> objRefsMap, Map<String, String> variablesMap
+    )
+    {
+        if ((retCode & MASK_ERROR) == MASK_ERROR)
+        {
+            for (MessageCallback cb : callbacks)
+            {
+                cb.error(retCode, message, cause, correction, details, objRefsMap, variablesMap);
+            }
+        }
+        else
+        if ((retCode & MASK_WARN) == MASK_WARN)
+        {
+            for (MessageCallback cb : callbacks)
+            {
+                cb.warn(retCode, message, cause, correction, details, objRefsMap, variablesMap);
+            }
+        }
+        else
+        if ((retCode & MASK_INFO) == MASK_INFO)
+        {
+            for (MessageCallback cb : callbacks)
+            {
+                cb.info(retCode, message, cause, correction, details, objRefsMap, variablesMap);
+            }
+        }
+        else
+        {
+            for (MessageCallback cb : callbacks)
+            {
+                cb.success(retCode, message, cause, correction, details, objRefsMap, variablesMap);
+            }
+        }
+    }
+
     private String format(String msg)
     {
         return msg.replaceAll("\\n", "\n               ");
@@ -300,7 +366,10 @@ public class ClientProtobuf implements Runnable
 
     private void println(String str)
     {
-        System.out.println(str);
+        if (outStream != null)
+        {
+            outStream.println(str);
+        }
     }
 
     public int sendCreateNode(String nodeName, String nodeType, Map<String, String> props)

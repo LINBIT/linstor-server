@@ -2,15 +2,18 @@ package com.linbit.drbdmanage.core;
 
 import static com.linbit.drbdmanage.ApiConsts.*;
 
+import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.ApiCallRcImpl;
 import com.linbit.drbdmanage.DrbdDataAlreadyExistsException;
+import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.NetInterface.NetInterfaceType;
 import com.linbit.drbdmanage.NetInterfaceData;
 import com.linbit.drbdmanage.NetInterfaceName;
@@ -22,6 +25,8 @@ import com.linbit.drbdmanage.DmIpAddress;
 import com.linbit.drbdmanage.Node.NodeFlag;
 import com.linbit.drbdmanage.Node.NodeType;
 import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.netcom.TcpConnector;
+import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -62,9 +67,12 @@ class CtrlNodeApiCallHandler
         NodeName nodeName = null;
         Props nodeProps = null;
         String currentNetIfNameStr = null;
+        String netComTypeStr = null;
         String portStr = null;
         Integer port = null;
         String netTypeStr = null;
+        String enabledStr = null;
+        boolean enabled = true;
         NetInterfaceType netType = null;
         Props netIfProps = null;
         try
@@ -90,86 +98,128 @@ class CtrlNodeApiCallHandler
             nodeProps = node.getProps(accCtx); // accDeniedExc0 (implError)
             nodeProps.map().putAll(propsMap);
 
-
             netIfProps = nodeProps.getNamespace(NAMESPC_NETIF);
             if (netIfProps == null)
             {
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_MISSING_PROPS);
-
-                String errorMessage = String.format(
-                    "Node '%s' is missing the props-namespace '%s'.",
-                    nodeNameStr,
-                    NAMESPC_NETIF
+                apiCallRc.addEntry(
+                    getApiCallRcMissingNetIfNamespace(
+                        nodeNameStr
+                    )
                 );
-                entry.setMessageFormat(errorMessage);
-                entry.setDetailsFormat("Example: \n" +
-                    NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 0.0.0.0\n" +
-                    NAMESPC_NETIF + "/netIfName0/" + KEY_PORT_NR + " = 9501\n" +
-                    NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_TYPE + " = " + VAL_NETCOM_TYPE_PLAIN
-                );
-                entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_MISSING_NAMESPC, NAMESPC_NETCOM);
-                entry.putObjRef(KEY_NODE, nodeNameStr);
-
-                apiCallRc.addEntry(entry);
             }
             else
             {
                 Iterator<String> netIfNamesIterator = netIfProps.iterateNamespaces();
-                while (netIfNamesIterator.hasNext()) {
+                boolean atLeastOneEnabled = false;
+                while (netIfNamesIterator.hasNext())
+                {
                     currentNetIfNameStr = netIfNamesIterator.next();
                     portStr = null;
                     port = null;
+                    netComTypeStr = null;
                     netTypeStr = null;
                     netType = null;
+                    enabledStr = null;
+                    enabled = true;
 
                     NetInterfaceName netName = new NetInterfaceName(currentNetIfNameStr); // invalidnameExc2
                     String ipStr = netIfProps.getProp(KEY_IP_ADDR, currentNetIfNameStr);
                     DmIpAddress addr = new DmIpAddress(
                         ipStr
                     );
-                    portStr = netIfProps.getProp(
-                        KEY_PORT_NR,
-                        currentNetIfNameStr
-                    );
-                    port = Integer.parseInt(portStr);
-                    netTypeStr = netIfProps.getProp(
-                        KEY_NETIF_TYPE,
-                        currentNetIfNameStr
-                    );
-                    netType = NetInterfaceType.valueOfIgnoreCase(
-                        netTypeStr,
-                        NetInterfaceType.IP
-                    );
-                    NetInterfaceData.getInstance( // sqlExc3, accDeniedExc4, alreadyExists2
-                        accCtx,
-                        node,
-                        netName,
-                        addr,
-                        port,
-                        netType,
-                        transMgr,
-                        true,
-                        true
-                    );
+                    portStr = netIfProps.getProp(KEY_PORT_NR, currentNetIfNameStr);
+                    netComTypeStr = netIfProps.getProp(KEY_NETCOM_TYPE, currentNetIfNameStr);
+                    if (portStr == null || netComTypeStr == null)
+                    {
+                        if (portStr == null && netComTypeStr != null)
+                        {
+                            apiCallRc.addEntry(
+                                getApiCallRcMissingPropNetComType(
+                                    nodeNameStr,
+                                    currentNetIfNameStr
+                                )
+                            );
+                        }
+                        else
+                        if (portStr != null && netComTypeStr == null)
+                        {
+                            apiCallRc.addEntry(
+                                getApiCallRcMissingPropNetComPort(
+                                    nodeNameStr,
+                                    currentNetIfNameStr
+                                )
+                            );
+                        }
+                    }
+                    else
+                    {
+                        port = Integer.parseInt(portStr);
+                        netTypeStr = netIfProps.getProp(KEY_NETIF_TYPE, currentNetIfNameStr);
+                        netType = NetInterfaceType.valueOfIgnoreCase(netTypeStr, NetInterfaceType.IP);
+                        enabledStr = netIfProps.getProp(KEY_NETCOM_ENABLED, currentNetIfNameStr);
+                        if (VAL_FALSE.equalsIgnoreCase(enabledStr) || VAL_TRUE.equalsIgnoreCase(enabledStr))
+                        {
+                            enabled = Boolean.parseBoolean(enabledStr);
+                        }
+                        else
+                        {
+                            enabled = true;
+                            if (enabledStr != null && !enabledStr.trim().equals(""))
+                            {
+                                apiCallRc.addEntry(
+                                    getApiCallRcWarnInvalidNetComEnabled(
+                                        nodeNameStr,
+                                        enabledStr
+                                    )
+                                );
+                            }
+                        }
+
+                        if (enabled)
+                        {
+                            atLeastOneEnabled = true;
+                            NetInterfaceData.getInstance( // sqlExc3, accDeniedExc4, alreadyExists2
+                                accCtx,
+                                node,
+                                netName,
+                                addr,
+                                port,
+                                netType,
+                                transMgr,
+                                true,
+                                true
+                            );
+                        }
+                    }
                 }
 
-                transMgr.commit(); // sqlExc4
+                if (atLeastOneEnabled == false)
+                {
+                    apiCallRc.addEntry(
+                        getApiCallRcMissingEnabledNetCom(
+                            nodeNameStr
+                        )
+                    );
+                }
+                else
+                {
+                    transMgr.commit(); // sqlExc4
 
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_NODE_CREATED);
-                String successMessage = String.format(
-                    "Node '%s' successfully created.",
-                    nodeNameStr
-                );
-                entry.setMessageFormat(successMessage);
-                entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.putObjRef(KEY_NODE, nodeNameStr);
+                    String successMessage = String.format(
+                        "Node '%s' successfully created.",
+                        nodeNameStr
+                    );
+                    apiCallRc.addEntry(
+                        getApiCallRcNodeCreated(
+                            nodeNameStr,
+                            successMessage
+                        )
+                    );
+                    controller.nodesMap.put(nodeName, node);
+                    controller.getErrorReporter().logInfo(successMessage);
 
-                apiCallRc.addEntry(entry);
-                controller.nodesMap.put(nodeName, node);
-                controller.getErrorReporter().logInfo(successMessage);
+                    startConnecting(node, accCtx, client);
+                }
             }
         }
         catch (SQLException sqlExc)
@@ -404,6 +454,197 @@ class CtrlNodeApiCallHandler
             controller.dbConnPool.returnConnection(transMgr.dbCon);
         }
         return apiCallRc;
+    }
+
+    private void startConnecting(Node node, AccessContext accCtx, Peer client)
+    {
+        Props netIfProps;
+        try
+        {
+            netIfProps = node.getProps(accCtx).getNamespace(NAMESPC_NETIF);
+            Iterator<String> iterator = netIfProps.iterateNamespaces();
+            TcpConnector tcpConnector = null;
+            InetSocketAddress satelliteAddress = null;
+            while (iterator.hasNext() && tcpConnector == null)
+            {
+                String netIf = iterator.next();
+                try
+                {
+                    if (!VAL_FALSE.equalsIgnoreCase(netIfProps.getProp(KEY_NETCOM_ENABLED, netIf)))
+                    {
+                        String addr = netIfProps.getProp(KEY_IP_ADDR, netIf);
+                        String port = netIfProps.getProp(KEY_PORT_NR, netIf);
+                        String type = netIfProps.getProp(KEY_NETCOM_TYPE, netIf);
+
+                        satelliteAddress = new InetSocketAddress(addr, Integer.parseInt(port));
+                        String serviceType;
+                        if (type.equals(VAL_NETCOM_TYPE_PLAIN))
+                        {
+                            serviceType = Controller.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC;
+                        }
+                        else
+                        {
+                            serviceType = Controller.PROPSCON_KEY_DEFAULT_SSL_CON_SVC;
+                        }
+                        String dfltConSvc = controller.ctrlConf.getProp(serviceType);
+                        if (dfltConSvc == null)
+                        {
+                            controller.getErrorReporter().reportError(
+                                new DrbdManageException(
+                                    "The controller has no default " + type.toLowerCase() + " tcp connector "
+                                ),
+                                accCtx,
+                                client,
+                                "Controller tried to establish connection to other node, but default tcp connector is missing"
+                            );
+                        }
+                        ServiceName dfltConSvcName = new ServiceName(dfltConSvc);
+                        tcpConnector = controller.netComConnectors.get(dfltConSvcName);
+                    }
+                }
+                catch (NumberFormatException numberFormatExc)
+                {
+                    // ignore and try the next one
+                }
+                catch (InvalidNameException invalidNameExc)
+                {
+                    controller.getErrorReporter().reportError(
+                        new ImplementationError(
+                            "Default tcp connector peer has not a valid ServiceName",
+                            invalidNameExc
+                        )
+                    );
+                }
+                catch (InvalidKeyException invalidKeyExc)
+                {
+                    controller.getErrorReporter().reportError(
+                        new ImplementationError(
+                            "Hardcoded props key threw InvalidKeyException",
+                            invalidKeyExc
+                        )
+                    );
+                }
+            }
+
+            if (satelliteAddress != null && tcpConnector != null)
+            {
+                controller.connectSatellite(satelliteAddress, tcpConnector);
+            }
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            controller.getErrorReporter().reportError(
+                new DrbdManageException(
+                    "An already validated access suddenly has no more access", exc
+                )
+            );
+        }
+    }
+
+    private ApiCallRcEntry getApiCallRcMissingNetIfNamespace(String nodeNameStr)
+    {
+        ApiCallRcEntry entry = new ApiCallRcEntry();
+        entry.setReturnCodeBit(RC_NODE_CRT_FAIL_MISSING_PROPS);
+
+        String errorMessage = String.format(
+            "Node '%s' is missing the props-namespace '%s'.",
+            nodeNameStr,
+            NAMESPC_NETIF
+        );
+        entry.setMessageFormat(errorMessage);
+        entry.setCorrectionFormat("Example: \n" +
+            NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 0.0.0.0\n" +
+            NAMESPC_NETIF + "/netIfName0/" + KEY_PORT_NR + " = 9501\n" +
+            NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_TYPE + " = " + VAL_NETCOM_TYPE_PLAIN + "\n" +
+            NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_ENABLED + " = " + VAL_TRUE + "\n" +
+            "   for a linstor node connection (" + KEY_NETCOM_ENABLED + " is optional and default " + VAL_TRUE+ ") or \n" +
+            NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 10.0.0.103\n" +
+            "   for a drbd resource interface"
+        );
+        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+        entry.putVariable(KEY_MISSING_NAMESPC, NAMESPC_NETCOM);
+        entry.putObjRef(KEY_NODE, nodeNameStr);
+        return entry;
+    }
+
+    private ApiCallRcEntry getApiCallRcNodeCreated(String nodeNameStr, String successMessage)
+    {
+        ApiCallRcEntry entry = new ApiCallRcEntry();
+        entry.setReturnCodeBit(RC_NODE_CREATED);
+        entry.setMessageFormat(successMessage);
+        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+        entry.putObjRef(KEY_NODE, nodeNameStr);
+        return entry;
+    }
+
+    private ApiCallRcEntry getApiCallRcMissingEnabledNetCom(String nodeNameStr)
+    {
+        ApiCallRcEntry entry = new ApiCallRcEntry();
+        entry.setReturnCodeBit(RC_NODE_CRT_FAIL_MISSING_NETCOM);
+
+        String errorMessage = String.format(
+            "No (enabled) network interface for linstor communication was specified for node '%s'.",
+            nodeNameStr
+        );
+        entry.setMessageFormat(errorMessage);
+        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+        entry.putObjRef(KEY_NODE, nodeNameStr);
+        return entry;
+    }
+
+    private ApiCallRcEntry getApiCallRcWarnInvalidNetComEnabled(String nodeNameStr, String enabledStr)
+    {
+        ApiCallRcEntry entry = new ApiCallRcEntry();
+        entry.setReturnCodeBit(RC_NODE_CRT_WARN_INVLD_OPT_PROP_NETCOM_ENABLED);
+
+        String errorMessage = String.format(
+            "The property '%s' for node '%s' was '%s', which is invalid. The property defaults to '%s'.",
+            KEY_NETCOM_ENABLED,
+            nodeNameStr,
+            enabledStr,
+            VAL_TRUE
+        );
+        entry.setMessageFormat(errorMessage);
+        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+        entry.putVariable(KEY_NETCOM_ENABLED, enabledStr);
+        entry.putObjRef(KEY_NODE, nodeNameStr);
+        return entry;
+    }
+
+    private ApiCallRcEntry getApiCallRcMissingPropNetComPort(String nodeNameStr, String currentNetIfNameStr)
+    {
+        ApiCallRcEntry entry = new ApiCallRcEntry();
+        entry.setReturnCodeBit(RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_PORT);
+
+        String errorMessage = String.format(
+            "The property '%s' for node '%s' for network interface '%s' is missing.",
+            KEY_PORT_NR,
+            nodeNameStr,
+            currentNetIfNameStr
+        );
+        entry.setMessageFormat(errorMessage);
+        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+        entry.putVariable(KEY_PORT_NR, "");
+        entry.putObjRef(KEY_NODE, nodeNameStr);
+        return entry;
+    }
+
+    private ApiCallRcEntry getApiCallRcMissingPropNetComType(String nodeNameStr, String currentNetIfNameStr)
+    {
+        ApiCallRcEntry entry = new ApiCallRcEntry();
+        entry.setReturnCodeBit(RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_TYPE);
+
+        String errorMessage = String.format(
+            "The property '%s' for node '%s' for network interface '%s' is missing.",
+            KEY_NETCOM_TYPE,
+            nodeNameStr,
+            currentNetIfNameStr
+        );
+        entry.setMessageFormat(errorMessage);
+        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+        entry.putVariable(KEY_NETCOM_TYPE, "");
+        entry.putObjRef(KEY_NODE, nodeNameStr);
+        return entry;
     }
 
     public ApiCallRc deleteNode(AccessContext accCtx, Peer client, String nodeNameStr)
