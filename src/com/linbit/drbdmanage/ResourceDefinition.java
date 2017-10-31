@@ -25,6 +25,10 @@ public interface ResourceDefinition extends TransactionObject
 
     public ResourceName getName();
 
+    public TcpPortNumber getPort(AccessContext accCtx) throws AccessDeniedException;
+
+    public void setPort(AccessContext accCtx, TcpPortNumber port) throws AccessDeniedException, SQLException;
+
     public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
         throws AccessDeniedException;
 

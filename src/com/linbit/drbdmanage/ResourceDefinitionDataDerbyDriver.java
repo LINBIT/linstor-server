@@ -8,7 +8,9 @@ import java.util.Map;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.dbdrivers.derby.DerbyConstants;
@@ -28,21 +30,28 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private static final String RD_UUID = DerbyConstants.UUID;
     private static final String RD_NAME = DerbyConstants.RESOURCE_NAME;
     private static final String RD_DSP_NAME = DerbyConstants.RESOURCE_DSP_NAME;
+    private static final String RD_PORT = DerbyConstants.TCP_PORT;
     private static final String RD_FLAGS = DerbyConstants.RESOURCE_FLAGS;
 
     private static final String RD_SELECT =
-        " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " + RD_FLAGS +
+        " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
+                     RD_FLAGS + ", " + RD_PORT +
         " FROM " + TBL_RES_DEF +
         " WHERE " + RD_NAME + " = ?";
     private static final String RD_SELECT_ALL =
-        " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " + RD_FLAGS +
+        " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
+                     RD_FLAGS + ", " + RD_PORT +
         " FROM " + TBL_RES_DEF;
     private static final String RD_INSERT =
         " INSERT INTO " + TBL_RES_DEF +
-        " VALUES (?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?)";
     private static final String RD_UPDATE_FLAGS =
         " UPDATE " + TBL_RES_DEF +
         " SET " + RD_FLAGS + " = ? " +
+        " WHERE " + RD_NAME + " = ?";
+    private static final String RD_UPDATE_PORT =
+        " UPDATE " + TBL_RES_DEF +
+        " SET " + RD_PORT + " = ? " +
         " WHERE " + RD_NAME + " = ?";
     private static final String RD_DELETE =
         " DELETE FROM " + TBL_RES_DEF +
@@ -53,6 +62,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private final Map<ResourceName, ResourceDefinition> resDfnMap;
 
     private final StateFlagsPersistence<ResourceDefinitionData> resDfnFlagPersistence;
+    private final SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> portDriver;
 
     private ResourceDataDerbyDriver resourceDriver;
     private VolumeDefinitionDataDerbyDriver volumeDefinitionDriver;
@@ -66,6 +76,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
+        portDriver = new PortDriver();
         resDfnMap = resDfnMapRef;
     }
 
@@ -88,7 +99,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
             stmt.setBytes(1, UuidUtils.asByteArray(resourceDefinition.getUuid()));
             stmt.setString(2, resourceDefinition.getName().value);
             stmt.setString(3, resourceDefinition.getName().displayValue);
-            stmt.setLong(4, resourceDefinition.getFlags().getFlagsBits(dbCtx));
+            stmt.setInt(4, resourceDefinition.getPort(dbCtx).value);
+            stmt.setLong(5, resourceDefinition.getFlags().getFlagsBits(dbCtx));
             stmt.executeUpdate();
 
             resDfnMap.put(resourceDefinition.getName(), resourceDefinition);
@@ -167,9 +179,11 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     {
         ResourceDefinitionData resDfn;
         ResourceName resourceName;
+        TcpPortNumber port;
         try
         {
             resourceName = new ResourceName(resultSet.getString(RD_DSP_NAME));
+            port = new TcpPortNumber(resultSet.getInt(RD_PORT));
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -181,6 +195,19 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     resultSet.getString(RD_DSP_NAME)
                 ),
                 invalidNameExc
+            );
+        }
+        catch (ValueOutOfRangeException valOutOfRangeExc)
+        {
+            throw new DrbdSqlRuntimeException(
+                String.format(
+                    "The port number of a stored ResourceDefinition in the table %s could not be restored. " +
+                        "(ResName=%s, invalid port=%d)",
+                        TBL_RES_DEF,
+                        resultSet.getString(RD_DSP_NAME),
+                        resultSet.getInt(RD_PORT)
+                    ),
+                valOutOfRangeExc
             );
         }
 
@@ -197,6 +224,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     UuidUtils.asUuid(resultSet.getBytes(RD_UUID)),
                     objProt,
                     resourceName,
+                    port,
                     resultSet.getLong(RD_FLAGS),
                     transMgr
                 );
@@ -284,6 +312,12 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         return resDfnFlagPersistence;
     }
 
+    @Override
+    public SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> getPortDriver()
+    {
+        return portDriver;
+    }
+
     private String getTraceId(ResourceDefinitionData resourceDefinition)
     {
         return getId(resourceDefinition.getName().value);
@@ -332,6 +366,40 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     "ResourceDefinition's flags updated from [%s] to [%s] %s",
                     Long.toBinaryString(resourceDefinition.getFlags().getFlagsBits(dbCtx)),
                     Long.toBinaryString(flags),
+                    getDebugId(resourceDefinition)
+                );
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                DerbyDriver.handleAccessDeniedException(accDeniedExc);
+            }
+        }
+    }
+
+    private class PortDriver implements SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber>
+    {
+        @Override
+        public void update(ResourceDefinitionData resourceDefinition, TcpPortNumber port, TransactionMgr transMgr)
+            throws SQLException
+        {
+            try
+            {
+                errorReporter.logTrace(
+                    "Updating ResourceDefinition's flags from [%d] to [%d] %s",
+                    resourceDefinition.getPort(dbCtx).value,
+                    port.value,
+                    getTraceId(resourceDefinition)
+                );
+                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_UPDATE_PORT))
+                {
+                    stmt.setInt(1, port.value);
+                    stmt.setString(2, resourceDefinition.getName().value);
+                    stmt.executeUpdate();
+                }
+                errorReporter.logTrace(
+                    "ResourceDefinition's flags updated from [%d] to [%d] %s",
+                    resourceDefinition.getPort(dbCtx).value,
+                    port.value,
                     getDebugId(resourceDefinition)
                 );
             }

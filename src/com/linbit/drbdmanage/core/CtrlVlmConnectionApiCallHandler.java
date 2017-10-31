@@ -92,6 +92,7 @@ class CtrlVlmConnectionApiCallHandler
             rscDfn = ResourceDefinitionData.getInstance( // accDeniedExc3
                 accCtx,
                 rscName,
+                null, // port only needed if we want to persist this entry
                 null, // rscFalgs are only needed if we want to persist this object
                 transMgr,
                 false, // do not persist this entry
@@ -768,6 +769,7 @@ class CtrlVlmConnectionApiCallHandler
             rscDfn = ResourceDefinitionData.getInstance( // accDeniedExc3
                 accCtx,
                 rscName,
+                null, // port only needed if we want to persist this entry
                 null, // rscFalgs are only needed if we want to persist this object
                 transMgr,
                 false, // do not persist this entry

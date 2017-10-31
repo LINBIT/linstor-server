@@ -52,8 +52,8 @@ class CtrlStorPoolDfnApiCallHandler
                 accCtx,
                 storPoolName,
                 transMgr,
-                true,
-                true
+                true, // persist this entry
+                true // throw exception if the entry exists
             );
             storPoolDfn.setConnection(transMgr);
             storPoolDfn.getConfiguration(accCtx).map().putAll(storPoolDfnProps);
@@ -237,8 +237,8 @@ class CtrlStorPoolDfnApiCallHandler
                 accCtx,
                 storPoolName,
                 transMgr,
-                false,
-                false
+                false, // do not persist this entry
+                false // do not throw exception if the entry exists
             );
 
             if (storPoolDefinitionData == null)

@@ -407,6 +407,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendCreateRscDfn(
         String resName,
+        int port,
         Map<String, String> resDfnProps,
         Iterable<? extends VlmDfn> vlmDfn
     )
@@ -414,7 +415,8 @@ public class ClientProtobuf implements Runnable
     {
         int msgId = this.msgId.incrementAndGet();
         MsgCrtRscDfn.Builder msgBuilder = MsgCrtRscDfn.newBuilder().
-            setRscName(resName);
+            setRscName(resName).
+            setRscPort(port);
         if (resDfnProps != null)
         {
             msgBuilder.putAllRscProps(resDfnProps);
@@ -690,7 +692,7 @@ public class ClientProtobuf implements Runnable
         sentCount++;
     }
 
-    public VlmDfn createVlmDfn(int vlmNr, int vlmSize)
+    public VlmDfn createVlmDfn(int vlmNr, long vlmSize)
     {
         return
             VlmDfn.newBuilder().
@@ -744,8 +746,8 @@ public class ClientProtobuf implements Runnable
         Thread.sleep(500);
 
         List<VlmDfn> vlmDfns = new ArrayList<>();
-        vlmDfns.add(client.createVlmDfn(vlmNr, 9001));
-        msgId = client.sendCreateRscDfn(rscName, null, vlmDfns);
+        vlmDfns.add(client.createVlmDfn(vlmNr, 1_000_000));
+        msgId = client.sendCreateRscDfn(rscName, 9001, null, vlmDfns);
         client.println(msgId + " create rscDfn");
         Thread.sleep(500);
 
@@ -848,7 +850,7 @@ public class ClientProtobuf implements Runnable
         resDfnProps.put(resPropsTestKey, resPropsTestValue);
         List<VlmDfn> vlmDfn = new ArrayList<>();
         vlmDfn.add(client.createVlmDfn(1, 1_000_000));
-        msgId = client.sendCreateRscDfn(resName, resDfnProps, vlmDfn);
+        msgId = client.sendCreateRscDfn(resName, 9001, resDfnProps, vlmDfn);
         client.println(msgId + " create rscDfn");
         Thread.sleep(500);
 

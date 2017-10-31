@@ -82,6 +82,7 @@ class CtrlRscConnectionApiCallHandler
             rscDfn = ResourceDefinitionData.getInstance(
                 accCtx,
                 rscName,
+                null, // port only needed if we want to persist this entry
                 null, // rscFalgs are only needed if we want to persist this object
                 transMgr,
                 false, // do not persist this entry
@@ -558,6 +559,7 @@ class CtrlRscConnectionApiCallHandler
             rscDfn = ResourceDefinitionData.getInstance(
                 accCtx,
                 rscName,
+                null, // port only needed if we want to persist this entry
                 null, // rscFalgs are only needed if we want to persist this object
                 transMgr,
                 false, // do not persist this entry

@@ -31,6 +31,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
     private final NodeName sourceName;
     private final NodeName targetName;
     private final ResourceName resName;
+    private final TcpPortNumber resPort;
     private final StorPoolName storPoolName;
     private final VolumeNumber volNr;
 
@@ -68,6 +69,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
         resName = new ResourceName("testResourceName");
+        resPort = new TcpPortNumber(9001);
         storPoolName = new StorPoolName("testStorPool");
         volNr = new VolumeNumber(42);
 
@@ -93,7 +95,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
         nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, transMgr, true, false);
         volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true, false);
 
         nodeIdSrc = new NodeId(13);

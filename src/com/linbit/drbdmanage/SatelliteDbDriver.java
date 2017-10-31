@@ -302,6 +302,14 @@ public class SatelliteDbDriver implements DatabaseDriver
             return (StateFlagsPersistence<ResourceDefinitionData>) stateFlagsDriver;
         }
 
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> getPortDriver()
+        {
+            return (SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber>) singleColDriver;
+        }
+
         @Override
         public void create(ResourceDefinitionData resDfn, TransactionMgr transMgr) throws SQLException
         {

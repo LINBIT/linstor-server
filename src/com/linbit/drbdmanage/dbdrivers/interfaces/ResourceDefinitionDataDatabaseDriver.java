@@ -4,9 +4,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.linbit.drbdmanage.BaseTransactionObject;
+import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.TcpPortNumber;
 import com.linbit.drbdmanage.stateflags.StateFlagsPersistence;
 
 /**
@@ -67,6 +69,11 @@ public interface ResourceDefinitionDataDatabaseDriver
     public StateFlagsPersistence<ResourceDefinitionData> getStateFlagsPersistence();
 
     /**
+     * A special sub-driver to update the port
+     */
+    public SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> getPortDriver();
+
+    /**
      * Checks if the stored primary key already exists in the database.
      *
      * @param resourceName
@@ -79,4 +86,5 @@ public interface ResourceDefinitionDataDatabaseDriver
      */
     public boolean exists(ResourceName resourceName, TransactionMgr transMgr)
         throws SQLException;
+
 }

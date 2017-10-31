@@ -54,8 +54,8 @@ class CtrlNodeConnectionApiCallHandler
             node1 = NodeData.getInstance( // accDeniedExc1
                 accCtx,
                 nodeName1,
-                null, // nodeType only needed if we want to persist this entry
                 null, // nodeFlags only needed if we want to persist this entry
+                null, // nodeType only needed if we want to persist this entry
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists

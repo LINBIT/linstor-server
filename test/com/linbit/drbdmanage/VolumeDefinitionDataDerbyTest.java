@@ -31,6 +31,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     private TransactionMgr transMgr;
 
     private ResourceName resName;
+    private TcpPortNumber resPort;
     private ResourceDefinition resDfn;
 
     private java.util.UUID uuid;
@@ -54,7 +55,8 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(getConnection());
 
         resName = new ResourceName("TestResource");
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true, false);
+        resPort = new TcpPortNumber(9001);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, transMgr, true, false);
 
         uuid = randomUUID();
         volNr = new VolumeNumber(13);

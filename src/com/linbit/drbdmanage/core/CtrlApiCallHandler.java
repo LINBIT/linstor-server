@@ -100,6 +100,7 @@ public class CtrlApiCallHandler
         AccessContext accCtx,
         Peer client,
         String resourceName,
+        int port,
         Map<String, String> props,
         List<VolumeDefinition.VlmDfnApi> volDescrMap
     )
@@ -112,6 +113,7 @@ public class CtrlApiCallHandler
                 accCtx,
                 client,
                 resourceName,
+                port,
                 props,
                 volDescrMap
             );

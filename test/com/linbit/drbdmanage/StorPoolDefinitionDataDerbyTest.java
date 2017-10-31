@@ -215,7 +215,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         driver.loadAll(transMgr);
 
         assertEquals(3, storPoolDfnMap.size());
-        assertNotNull(storPoolDfnMap.get(new StorPoolName("DfltStorPool")));
+        assertNotNull(storPoolDfnMap.get(new StorPoolName("DEFAULT")));
         assertNotNull(storPoolDfnMap.get(spName));
         assertNotNull(storPoolDfnMap.get(spName2));
         assertNotEquals(storPoolDfnMap.get(spName2), storPoolDfnMap.get(spName));

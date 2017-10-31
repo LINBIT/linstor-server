@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.DerbyBase;
@@ -27,6 +28,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         " FROM " + TBL_RESOURCE_CONNECTIONS;
 
     private final ResourceName resName;
+    private final TcpPortNumber resPort;
     private final NodeName sourceName;
     private final NodeName targetName;
 
@@ -47,9 +49,10 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     private ResourceData resSrc;
     private ResourceData resDst;
 
-    public ResourceConnectionDataDerbyTest() throws InvalidNameException
+    public ResourceConnectionDataDerbyTest() throws InvalidNameException, ValueOutOfRangeException
     {
         resName = new ResourceName("testResourceName");
+        resPort = new TcpPortNumber(9001);
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
     }
@@ -64,7 +67,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
 
         uuid = randomUUID();
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, transMgr, true, false);
         nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
         nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
 

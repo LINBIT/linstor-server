@@ -21,6 +21,7 @@ public class ConnectionPropsTest extends DerbyBase
     private NodeName nodeName1;
     private NodeName nodeName2;
     private ResourceName resName;
+    private TcpPortNumber resPort;
     private StorPoolName storPoolName;
     private NodeId nodeId1;
     private NodeId nodeId2;
@@ -65,6 +66,7 @@ public class ConnectionPropsTest extends DerbyBase
         nodeName1 = new NodeName("Node1");
         nodeName2 = new NodeName("Node2");
         resName = new ResourceName("ResName");
+        resPort = new TcpPortNumber(4242);
         storPoolName = new StorPoolName("StorPool");
         nodeId1 = new NodeId(1);
         nodeId2 = new NodeId(2);
@@ -81,7 +83,7 @@ public class ConnectionPropsTest extends DerbyBase
         node1 = NodeData.getInstance(sysCtx, nodeName1, NodeType.CONTROLLER, null, transMgr, true, false);
         node2 = NodeData.getInstance(sysCtx, nodeName2, NodeType.CONTROLLER, null, transMgr, true, false);
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, transMgr, true, false);
 
         res1 = ResourceData.getInstance(sysCtx, resDfn, node1, nodeId1, null, transMgr, true, false);
         res2 = ResourceData.getInstance(sysCtx, resDfn, node2, nodeId2, null, transMgr, true, false);

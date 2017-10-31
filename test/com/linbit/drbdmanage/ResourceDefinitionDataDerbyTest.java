@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
 import com.linbit.drbdmanage.core.DrbdManage;
@@ -28,11 +29,12 @@ import com.linbit.utils.UuidUtils;
 public class ResourceDefinitionDataDerbyTest extends DerbyBase
 {
     private static final String SELECT_ALL_RESOURCE_DEFINITIONS =
-        " SELECT " + UUID + ", " + RESOURCE_NAME + ", " +
-                     RESOURCE_DSP_NAME + ", " + RESOURCE_FLAGS +
+        " SELECT " + UUID + ", " + RESOURCE_NAME + ", " + RESOURCE_DSP_NAME + ", " +
+                     TCP_PORT + ", " + RESOURCE_FLAGS +
         " FROM " + TBL_RESOURCE_DEFINITIONS;
 
     private final ResourceName resName;
+    private final TcpPortNumber port;
     private final NodeName nodeName;
 
     private TransactionMgr transMgr;
@@ -45,9 +47,10 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     private ResourceDefinitionData resDfn;
     private ResourceDefinitionDataDerbyDriver driver;
 
-    public ResourceDefinitionDataDerbyTest() throws InvalidNameException
+    public ResourceDefinitionDataDerbyTest() throws InvalidNameException, ValueOutOfRangeException
     {
         resName = new ResourceName("TestResName");
+        port = new TcpPortNumber(4242);
         nodeName = new NodeName("TestNodeName1");
     }
 
@@ -55,7 +58,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_RESOURCE_DEFINITIONS + " table's column count has changed. Update tests accordingly!", 4, TBL_COL_COUNT_RESOURCE_DEFINITIONS);
+        assertEquals(TBL_RESOURCE_DEFINITIONS + " table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_RESOURCE_DEFINITIONS);
 
         transMgr = new TransactionMgr(getConnection());
 
@@ -82,6 +85,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resDfnUuid,
             resDfnObjProt,
             resName,
+            port,
             RscDfnFlags.DELETE.flagValue,
             transMgr
         );
@@ -102,6 +106,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resDfnUuid, UuidUtils.asUuid(resultSet.getBytes(UUID)));
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
+        assertEquals(port.value, resultSet.getInt(TCP_PORT));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resourceDefinitions", resultSet.next());
 
@@ -115,6 +120,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
+            port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
             transMgr,
             true,
@@ -130,12 +136,12 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         // uuid is now != resUuid because getInstance create a new resData object
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
+        assertEquals(port.value, resultSet.getInt(TCP_PORT));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
         stmt.close();
-
     }
 
     @Test
@@ -159,6 +165,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
+        assertEquals(port, loadedResDfn.getPort(sysCtx));
         assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
     }
 
@@ -168,6 +175,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinitionData loadedResDfn = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
+            port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
             transMgr,
             false,
@@ -192,7 +200,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         loadedResDfn = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
-            new RscDfnFlags[] { RscDfnFlags.DELETE },
+            null,
+            null,
             transMgr,
             false,
             false
@@ -201,6 +210,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
+        assertEquals(port, loadedResDfn.getPort(sysCtx));
         assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
     }
 
@@ -210,6 +220,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinitionData storedInstance = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
+            port,
             null,
             transMgr,
             true,
@@ -364,6 +375,27 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
+    public void testUpdatePort() throws Exception
+    {
+        driver.create(resDfn, transMgr);
+        resDfn.initialized();
+        resDfn.setConnection(transMgr);
+
+        TcpPortNumber otherPort = new TcpPortNumber(9001);
+        resDfn.setPort(sysCtx, otherPort);
+        transMgr.commit();
+
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
+        ResultSet resultSet = stmt.executeQuery();
+
+        assertTrue(resultSet.next());
+        assertEquals(otherPort.value, resultSet.getInt(TCP_PORT));
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
     public void testExists() throws Exception
     {
         assertFalse(driver.exists(resName, transMgr));
@@ -378,6 +410,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
+            port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
             null,
             true,
@@ -403,6 +436,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
             sysCtx,
             resName,
+            port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
             null,
             false,
@@ -442,6 +476,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         ResourceDefinitionData.getInstance(
             sysCtx,
             resName2,
+            port,
             null,
             transMgr,
             true,
@@ -463,6 +498,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(resDfn, transMgr);
 
-        ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, false, true);
+        ResourceDefinitionData.getInstance(sysCtx, resName, port, null, transMgr, false, true);
     }
 }

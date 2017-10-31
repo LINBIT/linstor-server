@@ -18,6 +18,7 @@ import com.linbit.drbdmanage.MinorNumber;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.TcpPortNumber;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.VolumeNumber;
@@ -43,6 +44,7 @@ class CtrlRscDfnApiCallHandler
         AccessContext accCtx,
         Peer client,
         String rscNameStr,
+        int portInt,
         Map<String, String> props,
         List<VlmDfnApi> volDescrMap
     )
@@ -80,10 +82,11 @@ class CtrlRscDfnApiCallHandler
             rscDfn = ResourceDefinitionData.getInstance( // sqlExc2, accDeniedExc1 (same as last line), alreadyExistsExc1
                 accCtx,
                 new ResourceName(rscNameStr), // invalidNameExc1
+                new TcpPortNumber(portInt), // valOORangeExc1
                 rscDfnInitFlags,
                 transMgr,
-                true,
-                true
+                true, // persist this entry
+                true // throw exception if the entry exists
             );
             rscDfn.setConnection(transMgr); // in case we will create vlmDfns
             rscDfn.getProps(accCtx).map().putAll(props);
@@ -95,8 +98,8 @@ class CtrlRscDfnApiCallHandler
                 volNr = null;
                 minorNr = null;
 
-                volNr = new VolumeNumber(vlmDfnApi.getVolumeNr()); // valOORangeExc1
-                minorNr = new MinorNumber(vlmDfnApi.getMinorNr()); // valOORangeExc2
+                volNr = new VolumeNumber(vlmDfnApi.getVolumeNr()); // valOORangeExc2
+                minorNr = new MinorNumber(vlmDfnApi.getMinorNr()); // valOORangeExc3
 
                 long size = vlmDfnApi.getSize();
 
@@ -114,8 +117,8 @@ class CtrlRscDfnApiCallHandler
                     size,
                     vlmDfnInitFlags,
                     transMgr,
-                    true,
-                    true
+                    true, // persist this entry
+                    true // throw exception if the entry exists
                 );
                 vlmDfn.setConnection(transMgr);
                 vlmDfn.getProps(accCtx).map().putAll(vlmDfnApi.getProps());
@@ -253,6 +256,15 @@ class CtrlRscDfnApiCallHandler
         {
             ApiCallRcEntry entry = new ApiCallRcEntry();
             String errorMessage;
+            if (rscDfn == null)
+            { // handle valOORangeExc1
+                errorMessage = String.format(
+                    "The specified tcp port %d is invalid.",
+                    portInt
+                );
+                entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_INVLD_RSC_PORT);
+            }
+            else
             if (volNr == null)
             { // handle valOORangeExc1
                 errorMessage = String.format(
@@ -423,10 +435,11 @@ class CtrlRscDfnApiCallHandler
             resDfn = ResourceDefinitionData.getInstance( // accDeniedExc2, sqlExc2, dataAlreadyExistsExc1
                 accCtx,
                 resName,
-                null,
+                null, // port only needed if we want to persist this entry
+                null, // rscFlags only needed if we want to persist this entry
                 transMgr,
-                false,
-                false
+                false, // do not persist this entry
+                false // do not throw exception if the entry exists
             );
 
             if (resDfn != null)

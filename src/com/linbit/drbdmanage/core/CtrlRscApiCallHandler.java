@@ -59,7 +59,6 @@ class CtrlRscApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-
         TransactionMgr transMgr = null;
 
         NodeName nodeName = null;
@@ -92,19 +91,20 @@ class CtrlRscApiCallHandler
             node = NodeData.getInstance( // accDeniedExc1, dataAlreadyExistsExc0
                 accCtx,
                 nodeName,
-                null,
-                null,
+                null, // nodeType only needed if we want to persist this entry
+                null, // nodeFlags only needed if we want to persist this entry
                 transMgr,
-                false,
-                false
+                false, // do not persist this entry
+                false // do not throw exception if the entry exists
             );
             rscDfn = ResourceDefinitionData.getInstance( // accDeniedExc2, dataAlreadyExistsExc0
                 accCtx,
                 rscName,
-                null,
+                null, // nodeType only needed if we want to persist this entry
+                null, // nodeFlags only needed if we want to persist this entry
                 transMgr,
-                false,
-                false
+                false, // do not persist this entry
+                false // do not throw exception if the entry exists
             );
 
             if (node == null)
@@ -164,8 +164,8 @@ class CtrlRscApiCallHandler
                     nodeId,
                     initFlags,
                     transMgr,
-                    true,
-                    true
+                    true, // persist this entry
+                    true // throw exception if the entry exists
                 );
                 rsc.setConnection(transMgr); // maybe volumes will be created
                 rsc.getProps(accCtx).map().putAll(rscPropsMap); // accDeniedExc4
@@ -251,8 +251,8 @@ class CtrlRscApiCallHandler
                         accCtx,
                         storPoolName,
                         transMgr,
-                        false,
-                        false
+                        false, // do not persist this entry
+                        false // do not throw exception if the entry exists
                     );
                     if (storPoolDfn != null)
                     {
@@ -260,11 +260,11 @@ class CtrlRscApiCallHandler
                             accCtx,
                             node,
                             storPoolDfn,
-                            null,
+                            null, // controller must not have a storage driver defined
                             transMgr,
-                            false,
-                            false,
-                            false
+                            false, // do not create an instance of the (not defined) storage driver
+                            false, // do not persist this entry
+                            false // do not throw exception if the entry exists
                         );
                     }
                     if (storPoolDfn == null || storPool == null)
@@ -318,8 +318,8 @@ class CtrlRscApiCallHandler
                             vlmApi.getMetaDisk(),
                             vlmFlags,
                             transMgr,
-                            true,
-                            true
+                            true, // persist this entry
+                            true // throw exception if the entry exists
                         );
                         vlmData.setConnection(transMgr);
                         vlmData.getProps(accCtx).map().putAll(vlmApi.getVlmProps());
@@ -749,29 +749,30 @@ class CtrlRscApiCallHandler
             node = NodeData.getInstance(
                 accCtx,
                 nodeName,
-                null,
-                null,
+                null, // nodeType only needed if we want to persist this entry
+                null, // nodeFlags only needed if we want to persist this entry
                 transMgr,
-                false,
-                false
+                false, // do not persist this entry
+                false // do not throw exception if the entry exists
             );
             rscDfn = ResourceDefinitionData.getInstance(
                 accCtx,
                 rscName,
-                null,
+                null, // port only needed if we want to persist this entry
+                null, // rscFlags only needed if we want to persist this entry
                 transMgr,
-                false,
-                false
+                false, // do not persist this entry
+                false // do not throw exception if the entry exists
             );
             rscData = ResourceData.getInstance(
                 accCtx,
                 rscDfn,
                 node,
-                null,
-                null,
+                null, // nodeId only needed if we want to persist this entry
+                null, // rscFlags only needed if we want to persist this entry
                 transMgr,
-                false,
-                false
+                false, // do not persist this entry
+                false // do not throw exception if the entry exists
             );
 
             if (node == null)

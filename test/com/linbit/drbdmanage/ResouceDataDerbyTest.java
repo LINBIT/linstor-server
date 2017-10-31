@@ -31,6 +31,7 @@ public class ResouceDataDerbyTest extends DerbyBase
 
     private final NodeName nodeName;
     private final ResourceName resName;
+    private final TcpPortNumber resPort;
     private final NodeId nodeId;
 
     private TransactionMgr transMgr;
@@ -47,6 +48,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     {
         nodeName = new NodeName("TestNodeName");
         resName = new ResourceName("TestResName");
+        resPort = new TcpPortNumber(9001);
         nodeId = new NodeId(13);
     }
 
@@ -59,7 +61,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(getConnection());
 
         node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true, false);
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, null, transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, transMgr, true, false);
 
         resUuid = randomUUID();
         objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPath(nodeName, resName), true, transMgr);

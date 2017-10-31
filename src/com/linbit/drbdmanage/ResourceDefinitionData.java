@@ -10,6 +10,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
+import com.linbit.TransactionSimpleObject;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.drbdmanage.propscon.Props;
@@ -35,6 +36,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // Resource name
     private final ResourceName resourceName;
 
+    // Tcp Port
+    private final TransactionSimpleObject<ResourceDefinitionData, TcpPortNumber> port;
+
     // Volumes of the resource
     private final TransactionMap<VolumeNumber, VolumeDefinition> volumeMap;
 
@@ -54,12 +58,14 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     private boolean deleted = false;
 
+
     /*
      * used by getInstance
      */
     private ResourceDefinitionData(
         AccessContext accCtx,
         ResourceName resName,
+        TcpPortNumber port,
         long initialFlags,
         TransactionMgr transMgr
     )
@@ -74,6 +80,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                 transMgr
             ),
             resName,
+            port,
             initialFlags,
             transMgr
         );
@@ -86,6 +93,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         UUID objIdRef,
         ObjectProtection objProtRef,
         ResourceName resName,
+        TcpPortNumber portRef,
         long initialFlags,
         TransactionMgr transMgr
     )
@@ -99,6 +107,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
         dbDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
 
+        port = new TransactionSimpleObject<>(this, portRef, dbDriver.getPortDriver());
         volumeMap = new TransactionMap<>(new TreeMap<VolumeNumber, VolumeDefinition>(), null);
         resourceMap = new TransactionMap<>(new TreeMap<NodeName, Resource>(), null);
 
@@ -113,13 +122,15 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             objProt,
             volumeMap,
             resourceMap,
-            rscDfnProps
+            rscDfnProps,
+            port
         );
     }
 
     public static ResourceDefinitionData getInstance(
         AccessContext accCtx,
         ResourceName resName,
+        TcpPortNumber port,
         RscDfnFlags[] flags,
         TransactionMgr transMgr,
         boolean createIfNotExists,
@@ -142,6 +153,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             resDfn = new ResourceDefinitionData(
                 accCtx,
                 resName,
+                port,
                 StateFlagsBits.getMask(flags),
                 transMgr
             );
@@ -224,6 +236,20 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return resourceMap.get(clNodeName);
+    }
+
+    @Override
+    public TcpPortNumber getPort(AccessContext accCtx) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return port.get();
+    }
+
+    @Override
+    public void setPort(AccessContext accCtx, TcpPortNumber port) throws AccessDeniedException, SQLException
+    {
+        objProt.requireAccess(accCtx, AccessType.USE);
+        this.port.set(port);
     }
 
     void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
