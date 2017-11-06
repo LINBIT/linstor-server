@@ -50,7 +50,7 @@ public class CreateNodeConnection extends BaseApiCall
             client,
             msgCreateNodeConn.getNodeName1(),
             msgCreateNodeConn.getNodeName2(),
-            msgCreateNodeConn.getNodeConnPropsMap()
+            asMap(msgCreateNodeConn.getNodeConnPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

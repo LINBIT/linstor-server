@@ -25,7 +25,17 @@ public final class MsgHeaderOuterClass {
      * back with the same msg_id
      * </pre>
      *
-     * <code>int32 msg_id = 1;</code>
+     * <code>required int32 msg_id = 1;</code>
+     */
+    boolean hasMsgId();
+    /**
+     * <pre>
+     * Identifying number for this message
+     * Immediate answers to this message will be sent
+     * back with the same msg_id
+     * </pre>
+     *
+     * <code>required int32 msg_id = 1;</code>
      */
     int getMsgId();
 
@@ -37,7 +47,18 @@ public final class MsgHeaderOuterClass {
      * that is selected by this field
      * </pre>
      *
-     * <code>string api_call = 2;</code>
+     * <code>required string api_call = 2;</code>
+     */
+    boolean hasApiCall();
+    /**
+     * <pre>
+     * Name of the API call to execute
+     * The message content (parameters) following this
+     * message header will be processed by the API method
+     * that is selected by this field
+     * </pre>
+     *
+     * <code>required string api_call = 2;</code>
      */
     java.lang.String getApiCall();
     /**
@@ -48,7 +69,7 @@ public final class MsgHeaderOuterClass {
      * that is selected by this field
      * </pre>
      *
-     * <code>string api_call = 2;</code>
+     * <code>required string api_call = 2;</code>
      */
     com.google.protobuf.ByteString
         getApiCallBytes();
@@ -76,7 +97,7 @@ public final class MsgHeaderOuterClass {
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+      return this.unknownFields;
     }
     private MsgHeader(
         com.google.protobuf.CodedInputStream input,
@@ -84,6 +105,8 @@ public final class MsgHeaderOuterClass {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -93,20 +116,21 @@ public final class MsgHeaderOuterClass {
               done = true;
               break;
             default: {
-              if (!input.skipField(tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
             }
             case 8: {
-
+              bitField0_ |= 0x00000001;
               msgId_ = input.readInt32();
               break;
             }
             case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              apiCall_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              apiCall_ = bs;
               break;
             }
           }
@@ -117,6 +141,7 @@ public final class MsgHeaderOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -132,6 +157,7 @@ public final class MsgHeaderOuterClass {
               com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader.class, com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader.Builder.class);
     }
 
+    private int bitField0_;
     public static final int MSG_ID_FIELD_NUMBER = 1;
     private int msgId_;
     /**
@@ -141,7 +167,19 @@ public final class MsgHeaderOuterClass {
      * back with the same msg_id
      * </pre>
      *
-     * <code>int32 msg_id = 1;</code>
+     * <code>required int32 msg_id = 1;</code>
+     */
+    public boolean hasMsgId() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * Identifying number for this message
+     * Immediate answers to this message will be sent
+     * back with the same msg_id
+     * </pre>
+     *
+     * <code>required int32 msg_id = 1;</code>
      */
     public int getMsgId() {
       return msgId_;
@@ -157,7 +195,20 @@ public final class MsgHeaderOuterClass {
      * that is selected by this field
      * </pre>
      *
-     * <code>string api_call = 2;</code>
+     * <code>required string api_call = 2;</code>
+     */
+    public boolean hasApiCall() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <pre>
+     * Name of the API call to execute
+     * The message content (parameters) following this
+     * message header will be processed by the API method
+     * that is selected by this field
+     * </pre>
+     *
+     * <code>required string api_call = 2;</code>
      */
     public java.lang.String getApiCall() {
       java.lang.Object ref = apiCall_;
@@ -167,7 +218,9 @@ public final class MsgHeaderOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        apiCall_ = s;
+        if (bs.isValidUtf8()) {
+          apiCall_ = s;
+        }
         return s;
       }
     }
@@ -179,7 +232,7 @@ public final class MsgHeaderOuterClass {
      * that is selected by this field
      * </pre>
      *
-     * <code>string api_call = 2;</code>
+     * <code>required string api_call = 2;</code>
      */
     public com.google.protobuf.ByteString
         getApiCallBytes() {
@@ -201,18 +254,27 @@ public final class MsgHeaderOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasMsgId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasApiCall()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (msgId_ != 0) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         output.writeInt32(1, msgId_);
       }
-      if (!getApiCallBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, apiCall_);
       }
+      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -220,13 +282,14 @@ public final class MsgHeaderOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (msgId_ != 0) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, msgId_);
       }
-      if (!getApiCallBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, apiCall_);
       }
+      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -243,10 +306,17 @@ public final class MsgHeaderOuterClass {
       com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader other = (com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader) obj;
 
       boolean result = true;
-      result = result && (getMsgId()
-          == other.getMsgId());
-      result = result && getApiCall()
-          .equals(other.getApiCall());
+      result = result && (hasMsgId() == other.hasMsgId());
+      if (hasMsgId()) {
+        result = result && (getMsgId()
+            == other.getMsgId());
+      }
+      result = result && (hasApiCall() == other.hasApiCall());
+      if (hasApiCall()) {
+        result = result && getApiCall()
+            .equals(other.getApiCall());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -257,10 +327,14 @@ public final class MsgHeaderOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + MSG_ID_FIELD_NUMBER;
-      hash = (53 * hash) + getMsgId();
-      hash = (37 * hash) + API_CALL_FIELD_NUMBER;
-      hash = (53 * hash) + getApiCall().hashCode();
+      if (hasMsgId()) {
+        hash = (37 * hash) + MSG_ID_FIELD_NUMBER;
+        hash = (53 * hash) + getMsgId();
+      }
+      if (hasApiCall()) {
+        hash = (37 * hash) + API_CALL_FIELD_NUMBER;
+        hash = (53 * hash) + getApiCall().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -384,9 +458,9 @@ public final class MsgHeaderOuterClass {
       public Builder clear() {
         super.clear();
         msgId_ = 0;
-
+        bitField0_ = (bitField0_ & ~0x00000001);
         apiCall_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
 
@@ -409,8 +483,17 @@ public final class MsgHeaderOuterClass {
 
       public com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader buildPartial() {
         com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader result = new com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
         result.msgId_ = msgId_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
         result.apiCall_ = apiCall_;
+        result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
@@ -452,18 +535,26 @@ public final class MsgHeaderOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader other) {
         if (other == com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader.getDefaultInstance()) return this;
-        if (other.getMsgId() != 0) {
+        if (other.hasMsgId()) {
           setMsgId(other.getMsgId());
         }
-        if (!other.getApiCall().isEmpty()) {
+        if (other.hasApiCall()) {
+          bitField0_ |= 0x00000002;
           apiCall_ = other.apiCall_;
           onChanged();
         }
+        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
       public final boolean isInitialized() {
+        if (!hasMsgId()) {
+          return false;
+        }
+        if (!hasApiCall()) {
+          return false;
+        }
         return true;
       }
 
@@ -484,6 +575,7 @@ public final class MsgHeaderOuterClass {
         }
         return this;
       }
+      private int bitField0_;
 
       private int msgId_ ;
       /**
@@ -493,7 +585,19 @@ public final class MsgHeaderOuterClass {
        * back with the same msg_id
        * </pre>
        *
-       * <code>int32 msg_id = 1;</code>
+       * <code>required int32 msg_id = 1;</code>
+       */
+      public boolean hasMsgId() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * Identifying number for this message
+       * Immediate answers to this message will be sent
+       * back with the same msg_id
+       * </pre>
+       *
+       * <code>required int32 msg_id = 1;</code>
        */
       public int getMsgId() {
         return msgId_;
@@ -505,10 +609,10 @@ public final class MsgHeaderOuterClass {
        * back with the same msg_id
        * </pre>
        *
-       * <code>int32 msg_id = 1;</code>
+       * <code>required int32 msg_id = 1;</code>
        */
       public Builder setMsgId(int value) {
-        
+        bitField0_ |= 0x00000001;
         msgId_ = value;
         onChanged();
         return this;
@@ -520,10 +624,10 @@ public final class MsgHeaderOuterClass {
        * back with the same msg_id
        * </pre>
        *
-       * <code>int32 msg_id = 1;</code>
+       * <code>required int32 msg_id = 1;</code>
        */
       public Builder clearMsgId() {
-        
+        bitField0_ = (bitField0_ & ~0x00000001);
         msgId_ = 0;
         onChanged();
         return this;
@@ -538,7 +642,20 @@ public final class MsgHeaderOuterClass {
        * that is selected by this field
        * </pre>
        *
-       * <code>string api_call = 2;</code>
+       * <code>required string api_call = 2;</code>
+       */
+      public boolean hasApiCall() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <pre>
+       * Name of the API call to execute
+       * The message content (parameters) following this
+       * message header will be processed by the API method
+       * that is selected by this field
+       * </pre>
+       *
+       * <code>required string api_call = 2;</code>
        */
       public java.lang.String getApiCall() {
         java.lang.Object ref = apiCall_;
@@ -546,7 +663,9 @@ public final class MsgHeaderOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          apiCall_ = s;
+          if (bs.isValidUtf8()) {
+            apiCall_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -560,7 +679,7 @@ public final class MsgHeaderOuterClass {
        * that is selected by this field
        * </pre>
        *
-       * <code>string api_call = 2;</code>
+       * <code>required string api_call = 2;</code>
        */
       public com.google.protobuf.ByteString
           getApiCallBytes() {
@@ -583,14 +702,14 @@ public final class MsgHeaderOuterClass {
        * that is selected by this field
        * </pre>
        *
-       * <code>string api_call = 2;</code>
+       * <code>required string api_call = 2;</code>
        */
       public Builder setApiCall(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000002;
         apiCall_ = value;
         onChanged();
         return this;
@@ -603,10 +722,10 @@ public final class MsgHeaderOuterClass {
        * that is selected by this field
        * </pre>
        *
-       * <code>string api_call = 2;</code>
+       * <code>required string api_call = 2;</code>
        */
       public Builder clearApiCall() {
-        
+        bitField0_ = (bitField0_ & ~0x00000002);
         apiCall_ = getDefaultInstance().getApiCall();
         onChanged();
         return this;
@@ -619,27 +738,26 @@ public final class MsgHeaderOuterClass {
        * that is selected by this field
        * </pre>
        *
-       * <code>string api_call = 2;</code>
+       * <code>required string api_call = 2;</code>
        */
       public Builder setApiCallBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000002;
         apiCall_ = value;
         onChanged();
         return this;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.setUnknownFields(unknownFields);
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.mergeUnknownFields(unknownFields);
       }
 
 
@@ -656,7 +774,7 @@ public final class MsgHeaderOuterClass {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<MsgHeader>
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<MsgHeader>
         PARSER = new com.google.protobuf.AbstractParser<MsgHeader>() {
       public MsgHeader parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
@@ -696,8 +814,8 @@ public final class MsgHeaderOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\017MsgHeader.proto\022\033com.linbit.drbdmanage" +
-      ".proto\"-\n\tMsgHeader\022\016\n\006msg_id\030\001 \001(\005\022\020\n\010a" +
-      "pi_call\030\002 \001(\tb\006proto3"
+      ".proto\"-\n\tMsgHeader\022\016\n\006msg_id\030\001 \002(\005\022\020\n\010a" +
+      "pi_call\030\002 \002(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

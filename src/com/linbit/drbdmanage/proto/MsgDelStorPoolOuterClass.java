@@ -23,7 +23,15 @@ public final class MsgDelStorPoolOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
+     */
+    boolean hasNodeName();
+    /**
+     * <pre>
+     * Node name
+     * </pre>
+     *
+     * <code>required string node_name = 1;</code>
      */
     java.lang.String getNodeName();
     /**
@@ -31,7 +39,7 @@ public final class MsgDelStorPoolOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
      */
     com.google.protobuf.ByteString
         getNodeNameBytes();
@@ -41,7 +49,15 @@ public final class MsgDelStorPoolOuterClass {
      * Storage pool name
      * </pre>
      *
-     * <code>string stor_pool_name = 2;</code>
+     * <code>required string stor_pool_name = 2;</code>
+     */
+    boolean hasStorPoolName();
+    /**
+     * <pre>
+     * Storage pool name
+     * </pre>
+     *
+     * <code>required string stor_pool_name = 2;</code>
      */
     java.lang.String getStorPoolName();
     /**
@@ -49,14 +65,14 @@ public final class MsgDelStorPoolOuterClass {
      * Storage pool name
      * </pre>
      *
-     * <code>string stor_pool_name = 2;</code>
+     * <code>required string stor_pool_name = 2;</code>
      */
     com.google.protobuf.ByteString
         getStorPoolNameBytes();
   }
   /**
    * <pre>
-   * drbdmanageNG - Delete storage pool 
+   * linstor - Delete storage pool
    * </pre>
    *
    * Protobuf type {@code com.linbit.drbdmanage.proto.MsgDelStorPool}
@@ -77,7 +93,7 @@ public final class MsgDelStorPoolOuterClass {
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+      return this.unknownFields;
     }
     private MsgDelStorPool(
         com.google.protobuf.CodedInputStream input,
@@ -85,6 +101,8 @@ public final class MsgDelStorPoolOuterClass {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -94,21 +112,22 @@ public final class MsgDelStorPoolOuterClass {
               done = true;
               break;
             default: {
-              if (!input.skipField(tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
             }
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              nodeName_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000001;
+              nodeName_ = bs;
               break;
             }
             case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              storPoolName_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              storPoolName_ = bs;
               break;
             }
           }
@@ -119,6 +138,7 @@ public final class MsgDelStorPoolOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -134,6 +154,7 @@ public final class MsgDelStorPoolOuterClass {
               com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool.class, com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool.Builder.class);
     }
 
+    private int bitField0_;
     public static final int NODE_NAME_FIELD_NUMBER = 1;
     private volatile java.lang.Object nodeName_;
     /**
@@ -141,7 +162,17 @@ public final class MsgDelStorPoolOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
+     */
+    public boolean hasNodeName() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * Node name
+     * </pre>
+     *
+     * <code>required string node_name = 1;</code>
      */
     public java.lang.String getNodeName() {
       java.lang.Object ref = nodeName_;
@@ -151,7 +182,9 @@ public final class MsgDelStorPoolOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        nodeName_ = s;
+        if (bs.isValidUtf8()) {
+          nodeName_ = s;
+        }
         return s;
       }
     }
@@ -160,7 +193,7 @@ public final class MsgDelStorPoolOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
      */
     public com.google.protobuf.ByteString
         getNodeNameBytes() {
@@ -183,7 +216,17 @@ public final class MsgDelStorPoolOuterClass {
      * Storage pool name
      * </pre>
      *
-     * <code>string stor_pool_name = 2;</code>
+     * <code>required string stor_pool_name = 2;</code>
+     */
+    public boolean hasStorPoolName() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <pre>
+     * Storage pool name
+     * </pre>
+     *
+     * <code>required string stor_pool_name = 2;</code>
      */
     public java.lang.String getStorPoolName() {
       java.lang.Object ref = storPoolName_;
@@ -193,7 +236,9 @@ public final class MsgDelStorPoolOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        storPoolName_ = s;
+        if (bs.isValidUtf8()) {
+          storPoolName_ = s;
+        }
         return s;
       }
     }
@@ -202,7 +247,7 @@ public final class MsgDelStorPoolOuterClass {
      * Storage pool name
      * </pre>
      *
-     * <code>string stor_pool_name = 2;</code>
+     * <code>required string stor_pool_name = 2;</code>
      */
     public com.google.protobuf.ByteString
         getStorPoolNameBytes() {
@@ -224,18 +269,27 @@ public final class MsgDelStorPoolOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasNodeName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasStorPoolName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!getNodeNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeName_);
       }
-      if (!getStorPoolNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, storPoolName_);
       }
+      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -243,12 +297,13 @@ public final class MsgDelStorPoolOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (!getNodeNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeName_);
       }
-      if (!getStorPoolNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, storPoolName_);
       }
+      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -265,10 +320,17 @@ public final class MsgDelStorPoolOuterClass {
       com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool other = (com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool) obj;
 
       boolean result = true;
-      result = result && getNodeName()
-          .equals(other.getNodeName());
-      result = result && getStorPoolName()
-          .equals(other.getStorPoolName());
+      result = result && (hasNodeName() == other.hasNodeName());
+      if (hasNodeName()) {
+        result = result && getNodeName()
+            .equals(other.getNodeName());
+      }
+      result = result && (hasStorPoolName() == other.hasStorPoolName());
+      if (hasStorPoolName()) {
+        result = result && getStorPoolName()
+            .equals(other.getStorPoolName());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -279,10 +341,14 @@ public final class MsgDelStorPoolOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
-      hash = (53 * hash) + getNodeName().hashCode();
-      hash = (37 * hash) + STOR_POOL_NAME_FIELD_NUMBER;
-      hash = (53 * hash) + getStorPoolName().hashCode();
+      if (hasNodeName()) {
+        hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getNodeName().hashCode();
+      }
+      if (hasStorPoolName()) {
+        hash = (37 * hash) + STOR_POOL_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getStorPoolName().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -367,7 +433,7 @@ public final class MsgDelStorPoolOuterClass {
     }
     /**
      * <pre>
-     * drbdmanageNG - Delete storage pool 
+     * linstor - Delete storage pool
      * </pre>
      *
      * Protobuf type {@code com.linbit.drbdmanage.proto.MsgDelStorPool}
@@ -406,9 +472,9 @@ public final class MsgDelStorPoolOuterClass {
       public Builder clear() {
         super.clear();
         nodeName_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000001);
         storPoolName_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
 
@@ -431,8 +497,17 @@ public final class MsgDelStorPoolOuterClass {
 
       public com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool buildPartial() {
         com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool result = new com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
         result.nodeName_ = nodeName_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
         result.storPoolName_ = storPoolName_;
+        result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
@@ -474,19 +549,28 @@ public final class MsgDelStorPoolOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool other) {
         if (other == com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool.getDefaultInstance()) return this;
-        if (!other.getNodeName().isEmpty()) {
+        if (other.hasNodeName()) {
+          bitField0_ |= 0x00000001;
           nodeName_ = other.nodeName_;
           onChanged();
         }
-        if (!other.getStorPoolName().isEmpty()) {
+        if (other.hasStorPoolName()) {
+          bitField0_ |= 0x00000002;
           storPoolName_ = other.storPoolName_;
           onChanged();
         }
+        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
       public final boolean isInitialized() {
+        if (!hasNodeName()) {
+          return false;
+        }
+        if (!hasStorPoolName()) {
+          return false;
+        }
         return true;
       }
 
@@ -507,6 +591,7 @@ public final class MsgDelStorPoolOuterClass {
         }
         return this;
       }
+      private int bitField0_;
 
       private java.lang.Object nodeName_ = "";
       /**
@@ -514,7 +599,17 @@ public final class MsgDelStorPoolOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
+       */
+      public boolean hasNodeName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * Node name
+       * </pre>
+       *
+       * <code>required string node_name = 1;</code>
        */
       public java.lang.String getNodeName() {
         java.lang.Object ref = nodeName_;
@@ -522,7 +617,9 @@ public final class MsgDelStorPoolOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          nodeName_ = s;
+          if (bs.isValidUtf8()) {
+            nodeName_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -533,7 +630,7 @@ public final class MsgDelStorPoolOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public com.google.protobuf.ByteString
           getNodeNameBytes() {
@@ -553,14 +650,14 @@ public final class MsgDelStorPoolOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public Builder setNodeName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000001;
         nodeName_ = value;
         onChanged();
         return this;
@@ -570,10 +667,10 @@ public final class MsgDelStorPoolOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public Builder clearNodeName() {
-        
+        bitField0_ = (bitField0_ & ~0x00000001);
         nodeName_ = getDefaultInstance().getNodeName();
         onChanged();
         return this;
@@ -583,15 +680,14 @@ public final class MsgDelStorPoolOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public Builder setNodeNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000001;
         nodeName_ = value;
         onChanged();
         return this;
@@ -603,7 +699,17 @@ public final class MsgDelStorPoolOuterClass {
        * Storage pool name
        * </pre>
        *
-       * <code>string stor_pool_name = 2;</code>
+       * <code>required string stor_pool_name = 2;</code>
+       */
+      public boolean hasStorPoolName() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <pre>
+       * Storage pool name
+       * </pre>
+       *
+       * <code>required string stor_pool_name = 2;</code>
        */
       public java.lang.String getStorPoolName() {
         java.lang.Object ref = storPoolName_;
@@ -611,7 +717,9 @@ public final class MsgDelStorPoolOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          storPoolName_ = s;
+          if (bs.isValidUtf8()) {
+            storPoolName_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -622,7 +730,7 @@ public final class MsgDelStorPoolOuterClass {
        * Storage pool name
        * </pre>
        *
-       * <code>string stor_pool_name = 2;</code>
+       * <code>required string stor_pool_name = 2;</code>
        */
       public com.google.protobuf.ByteString
           getStorPoolNameBytes() {
@@ -642,14 +750,14 @@ public final class MsgDelStorPoolOuterClass {
        * Storage pool name
        * </pre>
        *
-       * <code>string stor_pool_name = 2;</code>
+       * <code>required string stor_pool_name = 2;</code>
        */
       public Builder setStorPoolName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000002;
         storPoolName_ = value;
         onChanged();
         return this;
@@ -659,10 +767,10 @@ public final class MsgDelStorPoolOuterClass {
        * Storage pool name
        * </pre>
        *
-       * <code>string stor_pool_name = 2;</code>
+       * <code>required string stor_pool_name = 2;</code>
        */
       public Builder clearStorPoolName() {
-        
+        bitField0_ = (bitField0_ & ~0x00000002);
         storPoolName_ = getDefaultInstance().getStorPoolName();
         onChanged();
         return this;
@@ -672,27 +780,26 @@ public final class MsgDelStorPoolOuterClass {
        * Storage pool name
        * </pre>
        *
-       * <code>string stor_pool_name = 2;</code>
+       * <code>required string stor_pool_name = 2;</code>
        */
       public Builder setStorPoolNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000002;
         storPoolName_ = value;
         onChanged();
         return this;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.setUnknownFields(unknownFields);
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.mergeUnknownFields(unknownFields);
       }
 
 
@@ -709,7 +816,7 @@ public final class MsgDelStorPoolOuterClass {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<MsgDelStorPool>
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<MsgDelStorPool>
         PARSER = new com.google.protobuf.AbstractParser<MsgDelStorPool>() {
       public MsgDelStorPool parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
@@ -750,7 +857,7 @@ public final class MsgDelStorPoolOuterClass {
     java.lang.String[] descriptorData = {
       "\n\024MsgDelStorPool.proto\022\033com.linbit.drbdm" +
       "anage.proto\";\n\016MsgDelStorPool\022\021\n\tnode_na" +
-      "me\030\001 \001(\t\022\026\n\016stor_pool_name\030\002 \001(\tb\006proto3"
+      "me\030\001 \002(\t\022\026\n\016stor_pool_name\030\002 \002(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

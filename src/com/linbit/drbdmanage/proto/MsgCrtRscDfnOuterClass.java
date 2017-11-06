@@ -23,7 +23,15 @@ public final class MsgCrtRscDfnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>string rsc_name = 1;</code>
+     * <code>required string rsc_name = 1;</code>
+     */
+    boolean hasRscName();
+    /**
+     * <pre>
+     * Resource name
+     * </pre>
+     *
+     * <code>required string rsc_name = 1;</code>
      */
     java.lang.String getRscName();
     /**
@@ -31,7 +39,7 @@ public final class MsgCrtRscDfnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>string rsc_name = 1;</code>
+     * <code>required string rsc_name = 1;</code>
      */
     com.google.protobuf.ByteString
         getRscNameBytes();
@@ -41,7 +49,15 @@ public final class MsgCrtRscDfnOuterClass {
      * Port
      * </pre>
      *
-     * <code>sint32 rsc_port = 2;</code>
+     * <code>required sint32 rsc_port = 2;</code>
+     */
+    boolean hasRscPort();
+    /**
+     * <pre>
+     * Port
+     * </pre>
+     *
+     * <code>required sint32 rsc_port = 2;</code>
      */
     int getRscPort();
 
@@ -50,7 +66,24 @@ public final class MsgCrtRscDfnOuterClass {
      * Resource properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; rsc_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+     */
+    java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
+        getRscPropsList();
+    /**
+     * <pre>
+     * Resource properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+     */
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getRscProps(int index);
+    /**
+     * <pre>
+     * Resource properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
      */
     int getRscPropsCount();
     /**
@@ -58,46 +91,19 @@ public final class MsgCrtRscDfnOuterClass {
      * Resource properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; rsc_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
      */
-    boolean containsRscProps(
-        java.lang.String key);
-    /**
-     * Use {@link #getRscPropsMap()} instead.
-     */
-    @java.lang.Deprecated
-    java.util.Map<java.lang.String, java.lang.String>
-    getRscProps();
+    java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getRscPropsOrBuilderList();
     /**
      * <pre>
      * Resource properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; rsc_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
      */
-    java.util.Map<java.lang.String, java.lang.String>
-    getRscPropsMap();
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; rsc_props = 3;</code>
-     */
-
-    java.lang.String getRscPropsOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue);
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; rsc_props = 3;</code>
-     */
-
-    java.lang.String getRscPropsOrThrow(
-        java.lang.String key);
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getRscPropsOrBuilder(
+        int index);
 
     /**
      * <pre>
@@ -145,7 +151,7 @@ public final class MsgCrtRscDfnOuterClass {
   }
   /**
    * <pre>
-   * drbdmanageNG - Create resource definition
+   * linstor - Create resource definition
    * </pre>
    *
    * Protobuf type {@code com.linbit.drbdmanage.proto.MsgCrtRscDfn}
@@ -161,13 +167,14 @@ public final class MsgCrtRscDfnOuterClass {
     private MsgCrtRscDfn() {
       rscName_ = "";
       rscPort_ = 0;
+      rscProps_ = java.util.Collections.emptyList();
       vlmDfns_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+      return this.unknownFields;
     }
     private MsgCrtRscDfn(
         com.google.protobuf.CodedInputStream input,
@@ -175,6 +182,8 @@ public final class MsgCrtRscDfnOuterClass {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -184,33 +193,30 @@ public final class MsgCrtRscDfnOuterClass {
               done = true;
               break;
             default: {
-              if (!input.skipField(tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
             }
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              rscName_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000001;
+              rscName_ = bs;
               break;
             }
             case 16: {
-
+              bitField0_ |= 0x00000002;
               rscPort_ = input.readSInt32();
               break;
             }
             case 26: {
               if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-                rscProps_ = com.google.protobuf.MapField.newMapField(
-                    RscPropsDefaultEntryHolder.defaultEntry);
+                rscProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
                 mutable_bitField0_ |= 0x00000004;
               }
-              com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
-              rscProps__ = input.readMessage(
-                  RscPropsDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
-              rscProps_.getMutableMap().put(
-                  rscProps__.getKey(), rscProps__.getValue());
+              rscProps_.add(
+                  input.readMessage(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
               break;
             }
             case 34: {
@@ -219,7 +225,7 @@ public final class MsgCrtRscDfnOuterClass {
                 mutable_bitField0_ |= 0x00000008;
               }
               vlmDfns_.add(
-                  input.readMessage(com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.parser(), extensionRegistry));
+                  input.readMessage(com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.PARSER, extensionRegistry));
               break;
             }
           }
@@ -230,9 +236,13 @@ public final class MsgCrtRscDfnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+          rscProps_ = java.util.Collections.unmodifiableList(rscProps_);
+        }
         if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
           vlmDfns_ = java.util.Collections.unmodifiableList(vlmDfns_);
         }
+        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -241,17 +251,6 @@ public final class MsgCrtRscDfnOuterClass {
       return com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_descriptor;
     }
 
-    @SuppressWarnings({"rawtypes"})
-    protected com.google.protobuf.MapField internalGetMapField(
-        int number) {
-      switch (number) {
-        case 3:
-          return internalGetRscProps();
-        default:
-          throw new RuntimeException(
-              "Invalid map field number: " + number);
-      }
-    }
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
       return com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_fieldAccessorTable
@@ -267,7 +266,17 @@ public final class MsgCrtRscDfnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>string rsc_name = 1;</code>
+     * <code>required string rsc_name = 1;</code>
+     */
+    public boolean hasRscName() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * Resource name
+     * </pre>
+     *
+     * <code>required string rsc_name = 1;</code>
      */
     public java.lang.String getRscName() {
       java.lang.Object ref = rscName_;
@@ -277,7 +286,9 @@ public final class MsgCrtRscDfnOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        rscName_ = s;
+        if (bs.isValidUtf8()) {
+          rscName_ = s;
+        }
         return s;
       }
     }
@@ -286,7 +297,7 @@ public final class MsgCrtRscDfnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>string rsc_name = 1;</code>
+     * <code>required string rsc_name = 1;</code>
      */
     public com.google.protobuf.ByteString
         getRscNameBytes() {
@@ -309,102 +320,75 @@ public final class MsgCrtRscDfnOuterClass {
      * Port
      * </pre>
      *
-     * <code>sint32 rsc_port = 2;</code>
+     * <code>required sint32 rsc_port = 2;</code>
+     */
+    public boolean hasRscPort() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <pre>
+     * Port
+     * </pre>
+     *
+     * <code>required sint32 rsc_port = 2;</code>
      */
     public int getRscPort() {
       return rscPort_;
     }
 
     public static final int RSC_PROPS_FIELD_NUMBER = 3;
-    private static final class RscPropsDefaultEntryHolder {
-      static final com.google.protobuf.MapEntry<
-          java.lang.String, java.lang.String> defaultEntry =
-              com.google.protobuf.MapEntry
-              .<java.lang.String, java.lang.String>newDefaultInstance(
-                  com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_RscPropsEntry_descriptor, 
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "",
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "");
-    }
-    private com.google.protobuf.MapField<
-        java.lang.String, java.lang.String> rscProps_;
-    private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-    internalGetRscProps() {
-      if (rscProps_ == null) {
-        return com.google.protobuf.MapField.emptyMapField(
-            RscPropsDefaultEntryHolder.defaultEntry);
-      }
+    private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> rscProps_;
+    /**
+     * <pre>
+     * Resource properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+     */
+    public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getRscPropsList() {
       return rscProps_;
     }
-
+    /**
+     * <pre>
+     * Resource properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+     */
+    public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getRscPropsOrBuilderList() {
+      return rscProps_;
+    }
+    /**
+     * <pre>
+     * Resource properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+     */
     public int getRscPropsCount() {
-      return internalGetRscProps().getMap().size();
+      return rscProps_.size();
     }
     /**
      * <pre>
      * Resource properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; rsc_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
      */
-
-    public boolean containsRscProps(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      return internalGetRscProps().getMap().containsKey(key);
-    }
-    /**
-     * Use {@link #getRscPropsMap()} instead.
-     */
-    @java.lang.Deprecated
-    public java.util.Map<java.lang.String, java.lang.String> getRscProps() {
-      return getRscPropsMap();
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getRscProps(int index) {
+      return rscProps_.get(index);
     }
     /**
      * <pre>
      * Resource properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; rsc_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
      */
-
-    public java.util.Map<java.lang.String, java.lang.String> getRscPropsMap() {
-      return internalGetRscProps().getMap();
-    }
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; rsc_props = 3;</code>
-     */
-
-    public java.lang.String getRscPropsOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetRscProps().getMap();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
-    }
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; rsc_props = 3;</code>
-     */
-
-    public java.lang.String getRscPropsOrThrow(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetRscProps().getMap();
-      if (!map.containsKey(key)) {
-        throw new java.lang.IllegalArgumentException();
-      }
-      return map.get(key);
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getRscPropsOrBuilder(
+        int index) {
+      return rscProps_.get(index);
     }
 
     public static final int VLM_DFNS_FIELD_NUMBER = 4;
@@ -468,27 +452,45 @@ public final class MsgCrtRscDfnOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasRscName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRscPort()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      for (int i = 0; i < getRscPropsCount(); i++) {
+        if (!getRscProps(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      for (int i = 0; i < getVlmDfnsCount(); i++) {
+        if (!getVlmDfns(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       memoizedIsInitialized = 1;
       return true;
     }
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!getRscNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, rscName_);
       }
-      if (rscPort_ != 0) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         output.writeSInt32(2, rscPort_);
       }
-      com.google.protobuf.GeneratedMessageV3
-        .serializeStringMapTo(
-          output,
-          internalGetRscProps(),
-          RscPropsDefaultEntryHolder.defaultEntry,
-          3);
+      for (int i = 0; i < rscProps_.size(); i++) {
+        output.writeMessage(3, rscProps_.get(i));
+      }
       for (int i = 0; i < vlmDfns_.size(); i++) {
         output.writeMessage(4, vlmDfns_.get(i));
       }
+      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -496,27 +498,22 @@ public final class MsgCrtRscDfnOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (!getRscNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, rscName_);
       }
-      if (rscPort_ != 0) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
           .computeSInt32Size(2, rscPort_);
       }
-      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
-           : internalGetRscProps().getMap().entrySet()) {
-        com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
-        rscProps__ = RscPropsDefaultEntryHolder.defaultEntry.newBuilderForType()
-            .setKey(entry.getKey())
-            .setValue(entry.getValue())
-            .build();
+      for (int i = 0; i < rscProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(3, rscProps__);
+          .computeMessageSize(3, rscProps_.get(i));
       }
       for (int i = 0; i < vlmDfns_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(4, vlmDfns_.get(i));
       }
+      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -533,14 +530,21 @@ public final class MsgCrtRscDfnOuterClass {
       com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn other = (com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn) obj;
 
       boolean result = true;
-      result = result && getRscName()
-          .equals(other.getRscName());
-      result = result && (getRscPort()
-          == other.getRscPort());
-      result = result && internalGetRscProps().equals(
-          other.internalGetRscProps());
+      result = result && (hasRscName() == other.hasRscName());
+      if (hasRscName()) {
+        result = result && getRscName()
+            .equals(other.getRscName());
+      }
+      result = result && (hasRscPort() == other.hasRscPort());
+      if (hasRscPort()) {
+        result = result && (getRscPort()
+            == other.getRscPort());
+      }
+      result = result && getRscPropsList()
+          .equals(other.getRscPropsList());
       result = result && getVlmDfnsList()
           .equals(other.getVlmDfnsList());
+      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -551,13 +555,17 @@ public final class MsgCrtRscDfnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + RSC_NAME_FIELD_NUMBER;
-      hash = (53 * hash) + getRscName().hashCode();
-      hash = (37 * hash) + RSC_PORT_FIELD_NUMBER;
-      hash = (53 * hash) + getRscPort();
-      if (!internalGetRscProps().getMap().isEmpty()) {
+      if (hasRscName()) {
+        hash = (37 * hash) + RSC_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getRscName().hashCode();
+      }
+      if (hasRscPort()) {
+        hash = (37 * hash) + RSC_PORT_FIELD_NUMBER;
+        hash = (53 * hash) + getRscPort();
+      }
+      if (getRscPropsCount() > 0) {
         hash = (37 * hash) + RSC_PROPS_FIELD_NUMBER;
-        hash = (53 * hash) + internalGetRscProps().hashCode();
+        hash = (53 * hash) + getRscPropsList().hashCode();
       }
       if (getVlmDfnsCount() > 0) {
         hash = (37 * hash) + VLM_DFNS_FIELD_NUMBER;
@@ -647,7 +655,7 @@ public final class MsgCrtRscDfnOuterClass {
     }
     /**
      * <pre>
-     * drbdmanageNG - Create resource definition
+     * linstor - Create resource definition
      * </pre>
      *
      * Protobuf type {@code com.linbit.drbdmanage.proto.MsgCrtRscDfn}
@@ -661,28 +669,6 @@ public final class MsgCrtRscDfnOuterClass {
         return com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_descriptor;
       }
 
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMapField(
-          int number) {
-        switch (number) {
-          case 3:
-            return internalGetRscProps();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMutableMapField(
-          int number) {
-        switch (number) {
-          case 3:
-            return internalGetMutableRscProps();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
       protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
         return com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_fieldAccessorTable
@@ -703,16 +689,22 @@ public final class MsgCrtRscDfnOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
+          getRscPropsFieldBuilder();
           getVlmDfnsFieldBuilder();
         }
       }
       public Builder clear() {
         super.clear();
         rscName_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000001);
         rscPort_ = 0;
-
-        internalGetMutableRscProps().clear();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        if (rscPropsBuilder_ == null) {
+          rscProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000004);
+        } else {
+          rscPropsBuilder_.clear();
+        }
         if (vlmDfnsBuilder_ == null) {
           vlmDfns_ = java.util.Collections.emptyList();
           bitField0_ = (bitField0_ & ~0x00000008);
@@ -743,10 +735,23 @@ public final class MsgCrtRscDfnOuterClass {
         com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn result = new com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
         result.rscName_ = rscName_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
         result.rscPort_ = rscPort_;
-        result.rscProps_ = internalGetRscProps();
-        result.rscProps_.makeImmutable();
+        if (rscPropsBuilder_ == null) {
+          if (((bitField0_ & 0x00000004) == 0x00000004)) {
+            rscProps_ = java.util.Collections.unmodifiableList(rscProps_);
+            bitField0_ = (bitField0_ & ~0x00000004);
+          }
+          result.rscProps_ = rscProps_;
+        } else {
+          result.rscProps_ = rscPropsBuilder_.build();
+        }
         if (vlmDfnsBuilder_ == null) {
           if (((bitField0_ & 0x00000008) == 0x00000008)) {
             vlmDfns_ = java.util.Collections.unmodifiableList(vlmDfns_);
@@ -798,15 +803,40 @@ public final class MsgCrtRscDfnOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn other) {
         if (other == com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn.getDefaultInstance()) return this;
-        if (!other.getRscName().isEmpty()) {
+        if (other.hasRscName()) {
+          bitField0_ |= 0x00000001;
           rscName_ = other.rscName_;
           onChanged();
         }
-        if (other.getRscPort() != 0) {
+        if (other.hasRscPort()) {
           setRscPort(other.getRscPort());
         }
-        internalGetMutableRscProps().mergeFrom(
-            other.internalGetRscProps());
+        if (rscPropsBuilder_ == null) {
+          if (!other.rscProps_.isEmpty()) {
+            if (rscProps_.isEmpty()) {
+              rscProps_ = other.rscProps_;
+              bitField0_ = (bitField0_ & ~0x00000004);
+            } else {
+              ensureRscPropsIsMutable();
+              rscProps_.addAll(other.rscProps_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.rscProps_.isEmpty()) {
+            if (rscPropsBuilder_.isEmpty()) {
+              rscPropsBuilder_.dispose();
+              rscPropsBuilder_ = null;
+              rscProps_ = other.rscProps_;
+              bitField0_ = (bitField0_ & ~0x00000004);
+              rscPropsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getRscPropsFieldBuilder() : null;
+            } else {
+              rscPropsBuilder_.addAllMessages(other.rscProps_);
+            }
+          }
+        }
         if (vlmDfnsBuilder_ == null) {
           if (!other.vlmDfns_.isEmpty()) {
             if (vlmDfns_.isEmpty()) {
@@ -833,11 +863,28 @@ public final class MsgCrtRscDfnOuterClass {
             }
           }
         }
+        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
       public final boolean isInitialized() {
+        if (!hasRscName()) {
+          return false;
+        }
+        if (!hasRscPort()) {
+          return false;
+        }
+        for (int i = 0; i < getRscPropsCount(); i++) {
+          if (!getRscProps(i).isInitialized()) {
+            return false;
+          }
+        }
+        for (int i = 0; i < getVlmDfnsCount(); i++) {
+          if (!getVlmDfns(i).isInitialized()) {
+            return false;
+          }
+        }
         return true;
       }
 
@@ -866,7 +913,17 @@ public final class MsgCrtRscDfnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>string rsc_name = 1;</code>
+       * <code>required string rsc_name = 1;</code>
+       */
+      public boolean hasRscName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * Resource name
+       * </pre>
+       *
+       * <code>required string rsc_name = 1;</code>
        */
       public java.lang.String getRscName() {
         java.lang.Object ref = rscName_;
@@ -874,7 +931,9 @@ public final class MsgCrtRscDfnOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          rscName_ = s;
+          if (bs.isValidUtf8()) {
+            rscName_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -885,7 +944,7 @@ public final class MsgCrtRscDfnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>string rsc_name = 1;</code>
+       * <code>required string rsc_name = 1;</code>
        */
       public com.google.protobuf.ByteString
           getRscNameBytes() {
@@ -905,14 +964,14 @@ public final class MsgCrtRscDfnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>string rsc_name = 1;</code>
+       * <code>required string rsc_name = 1;</code>
        */
       public Builder setRscName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000001;
         rscName_ = value;
         onChanged();
         return this;
@@ -922,10 +981,10 @@ public final class MsgCrtRscDfnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>string rsc_name = 1;</code>
+       * <code>required string rsc_name = 1;</code>
        */
       public Builder clearRscName() {
-        
+        bitField0_ = (bitField0_ & ~0x00000001);
         rscName_ = getDefaultInstance().getRscName();
         onChanged();
         return this;
@@ -935,15 +994,14 @@ public final class MsgCrtRscDfnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>string rsc_name = 1;</code>
+       * <code>required string rsc_name = 1;</code>
        */
       public Builder setRscNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000001;
         rscName_ = value;
         onChanged();
         return this;
@@ -955,7 +1013,17 @@ public final class MsgCrtRscDfnOuterClass {
        * Port
        * </pre>
        *
-       * <code>sint32 rsc_port = 2;</code>
+       * <code>required sint32 rsc_port = 2;</code>
+       */
+      public boolean hasRscPort() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <pre>
+       * Port
+       * </pre>
+       *
+       * <code>required sint32 rsc_port = 2;</code>
        */
       public int getRscPort() {
         return rscPort_;
@@ -965,10 +1033,10 @@ public final class MsgCrtRscDfnOuterClass {
        * Port
        * </pre>
        *
-       * <code>sint32 rsc_port = 2;</code>
+       * <code>required sint32 rsc_port = 2;</code>
        */
       public Builder setRscPort(int value) {
-        
+        bitField0_ |= 0x00000002;
         rscPort_ = value;
         onChanged();
         return this;
@@ -978,110 +1046,219 @@ public final class MsgCrtRscDfnOuterClass {
        * Port
        * </pre>
        *
-       * <code>sint32 rsc_port = 2;</code>
+       * <code>required sint32 rsc_port = 2;</code>
        */
       public Builder clearRscPort() {
-        
+        bitField0_ = (bitField0_ & ~0x00000002);
         rscPort_ = 0;
         onChanged();
         return this;
       }
 
-      private com.google.protobuf.MapField<
-          java.lang.String, java.lang.String> rscProps_;
-      private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-      internalGetRscProps() {
-        if (rscProps_ == null) {
-          return com.google.protobuf.MapField.emptyMapField(
-              RscPropsDefaultEntryHolder.defaultEntry);
-        }
-        return rscProps_;
-      }
-      private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-      internalGetMutableRscProps() {
-        onChanged();;
-        if (rscProps_ == null) {
-          rscProps_ = com.google.protobuf.MapField.newMapField(
-              RscPropsDefaultEntryHolder.defaultEntry);
-        }
-        if (!rscProps_.isMutable()) {
-          rscProps_ = rscProps_.copy();
-        }
-        return rscProps_;
+      private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> rscProps_ =
+        java.util.Collections.emptyList();
+      private void ensureRscPropsIsMutable() {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+          rscProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(rscProps_);
+          bitField0_ |= 0x00000004;
+         }
       }
 
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> rscPropsBuilder_;
+
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getRscPropsList() {
+        if (rscPropsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(rscProps_);
+        } else {
+          return rscPropsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
       public int getRscPropsCount() {
-        return internalGetRscProps().getMap().size();
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; rsc_props = 3;</code>
-       */
-
-      public boolean containsRscProps(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        return internalGetRscProps().getMap().containsKey(key);
-      }
-      /**
-       * Use {@link #getRscPropsMap()} instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String> getRscProps() {
-        return getRscPropsMap();
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; rsc_props = 3;</code>
-       */
-
-      public java.util.Map<java.lang.String, java.lang.String> getRscPropsMap() {
-        return internalGetRscProps().getMap();
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; rsc_props = 3;</code>
-       */
-
-      public java.lang.String getRscPropsOrDefault(
-          java.lang.String key,
-          java.lang.String defaultValue) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            internalGetRscProps().getMap();
-        return map.containsKey(key) ? map.get(key) : defaultValue;
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; rsc_props = 3;</code>
-       */
-
-      public java.lang.String getRscPropsOrThrow(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            internalGetRscProps().getMap();
-        if (!map.containsKey(key)) {
-          throw new java.lang.IllegalArgumentException();
+        if (rscPropsBuilder_ == null) {
+          return rscProps_.size();
+        } else {
+          return rscPropsBuilder_.getCount();
         }
-        return map.get(key);
       }
-
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getRscProps(int index) {
+        if (rscPropsBuilder_ == null) {
+          return rscProps_.get(index);
+        } else {
+          return rscPropsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public Builder setRscProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (rscPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRscPropsIsMutable();
+          rscProps_.set(index, value);
+          onChanged();
+        } else {
+          rscPropsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public Builder setRscProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (rscPropsBuilder_ == null) {
+          ensureRscPropsIsMutable();
+          rscProps_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          rscPropsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public Builder addRscProps(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (rscPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRscPropsIsMutable();
+          rscProps_.add(value);
+          onChanged();
+        } else {
+          rscPropsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public Builder addRscProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (rscPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRscPropsIsMutable();
+          rscProps_.add(index, value);
+          onChanged();
+        } else {
+          rscPropsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public Builder addRscProps(
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (rscPropsBuilder_ == null) {
+          ensureRscPropsIsMutable();
+          rscProps_.add(builderForValue.build());
+          onChanged();
+        } else {
+          rscPropsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public Builder addRscProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (rscPropsBuilder_ == null) {
+          ensureRscPropsIsMutable();
+          rscProps_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          rscPropsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public Builder addAllRscProps(
+          java.lang.Iterable<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
+        if (rscPropsBuilder_ == null) {
+          ensureRscPropsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, rscProps_);
+          onChanged();
+        } else {
+          rscPropsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
       public Builder clearRscProps() {
-        internalGetMutableRscProps().getMutableMap()
-            .clear();
+        if (rscPropsBuilder_ == null) {
+          rscProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000004);
+          onChanged();
+        } else {
+          rscPropsBuilder_.clear();
+        }
         return this;
       }
       /**
@@ -1089,38 +1266,16 @@ public final class MsgCrtRscDfnOuterClass {
        * Resource properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; rsc_props = 3;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
        */
-
-      public Builder removeRscProps(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        internalGetMutableRscProps().getMutableMap()
-            .remove(key);
-        return this;
-      }
-      /**
-       * Use alternate mutation accessors instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String>
-      getMutableRscProps() {
-        return internalGetMutableRscProps().getMutableMap();
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; rsc_props = 3;</code>
-       */
-      public Builder putRscProps(
-          java.lang.String key,
-          java.lang.String value) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        if (value == null) { throw new java.lang.NullPointerException(); }
-        internalGetMutableRscProps().getMutableMap()
-            .put(key, value);
+      public Builder removeRscProps(int index) {
+        if (rscPropsBuilder_ == null) {
+          ensureRscPropsIsMutable();
+          rscProps_.remove(index);
+          onChanged();
+        } else {
+          rscPropsBuilder_.remove(index);
+        }
         return this;
       }
       /**
@@ -1128,14 +1283,88 @@ public final class MsgCrtRscDfnOuterClass {
        * Resource properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; rsc_props = 3;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
        */
-
-      public Builder putAllRscProps(
-          java.util.Map<java.lang.String, java.lang.String> values) {
-        internalGetMutableRscProps().getMutableMap()
-            .putAll(values);
-        return this;
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getRscPropsBuilder(
+          int index) {
+        return getRscPropsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getRscPropsOrBuilder(
+          int index) {
+        if (rscPropsBuilder_ == null) {
+          return rscProps_.get(index);  } else {
+          return rscPropsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+           getRscPropsOrBuilderList() {
+        if (rscPropsBuilder_ != null) {
+          return rscPropsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(rscProps_);
+        }
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addRscPropsBuilder() {
+        return getRscPropsFieldBuilder().addBuilder(
+            com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addRscPropsBuilder(
+          int index) {
+        return getRscPropsFieldBuilder().addBuilder(
+            index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Resource properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_props = 3;</code>
+       */
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
+           getRscPropsBuilderList() {
+        return getRscPropsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+          getRscPropsFieldBuilder() {
+        if (rscPropsBuilder_ == null) {
+          rscPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
+                  rscProps_,
+                  ((bitField0_ & 0x00000004) == 0x00000004),
+                  getParentForChildren(),
+                  isClean());
+          rscProps_ = null;
+        }
+        return rscPropsBuilder_;
       }
 
       private java.util.List<com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn> vlmDfns_ =
@@ -1451,12 +1680,12 @@ public final class MsgCrtRscDfnOuterClass {
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.setUnknownFields(unknownFields);
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.mergeUnknownFields(unknownFields);
       }
 
 
@@ -1473,7 +1702,7 @@ public final class MsgCrtRscDfnOuterClass {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<MsgCrtRscDfn>
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<MsgCrtRscDfn>
         PARSER = new com.google.protobuf.AbstractParser<MsgCrtRscDfn>() {
       public MsgCrtRscDfn parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
@@ -1503,11 +1732,6 @@ public final class MsgCrtRscDfnOuterClass {
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_RscPropsEntry_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_RscPropsEntry_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -1518,13 +1742,12 @@ public final class MsgCrtRscDfnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\022MsgCrtRscDfn.proto\022\033com.linbit.drbdman" +
-      "age.proto\032\022MsgCrtVlmDfn.proto\"\346\001\n\014MsgCrt" +
-      "RscDfn\022\020\n\010rsc_name\030\001 \001(\t\022\020\n\010rsc_port\030\002 \001" +
-      "(\021\022J\n\trsc_props\030\003 \003(\01327.com.linbit.drbdm" +
-      "anage.proto.MsgCrtRscDfn.RscPropsEntry\0225" +
-      "\n\010vlm_dfns\030\004 \003(\0132#.com.linbit.drbdmanage" +
-      ".proto.VlmDfn\032/\n\rRscPropsEntry\022\013\n\003key\030\001 " +
-      "\001(\t\022\r\n\005value\030\002 \001(\t:\0028\001P\000b\006proto3"
+      "age.proto\032\025LinStorMapEntry.proto\032\022MsgCrt" +
+      "VlmDfn.proto\"\252\001\n\014MsgCrtRscDfn\022\020\n\010rsc_nam" +
+      "e\030\001 \002(\t\022\020\n\010rsc_port\030\002 \002(\021\022?\n\trsc_props\030\003" +
+      " \003(\0132,.com.linbit.drbdmanage.proto.LinSt" +
+      "orMapEntry\0225\n\010vlm_dfns\030\004 \003(\0132#.com.linbi" +
+      "t.drbdmanage.proto.VlmDfnP\000P\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1537,6 +1760,7 @@ public final class MsgCrtRscDfnOuterClass {
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor(),
           com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_descriptor =
@@ -1545,12 +1769,7 @@ public final class MsgCrtRscDfnOuterClass {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_descriptor,
         new java.lang.String[] { "RscName", "RscPort", "RscProps", "VlmDfns", });
-    internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_RscPropsEntry_descriptor =
-      internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_descriptor.getNestedTypes().get(0);
-    internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_RscPropsEntry_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_com_linbit_drbdmanage_proto_MsgCrtRscDfn_RscPropsEntry_descriptor,
-        new java.lang.String[] { "Key", "Value", });
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.getDescriptor();
   }
 

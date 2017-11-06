@@ -52,7 +52,7 @@ public class CreateVolumeConnection extends BaseApiCall
             msgCreateVlmConn.getNodeName2(),
             msgCreateVlmConn.getResourceName(),
             msgCreateVlmConn.getVolumeNr(),
-            msgCreateVlmConn.getVolumeConnPropsMap()
+            asMap(msgCreateVlmConn.getVolumeConnPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

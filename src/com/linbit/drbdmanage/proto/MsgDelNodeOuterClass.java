@@ -23,7 +23,15 @@ public final class MsgDelNodeOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
+     */
+    boolean hasNodeName();
+    /**
+     * <pre>
+     * Node name
+     * </pre>
+     *
+     * <code>required string node_name = 1;</code>
      */
     java.lang.String getNodeName();
     /**
@@ -31,14 +39,14 @@ public final class MsgDelNodeOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
      */
     com.google.protobuf.ByteString
         getNodeNameBytes();
   }
   /**
    * <pre>
-   * drbdmanageNG - Delete node
+   * linstor - Delete node
    * </pre>
    *
    * Protobuf type {@code com.linbit.drbdmanage.proto.MsgDelNode}
@@ -58,7 +66,7 @@ public final class MsgDelNodeOuterClass {
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+      return this.unknownFields;
     }
     private MsgDelNode(
         com.google.protobuf.CodedInputStream input,
@@ -66,6 +74,8 @@ public final class MsgDelNodeOuterClass {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -75,15 +85,16 @@ public final class MsgDelNodeOuterClass {
               done = true;
               break;
             default: {
-              if (!input.skipField(tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
             }
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              nodeName_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000001;
+              nodeName_ = bs;
               break;
             }
           }
@@ -94,6 +105,7 @@ public final class MsgDelNodeOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -109,6 +121,7 @@ public final class MsgDelNodeOuterClass {
               com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode.class, com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode.Builder.class);
     }
 
+    private int bitField0_;
     public static final int NODE_NAME_FIELD_NUMBER = 1;
     private volatile java.lang.Object nodeName_;
     /**
@@ -116,7 +129,17 @@ public final class MsgDelNodeOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
+     */
+    public boolean hasNodeName() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * Node name
+     * </pre>
+     *
+     * <code>required string node_name = 1;</code>
      */
     public java.lang.String getNodeName() {
       java.lang.Object ref = nodeName_;
@@ -126,7 +149,9 @@ public final class MsgDelNodeOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        nodeName_ = s;
+        if (bs.isValidUtf8()) {
+          nodeName_ = s;
+        }
         return s;
       }
     }
@@ -135,7 +160,7 @@ public final class MsgDelNodeOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
      */
     public com.google.protobuf.ByteString
         getNodeNameBytes() {
@@ -157,15 +182,20 @@ public final class MsgDelNodeOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasNodeName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!getNodeNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeName_);
       }
+      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -173,9 +203,10 @@ public final class MsgDelNodeOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (!getNodeNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeName_);
       }
+      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -192,8 +223,12 @@ public final class MsgDelNodeOuterClass {
       com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode other = (com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode) obj;
 
       boolean result = true;
-      result = result && getNodeName()
-          .equals(other.getNodeName());
+      result = result && (hasNodeName() == other.hasNodeName());
+      if (hasNodeName()) {
+        result = result && getNodeName()
+            .equals(other.getNodeName());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -204,8 +239,10 @@ public final class MsgDelNodeOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
-      hash = (53 * hash) + getNodeName().hashCode();
+      if (hasNodeName()) {
+        hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getNodeName().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -290,7 +327,7 @@ public final class MsgDelNodeOuterClass {
     }
     /**
      * <pre>
-     * drbdmanageNG - Delete node
+     * linstor - Delete node
      * </pre>
      *
      * Protobuf type {@code com.linbit.drbdmanage.proto.MsgDelNode}
@@ -329,7 +366,7 @@ public final class MsgDelNodeOuterClass {
       public Builder clear() {
         super.clear();
         nodeName_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
 
@@ -352,7 +389,13 @@ public final class MsgDelNodeOuterClass {
 
       public com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode buildPartial() {
         com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode result = new com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
         result.nodeName_ = nodeName_;
+        result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
@@ -394,15 +437,20 @@ public final class MsgDelNodeOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode other) {
         if (other == com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode.getDefaultInstance()) return this;
-        if (!other.getNodeName().isEmpty()) {
+        if (other.hasNodeName()) {
+          bitField0_ |= 0x00000001;
           nodeName_ = other.nodeName_;
           onChanged();
         }
+        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
       public final boolean isInitialized() {
+        if (!hasNodeName()) {
+          return false;
+        }
         return true;
       }
 
@@ -423,6 +471,7 @@ public final class MsgDelNodeOuterClass {
         }
         return this;
       }
+      private int bitField0_;
 
       private java.lang.Object nodeName_ = "";
       /**
@@ -430,7 +479,17 @@ public final class MsgDelNodeOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
+       */
+      public boolean hasNodeName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * Node name
+       * </pre>
+       *
+       * <code>required string node_name = 1;</code>
        */
       public java.lang.String getNodeName() {
         java.lang.Object ref = nodeName_;
@@ -438,7 +497,9 @@ public final class MsgDelNodeOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          nodeName_ = s;
+          if (bs.isValidUtf8()) {
+            nodeName_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -449,7 +510,7 @@ public final class MsgDelNodeOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public com.google.protobuf.ByteString
           getNodeNameBytes() {
@@ -469,14 +530,14 @@ public final class MsgDelNodeOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public Builder setNodeName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000001;
         nodeName_ = value;
         onChanged();
         return this;
@@ -486,10 +547,10 @@ public final class MsgDelNodeOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public Builder clearNodeName() {
-        
+        bitField0_ = (bitField0_ & ~0x00000001);
         nodeName_ = getDefaultInstance().getNodeName();
         onChanged();
         return this;
@@ -499,27 +560,26 @@ public final class MsgDelNodeOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public Builder setNodeNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000001;
         nodeName_ = value;
         onChanged();
         return this;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.setUnknownFields(unknownFields);
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.mergeUnknownFields(unknownFields);
       }
 
 
@@ -536,7 +596,7 @@ public final class MsgDelNodeOuterClass {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<MsgDelNode>
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<MsgDelNode>
         PARSER = new com.google.protobuf.AbstractParser<MsgDelNode>() {
       public MsgDelNode parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
@@ -576,8 +636,7 @@ public final class MsgDelNodeOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\020MsgDelNode.proto\022\033com.linbit.drbdmanag" +
-      "e.proto\"\037\n\nMsgDelNode\022\021\n\tnode_name\030\001 \001(\t" +
-      "b\006proto3"
+      "e.proto\"\037\n\nMsgDelNode\022\021\n\tnode_name\030\001 \002(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

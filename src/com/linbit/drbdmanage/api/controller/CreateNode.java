@@ -49,7 +49,7 @@ public class CreateNode extends BaseApiCall
             client,
             msgCreateNode.getNodeName(),
             msgCreateNode.getNodeType(),
-            msgCreateNode.getNodePropsMap()
+            asMap(msgCreateNode.getNodePropsList())
         );
         answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

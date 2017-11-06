@@ -62,8 +62,7 @@ public class CreateResource extends BaseApiCall
             client,
             msgCrtRsc.getNodeName(),
             msgCrtRsc.getRscName(),
-            msgCrtRsc.getNodeId(),
-            msgCrtRsc.getRscPropsMap(),
+            asMap(msgCrtRsc.getRscPropsList()),
             vlmApiDataList
         );
 

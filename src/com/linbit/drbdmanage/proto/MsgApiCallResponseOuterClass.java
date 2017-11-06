@@ -23,7 +23,15 @@ public final class MsgApiCallResponseOuterClass {
      * return code (see ApiCallRcConstants)
      * </pre>
      *
-     * <code>sint64 ret_code = 1;</code>
+     * <code>required int64 ret_code = 1;</code>
+     */
+    boolean hasRetCode();
+    /**
+     * <pre>
+     * return code (see ApiCallRcConstants)
+     * </pre>
+     *
+     * <code>required int64 ret_code = 1;</code>
      */
     long getRetCode();
 
@@ -32,7 +40,24 @@ public final class MsgApiCallResponseOuterClass {
      * object references
      * </pre>
      *
-     * <code>map&lt;string, string&gt; obj_refs = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+     */
+    java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
+        getObjRefsList();
+    /**
+     * <pre>
+     * object references
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+     */
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getObjRefs(int index);
+    /**
+     * <pre>
+     * object references
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
      */
     int getObjRefsCount();
     /**
@@ -40,53 +65,34 @@ public final class MsgApiCallResponseOuterClass {
      * object references
      * </pre>
      *
-     * <code>map&lt;string, string&gt; obj_refs = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
      */
-    boolean containsObjRefs(
-        java.lang.String key);
-    /**
-     * Use {@link #getObjRefsMap()} instead.
-     */
-    @java.lang.Deprecated
-    java.util.Map<java.lang.String, java.lang.String>
-    getObjRefs();
+    java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getObjRefsOrBuilderList();
     /**
      * <pre>
      * object references
      * </pre>
      *
-     * <code>map&lt;string, string&gt; obj_refs = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
      */
-    java.util.Map<java.lang.String, java.lang.String>
-    getObjRefsMap();
-    /**
-     * <pre>
-     * object references
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; obj_refs = 2;</code>
-     */
-
-    java.lang.String getObjRefsOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue);
-    /**
-     * <pre>
-     * object references
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; obj_refs = 2;</code>
-     */
-
-    java.lang.String getObjRefsOrThrow(
-        java.lang.String key);
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getObjRefsOrBuilder(
+        int index);
 
     /**
      * <pre>
      * message format
      * </pre>
      *
-     * <code>string message_format = 3;</code>
+     * <code>required string message_format = 3;</code>
+     */
+    boolean hasMessageFormat();
+    /**
+     * <pre>
+     * message format
+     * </pre>
+     *
+     * <code>required string message_format = 3;</code>
      */
     java.lang.String getMessageFormat();
     /**
@@ -94,7 +100,7 @@ public final class MsgApiCallResponseOuterClass {
      * message format
      * </pre>
      *
-     * <code>string message_format = 3;</code>
+     * <code>required string message_format = 3;</code>
      */
     com.google.protobuf.ByteString
         getMessageFormatBytes();
@@ -104,7 +110,15 @@ public final class MsgApiCallResponseOuterClass {
      * cause format
      * </pre>
      *
-     * <code>string cause_format = 4;</code>
+     * <code>required string cause_format = 4;</code>
+     */
+    boolean hasCauseFormat();
+    /**
+     * <pre>
+     * cause format
+     * </pre>
+     *
+     * <code>required string cause_format = 4;</code>
      */
     java.lang.String getCauseFormat();
     /**
@@ -112,7 +126,7 @@ public final class MsgApiCallResponseOuterClass {
      * cause format
      * </pre>
      *
-     * <code>string cause_format = 4;</code>
+     * <code>required string cause_format = 4;</code>
      */
     com.google.protobuf.ByteString
         getCauseFormatBytes();
@@ -122,7 +136,15 @@ public final class MsgApiCallResponseOuterClass {
      * correction format
      * </pre>
      *
-     * <code>string correction_format = 5;</code>
+     * <code>required string correction_format = 5;</code>
+     */
+    boolean hasCorrectionFormat();
+    /**
+     * <pre>
+     * correction format
+     * </pre>
+     *
+     * <code>required string correction_format = 5;</code>
      */
     java.lang.String getCorrectionFormat();
     /**
@@ -130,7 +152,7 @@ public final class MsgApiCallResponseOuterClass {
      * correction format
      * </pre>
      *
-     * <code>string correction_format = 5;</code>
+     * <code>required string correction_format = 5;</code>
      */
     com.google.protobuf.ByteString
         getCorrectionFormatBytes();
@@ -140,7 +162,15 @@ public final class MsgApiCallResponseOuterClass {
      * details format
      * </pre>
      *
-     * <code>string details_format = 6;</code>
+     * <code>required string details_format = 6;</code>
+     */
+    boolean hasDetailsFormat();
+    /**
+     * <pre>
+     * details format
+     * </pre>
+     *
+     * <code>required string details_format = 6;</code>
      */
     java.lang.String getDetailsFormat();
     /**
@@ -148,7 +178,7 @@ public final class MsgApiCallResponseOuterClass {
      * details format
      * </pre>
      *
-     * <code>string details_format = 6;</code>
+     * <code>required string details_format = 6;</code>
      */
     com.google.protobuf.ByteString
         getDetailsFormatBytes();
@@ -158,7 +188,24 @@ public final class MsgApiCallResponseOuterClass {
      * referenced variables
      * </pre>
      *
-     * <code>map&lt;string, string&gt; variables = 7;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+     */
+    java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
+        getVariablesList();
+    /**
+     * <pre>
+     * referenced variables
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+     */
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVariables(int index);
+    /**
+     * <pre>
+     * referenced variables
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
      */
     int getVariablesCount();
     /**
@@ -166,50 +213,23 @@ public final class MsgApiCallResponseOuterClass {
      * referenced variables
      * </pre>
      *
-     * <code>map&lt;string, string&gt; variables = 7;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
      */
-    boolean containsVariables(
-        java.lang.String key);
-    /**
-     * Use {@link #getVariablesMap()} instead.
-     */
-    @java.lang.Deprecated
-    java.util.Map<java.lang.String, java.lang.String>
-    getVariables();
+    java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getVariablesOrBuilderList();
     /**
      * <pre>
      * referenced variables
      * </pre>
      *
-     * <code>map&lt;string, string&gt; variables = 7;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
      */
-    java.util.Map<java.lang.String, java.lang.String>
-    getVariablesMap();
-    /**
-     * <pre>
-     * referenced variables
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; variables = 7;</code>
-     */
-
-    java.lang.String getVariablesOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue);
-    /**
-     * <pre>
-     * referenced variables
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; variables = 7;</code>
-     */
-
-    java.lang.String getVariablesOrThrow(
-        java.lang.String key);
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVariablesOrBuilder(
+        int index);
   }
   /**
    * <pre>
-   * drbdmanageNG - ApiCallResponse
+   * linstor - ApiCallResponse
    * </pre>
    *
    * Protobuf type {@code com.linbit.drbdmanage.proto.MsgApiCallResponse}
@@ -224,16 +244,18 @@ public final class MsgApiCallResponseOuterClass {
     }
     private MsgApiCallResponse() {
       retCode_ = 0L;
+      objRefs_ = java.util.Collections.emptyList();
       messageFormat_ = "";
       causeFormat_ = "";
       correctionFormat_ = "";
       detailsFormat_ = "";
+      variables_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+      return this.unknownFields;
     }
     private MsgApiCallResponse(
         com.google.protobuf.CodedInputStream input,
@@ -241,6 +263,8 @@ public final class MsgApiCallResponseOuterClass {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -250,64 +274,57 @@ public final class MsgApiCallResponseOuterClass {
               done = true;
               break;
             default: {
-              if (!input.skipField(tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
             }
             case 8: {
-
-              retCode_ = input.readSInt64();
+              bitField0_ |= 0x00000001;
+              retCode_ = input.readInt64();
               break;
             }
             case 18: {
               if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                objRefs_ = com.google.protobuf.MapField.newMapField(
-                    ObjRefsDefaultEntryHolder.defaultEntry);
+                objRefs_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
                 mutable_bitField0_ |= 0x00000002;
               }
-              com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
-              objRefs__ = input.readMessage(
-                  ObjRefsDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
-              objRefs_.getMutableMap().put(
-                  objRefs__.getKey(), objRefs__.getValue());
+              objRefs_.add(
+                  input.readMessage(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
               break;
             }
             case 26: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              messageFormat_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              messageFormat_ = bs;
               break;
             }
             case 34: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              causeFormat_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000004;
+              causeFormat_ = bs;
               break;
             }
             case 42: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              correctionFormat_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000008;
+              correctionFormat_ = bs;
               break;
             }
             case 50: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              detailsFormat_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000010;
+              detailsFormat_ = bs;
               break;
             }
             case 58: {
               if (!((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
-                variables_ = com.google.protobuf.MapField.newMapField(
-                    VariablesDefaultEntryHolder.defaultEntry);
+                variables_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
                 mutable_bitField0_ |= 0x00000040;
               }
-              com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
-              variables__ = input.readMessage(
-                  VariablesDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
-              variables_.getMutableMap().put(
-                  variables__.getKey(), variables__.getValue());
+              variables_.add(
+                  input.readMessage(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
               break;
             }
           }
@@ -318,6 +335,13 @@ public final class MsgApiCallResponseOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+          objRefs_ = java.util.Collections.unmodifiableList(objRefs_);
+        }
+        if (((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
+          variables_ = java.util.Collections.unmodifiableList(variables_);
+        }
+        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -326,19 +350,6 @@ public final class MsgApiCallResponseOuterClass {
       return com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_descriptor;
     }
 
-    @SuppressWarnings({"rawtypes"})
-    protected com.google.protobuf.MapField internalGetMapField(
-        int number) {
-      switch (number) {
-        case 2:
-          return internalGetObjRefs();
-        case 7:
-          return internalGetVariables();
-        default:
-          throw new RuntimeException(
-              "Invalid map field number: " + number);
-      }
-    }
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
       return com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_fieldAccessorTable
@@ -354,102 +365,75 @@ public final class MsgApiCallResponseOuterClass {
      * return code (see ApiCallRcConstants)
      * </pre>
      *
-     * <code>sint64 ret_code = 1;</code>
+     * <code>required int64 ret_code = 1;</code>
+     */
+    public boolean hasRetCode() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * return code (see ApiCallRcConstants)
+     * </pre>
+     *
+     * <code>required int64 ret_code = 1;</code>
      */
     public long getRetCode() {
       return retCode_;
     }
 
     public static final int OBJ_REFS_FIELD_NUMBER = 2;
-    private static final class ObjRefsDefaultEntryHolder {
-      static final com.google.protobuf.MapEntry<
-          java.lang.String, java.lang.String> defaultEntry =
-              com.google.protobuf.MapEntry
-              .<java.lang.String, java.lang.String>newDefaultInstance(
-                  com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_ObjRefsEntry_descriptor, 
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "",
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "");
-    }
-    private com.google.protobuf.MapField<
-        java.lang.String, java.lang.String> objRefs_;
-    private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-    internalGetObjRefs() {
-      if (objRefs_ == null) {
-        return com.google.protobuf.MapField.emptyMapField(
-            ObjRefsDefaultEntryHolder.defaultEntry);
-      }
+    private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> objRefs_;
+    /**
+     * <pre>
+     * object references
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+     */
+    public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getObjRefsList() {
       return objRefs_;
     }
-
+    /**
+     * <pre>
+     * object references
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+     */
+    public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getObjRefsOrBuilderList() {
+      return objRefs_;
+    }
+    /**
+     * <pre>
+     * object references
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+     */
     public int getObjRefsCount() {
-      return internalGetObjRefs().getMap().size();
+      return objRefs_.size();
     }
     /**
      * <pre>
      * object references
      * </pre>
      *
-     * <code>map&lt;string, string&gt; obj_refs = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
      */
-
-    public boolean containsObjRefs(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      return internalGetObjRefs().getMap().containsKey(key);
-    }
-    /**
-     * Use {@link #getObjRefsMap()} instead.
-     */
-    @java.lang.Deprecated
-    public java.util.Map<java.lang.String, java.lang.String> getObjRefs() {
-      return getObjRefsMap();
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getObjRefs(int index) {
+      return objRefs_.get(index);
     }
     /**
      * <pre>
      * object references
      * </pre>
      *
-     * <code>map&lt;string, string&gt; obj_refs = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
      */
-
-    public java.util.Map<java.lang.String, java.lang.String> getObjRefsMap() {
-      return internalGetObjRefs().getMap();
-    }
-    /**
-     * <pre>
-     * object references
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; obj_refs = 2;</code>
-     */
-
-    public java.lang.String getObjRefsOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetObjRefs().getMap();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
-    }
-    /**
-     * <pre>
-     * object references
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; obj_refs = 2;</code>
-     */
-
-    public java.lang.String getObjRefsOrThrow(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetObjRefs().getMap();
-      if (!map.containsKey(key)) {
-        throw new java.lang.IllegalArgumentException();
-      }
-      return map.get(key);
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getObjRefsOrBuilder(
+        int index) {
+      return objRefs_.get(index);
     }
 
     public static final int MESSAGE_FORMAT_FIELD_NUMBER = 3;
@@ -459,7 +443,17 @@ public final class MsgApiCallResponseOuterClass {
      * message format
      * </pre>
      *
-     * <code>string message_format = 3;</code>
+     * <code>required string message_format = 3;</code>
+     */
+    public boolean hasMessageFormat() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <pre>
+     * message format
+     * </pre>
+     *
+     * <code>required string message_format = 3;</code>
      */
     public java.lang.String getMessageFormat() {
       java.lang.Object ref = messageFormat_;
@@ -469,7 +463,9 @@ public final class MsgApiCallResponseOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        messageFormat_ = s;
+        if (bs.isValidUtf8()) {
+          messageFormat_ = s;
+        }
         return s;
       }
     }
@@ -478,7 +474,7 @@ public final class MsgApiCallResponseOuterClass {
      * message format
      * </pre>
      *
-     * <code>string message_format = 3;</code>
+     * <code>required string message_format = 3;</code>
      */
     public com.google.protobuf.ByteString
         getMessageFormatBytes() {
@@ -501,7 +497,17 @@ public final class MsgApiCallResponseOuterClass {
      * cause format
      * </pre>
      *
-     * <code>string cause_format = 4;</code>
+     * <code>required string cause_format = 4;</code>
+     */
+    public boolean hasCauseFormat() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <pre>
+     * cause format
+     * </pre>
+     *
+     * <code>required string cause_format = 4;</code>
      */
     public java.lang.String getCauseFormat() {
       java.lang.Object ref = causeFormat_;
@@ -511,7 +517,9 @@ public final class MsgApiCallResponseOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        causeFormat_ = s;
+        if (bs.isValidUtf8()) {
+          causeFormat_ = s;
+        }
         return s;
       }
     }
@@ -520,7 +528,7 @@ public final class MsgApiCallResponseOuterClass {
      * cause format
      * </pre>
      *
-     * <code>string cause_format = 4;</code>
+     * <code>required string cause_format = 4;</code>
      */
     public com.google.protobuf.ByteString
         getCauseFormatBytes() {
@@ -543,7 +551,17 @@ public final class MsgApiCallResponseOuterClass {
      * correction format
      * </pre>
      *
-     * <code>string correction_format = 5;</code>
+     * <code>required string correction_format = 5;</code>
+     */
+    public boolean hasCorrectionFormat() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <pre>
+     * correction format
+     * </pre>
+     *
+     * <code>required string correction_format = 5;</code>
      */
     public java.lang.String getCorrectionFormat() {
       java.lang.Object ref = correctionFormat_;
@@ -553,7 +571,9 @@ public final class MsgApiCallResponseOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        correctionFormat_ = s;
+        if (bs.isValidUtf8()) {
+          correctionFormat_ = s;
+        }
         return s;
       }
     }
@@ -562,7 +582,7 @@ public final class MsgApiCallResponseOuterClass {
      * correction format
      * </pre>
      *
-     * <code>string correction_format = 5;</code>
+     * <code>required string correction_format = 5;</code>
      */
     public com.google.protobuf.ByteString
         getCorrectionFormatBytes() {
@@ -585,7 +605,17 @@ public final class MsgApiCallResponseOuterClass {
      * details format
      * </pre>
      *
-     * <code>string details_format = 6;</code>
+     * <code>required string details_format = 6;</code>
+     */
+    public boolean hasDetailsFormat() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <pre>
+     * details format
+     * </pre>
+     *
+     * <code>required string details_format = 6;</code>
      */
     public java.lang.String getDetailsFormat() {
       java.lang.Object ref = detailsFormat_;
@@ -595,7 +625,9 @@ public final class MsgApiCallResponseOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        detailsFormat_ = s;
+        if (bs.isValidUtf8()) {
+          detailsFormat_ = s;
+        }
         return s;
       }
     }
@@ -604,7 +636,7 @@ public final class MsgApiCallResponseOuterClass {
      * details format
      * </pre>
      *
-     * <code>string details_format = 6;</code>
+     * <code>required string details_format = 6;</code>
      */
     public com.google.protobuf.ByteString
         getDetailsFormatBytes() {
@@ -621,95 +653,58 @@ public final class MsgApiCallResponseOuterClass {
     }
 
     public static final int VARIABLES_FIELD_NUMBER = 7;
-    private static final class VariablesDefaultEntryHolder {
-      static final com.google.protobuf.MapEntry<
-          java.lang.String, java.lang.String> defaultEntry =
-              com.google.protobuf.MapEntry
-              .<java.lang.String, java.lang.String>newDefaultInstance(
-                  com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_VariablesEntry_descriptor, 
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "",
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "");
-    }
-    private com.google.protobuf.MapField<
-        java.lang.String, java.lang.String> variables_;
-    private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-    internalGetVariables() {
-      if (variables_ == null) {
-        return com.google.protobuf.MapField.emptyMapField(
-            VariablesDefaultEntryHolder.defaultEntry);
-      }
+    private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> variables_;
+    /**
+     * <pre>
+     * referenced variables
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+     */
+    public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getVariablesList() {
       return variables_;
     }
-
+    /**
+     * <pre>
+     * referenced variables
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+     */
+    public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getVariablesOrBuilderList() {
+      return variables_;
+    }
+    /**
+     * <pre>
+     * referenced variables
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+     */
     public int getVariablesCount() {
-      return internalGetVariables().getMap().size();
+      return variables_.size();
     }
     /**
      * <pre>
      * referenced variables
      * </pre>
      *
-     * <code>map&lt;string, string&gt; variables = 7;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
      */
-
-    public boolean containsVariables(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      return internalGetVariables().getMap().containsKey(key);
-    }
-    /**
-     * Use {@link #getVariablesMap()} instead.
-     */
-    @java.lang.Deprecated
-    public java.util.Map<java.lang.String, java.lang.String> getVariables() {
-      return getVariablesMap();
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVariables(int index) {
+      return variables_.get(index);
     }
     /**
      * <pre>
      * referenced variables
      * </pre>
      *
-     * <code>map&lt;string, string&gt; variables = 7;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
      */
-
-    public java.util.Map<java.lang.String, java.lang.String> getVariablesMap() {
-      return internalGetVariables().getMap();
-    }
-    /**
-     * <pre>
-     * referenced variables
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; variables = 7;</code>
-     */
-
-    public java.lang.String getVariablesOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetVariables().getMap();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
-    }
-    /**
-     * <pre>
-     * referenced variables
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; variables = 7;</code>
-     */
-
-    public java.lang.String getVariablesOrThrow(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetVariables().getMap();
-      if (!map.containsKey(key)) {
-        throw new java.lang.IllegalArgumentException();
-      }
-      return map.get(key);
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVariablesOrBuilder(
+        int index) {
+      return variables_.get(index);
     }
 
     private byte memoizedIsInitialized = -1;
@@ -718,39 +713,66 @@ public final class MsgApiCallResponseOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasRetCode()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasMessageFormat()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasCauseFormat()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasCorrectionFormat()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasDetailsFormat()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      for (int i = 0; i < getObjRefsCount(); i++) {
+        if (!getObjRefs(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      for (int i = 0; i < getVariablesCount(); i++) {
+        if (!getVariables(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       memoizedIsInitialized = 1;
       return true;
     }
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (retCode_ != 0L) {
-        output.writeSInt64(1, retCode_);
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeInt64(1, retCode_);
       }
-      com.google.protobuf.GeneratedMessageV3
-        .serializeStringMapTo(
-          output,
-          internalGetObjRefs(),
-          ObjRefsDefaultEntryHolder.defaultEntry,
-          2);
-      if (!getMessageFormatBytes().isEmpty()) {
+      for (int i = 0; i < objRefs_.size(); i++) {
+        output.writeMessage(2, objRefs_.get(i));
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, messageFormat_);
       }
-      if (!getCauseFormatBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 4, causeFormat_);
       }
-      if (!getCorrectionFormatBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 5, correctionFormat_);
       }
-      if (!getDetailsFormatBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 6, detailsFormat_);
       }
-      com.google.protobuf.GeneratedMessageV3
-        .serializeStringMapTo(
-          output,
-          internalGetVariables(),
-          VariablesDefaultEntryHolder.defaultEntry,
-          7);
+      for (int i = 0; i < variables_.size(); i++) {
+        output.writeMessage(7, variables_.get(i));
+      }
+      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -758,42 +780,31 @@ public final class MsgApiCallResponseOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (retCode_ != 0L) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(1, retCode_);
+          .computeInt64Size(1, retCode_);
       }
-      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
-           : internalGetObjRefs().getMap().entrySet()) {
-        com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
-        objRefs__ = ObjRefsDefaultEntryHolder.defaultEntry.newBuilderForType()
-            .setKey(entry.getKey())
-            .setValue(entry.getValue())
-            .build();
+      for (int i = 0; i < objRefs_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(2, objRefs__);
+          .computeMessageSize(2, objRefs_.get(i));
       }
-      if (!getMessageFormatBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, messageFormat_);
       }
-      if (!getCauseFormatBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, causeFormat_);
       }
-      if (!getCorrectionFormatBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, correctionFormat_);
       }
-      if (!getDetailsFormatBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, detailsFormat_);
       }
-      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
-           : internalGetVariables().getMap().entrySet()) {
-        com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
-        variables__ = VariablesDefaultEntryHolder.defaultEntry.newBuilderForType()
-            .setKey(entry.getKey())
-            .setValue(entry.getValue())
-            .build();
+      for (int i = 0; i < variables_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(7, variables__);
+          .computeMessageSize(7, variables_.get(i));
       }
+      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -810,20 +821,36 @@ public final class MsgApiCallResponseOuterClass {
       com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse other = (com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse) obj;
 
       boolean result = true;
-      result = result && (getRetCode()
-          == other.getRetCode());
-      result = result && internalGetObjRefs().equals(
-          other.internalGetObjRefs());
-      result = result && getMessageFormat()
-          .equals(other.getMessageFormat());
-      result = result && getCauseFormat()
-          .equals(other.getCauseFormat());
-      result = result && getCorrectionFormat()
-          .equals(other.getCorrectionFormat());
-      result = result && getDetailsFormat()
-          .equals(other.getDetailsFormat());
-      result = result && internalGetVariables().equals(
-          other.internalGetVariables());
+      result = result && (hasRetCode() == other.hasRetCode());
+      if (hasRetCode()) {
+        result = result && (getRetCode()
+            == other.getRetCode());
+      }
+      result = result && getObjRefsList()
+          .equals(other.getObjRefsList());
+      result = result && (hasMessageFormat() == other.hasMessageFormat());
+      if (hasMessageFormat()) {
+        result = result && getMessageFormat()
+            .equals(other.getMessageFormat());
+      }
+      result = result && (hasCauseFormat() == other.hasCauseFormat());
+      if (hasCauseFormat()) {
+        result = result && getCauseFormat()
+            .equals(other.getCauseFormat());
+      }
+      result = result && (hasCorrectionFormat() == other.hasCorrectionFormat());
+      if (hasCorrectionFormat()) {
+        result = result && getCorrectionFormat()
+            .equals(other.getCorrectionFormat());
+      }
+      result = result && (hasDetailsFormat() == other.hasDetailsFormat());
+      if (hasDetailsFormat()) {
+        result = result && getDetailsFormat()
+            .equals(other.getDetailsFormat());
+      }
+      result = result && getVariablesList()
+          .equals(other.getVariablesList());
+      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -834,24 +861,34 @@ public final class MsgApiCallResponseOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + RET_CODE_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getRetCode());
-      if (!internalGetObjRefs().getMap().isEmpty()) {
-        hash = (37 * hash) + OBJ_REFS_FIELD_NUMBER;
-        hash = (53 * hash) + internalGetObjRefs().hashCode();
+      if (hasRetCode()) {
+        hash = (37 * hash) + RET_CODE_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getRetCode());
       }
-      hash = (37 * hash) + MESSAGE_FORMAT_FIELD_NUMBER;
-      hash = (53 * hash) + getMessageFormat().hashCode();
-      hash = (37 * hash) + CAUSE_FORMAT_FIELD_NUMBER;
-      hash = (53 * hash) + getCauseFormat().hashCode();
-      hash = (37 * hash) + CORRECTION_FORMAT_FIELD_NUMBER;
-      hash = (53 * hash) + getCorrectionFormat().hashCode();
-      hash = (37 * hash) + DETAILS_FORMAT_FIELD_NUMBER;
-      hash = (53 * hash) + getDetailsFormat().hashCode();
-      if (!internalGetVariables().getMap().isEmpty()) {
+      if (getObjRefsCount() > 0) {
+        hash = (37 * hash) + OBJ_REFS_FIELD_NUMBER;
+        hash = (53 * hash) + getObjRefsList().hashCode();
+      }
+      if (hasMessageFormat()) {
+        hash = (37 * hash) + MESSAGE_FORMAT_FIELD_NUMBER;
+        hash = (53 * hash) + getMessageFormat().hashCode();
+      }
+      if (hasCauseFormat()) {
+        hash = (37 * hash) + CAUSE_FORMAT_FIELD_NUMBER;
+        hash = (53 * hash) + getCauseFormat().hashCode();
+      }
+      if (hasCorrectionFormat()) {
+        hash = (37 * hash) + CORRECTION_FORMAT_FIELD_NUMBER;
+        hash = (53 * hash) + getCorrectionFormat().hashCode();
+      }
+      if (hasDetailsFormat()) {
+        hash = (37 * hash) + DETAILS_FORMAT_FIELD_NUMBER;
+        hash = (53 * hash) + getDetailsFormat().hashCode();
+      }
+      if (getVariablesCount() > 0) {
         hash = (37 * hash) + VARIABLES_FIELD_NUMBER;
-        hash = (53 * hash) + internalGetVariables().hashCode();
+        hash = (53 * hash) + getVariablesList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -937,7 +974,7 @@ public final class MsgApiCallResponseOuterClass {
     }
     /**
      * <pre>
-     * drbdmanageNG - ApiCallResponse
+     * linstor - ApiCallResponse
      * </pre>
      *
      * Protobuf type {@code com.linbit.drbdmanage.proto.MsgApiCallResponse}
@@ -951,32 +988,6 @@ public final class MsgApiCallResponseOuterClass {
         return com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_descriptor;
       }
 
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMapField(
-          int number) {
-        switch (number) {
-          case 2:
-            return internalGetObjRefs();
-          case 7:
-            return internalGetVariables();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMutableMapField(
-          int number) {
-        switch (number) {
-          case 2:
-            return internalGetMutableObjRefs();
-          case 7:
-            return internalGetMutableVariables();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
       protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
         return com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_fieldAccessorTable
@@ -997,22 +1008,34 @@ public final class MsgApiCallResponseOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
+          getObjRefsFieldBuilder();
+          getVariablesFieldBuilder();
         }
       }
       public Builder clear() {
         super.clear();
         retCode_ = 0L;
-
-        internalGetMutableObjRefs().clear();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        if (objRefsBuilder_ == null) {
+          objRefs_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000002);
+        } else {
+          objRefsBuilder_.clear();
+        }
         messageFormat_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000004);
         causeFormat_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000008);
         correctionFormat_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000010);
         detailsFormat_ = "";
-
-        internalGetMutableVariables().clear();
+        bitField0_ = (bitField0_ & ~0x00000020);
+        if (variablesBuilder_ == null) {
+          variables_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000040);
+        } else {
+          variablesBuilder_.clear();
+        }
         return this;
       }
 
@@ -1037,15 +1060,44 @@ public final class MsgApiCallResponseOuterClass {
         com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse result = new com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
         result.retCode_ = retCode_;
-        result.objRefs_ = internalGetObjRefs();
-        result.objRefs_.makeImmutable();
+        if (objRefsBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) == 0x00000002)) {
+            objRefs_ = java.util.Collections.unmodifiableList(objRefs_);
+            bitField0_ = (bitField0_ & ~0x00000002);
+          }
+          result.objRefs_ = objRefs_;
+        } else {
+          result.objRefs_ = objRefsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000002;
+        }
         result.messageFormat_ = messageFormat_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000004;
+        }
         result.causeFormat_ = causeFormat_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000008;
+        }
         result.correctionFormat_ = correctionFormat_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000010;
+        }
         result.detailsFormat_ = detailsFormat_;
-        result.variables_ = internalGetVariables();
-        result.variables_.makeImmutable();
+        if (variablesBuilder_ == null) {
+          if (((bitField0_ & 0x00000040) == 0x00000040)) {
+            variables_ = java.util.Collections.unmodifiableList(variables_);
+            bitField0_ = (bitField0_ & ~0x00000040);
+          }
+          result.variables_ = variables_;
+        } else {
+          result.variables_ = variablesBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1088,34 +1140,112 @@ public final class MsgApiCallResponseOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse other) {
         if (other == com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse.getDefaultInstance()) return this;
-        if (other.getRetCode() != 0L) {
+        if (other.hasRetCode()) {
           setRetCode(other.getRetCode());
         }
-        internalGetMutableObjRefs().mergeFrom(
-            other.internalGetObjRefs());
-        if (!other.getMessageFormat().isEmpty()) {
+        if (objRefsBuilder_ == null) {
+          if (!other.objRefs_.isEmpty()) {
+            if (objRefs_.isEmpty()) {
+              objRefs_ = other.objRefs_;
+              bitField0_ = (bitField0_ & ~0x00000002);
+            } else {
+              ensureObjRefsIsMutable();
+              objRefs_.addAll(other.objRefs_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.objRefs_.isEmpty()) {
+            if (objRefsBuilder_.isEmpty()) {
+              objRefsBuilder_.dispose();
+              objRefsBuilder_ = null;
+              objRefs_ = other.objRefs_;
+              bitField0_ = (bitField0_ & ~0x00000002);
+              objRefsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getObjRefsFieldBuilder() : null;
+            } else {
+              objRefsBuilder_.addAllMessages(other.objRefs_);
+            }
+          }
+        }
+        if (other.hasMessageFormat()) {
+          bitField0_ |= 0x00000004;
           messageFormat_ = other.messageFormat_;
           onChanged();
         }
-        if (!other.getCauseFormat().isEmpty()) {
+        if (other.hasCauseFormat()) {
+          bitField0_ |= 0x00000008;
           causeFormat_ = other.causeFormat_;
           onChanged();
         }
-        if (!other.getCorrectionFormat().isEmpty()) {
+        if (other.hasCorrectionFormat()) {
+          bitField0_ |= 0x00000010;
           correctionFormat_ = other.correctionFormat_;
           onChanged();
         }
-        if (!other.getDetailsFormat().isEmpty()) {
+        if (other.hasDetailsFormat()) {
+          bitField0_ |= 0x00000020;
           detailsFormat_ = other.detailsFormat_;
           onChanged();
         }
-        internalGetMutableVariables().mergeFrom(
-            other.internalGetVariables());
+        if (variablesBuilder_ == null) {
+          if (!other.variables_.isEmpty()) {
+            if (variables_.isEmpty()) {
+              variables_ = other.variables_;
+              bitField0_ = (bitField0_ & ~0x00000040);
+            } else {
+              ensureVariablesIsMutable();
+              variables_.addAll(other.variables_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.variables_.isEmpty()) {
+            if (variablesBuilder_.isEmpty()) {
+              variablesBuilder_.dispose();
+              variablesBuilder_ = null;
+              variables_ = other.variables_;
+              bitField0_ = (bitField0_ & ~0x00000040);
+              variablesBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getVariablesFieldBuilder() : null;
+            } else {
+              variablesBuilder_.addAllMessages(other.variables_);
+            }
+          }
+        }
+        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
       public final boolean isInitialized() {
+        if (!hasRetCode()) {
+          return false;
+        }
+        if (!hasMessageFormat()) {
+          return false;
+        }
+        if (!hasCauseFormat()) {
+          return false;
+        }
+        if (!hasCorrectionFormat()) {
+          return false;
+        }
+        if (!hasDetailsFormat()) {
+          return false;
+        }
+        for (int i = 0; i < getObjRefsCount(); i++) {
+          if (!getObjRefs(i).isInitialized()) {
+            return false;
+          }
+        }
+        for (int i = 0; i < getVariablesCount(); i++) {
+          if (!getVariables(i).isInitialized()) {
+            return false;
+          }
+        }
         return true;
       }
 
@@ -1144,7 +1274,17 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>sint64 ret_code = 1;</code>
+       * <code>required int64 ret_code = 1;</code>
+       */
+      public boolean hasRetCode() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * return code (see ApiCallRcConstants)
+       * </pre>
+       *
+       * <code>required int64 ret_code = 1;</code>
        */
       public long getRetCode() {
         return retCode_;
@@ -1154,10 +1294,10 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>sint64 ret_code = 1;</code>
+       * <code>required int64 ret_code = 1;</code>
        */
       public Builder setRetCode(long value) {
-        
+        bitField0_ |= 0x00000001;
         retCode_ = value;
         onChanged();
         return this;
@@ -1167,110 +1307,219 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>sint64 ret_code = 1;</code>
+       * <code>required int64 ret_code = 1;</code>
        */
       public Builder clearRetCode() {
-        
+        bitField0_ = (bitField0_ & ~0x00000001);
         retCode_ = 0L;
         onChanged();
         return this;
       }
 
-      private com.google.protobuf.MapField<
-          java.lang.String, java.lang.String> objRefs_;
-      private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-      internalGetObjRefs() {
-        if (objRefs_ == null) {
-          return com.google.protobuf.MapField.emptyMapField(
-              ObjRefsDefaultEntryHolder.defaultEntry);
-        }
-        return objRefs_;
-      }
-      private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-      internalGetMutableObjRefs() {
-        onChanged();;
-        if (objRefs_ == null) {
-          objRefs_ = com.google.protobuf.MapField.newMapField(
-              ObjRefsDefaultEntryHolder.defaultEntry);
-        }
-        if (!objRefs_.isMutable()) {
-          objRefs_ = objRefs_.copy();
-        }
-        return objRefs_;
+      private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> objRefs_ =
+        java.util.Collections.emptyList();
+      private void ensureObjRefsIsMutable() {
+        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
+          objRefs_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(objRefs_);
+          bitField0_ |= 0x00000002;
+         }
       }
 
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> objRefsBuilder_;
+
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getObjRefsList() {
+        if (objRefsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(objRefs_);
+        } else {
+          return objRefsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
       public int getObjRefsCount() {
-        return internalGetObjRefs().getMap().size();
-      }
-      /**
-       * <pre>
-       * object references
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; obj_refs = 2;</code>
-       */
-
-      public boolean containsObjRefs(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        return internalGetObjRefs().getMap().containsKey(key);
-      }
-      /**
-       * Use {@link #getObjRefsMap()} instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String> getObjRefs() {
-        return getObjRefsMap();
-      }
-      /**
-       * <pre>
-       * object references
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; obj_refs = 2;</code>
-       */
-
-      public java.util.Map<java.lang.String, java.lang.String> getObjRefsMap() {
-        return internalGetObjRefs().getMap();
-      }
-      /**
-       * <pre>
-       * object references
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; obj_refs = 2;</code>
-       */
-
-      public java.lang.String getObjRefsOrDefault(
-          java.lang.String key,
-          java.lang.String defaultValue) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            internalGetObjRefs().getMap();
-        return map.containsKey(key) ? map.get(key) : defaultValue;
-      }
-      /**
-       * <pre>
-       * object references
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; obj_refs = 2;</code>
-       */
-
-      public java.lang.String getObjRefsOrThrow(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            internalGetObjRefs().getMap();
-        if (!map.containsKey(key)) {
-          throw new java.lang.IllegalArgumentException();
+        if (objRefsBuilder_ == null) {
+          return objRefs_.size();
+        } else {
+          return objRefsBuilder_.getCount();
         }
-        return map.get(key);
       }
-
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getObjRefs(int index) {
+        if (objRefsBuilder_ == null) {
+          return objRefs_.get(index);
+        } else {
+          return objRefsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public Builder setObjRefs(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (objRefsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjRefsIsMutable();
+          objRefs_.set(index, value);
+          onChanged();
+        } else {
+          objRefsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public Builder setObjRefs(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (objRefsBuilder_ == null) {
+          ensureObjRefsIsMutable();
+          objRefs_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          objRefsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public Builder addObjRefs(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (objRefsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjRefsIsMutable();
+          objRefs_.add(value);
+          onChanged();
+        } else {
+          objRefsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public Builder addObjRefs(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (objRefsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjRefsIsMutable();
+          objRefs_.add(index, value);
+          onChanged();
+        } else {
+          objRefsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public Builder addObjRefs(
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (objRefsBuilder_ == null) {
+          ensureObjRefsIsMutable();
+          objRefs_.add(builderForValue.build());
+          onChanged();
+        } else {
+          objRefsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public Builder addObjRefs(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (objRefsBuilder_ == null) {
+          ensureObjRefsIsMutable();
+          objRefs_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          objRefsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public Builder addAllObjRefs(
+          java.lang.Iterable<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
+        if (objRefsBuilder_ == null) {
+          ensureObjRefsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, objRefs_);
+          onChanged();
+        } else {
+          objRefsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
       public Builder clearObjRefs() {
-        internalGetMutableObjRefs().getMutableMap()
-            .clear();
+        if (objRefsBuilder_ == null) {
+          objRefs_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000002);
+          onChanged();
+        } else {
+          objRefsBuilder_.clear();
+        }
         return this;
       }
       /**
@@ -1278,38 +1527,16 @@ public final class MsgApiCallResponseOuterClass {
        * object references
        * </pre>
        *
-       * <code>map&lt;string, string&gt; obj_refs = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
        */
-
-      public Builder removeObjRefs(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        internalGetMutableObjRefs().getMutableMap()
-            .remove(key);
-        return this;
-      }
-      /**
-       * Use alternate mutation accessors instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String>
-      getMutableObjRefs() {
-        return internalGetMutableObjRefs().getMutableMap();
-      }
-      /**
-       * <pre>
-       * object references
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; obj_refs = 2;</code>
-       */
-      public Builder putObjRefs(
-          java.lang.String key,
-          java.lang.String value) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        if (value == null) { throw new java.lang.NullPointerException(); }
-        internalGetMutableObjRefs().getMutableMap()
-            .put(key, value);
+      public Builder removeObjRefs(int index) {
+        if (objRefsBuilder_ == null) {
+          ensureObjRefsIsMutable();
+          objRefs_.remove(index);
+          onChanged();
+        } else {
+          objRefsBuilder_.remove(index);
+        }
         return this;
       }
       /**
@@ -1317,14 +1544,88 @@ public final class MsgApiCallResponseOuterClass {
        * object references
        * </pre>
        *
-       * <code>map&lt;string, string&gt; obj_refs = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
        */
-
-      public Builder putAllObjRefs(
-          java.util.Map<java.lang.String, java.lang.String> values) {
-        internalGetMutableObjRefs().getMutableMap()
-            .putAll(values);
-        return this;
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getObjRefsBuilder(
+          int index) {
+        return getObjRefsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getObjRefsOrBuilder(
+          int index) {
+        if (objRefsBuilder_ == null) {
+          return objRefs_.get(index);  } else {
+          return objRefsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+           getObjRefsOrBuilderList() {
+        if (objRefsBuilder_ != null) {
+          return objRefsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(objRefs_);
+        }
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addObjRefsBuilder() {
+        return getObjRefsFieldBuilder().addBuilder(
+            com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addObjRefsBuilder(
+          int index) {
+        return getObjRefsFieldBuilder().addBuilder(
+            index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * object references
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry obj_refs = 2;</code>
+       */
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
+           getObjRefsBuilderList() {
+        return getObjRefsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+          getObjRefsFieldBuilder() {
+        if (objRefsBuilder_ == null) {
+          objRefsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
+                  objRefs_,
+                  ((bitField0_ & 0x00000002) == 0x00000002),
+                  getParentForChildren(),
+                  isClean());
+          objRefs_ = null;
+        }
+        return objRefsBuilder_;
       }
 
       private java.lang.Object messageFormat_ = "";
@@ -1333,7 +1634,17 @@ public final class MsgApiCallResponseOuterClass {
        * message format
        * </pre>
        *
-       * <code>string message_format = 3;</code>
+       * <code>required string message_format = 3;</code>
+       */
+      public boolean hasMessageFormat() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <pre>
+       * message format
+       * </pre>
+       *
+       * <code>required string message_format = 3;</code>
        */
       public java.lang.String getMessageFormat() {
         java.lang.Object ref = messageFormat_;
@@ -1341,7 +1652,9 @@ public final class MsgApiCallResponseOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          messageFormat_ = s;
+          if (bs.isValidUtf8()) {
+            messageFormat_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1352,7 +1665,7 @@ public final class MsgApiCallResponseOuterClass {
        * message format
        * </pre>
        *
-       * <code>string message_format = 3;</code>
+       * <code>required string message_format = 3;</code>
        */
       public com.google.protobuf.ByteString
           getMessageFormatBytes() {
@@ -1372,14 +1685,14 @@ public final class MsgApiCallResponseOuterClass {
        * message format
        * </pre>
        *
-       * <code>string message_format = 3;</code>
+       * <code>required string message_format = 3;</code>
        */
       public Builder setMessageFormat(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000004;
         messageFormat_ = value;
         onChanged();
         return this;
@@ -1389,10 +1702,10 @@ public final class MsgApiCallResponseOuterClass {
        * message format
        * </pre>
        *
-       * <code>string message_format = 3;</code>
+       * <code>required string message_format = 3;</code>
        */
       public Builder clearMessageFormat() {
-        
+        bitField0_ = (bitField0_ & ~0x00000004);
         messageFormat_ = getDefaultInstance().getMessageFormat();
         onChanged();
         return this;
@@ -1402,15 +1715,14 @@ public final class MsgApiCallResponseOuterClass {
        * message format
        * </pre>
        *
-       * <code>string message_format = 3;</code>
+       * <code>required string message_format = 3;</code>
        */
       public Builder setMessageFormatBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000004;
         messageFormat_ = value;
         onChanged();
         return this;
@@ -1422,7 +1734,17 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>string cause_format = 4;</code>
+       * <code>required string cause_format = 4;</code>
+       */
+      public boolean hasCauseFormat() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <pre>
+       * cause format
+       * </pre>
+       *
+       * <code>required string cause_format = 4;</code>
        */
       public java.lang.String getCauseFormat() {
         java.lang.Object ref = causeFormat_;
@@ -1430,7 +1752,9 @@ public final class MsgApiCallResponseOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          causeFormat_ = s;
+          if (bs.isValidUtf8()) {
+            causeFormat_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1441,7 +1765,7 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>string cause_format = 4;</code>
+       * <code>required string cause_format = 4;</code>
        */
       public com.google.protobuf.ByteString
           getCauseFormatBytes() {
@@ -1461,14 +1785,14 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>string cause_format = 4;</code>
+       * <code>required string cause_format = 4;</code>
        */
       public Builder setCauseFormat(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000008;
         causeFormat_ = value;
         onChanged();
         return this;
@@ -1478,10 +1802,10 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>string cause_format = 4;</code>
+       * <code>required string cause_format = 4;</code>
        */
       public Builder clearCauseFormat() {
-        
+        bitField0_ = (bitField0_ & ~0x00000008);
         causeFormat_ = getDefaultInstance().getCauseFormat();
         onChanged();
         return this;
@@ -1491,15 +1815,14 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>string cause_format = 4;</code>
+       * <code>required string cause_format = 4;</code>
        */
       public Builder setCauseFormatBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000008;
         causeFormat_ = value;
         onChanged();
         return this;
@@ -1511,7 +1834,17 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>string correction_format = 5;</code>
+       * <code>required string correction_format = 5;</code>
+       */
+      public boolean hasCorrectionFormat() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <pre>
+       * correction format
+       * </pre>
+       *
+       * <code>required string correction_format = 5;</code>
        */
       public java.lang.String getCorrectionFormat() {
         java.lang.Object ref = correctionFormat_;
@@ -1519,7 +1852,9 @@ public final class MsgApiCallResponseOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          correctionFormat_ = s;
+          if (bs.isValidUtf8()) {
+            correctionFormat_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1530,7 +1865,7 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>string correction_format = 5;</code>
+       * <code>required string correction_format = 5;</code>
        */
       public com.google.protobuf.ByteString
           getCorrectionFormatBytes() {
@@ -1550,14 +1885,14 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>string correction_format = 5;</code>
+       * <code>required string correction_format = 5;</code>
        */
       public Builder setCorrectionFormat(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000010;
         correctionFormat_ = value;
         onChanged();
         return this;
@@ -1567,10 +1902,10 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>string correction_format = 5;</code>
+       * <code>required string correction_format = 5;</code>
        */
       public Builder clearCorrectionFormat() {
-        
+        bitField0_ = (bitField0_ & ~0x00000010);
         correctionFormat_ = getDefaultInstance().getCorrectionFormat();
         onChanged();
         return this;
@@ -1580,15 +1915,14 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>string correction_format = 5;</code>
+       * <code>required string correction_format = 5;</code>
        */
       public Builder setCorrectionFormatBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000010;
         correctionFormat_ = value;
         onChanged();
         return this;
@@ -1600,7 +1934,17 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>string details_format = 6;</code>
+       * <code>required string details_format = 6;</code>
+       */
+      public boolean hasDetailsFormat() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <pre>
+       * details format
+       * </pre>
+       *
+       * <code>required string details_format = 6;</code>
        */
       public java.lang.String getDetailsFormat() {
         java.lang.Object ref = detailsFormat_;
@@ -1608,7 +1952,9 @@ public final class MsgApiCallResponseOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          detailsFormat_ = s;
+          if (bs.isValidUtf8()) {
+            detailsFormat_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -1619,7 +1965,7 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>string details_format = 6;</code>
+       * <code>required string details_format = 6;</code>
        */
       public com.google.protobuf.ByteString
           getDetailsFormatBytes() {
@@ -1639,14 +1985,14 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>string details_format = 6;</code>
+       * <code>required string details_format = 6;</code>
        */
       public Builder setDetailsFormat(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000020;
         detailsFormat_ = value;
         onChanged();
         return this;
@@ -1656,10 +2002,10 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>string details_format = 6;</code>
+       * <code>required string details_format = 6;</code>
        */
       public Builder clearDetailsFormat() {
-        
+        bitField0_ = (bitField0_ & ~0x00000020);
         detailsFormat_ = getDefaultInstance().getDetailsFormat();
         onChanged();
         return this;
@@ -1669,115 +2015,223 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>string details_format = 6;</code>
+       * <code>required string details_format = 6;</code>
        */
       public Builder setDetailsFormatBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000020;
         detailsFormat_ = value;
         onChanged();
         return this;
       }
 
-      private com.google.protobuf.MapField<
-          java.lang.String, java.lang.String> variables_;
-      private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-      internalGetVariables() {
-        if (variables_ == null) {
-          return com.google.protobuf.MapField.emptyMapField(
-              VariablesDefaultEntryHolder.defaultEntry);
-        }
-        return variables_;
-      }
-      private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-      internalGetMutableVariables() {
-        onChanged();;
-        if (variables_ == null) {
-          variables_ = com.google.protobuf.MapField.newMapField(
-              VariablesDefaultEntryHolder.defaultEntry);
-        }
-        if (!variables_.isMutable()) {
-          variables_ = variables_.copy();
-        }
-        return variables_;
+      private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> variables_ =
+        java.util.Collections.emptyList();
+      private void ensureVariablesIsMutable() {
+        if (!((bitField0_ & 0x00000040) == 0x00000040)) {
+          variables_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(variables_);
+          bitField0_ |= 0x00000040;
+         }
       }
 
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> variablesBuilder_;
+
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getVariablesList() {
+        if (variablesBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(variables_);
+        } else {
+          return variablesBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
       public int getVariablesCount() {
-        return internalGetVariables().getMap().size();
-      }
-      /**
-       * <pre>
-       * referenced variables
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; variables = 7;</code>
-       */
-
-      public boolean containsVariables(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        return internalGetVariables().getMap().containsKey(key);
-      }
-      /**
-       * Use {@link #getVariablesMap()} instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String> getVariables() {
-        return getVariablesMap();
-      }
-      /**
-       * <pre>
-       * referenced variables
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; variables = 7;</code>
-       */
-
-      public java.util.Map<java.lang.String, java.lang.String> getVariablesMap() {
-        return internalGetVariables().getMap();
-      }
-      /**
-       * <pre>
-       * referenced variables
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; variables = 7;</code>
-       */
-
-      public java.lang.String getVariablesOrDefault(
-          java.lang.String key,
-          java.lang.String defaultValue) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            internalGetVariables().getMap();
-        return map.containsKey(key) ? map.get(key) : defaultValue;
-      }
-      /**
-       * <pre>
-       * referenced variables
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; variables = 7;</code>
-       */
-
-      public java.lang.String getVariablesOrThrow(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            internalGetVariables().getMap();
-        if (!map.containsKey(key)) {
-          throw new java.lang.IllegalArgumentException();
+        if (variablesBuilder_ == null) {
+          return variables_.size();
+        } else {
+          return variablesBuilder_.getCount();
         }
-        return map.get(key);
       }
-
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVariables(int index) {
+        if (variablesBuilder_ == null) {
+          return variables_.get(index);
+        } else {
+          return variablesBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public Builder setVariables(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (variablesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureVariablesIsMutable();
+          variables_.set(index, value);
+          onChanged();
+        } else {
+          variablesBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public Builder setVariables(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (variablesBuilder_ == null) {
+          ensureVariablesIsMutable();
+          variables_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          variablesBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public Builder addVariables(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (variablesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureVariablesIsMutable();
+          variables_.add(value);
+          onChanged();
+        } else {
+          variablesBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public Builder addVariables(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (variablesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureVariablesIsMutable();
+          variables_.add(index, value);
+          onChanged();
+        } else {
+          variablesBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public Builder addVariables(
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (variablesBuilder_ == null) {
+          ensureVariablesIsMutable();
+          variables_.add(builderForValue.build());
+          onChanged();
+        } else {
+          variablesBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public Builder addVariables(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (variablesBuilder_ == null) {
+          ensureVariablesIsMutable();
+          variables_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          variablesBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public Builder addAllVariables(
+          java.lang.Iterable<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
+        if (variablesBuilder_ == null) {
+          ensureVariablesIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, variables_);
+          onChanged();
+        } else {
+          variablesBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
       public Builder clearVariables() {
-        internalGetMutableVariables().getMutableMap()
-            .clear();
+        if (variablesBuilder_ == null) {
+          variables_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000040);
+          onChanged();
+        } else {
+          variablesBuilder_.clear();
+        }
         return this;
       }
       /**
@@ -1785,38 +2239,16 @@ public final class MsgApiCallResponseOuterClass {
        * referenced variables
        * </pre>
        *
-       * <code>map&lt;string, string&gt; variables = 7;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
        */
-
-      public Builder removeVariables(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        internalGetMutableVariables().getMutableMap()
-            .remove(key);
-        return this;
-      }
-      /**
-       * Use alternate mutation accessors instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String>
-      getMutableVariables() {
-        return internalGetMutableVariables().getMutableMap();
-      }
-      /**
-       * <pre>
-       * referenced variables
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; variables = 7;</code>
-       */
-      public Builder putVariables(
-          java.lang.String key,
-          java.lang.String value) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        if (value == null) { throw new java.lang.NullPointerException(); }
-        internalGetMutableVariables().getMutableMap()
-            .put(key, value);
+      public Builder removeVariables(int index) {
+        if (variablesBuilder_ == null) {
+          ensureVariablesIsMutable();
+          variables_.remove(index);
+          onChanged();
+        } else {
+          variablesBuilder_.remove(index);
+        }
         return this;
       }
       /**
@@ -1824,23 +2256,97 @@ public final class MsgApiCallResponseOuterClass {
        * referenced variables
        * </pre>
        *
-       * <code>map&lt;string, string&gt; variables = 7;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
        */
-
-      public Builder putAllVariables(
-          java.util.Map<java.lang.String, java.lang.String> values) {
-        internalGetMutableVariables().getMutableMap()
-            .putAll(values);
-        return this;
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getVariablesBuilder(
+          int index) {
+        return getVariablesFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVariablesOrBuilder(
+          int index) {
+        if (variablesBuilder_ == null) {
+          return variables_.get(index);  } else {
+          return variablesBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+           getVariablesOrBuilderList() {
+        if (variablesBuilder_ != null) {
+          return variablesBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(variables_);
+        }
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addVariablesBuilder() {
+        return getVariablesFieldBuilder().addBuilder(
+            com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addVariablesBuilder(
+          int index) {
+        return getVariablesFieldBuilder().addBuilder(
+            index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * referenced variables
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry variables = 7;</code>
+       */
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
+           getVariablesBuilderList() {
+        return getVariablesFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+          getVariablesFieldBuilder() {
+        if (variablesBuilder_ == null) {
+          variablesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
+                  variables_,
+                  ((bitField0_ & 0x00000040) == 0x00000040),
+                  getParentForChildren(),
+                  isClean());
+          variables_ = null;
+        }
+        return variablesBuilder_;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.setUnknownFields(unknownFields);
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.mergeUnknownFields(unknownFields);
       }
 
 
@@ -1857,7 +2363,7 @@ public final class MsgApiCallResponseOuterClass {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<MsgApiCallResponse>
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<MsgApiCallResponse>
         PARSER = new com.google.protobuf.AbstractParser<MsgApiCallResponse>() {
       public MsgApiCallResponse parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
@@ -1887,16 +2393,6 @@ public final class MsgApiCallResponseOuterClass {
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_ObjRefsEntry_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_ObjRefsEntry_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_VariablesEntry_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_VariablesEntry_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -1907,17 +2403,14 @@ public final class MsgApiCallResponseOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\030MsgApiCallResponse.proto\022\033com.linbit.d" +
-      "rbdmanage.proto\"\214\003\n\022MsgApiCallResponse\022\020" +
-      "\n\010ret_code\030\001 \001(\022\022N\n\010obj_refs\030\002 \003(\0132<.com" +
-      ".linbit.drbdmanage.proto.MsgApiCallRespo" +
-      "nse.ObjRefsEntry\022\026\n\016message_format\030\003 \001(\t" +
-      "\022\024\n\014cause_format\030\004 \001(\t\022\031\n\021correction_for" +
-      "mat\030\005 \001(\t\022\026\n\016details_format\030\006 \001(\t\022Q\n\tvar" +
-      "iables\030\007 \003(\0132>.com.linbit.drbdmanage.pro" +
-      "to.MsgApiCallResponse.VariablesEntry\032.\n\014" +
-      "ObjRefsEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t",
-      ":\0028\001\0320\n\016VariablesEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005v" +
-      "alue\030\002 \001(\t:\0028\001b\006proto3"
+      "rbdmanage.proto\032\025LinStorMapEntry.proto\"\210" +
+      "\002\n\022MsgApiCallResponse\022\020\n\010ret_code\030\001 \002(\003\022" +
+      ">\n\010obj_refs\030\002 \003(\0132,.com.linbit.drbdmanag" +
+      "e.proto.LinStorMapEntry\022\026\n\016message_forma" +
+      "t\030\003 \002(\t\022\024\n\014cause_format\030\004 \002(\t\022\031\n\021correct" +
+      "ion_format\030\005 \002(\t\022\026\n\016details_format\030\006 \002(\t" +
+      "\022?\n\tvariables\030\007 \003(\0132,.com.linbit.drbdman" +
+      "age.proto.LinStorMapEntryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1930,6 +2423,7 @@ public final class MsgApiCallResponseOuterClass {
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_descriptor =
       getDescriptor().getMessageTypes().get(0);
@@ -1937,18 +2431,7 @@ public final class MsgApiCallResponseOuterClass {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_descriptor,
         new java.lang.String[] { "RetCode", "ObjRefs", "MessageFormat", "CauseFormat", "CorrectionFormat", "DetailsFormat", "Variables", });
-    internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_ObjRefsEntry_descriptor =
-      internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_descriptor.getNestedTypes().get(0);
-    internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_ObjRefsEntry_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_ObjRefsEntry_descriptor,
-        new java.lang.String[] { "Key", "Value", });
-    internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_VariablesEntry_descriptor =
-      internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_descriptor.getNestedTypes().get(1);
-    internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_VariablesEntry_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_com_linbit_drbdmanage_proto_MsgApiCallResponse_VariablesEntry_descriptor,
-        new java.lang.String[] { "Key", "Value", });
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

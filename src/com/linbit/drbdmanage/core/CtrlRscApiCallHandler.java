@@ -1,8 +1,55 @@
 package com.linbit.drbdmanage.core;
 
-import static com.linbit.drbdmanage.ApiConsts.*;
+import static com.linbit.drbdmanage.ApiConsts.KEY_NODE;
+import static com.linbit.drbdmanage.ApiConsts.KEY_NODE_ID;
+import static com.linbit.drbdmanage.ApiConsts.KEY_NODE_NAME;
+import static com.linbit.drbdmanage.ApiConsts.KEY_RSC_DFN;
+import static com.linbit.drbdmanage.ApiConsts.KEY_RSC_NAME;
+import static com.linbit.drbdmanage.ApiConsts.KEY_STOR_POOL_DFN;
+import static com.linbit.drbdmanage.ApiConsts.KEY_STOR_POOL_NAME;
+import static com.linbit.drbdmanage.ApiConsts.KEY_VLM_NR;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CREATED;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_NODE;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_RSC;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_RSC_DFN;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL_DFN;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_VLM;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_VLM_DFN;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_EXISTS_NODE;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_EXISTS_RSC;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_IMPL_ERROR;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_INVLD_NODE_ID;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_INVLD_NODE_NAME;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_INVLD_RSC_NAME;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_INVLD_STOR_POOL_NAME;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_INVLD_VLM_NR;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_NOT_FOUND_NODE;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_NOT_FOUND_RSC_DFN;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL_DFN;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_NOT_FOUND_VLM_DFN;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_SQL;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_SQL_ROLLBACK;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_CRT_FAIL_UNKNOWN_ERROR;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DELETED;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_ACC_DENIED_NODE;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_ACC_DENIED_RSC;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_ACC_DENIED_RSC_DFN;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_ACC_DENIED_VLM_DFN;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_IMPL_ERROR;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_INVLD_NODE_NAME;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_INVLD_RSC_NAME;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_NOT_FOUND_NODE;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_NOT_FOUND_RSC_DFN;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_SQL;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_SQL_ROLLBACK;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_FAIL_UNKNOWN_ERROR;
+import static com.linbit.drbdmanage.ApiConsts.RC_RSC_DEL_NOT_FOUND;
+import static com.linbit.drbdmanage.ApiConsts.RC_VLM_CREATED;
 
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -12,11 +59,15 @@ import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbdmanage.ApiCallRc;
 import com.linbit.drbdmanage.ApiCallRcImpl;
+import com.linbit.drbdmanage.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.DrbdDataAlreadyExistsException;
+import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeId;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.PriorityProps;
+import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.ResourceData;
 import com.linbit.drbdmanage.ResourceDefinitionData;
@@ -31,7 +82,6 @@ import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeData;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeNumber;
-import com.linbit.drbdmanage.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.Props;
@@ -52,7 +102,6 @@ class CtrlRscApiCallHandler
         Peer client,
         String nodeNameStr,
         String rscNameStr,
-        int nodeIdRaw,
         Map<String, String> rscPropsMap,
         List<VlmApi> vlmApiList
     )
@@ -150,7 +199,9 @@ class CtrlRscApiCallHandler
             }
             else
             {
-                nodeId = new NodeId(nodeIdRaw); // valueOutOfRangeExc1
+                nodeId = getNextNodeId(rscDfn.iterateResource(accCtx)); // accDenied should have happened on
+                                                                        // accDenied2
+
 
                 RscFlags[] initFlags = null;
 
@@ -199,7 +250,7 @@ class CtrlRscApiCallHandler
                     rscProps = null;
                     nodeProps = null;
 
-                    volNr = new VolumeNumber(vlmApi.getVlmNr()); // valueOutOfRangeExc2
+                    volNr = new VolumeNumber(vlmApi.getVlmNr()); // valueOutOfRangeExc1
                     vlmDfn = rscDfn.getVolumeDfn(accCtx, volNr); // accDeniedExc5
 
                     if (vlmDfn == null)
@@ -574,28 +625,15 @@ class CtrlRscApiCallHandler
             String errorMsgFormat;
             ApiCallRcEntry entry = new ApiCallRcEntry();
 
-            if (nodeId == null)
-            { // valueOutOfRangeExc1
-                errorMsgFormat = String.format(
-                    "Node id's value %d is out of its valid range (%d - %d)",
-                    nodeIdRaw,
-                    NodeId.NODE_ID_MIN,
-                    NodeId.NODE_ID_MAX
-                );
-                entry.putVariable(KEY_NODE_ID, Integer.toString(nodeIdRaw));
-                entry.setReturnCode(RC_RSC_CRT_FAIL_INVLD_NODE_ID);
-            }
-            else
-            { // valueOutOfRangeExc2
-                errorMsgFormat = String.format(
-                    "Volume number %d is out of its valid range (%d - %d)",
-                    currentVlmApi.getVlmNr(),
-                    VolumeNumber.VOLUME_NR_MIN,
-                    VolumeNumber.VOLUME_NR_MAX
-                );
-                entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmApi.getVlmNr()));
-                entry.setReturnCode(RC_RSC_CRT_FAIL_INVLD_VLM_NR);
-            }
+            // valueOutOfRangeExc1
+            errorMsgFormat = String.format(
+                "Volume number %d is out of its valid range (%d - %d)",
+                currentVlmApi.getVlmNr(),
+                VolumeNumber.VOLUME_NR_MIN,
+                VolumeNumber.VOLUME_NR_MAX
+            );
+            entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmApi.getVlmNr()));
+            entry.setReturnCode(RC_RSC_CRT_FAIL_INVLD_VLM_NR);
             controller.getErrorReporter().reportError(
                 valueOutOfRangeExc,
                 accCtx,
@@ -719,6 +757,66 @@ class CtrlRscApiCallHandler
             controller.dbConnPool.returnConnection(transMgr.dbCon);
         }
         return apiCallRc;
+    }
+
+    private NodeId getNextNodeId(Iterator<Resource> rscIterator)
+    {
+        NodeId nodeId = null;
+        Node[] idsInUse = new Node[NodeId.NODE_ID_MAX + 1];
+        int id = -1;
+        while (rscIterator.hasNext())
+        {
+            Resource rsc = rscIterator.next();
+            int val = rsc.getNodeId().value;
+            if (idsInUse[val] != null)
+            {
+                controller.getErrorReporter().reportError(
+                    new ImplementationError(
+                        String.format(
+                            "NodeId '%d' is used for resource '%s' on node '%s' AND '%s'",
+                            val,
+                            rsc.getDefinition().getName().value,
+                            idsInUse[val].getName().value,
+                            rsc.getAssignedNode().getName().value
+                            ),
+                        null
+                    )
+                );
+            }
+            idsInUse[val] = rsc.getAssignedNode();
+        }
+
+        for (int idx = 0; idx < idsInUse.length; idx++)
+        {
+            if (idsInUse[idx] == null)
+            {
+                id = idx;
+                break;
+            }
+        }
+        try
+        {
+            if (id == -1)
+            {
+                controller.getErrorReporter().reportError(
+                    new DrbdManageException(
+                        String.format(
+                            "Could not find valid nodeId. Most likely because the maximum count (%d)" +
+                                " is already reached",
+                            NodeId.NODE_ID_MAX + 1
+                        )
+                    )
+                );
+            }
+            nodeId = new NodeId(id + 1);
+        }
+        catch (ValueOutOfRangeException valueOutOfRangeExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError("Found nodeId was invalid", valueOutOfRangeExc)
+            );
+        }
+        return nodeId;
     }
 
     public ApiCallRc deleteResource(

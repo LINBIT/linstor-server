@@ -51,7 +51,7 @@ public class CreateResourceConnection extends BaseApiCall
             msgCreateRscConn.getNodeName1(),
             msgCreateRscConn.getNodeName2(),
             msgCreateRscConn.getResourceName(),
-            msgCreateRscConn.getResourceConnPropsMap()
+            asMap(msgCreateRscConn.getResourceConnPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

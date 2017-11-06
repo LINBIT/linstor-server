@@ -51,7 +51,7 @@ public class CreateStorPool extends BaseApiCall
             msgCreateStorPool.getNodeName(),
             msgCreateStorPool.getStorPoolName(),
             msgCreateStorPool.getDriver(),
-            msgCreateStorPool.getStorPoolPropsMap()
+            asMap(msgCreateStorPool.getStorPoolPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

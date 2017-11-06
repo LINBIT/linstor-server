@@ -35,6 +35,9 @@ public interface ResourceDefinition extends TransactionObject
     public Iterator<VolumeDefinition> iterateVolumeDfn(AccessContext accCtx)
         throws AccessDeniedException;
 
+    public Iterator<Resource> iterateResource(AccessContext accCtx)
+        throws AccessDeniedException;
+
     public Resource getResource(AccessContext accCtx, NodeName clNodeName)
         throws AccessDeniedException;
 

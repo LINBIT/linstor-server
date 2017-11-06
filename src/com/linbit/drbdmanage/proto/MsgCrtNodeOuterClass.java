@@ -23,7 +23,15 @@ public final class MsgCrtNodeOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
+     */
+    boolean hasNodeName();
+    /**
+     * <pre>
+     * Node name
+     * </pre>
+     *
+     * <code>required string node_name = 1;</code>
      */
     java.lang.String getNodeName();
     /**
@@ -31,7 +39,7 @@ public final class MsgCrtNodeOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
      */
     com.google.protobuf.ByteString
         getNodeNameBytes();
@@ -41,7 +49,15 @@ public final class MsgCrtNodeOuterClass {
      * Node type
      * </pre>
      *
-     * <code>string node_type = 2;</code>
+     * <code>required string node_type = 2;</code>
+     */
+    boolean hasNodeType();
+    /**
+     * <pre>
+     * Node type
+     * </pre>
+     *
+     * <code>required string node_type = 2;</code>
      */
     java.lang.String getNodeType();
     /**
@@ -49,7 +65,7 @@ public final class MsgCrtNodeOuterClass {
      * Node type
      * </pre>
      *
-     * <code>string node_type = 2;</code>
+     * <code>required string node_type = 2;</code>
      */
     com.google.protobuf.ByteString
         getNodeTypeBytes();
@@ -59,7 +75,24 @@ public final class MsgCrtNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+     */
+    java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
+        getNodePropsList();
+    /**
+     * <pre>
+     * Node properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+     */
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getNodeProps(int index);
+    /**
+     * <pre>
+     * Node properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
      */
     int getNodePropsCount();
     /**
@@ -67,50 +100,23 @@ public final class MsgCrtNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
      */
-    boolean containsNodeProps(
-        java.lang.String key);
-    /**
-     * Use {@link #getNodePropsMap()} instead.
-     */
-    @java.lang.Deprecated
-    java.util.Map<java.lang.String, java.lang.String>
-    getNodeProps();
+    java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getNodePropsOrBuilderList();
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
      */
-    java.util.Map<java.lang.String, java.lang.String>
-    getNodePropsMap();
-    /**
-     * <pre>
-     * Node properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; node_props = 3;</code>
-     */
-
-    java.lang.String getNodePropsOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue);
-    /**
-     * <pre>
-     * Node properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; node_props = 3;</code>
-     */
-
-    java.lang.String getNodePropsOrThrow(
-        java.lang.String key);
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodePropsOrBuilder(
+        int index);
   }
   /**
    * <pre>
-   * drbdmanageNG - Create node
+   * linstor - Create node
    * </pre>
    *
    * Protobuf type {@code com.linbit.drbdmanage.proto.MsgCrtNode}
@@ -126,12 +132,13 @@ public final class MsgCrtNodeOuterClass {
     private MsgCrtNode() {
       nodeName_ = "";
       nodeType_ = "";
+      nodeProps_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+      return this.unknownFields;
     }
     private MsgCrtNode(
         com.google.protobuf.CodedInputStream input,
@@ -139,6 +146,8 @@ public final class MsgCrtNodeOuterClass {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -148,34 +157,31 @@ public final class MsgCrtNodeOuterClass {
               done = true;
               break;
             default: {
-              if (!input.skipField(tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
             }
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              nodeName_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000001;
+              nodeName_ = bs;
               break;
             }
             case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              nodeType_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              nodeType_ = bs;
               break;
             }
             case 26: {
               if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-                nodeProps_ = com.google.protobuf.MapField.newMapField(
-                    NodePropsDefaultEntryHolder.defaultEntry);
+                nodeProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
                 mutable_bitField0_ |= 0x00000004;
               }
-              com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
-              nodeProps__ = input.readMessage(
-                  NodePropsDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
-              nodeProps_.getMutableMap().put(
-                  nodeProps__.getKey(), nodeProps__.getValue());
+              nodeProps_.add(
+                  input.readMessage(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
               break;
             }
           }
@@ -186,6 +192,10 @@ public final class MsgCrtNodeOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+          nodeProps_ = java.util.Collections.unmodifiableList(nodeProps_);
+        }
+        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -194,17 +204,6 @@ public final class MsgCrtNodeOuterClass {
       return com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_descriptor;
     }
 
-    @SuppressWarnings({"rawtypes"})
-    protected com.google.protobuf.MapField internalGetMapField(
-        int number) {
-      switch (number) {
-        case 3:
-          return internalGetNodeProps();
-        default:
-          throw new RuntimeException(
-              "Invalid map field number: " + number);
-      }
-    }
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
       return com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_fieldAccessorTable
@@ -220,7 +219,17 @@ public final class MsgCrtNodeOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
+     */
+    public boolean hasNodeName() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * Node name
+     * </pre>
+     *
+     * <code>required string node_name = 1;</code>
      */
     public java.lang.String getNodeName() {
       java.lang.Object ref = nodeName_;
@@ -230,7 +239,9 @@ public final class MsgCrtNodeOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        nodeName_ = s;
+        if (bs.isValidUtf8()) {
+          nodeName_ = s;
+        }
         return s;
       }
     }
@@ -239,7 +250,7 @@ public final class MsgCrtNodeOuterClass {
      * Node name
      * </pre>
      *
-     * <code>string node_name = 1;</code>
+     * <code>required string node_name = 1;</code>
      */
     public com.google.protobuf.ByteString
         getNodeNameBytes() {
@@ -262,7 +273,17 @@ public final class MsgCrtNodeOuterClass {
      * Node type
      * </pre>
      *
-     * <code>string node_type = 2;</code>
+     * <code>required string node_type = 2;</code>
+     */
+    public boolean hasNodeType() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <pre>
+     * Node type
+     * </pre>
+     *
+     * <code>required string node_type = 2;</code>
      */
     public java.lang.String getNodeType() {
       java.lang.Object ref = nodeType_;
@@ -272,7 +293,9 @@ public final class MsgCrtNodeOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        nodeType_ = s;
+        if (bs.isValidUtf8()) {
+          nodeType_ = s;
+        }
         return s;
       }
     }
@@ -281,7 +304,7 @@ public final class MsgCrtNodeOuterClass {
      * Node type
      * </pre>
      *
-     * <code>string node_type = 2;</code>
+     * <code>required string node_type = 2;</code>
      */
     public com.google.protobuf.ByteString
         getNodeTypeBytes() {
@@ -298,95 +321,58 @@ public final class MsgCrtNodeOuterClass {
     }
 
     public static final int NODE_PROPS_FIELD_NUMBER = 3;
-    private static final class NodePropsDefaultEntryHolder {
-      static final com.google.protobuf.MapEntry<
-          java.lang.String, java.lang.String> defaultEntry =
-              com.google.protobuf.MapEntry
-              .<java.lang.String, java.lang.String>newDefaultInstance(
-                  com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_NodePropsEntry_descriptor, 
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "",
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "");
-    }
-    private com.google.protobuf.MapField<
-        java.lang.String, java.lang.String> nodeProps_;
-    private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-    internalGetNodeProps() {
-      if (nodeProps_ == null) {
-        return com.google.protobuf.MapField.emptyMapField(
-            NodePropsDefaultEntryHolder.defaultEntry);
-      }
+    private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> nodeProps_;
+    /**
+     * <pre>
+     * Node properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+     */
+    public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getNodePropsList() {
       return nodeProps_;
     }
-
+    /**
+     * <pre>
+     * Node properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+     */
+    public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getNodePropsOrBuilderList() {
+      return nodeProps_;
+    }
+    /**
+     * <pre>
+     * Node properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+     */
     public int getNodePropsCount() {
-      return internalGetNodeProps().getMap().size();
+      return nodeProps_.size();
     }
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
      */
-
-    public boolean containsNodeProps(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      return internalGetNodeProps().getMap().containsKey(key);
-    }
-    /**
-     * Use {@link #getNodePropsMap()} instead.
-     */
-    @java.lang.Deprecated
-    public java.util.Map<java.lang.String, java.lang.String> getNodeProps() {
-      return getNodePropsMap();
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getNodeProps(int index) {
+      return nodeProps_.get(index);
     }
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
      */
-
-    public java.util.Map<java.lang.String, java.lang.String> getNodePropsMap() {
-      return internalGetNodeProps().getMap();
-    }
-    /**
-     * <pre>
-     * Node properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; node_props = 3;</code>
-     */
-
-    public java.lang.String getNodePropsOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetNodeProps().getMap();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
-    }
-    /**
-     * <pre>
-     * Node properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; node_props = 3;</code>
-     */
-
-    public java.lang.String getNodePropsOrThrow(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetNodeProps().getMap();
-      if (!map.containsKey(key)) {
-        throw new java.lang.IllegalArgumentException();
-      }
-      return map.get(key);
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodePropsOrBuilder(
+        int index) {
+      return nodeProps_.get(index);
     }
 
     private byte memoizedIsInitialized = -1;
@@ -395,24 +381,36 @@ public final class MsgCrtNodeOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasNodeName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasNodeType()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      for (int i = 0; i < getNodePropsCount(); i++) {
+        if (!getNodeProps(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       memoizedIsInitialized = 1;
       return true;
     }
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!getNodeNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeName_);
       }
-      if (!getNodeTypeBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeType_);
       }
-      com.google.protobuf.GeneratedMessageV3
-        .serializeStringMapTo(
-          output,
-          internalGetNodeProps(),
-          NodePropsDefaultEntryHolder.defaultEntry,
-          3);
+      for (int i = 0; i < nodeProps_.size(); i++) {
+        output.writeMessage(3, nodeProps_.get(i));
+      }
+      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -420,22 +418,17 @@ public final class MsgCrtNodeOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (!getNodeNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeName_);
       }
-      if (!getNodeTypeBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeType_);
       }
-      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
-           : internalGetNodeProps().getMap().entrySet()) {
-        com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
-        nodeProps__ = NodePropsDefaultEntryHolder.defaultEntry.newBuilderForType()
-            .setKey(entry.getKey())
-            .setValue(entry.getValue())
-            .build();
+      for (int i = 0; i < nodeProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(3, nodeProps__);
+          .computeMessageSize(3, nodeProps_.get(i));
       }
+      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -452,12 +445,19 @@ public final class MsgCrtNodeOuterClass {
       com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode other = (com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode) obj;
 
       boolean result = true;
-      result = result && getNodeName()
-          .equals(other.getNodeName());
-      result = result && getNodeType()
-          .equals(other.getNodeType());
-      result = result && internalGetNodeProps().equals(
-          other.internalGetNodeProps());
+      result = result && (hasNodeName() == other.hasNodeName());
+      if (hasNodeName()) {
+        result = result && getNodeName()
+            .equals(other.getNodeName());
+      }
+      result = result && (hasNodeType() == other.hasNodeType());
+      if (hasNodeType()) {
+        result = result && getNodeType()
+            .equals(other.getNodeType());
+      }
+      result = result && getNodePropsList()
+          .equals(other.getNodePropsList());
+      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -468,13 +468,17 @@ public final class MsgCrtNodeOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
-      hash = (53 * hash) + getNodeName().hashCode();
-      hash = (37 * hash) + NODE_TYPE_FIELD_NUMBER;
-      hash = (53 * hash) + getNodeType().hashCode();
-      if (!internalGetNodeProps().getMap().isEmpty()) {
+      if (hasNodeName()) {
+        hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getNodeName().hashCode();
+      }
+      if (hasNodeType()) {
+        hash = (37 * hash) + NODE_TYPE_FIELD_NUMBER;
+        hash = (53 * hash) + getNodeType().hashCode();
+      }
+      if (getNodePropsCount() > 0) {
         hash = (37 * hash) + NODE_PROPS_FIELD_NUMBER;
-        hash = (53 * hash) + internalGetNodeProps().hashCode();
+        hash = (53 * hash) + getNodePropsList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -560,7 +564,7 @@ public final class MsgCrtNodeOuterClass {
     }
     /**
      * <pre>
-     * drbdmanageNG - Create node
+     * linstor - Create node
      * </pre>
      *
      * Protobuf type {@code com.linbit.drbdmanage.proto.MsgCrtNode}
@@ -574,28 +578,6 @@ public final class MsgCrtNodeOuterClass {
         return com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_descriptor;
       }
 
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMapField(
-          int number) {
-        switch (number) {
-          case 3:
-            return internalGetNodeProps();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMutableMapField(
-          int number) {
-        switch (number) {
-          case 3:
-            return internalGetMutableNodeProps();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
       protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
         return com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_fieldAccessorTable
@@ -616,15 +598,21 @@ public final class MsgCrtNodeOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
+          getNodePropsFieldBuilder();
         }
       }
       public Builder clear() {
         super.clear();
         nodeName_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000001);
         nodeType_ = "";
-
-        internalGetMutableNodeProps().clear();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        if (nodePropsBuilder_ == null) {
+          nodeProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000004);
+        } else {
+          nodePropsBuilder_.clear();
+        }
         return this;
       }
 
@@ -649,10 +637,23 @@ public final class MsgCrtNodeOuterClass {
         com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode result = new com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
         result.nodeName_ = nodeName_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
         result.nodeType_ = nodeType_;
-        result.nodeProps_ = internalGetNodeProps();
-        result.nodeProps_.makeImmutable();
+        if (nodePropsBuilder_ == null) {
+          if (((bitField0_ & 0x00000004) == 0x00000004)) {
+            nodeProps_ = java.util.Collections.unmodifiableList(nodeProps_);
+            bitField0_ = (bitField0_ & ~0x00000004);
+          }
+          result.nodeProps_ = nodeProps_;
+        } else {
+          result.nodeProps_ = nodePropsBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -695,21 +696,59 @@ public final class MsgCrtNodeOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode other) {
         if (other == com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode.getDefaultInstance()) return this;
-        if (!other.getNodeName().isEmpty()) {
+        if (other.hasNodeName()) {
+          bitField0_ |= 0x00000001;
           nodeName_ = other.nodeName_;
           onChanged();
         }
-        if (!other.getNodeType().isEmpty()) {
+        if (other.hasNodeType()) {
+          bitField0_ |= 0x00000002;
           nodeType_ = other.nodeType_;
           onChanged();
         }
-        internalGetMutableNodeProps().mergeFrom(
-            other.internalGetNodeProps());
+        if (nodePropsBuilder_ == null) {
+          if (!other.nodeProps_.isEmpty()) {
+            if (nodeProps_.isEmpty()) {
+              nodeProps_ = other.nodeProps_;
+              bitField0_ = (bitField0_ & ~0x00000004);
+            } else {
+              ensureNodePropsIsMutable();
+              nodeProps_.addAll(other.nodeProps_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.nodeProps_.isEmpty()) {
+            if (nodePropsBuilder_.isEmpty()) {
+              nodePropsBuilder_.dispose();
+              nodePropsBuilder_ = null;
+              nodeProps_ = other.nodeProps_;
+              bitField0_ = (bitField0_ & ~0x00000004);
+              nodePropsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getNodePropsFieldBuilder() : null;
+            } else {
+              nodePropsBuilder_.addAllMessages(other.nodeProps_);
+            }
+          }
+        }
+        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
       public final boolean isInitialized() {
+        if (!hasNodeName()) {
+          return false;
+        }
+        if (!hasNodeType()) {
+          return false;
+        }
+        for (int i = 0; i < getNodePropsCount(); i++) {
+          if (!getNodeProps(i).isInitialized()) {
+            return false;
+          }
+        }
         return true;
       }
 
@@ -738,7 +777,17 @@ public final class MsgCrtNodeOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
+       */
+      public boolean hasNodeName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * Node name
+       * </pre>
+       *
+       * <code>required string node_name = 1;</code>
        */
       public java.lang.String getNodeName() {
         java.lang.Object ref = nodeName_;
@@ -746,7 +795,9 @@ public final class MsgCrtNodeOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          nodeName_ = s;
+          if (bs.isValidUtf8()) {
+            nodeName_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -757,7 +808,7 @@ public final class MsgCrtNodeOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public com.google.protobuf.ByteString
           getNodeNameBytes() {
@@ -777,14 +828,14 @@ public final class MsgCrtNodeOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public Builder setNodeName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000001;
         nodeName_ = value;
         onChanged();
         return this;
@@ -794,10 +845,10 @@ public final class MsgCrtNodeOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public Builder clearNodeName() {
-        
+        bitField0_ = (bitField0_ & ~0x00000001);
         nodeName_ = getDefaultInstance().getNodeName();
         onChanged();
         return this;
@@ -807,15 +858,14 @@ public final class MsgCrtNodeOuterClass {
        * Node name
        * </pre>
        *
-       * <code>string node_name = 1;</code>
+       * <code>required string node_name = 1;</code>
        */
       public Builder setNodeNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000001;
         nodeName_ = value;
         onChanged();
         return this;
@@ -827,7 +877,17 @@ public final class MsgCrtNodeOuterClass {
        * Node type
        * </pre>
        *
-       * <code>string node_type = 2;</code>
+       * <code>required string node_type = 2;</code>
+       */
+      public boolean hasNodeType() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <pre>
+       * Node type
+       * </pre>
+       *
+       * <code>required string node_type = 2;</code>
        */
       public java.lang.String getNodeType() {
         java.lang.Object ref = nodeType_;
@@ -835,7 +895,9 @@ public final class MsgCrtNodeOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          nodeType_ = s;
+          if (bs.isValidUtf8()) {
+            nodeType_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -846,7 +908,7 @@ public final class MsgCrtNodeOuterClass {
        * Node type
        * </pre>
        *
-       * <code>string node_type = 2;</code>
+       * <code>required string node_type = 2;</code>
        */
       public com.google.protobuf.ByteString
           getNodeTypeBytes() {
@@ -866,14 +928,14 @@ public final class MsgCrtNodeOuterClass {
        * Node type
        * </pre>
        *
-       * <code>string node_type = 2;</code>
+       * <code>required string node_type = 2;</code>
        */
       public Builder setNodeType(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000002;
         nodeType_ = value;
         onChanged();
         return this;
@@ -883,10 +945,10 @@ public final class MsgCrtNodeOuterClass {
        * Node type
        * </pre>
        *
-       * <code>string node_type = 2;</code>
+       * <code>required string node_type = 2;</code>
        */
       public Builder clearNodeType() {
-        
+        bitField0_ = (bitField0_ & ~0x00000002);
         nodeType_ = getDefaultInstance().getNodeType();
         onChanged();
         return this;
@@ -896,115 +958,223 @@ public final class MsgCrtNodeOuterClass {
        * Node type
        * </pre>
        *
-       * <code>string node_type = 2;</code>
+       * <code>required string node_type = 2;</code>
        */
       public Builder setNodeTypeBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000002;
         nodeType_ = value;
         onChanged();
         return this;
       }
 
-      private com.google.protobuf.MapField<
-          java.lang.String, java.lang.String> nodeProps_;
-      private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-      internalGetNodeProps() {
-        if (nodeProps_ == null) {
-          return com.google.protobuf.MapField.emptyMapField(
-              NodePropsDefaultEntryHolder.defaultEntry);
-        }
-        return nodeProps_;
-      }
-      private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-      internalGetMutableNodeProps() {
-        onChanged();;
-        if (nodeProps_ == null) {
-          nodeProps_ = com.google.protobuf.MapField.newMapField(
-              NodePropsDefaultEntryHolder.defaultEntry);
-        }
-        if (!nodeProps_.isMutable()) {
-          nodeProps_ = nodeProps_.copy();
-        }
-        return nodeProps_;
+      private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> nodeProps_ =
+        java.util.Collections.emptyList();
+      private void ensureNodePropsIsMutable() {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+          nodeProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(nodeProps_);
+          bitField0_ |= 0x00000004;
+         }
       }
 
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> nodePropsBuilder_;
+
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getNodePropsList() {
+        if (nodePropsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(nodeProps_);
+        } else {
+          return nodePropsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
       public int getNodePropsCount() {
-        return internalGetNodeProps().getMap().size();
-      }
-      /**
-       * <pre>
-       * Node properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; node_props = 3;</code>
-       */
-
-      public boolean containsNodeProps(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        return internalGetNodeProps().getMap().containsKey(key);
-      }
-      /**
-       * Use {@link #getNodePropsMap()} instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String> getNodeProps() {
-        return getNodePropsMap();
-      }
-      /**
-       * <pre>
-       * Node properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; node_props = 3;</code>
-       */
-
-      public java.util.Map<java.lang.String, java.lang.String> getNodePropsMap() {
-        return internalGetNodeProps().getMap();
-      }
-      /**
-       * <pre>
-       * Node properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; node_props = 3;</code>
-       */
-
-      public java.lang.String getNodePropsOrDefault(
-          java.lang.String key,
-          java.lang.String defaultValue) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            internalGetNodeProps().getMap();
-        return map.containsKey(key) ? map.get(key) : defaultValue;
-      }
-      /**
-       * <pre>
-       * Node properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; node_props = 3;</code>
-       */
-
-      public java.lang.String getNodePropsOrThrow(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            internalGetNodeProps().getMap();
-        if (!map.containsKey(key)) {
-          throw new java.lang.IllegalArgumentException();
+        if (nodePropsBuilder_ == null) {
+          return nodeProps_.size();
+        } else {
+          return nodePropsBuilder_.getCount();
         }
-        return map.get(key);
       }
-
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getNodeProps(int index) {
+        if (nodePropsBuilder_ == null) {
+          return nodeProps_.get(index);
+        } else {
+          return nodePropsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public Builder setNodeProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (nodePropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureNodePropsIsMutable();
+          nodeProps_.set(index, value);
+          onChanged();
+        } else {
+          nodePropsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public Builder setNodeProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (nodePropsBuilder_ == null) {
+          ensureNodePropsIsMutable();
+          nodeProps_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          nodePropsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public Builder addNodeProps(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (nodePropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureNodePropsIsMutable();
+          nodeProps_.add(value);
+          onChanged();
+        } else {
+          nodePropsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public Builder addNodeProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (nodePropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureNodePropsIsMutable();
+          nodeProps_.add(index, value);
+          onChanged();
+        } else {
+          nodePropsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public Builder addNodeProps(
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (nodePropsBuilder_ == null) {
+          ensureNodePropsIsMutable();
+          nodeProps_.add(builderForValue.build());
+          onChanged();
+        } else {
+          nodePropsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public Builder addNodeProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (nodePropsBuilder_ == null) {
+          ensureNodePropsIsMutable();
+          nodeProps_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          nodePropsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public Builder addAllNodeProps(
+          java.lang.Iterable<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
+        if (nodePropsBuilder_ == null) {
+          ensureNodePropsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, nodeProps_);
+          onChanged();
+        } else {
+          nodePropsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
       public Builder clearNodeProps() {
-        internalGetMutableNodeProps().getMutableMap()
-            .clear();
+        if (nodePropsBuilder_ == null) {
+          nodeProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000004);
+          onChanged();
+        } else {
+          nodePropsBuilder_.clear();
+        }
         return this;
       }
       /**
@@ -1012,38 +1182,16 @@ public final class MsgCrtNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_props = 3;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
        */
-
-      public Builder removeNodeProps(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        internalGetMutableNodeProps().getMutableMap()
-            .remove(key);
-        return this;
-      }
-      /**
-       * Use alternate mutation accessors instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String>
-      getMutableNodeProps() {
-        return internalGetMutableNodeProps().getMutableMap();
-      }
-      /**
-       * <pre>
-       * Node properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; node_props = 3;</code>
-       */
-      public Builder putNodeProps(
-          java.lang.String key,
-          java.lang.String value) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        if (value == null) { throw new java.lang.NullPointerException(); }
-        internalGetMutableNodeProps().getMutableMap()
-            .put(key, value);
+      public Builder removeNodeProps(int index) {
+        if (nodePropsBuilder_ == null) {
+          ensureNodePropsIsMutable();
+          nodeProps_.remove(index);
+          onChanged();
+        } else {
+          nodePropsBuilder_.remove(index);
+        }
         return this;
       }
       /**
@@ -1051,23 +1199,97 @@ public final class MsgCrtNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_props = 3;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
        */
-
-      public Builder putAllNodeProps(
-          java.util.Map<java.lang.String, java.lang.String> values) {
-        internalGetMutableNodeProps().getMutableMap()
-            .putAll(values);
-        return this;
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getNodePropsBuilder(
+          int index) {
+        return getNodePropsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodePropsOrBuilder(
+          int index) {
+        if (nodePropsBuilder_ == null) {
+          return nodeProps_.get(index);  } else {
+          return nodePropsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+           getNodePropsOrBuilderList() {
+        if (nodePropsBuilder_ != null) {
+          return nodePropsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(nodeProps_);
+        }
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addNodePropsBuilder() {
+        return getNodePropsFieldBuilder().addBuilder(
+            com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addNodePropsBuilder(
+          int index) {
+        return getNodePropsFieldBuilder().addBuilder(
+            index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Node properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_props = 3;</code>
+       */
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
+           getNodePropsBuilderList() {
+        return getNodePropsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+          getNodePropsFieldBuilder() {
+        if (nodePropsBuilder_ == null) {
+          nodePropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
+                  nodeProps_,
+                  ((bitField0_ & 0x00000004) == 0x00000004),
+                  getParentForChildren(),
+                  isClean());
+          nodeProps_ = null;
+        }
+        return nodePropsBuilder_;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.setUnknownFields(unknownFields);
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.mergeUnknownFields(unknownFields);
       }
 
 
@@ -1084,7 +1306,7 @@ public final class MsgCrtNodeOuterClass {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<MsgCrtNode>
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<MsgCrtNode>
         PARSER = new com.google.protobuf.AbstractParser<MsgCrtNode>() {
       public MsgCrtNode parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
@@ -1114,11 +1336,6 @@ public final class MsgCrtNodeOuterClass {
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_NodePropsEntry_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_NodePropsEntry_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -1129,11 +1346,10 @@ public final class MsgCrtNodeOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\020MsgCrtNode.proto\022\033com.linbit.drbdmanag" +
-      "e.proto\"\260\001\n\nMsgCrtNode\022\021\n\tnode_name\030\001 \001(" +
-      "\t\022\021\n\tnode_type\030\002 \001(\t\022J\n\nnode_props\030\003 \003(\013" +
-      "26.com.linbit.drbdmanage.proto.MsgCrtNod" +
-      "e.NodePropsEntry\0320\n\016NodePropsEntry\022\013\n\003ke" +
-      "y\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001b\006proto3"
+      "e.proto\032\025LinStorMapEntry.proto\"t\n\nMsgCrt" +
+      "Node\022\021\n\tnode_name\030\001 \002(\t\022\021\n\tnode_type\030\002 \002" +
+      "(\t\022@\n\nnode_props\030\003 \003(\0132,.com.linbit.drbd" +
+      "manage.proto.LinStorMapEntryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1146,6 +1362,7 @@ public final class MsgCrtNodeOuterClass {
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_descriptor =
       getDescriptor().getMessageTypes().get(0);
@@ -1153,12 +1370,7 @@ public final class MsgCrtNodeOuterClass {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_descriptor,
         new java.lang.String[] { "NodeName", "NodeType", "NodeProps", });
-    internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_NodePropsEntry_descriptor =
-      internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_descriptor.getNestedTypes().get(0);
-    internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_NodePropsEntry_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_com_linbit_drbdmanage_proto_MsgCrtNode_NodePropsEntry_descriptor,
-        new java.lang.String[] { "Key", "Value", });
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.drbdmanage.proto.internal;
+
+// LinStor - Internal message for changed resource
+message MsgIntRscChanged
+{
+    // Resource name
+    string              resource_name       = 1;
+}

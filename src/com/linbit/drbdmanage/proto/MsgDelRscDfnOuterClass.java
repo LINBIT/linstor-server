@@ -23,7 +23,15 @@ public final class MsgDelRscDfnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>string rsc_name = 1;</code>
+     * <code>required string rsc_name = 1;</code>
+     */
+    boolean hasRscName();
+    /**
+     * <pre>
+     * Resource name
+     * </pre>
+     *
+     * <code>required string rsc_name = 1;</code>
      */
     java.lang.String getRscName();
     /**
@@ -31,14 +39,14 @@ public final class MsgDelRscDfnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>string rsc_name = 1;</code>
+     * <code>required string rsc_name = 1;</code>
      */
     com.google.protobuf.ByteString
         getRscNameBytes();
   }
   /**
    * <pre>
-   * drbdmanageNG - Delete resource definition
+   * linstor - Delete resource definition
    * </pre>
    *
    * Protobuf type {@code com.linbit.drbdmanage.proto.MsgDelRscDfn}
@@ -58,7 +66,7 @@ public final class MsgDelRscDfnOuterClass {
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+      return this.unknownFields;
     }
     private MsgDelRscDfn(
         com.google.protobuf.CodedInputStream input,
@@ -66,6 +74,8 @@ public final class MsgDelRscDfnOuterClass {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -75,15 +85,16 @@ public final class MsgDelRscDfnOuterClass {
               done = true;
               break;
             default: {
-              if (!input.skipField(tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
             }
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              rscName_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000001;
+              rscName_ = bs;
               break;
             }
           }
@@ -94,6 +105,7 @@ public final class MsgDelRscDfnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -109,6 +121,7 @@ public final class MsgDelRscDfnOuterClass {
               com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn.class, com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn.Builder.class);
     }
 
+    private int bitField0_;
     public static final int RSC_NAME_FIELD_NUMBER = 1;
     private volatile java.lang.Object rscName_;
     /**
@@ -116,7 +129,17 @@ public final class MsgDelRscDfnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>string rsc_name = 1;</code>
+     * <code>required string rsc_name = 1;</code>
+     */
+    public boolean hasRscName() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * Resource name
+     * </pre>
+     *
+     * <code>required string rsc_name = 1;</code>
      */
     public java.lang.String getRscName() {
       java.lang.Object ref = rscName_;
@@ -126,7 +149,9 @@ public final class MsgDelRscDfnOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        rscName_ = s;
+        if (bs.isValidUtf8()) {
+          rscName_ = s;
+        }
         return s;
       }
     }
@@ -135,7 +160,7 @@ public final class MsgDelRscDfnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>string rsc_name = 1;</code>
+     * <code>required string rsc_name = 1;</code>
      */
     public com.google.protobuf.ByteString
         getRscNameBytes() {
@@ -157,15 +182,20 @@ public final class MsgDelRscDfnOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasRscName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!getRscNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, rscName_);
       }
+      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -173,9 +203,10 @@ public final class MsgDelRscDfnOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (!getRscNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, rscName_);
       }
+      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -192,8 +223,12 @@ public final class MsgDelRscDfnOuterClass {
       com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn other = (com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn) obj;
 
       boolean result = true;
-      result = result && getRscName()
-          .equals(other.getRscName());
+      result = result && (hasRscName() == other.hasRscName());
+      if (hasRscName()) {
+        result = result && getRscName()
+            .equals(other.getRscName());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -204,8 +239,10 @@ public final class MsgDelRscDfnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + RSC_NAME_FIELD_NUMBER;
-      hash = (53 * hash) + getRscName().hashCode();
+      if (hasRscName()) {
+        hash = (37 * hash) + RSC_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getRscName().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -290,7 +327,7 @@ public final class MsgDelRscDfnOuterClass {
     }
     /**
      * <pre>
-     * drbdmanageNG - Delete resource definition
+     * linstor - Delete resource definition
      * </pre>
      *
      * Protobuf type {@code com.linbit.drbdmanage.proto.MsgDelRscDfn}
@@ -329,7 +366,7 @@ public final class MsgDelRscDfnOuterClass {
       public Builder clear() {
         super.clear();
         rscName_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
 
@@ -352,7 +389,13 @@ public final class MsgDelRscDfnOuterClass {
 
       public com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn buildPartial() {
         com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn result = new com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
         result.rscName_ = rscName_;
+        result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
@@ -394,15 +437,20 @@ public final class MsgDelRscDfnOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn other) {
         if (other == com.linbit.drbdmanage.proto.MsgDelRscDfnOuterClass.MsgDelRscDfn.getDefaultInstance()) return this;
-        if (!other.getRscName().isEmpty()) {
+        if (other.hasRscName()) {
+          bitField0_ |= 0x00000001;
           rscName_ = other.rscName_;
           onChanged();
         }
+        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
       public final boolean isInitialized() {
+        if (!hasRscName()) {
+          return false;
+        }
         return true;
       }
 
@@ -423,6 +471,7 @@ public final class MsgDelRscDfnOuterClass {
         }
         return this;
       }
+      private int bitField0_;
 
       private java.lang.Object rscName_ = "";
       /**
@@ -430,7 +479,17 @@ public final class MsgDelRscDfnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>string rsc_name = 1;</code>
+       * <code>required string rsc_name = 1;</code>
+       */
+      public boolean hasRscName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * Resource name
+       * </pre>
+       *
+       * <code>required string rsc_name = 1;</code>
        */
       public java.lang.String getRscName() {
         java.lang.Object ref = rscName_;
@@ -438,7 +497,9 @@ public final class MsgDelRscDfnOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          rscName_ = s;
+          if (bs.isValidUtf8()) {
+            rscName_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -449,7 +510,7 @@ public final class MsgDelRscDfnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>string rsc_name = 1;</code>
+       * <code>required string rsc_name = 1;</code>
        */
       public com.google.protobuf.ByteString
           getRscNameBytes() {
@@ -469,14 +530,14 @@ public final class MsgDelRscDfnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>string rsc_name = 1;</code>
+       * <code>required string rsc_name = 1;</code>
        */
       public Builder setRscName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000001;
         rscName_ = value;
         onChanged();
         return this;
@@ -486,10 +547,10 @@ public final class MsgDelRscDfnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>string rsc_name = 1;</code>
+       * <code>required string rsc_name = 1;</code>
        */
       public Builder clearRscName() {
-        
+        bitField0_ = (bitField0_ & ~0x00000001);
         rscName_ = getDefaultInstance().getRscName();
         onChanged();
         return this;
@@ -499,27 +560,26 @@ public final class MsgDelRscDfnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>string rsc_name = 1;</code>
+       * <code>required string rsc_name = 1;</code>
        */
       public Builder setRscNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000001;
         rscName_ = value;
         onChanged();
         return this;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.setUnknownFields(unknownFields);
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.mergeUnknownFields(unknownFields);
       }
 
 
@@ -536,7 +596,7 @@ public final class MsgDelRscDfnOuterClass {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<MsgDelRscDfn>
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<MsgDelRscDfn>
         PARSER = new com.google.protobuf.AbstractParser<MsgDelRscDfn>() {
       public MsgDelRscDfn parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
@@ -577,7 +637,7 @@ public final class MsgDelRscDfnOuterClass {
     java.lang.String[] descriptorData = {
       "\n\022MsgDelRscDfn.proto\022\033com.linbit.drbdman" +
       "age.proto\" \n\014MsgDelRscDfn\022\020\n\010rsc_name\030\001 " +
-      "\001(\tb\006proto3"
+      "\002(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

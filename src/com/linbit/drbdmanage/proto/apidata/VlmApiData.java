@@ -1,8 +1,10 @@
 package com.linbit.drbdmanage.proto.apidata;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.linbit.drbdmanage.Volume.VlmApi;
+import com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
 
 public class VlmApiData implements VlmApi
@@ -41,7 +43,11 @@ public class VlmApiData implements VlmApi
     @Override
     public Map<String, String> getVlmProps()
     {
-        return vlm.getVlmPropsMap();
+        Map<String, String> ret = new HashMap<>();
+        for (LinStorMapEntry entry : vlm.getVlmPropsList())
+        {
+            ret.put(entry.getKey(), entry.getValue());
+        }
+        return ret;
     }
-
 }

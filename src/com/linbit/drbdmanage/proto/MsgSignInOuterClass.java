@@ -23,7 +23,15 @@ public final class MsgSignInOuterClass {
      * Name of the identity to sign in
      * </pre>
      *
-     * <code>string id_name = 1;</code>
+     * <code>required string id_name = 1;</code>
+     */
+    boolean hasIdName();
+    /**
+     * <pre>
+     * Name of the identity to sign in
+     * </pre>
+     *
+     * <code>required string id_name = 1;</code>
      */
     java.lang.String getIdName();
     /**
@@ -31,7 +39,7 @@ public final class MsgSignInOuterClass {
      * Name of the identity to sign in
      * </pre>
      *
-     * <code>string id_name = 1;</code>
+     * <code>required string id_name = 1;</code>
      */
     com.google.protobuf.ByteString
         getIdNameBytes();
@@ -41,7 +49,15 @@ public final class MsgSignInOuterClass {
      * Password associated with the identity
      * </pre>
      *
-     * <code>string password = 2;</code>
+     * <code>required string password = 2;</code>
+     */
+    boolean hasPassword();
+    /**
+     * <pre>
+     * Password associated with the identity
+     * </pre>
+     *
+     * <code>required string password = 2;</code>
      */
     java.lang.String getPassword();
     /**
@@ -49,7 +65,7 @@ public final class MsgSignInOuterClass {
      * Password associated with the identity
      * </pre>
      *
-     * <code>string password = 2;</code>
+     * <code>required string password = 2;</code>
      */
     com.google.protobuf.ByteString
         getPasswordBytes();
@@ -77,7 +93,7 @@ public final class MsgSignInOuterClass {
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+      return this.unknownFields;
     }
     private MsgSignIn(
         com.google.protobuf.CodedInputStream input,
@@ -85,6 +101,8 @@ public final class MsgSignInOuterClass {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -94,21 +112,22 @@ public final class MsgSignInOuterClass {
               done = true;
               break;
             default: {
-              if (!input.skipField(tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
             }
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              idName_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000001;
+              idName_ = bs;
               break;
             }
             case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              password_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              password_ = bs;
               break;
             }
           }
@@ -119,6 +138,7 @@ public final class MsgSignInOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -134,6 +154,7 @@ public final class MsgSignInOuterClass {
               com.linbit.drbdmanage.proto.MsgSignInOuterClass.MsgSignIn.class, com.linbit.drbdmanage.proto.MsgSignInOuterClass.MsgSignIn.Builder.class);
     }
 
+    private int bitField0_;
     public static final int ID_NAME_FIELD_NUMBER = 1;
     private volatile java.lang.Object idName_;
     /**
@@ -141,7 +162,17 @@ public final class MsgSignInOuterClass {
      * Name of the identity to sign in
      * </pre>
      *
-     * <code>string id_name = 1;</code>
+     * <code>required string id_name = 1;</code>
+     */
+    public boolean hasIdName() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * Name of the identity to sign in
+     * </pre>
+     *
+     * <code>required string id_name = 1;</code>
      */
     public java.lang.String getIdName() {
       java.lang.Object ref = idName_;
@@ -151,7 +182,9 @@ public final class MsgSignInOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        idName_ = s;
+        if (bs.isValidUtf8()) {
+          idName_ = s;
+        }
         return s;
       }
     }
@@ -160,7 +193,7 @@ public final class MsgSignInOuterClass {
      * Name of the identity to sign in
      * </pre>
      *
-     * <code>string id_name = 1;</code>
+     * <code>required string id_name = 1;</code>
      */
     public com.google.protobuf.ByteString
         getIdNameBytes() {
@@ -183,7 +216,17 @@ public final class MsgSignInOuterClass {
      * Password associated with the identity
      * </pre>
      *
-     * <code>string password = 2;</code>
+     * <code>required string password = 2;</code>
+     */
+    public boolean hasPassword() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <pre>
+     * Password associated with the identity
+     * </pre>
+     *
+     * <code>required string password = 2;</code>
      */
     public java.lang.String getPassword() {
       java.lang.Object ref = password_;
@@ -193,7 +236,9 @@ public final class MsgSignInOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        password_ = s;
+        if (bs.isValidUtf8()) {
+          password_ = s;
+        }
         return s;
       }
     }
@@ -202,7 +247,7 @@ public final class MsgSignInOuterClass {
      * Password associated with the identity
      * </pre>
      *
-     * <code>string password = 2;</code>
+     * <code>required string password = 2;</code>
      */
     public com.google.protobuf.ByteString
         getPasswordBytes() {
@@ -224,18 +269,27 @@ public final class MsgSignInOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasIdName()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPassword()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!getIdNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, idName_);
       }
-      if (!getPasswordBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, password_);
       }
+      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -243,12 +297,13 @@ public final class MsgSignInOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (!getIdNameBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, idName_);
       }
-      if (!getPasswordBytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, password_);
       }
+      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -265,10 +320,17 @@ public final class MsgSignInOuterClass {
       com.linbit.drbdmanage.proto.MsgSignInOuterClass.MsgSignIn other = (com.linbit.drbdmanage.proto.MsgSignInOuterClass.MsgSignIn) obj;
 
       boolean result = true;
-      result = result && getIdName()
-          .equals(other.getIdName());
-      result = result && getPassword()
-          .equals(other.getPassword());
+      result = result && (hasIdName() == other.hasIdName());
+      if (hasIdName()) {
+        result = result && getIdName()
+            .equals(other.getIdName());
+      }
+      result = result && (hasPassword() == other.hasPassword());
+      if (hasPassword()) {
+        result = result && getPassword()
+            .equals(other.getPassword());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -279,10 +341,14 @@ public final class MsgSignInOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + ID_NAME_FIELD_NUMBER;
-      hash = (53 * hash) + getIdName().hashCode();
-      hash = (37 * hash) + PASSWORD_FIELD_NUMBER;
-      hash = (53 * hash) + getPassword().hashCode();
+      if (hasIdName()) {
+        hash = (37 * hash) + ID_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getIdName().hashCode();
+      }
+      if (hasPassword()) {
+        hash = (37 * hash) + PASSWORD_FIELD_NUMBER;
+        hash = (53 * hash) + getPassword().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -406,9 +472,9 @@ public final class MsgSignInOuterClass {
       public Builder clear() {
         super.clear();
         idName_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000001);
         password_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
 
@@ -431,8 +497,17 @@ public final class MsgSignInOuterClass {
 
       public com.linbit.drbdmanage.proto.MsgSignInOuterClass.MsgSignIn buildPartial() {
         com.linbit.drbdmanage.proto.MsgSignInOuterClass.MsgSignIn result = new com.linbit.drbdmanage.proto.MsgSignInOuterClass.MsgSignIn(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
         result.idName_ = idName_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
         result.password_ = password_;
+        result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
@@ -474,19 +549,28 @@ public final class MsgSignInOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgSignInOuterClass.MsgSignIn other) {
         if (other == com.linbit.drbdmanage.proto.MsgSignInOuterClass.MsgSignIn.getDefaultInstance()) return this;
-        if (!other.getIdName().isEmpty()) {
+        if (other.hasIdName()) {
+          bitField0_ |= 0x00000001;
           idName_ = other.idName_;
           onChanged();
         }
-        if (!other.getPassword().isEmpty()) {
+        if (other.hasPassword()) {
+          bitField0_ |= 0x00000002;
           password_ = other.password_;
           onChanged();
         }
+        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
       public final boolean isInitialized() {
+        if (!hasIdName()) {
+          return false;
+        }
+        if (!hasPassword()) {
+          return false;
+        }
         return true;
       }
 
@@ -507,6 +591,7 @@ public final class MsgSignInOuterClass {
         }
         return this;
       }
+      private int bitField0_;
 
       private java.lang.Object idName_ = "";
       /**
@@ -514,7 +599,17 @@ public final class MsgSignInOuterClass {
        * Name of the identity to sign in
        * </pre>
        *
-       * <code>string id_name = 1;</code>
+       * <code>required string id_name = 1;</code>
+       */
+      public boolean hasIdName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * Name of the identity to sign in
+       * </pre>
+       *
+       * <code>required string id_name = 1;</code>
        */
       public java.lang.String getIdName() {
         java.lang.Object ref = idName_;
@@ -522,7 +617,9 @@ public final class MsgSignInOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          idName_ = s;
+          if (bs.isValidUtf8()) {
+            idName_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -533,7 +630,7 @@ public final class MsgSignInOuterClass {
        * Name of the identity to sign in
        * </pre>
        *
-       * <code>string id_name = 1;</code>
+       * <code>required string id_name = 1;</code>
        */
       public com.google.protobuf.ByteString
           getIdNameBytes() {
@@ -553,14 +650,14 @@ public final class MsgSignInOuterClass {
        * Name of the identity to sign in
        * </pre>
        *
-       * <code>string id_name = 1;</code>
+       * <code>required string id_name = 1;</code>
        */
       public Builder setIdName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000001;
         idName_ = value;
         onChanged();
         return this;
@@ -570,10 +667,10 @@ public final class MsgSignInOuterClass {
        * Name of the identity to sign in
        * </pre>
        *
-       * <code>string id_name = 1;</code>
+       * <code>required string id_name = 1;</code>
        */
       public Builder clearIdName() {
-        
+        bitField0_ = (bitField0_ & ~0x00000001);
         idName_ = getDefaultInstance().getIdName();
         onChanged();
         return this;
@@ -583,15 +680,14 @@ public final class MsgSignInOuterClass {
        * Name of the identity to sign in
        * </pre>
        *
-       * <code>string id_name = 1;</code>
+       * <code>required string id_name = 1;</code>
        */
       public Builder setIdNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000001;
         idName_ = value;
         onChanged();
         return this;
@@ -603,7 +699,17 @@ public final class MsgSignInOuterClass {
        * Password associated with the identity
        * </pre>
        *
-       * <code>string password = 2;</code>
+       * <code>required string password = 2;</code>
+       */
+      public boolean hasPassword() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <pre>
+       * Password associated with the identity
+       * </pre>
+       *
+       * <code>required string password = 2;</code>
        */
       public java.lang.String getPassword() {
         java.lang.Object ref = password_;
@@ -611,7 +717,9 @@ public final class MsgSignInOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          password_ = s;
+          if (bs.isValidUtf8()) {
+            password_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -622,7 +730,7 @@ public final class MsgSignInOuterClass {
        * Password associated with the identity
        * </pre>
        *
-       * <code>string password = 2;</code>
+       * <code>required string password = 2;</code>
        */
       public com.google.protobuf.ByteString
           getPasswordBytes() {
@@ -642,14 +750,14 @@ public final class MsgSignInOuterClass {
        * Password associated with the identity
        * </pre>
        *
-       * <code>string password = 2;</code>
+       * <code>required string password = 2;</code>
        */
       public Builder setPassword(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000002;
         password_ = value;
         onChanged();
         return this;
@@ -659,10 +767,10 @@ public final class MsgSignInOuterClass {
        * Password associated with the identity
        * </pre>
        *
-       * <code>string password = 2;</code>
+       * <code>required string password = 2;</code>
        */
       public Builder clearPassword() {
-        
+        bitField0_ = (bitField0_ & ~0x00000002);
         password_ = getDefaultInstance().getPassword();
         onChanged();
         return this;
@@ -672,27 +780,26 @@ public final class MsgSignInOuterClass {
        * Password associated with the identity
        * </pre>
        *
-       * <code>string password = 2;</code>
+       * <code>required string password = 2;</code>
        */
       public Builder setPasswordBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000002;
         password_ = value;
         onChanged();
         return this;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.setUnknownFields(unknownFields);
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.mergeUnknownFields(unknownFields);
       }
 
 
@@ -709,7 +816,7 @@ public final class MsgSignInOuterClass {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<MsgSignIn>
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<MsgSignIn>
         PARSER = new com.google.protobuf.AbstractParser<MsgSignIn>() {
       public MsgSignIn parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
@@ -749,8 +856,8 @@ public final class MsgSignInOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\017MsgSignIn.proto\022\033com.linbit.drbdmanage" +
-      ".proto\".\n\tMsgSignIn\022\017\n\007id_name\030\001 \001(\t\022\020\n\010" +
-      "password\030\002 \001(\tb\006proto3"
+      ".proto\".\n\tMsgSignIn\022\017\n\007id_name\030\001 \002(\t\022\020\n\010" +
+      "password\030\002 \002(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

@@ -23,7 +23,15 @@ public final class MsgCrtNodeConnOuterClass {
      * Node 1 name
      * </pre>
      *
-     * <code>string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 1;</code>
+     */
+    boolean hasNodeName1();
+    /**
+     * <pre>
+     * Node 1 name
+     * </pre>
+     *
+     * <code>required string node_name_1 = 1;</code>
      */
     java.lang.String getNodeName1();
     /**
@@ -31,7 +39,7 @@ public final class MsgCrtNodeConnOuterClass {
      * Node 1 name
      * </pre>
      *
-     * <code>string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 1;</code>
      */
     com.google.protobuf.ByteString
         getNodeName1Bytes();
@@ -41,7 +49,15 @@ public final class MsgCrtNodeConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 2;</code>
+     */
+    boolean hasNodeName2();
+    /**
+     * <pre>
+     * Node 2 name
+     * </pre>
+     *
+     * <code>required string node_name_2 = 2;</code>
      */
     java.lang.String getNodeName2();
     /**
@@ -49,7 +65,7 @@ public final class MsgCrtNodeConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 2;</code>
      */
     com.google.protobuf.ByteString
         getNodeName2Bytes();
@@ -59,7 +75,24 @@ public final class MsgCrtNodeConnOuterClass {
      * Node connection properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+     */
+    java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
+        getNodeConnPropsList();
+    /**
+     * <pre>
+     * Node connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+     */
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getNodeConnProps(int index);
+    /**
+     * <pre>
+     * Node connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
      */
     int getNodeConnPropsCount();
     /**
@@ -67,50 +100,23 @@ public final class MsgCrtNodeConnOuterClass {
      * Node connection properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
      */
-    boolean containsNodeConnProps(
-        java.lang.String key);
-    /**
-     * Use {@link #getNodeConnPropsMap()} instead.
-     */
-    @java.lang.Deprecated
-    java.util.Map<java.lang.String, java.lang.String>
-    getNodeConnProps();
+    java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getNodeConnPropsOrBuilderList();
     /**
      * <pre>
      * Node connection properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
      */
-    java.util.Map<java.lang.String, java.lang.String>
-    getNodeConnPropsMap();
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
-     */
-
-    java.lang.String getNodeConnPropsOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue);
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
-     */
-
-    java.lang.String getNodeConnPropsOrThrow(
-        java.lang.String key);
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodeConnPropsOrBuilder(
+        int index);
   }
   /**
    * <pre>
-   * drbdmanageNG - Create node connection
+   * linstor - Create node connection
    * </pre>
    *
    * Protobuf type {@code com.linbit.drbdmanage.proto.MsgCrtNodeConn}
@@ -126,12 +132,13 @@ public final class MsgCrtNodeConnOuterClass {
     private MsgCrtNodeConn() {
       nodeName1_ = "";
       nodeName2_ = "";
+      nodeConnProps_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+      return this.unknownFields;
     }
     private MsgCrtNodeConn(
         com.google.protobuf.CodedInputStream input,
@@ -139,6 +146,8 @@ public final class MsgCrtNodeConnOuterClass {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -148,34 +157,31 @@ public final class MsgCrtNodeConnOuterClass {
               done = true;
               break;
             default: {
-              if (!input.skipField(tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
             }
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              nodeName1_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000001;
+              nodeName1_ = bs;
               break;
             }
             case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              nodeName2_ = s;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              nodeName2_ = bs;
               break;
             }
             case 26: {
               if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-                nodeConnProps_ = com.google.protobuf.MapField.newMapField(
-                    NodeConnPropsDefaultEntryHolder.defaultEntry);
+                nodeConnProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
                 mutable_bitField0_ |= 0x00000004;
               }
-              com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
-              nodeConnProps__ = input.readMessage(
-                  NodeConnPropsDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
-              nodeConnProps_.getMutableMap().put(
-                  nodeConnProps__.getKey(), nodeConnProps__.getValue());
+              nodeConnProps_.add(
+                  input.readMessage(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
               break;
             }
           }
@@ -186,6 +192,10 @@ public final class MsgCrtNodeConnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+          nodeConnProps_ = java.util.Collections.unmodifiableList(nodeConnProps_);
+        }
+        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -194,17 +204,6 @@ public final class MsgCrtNodeConnOuterClass {
       return com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_descriptor;
     }
 
-    @SuppressWarnings({"rawtypes"})
-    protected com.google.protobuf.MapField internalGetMapField(
-        int number) {
-      switch (number) {
-        case 3:
-          return internalGetNodeConnProps();
-        default:
-          throw new RuntimeException(
-              "Invalid map field number: " + number);
-      }
-    }
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
       return com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_fieldAccessorTable
@@ -220,7 +219,17 @@ public final class MsgCrtNodeConnOuterClass {
      * Node 1 name
      * </pre>
      *
-     * <code>string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 1;</code>
+     */
+    public boolean hasNodeName1() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * Node 1 name
+     * </pre>
+     *
+     * <code>required string node_name_1 = 1;</code>
      */
     public java.lang.String getNodeName1() {
       java.lang.Object ref = nodeName1_;
@@ -230,7 +239,9 @@ public final class MsgCrtNodeConnOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        nodeName1_ = s;
+        if (bs.isValidUtf8()) {
+          nodeName1_ = s;
+        }
         return s;
       }
     }
@@ -239,7 +250,7 @@ public final class MsgCrtNodeConnOuterClass {
      * Node 1 name
      * </pre>
      *
-     * <code>string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 1;</code>
      */
     public com.google.protobuf.ByteString
         getNodeName1Bytes() {
@@ -262,7 +273,17 @@ public final class MsgCrtNodeConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 2;</code>
+     */
+    public boolean hasNodeName2() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <pre>
+     * Node 2 name
+     * </pre>
+     *
+     * <code>required string node_name_2 = 2;</code>
      */
     public java.lang.String getNodeName2() {
       java.lang.Object ref = nodeName2_;
@@ -272,7 +293,9 @@ public final class MsgCrtNodeConnOuterClass {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        nodeName2_ = s;
+        if (bs.isValidUtf8()) {
+          nodeName2_ = s;
+        }
         return s;
       }
     }
@@ -281,7 +304,7 @@ public final class MsgCrtNodeConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 2;</code>
      */
     public com.google.protobuf.ByteString
         getNodeName2Bytes() {
@@ -298,95 +321,58 @@ public final class MsgCrtNodeConnOuterClass {
     }
 
     public static final int NODE_CONN_PROPS_FIELD_NUMBER = 3;
-    private static final class NodeConnPropsDefaultEntryHolder {
-      static final com.google.protobuf.MapEntry<
-          java.lang.String, java.lang.String> defaultEntry =
-              com.google.protobuf.MapEntry
-              .<java.lang.String, java.lang.String>newDefaultInstance(
-                  com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_NodeConnPropsEntry_descriptor, 
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "",
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "");
-    }
-    private com.google.protobuf.MapField<
-        java.lang.String, java.lang.String> nodeConnProps_;
-    private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-    internalGetNodeConnProps() {
-      if (nodeConnProps_ == null) {
-        return com.google.protobuf.MapField.emptyMapField(
-            NodeConnPropsDefaultEntryHolder.defaultEntry);
-      }
+    private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> nodeConnProps_;
+    /**
+     * <pre>
+     * Node connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+     */
+    public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getNodeConnPropsList() {
       return nodeConnProps_;
     }
-
+    /**
+     * <pre>
+     * Node connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+     */
+    public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getNodeConnPropsOrBuilderList() {
+      return nodeConnProps_;
+    }
+    /**
+     * <pre>
+     * Node connection properties map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+     */
     public int getNodeConnPropsCount() {
-      return internalGetNodeConnProps().getMap().size();
+      return nodeConnProps_.size();
     }
     /**
      * <pre>
      * Node connection properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
      */
-
-    public boolean containsNodeConnProps(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      return internalGetNodeConnProps().getMap().containsKey(key);
-    }
-    /**
-     * Use {@link #getNodeConnPropsMap()} instead.
-     */
-    @java.lang.Deprecated
-    public java.util.Map<java.lang.String, java.lang.String> getNodeConnProps() {
-      return getNodeConnPropsMap();
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getNodeConnProps(int index) {
+      return nodeConnProps_.get(index);
     }
     /**
      * <pre>
      * Node connection properties map
      * </pre>
      *
-     * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
      */
-
-    public java.util.Map<java.lang.String, java.lang.String> getNodeConnPropsMap() {
-      return internalGetNodeConnProps().getMap();
-    }
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
-     */
-
-    public java.lang.String getNodeConnPropsOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetNodeConnProps().getMap();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
-    }
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
-     */
-
-    public java.lang.String getNodeConnPropsOrThrow(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetNodeConnProps().getMap();
-      if (!map.containsKey(key)) {
-        throw new java.lang.IllegalArgumentException();
-      }
-      return map.get(key);
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodeConnPropsOrBuilder(
+        int index) {
+      return nodeConnProps_.get(index);
     }
 
     private byte memoizedIsInitialized = -1;
@@ -395,24 +381,36 @@ public final class MsgCrtNodeConnOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
+      if (!hasNodeName1()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasNodeName2()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      for (int i = 0; i < getNodeConnPropsCount(); i++) {
+        if (!getNodeConnProps(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       memoizedIsInitialized = 1;
       return true;
     }
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!getNodeName1Bytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeName1_);
       }
-      if (!getNodeName2Bytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName2_);
       }
-      com.google.protobuf.GeneratedMessageV3
-        .serializeStringMapTo(
-          output,
-          internalGetNodeConnProps(),
-          NodeConnPropsDefaultEntryHolder.defaultEntry,
-          3);
+      for (int i = 0; i < nodeConnProps_.size(); i++) {
+        output.writeMessage(3, nodeConnProps_.get(i));
+      }
+      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -420,22 +418,17 @@ public final class MsgCrtNodeConnOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (!getNodeName1Bytes().isEmpty()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeName1_);
       }
-      if (!getNodeName2Bytes().isEmpty()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName2_);
       }
-      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
-           : internalGetNodeConnProps().getMap().entrySet()) {
-        com.google.protobuf.MapEntry<java.lang.String, java.lang.String>
-        nodeConnProps__ = NodeConnPropsDefaultEntryHolder.defaultEntry.newBuilderForType()
-            .setKey(entry.getKey())
-            .setValue(entry.getValue())
-            .build();
+      for (int i = 0; i < nodeConnProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(3, nodeConnProps__);
+          .computeMessageSize(3, nodeConnProps_.get(i));
       }
+      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -452,12 +445,19 @@ public final class MsgCrtNodeConnOuterClass {
       com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn other = (com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn) obj;
 
       boolean result = true;
-      result = result && getNodeName1()
-          .equals(other.getNodeName1());
-      result = result && getNodeName2()
-          .equals(other.getNodeName2());
-      result = result && internalGetNodeConnProps().equals(
-          other.internalGetNodeConnProps());
+      result = result && (hasNodeName1() == other.hasNodeName1());
+      if (hasNodeName1()) {
+        result = result && getNodeName1()
+            .equals(other.getNodeName1());
+      }
+      result = result && (hasNodeName2() == other.hasNodeName2());
+      if (hasNodeName2()) {
+        result = result && getNodeName2()
+            .equals(other.getNodeName2());
+      }
+      result = result && getNodeConnPropsList()
+          .equals(other.getNodeConnPropsList());
+      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -468,13 +468,17 @@ public final class MsgCrtNodeConnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + NODE_NAME_1_FIELD_NUMBER;
-      hash = (53 * hash) + getNodeName1().hashCode();
-      hash = (37 * hash) + NODE_NAME_2_FIELD_NUMBER;
-      hash = (53 * hash) + getNodeName2().hashCode();
-      if (!internalGetNodeConnProps().getMap().isEmpty()) {
+      if (hasNodeName1()) {
+        hash = (37 * hash) + NODE_NAME_1_FIELD_NUMBER;
+        hash = (53 * hash) + getNodeName1().hashCode();
+      }
+      if (hasNodeName2()) {
+        hash = (37 * hash) + NODE_NAME_2_FIELD_NUMBER;
+        hash = (53 * hash) + getNodeName2().hashCode();
+      }
+      if (getNodeConnPropsCount() > 0) {
         hash = (37 * hash) + NODE_CONN_PROPS_FIELD_NUMBER;
-        hash = (53 * hash) + internalGetNodeConnProps().hashCode();
+        hash = (53 * hash) + getNodeConnPropsList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -560,7 +564,7 @@ public final class MsgCrtNodeConnOuterClass {
     }
     /**
      * <pre>
-     * drbdmanageNG - Create node connection
+     * linstor - Create node connection
      * </pre>
      *
      * Protobuf type {@code com.linbit.drbdmanage.proto.MsgCrtNodeConn}
@@ -574,28 +578,6 @@ public final class MsgCrtNodeConnOuterClass {
         return com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_descriptor;
       }
 
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMapField(
-          int number) {
-        switch (number) {
-          case 3:
-            return internalGetNodeConnProps();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMutableMapField(
-          int number) {
-        switch (number) {
-          case 3:
-            return internalGetMutableNodeConnProps();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
       protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
         return com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_fieldAccessorTable
@@ -616,15 +598,21 @@ public final class MsgCrtNodeConnOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
+          getNodeConnPropsFieldBuilder();
         }
       }
       public Builder clear() {
         super.clear();
         nodeName1_ = "";
-
+        bitField0_ = (bitField0_ & ~0x00000001);
         nodeName2_ = "";
-
-        internalGetMutableNodeConnProps().clear();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        if (nodeConnPropsBuilder_ == null) {
+          nodeConnProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000004);
+        } else {
+          nodeConnPropsBuilder_.clear();
+        }
         return this;
       }
 
@@ -649,10 +637,23 @@ public final class MsgCrtNodeConnOuterClass {
         com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn result = new com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
         result.nodeName1_ = nodeName1_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
         result.nodeName2_ = nodeName2_;
-        result.nodeConnProps_ = internalGetNodeConnProps();
-        result.nodeConnProps_.makeImmutable();
+        if (nodeConnPropsBuilder_ == null) {
+          if (((bitField0_ & 0x00000004) == 0x00000004)) {
+            nodeConnProps_ = java.util.Collections.unmodifiableList(nodeConnProps_);
+            bitField0_ = (bitField0_ & ~0x00000004);
+          }
+          result.nodeConnProps_ = nodeConnProps_;
+        } else {
+          result.nodeConnProps_ = nodeConnPropsBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -695,21 +696,59 @@ public final class MsgCrtNodeConnOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn other) {
         if (other == com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn.getDefaultInstance()) return this;
-        if (!other.getNodeName1().isEmpty()) {
+        if (other.hasNodeName1()) {
+          bitField0_ |= 0x00000001;
           nodeName1_ = other.nodeName1_;
           onChanged();
         }
-        if (!other.getNodeName2().isEmpty()) {
+        if (other.hasNodeName2()) {
+          bitField0_ |= 0x00000002;
           nodeName2_ = other.nodeName2_;
           onChanged();
         }
-        internalGetMutableNodeConnProps().mergeFrom(
-            other.internalGetNodeConnProps());
+        if (nodeConnPropsBuilder_ == null) {
+          if (!other.nodeConnProps_.isEmpty()) {
+            if (nodeConnProps_.isEmpty()) {
+              nodeConnProps_ = other.nodeConnProps_;
+              bitField0_ = (bitField0_ & ~0x00000004);
+            } else {
+              ensureNodeConnPropsIsMutable();
+              nodeConnProps_.addAll(other.nodeConnProps_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.nodeConnProps_.isEmpty()) {
+            if (nodeConnPropsBuilder_.isEmpty()) {
+              nodeConnPropsBuilder_.dispose();
+              nodeConnPropsBuilder_ = null;
+              nodeConnProps_ = other.nodeConnProps_;
+              bitField0_ = (bitField0_ & ~0x00000004);
+              nodeConnPropsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getNodeConnPropsFieldBuilder() : null;
+            } else {
+              nodeConnPropsBuilder_.addAllMessages(other.nodeConnProps_);
+            }
+          }
+        }
+        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
       public final boolean isInitialized() {
+        if (!hasNodeName1()) {
+          return false;
+        }
+        if (!hasNodeName2()) {
+          return false;
+        }
+        for (int i = 0; i < getNodeConnPropsCount(); i++) {
+          if (!getNodeConnProps(i).isInitialized()) {
+            return false;
+          }
+        }
         return true;
       }
 
@@ -738,7 +777,17 @@ public final class MsgCrtNodeConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 1;</code>
+       */
+      public boolean hasNodeName1() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * Node 1 name
+       * </pre>
+       *
+       * <code>required string node_name_1 = 1;</code>
        */
       public java.lang.String getNodeName1() {
         java.lang.Object ref = nodeName1_;
@@ -746,7 +795,9 @@ public final class MsgCrtNodeConnOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          nodeName1_ = s;
+          if (bs.isValidUtf8()) {
+            nodeName1_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -757,7 +808,7 @@ public final class MsgCrtNodeConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 1;</code>
        */
       public com.google.protobuf.ByteString
           getNodeName1Bytes() {
@@ -777,14 +828,14 @@ public final class MsgCrtNodeConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 1;</code>
        */
       public Builder setNodeName1(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000001;
         nodeName1_ = value;
         onChanged();
         return this;
@@ -794,10 +845,10 @@ public final class MsgCrtNodeConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 1;</code>
        */
       public Builder clearNodeName1() {
-        
+        bitField0_ = (bitField0_ & ~0x00000001);
         nodeName1_ = getDefaultInstance().getNodeName1();
         onChanged();
         return this;
@@ -807,15 +858,14 @@ public final class MsgCrtNodeConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 1;</code>
        */
       public Builder setNodeName1Bytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000001;
         nodeName1_ = value;
         onChanged();
         return this;
@@ -827,7 +877,17 @@ public final class MsgCrtNodeConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 2;</code>
+       */
+      public boolean hasNodeName2() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <pre>
+       * Node 2 name
+       * </pre>
+       *
+       * <code>required string node_name_2 = 2;</code>
        */
       public java.lang.String getNodeName2() {
         java.lang.Object ref = nodeName2_;
@@ -835,7 +895,9 @@ public final class MsgCrtNodeConnOuterClass {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          nodeName2_ = s;
+          if (bs.isValidUtf8()) {
+            nodeName2_ = s;
+          }
           return s;
         } else {
           return (java.lang.String) ref;
@@ -846,7 +908,7 @@ public final class MsgCrtNodeConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 2;</code>
        */
       public com.google.protobuf.ByteString
           getNodeName2Bytes() {
@@ -866,14 +928,14 @@ public final class MsgCrtNodeConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 2;</code>
        */
       public Builder setNodeName2(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  
+  bitField0_ |= 0x00000002;
         nodeName2_ = value;
         onChanged();
         return this;
@@ -883,10 +945,10 @@ public final class MsgCrtNodeConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 2;</code>
        */
       public Builder clearNodeName2() {
-        
+        bitField0_ = (bitField0_ & ~0x00000002);
         nodeName2_ = getDefaultInstance().getNodeName2();
         onChanged();
         return this;
@@ -896,115 +958,223 @@ public final class MsgCrtNodeConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 2;</code>
        */
       public Builder setNodeName2Bytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  checkByteStringIsUtf8(value);
-        
+  bitField0_ |= 0x00000002;
         nodeName2_ = value;
         onChanged();
         return this;
       }
 
-      private com.google.protobuf.MapField<
-          java.lang.String, java.lang.String> nodeConnProps_;
-      private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-      internalGetNodeConnProps() {
-        if (nodeConnProps_ == null) {
-          return com.google.protobuf.MapField.emptyMapField(
-              NodeConnPropsDefaultEntryHolder.defaultEntry);
-        }
-        return nodeConnProps_;
-      }
-      private com.google.protobuf.MapField<java.lang.String, java.lang.String>
-      internalGetMutableNodeConnProps() {
-        onChanged();;
-        if (nodeConnProps_ == null) {
-          nodeConnProps_ = com.google.protobuf.MapField.newMapField(
-              NodeConnPropsDefaultEntryHolder.defaultEntry);
-        }
-        if (!nodeConnProps_.isMutable()) {
-          nodeConnProps_ = nodeConnProps_.copy();
-        }
-        return nodeConnProps_;
+      private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> nodeConnProps_ =
+        java.util.Collections.emptyList();
+      private void ensureNodeConnPropsIsMutable() {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+          nodeConnProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(nodeConnProps_);
+          bitField0_ |= 0x00000004;
+         }
       }
 
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> nodeConnPropsBuilder_;
+
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getNodeConnPropsList() {
+        if (nodeConnPropsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(nodeConnProps_);
+        } else {
+          return nodeConnPropsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
       public int getNodeConnPropsCount() {
-        return internalGetNodeConnProps().getMap().size();
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
-       */
-
-      public boolean containsNodeConnProps(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        return internalGetNodeConnProps().getMap().containsKey(key);
-      }
-      /**
-       * Use {@link #getNodeConnPropsMap()} instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String> getNodeConnProps() {
-        return getNodeConnPropsMap();
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
-       */
-
-      public java.util.Map<java.lang.String, java.lang.String> getNodeConnPropsMap() {
-        return internalGetNodeConnProps().getMap();
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
-       */
-
-      public java.lang.String getNodeConnPropsOrDefault(
-          java.lang.String key,
-          java.lang.String defaultValue) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            internalGetNodeConnProps().getMap();
-        return map.containsKey(key) ? map.get(key) : defaultValue;
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
-       */
-
-      public java.lang.String getNodeConnPropsOrThrow(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            internalGetNodeConnProps().getMap();
-        if (!map.containsKey(key)) {
-          throw new java.lang.IllegalArgumentException();
+        if (nodeConnPropsBuilder_ == null) {
+          return nodeConnProps_.size();
+        } else {
+          return nodeConnPropsBuilder_.getCount();
         }
-        return map.get(key);
       }
-
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getNodeConnProps(int index) {
+        if (nodeConnPropsBuilder_ == null) {
+          return nodeConnProps_.get(index);
+        } else {
+          return nodeConnPropsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public Builder setNodeConnProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (nodeConnPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureNodeConnPropsIsMutable();
+          nodeConnProps_.set(index, value);
+          onChanged();
+        } else {
+          nodeConnPropsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public Builder setNodeConnProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (nodeConnPropsBuilder_ == null) {
+          ensureNodeConnPropsIsMutable();
+          nodeConnProps_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          nodeConnPropsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public Builder addNodeConnProps(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (nodeConnPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureNodeConnPropsIsMutable();
+          nodeConnProps_.add(value);
+          onChanged();
+        } else {
+          nodeConnPropsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public Builder addNodeConnProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (nodeConnPropsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureNodeConnPropsIsMutable();
+          nodeConnProps_.add(index, value);
+          onChanged();
+        } else {
+          nodeConnPropsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public Builder addNodeConnProps(
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (nodeConnPropsBuilder_ == null) {
+          ensureNodeConnPropsIsMutable();
+          nodeConnProps_.add(builderForValue.build());
+          onChanged();
+        } else {
+          nodeConnPropsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public Builder addNodeConnProps(
+          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (nodeConnPropsBuilder_ == null) {
+          ensureNodeConnPropsIsMutable();
+          nodeConnProps_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          nodeConnPropsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public Builder addAllNodeConnProps(
+          java.lang.Iterable<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
+        if (nodeConnPropsBuilder_ == null) {
+          ensureNodeConnPropsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, nodeConnProps_);
+          onChanged();
+        } else {
+          nodeConnPropsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
       public Builder clearNodeConnProps() {
-        internalGetMutableNodeConnProps().getMutableMap()
-            .clear();
+        if (nodeConnPropsBuilder_ == null) {
+          nodeConnProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000004);
+          onChanged();
+        } else {
+          nodeConnPropsBuilder_.clear();
+        }
         return this;
       }
       /**
@@ -1012,38 +1182,16 @@ public final class MsgCrtNodeConnOuterClass {
        * Node connection properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
        */
-
-      public Builder removeNodeConnProps(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        internalGetMutableNodeConnProps().getMutableMap()
-            .remove(key);
-        return this;
-      }
-      /**
-       * Use alternate mutation accessors instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String>
-      getMutableNodeConnProps() {
-        return internalGetMutableNodeConnProps().getMutableMap();
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
-       */
-      public Builder putNodeConnProps(
-          java.lang.String key,
-          java.lang.String value) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        if (value == null) { throw new java.lang.NullPointerException(); }
-        internalGetMutableNodeConnProps().getMutableMap()
-            .put(key, value);
+      public Builder removeNodeConnProps(int index) {
+        if (nodeConnPropsBuilder_ == null) {
+          ensureNodeConnPropsIsMutable();
+          nodeConnProps_.remove(index);
+          onChanged();
+        } else {
+          nodeConnPropsBuilder_.remove(index);
+        }
         return this;
       }
       /**
@@ -1051,23 +1199,97 @@ public final class MsgCrtNodeConnOuterClass {
        * Node connection properties map
        * </pre>
        *
-       * <code>map&lt;string, string&gt; node_conn_props = 3;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
        */
-
-      public Builder putAllNodeConnProps(
-          java.util.Map<java.lang.String, java.lang.String> values) {
-        internalGetMutableNodeConnProps().getMutableMap()
-            .putAll(values);
-        return this;
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getNodeConnPropsBuilder(
+          int index) {
+        return getNodeConnPropsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodeConnPropsOrBuilder(
+          int index) {
+        if (nodeConnPropsBuilder_ == null) {
+          return nodeConnProps_.get(index);  } else {
+          return nodeConnPropsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+           getNodeConnPropsOrBuilderList() {
+        if (nodeConnPropsBuilder_ != null) {
+          return nodeConnPropsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(nodeConnProps_);
+        }
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addNodeConnPropsBuilder() {
+        return getNodeConnPropsFieldBuilder().addBuilder(
+            com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addNodeConnPropsBuilder(
+          int index) {
+        return getNodeConnPropsFieldBuilder().addBuilder(
+            index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Node connection properties map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry node_conn_props = 3;</code>
+       */
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
+           getNodeConnPropsBuilderList() {
+        return getNodeConnPropsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+          getNodeConnPropsFieldBuilder() {
+        if (nodeConnPropsBuilder_ == null) {
+          nodeConnPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
+                  nodeConnProps_,
+                  ((bitField0_ & 0x00000004) == 0x00000004),
+                  getParentForChildren(),
+                  isClean());
+          nodeConnProps_ = null;
+        }
+        return nodeConnPropsBuilder_;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.setUnknownFields(unknownFields);
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return this;
+        return super.mergeUnknownFields(unknownFields);
       }
 
 
@@ -1084,7 +1306,7 @@ public final class MsgCrtNodeConnOuterClass {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<MsgCrtNodeConn>
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<MsgCrtNodeConn>
         PARSER = new com.google.protobuf.AbstractParser<MsgCrtNodeConn>() {
       public MsgCrtNodeConn parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
@@ -1114,11 +1336,6 @@ public final class MsgCrtNodeConnOuterClass {
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_NodeConnPropsEntry_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_NodeConnPropsEntry_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -1129,12 +1346,11 @@ public final class MsgCrtNodeConnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\024MsgCrtNodeConn.proto\022\033com.linbit.drbdm" +
-      "anage.proto\"\311\001\n\016MsgCrtNodeConn\022\023\n\013node_n" +
-      "ame_1\030\001 \001(\t\022\023\n\013node_name_2\030\002 \001(\t\022W\n\017node" +
-      "_conn_props\030\003 \003(\0132>.com.linbit.drbdmanag" +
-      "e.proto.MsgCrtNodeConn.NodeConnPropsEntr" +
-      "y\0324\n\022NodeConnPropsEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005" +
-      "value\030\002 \001(\t:\0028\001b\006proto3"
+      "anage.proto\032\025LinStorMapEntry.proto\"\201\001\n\016M" +
+      "sgCrtNodeConn\022\023\n\013node_name_1\030\001 \002(\t\022\023\n\013no" +
+      "de_name_2\030\002 \002(\t\022E\n\017node_conn_props\030\003 \003(\013" +
+      "2,.com.linbit.drbdmanage.proto.LinStorMa" +
+      "pEntryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1147,6 +1363,7 @@ public final class MsgCrtNodeConnOuterClass {
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_descriptor =
       getDescriptor().getMessageTypes().get(0);
@@ -1154,12 +1371,7 @@ public final class MsgCrtNodeConnOuterClass {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_descriptor,
         new java.lang.String[] { "NodeName1", "NodeName2", "NodeConnProps", });
-    internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_NodeConnPropsEntry_descriptor =
-      internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_descriptor.getNestedTypes().get(0);
-    internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_NodeConnPropsEntry_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_NodeConnPropsEntry_descriptor,
-        new java.lang.String[] { "Key", "Value", });
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

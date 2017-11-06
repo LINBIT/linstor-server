@@ -153,7 +153,6 @@ public class CtrlApiCallHandler
         Peer client,
         String nodeName,
         String rscName,
-        int nodeId,
         Map<String, String> rscPropsMap,
         List<Volume.VlmApi> vlmApiDataList
     )
@@ -169,7 +168,6 @@ public class CtrlApiCallHandler
                 client,
                 nodeName,
                 rscName,
-                nodeId,
                 rscPropsMap,
                 vlmApiDataList
             );

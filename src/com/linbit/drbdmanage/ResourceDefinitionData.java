@@ -223,6 +223,15 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public Iterator<Resource> iterateResource(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return resourceMap.values().iterator();
+    }
+
+    @Override
     public ObjectProtection getObjProt()
     {
         checkDeleted();

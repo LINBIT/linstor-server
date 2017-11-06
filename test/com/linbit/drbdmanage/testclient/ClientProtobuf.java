@@ -16,10 +16,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.protobuf.Message;
+import com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn;
 import com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode;
@@ -209,8 +211,8 @@ public class ClientProtobuf implements Runnable
                     String cause = response.getCauseFormat();
                     String correction = response.getCorrectionFormat();
                     String details = response.getDetailsFormat();
-                    Map<String, String> objRefsMap = response.getObjRefsMap();
-                    Map<String, String> variablesMap = response.getVariablesMap();
+                    Map<String, String> objRefsMap = asMap(response.getObjRefsList());
+                    Map<String, String> variablesMap = asMap(response.getVariablesList());
 
                     callback(retCode, message, cause, correction, details, objRefsMap, variablesMap);
 
@@ -381,7 +383,7 @@ public class ClientProtobuf implements Runnable
             setNodeType(nodeType);
         if (props != null)
         {
-            msgBuilder.putAllNodeProps(props);
+            msgBuilder.addAllNodeProps(asLinStorMapEntryList(props));
         }
         send(
             msgId,
@@ -419,7 +421,7 @@ public class ClientProtobuf implements Runnable
             setRscPort(port);
         if (resDfnProps != null)
         {
-            msgBuilder.putAllRscProps(resDfnProps);
+            msgBuilder.addAllRscProps(asLinStorMapEntryList(resDfnProps));
         }
         if (vlmDfn != null)
         {
@@ -515,7 +517,7 @@ public class ClientProtobuf implements Runnable
             setRscName(resName);
         if (resProps != null)
         {
-            msgBuilder.putAllRscProps(resProps);
+            msgBuilder.addAllRscProps(asLinStorMapEntryList(resProps));
         }
         if (vlms != null)
         {
@@ -552,7 +554,7 @@ public class ClientProtobuf implements Runnable
             setNodeName2(nodeName2);
         if (props != null)
         {
-            msgBuilder.putAllNodeConnProps(props);
+            msgBuilder.addAllNodeConnProps(asLinStorMapEntryList(props));
         }
         send(
             msgId,
@@ -587,7 +589,7 @@ public class ClientProtobuf implements Runnable
             setResourceName(rscName);
         if (props != null)
         {
-            msgBuilder.putAllResourceConnProps(props);
+            msgBuilder.addAllResourceConnProps(asLinStorMapEntryList(props));
         }
         send(
             msgId,
@@ -630,7 +632,7 @@ public class ClientProtobuf implements Runnable
             setVolumeNr(vlmNr);
         if (props != null)
         {
-            msgBuilder.putAllVolumeConnProps(props);
+            msgBuilder.addAllVolumeConnProps(asLinStorMapEntryList(props));
         }
         send(
             msgId,
@@ -900,5 +902,30 @@ public class ClientProtobuf implements Runnable
         client.outputStream.flush();
         Thread.sleep(1000);
         client.shutdown();
+    }
+
+    private Iterable<LinStorMapEntry> asLinStorMapEntryList(Map<String, String> map)
+    {
+        List<LinStorMapEntry> list = new ArrayList<>(map.size());
+        for (Map.Entry<String, String> entry : map.entrySet())
+        {
+            list.add(
+                LinStorMapEntry.newBuilder()
+                    .setKey(entry.getKey())
+                    .setValue(entry.getValue())
+                    .build()
+            );
+        }
+        return list;
+    }
+
+    private Map<String, String> asMap(List<LinStorMapEntry> list)
+    {
+        Map<String, String> map = new TreeMap<>();
+        for (LinStorMapEntry entry : list)
+        {
+            map.put(entry.getKey(), entry.getValue());
+        }
+        return map;
     }
 }

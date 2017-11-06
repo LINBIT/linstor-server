@@ -50,7 +50,7 @@ public class CreateStorPoolDfn extends BaseApiCall
             accCtx,
             client,
             msgCreateStorPoolDfn.getStorPoolName(),
-            msgCreateStorPoolDfn.getStorPoolDfnPropsMap()
+            asMap(msgCreateStorPoolDfn.getStorPoolDfnPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

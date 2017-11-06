@@ -10,6 +10,7 @@ import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
+import com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse.Builder;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
@@ -19,7 +20,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.slf4j.event.Level;
 
@@ -120,8 +124,8 @@ public abstract class BaseApiCall implements ApiCall
             {
                 msgApiCallResponseBuilder.setMessageFormat(apiCallEntry.getMessageFormat());
             }
-            msgApiCallResponseBuilder.putAllObjRefs(apiCallEntry.getObjRefs());
-            msgApiCallResponseBuilder.putAllVariables(apiCallEntry.getVariables());
+            msgApiCallResponseBuilder.addAllObjRefs(asLinStorMapEntryList(apiCallEntry.getObjRefs()));
+            msgApiCallResponseBuilder.addAllVariables(asLinStorMapEntryList(apiCallEntry.getVariables()));
 
             protoMsg = msgApiCallResponseBuilder.build();
             try
@@ -205,5 +209,29 @@ public abstract class BaseApiCall implements ApiCall
                 )
             );
         }
+    }
+
+    protected Map<String, String> asMap(List<LinStorMapEntry> list)
+    {
+        Map<String, String> map = new TreeMap<>();
+        for (LinStorMapEntry entry : list)
+        {
+            map.put(entry.getKey(), entry.getValue());
+        }
+        return map;
+    }
+
+    protected List<LinStorMapEntry> asLinStorMapEntryList(Map<String, String> map)
+    {
+        List<LinStorMapEntry> entries = new ArrayList<>(map.size());
+        for (Map.Entry<String, String> entry : map.entrySet())
+        {
+            entries.add(LinStorMapEntry.newBuilder()
+                .setKey(entry.getKey())
+                .setValue(entry.getValue())
+                .build()
+            );
+        }
+        return entries;
     }
 }
