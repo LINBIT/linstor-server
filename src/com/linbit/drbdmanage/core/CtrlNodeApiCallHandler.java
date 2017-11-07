@@ -528,7 +528,7 @@ class CtrlNodeApiCallHandler
 
             if (satelliteAddress != null && tcpConnector != null)
             {
-                controller.connectSatellite(satelliteAddress, tcpConnector);
+                controller.connectSatellite(satelliteAddress, tcpConnector, node);
             }
         }
         catch (AccessDeniedException | InvalidKeyException exc)

@@ -1331,7 +1331,8 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
     public void connectSatellite(
         final InetSocketAddress satelliteAddress,
-        final TcpConnector tcpConnector
+        final TcpConnector tcpConnector,
+        final Node node
     )
     {
         Runnable connectRunnable = new Runnable()
@@ -1342,6 +1343,14 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 try
                 {
                     Peer peer = tcpConnector.connect(satelliteAddress);
+                    {
+                        AccessContext connectorCtx = sysCtx.clone();
+                        connectorCtx.getEffectivePrivs().enablePrivileges(
+                            Privilege.PRIV_MAC_OVRD,
+                            Privilege.PRIV_OBJ_CHANGE
+                        );
+                        node.setPeer(connectorCtx, peer);
+                    }
                     if (!peer.isConnected())
                     {
                         reconnectorTask.add(peer);
@@ -1367,6 +1376,16 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                             ioExc
                         )
                     );
+                }
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    getErrorReporter().reportError(
+                        new ImplementationError(
+                            "System context has not enough privileges to set peer for a connecting node",
+                            accDeniedExc
+                        )
+                    );
+                    accDeniedExc.printStackTrace();
                 }
             }
         };
