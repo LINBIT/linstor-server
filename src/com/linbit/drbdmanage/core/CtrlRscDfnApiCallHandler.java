@@ -1,6 +1,6 @@
 package com.linbit.drbdmanage.core;
 
-import static com.linbit.drbdmanage.ApiConsts.*;
+import static com.linbit.drbdmanage.api.ApiConsts.*;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -11,8 +11,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
-import com.linbit.drbdmanage.ApiCallRc;
-import com.linbit.drbdmanage.ApiCallRcImpl;
 import com.linbit.drbdmanage.DrbdDataAlreadyExistsException;
 import com.linbit.drbdmanage.MinorNumber;
 import com.linbit.drbdmanage.ResourceDefinition;
@@ -22,10 +20,12 @@ import com.linbit.drbdmanage.TcpPortNumber;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.VolumeNumber;
-import com.linbit.drbdmanage.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.ResourceDefinition.RscDfnFlags;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnApi;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
+import com.linbit.drbdmanage.api.ApiCallRc;
+import com.linbit.drbdmanage.api.ApiCallRcImpl;
+import com.linbit.drbdmanage.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;

@@ -408,14 +408,14 @@ public class NodeData extends BaseTransactionObject implements Node
     @Override
     public void setPeer(AccessContext accCtx, Peer peerRef) throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.CONTROL);
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
         peer = peerRef;
     }
 
     @Override
     public Peer getPeer(AccessContext accCtx) throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.CONTROL);
+        objProt.requireAccess(accCtx, AccessType.VIEW);
         return peer;
     }
 

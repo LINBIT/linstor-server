@@ -1,6 +1,6 @@
 package com.linbit.drbdmanage.testclient;
 
-import static com.linbit.drbdmanage.ApiConsts.*;
+import static com.linbit.drbdmanage.api.ApiConsts.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -694,12 +694,13 @@ public class ClientProtobuf implements Runnable
         sentCount++;
     }
 
-    public VlmDfn createVlmDfn(int vlmNr, long vlmSize)
+    public VlmDfn createVlmDfn(int vlmNr, int minor, long vlmSize)
     {
         return
             VlmDfn.newBuilder().
                 setVlmNr(vlmNr).
                 setVlmSize(vlmSize).
+                setVlmMinor(minor).
                 build();
     }
 
@@ -748,7 +749,7 @@ public class ClientProtobuf implements Runnable
         Thread.sleep(500);
 
         List<VlmDfn> vlmDfns = new ArrayList<>();
-        vlmDfns.add(client.createVlmDfn(vlmNr, 1_000_000));
+        vlmDfns.add(client.createVlmDfn(vlmNr, 1, 1_000_000));
         msgId = client.sendCreateRscDfn(rscName, 9001, null, vlmDfns);
         client.println(msgId + " create rscDfn");
         Thread.sleep(500);
@@ -851,7 +852,7 @@ public class ClientProtobuf implements Runnable
         Map<String, String> resDfnProps = new HashMap<>();
         resDfnProps.put(resPropsTestKey, resPropsTestValue);
         List<VlmDfn> vlmDfn = new ArrayList<>();
-        vlmDfn.add(client.createVlmDfn(1, 1_000_000));
+        vlmDfn.add(client.createVlmDfn(1, 1, 1_000_000));
         msgId = client.sendCreateRscDfn(resName, 9001, resDfnProps, vlmDfn);
         client.println(msgId + " create rscDfn");
         Thread.sleep(500);

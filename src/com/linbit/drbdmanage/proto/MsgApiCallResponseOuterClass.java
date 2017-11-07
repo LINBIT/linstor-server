@@ -23,7 +23,7 @@ public final class MsgApiCallResponseOuterClass {
      * return code (see ApiCallRcConstants)
      * </pre>
      *
-     * <code>required int64 ret_code = 1;</code>
+     * <code>required sint64 ret_code = 1;</code>
      */
     boolean hasRetCode();
     /**
@@ -31,7 +31,7 @@ public final class MsgApiCallResponseOuterClass {
      * return code (see ApiCallRcConstants)
      * </pre>
      *
-     * <code>required int64 ret_code = 1;</code>
+     * <code>required sint64 ret_code = 1;</code>
      */
     long getRetCode();
 
@@ -110,7 +110,7 @@ public final class MsgApiCallResponseOuterClass {
      * cause format
      * </pre>
      *
-     * <code>required string cause_format = 4;</code>
+     * <code>optional string cause_format = 4;</code>
      */
     boolean hasCauseFormat();
     /**
@@ -118,7 +118,7 @@ public final class MsgApiCallResponseOuterClass {
      * cause format
      * </pre>
      *
-     * <code>required string cause_format = 4;</code>
+     * <code>optional string cause_format = 4;</code>
      */
     java.lang.String getCauseFormat();
     /**
@@ -126,7 +126,7 @@ public final class MsgApiCallResponseOuterClass {
      * cause format
      * </pre>
      *
-     * <code>required string cause_format = 4;</code>
+     * <code>optional string cause_format = 4;</code>
      */
     com.google.protobuf.ByteString
         getCauseFormatBytes();
@@ -136,7 +136,7 @@ public final class MsgApiCallResponseOuterClass {
      * correction format
      * </pre>
      *
-     * <code>required string correction_format = 5;</code>
+     * <code>optional string correction_format = 5;</code>
      */
     boolean hasCorrectionFormat();
     /**
@@ -144,7 +144,7 @@ public final class MsgApiCallResponseOuterClass {
      * correction format
      * </pre>
      *
-     * <code>required string correction_format = 5;</code>
+     * <code>optional string correction_format = 5;</code>
      */
     java.lang.String getCorrectionFormat();
     /**
@@ -152,7 +152,7 @@ public final class MsgApiCallResponseOuterClass {
      * correction format
      * </pre>
      *
-     * <code>required string correction_format = 5;</code>
+     * <code>optional string correction_format = 5;</code>
      */
     com.google.protobuf.ByteString
         getCorrectionFormatBytes();
@@ -162,7 +162,7 @@ public final class MsgApiCallResponseOuterClass {
      * details format
      * </pre>
      *
-     * <code>required string details_format = 6;</code>
+     * <code>optional string details_format = 6;</code>
      */
     boolean hasDetailsFormat();
     /**
@@ -170,7 +170,7 @@ public final class MsgApiCallResponseOuterClass {
      * details format
      * </pre>
      *
-     * <code>required string details_format = 6;</code>
+     * <code>optional string details_format = 6;</code>
      */
     java.lang.String getDetailsFormat();
     /**
@@ -178,7 +178,7 @@ public final class MsgApiCallResponseOuterClass {
      * details format
      * </pre>
      *
-     * <code>required string details_format = 6;</code>
+     * <code>optional string details_format = 6;</code>
      */
     com.google.protobuf.ByteString
         getDetailsFormatBytes();
@@ -282,7 +282,7 @@ public final class MsgApiCallResponseOuterClass {
             }
             case 8: {
               bitField0_ |= 0x00000001;
-              retCode_ = input.readInt64();
+              retCode_ = input.readSInt64();
               break;
             }
             case 18: {
@@ -365,7 +365,7 @@ public final class MsgApiCallResponseOuterClass {
      * return code (see ApiCallRcConstants)
      * </pre>
      *
-     * <code>required int64 ret_code = 1;</code>
+     * <code>required sint64 ret_code = 1;</code>
      */
     public boolean hasRetCode() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -375,7 +375,7 @@ public final class MsgApiCallResponseOuterClass {
      * return code (see ApiCallRcConstants)
      * </pre>
      *
-     * <code>required int64 ret_code = 1;</code>
+     * <code>required sint64 ret_code = 1;</code>
      */
     public long getRetCode() {
       return retCode_;
@@ -497,7 +497,7 @@ public final class MsgApiCallResponseOuterClass {
      * cause format
      * </pre>
      *
-     * <code>required string cause_format = 4;</code>
+     * <code>optional string cause_format = 4;</code>
      */
     public boolean hasCauseFormat() {
       return ((bitField0_ & 0x00000004) == 0x00000004);
@@ -507,7 +507,7 @@ public final class MsgApiCallResponseOuterClass {
      * cause format
      * </pre>
      *
-     * <code>required string cause_format = 4;</code>
+     * <code>optional string cause_format = 4;</code>
      */
     public java.lang.String getCauseFormat() {
       java.lang.Object ref = causeFormat_;
@@ -528,7 +528,7 @@ public final class MsgApiCallResponseOuterClass {
      * cause format
      * </pre>
      *
-     * <code>required string cause_format = 4;</code>
+     * <code>optional string cause_format = 4;</code>
      */
     public com.google.protobuf.ByteString
         getCauseFormatBytes() {
@@ -551,7 +551,7 @@ public final class MsgApiCallResponseOuterClass {
      * correction format
      * </pre>
      *
-     * <code>required string correction_format = 5;</code>
+     * <code>optional string correction_format = 5;</code>
      */
     public boolean hasCorrectionFormat() {
       return ((bitField0_ & 0x00000008) == 0x00000008);
@@ -561,7 +561,7 @@ public final class MsgApiCallResponseOuterClass {
      * correction format
      * </pre>
      *
-     * <code>required string correction_format = 5;</code>
+     * <code>optional string correction_format = 5;</code>
      */
     public java.lang.String getCorrectionFormat() {
       java.lang.Object ref = correctionFormat_;
@@ -582,7 +582,7 @@ public final class MsgApiCallResponseOuterClass {
      * correction format
      * </pre>
      *
-     * <code>required string correction_format = 5;</code>
+     * <code>optional string correction_format = 5;</code>
      */
     public com.google.protobuf.ByteString
         getCorrectionFormatBytes() {
@@ -605,7 +605,7 @@ public final class MsgApiCallResponseOuterClass {
      * details format
      * </pre>
      *
-     * <code>required string details_format = 6;</code>
+     * <code>optional string details_format = 6;</code>
      */
     public boolean hasDetailsFormat() {
       return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -615,7 +615,7 @@ public final class MsgApiCallResponseOuterClass {
      * details format
      * </pre>
      *
-     * <code>required string details_format = 6;</code>
+     * <code>optional string details_format = 6;</code>
      */
     public java.lang.String getDetailsFormat() {
       java.lang.Object ref = detailsFormat_;
@@ -636,7 +636,7 @@ public final class MsgApiCallResponseOuterClass {
      * details format
      * </pre>
      *
-     * <code>required string details_format = 6;</code>
+     * <code>optional string details_format = 6;</code>
      */
     public com.google.protobuf.ByteString
         getDetailsFormatBytes() {
@@ -721,18 +721,6 @@ public final class MsgApiCallResponseOuterClass {
         memoizedIsInitialized = 0;
         return false;
       }
-      if (!hasCauseFormat()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasCorrectionFormat()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasDetailsFormat()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
       for (int i = 0; i < getObjRefsCount(); i++) {
         if (!getObjRefs(i).isInitialized()) {
           memoizedIsInitialized = 0;
@@ -752,7 +740,7 @@ public final class MsgApiCallResponseOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeInt64(1, retCode_);
+        output.writeSInt64(1, retCode_);
       }
       for (int i = 0; i < objRefs_.size(); i++) {
         output.writeMessage(2, objRefs_.get(i));
@@ -782,7 +770,7 @@ public final class MsgApiCallResponseOuterClass {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(1, retCode_);
+          .computeSInt64Size(1, retCode_);
       }
       for (int i = 0; i < objRefs_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
@@ -1227,15 +1215,6 @@ public final class MsgApiCallResponseOuterClass {
         if (!hasMessageFormat()) {
           return false;
         }
-        if (!hasCauseFormat()) {
-          return false;
-        }
-        if (!hasCorrectionFormat()) {
-          return false;
-        }
-        if (!hasDetailsFormat()) {
-          return false;
-        }
         for (int i = 0; i < getObjRefsCount(); i++) {
           if (!getObjRefs(i).isInitialized()) {
             return false;
@@ -1274,7 +1253,7 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>required int64 ret_code = 1;</code>
+       * <code>required sint64 ret_code = 1;</code>
        */
       public boolean hasRetCode() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -1284,7 +1263,7 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>required int64 ret_code = 1;</code>
+       * <code>required sint64 ret_code = 1;</code>
        */
       public long getRetCode() {
         return retCode_;
@@ -1294,7 +1273,7 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>required int64 ret_code = 1;</code>
+       * <code>required sint64 ret_code = 1;</code>
        */
       public Builder setRetCode(long value) {
         bitField0_ |= 0x00000001;
@@ -1307,7 +1286,7 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>required int64 ret_code = 1;</code>
+       * <code>required sint64 ret_code = 1;</code>
        */
       public Builder clearRetCode() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -1734,7 +1713,7 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>required string cause_format = 4;</code>
+       * <code>optional string cause_format = 4;</code>
        */
       public boolean hasCauseFormat() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
@@ -1744,7 +1723,7 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>required string cause_format = 4;</code>
+       * <code>optional string cause_format = 4;</code>
        */
       public java.lang.String getCauseFormat() {
         java.lang.Object ref = causeFormat_;
@@ -1765,7 +1744,7 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>required string cause_format = 4;</code>
+       * <code>optional string cause_format = 4;</code>
        */
       public com.google.protobuf.ByteString
           getCauseFormatBytes() {
@@ -1785,7 +1764,7 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>required string cause_format = 4;</code>
+       * <code>optional string cause_format = 4;</code>
        */
       public Builder setCauseFormat(
           java.lang.String value) {
@@ -1802,7 +1781,7 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>required string cause_format = 4;</code>
+       * <code>optional string cause_format = 4;</code>
        */
       public Builder clearCauseFormat() {
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -1815,7 +1794,7 @@ public final class MsgApiCallResponseOuterClass {
        * cause format
        * </pre>
        *
-       * <code>required string cause_format = 4;</code>
+       * <code>optional string cause_format = 4;</code>
        */
       public Builder setCauseFormatBytes(
           com.google.protobuf.ByteString value) {
@@ -1834,7 +1813,7 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>required string correction_format = 5;</code>
+       * <code>optional string correction_format = 5;</code>
        */
       public boolean hasCorrectionFormat() {
         return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -1844,7 +1823,7 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>required string correction_format = 5;</code>
+       * <code>optional string correction_format = 5;</code>
        */
       public java.lang.String getCorrectionFormat() {
         java.lang.Object ref = correctionFormat_;
@@ -1865,7 +1844,7 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>required string correction_format = 5;</code>
+       * <code>optional string correction_format = 5;</code>
        */
       public com.google.protobuf.ByteString
           getCorrectionFormatBytes() {
@@ -1885,7 +1864,7 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>required string correction_format = 5;</code>
+       * <code>optional string correction_format = 5;</code>
        */
       public Builder setCorrectionFormat(
           java.lang.String value) {
@@ -1902,7 +1881,7 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>required string correction_format = 5;</code>
+       * <code>optional string correction_format = 5;</code>
        */
       public Builder clearCorrectionFormat() {
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -1915,7 +1894,7 @@ public final class MsgApiCallResponseOuterClass {
        * correction format
        * </pre>
        *
-       * <code>required string correction_format = 5;</code>
+       * <code>optional string correction_format = 5;</code>
        */
       public Builder setCorrectionFormatBytes(
           com.google.protobuf.ByteString value) {
@@ -1934,7 +1913,7 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>required string details_format = 6;</code>
+       * <code>optional string details_format = 6;</code>
        */
       public boolean hasDetailsFormat() {
         return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -1944,7 +1923,7 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>required string details_format = 6;</code>
+       * <code>optional string details_format = 6;</code>
        */
       public java.lang.String getDetailsFormat() {
         java.lang.Object ref = detailsFormat_;
@@ -1965,7 +1944,7 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>required string details_format = 6;</code>
+       * <code>optional string details_format = 6;</code>
        */
       public com.google.protobuf.ByteString
           getDetailsFormatBytes() {
@@ -1985,7 +1964,7 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>required string details_format = 6;</code>
+       * <code>optional string details_format = 6;</code>
        */
       public Builder setDetailsFormat(
           java.lang.String value) {
@@ -2002,7 +1981,7 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>required string details_format = 6;</code>
+       * <code>optional string details_format = 6;</code>
        */
       public Builder clearDetailsFormat() {
         bitField0_ = (bitField0_ & ~0x00000020);
@@ -2015,7 +1994,7 @@ public final class MsgApiCallResponseOuterClass {
        * details format
        * </pre>
        *
-       * <code>required string details_format = 6;</code>
+       * <code>optional string details_format = 6;</code>
        */
       public Builder setDetailsFormatBytes(
           com.google.protobuf.ByteString value) {
@@ -2404,11 +2383,11 @@ public final class MsgApiCallResponseOuterClass {
     java.lang.String[] descriptorData = {
       "\n\030MsgApiCallResponse.proto\022\033com.linbit.d" +
       "rbdmanage.proto\032\025LinStorMapEntry.proto\"\210" +
-      "\002\n\022MsgApiCallResponse\022\020\n\010ret_code\030\001 \002(\003\022" +
+      "\002\n\022MsgApiCallResponse\022\020\n\010ret_code\030\001 \002(\022\022" +
       ">\n\010obj_refs\030\002 \003(\0132,.com.linbit.drbdmanag" +
       "e.proto.LinStorMapEntry\022\026\n\016message_forma" +
-      "t\030\003 \002(\t\022\024\n\014cause_format\030\004 \002(\t\022\031\n\021correct" +
-      "ion_format\030\005 \002(\t\022\026\n\016details_format\030\006 \002(\t" +
+      "t\030\003 \002(\t\022\024\n\014cause_format\030\004 \001(\t\022\031\n\021correct" +
+      "ion_format\030\005 \001(\t\022\026\n\016details_format\030\006 \001(\t" +
       "\022?\n\tvariables\030\007 \003(\0132,.com.linbit.drbdman" +
       "age.proto.LinStorMapEntryP\000"
     };

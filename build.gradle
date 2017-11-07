@@ -43,3 +43,7 @@ dependencies
     // testCompile group: 'org.mockito', name: 'mockito', version: '2.7.19'
     testCompile group: 'org.powermock', name: 'powermock-mockito-release-full', version: '1.6.4'
 }
+
+task showMeCache << {
+  configurations.compile.each { println it }
+}

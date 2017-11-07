@@ -2,8 +2,8 @@ package com.linbit.drbdmanage.proto;
 
 import com.linbit.ErrorCheck;
 import com.linbit.WorkQueue;
-import com.linbit.drbdmanage.ApiCall;
 import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.api.ApiCall;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.MessageProcessor;

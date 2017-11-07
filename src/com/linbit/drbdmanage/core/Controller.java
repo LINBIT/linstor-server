@@ -44,6 +44,7 @@ import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.api.ApiType;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.dbdrivers.DerbyDriver;
 import com.linbit.drbdmanage.debug.DebugConsole;
@@ -166,6 +167,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     // Map of network communications connectors
     final Map<ServiceName, TcpConnector> netComConnectors;
 
+    // The current API type (e.g ProtoBuf)
+    private final ApiType apiType;
+
     // Shutdown controls
     private boolean shutdownFinished;
     private ObjectProtection shutdownProt;
@@ -226,7 +230,6 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 
         metaData = new MetaData();
 
-
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
         {
@@ -242,6 +245,8 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         // Initialize connected peers map
         peerMap = new TreeMap<>();
 
+        apiType = ApiType.PROTOBUF;
+
         taskScheduleService = new TaskScheduleService(this);
         systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
 
@@ -252,7 +257,24 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         // the corresponding protectionObjects will be initialized in the initialize method
         // after the initialization of the database
 
-        apiCallHandler = new CtrlApiCallHandler(this);
+        {
+            AccessContext apiCtx = sysCtx.clone();
+            try
+            {
+                apiCtx.getEffectivePrivs().enablePrivileges(
+                    Privilege.PRIV_OBJ_VIEW,
+                    Privilege.PRIV_MAC_OVRD
+                );
+                apiCallHandler = new CtrlApiCallHandler(this, apiType, apiCtx);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw new ImplementationError(
+                    "Could not create API handler's access context",
+                    accDeniedExc
+                );
+            }
+        }
 
         // Initialize shutdown controls
         shutdownFinished = false;
@@ -460,7 +482,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
                 }
 
                 errorLogRef.logInfo("Initializing test APIs");
-                DrbdManage.loadApiCalls(msgProc, this, this);
+                DrbdManage.loadApiCalls(msgProc, this, this, apiType);
 
                 // Initialize tasks
                 {

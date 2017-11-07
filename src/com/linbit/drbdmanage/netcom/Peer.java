@@ -1,7 +1,7 @@
 package com.linbit.drbdmanage.netcom;
 
 import com.linbit.ServiceName;
-import com.linbit.drbdmanage.api.common.Ping;
+import com.linbit.drbdmanage.api.protobuf.common.Ping;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import java.net.InetSocketAddress;

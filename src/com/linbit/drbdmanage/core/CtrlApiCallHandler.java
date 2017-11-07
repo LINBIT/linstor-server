@@ -3,32 +3,17 @@ package com.linbit.drbdmanage.core;
 import java.util.List;
 import java.util.Map;
 
-import com.linbit.drbdmanage.ApiCallRc;
+import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.Volume;
 import com.linbit.drbdmanage.VolumeDefinition;
+import com.linbit.drbdmanage.api.ApiCallRc;
+import com.linbit.drbdmanage.api.ApiType;
+import com.linbit.drbdmanage.api.protobuf.controller.serializer.ResourceDataSerializerProto;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 
 public class CtrlApiCallHandler
 {
-    public static final String PROPS_NODE_TYPE_KEY = "nodeType";
-    public static final String PROPS_NODE_FLAGS_KEY = "nodeFlags";
-
-    public static final String PROPS_RESOURCE_DEFINITION_PEER_COUNT_KEY = "rscDfnPeerCountKey";
-    public static final String PROPS_RESOURCE_DEFINITION_AL_SIZE_KEY = "rscDfnAlSizeKey";
-    public static final String PROPS_RESOURCE_DEFINITION_AL_STRIPES_KEY = "rscDfnAlStripesKey";
-
-    public static final String API_RC_VAR_NODE_NAME_KEY = "nodeName";
-    public static final String API_RC_VAR_RESOURCE_NAME_KEY = "resName";
-    public static final String API_RC_VAR_VOlUME_NUMBER_KEY = "volNr";
-    public static final String API_RC_VAR_VOlUME_MINOR_KEY = "volMinor";
-    public static final String API_RC_VAR_VOlUME_SIZE_KEY = "volSize";
-    public static final String API_RC_VAR_RESOURCE_PEER_COUNT_KEY = "peerCount";
-    public static final String API_RC_VAR_RESOURCE_AL_STRIPES_KEY = "alStripes";
-    public static final String API_RC_VAR_RESOURCE_AL_SIZE_KEY = "alSize";
-    public static final String API_RC_VAR_ACC_CTX_ID_KEY = "accCtxId";
-    public static final String API_RC_VAR_ACC_CTX_ROLE_KEY = "accCtxRole";
-
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
     private final CtrlRscApiCallHandler rscApiCallHandler;
@@ -40,17 +25,31 @@ public class CtrlApiCallHandler
 
     private final Controller controller;
 
-    CtrlApiCallHandler(Controller controllerRef)
+    CtrlApiCallHandler(Controller controllerRef, ApiType type, AccessContext apiCtx)
     {
         controller = controllerRef;
-        nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef);
-        rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef);
-        rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef);
-        storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef);
-        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef);
-        nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
-        rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef);
-        vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef);
+        switch (type)
+        {
+            case PROTOBUF:
+                nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef);
+                rscApiCallHandler = new CtrlRscApiCallHandler(
+                    controllerRef,
+                    new ResourceDataSerializerProto(
+                        apiCtx,
+                        controller.getErrorReporter()
+                    ),
+                    apiCtx
+                );
+                rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef);
+                storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef);
+                storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef);
+                nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
+                rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef);
+                vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef);
+                break;
+            default:
+                throw new ImplementationError("Unknown ApiType given: " + type, null);
+        }
     }
 
     public ApiCallRc createNode(

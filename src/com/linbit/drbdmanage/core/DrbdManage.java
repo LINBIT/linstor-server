@@ -1,9 +1,10 @@
 package com.linbit.drbdmanage.core;
 
-import com.linbit.drbdmanage.ApiCall;
 import com.linbit.drbdmanage.CommonPeerCtx;
 import com.linbit.drbdmanage.CoreServices;
 import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.drbdmanage.api.ApiCall;
+import com.linbit.drbdmanage.api.ApiType;
 import com.linbit.drbdmanage.api.BaseApiCall;
 import com.linbit.drbdmanage.dbdrivers.DatabaseDriver;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
@@ -294,13 +295,14 @@ public abstract class DrbdManage
     protected static void loadApiCalls(
         final CommonMessageProcessor msgProc,
         final DrbdManage componentRef,
-        final CoreServices coreService
+        final CoreServices coreService,
+        final ApiType apiType
     )
     {
         final ClassLoader cl = componentRef.getClass().getClassLoader();
 
         String[] pkgsToload;
-        String basePackage = BaseApiCall.class.getPackage().getName();
+        String basePackage = apiType.getBasePackageName();
         String commonPkg = basePackage + ".common";
 
         if (componentRef.getClass().equals(Controller.class))
@@ -342,7 +344,7 @@ public abstract class DrbdManage
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
                     {
-                        loadClass(msgProc, componentRef, coreService, cl, basePath, pkgToLoad, file);
+                        loadClass(msgProc, componentRef, coreService, cl, basePath, pkgToLoad, file, apiType);
                         return FileVisitResult.CONTINUE;
                     }
                 });
@@ -370,7 +372,8 @@ public abstract class DrbdManage
         final ClassLoader cl,
         final Path basePath,
         final String pkgToLoad,
-        Path file
+        Path file,
+        final ApiType apiType
     )
     {
         if (file.getFileName().toString().endsWith(".class"))
@@ -407,7 +410,7 @@ public abstract class DrbdManage
                 );
             }
 
-            if (clazz != null)
+            if (clazz != null && clazz.getAnnotation(apiType.getRequiredAnnotation()) != null)
             {
                 if (Modifier.isAbstract(clazz.getModifiers()))
                 {

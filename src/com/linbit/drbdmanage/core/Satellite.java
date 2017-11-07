@@ -16,6 +16,7 @@ import com.linbit.drbdmanage.SatelliteDbDriver;
 import com.linbit.drbdmanage.SatellitePeerCtx;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolName;
+import com.linbit.drbdmanage.api.ApiType;
 import com.linbit.drbdmanage.debug.DebugConsole;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.netcom.Peer;
@@ -114,6 +115,9 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     // Map of network communications connectors
     private final Map<ServiceName, TcpConnector> netComConnectors;
 
+    // The current API type (e.g ProtoBuf)
+    private final ApiType apiType;
+
     // Controller configuration properties
     Props stltConf;
     ObjectProtection stltConfProt;
@@ -166,6 +170,8 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
         // Initialize connected peers map
         peerMap = new TreeMap<>();
+
+        apiType = ApiType.PROTOBUF;
 
         // initialize noop databases drivers (needed for shutdownProt)
         securityDbDriver = new EmptySecurityDbDriver();
@@ -263,7 +269,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
 
                 errorLogRef.logInfo("Initializing test APIs");
-                DrbdManage.loadApiCalls(msgProc, this, this);
+                DrbdManage.loadApiCalls(msgProc, this, this, apiType);
 
                 // Initialize system services
                 startSystemServices(systemServicesMap.values());

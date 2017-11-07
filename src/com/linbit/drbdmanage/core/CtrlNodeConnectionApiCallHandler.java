@@ -1,20 +1,21 @@
 package com.linbit.drbdmanage.core;
 
-import static com.linbit.drbdmanage.ApiConsts.*;
+import static com.linbit.drbdmanage.api.ApiConsts.*;
+
 import java.sql.SQLException;
 import java.util.Map;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.drbdmanage.ApiCallRc;
-import com.linbit.drbdmanage.ApiCallRcImpl;
-import com.linbit.drbdmanage.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.DrbdDataAlreadyExistsException;
 import com.linbit.drbdmanage.NodeConnectionData;
 import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeName;
-import com.linbit.drbdmanage.ApiConsts;
+import com.linbit.drbdmanage.api.ApiCallRc;
+import com.linbit.drbdmanage.api.ApiCallRcImpl;
+import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
