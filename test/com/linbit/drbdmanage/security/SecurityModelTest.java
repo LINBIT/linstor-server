@@ -1,16 +1,24 @@
 package com.linbit.drbdmanage.security;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.linbit.ServiceName;
+import com.linbit.SystemServiceStartException;
+import com.linbit.drbdmanage.ControllerDatabase;
+
 import static org.junit.Assert.*;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Properties;
 
 /**
  * Tests the security model
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class SecurityModelTest
+public class SecurityModelTest extends DerbyBase
 {
     private AccessContext sysCtx;
     private AccessContext publicCtx;
@@ -23,17 +31,12 @@ public class SecurityModelTest
 
     private SecurityType userType;
 
+    @Override
     @Before
-    public void setUp()
-        throws Throwable
+    public void setUp() throws Exception
     {
         // Restore the global security level to MAC before each test
-        SecurityLevel.set(sysCtx, SecurityLevel.MAC, null, null);
-    }
-
-    @After
-    public void tearDown()
-    {
+        setSecurityLevel(SecurityLevel.MAC);
     }
 
     public SecurityModelTest()
@@ -115,7 +118,7 @@ public class SecurityModelTest
     public void testSecLevelRbacObjProtAclDeny()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
+        setSecurityLevel(SecurityLevel.RBAC);
 
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -188,7 +191,7 @@ public class SecurityModelTest
     public void testSecLevelRbacBuddyAclModify()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
+        setSecurityLevel(SecurityLevel.RBAC);
 
         AccessContext buddyCtx = sysCtx.impersonate(
             buddyId, buddyRole, creatorCtx.getDomain()
@@ -233,7 +236,7 @@ public class SecurityModelTest
     public void testSecLevelRbacBanditAclModify()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
+        setSecurityLevel(SecurityLevel.RBAC);
 
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -302,7 +305,7 @@ public class SecurityModelTest
     public void testSecLevelRbacBanditTypeModify()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
+        setSecurityLevel(SecurityLevel.RBAC);
 
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -368,7 +371,7 @@ public class SecurityModelTest
     public void testSecLevelRbacBanditOwnerModify()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
+        setSecurityLevel(SecurityLevel.RBAC);
 
         ObjectProtection prot = null;
         AccessContext banditCtx = null;
@@ -560,7 +563,7 @@ public class SecurityModelTest
     public void testSecLevelRbacImpersonateDeny()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
+        setSecurityLevel(SecurityLevel.RBAC);
 
         publicCtx.impersonate(Identity.SYSTEM_ID, Role.SYSTEM_ROLE, userType);
     }
@@ -569,7 +572,7 @@ public class SecurityModelTest
     public void testSecLevelRbacTypeOvrd()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.RBAC, null, null);
+        setSecurityLevel(SecurityLevel.RBAC);
 
         ObjectProtection prot = null;
         AccessContext otherDomainCtx = null;
@@ -625,7 +628,7 @@ public class SecurityModelTest
     public void testSecLevelNoneObjProtOvrd()
         throws Throwable
     {
-        SecurityLevel.set(sysCtx, SecurityLevel.NO_SECURITY, null, null);
+        setSecurityLevel(SecurityLevel.NO_SECURITY);
 
         ObjectProtection prot = null;
         // Create the object as creator

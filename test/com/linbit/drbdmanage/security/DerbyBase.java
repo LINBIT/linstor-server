@@ -191,6 +191,11 @@ public abstract class DerbyBase implements DerbyConstants
         storPoolDfnMap.clear();
     }
 
+    protected void setSecurityLevel(SecurityLevel level) throws AccessDeniedException, SQLException
+    {
+        SecurityLevel.set(sysCtx, level, dbConnPool, secureDbDriver);
+    }
+
     protected void satelliteMode()
     {
         CoreUtils.satelliteMode(sysCtx, nodesMap, resDfnMap, storPoolDfnMap);

@@ -135,7 +135,8 @@ public class ObjectProtectionTest
                 boolean selfProtectionException = accCtx.subjectRole == targetRole &&
                     !iteration.userAccCtx.privEffective.hasPrivileges(PRIV_OBJ_CONTROL);
 
-                boolean expectException = !secTypeAccessType.hasAccess(CONTROL);
+                boolean expectException = (secTypeAccessType == null) ||
+                    (!secTypeAccessType.hasAccess(CONTROL));
                 if (!isUserOwner && !expectException)
                 {
                     expectException = aclAccessType == null ||
@@ -199,7 +200,8 @@ public class ObjectProtectionTest
                 boolean selfProtectionException = accCtx.subjectRole == targetRole &&
                     !iteration.userAccCtx.privEffective.hasPrivileges(PRIV_OBJ_CONTROL);
 
-                boolean expectException = !secTypeAccessType.hasAccess(CONTROL);
+                boolean expectException = (secTypeAccessType == null) ||
+                    (!secTypeAccessType.hasAccess(CONTROL));
                 if (!isUserOwner && !expectException)
                 {
                     expectException = aclAccessType == null ||

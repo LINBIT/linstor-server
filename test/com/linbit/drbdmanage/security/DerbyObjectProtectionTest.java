@@ -17,13 +17,13 @@ public class DerbyObjectProtectionTest extends DerbyBase
 {
     private static final String OP_SELECT =
         "SELECT * FROM " + TBL_SEC_OBJECT_PROTECTION +
-        " WHERE " + OBJECT_PATH + " <> '/storpooldefinitions/DFLTSTORPOOL'";
+        " WHERE " + OBJECT_PATH + " = ?";
     private static final String OP_INSERT =
         "INSERT INTO " + TBL_SEC_OBJECT_PROTECTION + " VALUES (?, ?, ?, ?)";
 
     private static final String ACL_SELECT =
         "SELECT * FROM " + TBL_SEC_ACL_MAP +
-        " WHERE " + OBJECT_PATH + " <> '/storpooldefinitions/DFLTSTORPOOL'";
+        " WHERE " + OBJECT_PATH + " = ?";
     private static final String ACL_SELECT_BY_OBJPATH_AND_ROLE =
         "SELECT * FROM " + TBL_SEC_ACL_MAP +
         " WHERE " + OBJECT_PATH + " = ? AND " +
@@ -45,6 +45,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         ObjectProtection.getInstance(sysCtx, objPath, true, transMgr);
 
         final PreparedStatement stmt = con.prepareStatement(OP_SELECT);
+        stmt.setString(1, objPath);
         final ResultSet resultSet = stmt.executeQuery();
 
         assertTrue("Database did not persist objectProtection instance", resultSet.next());
@@ -200,6 +201,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         objProt.delAclEntry(sysCtx, sysCtx.subjectRole);
 
         PreparedStatement stmt = con.prepareStatement(ACL_SELECT);
+        stmt.setString(1, objPath);
         ResultSet resultSet = stmt.executeQuery();
 
         assertFalse("Database did not remove acl entry", resultSet.next());
