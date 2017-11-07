@@ -18,8 +18,8 @@ import com.linbit.drbdmanage.debug.DebugConsole;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.proto.internal.MsgDebugCommandOuterClass.MsgDebugCommand;
-import com.linbit.drbdmanage.proto.internal.MsgDebugReplyOuterClass.MsgDebugReply;
+import com.linbit.drbdmanage.proto.javainternal.MsgDebugCommandOuterClass.MsgDebugCommand;
+import com.linbit.drbdmanage.proto.javainternal.MsgDebugReplyOuterClass.MsgDebugReply;
 import com.linbit.drbdmanage.security.AccessContext;
 
 /**

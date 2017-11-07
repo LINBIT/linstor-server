@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.core;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.Volume;
@@ -493,6 +494,24 @@ public class CtrlApiCallHandler
             controller.nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
+    }
+
+    public void requestResource(String rscName, UUID rscUuid, int msgId)
+    {
+        try
+        {
+            controller.nodesMapLock.readLock().lock();
+            controller.rscDfnMapLock.readLock().lock();
+            controller.storPoolDfnMapLock.readLock().lock();
+
+            rscApiCallHandler.respondResource(rscName, rscUuid, msgId);
+        }
+        finally
+        {
+            controller.nodesMapLock.readLock().unlock();
+            controller.rscDfnMapLock.readLock().unlock();
+            controller.storPoolDfnMapLock.readLock().unlock();
+        }
     }
 
 }

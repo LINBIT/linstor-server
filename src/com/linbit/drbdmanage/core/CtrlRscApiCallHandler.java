@@ -1,55 +1,13 @@
 package com.linbit.drbdmanage.core;
 
-import static com.linbit.drbdmanage.api.ApiConsts.KEY_NODE;
-import static com.linbit.drbdmanage.api.ApiConsts.KEY_NODE_NAME;
-import static com.linbit.drbdmanage.api.ApiConsts.KEY_RSC_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.KEY_RSC_NAME;
-import static com.linbit.drbdmanage.api.ApiConsts.KEY_STOR_POOL_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.KEY_STOR_POOL_NAME;
-import static com.linbit.drbdmanage.api.ApiConsts.KEY_VLM_NR;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CREATED;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_NODE;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_RSC;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_RSC_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_VLM;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_ACC_DENIED_VLM_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_EXISTS_NODE;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_EXISTS_RSC;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_IMPL_ERROR;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_INVLD_NODE_NAME;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_INVLD_RSC_NAME;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_INVLD_STOR_POOL_NAME;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_INVLD_VLM_NR;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_NOT_FOUND_NODE;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_NOT_FOUND_RSC_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_NOT_FOUND_VLM_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_SQL;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_SQL_ROLLBACK;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_CRT_FAIL_UNKNOWN_ERROR;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DELETED;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_ACC_DENIED_NODE;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_ACC_DENIED_RSC;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_ACC_DENIED_RSC_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_ACC_DENIED_VLM_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_IMPL_ERROR;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_INVLD_NODE_NAME;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_INVLD_RSC_NAME;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_NOT_FOUND_NODE;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_NOT_FOUND_RSC_DFN;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_SQL;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_SQL_ROLLBACK;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_FAIL_UNKNOWN_ERROR;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_RSC_DEL_NOT_FOUND;
-import static com.linbit.drbdmanage.api.ApiConsts.RC_VLM_CREATED;
+import static com.linbit.drbdmanage.api.ApiConsts.*;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -65,6 +23,7 @@ import com.linbit.drbdmanage.PriorityProps;
 import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.ResourceData;
+import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPool;
@@ -74,13 +33,13 @@ import com.linbit.drbdmanage.StorPoolDefinitionData;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.Volume.VlmApi;
 import com.linbit.drbdmanage.Volume.VlmFlags;
+import com.linbit.drbdmanage.VolumeData;
+import com.linbit.drbdmanage.VolumeDefinition;
+import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.api.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiCallRcImpl;
 import com.linbit.drbdmanage.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.api.protobuf.controller.interfaces.ResourceDataSerializer;
-import com.linbit.drbdmanage.VolumeData;
-import com.linbit.drbdmanage.VolumeDefinition;
-import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
@@ -1199,15 +1158,15 @@ class CtrlRscApiCallHandler
                             "resource '%s' on node '%s'.",
                         rscNameStr,
                         nodeNameStr
-                        );
-                        controller.getErrorReporter().reportError(
-                            sqlExc,
-                            accCtx,
-                            client,
-                            errorMessage
-                            );
+                    );
+                    controller.getErrorReporter().reportError(
+                        sqlExc,
+                        accCtx,
+                        client,
+                        errorMessage
+                    );
 
-                            ApiCallRcEntry entry = new ApiCallRcEntry();
+                    ApiCallRcEntry entry = new ApiCallRcEntry();
                     entry.setReturnCodeBit(RC_RSC_DEL_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
@@ -1223,5 +1182,82 @@ class CtrlRscApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    public void respondResource(String rscNameStr, UUID rscUuid, int msgId)
+    {
+        try
+        {
+            ResourceName rscName = new ResourceName(rscNameStr);
+            ResourceDefinition rscDfn = controller.rscDfnMap.get(rscName);
+
+            Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
+            List<Resource> otherResources = new ArrayList<>();
+            Resource localResource = null;
+            while (rscIterator.hasNext())
+            {
+                Resource rsc = rscIterator.next();
+                if (rsc.getUuid().equals(rscUuid))
+                {
+                    localResource = rsc;
+                }
+                else
+                {
+                    otherResources.add(rsc);
+                }
+            }
+
+            if (localResource != null)
+            {
+                byte[] data = serializer.getRscReqResponse(msgId, localResource, otherResources);
+
+                Peer peer = localResource.getAssignedNode().getPeer(apiCtx);
+
+                Message response = peer.createMessage();
+                response.setData(data);
+                peer.sendMessage(response);
+            }
+            else
+            {
+                controller.getErrorReporter().reportError(
+                    new ImplementationError(
+                        String.format(
+                            "A requested resource name '%s' with the uuid '%s' was not found "+
+                                "in the controllers list of resources",
+                                rscName,
+                                rscUuid.toString()
+                            ),
+                        null
+                    )
+                );
+            }
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Satellite requested data for invalid resource name '" + rscNameStr + "'.",
+                    invalidNameExc
+                )
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Controller's api context has not enough privileges to gather requested resource data.",
+                    accDeniedExc
+                )
+            );
+        }
+        catch (IllegalMessageStateException illegalMessageStateExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Failed to respond to resource data request",
+                    illegalMessageStateExc
+                )
+            );
+        }
     }
 }
