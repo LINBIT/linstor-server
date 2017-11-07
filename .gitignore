@@ -19,5 +19,5 @@ test-support/TestOutput
 test-support/*.o
 
 # debug
-src/com/linbit/drbdmanage/api/controller/ResetController.java
+src/com/linbit/drbdmanage/api/protobuf/controller/ResetController.java
 src/com/linbit/drbdmanage/core/CtrlResetHandler.java
