@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +85,7 @@ public class SatelliteDbDriver implements DatabaseDriver
     }
 
     @Override
-    public void loadAll(TransactionMgr transMgr) throws SQLException
+    public void loadAll(TransactionMgr transMgr)
     {
         // no-op
     }
@@ -178,37 +177,37 @@ public class SatelliteDbDriver implements DatabaseDriver
     private class SatellitePropDriver implements PropsConDatabaseDriver
     {
         @Override
-        public Map<String, String> load(String instanceName, TransactionMgr transMgr) throws SQLException
+        public Map<String, String> load(String instanceName, TransactionMgr transMgr)
         {
             return Collections.emptyMap();
         }
 
         @Override
-        public void persist(String instanceName, String key, String value, TransactionMgr transMgr) throws SQLException
+        public void persist(String instanceName, String key, String value, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void persist(String instanceName, Map<String, String> props, TransactionMgr transMgr) throws SQLException
+        public void persist(String instanceName, Map<String, String> props, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void remove(String instanceName, String key, TransactionMgr transMgr) throws SQLException
+        public void remove(String instanceName, String key, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void remove(String instanceName, Set<String> keys, TransactionMgr transMgr) throws SQLException
+        public void remove(String instanceName, Set<String> keys, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void removeAll(String instanceName, TransactionMgr transMgr) throws SQLException
+        public void removeAll(String instanceName, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -231,20 +230,20 @@ public class SatelliteDbDriver implements DatabaseDriver
         }
 
         @Override
-        public void create(NodeData node, TransactionMgr transMgr) throws SQLException
+        public void create(NodeData node, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
         public NodeData load(NodeName nodeName, boolean logWarnIfNotExists, TransactionMgr transMgr)
-            throws SQLException
+
         {
             return (NodeData) nodesMap.get(nodeName);
         }
 
         @Override
-        public void delete(NodeData node, TransactionMgr transMgr) throws SQLException
+        public void delete(NodeData node, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -260,7 +259,7 @@ public class SatelliteDbDriver implements DatabaseDriver
         }
 
         @Override
-        public void create(ResourceData res, TransactionMgr transMgr) throws SQLException
+        public void create(ResourceData res, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -272,7 +271,7 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             ResourceData resource = null;
             try
@@ -287,7 +286,7 @@ public class SatelliteDbDriver implements DatabaseDriver
         }
 
         @Override
-        public void delete(ResourceData resourceData, TransactionMgr transMgr) throws SQLException
+        public void delete(ResourceData resourceData, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -302,7 +301,6 @@ public class SatelliteDbDriver implements DatabaseDriver
             return (StateFlagsPersistence<ResourceDefinitionData>) stateFlagsDriver;
         }
 
-
         @SuppressWarnings("unchecked")
         @Override
         public SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> getPortDriver()
@@ -311,13 +309,13 @@ public class SatelliteDbDriver implements DatabaseDriver
         }
 
         @Override
-        public void create(ResourceDefinitionData resDfn, TransactionMgr transMgr) throws SQLException
+        public void create(ResourceDefinitionData resDfn, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public boolean exists(ResourceName resourceName, TransactionMgr transMgr) throws SQLException
+        public boolean exists(ResourceName resourceName, TransactionMgr transMgr)
         {
             return resDfnMap.containsKey(resourceName);
         }
@@ -328,13 +326,12 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-            throws SQLException
         {
             return (ResourceDefinitionData) resDfnMap.get(resourceName);
         }
 
         @Override
-        public void delete(ResourceDefinitionData data, TransactionMgr transMgr) throws SQLException
+        public void delete(ResourceDefinitionData data, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -356,7 +353,7 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             VolumeData volume = null;
             try
@@ -371,13 +368,13 @@ public class SatelliteDbDriver implements DatabaseDriver
         }
 
         @Override
-        public void create(VolumeData vol, TransactionMgr transMgr) throws SQLException
+        public void create(VolumeData vol, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void delete(VolumeData data, TransactionMgr transMgr) throws SQLException
+        public void delete(VolumeData data, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -407,7 +404,7 @@ public class SatelliteDbDriver implements DatabaseDriver
         }
 
         @Override
-        public void create(VolumeDefinitionData volDfnData, TransactionMgr transMgr) throws SQLException
+        public void create(VolumeDefinitionData volDfnData, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -419,7 +416,7 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             VolumeDefinitionData volumeDfn = null;
             try
@@ -434,7 +431,7 @@ public class SatelliteDbDriver implements DatabaseDriver
         }
 
         @Override
-        public void delete(VolumeDefinitionData data, TransactionMgr transMgr) throws SQLException
+        public void delete(VolumeDefinitionData data, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -443,7 +440,7 @@ public class SatelliteDbDriver implements DatabaseDriver
     private class SatelliteSpDriver implements StorPoolDefinitionDataDatabaseDriver
     {
         @Override
-        public void create(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
+        public void create(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -454,13 +451,13 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             return (StorPoolDefinitionData) storPoolDfnMap.get(storPoolName);
         }
 
         @Override
-        public void delete(StorPoolDefinitionData data, TransactionMgr transMgr) throws SQLException
+        public void delete(StorPoolDefinitionData data, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -475,7 +472,7 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             StorPoolData storPool = null;
             try
@@ -490,19 +487,19 @@ public class SatelliteDbDriver implements DatabaseDriver
         }
 
         @Override
-        public void create(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
+        public void create(StorPoolData storPoolData, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void delete(StorPoolData data, TransactionMgr transMgr) throws SQLException
+        public void delete(StorPoolData data, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void ensureEntryExists(StorPoolData data, TransactionMgr transMgr) throws SQLException
+        public void ensureEntryExists(StorPoolData data, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -538,7 +535,7 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             NetInterfaceData netInterface = null;
             try
@@ -553,13 +550,13 @@ public class SatelliteDbDriver implements DatabaseDriver
         }
 
         @Override
-        public void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException
+        public void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void delete(NetInterfaceData data, TransactionMgr transMgr) throws SQLException
+        public void delete(NetInterfaceData data, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -568,7 +565,7 @@ public class SatelliteDbDriver implements DatabaseDriver
     private class SatelliteFlagDriver implements StateFlagsPersistence<Object>
     {
         @Override
-        public void persist(Object parent, long flags, TransactionMgr transMgr) throws SQLException
+        public void persist(Object parent, long flags, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -577,7 +574,7 @@ public class SatelliteDbDriver implements DatabaseDriver
     private class SatelliteSingleColDriver<NOOP_KEY, NOOP> implements SingleColumnDatabaseDriver<NOOP_KEY, NOOP>
     {
         @Override
-        public void update(NOOP_KEY parent, NOOP element, TransactionMgr transMgr) throws SQLException
+        public void update(NOOP_KEY parent, NOOP element, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -592,7 +589,7 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             NodeConnectionData nodeConnection = null;
             try
@@ -611,19 +608,19 @@ public class SatelliteDbDriver implements DatabaseDriver
             Node node,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             return Collections.emptyList();
         }
 
         @Override
-        public void create(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException
+        public void create(NodeConnectionData nodeConDfnData, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void delete(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException
+        public void delete(NodeConnectionData nodeConDfnData, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -638,7 +635,7 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             ResourceConnectionData resourceConnection = null;
             try
@@ -657,19 +654,19 @@ public class SatelliteDbDriver implements DatabaseDriver
             Resource resource,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             return Collections.emptyList();
         }
 
         @Override
-        public void create(ResourceConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
+        public void create(ResourceConnectionData conDfnData, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void delete(ResourceConnectionData data, TransactionMgr transMgr) throws SQLException
+        public void delete(ResourceConnectionData data, TransactionMgr transMgr)
         {
             // no-op
         }
@@ -684,7 +681,7 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             VolumeConnectionData volumeConnection = null;
             try
@@ -703,19 +700,19 @@ public class SatelliteDbDriver implements DatabaseDriver
             Volume volume,
             TransactionMgr transMgr
         )
-            throws SQLException
+
         {
             return Collections.emptyList();
         }
 
         @Override
-        public void create(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
+        public void create(VolumeConnectionData conDfnData, TransactionMgr transMgr)
         {
             // no-op
         }
 
         @Override
-        public void delete(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
+        public void delete(VolumeConnectionData conDfnData, TransactionMgr transMgr)
         {
             // no-op
         }

@@ -3,6 +3,8 @@ package com.linbit.drbdmanage;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,6 +63,9 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private final ErrorReporter errorReporter;
     private final Map<ResourceName, ResourceDefinition> resDfnMap;
 
+    private final Map<ResourceName, ResourceDefinitionData> rscDfnCache;
+    private boolean cacheCleared = false;
+
     private final StateFlagsPersistence<ResourceDefinitionData> resDfnFlagPersistence;
     private final SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> portDriver;
 
@@ -78,6 +83,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
         portDriver = new PortDriver();
         resDfnMap = resDfnMapRef;
+        rscDfnCache = new HashMap<>();
     }
 
     public void initialize(
@@ -102,8 +108,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
             stmt.setInt(4, resourceDefinition.getPort(dbCtx).value);
             stmt.setLong(5, resourceDefinition.getFlags().getFlagsBits(dbCtx));
             stmt.executeUpdate();
-
-            resDfnMap.put(resourceDefinition.getName(), resourceDefinition);
 
             errorReporter.logTrace("ResourceDefinition created %s", getDebugId(resourceDefinition));
         }
@@ -157,22 +161,24 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         return resDfn;
     }
 
-    public void loadAll(TransactionMgr transMgr) throws SQLException
+    public List<ResourceDefinitionData> loadAll(TransactionMgr transMgr) throws SQLException
     {
         errorReporter.logTrace("Loading all ResourceDefinitions");
+        List<ResourceDefinitionData> list = new ArrayList<>();
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    load(resultSet, transMgr); // we do not care about the return value
-                    // the loaded resDfn(s) get cached anyways, and thus the controller gets
-                    // the references that way
+                    list.add(
+                        load(resultSet, transMgr)
+                    );
                 }
             }
         }
-        errorReporter.logTrace("Loaded %d ResourceDefinitions", resDfnMap.size());
+        errorReporter.logTrace("Loaded %d ResourceDefinitions", list.size());
+        return list;
     }
 
     private ResourceDefinitionData load(ResultSet resultSet, TransactionMgr transMgr) throws SQLException
@@ -216,6 +222,11 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         resDfn = (ResourceDefinitionData) resDfnMap.get(resourceName);
         if (resDfn == null)
         {
+            resDfn = rscDfnCache.get(resourceName);
+        }
+        if (resDfn == null)
+        {
+
             try
             {
                 ObjectProtection objProt = getObjectProtection(resourceName, transMgr);
@@ -229,7 +240,10 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     transMgr
                 );
                 // cache the resDfn BEFORE we load the conDfns
-                resDfnMap.put(resourceName, resDfn);
+                if (!cacheCleared)
+                {
+                    rscDfnCache.put(resourceName, resDfn);
+                }
 
                 errorReporter.logTrace("ResourceDefinition instance created %s", getTraceId(resDfn));
 
@@ -292,6 +306,12 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
             );
         }
         return objProt;
+    }
+
+    public void clearCache()
+    {
+        cacheCleared = true;
+        rscDfnCache.clear();
     }
 
     @Override

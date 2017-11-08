@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.dbdrivers;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 import com.linbit.ImplementationError;
@@ -11,14 +12,17 @@ import com.linbit.drbdmanage.ResourceConnectionDataDerbyDriver;
 import com.linbit.drbdmanage.NetInterfaceDataDerbyDriver;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeConnectionDataDerbyDriver;
+import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeDataDerbyDriver;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDataDerbyDriver;
 import com.linbit.drbdmanage.ResourceDefinition;
+import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.ResourceDefinitionDataDerbyDriver;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPoolDataDerbyDriver;
 import com.linbit.drbdmanage.StorPoolDefinition;
+import com.linbit.drbdmanage.StorPoolDefinitionData;
 import com.linbit.drbdmanage.StorPoolDefinitionDataDerbyDriver;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.VolumeConnectionDataDerbyDriver;
@@ -135,10 +139,12 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public void loadAll(TransactionMgr transMgr) throws SQLException
     {
-        nodeDriver.loadAll(transMgr);
-        resesourceDefinitionDriver.loadAll(transMgr);
-        storPoolDefinitionDriver.loadAll(transMgr);
+        List<NodeData> nodeList = nodeDriver.loadAll(transMgr);
+        List<ResourceDefinitionData> rscDfnList = resesourceDefinitionDriver.loadAll(transMgr);
+        List<StorPoolDefinitionData> storPoolDfnList = storPoolDefinitionDriver.loadAll(transMgr);
 
+        nodeDriver.clearCache();
+        resesourceDefinitionDriver.clearCache();
         resourceDriver.clearCache();
         volumeDriver.clearCache();
         storPoolDriver.clearCache();

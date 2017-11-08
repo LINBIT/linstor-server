@@ -174,7 +174,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         apiType = ApiType.PROTOBUF;
 
         // initialize noop databases drivers (needed for shutdownProt)
-        securityDbDriver = new EmptySecurityDbDriver();
+        securityDbDriver = new EmptySecurityDbDriver(sysCtx);
         persistenceDbDriver = new SatelliteDbDriver(sysCtx, nodesMap, rscDfnMap, storPoolDfnMap);
 
         // Initialize the worker thread pool

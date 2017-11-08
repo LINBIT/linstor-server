@@ -3,6 +3,8 @@ package com.linbit.drbdmanage;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +59,9 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 
 
     private final Map<NodeName, Node> nodeCache;
+    private boolean cacheCleared = false;
+
+    private final Map<NodeName, Node> nodesMap;
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
@@ -71,12 +76,14 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     public NodeDataDerbyDriver(
         AccessContext privCtx,
         ErrorReporter errorReporterRef,
-        Map<NodeName, Node> nodeCacheRef
+        Map<NodeName, Node> nodesMapRef
     )
     {
         dbCtx = privCtx;
         errorReporter = errorReporterRef;
-        nodeCache = nodeCacheRef;
+        nodeCache = new HashMap<>();
+
+        nodesMap = nodesMapRef;
 
         flagDriver = new NodeFlagPersistence();
         typeDriver = new NodeTypeDriver();
@@ -108,7 +115,6 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             stmt.setLong(4, node.getFlags().getFlagsBits(dbCtx));
             stmt.setLong(5, node.getNodeType(dbCtx).getFlagValue());
             stmt.executeUpdate();
-            cache(node);
 
             errorReporter.logTrace("Node created %s", getDebugId(node));
         }
@@ -118,22 +124,24 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         }
     }
 
-    public void loadAll(TransactionMgr transMgr) throws SQLException
+    public List<NodeData> loadAll(TransactionMgr transMgr) throws SQLException
     {
         errorReporter.logTrace("Loading all Nodes");
+        List<NodeData> list = new ArrayList<>();
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    load(resultSet, transMgr); // we do not care about the return value
-                    // the loaded node(s) get cached anyways, and thus the controller gets
-                    // the references that way
+                    list.add(
+                        load(resultSet, transMgr)
+                    );
                 }
             }
         }
-        errorReporter.logTrace("Loaded %d Nodes", nodeCache.size());
+        errorReporter.logTrace("Loaded %d Nodes", list.size());
+        return list;
     }
 
     @Override
@@ -185,7 +193,11 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             );
         }
 
-        node = cacheGet(nodeName);
+        node = (NodeData) nodesMap.get(nodeName);
+        if (node == null)
+        {
+            node = (NodeData) nodeCache.get(nodeName);
+        }
         if (node == null)
         {
             ObjectProtection objProt = getObjectProtection(nodeName, transMgr);
@@ -206,69 +218,63 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             // resource -> resourceDefinition
             // resourceDefinition -> resource (other than before)
             // resource -> node (containing "our" node, but also other nodes)
-
-            // to break this infinite loop we (re-)check our nodesMaps (cache)
-            if (cache(node))
+            if (!cacheCleared)
             {
-                try
-                {
-                    List<NetInterfaceData> netIfaces =
-                        netInterfaceDriver.loadNetInterfaceData(node, transMgr);
-                    for (NetInterfaceData netIf : netIfaces)
-                    {
-                        node.addNetInterface(dbCtx, netIf);
-                    }
-                    errorReporter.logTrace(
-                        "Node's NetInterfaces restored %s Count: %d",
-                        getTraceId(node),
-                        netIfaces.size()
-                    );
-
-                    List<ResourceData> resList = resourceDataDriver.loadResourceData(dbCtx, node, transMgr);
-                    for (ResourceData res : resList)
-                    {
-                        node.addResource(dbCtx, res);
-                    }
-                    errorReporter.logTrace(
-                        "Node's Resources restored %s Count: %d",
-                        getTraceId(node),
-                        resList.size()
-                    );
-
-                    List<StorPoolData> storPoolList = storPoolDriver.loadStorPools(node, transMgr);
-                    for (StorPoolData storPool : storPoolList)
-                    {
-                        node.addStorPool(dbCtx, storPool);
-                    }
-                    errorReporter.logTrace(
-                        "Node's StorPools restored %s Count: %d",
-                        getTraceId(node),
-                        storPoolList.size()
-                    );
-
-                    List<NodeConnectionData> nodeConDfnList =
-                        nodeConnectionDriver.loadAllByNode(node, transMgr);
-                    for (NodeConnectionData nodeConDfn : nodeConDfnList)
-                    {
-                        node.setNodeConnection(dbCtx, nodeConDfn);
-                    }
-                    errorReporter.logTrace(
-                        "Node's ConnectionDefinitions restored %s Count: %d",
-                        getTraceId(node),
-                        nodeConDfnList.size()
-                    );
-
-                    errorReporter.logTrace("Node loaded from DB %s", getDebugId(node));
-                }
-                catch (AccessDeniedException accessDeniedExc)
-                {
-                    DerbyDriver.handleAccessDeniedException(accessDeniedExc);
-                }
+                nodeCache.put(nodeName, node);
             }
-            else
+            try
             {
-                node = cacheGet(nodeName);
-                errorReporter.logTrace("Node loaded from Cache %s", getDebugId(node));
+                List<NetInterfaceData> netIfaces =
+                    netInterfaceDriver.loadNetInterfaceData(node, transMgr);
+                for (NetInterfaceData netIf : netIfaces)
+                {
+                    node.addNetInterface(dbCtx, netIf);
+                }
+                errorReporter.logTrace(
+                    "Node's NetInterfaces restored %s Count: %d",
+                    getTraceId(node),
+                    netIfaces.size()
+                );
+
+                List<ResourceData> resList = resourceDataDriver.loadResourceData(dbCtx, node, transMgr);
+                for (ResourceData res : resList)
+                {
+                    node.addResource(dbCtx, res);
+                }
+                errorReporter.logTrace(
+                    "Node's Resources restored %s Count: %d",
+                    getTraceId(node),
+                    resList.size()
+                );
+
+                List<StorPoolData> storPoolList = storPoolDriver.loadStorPools(node, transMgr);
+                for (StorPoolData storPool : storPoolList)
+                {
+                    node.addStorPool(dbCtx, storPool);
+                }
+                errorReporter.logTrace(
+                    "Node's StorPools restored %s Count: %d",
+                    getTraceId(node),
+                    storPoolList.size()
+                );
+
+                List<NodeConnectionData> nodeConDfnList =
+                    nodeConnectionDriver.loadAllByNode(node, transMgr);
+                for (NodeConnectionData nodeConDfn : nodeConDfnList)
+                {
+                    node.setNodeConnection(dbCtx, nodeConDfn);
+                }
+                errorReporter.logTrace(
+                    "Node's ConnectionDefinitions restored %s Count: %d",
+                    getTraceId(node),
+                    nodeConDfnList.size()
+                );
+
+                errorReporter.logTrace("Node loaded from DB %s", getDebugId(node));
+            }
+            catch (AccessDeniedException accessDeniedExc)
+            {
+                DerbyDriver.handleAccessDeniedException(accessDeniedExc);
             }
         }
         else
@@ -306,37 +312,13 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 
             stmt.executeUpdate();
         }
-        cacheRemove(node.getName());
         errorReporter.logTrace("Node deleted %s", getDebugId(node));
     }
 
-    private boolean cache(NodeData node)
+    public void clearCache()
     {
-        boolean ret = false;
-        if (node != null)
-        {
-            NodeName pk = node.getName();
-            boolean contains = nodeCache.containsKey(pk);
-            if (!contains)
-            {
-                nodeCache.put(pk, node);
-                ret = true;
-            }
-        }
-        return ret;
-    }
-
-    private void cacheRemove(NodeName nodeName)
-    {
-        if (nodeName != null)
-        {
-            nodeCache.remove(nodeName);
-        }
-    }
-
-    private NodeData cacheGet(NodeName nodeName)
-    {
-        return (NodeData) nodeCache.get(nodeName);
+        cacheCleared = true;
+        nodeCache.clear();
     }
 
     @Override

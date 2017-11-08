@@ -9,8 +9,14 @@ import com.linbit.TransactionMgr;
 
 public class EmptySecurityDbDriver implements DbAccessor
 {
-
     public static final SingleColumnDatabaseDriver<?, ?> NOOP_COL_DRIVER = new NoOpColDriver();
+
+    private final ObjectProtection objProt;
+
+    public EmptySecurityDbDriver(AccessContext accCtx)
+    {
+        objProt = new ObjectProtection(accCtx, null, null);
+    }
 
     @Override
     public ResultSet getSignInEntry(Connection dbConn, IdentityName idName) throws SQLException
@@ -72,7 +78,7 @@ public class EmptySecurityDbDriver implements DbAccessor
         // no-op
     }
 
-    private static class EmptyObjectProtectionDatabaseDriver implements ObjectProtectionDatabaseDriver
+    private class EmptyObjectProtectionDatabaseDriver implements ObjectProtectionDatabaseDriver
     {
         public EmptyObjectProtectionDatabaseDriver()
         {
@@ -128,8 +134,7 @@ public class EmptySecurityDbDriver implements DbAccessor
         )
             throws SQLException
         {
-            // no-op
-            return null;
+            return objProt;
         }
 
         @SuppressWarnings("unchecked")

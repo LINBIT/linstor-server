@@ -3,6 +3,8 @@ package com.linbit.drbdmanage;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -63,9 +65,6 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
             stmt.setString(3, storPoolDefinitionData.getName().displayValue);
             stmt.executeUpdate();
         }
-
-        cache(storPoolDefinitionData);
-
         errorReporter.logTrace("StorPoolDefinition created %s", getDebugId(storPoolDefinitionData));
     }
 
@@ -105,19 +104,20 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     public void loadAll(TransactionMgr transMgr) throws SQLException
     {
         errorReporter.logTrace("Loading all StorPoolDefinitions");
+        List<StorPoolDefinitionData> list = new ArrayList<>();
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_SELECT_ALL))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 while (resultSet.next())
                 {
-                    load(resultSet, transMgr); // we do not care about the return value
-                    // the loaded resDfn(s) get cached anyways, and thus the controller gets
-                    // the references that way
+                    list.add(
+                        load(resultSet, transMgr)
+                    );
                 }
             }
         }
-        errorReporter.logTrace("Loaded %d StorPoolDefinitions", storPoolDfnMap.size());
+        errorReporter.logTrace("Loaded %d StorPoolDefinitions", list.size());
     }
 
     public StorPoolDefinitionData load(ResultSet resultSet, TransactionMgr transMgr) throws SQLException
@@ -149,7 +149,6 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
             ObjectProtection objProt = getObjectProtection(storPoolName, transMgr);
 
             storPoolDefinition = new StorPoolDefinitionData(uuid, objProt, storPoolName);
-            cache(storPoolDefinition);
             errorReporter.logTrace("StorPoolDefinition loaded from DB %s", getDebugId(storPoolName));
         }
         else
@@ -188,11 +187,6 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
             stmt.executeUpdate();
         }
         errorReporter.logTrace("StorPoolDefinition deleted %s", getDebugId(storPoolDefinitionData));
-    }
-
-    private void cache(StorPoolDefinitionData spdd)
-    {
-        storPoolDfnMap.put(spdd.getName(), spdd);
     }
 
     private StorPoolDefinitionData cacheGet(StorPoolName sName)
