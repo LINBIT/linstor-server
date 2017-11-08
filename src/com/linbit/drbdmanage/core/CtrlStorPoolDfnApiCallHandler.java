@@ -259,7 +259,8 @@ class CtrlStorPoolDfnApiCallHandler
             {
                 storPoolDefinitionData.setConnection(transMgr);
 //                storPoolDefinitionData.markDeleted(accCtx);
-                // TODO: check if there are still storpools open, if not, delete this storpooldefinition
+                // TODO: check if there are still storPools open, if not, delete this storPoolDefinition
+                // client has to manually remove storPools prior removing storPoolDefinition
                 transMgr.commit();
 
                 String successMessage = String.format(

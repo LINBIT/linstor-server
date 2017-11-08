@@ -9,6 +9,7 @@ import com.linbit.drbdmanage.Volume;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.api.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiType;
+import com.linbit.drbdmanage.api.protobuf.controller.interfaces.ResourceDataSerializer;
 import com.linbit.drbdmanage.api.protobuf.controller.serializer.ResourceDataSerializerProto;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -29,28 +30,23 @@ public class CtrlApiCallHandler
     CtrlApiCallHandler(Controller controllerRef, ApiType type, AccessContext apiCtx)
     {
         controller = controllerRef;
+        ResourceDataSerializer rscSerializer;
         switch (type)
         {
             case PROTOBUF:
-                nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef);
-                rscApiCallHandler = new CtrlRscApiCallHandler(
-                    controllerRef,
-                    new ResourceDataSerializerProto(
-                        apiCtx,
-                        controller.getErrorReporter()
-                    ),
-                    apiCtx
-                );
-                rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef);
-                storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef);
-                storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef);
-                nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
-                rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef);
-                vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef);
+                rscSerializer = new ResourceDataSerializerProto(apiCtx, controller.getErrorReporter());
                 break;
             default:
-                throw new ImplementationError("Unknown ApiType given: " + type, null);
+                throw new ImplementationError("Unknown ApiType: " + type, null);
         }
+        nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, apiCtx);
+        rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, apiCtx);
+        rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, apiCtx);
+        storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef);
+        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef);
+        nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
+        rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef);
+        vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef);
     }
 
     public ApiCallRc createNode(

@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.core;
 import static com.linbit.drbdmanage.api.ApiConsts.*;
 
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +14,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbdmanage.DrbdDataAlreadyExistsException;
 import com.linbit.drbdmanage.MinorNumber;
+import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.ResourceName;
@@ -34,10 +36,12 @@ import com.linbit.drbdmanage.security.AccessType;
 class CtrlRscDfnApiCallHandler
 {
     private Controller controller;
+    private AccessContext apiCtx;
 
-    CtrlRscDfnApiCallHandler(Controller controllerRef)
+    CtrlRscDfnApiCallHandler(Controller controllerRef, AccessContext apiCtxRef)
     {
         controller = controllerRef;
+        apiCtx = apiCtxRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -425,6 +429,7 @@ class CtrlRscDfnApiCallHandler
         TransactionMgr transMgr = null;
         ResourceName resName = null;
         ResourceDefinitionData resDfn = null;
+        Iterator<Resource> rscIterator = null;
 
         try
         {
@@ -447,7 +452,15 @@ class CtrlRscDfnApiCallHandler
                 resDfn.setConnection(transMgr);
                 resDfn.markDeleted(accCtx); // accDeniedExc3, sqlExc3
 
-                transMgr.commit(); // sqlExc4
+                rscIterator = resDfn.iterateResource(apiCtx); // accDeniedExc4
+                while (rscIterator.hasNext())
+                {
+                    Resource rsc = rscIterator.next();
+                    rsc.setConnection(transMgr);
+                    rsc.markDeleted(apiCtx); // accDeniedExc5, sqlExc4
+                }
+
+                transMgr.commit(); // sqlExc5
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(RC_RSC_DFN_DELETED);
@@ -486,15 +499,33 @@ class CtrlRscDfnApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            String errorMessage = String.format(
-                "The access context (user: '%s', role: '%s') has no permission to " +
-                    "delete the resource definition '%s'.",
-                accCtx.subjectId.name.displayValue,
-                accCtx.subjectRole.name.displayValue,
-                rscNameStr
-            );
+            String errorMessage;
+            Throwable exc;
+            if (rscIterator == null)
+            { // accDeniedExc1 && accDeniedExc2 && accDeniedExc3
+                errorMessage = String.format(
+                    "The access context (user: '%s', role: '%s') has no permission to " +
+                        "delete the resource definition '%s'.",
+                    accCtx.subjectId.name.displayValue,
+                    accCtx.subjectRole.name.displayValue,
+                    rscNameStr
+                );
+                exc = accDeniedExc;
+            }
+            else
+            { // accDeniedExc4 && accDeniedExc5
+                errorMessage = String.format(
+                    "The resources depending on the resource definition '%s' could not be marked for "+
+                        "deletion due to an implementation error.",
+                    rscNameStr
+                );
+                exc = new ImplementationError(
+                    "ApiContext does not haven sufficent permission to mark resources as deleted",
+                    accDeniedExc
+                );
+            }
             controller.getErrorReporter().reportError(
-                accDeniedExc,
+                exc,
                 accCtx,
                 client,
                 errorMessage

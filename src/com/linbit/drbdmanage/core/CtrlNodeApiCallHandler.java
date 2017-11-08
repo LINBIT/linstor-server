@@ -18,6 +18,7 @@ import com.linbit.drbdmanage.NetInterfaceName;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.DmIpAddress;
 import com.linbit.drbdmanage.Node.NodeFlag;
 import com.linbit.drbdmanage.Node.NodeType;
@@ -35,10 +36,12 @@ import com.linbit.drbdmanage.security.AccessType;
 class CtrlNodeApiCallHandler
 {
     private final Controller controller;
+    private final AccessContext apiCtx;
 
-    CtrlNodeApiCallHandler(Controller controllerRef)
+    CtrlNodeApiCallHandler(Controller controllerRef, AccessContext apiCtxRef)
     {
         controller = controllerRef;
+        apiCtx = apiCtxRef;
     }
 
     public ApiCallRc createNode(
@@ -653,6 +656,7 @@ class CtrlNodeApiCallHandler
 
         TransactionMgr transMgr = null;
         NodeData nodeData = null;
+        Iterator<Resource> rscIterator = null;
 
         try
         {
@@ -671,7 +675,16 @@ class CtrlNodeApiCallHandler
             {
                 nodeData.setConnection(transMgr);
                 nodeData.markDeleted(accCtx); // sqlExc3, accDeniedExc3
-                transMgr.commit(); // sqlExc4
+
+                rscIterator = nodeData.iterateResources(apiCtx); //accDeniedExc4
+                while (rscIterator.hasNext())
+                {
+                    Resource rsc = rscIterator.next();
+                    rsc.setConnection(transMgr);
+                    rsc.markDeleted(apiCtx); // sqlExc4, accDeniedExc4
+                }
+
+                transMgr.commit(); // sqlExc5
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(RC_NODE_DELETED);
@@ -686,7 +699,7 @@ class CtrlNodeApiCallHandler
                 controller.getErrorReporter().logInfo(successMessage);
 
                 // TODO: tell satellites to remove all the corresponding resources
-                // TODO: if satellite is finished remove the node from the DB
+                // TODO: if satellites finished, cleanup the storPools and then remove the node from DB
             }
             else
             {
@@ -751,21 +764,41 @@ class CtrlNodeApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            // handle accDeniedExc1 && accDeniedExc2 && accDeniedExc3
-            String errormessage = String.format(
-                "The given access context has no permission to delete node '%s'.",
-                nodeNameStr
-            );
+            String errorMessage;
+            Throwable exc;
+            if (rscIterator == null)
+            { // handle accDeniedExc1 && accDeniedExc2 && accDeniedExc3
+                errorMessage = String.format(
+                    "The access context (user: '%s', role: '%s') has no permission to " +
+                        "delete the node '%s'.",
+                    accCtx.subjectId.name.displayValue,
+                    accCtx.subjectRole.name.displayValue,
+                    nodeNameStr
+                );
+                exc = accDeniedExc;
+            }
+            else
+            { // handle accDeniedExc4 && accDeniedExc5
+                errorMessage = String.format(
+                    "The resources deployed on node '%s' could not be marked for "+
+                        "deletion due to an implementation error.",
+                    nodeNameStr
+                );
+                exc = new ImplementationError(
+                    "ApiContext does not haven sufficent permission to mark resources as deleted",
+                    accDeniedExc
+                );
+            }
             controller.getErrorReporter().reportError(
-                accDeniedExc,
+                exc,
                 accCtx,
                 client,
-                errormessage
+                errorMessage
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_DEL_FAIL_ACC_DENIED_NODE);
-            entry.setMessageFormat(errormessage);
+            entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(accDeniedExc.getMessage());
             entry.putObjRef(KEY_NODE, nodeNameStr);
             entry.putVariable(KEY_NODE_NAME, nodeNameStr);

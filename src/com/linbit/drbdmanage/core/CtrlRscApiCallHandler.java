@@ -381,7 +381,7 @@ class CtrlRscApiCallHandler
                         apiCallRc = successApiCallRc;
                         controller.getErrorReporter().logInfo(rscSuccessMsg);
 
-                        sendToNode(accCtx, client, rsc);
+                        notifyNodeRscChanged(accCtx, client, rsc);
 
                         // TODO: tell satellite(s) to do their job
                         // TODO: if a satellite confirms creation, also log it to controller.info
@@ -795,7 +795,7 @@ class CtrlRscApiCallHandler
         return nodeId;
     }
 
-    private void sendToNode(AccessContext accCtx, Peer client, ResourceData rsc)
+    private void notifyNodeRscChanged(AccessContext accCtx, Peer client, ResourceData rsc)
     {
         try
         {
@@ -811,15 +811,6 @@ class CtrlRscApiCallHandler
                 message.setData(data);
                 peer.sendMessage(message);
             }
-
-            Peer peer = rsc.getAssignedNode().getPeer(accCtx);
-            Message message = peer.createMessage();
-            byte[] data = serializer.serialize(rsc);
-            if (data != null)
-            {
-                message.setData(data);
-                peer.sendMessage(message);
-            } // otherwise the serializer should have reported an error already
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -846,8 +837,8 @@ class CtrlRscApiCallHandler
         Peer client,
         String nodeNameStr,
         String rscNameStr
-        )
-        {
+    )
+    {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         TransactionMgr transMgr = null;
