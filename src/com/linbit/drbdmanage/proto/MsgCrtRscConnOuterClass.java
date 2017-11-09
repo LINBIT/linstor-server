@@ -20,10 +20,27 @@ public final class MsgCrtRscConnOuterClass {
 
     /**
      * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    boolean hasUuid();
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString getUuid();
+
+    /**
+     * <pre>
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     boolean hasNodeName1();
     /**
@@ -31,7 +48,7 @@ public final class MsgCrtRscConnOuterClass {
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     java.lang.String getNodeName1();
     /**
@@ -39,7 +56,7 @@ public final class MsgCrtRscConnOuterClass {
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     com.google.protobuf.ByteString
         getNodeName1Bytes();
@@ -49,7 +66,7 @@ public final class MsgCrtRscConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     boolean hasNodeName2();
     /**
@@ -57,7 +74,7 @@ public final class MsgCrtRscConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     java.lang.String getNodeName2();
     /**
@@ -65,7 +82,7 @@ public final class MsgCrtRscConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     com.google.protobuf.ByteString
         getNodeName2Bytes();
@@ -75,69 +92,103 @@ public final class MsgCrtRscConnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string rsc_name = 4;</code>
      */
-    boolean hasResourceName();
+    boolean hasRscName();
     /**
      * <pre>
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string rsc_name = 4;</code>
      */
-    java.lang.String getResourceName();
+    java.lang.String getRscName();
     /**
      * <pre>
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string rsc_name = 4;</code>
      */
     com.google.protobuf.ByteString
-        getResourceNameBytes();
+        getRscNameBytes();
+
+    /**
+     * <pre>
+     * Resource 1 uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_1_uuid = 5;</code>
+     */
+    boolean hasRsc1Uuid();
+    /**
+     * <pre>
+     * Resource 1 uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_1_uuid = 5;</code>
+     */
+    com.google.protobuf.ByteString getRsc1Uuid();
+
+    /**
+     * <pre>
+     * Resource 2 uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_2_uuid = 6;</code>
+     */
+    boolean hasRsc2Uuid();
+    /**
+     * <pre>
+     * Resource 2 uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_2_uuid = 6;</code>
+     */
+    com.google.protobuf.ByteString getRsc2Uuid();
 
     /**
      * <pre>
      * Resource connection properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
      */
     java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
-        getResourceConnPropsList();
+        getRscConnPropsList();
     /**
      * <pre>
      * Resource connection properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
      */
-    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getResourceConnProps(int index);
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getRscConnProps(int index);
     /**
      * <pre>
      * Resource connection properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
      */
-    int getResourceConnPropsCount();
+    int getRscConnPropsCount();
     /**
      * <pre>
      * Resource connection properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
      */
     java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getResourceConnPropsOrBuilderList();
+        getRscConnPropsOrBuilderList();
     /**
      * <pre>
      * Resource connection properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
      */
-    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getResourceConnPropsOrBuilder(
+    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getRscConnPropsOrBuilder(
         int index);
   }
   /**
@@ -156,10 +207,13 @@ public final class MsgCrtRscConnOuterClass {
       super(builder);
     }
     private MsgCrtRscConn() {
+      uuid_ = com.google.protobuf.ByteString.EMPTY;
       nodeName1_ = "";
       nodeName2_ = "";
-      resourceName_ = "";
-      resourceConnProps_ = java.util.Collections.emptyList();
+      rscName_ = "";
+      rsc1Uuid_ = com.google.protobuf.ByteString.EMPTY;
+      rsc2Uuid_ = com.google.protobuf.ByteString.EMPTY;
+      rscConnProps_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -191,29 +245,44 @@ public final class MsgCrtRscConnOuterClass {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              nodeName1_ = bs;
+              uuid_ = input.readBytes();
               break;
             }
             case 18: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
-              nodeName2_ = bs;
+              nodeName1_ = bs;
               break;
             }
             case 26: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
-              resourceName_ = bs;
+              nodeName2_ = bs;
               break;
             }
             case 34: {
-              if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-                resourceConnProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
-                mutable_bitField0_ |= 0x00000008;
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000008;
+              rscName_ = bs;
+              break;
+            }
+            case 42: {
+              bitField0_ |= 0x00000010;
+              rsc1Uuid_ = input.readBytes();
+              break;
+            }
+            case 50: {
+              bitField0_ |= 0x00000020;
+              rsc2Uuid_ = input.readBytes();
+              break;
+            }
+            case 58: {
+              if (!((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
+                rscConnProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
+                mutable_bitField0_ |= 0x00000040;
               }
-              resourceConnProps_.add(
+              rscConnProps_.add(
                   input.readMessage(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
               break;
             }
@@ -225,8 +294,8 @@ public final class MsgCrtRscConnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-          resourceConnProps_ = java.util.Collections.unmodifiableList(resourceConnProps_);
+        if (((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
+          rscConnProps_ = java.util.Collections.unmodifiableList(rscConnProps_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -245,24 +314,47 @@ public final class MsgCrtRscConnOuterClass {
     }
 
     private int bitField0_;
-    public static final int NODE_NAME_1_FIELD_NUMBER = 1;
+    public static final int UUID_FIELD_NUMBER = 1;
+    private com.google.protobuf.ByteString uuid_;
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    public boolean hasUuid() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString getUuid() {
+      return uuid_;
+    }
+
+    public static final int NODE_NAME_1_FIELD_NUMBER = 2;
     private volatile java.lang.Object nodeName1_;
     /**
      * <pre>
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     public boolean hasNodeName1() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
      * <pre>
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     public java.lang.String getNodeName1() {
       java.lang.Object ref = nodeName1_;
@@ -283,7 +375,7 @@ public final class MsgCrtRscConnOuterClass {
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     public com.google.protobuf.ByteString
         getNodeName1Bytes() {
@@ -299,24 +391,24 @@ public final class MsgCrtRscConnOuterClass {
       }
     }
 
-    public static final int NODE_NAME_2_FIELD_NUMBER = 2;
+    public static final int NODE_NAME_2_FIELD_NUMBER = 3;
     private volatile java.lang.Object nodeName2_;
     /**
      * <pre>
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     public boolean hasNodeName2() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
      * <pre>
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     public java.lang.String getNodeName2() {
       java.lang.Object ref = nodeName2_;
@@ -337,7 +429,7 @@ public final class MsgCrtRscConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     public com.google.protobuf.ByteString
         getNodeName2Bytes() {
@@ -353,27 +445,27 @@ public final class MsgCrtRscConnOuterClass {
       }
     }
 
-    public static final int RESOURCE_NAME_FIELD_NUMBER = 3;
-    private volatile java.lang.Object resourceName_;
+    public static final int RSC_NAME_FIELD_NUMBER = 4;
+    private volatile java.lang.Object rscName_;
     /**
      * <pre>
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string rsc_name = 4;</code>
      */
-    public boolean hasResourceName() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+    public boolean hasRscName() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
      * <pre>
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string rsc_name = 4;</code>
      */
-    public java.lang.String getResourceName() {
-      java.lang.Object ref = resourceName_;
+    public java.lang.String getRscName() {
+      java.lang.Object ref = rscName_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -381,7 +473,7 @@ public final class MsgCrtRscConnOuterClass {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          resourceName_ = s;
+          rscName_ = s;
         }
         return s;
       }
@@ -391,75 +483,121 @@ public final class MsgCrtRscConnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string rsc_name = 4;</code>
      */
     public com.google.protobuf.ByteString
-        getResourceNameBytes() {
-      java.lang.Object ref = resourceName_;
+        getRscNameBytes() {
+      java.lang.Object ref = rscName_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        resourceName_ = b;
+        rscName_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
       }
     }
 
-    public static final int RESOURCE_CONN_PROPS_FIELD_NUMBER = 4;
-    private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> resourceConnProps_;
+    public static final int RSC_1_UUID_FIELD_NUMBER = 5;
+    private com.google.protobuf.ByteString rsc1Uuid_;
+    /**
+     * <pre>
+     * Resource 1 uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_1_uuid = 5;</code>
+     */
+    public boolean hasRsc1Uuid() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <pre>
+     * Resource 1 uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_1_uuid = 5;</code>
+     */
+    public com.google.protobuf.ByteString getRsc1Uuid() {
+      return rsc1Uuid_;
+    }
+
+    public static final int RSC_2_UUID_FIELD_NUMBER = 6;
+    private com.google.protobuf.ByteString rsc2Uuid_;
+    /**
+     * <pre>
+     * Resource 2 uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_2_uuid = 6;</code>
+     */
+    public boolean hasRsc2Uuid() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <pre>
+     * Resource 2 uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_2_uuid = 6;</code>
+     */
+    public com.google.protobuf.ByteString getRsc2Uuid() {
+      return rsc2Uuid_;
+    }
+
+    public static final int RSC_CONN_PROPS_FIELD_NUMBER = 7;
+    private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> rscConnProps_;
     /**
      * <pre>
      * Resource connection properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
      */
-    public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getResourceConnPropsList() {
-      return resourceConnProps_;
+    public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getRscConnPropsList() {
+      return rscConnProps_;
     }
     /**
      * <pre>
      * Resource connection properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
      */
     public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getResourceConnPropsOrBuilderList() {
-      return resourceConnProps_;
+        getRscConnPropsOrBuilderList() {
+      return rscConnProps_;
     }
     /**
      * <pre>
      * Resource connection properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
      */
-    public int getResourceConnPropsCount() {
-      return resourceConnProps_.size();
+    public int getRscConnPropsCount() {
+      return rscConnProps_.size();
     }
     /**
      * <pre>
      * Resource connection properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
      */
-    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getResourceConnProps(int index) {
-      return resourceConnProps_.get(index);
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getRscConnProps(int index) {
+      return rscConnProps_.get(index);
     }
     /**
      * <pre>
      * Resource connection properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
      */
-    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getResourceConnPropsOrBuilder(
+    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getRscConnPropsOrBuilder(
         int index) {
-      return resourceConnProps_.get(index);
+      return rscConnProps_.get(index);
     }
 
     private byte memoizedIsInitialized = -1;
@@ -476,12 +614,12 @@ public final class MsgCrtRscConnOuterClass {
         memoizedIsInitialized = 0;
         return false;
       }
-      if (!hasResourceName()) {
+      if (!hasRscName()) {
         memoizedIsInitialized = 0;
         return false;
       }
-      for (int i = 0; i < getResourceConnPropsCount(); i++) {
-        if (!getResourceConnProps(i).isInitialized()) {
+      for (int i = 0; i < getRscConnPropsCount(); i++) {
+        if (!getRscConnProps(i).isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -493,16 +631,25 @@ public final class MsgCrtRscConnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeName1_);
+        output.writeBytes(1, uuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName2_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName1_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, resourceName_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, nodeName2_);
       }
-      for (int i = 0; i < resourceConnProps_.size(); i++) {
-        output.writeMessage(4, resourceConnProps_.get(i));
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, rscName_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBytes(5, rsc1Uuid_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeBytes(6, rsc2Uuid_);
+      }
+      for (int i = 0; i < rscConnProps_.size(); i++) {
+        output.writeMessage(7, rscConnProps_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -513,17 +660,29 @@ public final class MsgCrtRscConnOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeName1_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, uuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName2_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName1_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, resourceName_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, nodeName2_);
       }
-      for (int i = 0; i < resourceConnProps_.size(); i++) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, rscName_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(4, resourceConnProps_.get(i));
+          .computeBytesSize(5, rsc1Uuid_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(6, rsc2Uuid_);
+      }
+      for (int i = 0; i < rscConnProps_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(7, rscConnProps_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -542,6 +701,11 @@ public final class MsgCrtRscConnOuterClass {
       com.linbit.drbdmanage.proto.MsgCrtRscConnOuterClass.MsgCrtRscConn other = (com.linbit.drbdmanage.proto.MsgCrtRscConnOuterClass.MsgCrtRscConn) obj;
 
       boolean result = true;
+      result = result && (hasUuid() == other.hasUuid());
+      if (hasUuid()) {
+        result = result && getUuid()
+            .equals(other.getUuid());
+      }
       result = result && (hasNodeName1() == other.hasNodeName1());
       if (hasNodeName1()) {
         result = result && getNodeName1()
@@ -552,13 +716,23 @@ public final class MsgCrtRscConnOuterClass {
         result = result && getNodeName2()
             .equals(other.getNodeName2());
       }
-      result = result && (hasResourceName() == other.hasResourceName());
-      if (hasResourceName()) {
-        result = result && getResourceName()
-            .equals(other.getResourceName());
+      result = result && (hasRscName() == other.hasRscName());
+      if (hasRscName()) {
+        result = result && getRscName()
+            .equals(other.getRscName());
       }
-      result = result && getResourceConnPropsList()
-          .equals(other.getResourceConnPropsList());
+      result = result && (hasRsc1Uuid() == other.hasRsc1Uuid());
+      if (hasRsc1Uuid()) {
+        result = result && getRsc1Uuid()
+            .equals(other.getRsc1Uuid());
+      }
+      result = result && (hasRsc2Uuid() == other.hasRsc2Uuid());
+      if (hasRsc2Uuid()) {
+        result = result && getRsc2Uuid()
+            .equals(other.getRsc2Uuid());
+      }
+      result = result && getRscConnPropsList()
+          .equals(other.getRscConnPropsList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -570,6 +744,10 @@ public final class MsgCrtRscConnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
+      if (hasUuid()) {
+        hash = (37 * hash) + UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getUuid().hashCode();
+      }
       if (hasNodeName1()) {
         hash = (37 * hash) + NODE_NAME_1_FIELD_NUMBER;
         hash = (53 * hash) + getNodeName1().hashCode();
@@ -578,13 +756,21 @@ public final class MsgCrtRscConnOuterClass {
         hash = (37 * hash) + NODE_NAME_2_FIELD_NUMBER;
         hash = (53 * hash) + getNodeName2().hashCode();
       }
-      if (hasResourceName()) {
-        hash = (37 * hash) + RESOURCE_NAME_FIELD_NUMBER;
-        hash = (53 * hash) + getResourceName().hashCode();
+      if (hasRscName()) {
+        hash = (37 * hash) + RSC_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getRscName().hashCode();
       }
-      if (getResourceConnPropsCount() > 0) {
-        hash = (37 * hash) + RESOURCE_CONN_PROPS_FIELD_NUMBER;
-        hash = (53 * hash) + getResourceConnPropsList().hashCode();
+      if (hasRsc1Uuid()) {
+        hash = (37 * hash) + RSC_1_UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getRsc1Uuid().hashCode();
+      }
+      if (hasRsc2Uuid()) {
+        hash = (37 * hash) + RSC_2_UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getRsc2Uuid().hashCode();
+      }
+      if (getRscConnPropsCount() > 0) {
+        hash = (37 * hash) + RSC_CONN_PROPS_FIELD_NUMBER;
+        hash = (53 * hash) + getRscConnPropsList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -704,22 +890,28 @@ public final class MsgCrtRscConnOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
-          getResourceConnPropsFieldBuilder();
+          getRscConnPropsFieldBuilder();
         }
       }
       public Builder clear() {
         super.clear();
-        nodeName1_ = "";
+        uuid_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000001);
-        nodeName2_ = "";
+        nodeName1_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
-        resourceName_ = "";
+        nodeName2_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
-        if (resourceConnPropsBuilder_ == null) {
-          resourceConnProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000008);
+        rscName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000008);
+        rsc1Uuid_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        rsc2Uuid_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        if (rscConnPropsBuilder_ == null) {
+          rscConnProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000040);
         } else {
-          resourceConnPropsBuilder_.clear();
+          rscConnPropsBuilder_.clear();
         }
         return this;
       }
@@ -748,23 +940,35 @@ public final class MsgCrtRscConnOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.nodeName1_ = nodeName1_;
+        result.uuid_ = uuid_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.nodeName2_ = nodeName2_;
+        result.nodeName1_ = nodeName1_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
         }
-        result.resourceName_ = resourceName_;
-        if (resourceConnPropsBuilder_ == null) {
-          if (((bitField0_ & 0x00000008) == 0x00000008)) {
-            resourceConnProps_ = java.util.Collections.unmodifiableList(resourceConnProps_);
-            bitField0_ = (bitField0_ & ~0x00000008);
+        result.nodeName2_ = nodeName2_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.rscName_ = rscName_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.rsc1Uuid_ = rsc1Uuid_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.rsc2Uuid_ = rsc2Uuid_;
+        if (rscConnPropsBuilder_ == null) {
+          if (((bitField0_ & 0x00000040) == 0x00000040)) {
+            rscConnProps_ = java.util.Collections.unmodifiableList(rscConnProps_);
+            bitField0_ = (bitField0_ & ~0x00000040);
           }
-          result.resourceConnProps_ = resourceConnProps_;
+          result.rscConnProps_ = rscConnProps_;
         } else {
-          result.resourceConnProps_ = resourceConnPropsBuilder_.build();
+          result.rscConnProps_ = rscConnPropsBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -808,44 +1012,53 @@ public final class MsgCrtRscConnOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgCrtRscConnOuterClass.MsgCrtRscConn other) {
         if (other == com.linbit.drbdmanage.proto.MsgCrtRscConnOuterClass.MsgCrtRscConn.getDefaultInstance()) return this;
+        if (other.hasUuid()) {
+          setUuid(other.getUuid());
+        }
         if (other.hasNodeName1()) {
-          bitField0_ |= 0x00000001;
+          bitField0_ |= 0x00000002;
           nodeName1_ = other.nodeName1_;
           onChanged();
         }
         if (other.hasNodeName2()) {
-          bitField0_ |= 0x00000002;
+          bitField0_ |= 0x00000004;
           nodeName2_ = other.nodeName2_;
           onChanged();
         }
-        if (other.hasResourceName()) {
-          bitField0_ |= 0x00000004;
-          resourceName_ = other.resourceName_;
+        if (other.hasRscName()) {
+          bitField0_ |= 0x00000008;
+          rscName_ = other.rscName_;
           onChanged();
         }
-        if (resourceConnPropsBuilder_ == null) {
-          if (!other.resourceConnProps_.isEmpty()) {
-            if (resourceConnProps_.isEmpty()) {
-              resourceConnProps_ = other.resourceConnProps_;
-              bitField0_ = (bitField0_ & ~0x00000008);
+        if (other.hasRsc1Uuid()) {
+          setRsc1Uuid(other.getRsc1Uuid());
+        }
+        if (other.hasRsc2Uuid()) {
+          setRsc2Uuid(other.getRsc2Uuid());
+        }
+        if (rscConnPropsBuilder_ == null) {
+          if (!other.rscConnProps_.isEmpty()) {
+            if (rscConnProps_.isEmpty()) {
+              rscConnProps_ = other.rscConnProps_;
+              bitField0_ = (bitField0_ & ~0x00000040);
             } else {
-              ensureResourceConnPropsIsMutable();
-              resourceConnProps_.addAll(other.resourceConnProps_);
+              ensureRscConnPropsIsMutable();
+              rscConnProps_.addAll(other.rscConnProps_);
             }
             onChanged();
           }
         } else {
-          if (!other.resourceConnProps_.isEmpty()) {
-            if (resourceConnPropsBuilder_.isEmpty()) {
-              resourceConnPropsBuilder_.dispose();
-              resourceConnPropsBuilder_ = null;
-              resourceConnProps_ = other.resourceConnProps_;
-              bitField0_ = (bitField0_ & ~0x00000008);
-              resourceConnPropsBuilder_ = 
+          if (!other.rscConnProps_.isEmpty()) {
+            if (rscConnPropsBuilder_.isEmpty()) {
+              rscConnPropsBuilder_.dispose();
+              rscConnPropsBuilder_ = null;
+              rscConnProps_ = other.rscConnProps_;
+              bitField0_ = (bitField0_ & ~0x00000040);
+              rscConnPropsBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getResourceConnPropsFieldBuilder() : null;
+                   getRscConnPropsFieldBuilder() : null;
             } else {
-              resourceConnPropsBuilder_.addAllMessages(other.resourceConnProps_);
+              rscConnPropsBuilder_.addAllMessages(other.rscConnProps_);
             }
           }
         }
@@ -861,11 +1074,11 @@ public final class MsgCrtRscConnOuterClass {
         if (!hasNodeName2()) {
           return false;
         }
-        if (!hasResourceName()) {
+        if (!hasRscName()) {
           return false;
         }
-        for (int i = 0; i < getResourceConnPropsCount(); i++) {
-          if (!getResourceConnProps(i).isInitialized()) {
+        for (int i = 0; i < getRscConnPropsCount(); i++) {
+          if (!getRscConnProps(i).isInitialized()) {
             return false;
           }
         }
@@ -891,23 +1104,74 @@ public final class MsgCrtRscConnOuterClass {
       }
       private int bitField0_;
 
+      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public boolean hasUuid() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public com.google.protobuf.ByteString getUuid() {
+        return uuid_;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public Builder setUuid(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        uuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public Builder clearUuid() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        uuid_ = getDefaultInstance().getUuid();
+        onChanged();
+        return this;
+      }
+
       private java.lang.Object nodeName1_ = "";
       /**
        * <pre>
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public boolean hasNodeName1() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
        * <pre>
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public java.lang.String getNodeName1() {
         java.lang.Object ref = nodeName1_;
@@ -928,7 +1192,7 @@ public final class MsgCrtRscConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public com.google.protobuf.ByteString
           getNodeName1Bytes() {
@@ -948,14 +1212,14 @@ public final class MsgCrtRscConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public Builder setNodeName1(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000001;
+  bitField0_ |= 0x00000002;
         nodeName1_ = value;
         onChanged();
         return this;
@@ -965,10 +1229,10 @@ public final class MsgCrtRscConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public Builder clearNodeName1() {
-        bitField0_ = (bitField0_ & ~0x00000001);
+        bitField0_ = (bitField0_ & ~0x00000002);
         nodeName1_ = getDefaultInstance().getNodeName1();
         onChanged();
         return this;
@@ -978,14 +1242,14 @@ public final class MsgCrtRscConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public Builder setNodeName1Bytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000001;
+  bitField0_ |= 0x00000002;
         nodeName1_ = value;
         onChanged();
         return this;
@@ -997,17 +1261,17 @@ public final class MsgCrtRscConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public boolean hasNodeName2() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
        * <pre>
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public java.lang.String getNodeName2() {
         java.lang.Object ref = nodeName2_;
@@ -1028,7 +1292,7 @@ public final class MsgCrtRscConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public com.google.protobuf.ByteString
           getNodeName2Bytes() {
@@ -1048,14 +1312,14 @@ public final class MsgCrtRscConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public Builder setNodeName2(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000004;
         nodeName2_ = value;
         onChanged();
         return this;
@@ -1065,10 +1329,10 @@ public final class MsgCrtRscConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public Builder clearNodeName2() {
-        bitField0_ = (bitField0_ & ~0x00000002);
+        bitField0_ = (bitField0_ & ~0x00000004);
         nodeName2_ = getDefaultInstance().getNodeName2();
         onChanged();
         return this;
@@ -1078,45 +1342,45 @@ public final class MsgCrtRscConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public Builder setNodeName2Bytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000004;
         nodeName2_ = value;
         onChanged();
         return this;
       }
 
-      private java.lang.Object resourceName_ = "";
+      private java.lang.Object rscName_ = "";
       /**
        * <pre>
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string rsc_name = 4;</code>
        */
-      public boolean hasResourceName() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+      public boolean hasRscName() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
        * <pre>
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string rsc_name = 4;</code>
        */
-      public java.lang.String getResourceName() {
-        java.lang.Object ref = resourceName_;
+      public java.lang.String getRscName() {
+        java.lang.Object ref = rscName_;
         if (!(ref instanceof java.lang.String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
-            resourceName_ = s;
+            rscName_ = s;
           }
           return s;
         } else {
@@ -1128,16 +1392,16 @@ public final class MsgCrtRscConnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string rsc_name = 4;</code>
        */
       public com.google.protobuf.ByteString
-          getResourceNameBytes() {
-        java.lang.Object ref = resourceName_;
+          getRscNameBytes() {
+        java.lang.Object ref = rscName_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          resourceName_ = b;
+          rscName_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
@@ -1148,15 +1412,15 @@ public final class MsgCrtRscConnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string rsc_name = 4;</code>
        */
-      public Builder setResourceName(
+      public Builder setRscName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000004;
-        resourceName_ = value;
+  bitField0_ |= 0x00000008;
+        rscName_ = value;
         onChanged();
         return this;
       }
@@ -1165,11 +1429,11 @@ public final class MsgCrtRscConnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string rsc_name = 4;</code>
        */
-      public Builder clearResourceName() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        resourceName_ = getDefaultInstance().getResourceName();
+      public Builder clearRscName() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        rscName_ = getDefaultInstance().getRscName();
         onChanged();
         return this;
       }
@@ -1178,43 +1442,145 @@ public final class MsgCrtRscConnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string rsc_name = 4;</code>
        */
-      public Builder setResourceNameBytes(
+      public Builder setRscNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000004;
-        resourceName_ = value;
+  bitField0_ |= 0x00000008;
+        rscName_ = value;
         onChanged();
         return this;
       }
 
-      private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> resourceConnProps_ =
+      private com.google.protobuf.ByteString rsc1Uuid_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <pre>
+       * Resource 1 uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_1_uuid = 5;</code>
+       */
+      public boolean hasRsc1Uuid() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <pre>
+       * Resource 1 uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_1_uuid = 5;</code>
+       */
+      public com.google.protobuf.ByteString getRsc1Uuid() {
+        return rsc1Uuid_;
+      }
+      /**
+       * <pre>
+       * Resource 1 uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_1_uuid = 5;</code>
+       */
+      public Builder setRsc1Uuid(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        rsc1Uuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource 1 uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_1_uuid = 5;</code>
+       */
+      public Builder clearRsc1Uuid() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        rsc1Uuid_ = getDefaultInstance().getRsc1Uuid();
+        onChanged();
+        return this;
+      }
+
+      private com.google.protobuf.ByteString rsc2Uuid_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <pre>
+       * Resource 2 uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_2_uuid = 6;</code>
+       */
+      public boolean hasRsc2Uuid() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <pre>
+       * Resource 2 uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_2_uuid = 6;</code>
+       */
+      public com.google.protobuf.ByteString getRsc2Uuid() {
+        return rsc2Uuid_;
+      }
+      /**
+       * <pre>
+       * Resource 2 uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_2_uuid = 6;</code>
+       */
+      public Builder setRsc2Uuid(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        rsc2Uuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource 2 uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_2_uuid = 6;</code>
+       */
+      public Builder clearRsc2Uuid() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        rsc2Uuid_ = getDefaultInstance().getRsc2Uuid();
+        onChanged();
+        return this;
+      }
+
+      private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> rscConnProps_ =
         java.util.Collections.emptyList();
-      private void ensureResourceConnPropsIsMutable() {
-        if (!((bitField0_ & 0x00000008) == 0x00000008)) {
-          resourceConnProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(resourceConnProps_);
-          bitField0_ |= 0x00000008;
+      private void ensureRscConnPropsIsMutable() {
+        if (!((bitField0_ & 0x00000040) == 0x00000040)) {
+          rscConnProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(rscConnProps_);
+          bitField0_ |= 0x00000040;
          }
       }
 
       private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> resourceConnPropsBuilder_;
+          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> rscConnPropsBuilder_;
 
       /**
        * <pre>
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getResourceConnPropsList() {
-        if (resourceConnPropsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(resourceConnProps_);
+      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getRscConnPropsList() {
+        if (rscConnPropsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(rscConnProps_);
         } else {
-          return resourceConnPropsBuilder_.getMessageList();
+          return rscConnPropsBuilder_.getMessageList();
         }
       }
       /**
@@ -1222,13 +1588,13 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public int getResourceConnPropsCount() {
-        if (resourceConnPropsBuilder_ == null) {
-          return resourceConnProps_.size();
+      public int getRscConnPropsCount() {
+        if (rscConnPropsBuilder_ == null) {
+          return rscConnProps_.size();
         } else {
-          return resourceConnPropsBuilder_.getCount();
+          return rscConnPropsBuilder_.getCount();
         }
       }
       /**
@@ -1236,13 +1602,13 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getResourceConnProps(int index) {
-        if (resourceConnPropsBuilder_ == null) {
-          return resourceConnProps_.get(index);
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getRscConnProps(int index) {
+        if (rscConnPropsBuilder_ == null) {
+          return rscConnProps_.get(index);
         } else {
-          return resourceConnPropsBuilder_.getMessage(index);
+          return rscConnPropsBuilder_.getMessage(index);
         }
       }
       /**
@@ -1250,19 +1616,19 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public Builder setResourceConnProps(
+      public Builder setRscConnProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (resourceConnPropsBuilder_ == null) {
+        if (rscConnPropsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          ensureResourceConnPropsIsMutable();
-          resourceConnProps_.set(index, value);
+          ensureRscConnPropsIsMutable();
+          rscConnProps_.set(index, value);
           onChanged();
         } else {
-          resourceConnPropsBuilder_.setMessage(index, value);
+          rscConnPropsBuilder_.setMessage(index, value);
         }
         return this;
       }
@@ -1271,16 +1637,16 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public Builder setResourceConnProps(
+      public Builder setRscConnProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (resourceConnPropsBuilder_ == null) {
-          ensureResourceConnPropsIsMutable();
-          resourceConnProps_.set(index, builderForValue.build());
+        if (rscConnPropsBuilder_ == null) {
+          ensureRscConnPropsIsMutable();
+          rscConnProps_.set(index, builderForValue.build());
           onChanged();
         } else {
-          resourceConnPropsBuilder_.setMessage(index, builderForValue.build());
+          rscConnPropsBuilder_.setMessage(index, builderForValue.build());
         }
         return this;
       }
@@ -1289,18 +1655,18 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public Builder addResourceConnProps(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (resourceConnPropsBuilder_ == null) {
+      public Builder addRscConnProps(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (rscConnPropsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          ensureResourceConnPropsIsMutable();
-          resourceConnProps_.add(value);
+          ensureRscConnPropsIsMutable();
+          rscConnProps_.add(value);
           onChanged();
         } else {
-          resourceConnPropsBuilder_.addMessage(value);
+          rscConnPropsBuilder_.addMessage(value);
         }
         return this;
       }
@@ -1309,19 +1675,19 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public Builder addResourceConnProps(
+      public Builder addRscConnProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (resourceConnPropsBuilder_ == null) {
+        if (rscConnPropsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          ensureResourceConnPropsIsMutable();
-          resourceConnProps_.add(index, value);
+          ensureRscConnPropsIsMutable();
+          rscConnProps_.add(index, value);
           onChanged();
         } else {
-          resourceConnPropsBuilder_.addMessage(index, value);
+          rscConnPropsBuilder_.addMessage(index, value);
         }
         return this;
       }
@@ -1330,16 +1696,16 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public Builder addResourceConnProps(
+      public Builder addRscConnProps(
           com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (resourceConnPropsBuilder_ == null) {
-          ensureResourceConnPropsIsMutable();
-          resourceConnProps_.add(builderForValue.build());
+        if (rscConnPropsBuilder_ == null) {
+          ensureRscConnPropsIsMutable();
+          rscConnProps_.add(builderForValue.build());
           onChanged();
         } else {
-          resourceConnPropsBuilder_.addMessage(builderForValue.build());
+          rscConnPropsBuilder_.addMessage(builderForValue.build());
         }
         return this;
       }
@@ -1348,16 +1714,16 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public Builder addResourceConnProps(
+      public Builder addRscConnProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (resourceConnPropsBuilder_ == null) {
-          ensureResourceConnPropsIsMutable();
-          resourceConnProps_.add(index, builderForValue.build());
+        if (rscConnPropsBuilder_ == null) {
+          ensureRscConnPropsIsMutable();
+          rscConnProps_.add(index, builderForValue.build());
           onChanged();
         } else {
-          resourceConnPropsBuilder_.addMessage(index, builderForValue.build());
+          rscConnPropsBuilder_.addMessage(index, builderForValue.build());
         }
         return this;
       }
@@ -1366,17 +1732,17 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public Builder addAllResourceConnProps(
+      public Builder addAllRscConnProps(
           java.lang.Iterable<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
-        if (resourceConnPropsBuilder_ == null) {
-          ensureResourceConnPropsIsMutable();
+        if (rscConnPropsBuilder_ == null) {
+          ensureRscConnPropsIsMutable();
           com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, resourceConnProps_);
+              values, rscConnProps_);
           onChanged();
         } else {
-          resourceConnPropsBuilder_.addAllMessages(values);
+          rscConnPropsBuilder_.addAllMessages(values);
         }
         return this;
       }
@@ -1385,15 +1751,15 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public Builder clearResourceConnProps() {
-        if (resourceConnPropsBuilder_ == null) {
-          resourceConnProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000008);
+      public Builder clearRscConnProps() {
+        if (rscConnPropsBuilder_ == null) {
+          rscConnProps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000040);
           onChanged();
         } else {
-          resourceConnPropsBuilder_.clear();
+          rscConnPropsBuilder_.clear();
         }
         return this;
       }
@@ -1402,15 +1768,15 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public Builder removeResourceConnProps(int index) {
-        if (resourceConnPropsBuilder_ == null) {
-          ensureResourceConnPropsIsMutable();
-          resourceConnProps_.remove(index);
+      public Builder removeRscConnProps(int index) {
+        if (rscConnPropsBuilder_ == null) {
+          ensureRscConnPropsIsMutable();
+          rscConnProps_.remove(index);
           onChanged();
         } else {
-          resourceConnPropsBuilder_.remove(index);
+          rscConnPropsBuilder_.remove(index);
         }
         return this;
       }
@@ -1419,24 +1785,24 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getResourceConnPropsBuilder(
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getRscConnPropsBuilder(
           int index) {
-        return getResourceConnPropsFieldBuilder().getBuilder(index);
+        return getRscConnPropsFieldBuilder().getBuilder(index);
       }
       /**
        * <pre>
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getResourceConnPropsOrBuilder(
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getRscConnPropsOrBuilder(
           int index) {
-        if (resourceConnPropsBuilder_ == null) {
-          return resourceConnProps_.get(index);  } else {
-          return resourceConnPropsBuilder_.getMessageOrBuilder(index);
+        if (rscConnPropsBuilder_ == null) {
+          return rscConnProps_.get(index);  } else {
+          return rscConnPropsBuilder_.getMessageOrBuilder(index);
         }
       }
       /**
@@ -1444,14 +1810,14 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
       public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-           getResourceConnPropsOrBuilderList() {
-        if (resourceConnPropsBuilder_ != null) {
-          return resourceConnPropsBuilder_.getMessageOrBuilderList();
+           getRscConnPropsOrBuilderList() {
+        if (rscConnPropsBuilder_ != null) {
+          return rscConnPropsBuilder_.getMessageOrBuilderList();
         } else {
-          return java.util.Collections.unmodifiableList(resourceConnProps_);
+          return java.util.Collections.unmodifiableList(rscConnProps_);
         }
       }
       /**
@@ -1459,10 +1825,10 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addResourceConnPropsBuilder() {
-        return getResourceConnPropsFieldBuilder().addBuilder(
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addRscConnPropsBuilder() {
+        return getRscConnPropsFieldBuilder().addBuilder(
             com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
       }
       /**
@@ -1470,11 +1836,11 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
-      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addResourceConnPropsBuilder(
+      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addRscConnPropsBuilder(
           int index) {
-        return getResourceConnPropsFieldBuilder().addBuilder(
+        return getRscConnPropsFieldBuilder().addBuilder(
             index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
       }
       /**
@@ -1482,25 +1848,25 @@ public final class MsgCrtRscConnOuterClass {
        * Resource connection properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry resource_conn_props = 4;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry rsc_conn_props = 7;</code>
        */
       public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
-           getResourceConnPropsBuilderList() {
-        return getResourceConnPropsFieldBuilder().getBuilderList();
+           getRscConnPropsBuilderList() {
+        return getRscConnPropsFieldBuilder().getBuilderList();
       }
       private com.google.protobuf.RepeatedFieldBuilderV3<
           com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-          getResourceConnPropsFieldBuilder() {
-        if (resourceConnPropsBuilder_ == null) {
-          resourceConnPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+          getRscConnPropsFieldBuilder() {
+        if (rscConnPropsBuilder_ == null) {
+          rscConnPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
-                  resourceConnProps_,
-                  ((bitField0_ & 0x00000008) == 0x00000008),
+                  rscConnProps_,
+                  ((bitField0_ & 0x00000040) == 0x00000040),
                   getParentForChildren(),
                   isClean());
-          resourceConnProps_ = null;
+          rscConnProps_ = null;
         }
-        return resourceConnPropsBuilder_;
+        return rscConnPropsBuilder_;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -1566,11 +1932,12 @@ public final class MsgCrtRscConnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\023MsgCrtRscConn.proto\022\033com.linbit.drbdma" +
-      "nage.proto\032\025LinStorMapEntry.proto\"\233\001\n\rMs" +
-      "gCrtRscConn\022\023\n\013node_name_1\030\001 \002(\t\022\023\n\013node" +
-      "_name_2\030\002 \002(\t\022\025\n\rresource_name\030\003 \002(\t\022I\n\023" +
-      "resource_conn_props\030\004 \003(\0132,.com.linbit.d" +
-      "rbdmanage.proto.LinStorMapEntryP\000"
+      "nage.proto\032\025LinStorMapEntry.proto\"\307\001\n\rMs" +
+      "gCrtRscConn\022\014\n\004uuid\030\001 \001(\014\022\023\n\013node_name_1" +
+      "\030\002 \002(\t\022\023\n\013node_name_2\030\003 \002(\t\022\020\n\010rsc_name\030" +
+      "\004 \002(\t\022\022\n\nrsc_1_uuid\030\005 \001(\014\022\022\n\nrsc_2_uuid\030" +
+      "\006 \001(\014\022D\n\016rsc_conn_props\030\007 \003(\0132,.com.linb" +
+      "it.drbdmanage.proto.LinStorMapEntryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1590,7 +1957,7 @@ public final class MsgCrtRscConnOuterClass {
     internal_static_com_linbit_drbdmanage_proto_MsgCrtRscConn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgCrtRscConn_descriptor,
-        new java.lang.String[] { "NodeName1", "NodeName2", "ResourceName", "ResourceConnProps", });
+        new java.lang.String[] { "Uuid", "NodeName1", "NodeName2", "RscName", "Rsc1Uuid", "Rsc2Uuid", "RscConnProps", });
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 

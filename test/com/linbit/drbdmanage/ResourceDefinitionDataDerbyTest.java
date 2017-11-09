@@ -148,7 +148,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testLoad() throws Exception
     {
         driver.create(resDfn, transMgr);
-
+        resDfnMap.put(resName, resDfn);
         ResourceData.getInstance(
             sysCtx,
             resDfn,
@@ -226,7 +226,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             true,
             false
         );
-
+        super.resDfnMap.put(resName, storedInstance);
         // no clearCaches
 
         assertEquals(storedInstance, driver.load(resName, true, transMgr));
@@ -487,7 +487,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         driver.loadAll(transMgr);
 
-        assertEquals(2, resDfnMap.size());
         assertNotNull(resDfnMap.get(resName));
         assertNotNull(resDfnMap.get(resName2));
         assertNotEquals(resDfnMap.get(resName2), resDfnMap.get(resName));

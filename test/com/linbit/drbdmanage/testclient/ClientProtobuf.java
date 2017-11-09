@@ -586,10 +586,10 @@ public class ClientProtobuf implements Runnable
         MsgCrtRscConn.Builder msgBuilder = MsgCrtRscConn.newBuilder().
             setNodeName1(nodeName1).
             setNodeName2(NodeName2).
-            setResourceName(rscName);
+            setRscName(rscName);
         if (props != null)
         {
-            msgBuilder.addAllResourceConnProps(asLinStorMapEntryList(props));
+            msgBuilder.addAllRscConnProps(asLinStorMapEntryList(props));
         }
         send(
             msgId,

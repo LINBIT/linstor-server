@@ -101,7 +101,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         return storPoolDefinition;
     }
 
-    public void loadAll(TransactionMgr transMgr) throws SQLException
+    public List<StorPoolDefinitionData> loadAll(TransactionMgr transMgr) throws SQLException
     {
         errorReporter.logTrace("Loading all StorPoolDefinitions");
         List<StorPoolDefinitionData> list = new ArrayList<>();
@@ -118,6 +118,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
             }
         }
         errorReporter.logTrace("Loaded %d StorPoolDefinitions", list.size());
+        return list;
     }
 
     public StorPoolDefinitionData load(ResultSet resultSet, TransactionMgr transMgr) throws SQLException

@@ -4,6 +4,8 @@ import static org.junit.Assert.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.List;
+
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
@@ -698,7 +700,7 @@ public class NodeDataDerbyTest extends DerbyBase
     public void testCache() throws Exception
     {
         dbDriver.create(node, transMgr);
-
+        super.nodesMap.put(nodeName, node);
         // no clearCaches
 
         assertEquals(node, dbDriver.load(nodeName, true, transMgr));
@@ -791,7 +793,7 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         dbDriver.create(node, transMgr);
         NodeName nodeName2 = new NodeName("NodeName2");
-        NodeData.getInstance(
+        NodeData node2 = NodeData.getInstance(
             sysCtx,
             nodeName2,
             NodeType.CONTROLLER,
@@ -800,15 +802,24 @@ public class NodeDataDerbyTest extends DerbyBase
             true,
             false
         );
+        nodesMap.put(nodeName, node);
+        nodesMap.put(nodeName2, node2);
+        List<NodeData> allNodes = dbDriver.loadAll(transMgr);
+        assertEquals(2, allNodes.size());
 
         clearCaches();
+        allNodes = dbDriver.loadAll(transMgr);
+        assertEquals(2, allNodes.size());
 
-        dbDriver.loadAll(transMgr);
+        assertEquals(node.getName().value, allNodes.get(0).getName().value);
+        assertEquals(node.getName().displayValue, allNodes.get(0).getName().displayValue);
+        assertEquals(node.getNodeType(sysCtx), allNodes.get(0).getNodeType(sysCtx));
+        assertEquals(node.getUuid(), allNodes.get(0).getUuid());
 
-        assertEquals(2, nodesMap.size());
-        assertNotNull(nodesMap.get(nodeName));
-        assertNotNull(nodesMap.get(nodeName2));
-        assertNotEquals(nodesMap.get(nodeName2), nodesMap.get(nodeName));
+        assertEquals(node2.getName().value, allNodes.get(1).getName().value);
+        assertEquals(node2.getName().displayValue, allNodes.get(1).getName().displayValue);
+        assertEquals(node2.getNodeType(sysCtx), allNodes.get(1).getNodeType(sysCtx));
+        assertEquals(node2.getUuid(), allNodes.get(1).getUuid());
     }
 
     @Test (expected = DrbdDataAlreadyExistsException.class)

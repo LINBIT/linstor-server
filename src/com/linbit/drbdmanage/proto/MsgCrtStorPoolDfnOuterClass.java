@@ -20,10 +20,27 @@ public final class MsgCrtStorPoolDfnOuterClass {
 
     /**
      * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    boolean hasUuid();
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString getUuid();
+
+    /**
+     * <pre>
      * Storage pool name
      * </pre>
      *
-     * <code>required string stor_pool_name = 1;</code>
+     * <code>required string stor_pool_name = 2;</code>
      */
     boolean hasStorPoolName();
     /**
@@ -31,7 +48,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool name
      * </pre>
      *
-     * <code>required string stor_pool_name = 1;</code>
+     * <code>required string stor_pool_name = 2;</code>
      */
     java.lang.String getStorPoolName();
     /**
@@ -39,7 +56,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool name
      * </pre>
      *
-     * <code>required string stor_pool_name = 1;</code>
+     * <code>required string stor_pool_name = 2;</code>
      */
     com.google.protobuf.ByteString
         getStorPoolNameBytes();
@@ -49,7 +66,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
      */
     java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
         getStorPoolDfnPropsList();
@@ -58,7 +75,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
      */
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStorPoolDfnProps(int index);
     /**
@@ -66,7 +83,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
      */
     int getStorPoolDfnPropsCount();
     /**
@@ -74,7 +91,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
      */
     java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
         getStorPoolDfnPropsOrBuilderList();
@@ -83,7 +100,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
      */
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStorPoolDfnPropsOrBuilder(
         int index);
@@ -104,6 +121,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
       super(builder);
     }
     private MsgCrtStorPoolDfn() {
+      uuid_ = com.google.protobuf.ByteString.EMPTY;
       storPoolName_ = "";
       storPoolDfnProps_ = java.util.Collections.emptyList();
     }
@@ -137,15 +155,20 @@ public final class MsgCrtStorPoolDfnOuterClass {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              storPoolName_ = bs;
+              uuid_ = input.readBytes();
               break;
             }
             case 18: {
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              storPoolName_ = bs;
+              break;
+            }
+            case 26: {
+              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
                 storPoolDfnProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
-                mutable_bitField0_ |= 0x00000002;
+                mutable_bitField0_ |= 0x00000004;
               }
               storPoolDfnProps_.add(
                   input.readMessage(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
@@ -159,7 +182,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
           storPoolDfnProps_ = java.util.Collections.unmodifiableList(storPoolDfnProps_);
         }
         this.unknownFields = unknownFields.build();
@@ -179,24 +202,47 @@ public final class MsgCrtStorPoolDfnOuterClass {
     }
 
     private int bitField0_;
-    public static final int STOR_POOL_NAME_FIELD_NUMBER = 1;
+    public static final int UUID_FIELD_NUMBER = 1;
+    private com.google.protobuf.ByteString uuid_;
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    public boolean hasUuid() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString getUuid() {
+      return uuid_;
+    }
+
+    public static final int STOR_POOL_NAME_FIELD_NUMBER = 2;
     private volatile java.lang.Object storPoolName_;
     /**
      * <pre>
      * Storage pool name
      * </pre>
      *
-     * <code>required string stor_pool_name = 1;</code>
+     * <code>required string stor_pool_name = 2;</code>
      */
     public boolean hasStorPoolName() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
      * <pre>
      * Storage pool name
      * </pre>
      *
-     * <code>required string stor_pool_name = 1;</code>
+     * <code>required string stor_pool_name = 2;</code>
      */
     public java.lang.String getStorPoolName() {
       java.lang.Object ref = storPoolName_;
@@ -217,7 +263,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool name
      * </pre>
      *
-     * <code>required string stor_pool_name = 1;</code>
+     * <code>required string stor_pool_name = 2;</code>
      */
     public com.google.protobuf.ByteString
         getStorPoolNameBytes() {
@@ -233,14 +279,14 @@ public final class MsgCrtStorPoolDfnOuterClass {
       }
     }
 
-    public static final int STOR_POOL_DFN_PROPS_FIELD_NUMBER = 2;
+    public static final int STOR_POOL_DFN_PROPS_FIELD_NUMBER = 3;
     private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> storPoolDfnProps_;
     /**
      * <pre>
      * Storage pool definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
      */
     public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getStorPoolDfnPropsList() {
       return storPoolDfnProps_;
@@ -250,7 +296,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
      */
     public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
         getStorPoolDfnPropsOrBuilderList() {
@@ -261,7 +307,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
      */
     public int getStorPoolDfnPropsCount() {
       return storPoolDfnProps_.size();
@@ -271,7 +317,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
      */
     public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStorPoolDfnProps(int index) {
       return storPoolDfnProps_.get(index);
@@ -281,7 +327,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * Storage pool definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
      */
     public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStorPoolDfnPropsOrBuilder(
         int index) {
@@ -311,10 +357,13 @@ public final class MsgCrtStorPoolDfnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, storPoolName_);
+        output.writeBytes(1, uuid_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, storPoolName_);
       }
       for (int i = 0; i < storPoolDfnProps_.size(); i++) {
-        output.writeMessage(2, storPoolDfnProps_.get(i));
+        output.writeMessage(3, storPoolDfnProps_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -325,11 +374,15 @@ public final class MsgCrtStorPoolDfnOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, storPoolName_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, uuid_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, storPoolName_);
       }
       for (int i = 0; i < storPoolDfnProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, storPoolDfnProps_.get(i));
+          .computeMessageSize(3, storPoolDfnProps_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -348,6 +401,11 @@ public final class MsgCrtStorPoolDfnOuterClass {
       com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn other = (com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn) obj;
 
       boolean result = true;
+      result = result && (hasUuid() == other.hasUuid());
+      if (hasUuid()) {
+        result = result && getUuid()
+            .equals(other.getUuid());
+      }
       result = result && (hasStorPoolName() == other.hasStorPoolName());
       if (hasStorPoolName()) {
         result = result && getStorPoolName()
@@ -366,6 +424,10 @@ public final class MsgCrtStorPoolDfnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
+      if (hasUuid()) {
+        hash = (37 * hash) + UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getUuid().hashCode();
+      }
       if (hasStorPoolName()) {
         hash = (37 * hash) + STOR_POOL_NAME_FIELD_NUMBER;
         hash = (53 * hash) + getStorPoolName().hashCode();
@@ -497,11 +559,13 @@ public final class MsgCrtStorPoolDfnOuterClass {
       }
       public Builder clear() {
         super.clear();
-        storPoolName_ = "";
+        uuid_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000001);
+        storPoolName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
         if (storPoolDfnPropsBuilder_ == null) {
           storPoolDfnProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
+          bitField0_ = (bitField0_ & ~0x00000004);
         } else {
           storPoolDfnPropsBuilder_.clear();
         }
@@ -532,11 +596,15 @@ public final class MsgCrtStorPoolDfnOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
+        result.uuid_ = uuid_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
         result.storPoolName_ = storPoolName_;
         if (storPoolDfnPropsBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          if (((bitField0_ & 0x00000004) == 0x00000004)) {
             storPoolDfnProps_ = java.util.Collections.unmodifiableList(storPoolDfnProps_);
-            bitField0_ = (bitField0_ & ~0x00000002);
+            bitField0_ = (bitField0_ & ~0x00000004);
           }
           result.storPoolDfnProps_ = storPoolDfnProps_;
         } else {
@@ -584,8 +652,11 @@ public final class MsgCrtStorPoolDfnOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn other) {
         if (other == com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn.getDefaultInstance()) return this;
+        if (other.hasUuid()) {
+          setUuid(other.getUuid());
+        }
         if (other.hasStorPoolName()) {
-          bitField0_ |= 0x00000001;
+          bitField0_ |= 0x00000002;
           storPoolName_ = other.storPoolName_;
           onChanged();
         }
@@ -593,7 +664,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
           if (!other.storPoolDfnProps_.isEmpty()) {
             if (storPoolDfnProps_.isEmpty()) {
               storPoolDfnProps_ = other.storPoolDfnProps_;
-              bitField0_ = (bitField0_ & ~0x00000002);
+              bitField0_ = (bitField0_ & ~0x00000004);
             } else {
               ensureStorPoolDfnPropsIsMutable();
               storPoolDfnProps_.addAll(other.storPoolDfnProps_);
@@ -606,7 +677,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
               storPoolDfnPropsBuilder_.dispose();
               storPoolDfnPropsBuilder_ = null;
               storPoolDfnProps_ = other.storPoolDfnProps_;
-              bitField0_ = (bitField0_ & ~0x00000002);
+              bitField0_ = (bitField0_ & ~0x00000004);
               storPoolDfnPropsBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
                    getStorPoolDfnPropsFieldBuilder() : null;
@@ -651,23 +722,74 @@ public final class MsgCrtStorPoolDfnOuterClass {
       }
       private int bitField0_;
 
+      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public boolean hasUuid() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public com.google.protobuf.ByteString getUuid() {
+        return uuid_;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public Builder setUuid(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        uuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public Builder clearUuid() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        uuid_ = getDefaultInstance().getUuid();
+        onChanged();
+        return this;
+      }
+
       private java.lang.Object storPoolName_ = "";
       /**
        * <pre>
        * Storage pool name
        * </pre>
        *
-       * <code>required string stor_pool_name = 1;</code>
+       * <code>required string stor_pool_name = 2;</code>
        */
       public boolean hasStorPoolName() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
        * <pre>
        * Storage pool name
        * </pre>
        *
-       * <code>required string stor_pool_name = 1;</code>
+       * <code>required string stor_pool_name = 2;</code>
        */
       public java.lang.String getStorPoolName() {
         java.lang.Object ref = storPoolName_;
@@ -688,7 +810,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool name
        * </pre>
        *
-       * <code>required string stor_pool_name = 1;</code>
+       * <code>required string stor_pool_name = 2;</code>
        */
       public com.google.protobuf.ByteString
           getStorPoolNameBytes() {
@@ -708,14 +830,14 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool name
        * </pre>
        *
-       * <code>required string stor_pool_name = 1;</code>
+       * <code>required string stor_pool_name = 2;</code>
        */
       public Builder setStorPoolName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000001;
+  bitField0_ |= 0x00000002;
         storPoolName_ = value;
         onChanged();
         return this;
@@ -725,10 +847,10 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool name
        * </pre>
        *
-       * <code>required string stor_pool_name = 1;</code>
+       * <code>required string stor_pool_name = 2;</code>
        */
       public Builder clearStorPoolName() {
-        bitField0_ = (bitField0_ & ~0x00000001);
+        bitField0_ = (bitField0_ & ~0x00000002);
         storPoolName_ = getDefaultInstance().getStorPoolName();
         onChanged();
         return this;
@@ -738,14 +860,14 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool name
        * </pre>
        *
-       * <code>required string stor_pool_name = 1;</code>
+       * <code>required string stor_pool_name = 2;</code>
        */
       public Builder setStorPoolNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000001;
+  bitField0_ |= 0x00000002;
         storPoolName_ = value;
         onChanged();
         return this;
@@ -754,9 +876,9 @@ public final class MsgCrtStorPoolDfnOuterClass {
       private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> storPoolDfnProps_ =
         java.util.Collections.emptyList();
       private void ensureStorPoolDfnPropsIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
           storPoolDfnProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(storPoolDfnProps_);
-          bitField0_ |= 0x00000002;
+          bitField0_ |= 0x00000004;
          }
       }
 
@@ -768,7 +890,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getStorPoolDfnPropsList() {
         if (storPoolDfnPropsBuilder_ == null) {
@@ -782,7 +904,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public int getStorPoolDfnPropsCount() {
         if (storPoolDfnPropsBuilder_ == null) {
@@ -796,7 +918,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStorPoolDfnProps(int index) {
         if (storPoolDfnPropsBuilder_ == null) {
@@ -810,7 +932,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public Builder setStorPoolDfnProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
@@ -831,7 +953,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public Builder setStorPoolDfnProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -849,7 +971,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public Builder addStorPoolDfnProps(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
         if (storPoolDfnPropsBuilder_ == null) {
@@ -869,7 +991,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public Builder addStorPoolDfnProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
@@ -890,7 +1012,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public Builder addStorPoolDfnProps(
           com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -908,7 +1030,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public Builder addStorPoolDfnProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -926,7 +1048,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public Builder addAllStorPoolDfnProps(
           java.lang.Iterable<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
@@ -945,12 +1067,12 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public Builder clearStorPoolDfnProps() {
         if (storPoolDfnPropsBuilder_ == null) {
           storPoolDfnProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
+          bitField0_ = (bitField0_ & ~0x00000004);
           onChanged();
         } else {
           storPoolDfnPropsBuilder_.clear();
@@ -962,7 +1084,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public Builder removeStorPoolDfnProps(int index) {
         if (storPoolDfnPropsBuilder_ == null) {
@@ -979,7 +1101,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getStorPoolDfnPropsBuilder(
           int index) {
@@ -990,7 +1112,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStorPoolDfnPropsOrBuilder(
           int index) {
@@ -1004,7 +1126,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
            getStorPoolDfnPropsOrBuilderList() {
@@ -1019,7 +1141,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addStorPoolDfnPropsBuilder() {
         return getStorPoolDfnPropsFieldBuilder().addBuilder(
@@ -1030,7 +1152,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addStorPoolDfnPropsBuilder(
           int index) {
@@ -1042,7 +1164,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * Storage pool definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry stor_pool_dfn_props = 3;</code>
        */
       public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
            getStorPoolDfnPropsBuilderList() {
@@ -1055,7 +1177,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
           storPoolDfnPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
                   storPoolDfnProps_,
-                  ((bitField0_ & 0x00000002) == 0x00000002),
+                  ((bitField0_ & 0x00000004) == 0x00000004),
                   getParentForChildren(),
                   isClean());
           storPoolDfnProps_ = null;
@@ -1126,10 +1248,11 @@ public final class MsgCrtStorPoolDfnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\027MsgCrtStorPoolDfn.proto\022\033com.linbit.dr" +
-      "bdmanage.proto\032\025LinStorMapEntry.proto\"v\n" +
-      "\021MsgCrtStorPoolDfn\022\026\n\016stor_pool_name\030\001 \002" +
-      "(\t\022I\n\023stor_pool_dfn_props\030\002 \003(\0132,.com.li" +
-      "nbit.drbdmanage.proto.LinStorMapEntryP\000"
+      "bdmanage.proto\032\025LinStorMapEntry.proto\"\204\001" +
+      "\n\021MsgCrtStorPoolDfn\022\014\n\004uuid\030\001 \001(\014\022\026\n\016sto" +
+      "r_pool_name\030\002 \002(\t\022I\n\023stor_pool_dfn_props" +
+      "\030\003 \003(\0132,.com.linbit.drbdmanage.proto.Lin" +
+      "StorMapEntryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1149,7 +1272,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
     internal_static_com_linbit_drbdmanage_proto_MsgCrtStorPoolDfn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgCrtStorPoolDfn_descriptor,
-        new java.lang.String[] { "StorPoolName", "StorPoolDfnProps", });
+        new java.lang.String[] { "Uuid", "StorPoolName", "StorPoolDfnProps", });
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 

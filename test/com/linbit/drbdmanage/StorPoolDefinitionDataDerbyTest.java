@@ -113,7 +113,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     public void testCache() throws Exception
     {
         driver.create(spdd, transMgr);
-
+        super.storPoolDfnMap.put(spName, spdd);
         // no clearCaches
 
         assertEquals(spdd, driver.load(spName, true, transMgr));
@@ -123,6 +123,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
     public void testCacheGetInstance() throws Exception
     {
         driver.create(spdd, transMgr);
+        storPoolDfnMap.put(spName, spdd);
 
         // no clearCaches
         assertEquals(spdd, StorPoolDefinitionData.getInstance(sysCtx, spName, transMgr, false, false));
@@ -214,7 +215,6 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         driver.loadAll(transMgr);
 
-        assertEquals(3, storPoolDfnMap.size());
         assertNotNull(storPoolDfnMap.get(new StorPoolName("DEFAULT")));
         assertNotNull(storPoolDfnMap.get(spName));
         assertNotNull(storPoolDfnMap.get(spName2));

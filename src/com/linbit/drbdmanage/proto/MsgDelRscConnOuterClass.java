@@ -20,10 +20,27 @@ public final class MsgDelRscConnOuterClass {
 
     /**
      * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    boolean hasUuid();
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString getUuid();
+
+    /**
+     * <pre>
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     boolean hasNodeName1();
     /**
@@ -31,7 +48,7 @@ public final class MsgDelRscConnOuterClass {
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     java.lang.String getNodeName1();
     /**
@@ -39,7 +56,7 @@ public final class MsgDelRscConnOuterClass {
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     com.google.protobuf.ByteString
         getNodeName1Bytes();
@@ -49,7 +66,7 @@ public final class MsgDelRscConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     boolean hasNodeName2();
     /**
@@ -57,7 +74,7 @@ public final class MsgDelRscConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     java.lang.String getNodeName2();
     /**
@@ -65,7 +82,7 @@ public final class MsgDelRscConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     com.google.protobuf.ByteString
         getNodeName2Bytes();
@@ -75,7 +92,7 @@ public final class MsgDelRscConnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string resource_name = 4;</code>
      */
     boolean hasResourceName();
     /**
@@ -83,7 +100,7 @@ public final class MsgDelRscConnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string resource_name = 4;</code>
      */
     java.lang.String getResourceName();
     /**
@@ -91,7 +108,7 @@ public final class MsgDelRscConnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string resource_name = 4;</code>
      */
     com.google.protobuf.ByteString
         getResourceNameBytes();
@@ -112,6 +129,7 @@ public final class MsgDelRscConnOuterClass {
       super(builder);
     }
     private MsgDelRscConn() {
+      uuid_ = com.google.protobuf.ByteString.EMPTY;
       nodeName1_ = "";
       nodeName2_ = "";
       resourceName_ = "";
@@ -146,20 +164,25 @@ public final class MsgDelRscConnOuterClass {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              nodeName1_ = bs;
+              uuid_ = input.readBytes();
               break;
             }
             case 18: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
-              nodeName2_ = bs;
+              nodeName1_ = bs;
               break;
             }
             case 26: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
+              nodeName2_ = bs;
+              break;
+            }
+            case 34: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000008;
               resourceName_ = bs;
               break;
             }
@@ -188,24 +211,47 @@ public final class MsgDelRscConnOuterClass {
     }
 
     private int bitField0_;
-    public static final int NODE_NAME_1_FIELD_NUMBER = 1;
+    public static final int UUID_FIELD_NUMBER = 1;
+    private com.google.protobuf.ByteString uuid_;
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    public boolean hasUuid() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional bytes uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString getUuid() {
+      return uuid_;
+    }
+
+    public static final int NODE_NAME_1_FIELD_NUMBER = 2;
     private volatile java.lang.Object nodeName1_;
     /**
      * <pre>
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     public boolean hasNodeName1() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
      * <pre>
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     public java.lang.String getNodeName1() {
       java.lang.Object ref = nodeName1_;
@@ -226,7 +272,7 @@ public final class MsgDelRscConnOuterClass {
      * Node 1 name
      * </pre>
      *
-     * <code>required string node_name_1 = 1;</code>
+     * <code>required string node_name_1 = 2;</code>
      */
     public com.google.protobuf.ByteString
         getNodeName1Bytes() {
@@ -242,24 +288,24 @@ public final class MsgDelRscConnOuterClass {
       }
     }
 
-    public static final int NODE_NAME_2_FIELD_NUMBER = 2;
+    public static final int NODE_NAME_2_FIELD_NUMBER = 3;
     private volatile java.lang.Object nodeName2_;
     /**
      * <pre>
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     public boolean hasNodeName2() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
      * <pre>
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     public java.lang.String getNodeName2() {
       java.lang.Object ref = nodeName2_;
@@ -280,7 +326,7 @@ public final class MsgDelRscConnOuterClass {
      * Node 2 name
      * </pre>
      *
-     * <code>required string node_name_2 = 2;</code>
+     * <code>required string node_name_2 = 3;</code>
      */
     public com.google.protobuf.ByteString
         getNodeName2Bytes() {
@@ -296,24 +342,24 @@ public final class MsgDelRscConnOuterClass {
       }
     }
 
-    public static final int RESOURCE_NAME_FIELD_NUMBER = 3;
+    public static final int RESOURCE_NAME_FIELD_NUMBER = 4;
     private volatile java.lang.Object resourceName_;
     /**
      * <pre>
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string resource_name = 4;</code>
      */
     public boolean hasResourceName() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
      * <pre>
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string resource_name = 4;</code>
      */
     public java.lang.String getResourceName() {
       java.lang.Object ref = resourceName_;
@@ -334,7 +380,7 @@ public final class MsgDelRscConnOuterClass {
      * Resource name
      * </pre>
      *
-     * <code>required string resource_name = 3;</code>
+     * <code>required string resource_name = 4;</code>
      */
     public com.google.protobuf.ByteString
         getResourceNameBytes() {
@@ -375,13 +421,16 @@ public final class MsgDelRscConnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeName1_);
+        output.writeBytes(1, uuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName2_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName1_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, resourceName_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, nodeName2_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, resourceName_);
       }
       unknownFields.writeTo(output);
     }
@@ -392,13 +441,17 @@ public final class MsgDelRscConnOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeName1_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, uuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName2_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName1_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, resourceName_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, nodeName2_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, resourceName_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -417,6 +470,11 @@ public final class MsgDelRscConnOuterClass {
       com.linbit.drbdmanage.proto.MsgDelRscConnOuterClass.MsgDelRscConn other = (com.linbit.drbdmanage.proto.MsgDelRscConnOuterClass.MsgDelRscConn) obj;
 
       boolean result = true;
+      result = result && (hasUuid() == other.hasUuid());
+      if (hasUuid()) {
+        result = result && getUuid()
+            .equals(other.getUuid());
+      }
       result = result && (hasNodeName1() == other.hasNodeName1());
       if (hasNodeName1()) {
         result = result && getNodeName1()
@@ -443,6 +501,10 @@ public final class MsgDelRscConnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
+      if (hasUuid()) {
+        hash = (37 * hash) + UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getUuid().hashCode();
+      }
       if (hasNodeName1()) {
         hash = (37 * hash) + NODE_NAME_1_FIELD_NUMBER;
         hash = (53 * hash) + getNodeName1().hashCode();
@@ -577,12 +639,14 @@ public final class MsgDelRscConnOuterClass {
       }
       public Builder clear() {
         super.clear();
-        nodeName1_ = "";
+        uuid_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000001);
-        nodeName2_ = "";
+        nodeName1_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
-        resourceName_ = "";
+        nodeName2_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
+        resourceName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -610,13 +674,17 @@ public final class MsgDelRscConnOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.nodeName1_ = nodeName1_;
+        result.uuid_ = uuid_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.nodeName2_ = nodeName2_;
+        result.nodeName1_ = nodeName1_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
+        }
+        result.nodeName2_ = nodeName2_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
         }
         result.resourceName_ = resourceName_;
         result.bitField0_ = to_bitField0_;
@@ -661,18 +729,21 @@ public final class MsgDelRscConnOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgDelRscConnOuterClass.MsgDelRscConn other) {
         if (other == com.linbit.drbdmanage.proto.MsgDelRscConnOuterClass.MsgDelRscConn.getDefaultInstance()) return this;
+        if (other.hasUuid()) {
+          setUuid(other.getUuid());
+        }
         if (other.hasNodeName1()) {
-          bitField0_ |= 0x00000001;
+          bitField0_ |= 0x00000002;
           nodeName1_ = other.nodeName1_;
           onChanged();
         }
         if (other.hasNodeName2()) {
-          bitField0_ |= 0x00000002;
+          bitField0_ |= 0x00000004;
           nodeName2_ = other.nodeName2_;
           onChanged();
         }
         if (other.hasResourceName()) {
-          bitField0_ |= 0x00000004;
+          bitField0_ |= 0x00000008;
           resourceName_ = other.resourceName_;
           onChanged();
         }
@@ -713,23 +784,74 @@ public final class MsgDelRscConnOuterClass {
       }
       private int bitField0_;
 
+      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public boolean hasUuid() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public com.google.protobuf.ByteString getUuid() {
+        return uuid_;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public Builder setUuid(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        uuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional bytes uuid = 1;</code>
+       */
+      public Builder clearUuid() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        uuid_ = getDefaultInstance().getUuid();
+        onChanged();
+        return this;
+      }
+
       private java.lang.Object nodeName1_ = "";
       /**
        * <pre>
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public boolean hasNodeName1() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
        * <pre>
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public java.lang.String getNodeName1() {
         java.lang.Object ref = nodeName1_;
@@ -750,7 +872,7 @@ public final class MsgDelRscConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public com.google.protobuf.ByteString
           getNodeName1Bytes() {
@@ -770,14 +892,14 @@ public final class MsgDelRscConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public Builder setNodeName1(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000001;
+  bitField0_ |= 0x00000002;
         nodeName1_ = value;
         onChanged();
         return this;
@@ -787,10 +909,10 @@ public final class MsgDelRscConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public Builder clearNodeName1() {
-        bitField0_ = (bitField0_ & ~0x00000001);
+        bitField0_ = (bitField0_ & ~0x00000002);
         nodeName1_ = getDefaultInstance().getNodeName1();
         onChanged();
         return this;
@@ -800,14 +922,14 @@ public final class MsgDelRscConnOuterClass {
        * Node 1 name
        * </pre>
        *
-       * <code>required string node_name_1 = 1;</code>
+       * <code>required string node_name_1 = 2;</code>
        */
       public Builder setNodeName1Bytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000001;
+  bitField0_ |= 0x00000002;
         nodeName1_ = value;
         onChanged();
         return this;
@@ -819,17 +941,17 @@ public final class MsgDelRscConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public boolean hasNodeName2() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
        * <pre>
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public java.lang.String getNodeName2() {
         java.lang.Object ref = nodeName2_;
@@ -850,7 +972,7 @@ public final class MsgDelRscConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public com.google.protobuf.ByteString
           getNodeName2Bytes() {
@@ -870,14 +992,14 @@ public final class MsgDelRscConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public Builder setNodeName2(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000004;
         nodeName2_ = value;
         onChanged();
         return this;
@@ -887,10 +1009,10 @@ public final class MsgDelRscConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public Builder clearNodeName2() {
-        bitField0_ = (bitField0_ & ~0x00000002);
+        bitField0_ = (bitField0_ & ~0x00000004);
         nodeName2_ = getDefaultInstance().getNodeName2();
         onChanged();
         return this;
@@ -900,14 +1022,14 @@ public final class MsgDelRscConnOuterClass {
        * Node 2 name
        * </pre>
        *
-       * <code>required string node_name_2 = 2;</code>
+       * <code>required string node_name_2 = 3;</code>
        */
       public Builder setNodeName2Bytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000004;
         nodeName2_ = value;
         onChanged();
         return this;
@@ -919,17 +1041,17 @@ public final class MsgDelRscConnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string resource_name = 4;</code>
        */
       public boolean hasResourceName() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
        * <pre>
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string resource_name = 4;</code>
        */
       public java.lang.String getResourceName() {
         java.lang.Object ref = resourceName_;
@@ -950,7 +1072,7 @@ public final class MsgDelRscConnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string resource_name = 4;</code>
        */
       public com.google.protobuf.ByteString
           getResourceNameBytes() {
@@ -970,14 +1092,14 @@ public final class MsgDelRscConnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string resource_name = 4;</code>
        */
       public Builder setResourceName(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000004;
+  bitField0_ |= 0x00000008;
         resourceName_ = value;
         onChanged();
         return this;
@@ -987,10 +1109,10 @@ public final class MsgDelRscConnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string resource_name = 4;</code>
        */
       public Builder clearResourceName() {
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000008);
         resourceName_ = getDefaultInstance().getResourceName();
         onChanged();
         return this;
@@ -1000,14 +1122,14 @@ public final class MsgDelRscConnOuterClass {
        * Resource name
        * </pre>
        *
-       * <code>required string resource_name = 3;</code>
+       * <code>required string resource_name = 4;</code>
        */
       public Builder setResourceNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000004;
+  bitField0_ |= 0x00000008;
         resourceName_ = value;
         onChanged();
         return this;
@@ -1076,9 +1198,9 @@ public final class MsgDelRscConnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\023MsgDelRscConn.proto\022\033com.linbit.drbdma" +
-      "nage.proto\"P\n\rMsgDelRscConn\022\023\n\013node_name" +
-      "_1\030\001 \002(\t\022\023\n\013node_name_2\030\002 \002(\t\022\025\n\rresourc" +
-      "e_name\030\003 \002(\t"
+      "nage.proto\"^\n\rMsgDelRscConn\022\014\n\004uuid\030\001 \001(" +
+      "\014\022\023\n\013node_name_1\030\002 \002(\t\022\023\n\013node_name_2\030\003 " +
+      "\002(\t\022\025\n\rresource_name\030\004 \002(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1097,7 +1219,7 @@ public final class MsgDelRscConnOuterClass {
     internal_static_com_linbit_drbdmanage_proto_MsgDelRscConn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgDelRscConn_descriptor,
-        new java.lang.String[] { "NodeName1", "NodeName2", "ResourceName", });
+        new java.lang.String[] { "Uuid", "NodeName1", "NodeName2", "ResourceName", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

@@ -226,7 +226,6 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         }
         if (resDfn == null)
         {
-
             try
             {
                 ObjectProtection objProt = getObjectProtection(resourceName, transMgr);
