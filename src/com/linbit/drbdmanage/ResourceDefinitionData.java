@@ -309,6 +309,12 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return "Rsc: '" + resourceName + "'";
+    }
+
     private static final class RscDfnFlagsImpl extends StateFlagsBits<ResourceDefinitionData, RscDfnFlags>
     {
         RscDfnFlagsImpl(

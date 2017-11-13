@@ -60,4 +60,12 @@ public abstract class GenericName implements Comparable<GenericName>
     {
         return value.hashCode();
     }
+
+    @Override
+    public String toString()
+    {
+        return displayValue;
+    }
+
+
 }

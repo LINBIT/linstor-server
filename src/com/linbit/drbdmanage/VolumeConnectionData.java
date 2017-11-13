@@ -239,4 +239,13 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
             throw new ImplementationError("Access to deleted VolumeConnection", null);
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return "Node1: '" + sourceVolume.getResource().getAssignedNode().getName() + "', " +
+               "Node2: '" + targetVolume.getResource().getAssignedNode().getName() + "', " +
+               "Rsc: '" + sourceVolume.getResourceDefinition().getName() + "', " +
+               "VlmNr: '" + sourceVolume.getVolumeDefinition().getVolumeNumber() + "'";
+    }
 }

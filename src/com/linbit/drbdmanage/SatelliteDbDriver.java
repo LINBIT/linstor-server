@@ -353,7 +353,6 @@ public class SatelliteDbDriver implements DatabaseDriver
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )
-
         {
             return (VolumeData) resource.getVolume(volumeDefinition.getVolumeNumber());
         }

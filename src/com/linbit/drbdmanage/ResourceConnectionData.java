@@ -226,6 +226,14 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         deleted = true;
     }
 
+    @Override
+    public String toString()
+    {
+        return "Node1: '" + sourceResource.getAssignedNode().getName() + "', " +
+               "Node2: '" + targetResource.getAssignedNode().getName() + "', " +
+               "Rsc: '" + sourceResource.getDefinition().getName() + "'";
+    }
+
     private void checkDeleted()
     {
         if (deleted)

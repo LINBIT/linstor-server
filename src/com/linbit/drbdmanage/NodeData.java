@@ -449,6 +449,12 @@ public class NodeData extends BaseTransactionObject implements Node
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return "Node: '" + clNodeName + "'";
+    }
+
     private static final class NodeFlagsImpl extends StateFlagsBits<NodeData, NodeFlag>
     {
         NodeFlagsImpl(NodeData parent, ObjectProtection objProtRef, StateFlagsPersistence<NodeData> persistenceRef, long initialFlags)

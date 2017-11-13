@@ -271,4 +271,11 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             throw new ImplementationError("Access to deleted node", null);
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return "Node: '" + node.getName() + "', " +
+               "StorPool: '" + storPoolDef.getName() + "'";
+    }
 }

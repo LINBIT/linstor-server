@@ -335,6 +335,14 @@ public class VolumeData extends BaseTransactionObject implements Volume
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return "Node: '" + resource.getAssignedNode().getName() + "', " +
+               "Rsc: '" + resource.getDefinition().getName() + "', " +
+               "VlmNr: '" + volumeDfn.getVolumeNumber() + "'";
+    }
+
     private final class VlmFlagsImpl extends StateFlagsBits<VolumeData, VlmFlags>
     {
         VlmFlagsImpl(

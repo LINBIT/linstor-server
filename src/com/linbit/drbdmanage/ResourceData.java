@@ -367,6 +367,13 @@ public class ResourceData extends BaseTransactionObject implements Resource
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return "Node: '" + assgNode.getName() + "', " +
+               "Rsc: '" + resourceDfn.getName() + "'";
+    }
+
     private static final class RscFlagsImpl extends StateFlagsBits<ResourceData, RscFlags>
     {
         RscFlagsImpl(

@@ -211,4 +211,11 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
             throw new ImplementationError("Access to deleted NodeConnection", null);
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return "Node1: '" + sourceNode.getName() + "', " +
+               "Node2: '" + targetNode.getName() + "'";
+    }
 }

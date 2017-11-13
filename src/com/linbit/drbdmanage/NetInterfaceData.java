@@ -230,4 +230,11 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             throw new ImplementationError("Access to deleted NetInterface", null);
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return "Node: '" + niNode.getName() + "', "+
+               "NetInterfaceName: '" + niName + "'";
+    }
 }

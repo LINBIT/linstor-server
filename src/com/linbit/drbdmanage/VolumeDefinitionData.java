@@ -330,6 +330,13 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return "Rsc: '" + resourceDfn.getName() + "', " +
+               "VlmNr: '" + volumeNr + "'";
+    }
+
     private static final class VlmDfnFlagsImpl extends StateFlagsBits<VolumeDefinitionData, VlmDfnFlags>
     {
         VlmDfnFlagsImpl(

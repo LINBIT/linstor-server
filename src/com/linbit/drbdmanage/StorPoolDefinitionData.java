@@ -182,4 +182,9 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return "StorPool: '" + name + "'";
+    }
 }
