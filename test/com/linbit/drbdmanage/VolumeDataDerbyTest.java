@@ -152,13 +152,13 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
+            sysCtx,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            sysCtx,
             transMgr
         );
         driver.create(vol, transMgr);
@@ -230,13 +230,13 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
+            sysCtx,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            sysCtx,
             transMgr
         );
         driver.create(vol, transMgr);
@@ -251,13 +251,13 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
+            sysCtx,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            sysCtx,
             transMgr
         );
         driver.create(vol, transMgr);
@@ -278,13 +278,13 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
+            sysCtx,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            sysCtx,
             transMgr
         );
         driver.create(vol, transMgr);
@@ -330,13 +330,13 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
+            sysCtx,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            sysCtx,
             transMgr
         );
         driver.create(vol, transMgr);
@@ -364,13 +364,13 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
+            sysCtx,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            sysCtx,
             transMgr
         );
         driver.create(vol, transMgr);
@@ -392,13 +392,13 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
+            sysCtx,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            sysCtx,
             transMgr
         );
         driver.create(vol, transMgr);
@@ -439,13 +439,13 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
+            sysCtx,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            sysCtx,
             transMgr
         );
         driver.create(vol, transMgr);
@@ -555,13 +555,13 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
+            sysCtx,
             res,
             volDfn,
             storPool,
             blockDevicePath,
             metaDiskPath,
             VlmFlags.CLEAN.flagValue,
-            sysCtx,
             transMgr
         );
         driver.create(vol, transMgr);

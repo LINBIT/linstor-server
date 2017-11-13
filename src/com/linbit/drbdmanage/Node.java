@@ -8,7 +8,10 @@ import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import java.util.Map;
@@ -161,6 +164,19 @@ public interface Node extends TransactionObject
                 }
             }
             return flags;
+        }
+
+        public static NodeFlag[] restoreFlags(long nodeFlags)
+        {
+            List<NodeFlag> flagList = new ArrayList<>();
+            for (NodeFlag flag : NodeFlag.values())
+            {
+                if ((nodeFlags & flag.flagValue) == flag.flagValue)
+                {
+                    flagList.add(flag);
+                }
+            }
+            return flagList.toArray(new NodeFlag[flagList.size()]);
         }
     }
 

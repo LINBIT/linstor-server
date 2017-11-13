@@ -8,6 +8,7 @@ import java.util.UUID;
 import com.linbit.Checks;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
@@ -215,9 +216,48 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             ((ResourceDefinitionData) resDfn).putVolumeDefinition(accCtx, volDfnData);
             volDfnData.initialized();
         }
-
-
         return volDfnData;
+    }
+
+    public static VolumeDefinitionData getInstanceSatellite(
+        AccessContext accCtx,
+        UUID vlmDfnUuid,
+        ResourceDefinition rscDfn,
+        VolumeNumber vlmNr,
+        long vlmSize,
+        MinorNumber minorNumber,
+        VlmDfnFlags[] flags,
+        SatelliteTransactionMgr transMgr
+    )
+        throws ImplementationError
+    {
+        VolumeDefinitionDataDatabaseDriver driver = DrbdManage.getVolumeDefinitionDataDatabaseDriver();
+        VolumeDefinitionData vlmDfnData;
+        try
+        {
+            vlmDfnData = driver.load(rscDfn, vlmNr, false, transMgr);
+            if (vlmDfnData == null)
+            {
+                vlmDfnData = new VolumeDefinitionData(
+                    vlmDfnUuid,
+                    accCtx,
+                    rscDfn,
+                    vlmNr,
+                    minorNumber,
+                    vlmSize,
+                    StateFlagsBits.getMask(flags),
+                    transMgr
+                );
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new ImplementationError(
+                "This method should only be called with a satellite db in background!",
+                exc
+            );
+        }
+        return vlmDfnData;
     }
 
     @Override

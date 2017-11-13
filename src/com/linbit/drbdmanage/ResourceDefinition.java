@@ -7,7 +7,10 @@ import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+
 import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 import java.util.Map;
@@ -67,6 +70,19 @@ public interface ResourceDefinition extends TransactionObject
         public long getFlagValue()
         {
             return flagValue;
+        }
+
+        public static RscDfnFlags[] restoreFlags(long rawFlags)
+        {
+            List<RscDfnFlags> list = new ArrayList<>();
+            for (RscDfnFlags flag : RscDfnFlags.values())
+            {
+                if ((rawFlags & flag.flagValue) == flag.flagValue)
+                {
+                    list.add(flag);
+                }
+            }
+            return list.toArray(new RscDfnFlags[list.size()]);
         }
     }
 

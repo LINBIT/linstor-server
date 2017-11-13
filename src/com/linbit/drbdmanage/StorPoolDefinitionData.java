@@ -2,6 +2,7 @@ package com.linbit.drbdmanage;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -140,6 +141,15 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     {
         checkDeleted();
         return name;
+    }
+
+    @Override
+    public Iterator<StorPool> iterateStorPools(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return storPools.values().iterator();
     }
 
     void addStorPool(AccessContext accCtx, StorPoolData storPoolData) throws AccessDeniedException

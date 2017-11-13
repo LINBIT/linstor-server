@@ -334,13 +334,13 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 {
                     volData = new VolumeData(
                         UuidUtils.asUuid(resultSet.getBytes(VOL_UUID)),
+                        accCtx,
                         res,
                         volDfn,
                         storPool,
                         resultSet.getString(VOL_BLOCK_DEVICE),
                         resultSet.getString(VOL_META_DISK),
                         resultSet.getLong(VOL_FLAGS),
-                        accCtx,
                         transMgr
                     );
                     errorReporter.logTrace("Volume created %s", getTraceId(volData));

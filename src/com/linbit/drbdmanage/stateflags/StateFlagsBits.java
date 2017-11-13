@@ -88,6 +88,16 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
 
     @SuppressWarnings("unchecked")
     @Override
+    public void resetFlagsTo(AccessContext accCtx, FLAG... flags) throws AccessDeniedException, SQLException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        final long flagsBits = getMask(flags);
+        setFlags(flagsBits & mask);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public void disableFlags(final AccessContext accCtx, final FLAG... flags)
         throws AccessDeniedException, SQLException
     {

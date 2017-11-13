@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
@@ -184,6 +185,49 @@ public class NodeData extends BaseTransactionObject implements Node
         }
         return nodeData;
     }
+
+    public static NodeData getInstanceSatellite(
+        AccessContext accCtx,
+        UUID uuid,
+        NodeName nameRef,
+        NodeType typeRef,
+        NodeFlag[] flags,
+        SatelliteTransactionMgr transMgr
+    )
+        throws ImplementationError
+    {
+        NodeData nodeData = null;
+        NodeDataDatabaseDriver dbDriver = DrbdManage.getNodeDataDatabaseDriver();
+        try
+        {
+            nodeData = dbDriver.load(nameRef, false, transMgr);
+            if (nodeData == null)
+            {
+                nodeData = new NodeData(
+                    uuid,
+                    ObjectProtection.getInstance(
+                        accCtx,
+                        "",
+                        true,
+                        transMgr
+                    ),
+                    nameRef,
+                    typeRef,
+                    StateFlagsBits.getMask(flags),
+                    transMgr
+                );
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new ImplementationError(
+                "This method should only be called with a satellite db in background!",
+                exc
+            );
+        }
+        return nodeData;
+    }
+
 
     @Override
     public UUID getUuid()

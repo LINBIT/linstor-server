@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
@@ -190,6 +191,46 @@ public class ResourceData extends BaseTransactionObject implements Resource
             resData.initialized();
         }
         return resData;
+    }
+
+    public static ResourceData getInstanceSatellite(
+        AccessContext accCtx,
+        UUID uuid,
+        NodeData node,
+        ResourceDefinitionData rscDfn,
+        NodeId nodeId,
+        RscFlags[] initFlags,
+        SatelliteTransactionMgr transMgr
+    )
+        throws ImplementationError
+    {
+        ResourceDataDatabaseDriver dbDriver = DrbdManage.getResourceDataDatabaseDriver();
+        ResourceData rscData;
+        try
+        {
+            rscData = dbDriver.load(node, rscDfn.getName(), false, transMgr);
+            if (rscData == null)
+            {
+                rscData = new ResourceData(
+                    uuid,
+                    accCtx,
+                    ObjectProtection.getInstance(null, "", false, transMgr),
+                    rscDfn,
+                    node,
+                    nodeId,
+                    StateFlagsBits.getMask(initFlags),
+                    transMgr
+                );
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new ImplementationError(
+                "This method should only be called with a satellite db in background!",
+                exc
+            );
+        }
+        return rscData;
     }
 
     @Override

@@ -26,6 +26,9 @@ public interface StateFlags<T extends Flags> extends TransactionObject
     public void enableFlagsExcept(AccessContext accCtx, T... flags)
         throws AccessDeniedException, SQLException;
 
+    public void resetFlagsTo(AccessContext accCtx, T... flags)
+        throws AccessDeniedException, SQLException;
+
     public void disableFlagsExcept(AccessContext accCtx, T... flags)
         throws AccessDeniedException, SQLException;
 
@@ -46,4 +49,5 @@ public interface StateFlags<T extends Flags> extends TransactionObject
 
     public long getValidFlagsBits(AccessContext accCtx)
         throws AccessDeniedException;
+
 }

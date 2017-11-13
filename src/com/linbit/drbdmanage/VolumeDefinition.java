@@ -8,6 +8,8 @@ import com.linbit.drbdmanage.stateflags.Flags;
 import com.linbit.drbdmanage.stateflags.StateFlags;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -78,6 +80,19 @@ public interface VolumeDefinition extends TransactionObject
                 }
             }
             return flags;
+        }
+
+        public static VlmDfnFlags[] restoreFlags(long vlmDfnFlags)
+        {
+            List<VlmDfnFlags> flagList = new ArrayList<>();
+            for (VlmDfnFlags flag : VlmDfnFlags.values())
+            {
+                if ((vlmDfnFlags & flag.flagValue) == flag.flagValue)
+                {
+                    flagList.add(flag);
+                }
+            }
+            return flagList.toArray(new VlmDfnFlags[flagList.size()]);
         }
     }
 

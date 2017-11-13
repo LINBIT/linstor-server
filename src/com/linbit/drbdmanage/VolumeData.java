@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
@@ -62,26 +63,26 @@ public class VolumeData extends BaseTransactionObject implements Volume
      * used by getInstance
      */
     private VolumeData(
+        AccessContext accCtx,
         Resource resRef,
         VolumeDefinition volDfn,
         StorPool storPool,
         String blockDevicePathRef,
         String metaDiskPathRef,
         long initFlags,
-        AccessContext accCtx,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
     {
         this(
             UUID.randomUUID(),
+            accCtx,
             resRef,
             volDfn,
             storPool,
             blockDevicePathRef,
             metaDiskPathRef,
             initFlags,
-            accCtx,
             transMgr
         );
     }
@@ -91,13 +92,13 @@ public class VolumeData extends BaseTransactionObject implements Volume
      */
     VolumeData(
         UUID uuid,
+        AccessContext accCtx,
         Resource resRef,
         VolumeDefinition volDfnRef,
         StorPool storPoolRef,
         String blockDevicePathRef,
         String metaDiskPathRef,
         long initFlags,
-        AccessContext accCtx,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -161,12 +162,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         VolumeData volData = null;
 
         VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver();
-        volData = driver.load(
-            resRef,
-            volDfn,
-            false,
-            transMgr
-        );
+        volData = driver.load(resRef, volDfn, false, transMgr);
 
         if (failIfExists && volData != null)
         {
@@ -176,13 +172,13 @@ public class VolumeData extends BaseTransactionObject implements Volume
         if (volData == null && createIfNotExists)
         {
             volData = new VolumeData(
+                accCtx,
                 resRef,
                 volDfn,
                 storPool,
                 blockDevicePathRef,
                 metaDiskPathRef,
                 StateFlagsBits.getMask(flags),
-                accCtx,
                 transMgr
             );
             driver.create(volData, transMgr);
@@ -194,6 +190,48 @@ public class VolumeData extends BaseTransactionObject implements Volume
         return volData;
     }
 
+    public static VolumeData getInstanceSatellite(
+        AccessContext accCtx,
+        UUID vlmUuid,
+        Resource rscRef,
+        VolumeDefinition vlmDfn,
+        StorPool storPoolRef,
+        String blockDevicePathRef,
+        String metaDiskPathRef,
+        VlmFlags[] flags,
+        SatelliteTransactionMgr transMgr
+    )
+    {
+        VolumeDataDatabaseDriver driver = DrbdManage.getVolumeDataDatabaseDriver();
+        VolumeData vlmData;
+        try
+        {
+            vlmData = driver.load(rscRef, vlmDfn, false, transMgr);
+            if (vlmData == null)
+            {
+                vlmData = new VolumeData(
+                    vlmUuid,
+                    accCtx,
+                    rscRef,
+                    vlmDfn,
+                    storPoolRef,
+                    blockDevicePathRef,
+                    metaDiskPathRef,
+                    StateFlagsBits.getMask(flags),
+                    transMgr
+                );
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new ImplementationError(
+                "This method should only be called with a satellite db in background!",
+                exc
+            );
+        }
+
+        return vlmData;
+    }
 
     @Override
     public UUID getUuid()

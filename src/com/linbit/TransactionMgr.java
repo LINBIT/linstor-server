@@ -9,6 +9,7 @@ import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 
 public class TransactionMgr
 {
+    private final boolean isSatellite;
     public final Connection dbCon;
     private Set<TransactionObject> transObjects;
 
@@ -19,8 +20,16 @@ public class TransactionMgr
 
     public TransactionMgr(Connection con) throws SQLException
     {
+        isSatellite = false;
         con.setAutoCommit(false);
         dbCon = con;
+        transObjects = new LinkedHashSet<>(); // preserves the order but removes duplicates
+    }
+
+    TransactionMgr()
+    {
+        isSatellite = true;
+        dbCon = null;
         transObjects = new LinkedHashSet<>(); // preserves the order but removes duplicates
     }
 
@@ -43,7 +52,10 @@ public class TransactionMgr
 
     public void commit(boolean clearTransObjects) throws SQLException
     {
-        dbCon.commit();
+        if (!isSatellite)
+        {
+            dbCon.commit();
+        }
         for (TransactionObject transObj : transObjects)
         {
             // checking if isDirty to prevent endless indirect recursion
@@ -76,7 +88,10 @@ public class TransactionMgr
                 transObj.rollback();
             }
         }
-        dbCon.rollback();
+        if (!isSatellite)
+        {
+            dbCon.rollback();
+        }
     }
 
     public void clearTransactionObjects()
