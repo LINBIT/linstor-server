@@ -21,6 +21,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.netcom.ConnectionObserver;
 import com.linbit.drbdmanage.netcom.MessageProcessor;
 import com.linbit.drbdmanage.netcom.TcpConnectorService;
@@ -108,7 +109,8 @@ public class SslTcpConnectorService extends TcpConnectorService
     protected SslTcpConnectorPeer createTcpConnectorPeer(
         final String peerId,
         final SelectionKey connKey,
-        final boolean outgoing
+        final boolean outgoing,
+        final Node node
     )
     {
         try
@@ -131,7 +133,9 @@ public class SslTcpConnectorService extends TcpConnectorService
                 connKey,
                 defaultPeerAccCtx,
                 sslCtx,
-                address);
+                address,
+                node
+            );
         }
         catch (SSLException sslExc)
         {

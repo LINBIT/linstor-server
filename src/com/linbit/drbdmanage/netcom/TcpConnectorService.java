@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.netcom;
 
 import com.linbit.*;
 import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.TcpPortNumber;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage.ReadState;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage.WriteState;
@@ -168,7 +169,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     }
 
     @Override
-    public Peer connect(InetSocketAddress address) throws IOException
+    public Peer connect(InetSocketAddress address, Node node) throws IOException
     {
         SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
@@ -194,7 +195,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                 // and we will need to call the finishConnection()
                 connKey = socketChannel.register(serverSelector, OP_CONNECT);
             }
-            peer = createTcpConnectorPeer(peerId, connKey, true);
+            peer = createTcpConnectorPeer(peerId, connKey, true, node);
             if (connected)
             {
                 peer.connectionEstablished();
@@ -205,7 +206,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     }
 
     @Override
-    public void reconnect(Peer peer) throws IOException
+    public Peer reconnect(Peer peer) throws IOException
     {
         peer.closeConnection();
         final String[] split = peer.getId().split(":");
@@ -213,26 +214,9 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         final int port = Integer.parseInt(split[1]);
 
         final InetSocketAddress address = new InetSocketAddress(host, port);
+        Peer newPeer = this.connect(address, peer.getNode());
 
-        final SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.configureBlocking(false);
-        final SelectionKey connKey;
-        synchronized (syncObj)
-        {
-            serverSelector.wakeup();
-            final boolean connected = socketChannel.connect(address);
-            if (connected)
-            {
-                connKey = socketChannel.register(serverSelector, 0);
-                peer.connectionEstablished();
-            }
-            else
-            {
-                connKey = socketChannel.register(serverSelector, OP_CONNECT);
-            }
-            connKey.attach(peer);
-            ((TcpConnectorPeer) peer).setSelectionKey(connKey);
-        }
+        return newPeer;
     }
 
     @Override
@@ -598,7 +582,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                             if (connKey != null)
                             {
                                 // Prepare the peer object and message
-                                TcpConnectorPeer connPeer = createTcpConnectorPeer(peerId, connKey);
+                                TcpConnectorPeer connPeer = createTcpConnectorPeer(peerId, connKey, null);
                                 connKey.attach(connPeer);
                                 connPeer.connectionEstablished();
                                 if (connObserver != null)
@@ -683,15 +667,20 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         }
     }
 
-    protected TcpConnectorPeer createTcpConnectorPeer(String peerId, SelectionKey connKey)
+    protected TcpConnectorPeer createTcpConnectorPeer(String peerId, SelectionKey connKey, Node node)
     {
-        return createTcpConnectorPeer(peerId, connKey, false);
+        return createTcpConnectorPeer(peerId, connKey, false, node);
     }
 
-    protected TcpConnectorPeer createTcpConnectorPeer(String peerId, SelectionKey connKey, boolean outgoing)
+    protected TcpConnectorPeer createTcpConnectorPeer(
+        String peerId,
+        SelectionKey connKey,
+        boolean outgoing,
+        Node node
+    )
     {
         return new TcpConnectorPeer(
-            peerId, this, connKey, defaultPeerAccCtx
+            peerId, this, connKey, defaultPeerAccCtx, node
         );
     }
 

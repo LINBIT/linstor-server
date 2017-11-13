@@ -2,6 +2,7 @@ package com.linbit.drbdmanage.netcom;
 
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
+import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.Privilege;
@@ -28,6 +29,8 @@ import java.nio.channels.SocketChannel;
  */
 public class TcpConnectorPeer implements Peer
 {
+    private final Node node;
+
     private String peerId;
 
     private TcpConnector connector;
@@ -68,11 +71,13 @@ public class TcpConnectorPeer implements Peer
         String peerIdRef,
         TcpConnector connectorRef,
         SelectionKey key,
-        AccessContext accCtx
+        AccessContext accCtx,
+        Node nodeRef
     )
     {
         peerId = peerIdRef;
         connector = connectorRef;
+        node = nodeRef;
         msgOutQueue = new LinkedList<>();
 
         // Do not use createMessage() here!
@@ -105,6 +110,12 @@ public class TcpConnectorPeer implements Peer
             connInstName = connector.getInstanceName();
         }
         return connInstName;
+    }
+
+    @Override
+    public Node getNode()
+    {
+        return node;
     }
 
     @Override

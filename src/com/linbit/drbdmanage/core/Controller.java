@@ -1342,7 +1342,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
             {
                 try
                 {
-                    Peer peer = tcpConnector.connect(satelliteAddress);
+                    Peer peer = tcpConnector.connect(satelliteAddress, node);
                     {
                         AccessContext connectorCtx = sysCtx.clone();
                         connectorCtx.getEffectivePrivs().enablePrivileges(

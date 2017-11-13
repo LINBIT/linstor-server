@@ -1,6 +1,7 @@
 package com.linbit.drbdmanage.netcom;
 
 import com.linbit.ServiceName;
+import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.api.protobuf.common.Ping;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
@@ -21,6 +22,13 @@ public interface Peer
      * @return Unique peer identifier
      */
     String getId();
+
+    /**
+     * Returns the {@link Node} object the peer represents
+     *
+     * @return Node instance
+     */
+    Node getNode();
 
     /**
      * Returns the service instance name of the connector associated with this peer object

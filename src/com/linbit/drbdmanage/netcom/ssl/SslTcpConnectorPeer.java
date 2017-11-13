@@ -14,6 +14,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 
 import com.linbit.ImplementationError;
+import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.netcom.MessageTypes;
 import com.linbit.drbdmanage.netcom.TcpConnectorMessage;
 import com.linbit.drbdmanage.netcom.TcpConnectorPeer;
@@ -53,10 +54,12 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         final SelectionKey connKey,
         final AccessContext peerAccCtx,
         final SSLContext sslCtx,
-        final InetSocketAddress address
-    ) throws SSLException
+        final InetSocketAddress address,
+        final Node node
+    )
+        throws SSLException
     {
-        super(peerId, sslConnectorService, connKey, peerAccCtx);
+        super(peerId, sslConnectorService, connKey, peerAccCtx, node);
         this.sslCtx = sslCtx;
         this.address = address;
 
