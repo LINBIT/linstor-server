@@ -21,8 +21,7 @@ public interface VolumeDefinition extends TransactionObject
 
     public ResourceDefinition getResourceDefinition();
 
-    public VolumeNumber getVolumeNumber(AccessContext accCtx)
-        throws AccessDeniedException;
+    public VolumeNumber getVolumeNumber();
 
     public MinorNumber getMinorNr(AccessContext accCtx)
         throws AccessDeniedException;

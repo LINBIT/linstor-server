@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
@@ -121,7 +120,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
             stmt.setString(1, resource.getAssignedNode().getName().value);
             stmt.setString(2, resource.getDefinition().getName().value);
-            stmt.setInt(3, volumeDefintion.getVolumeNumber(dbCtx).value);
+            stmt.setInt(3, volumeDefintion.getVolumeNumber().value);
 
             try (ResultSet resultSet = stmt.executeQuery())
             {
@@ -149,10 +148,6 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     );
                 }
             }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accDeniedExc);
         }
         return ret;
     }
@@ -410,7 +405,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setBytes(1, UuidUtils.asByteArray(vol.getUuid()));
             stmt.setString(2, vol.getResource().getAssignedNode().getName().value);
             stmt.setString(3, vol.getResourceDefinition().getName().value);
-            stmt.setInt(4, vol.getVolumeDefinition().getVolumeNumber(dbCtx).value);
+            stmt.setInt(4, vol.getVolumeDefinition().getVolumeNumber().value);
             stmt.setString(5, vol.getStorPool(dbCtx).getName().value);
             stmt.setString(6, vol.getBlockDevicePath(dbCtx));
             stmt.setString(7, vol.getMetaDiskPath(dbCtx));
@@ -434,14 +429,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
             stmt.setString(1, volume.getResource().getAssignedNode().getName().value);
             stmt.setString(2, volume.getResource().getDefinition().getName().value);
-            stmt.setInt(3, volume.getVolumeDefinition().getVolumeNumber(dbCtx).value);
+            stmt.setInt(3, volume.getVolumeDefinition().getVolumeNumber().value);
             stmt.executeUpdate();
 
             errorReporter.logTrace("Volume deleted %s", getDebugId(volume));
-        }
-        catch (AccessDeniedException accessDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
     }
 
@@ -477,7 +468,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return getVolId(
             volume.getResource().getAssignedNode().getName().value,
             volume.getResource().getDefinition().getName().value,
-            getVolNr(volume.getVolumeDefinition())
+            volume.getVolumeDefinition().getVolumeNumber()
         );
     }
 
@@ -486,7 +477,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return getVolId(
             resource.getAssignedNode().getName().displayValue,
             resource.getDefinition().getName().displayValue,
-            getVolNr(volumeDefintion)
+            volumeDefintion.getVolumeNumber()
         );
     }
 
@@ -495,22 +486,8 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return getVolId(
             volume.getResource().getAssignedNode().getName().displayValue,
             volume.getResource().getDefinition().getName().displayValue,
-            getVolNr(volume.getVolumeDefinition())
+            volume.getVolumeDefinition().getVolumeNumber()
         );
-    }
-
-    private VolumeNumber getVolNr(VolumeDefinition volumeDefintion) throws ImplementationError
-    {
-        VolumeNumber volumeNumber = null;
-        try
-        {
-            volumeNumber = volumeDefintion.getVolumeNumber(dbCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return volumeNumber;
     }
 
     private String getVolId(String nodeName, String resName, VolumeNumber volNum)
@@ -596,7 +573,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 stmt.setLong(1, flags);
                 stmt.setString(2, volume.getResource().getAssignedNode().getName().value);
                 stmt.setString(3, volume.getResource().getDefinition().getName().value);
-                stmt.setInt(4, volume.getVolumeDefinition().getVolumeNumber(dbCtx).value);
+                stmt.setInt(4, volume.getVolumeDefinition().getVolumeNumber().value);
                 stmt.executeUpdate();
 
                 errorReporter.logTrace(

@@ -138,7 +138,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                 stmt.setString(1, sourceNode.getName().value);
                 stmt.setString(2, targetNode.getName().value);
                 stmt.setString(3, resDfn.getName().value);
-                stmt.setInt(4, volDfn.getVolumeNumber(dbCtx).value);
+                stmt.setInt(4, volDfn.getVolumeNumber().value);
 
                 try (ResultSet resultSet = stmt.executeQuery())
                 {
@@ -163,10 +163,6 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                     }
                 }
             }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                DerbyDriver.handleAccessDeniedException(accDeniedExc);
-            }
         }
         return ret;
     }
@@ -190,7 +186,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             stmt.setString(1, nodeName.value);
             stmt.setString(2, nodeName.value);
             stmt.setString(3, volume.getResourceDefinition().getName().value);
-            stmt.setInt(4, getVolumeNumber(volume).value);
+            stmt.setInt(4, volume.getVolumeDefinition().getVolumeNumber().value);
 
             try (ResultSet resultSet = stmt.executeQuery())
             {
@@ -338,7 +334,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             stmt.setString(2, sourceVolume.getResource().getAssignedNode().getName().value);
             stmt.setString(3, targetVolume.getResource().getAssignedNode().getName().value);
             stmt.setString(4, sourceVolume.getResourceDefinition().getName().value);
-            stmt.setInt(5, getVolumeNumber(sourceVolume).value);
+            stmt.setInt(5, sourceVolume.getVolumeDefinition().getVolumeNumber().value);
 
             stmt.executeUpdate();
 
@@ -363,7 +359,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             stmt.setString(1, sourceVolume.getResource().getAssignedNode().getName().value);
             stmt.setString(2, targetVolume.getResource().getAssignedNode().getName().value);
             stmt.setString(3, sourceVolume.getResourceDefinition().getName().value);
-            stmt.setInt(4, getVolumeNumber(sourceVolume).value);
+            stmt.setInt(4, sourceVolume.getVolumeDefinition().getVolumeNumber().value);
 
             stmt.executeUpdate();
 
@@ -389,8 +385,8 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             Resource resDst = resDfn.getResource(dbCtx, nodeDst.getName());
             if (resSrc != null && resDst != null)
             {
-                Volume volSrc = resSrc.getVolume(getVolumeNumber(volDfn));
-                Volume volDst = resDst.getVolume(getVolumeNumber(volDfn));
+                Volume volSrc = resSrc.getVolume(volDfn.getVolumeNumber());
+                Volume volDst = resDst.getVolume(volDfn.getVolumeNumber());
 
                 if (volSrc != null && volDst != null)
                 {
@@ -417,7 +413,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                 sourceVolume.getResource().getAssignedNode().getName().value,
                 targetVolume.getResource().getAssignedNode().getName().value,
                 sourceVolume.getResourceDefinition().getName().value,
-                getVolumeNumber(sourceVolume).value
+                sourceVolume.getVolumeDefinition().getVolumeNumber().value
             );
         }
         catch (AccessDeniedException accDeniedException)
@@ -438,7 +434,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                 sourceVolume.getResource().getAssignedNode().getName().displayValue,
                 targetVolume.getResource().getAssignedNode().getName().displayValue,
                 sourceVolume.getResourceDefinition().getName().displayValue,
-                getVolumeNumber(sourceVolume).value
+                sourceVolume.getVolumeDefinition().getVolumeNumber().value
             );
         }catch (AccessDeniedException accDeniedException)
         {
@@ -447,27 +443,13 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         return id;
     }
 
-    private VolumeNumber getVolumeNumber(VolumeDefinition volDfn)
-    {
-        VolumeNumber volumeNumber = null;
-        try
-        {
-            volumeNumber = volDfn.getVolumeNumber(dbCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return volumeNumber;
-    }
-
     private String getTraceId(Volume sourceVolume, Volume targetVolume)
     {
         return getId(
             sourceVolume.getResource().getAssignedNode().getName().value,
             targetVolume.getResource().getAssignedNode().getName().value,
             sourceVolume.getResource().getDefinition().getName().value,
-            getVolumeNumber(sourceVolume.getVolumeDefinition()).value
+            sourceVolume.getVolumeDefinition().getVolumeNumber().value
         );
     }
 
@@ -477,7 +459,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
             sourceVolume.getResource().getAssignedNode().getName().displayValue,
             targetVolume.getResource().getAssignedNode().getName().displayValue,
             sourceVolume.getResource().getDefinition().getName().displayValue,
-            getVolumeNumber(sourceVolume.getVolumeDefinition()).value
+            sourceVolume.getVolumeDefinition().getVolumeNumber().value
         );
     }
 
@@ -499,22 +481,8 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         return getVolumeId(
             volume.getResource().getAssignedNode().getName().value,
             volume.getResourceDefinition().getName().value,
-            getVolumeNumber(volume).value
+            volume.getVolumeDefinition().getVolumeNumber().value
         );
-    }
-
-    private VolumeNumber getVolumeNumber(Volume volume)
-    {
-        VolumeNumber volumeNumber = null;
-        try
-        {
-            volumeNumber = volume.getVolumeDefinition().getVolumeNumber(dbCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return volumeNumber;
     }
 
     private String getVolumeDebugId(Volume volume)
@@ -522,7 +490,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         return getVolumeId(
             volume.getResource().getAssignedNode().getName().displayValue,
             volume.getResourceDefinition().getName().displayValue,
-            getVolumeNumber(volume).value
+            volume.getVolumeDefinition().getVolumeNumber().value
         );
     }
 

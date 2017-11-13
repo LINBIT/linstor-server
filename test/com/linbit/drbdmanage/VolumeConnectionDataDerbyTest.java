@@ -298,7 +298,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         assertEquals(targetName, targetVolume.getResource().getAssignedNode().getName());
         assertEquals(resName, sourceVolume.getResourceDefinition().getName());
         assertEquals(sourceVolume.getResourceDefinition(), targetVolume.getResourceDefinition());
-        assertEquals(volNr, sourceVolume.getVolumeDefinition().getVolumeNumber(sysCtx));
+        assertEquals(volNr, sourceVolume.getVolumeDefinition().getVolumeNumber());
         assertEquals(sourceVolume.getVolumeDefinition(), targetVolume.getVolumeDefinition());
     }
 

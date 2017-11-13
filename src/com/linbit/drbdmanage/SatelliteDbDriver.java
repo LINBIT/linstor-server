@@ -355,16 +355,7 @@ public class SatelliteDbDriver implements DatabaseDriver
         )
 
         {
-            VolumeData volume = null;
-            try
-            {
-                volume = (VolumeData) resource.getVolume(volumeDefinition.getVolumeNumber(dbCtx));
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                handleAccessDeniedException(accDeniedExc);
-            }
-            return volume;
+            return (VolumeData) resource.getVolume(volumeDefinition.getVolumeNumber());
         }
 
         @Override

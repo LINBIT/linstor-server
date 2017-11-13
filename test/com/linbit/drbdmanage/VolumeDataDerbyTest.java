@@ -545,7 +545,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         assertNotNull(loadedVol.getProps(sysCtx));
         assertEquals(res.getDefinition().getName(), loadedVol.getResource().getDefinition().getName());
         assertEquals(volDfn.getMinorNr(sysCtx), loadedVol.getVolumeDefinition().getMinorNr(sysCtx));
-        assertEquals(volDfn.getVolumeNumber(sysCtx), loadedVol.getVolumeDefinition().getVolumeNumber(sysCtx));
+        assertEquals(volDfn.getVolumeNumber(), loadedVol.getVolumeDefinition().getVolumeNumber());
         assertEquals(volDfn.getVolumeSize(sysCtx), loadedVol.getVolumeDefinition().getVolumeSize(sysCtx));
         assertEquals(volDfn.getUuid(), loadedVol.getVolumeDefinition().getUuid());
     }

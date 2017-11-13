@@ -286,7 +286,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        return volumeMap.put(vol.getVolumeDefinition().getVolumeNumber(accCtx), vol);
+        return volumeMap.put(vol.getVolumeDefinition().getVolumeNumber(), vol);
     }
 
     synchronized void removeVolume(AccessContext accCtx, Volume vol)
@@ -295,7 +295,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        volumeMap.remove(vol.getVolumeDefinition().getVolumeNumber(accCtx));
+        volumeMap.remove(vol.getVolumeDefinition().getVolumeNumber());
     }
 
     @Override

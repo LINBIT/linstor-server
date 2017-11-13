@@ -475,7 +475,7 @@ class CtrlStorPoolApiCallHandler
                              .append("', resource name: '")
                              .append(vol.getResource().getDefinition().getName().displayValue)
                              .append("', volume number: ")
-                             .append(vol.getVolumeDefinition().getVolumeNumber(accCtx).value);
+                             .append(vol.getVolumeDefinition().getVolumeNumber().value);
                 }
 
                 ApiCallRcEntry storPoolInUse = new ApiCallRcEntry();

@@ -97,7 +97,7 @@ public class ResourceDataSerializerProto implements ResourceDataSerializer
                         .setBlockDevice(currenctVlm.getBlockDevicePath(serializerCtx))
                         .setMetaDisk(currenctVlm.getMetaDiskPath(serializerCtx))
                         .setStorPoolName(currenctVlm.getStorPool(serializerCtx).getName().value)
-                        .setVlmNr(currenctVlm.getVolumeDefinition().getVolumeNumber(serializerCtx).value)
+                        .setVlmNr(currenctVlm.getVolumeDefinition().getVolumeNumber().value)
                         .build()
                     );
                 }
@@ -190,7 +190,7 @@ public class ResourceDataSerializerProto implements ResourceDataSerializer
             Map<String, String> volProps = vol.getProps(serializerCtx).map();
             vlmList.add(
                 Vlm.newBuilder()
-                    .setVlmNr(vol.getVolumeDefinition().getVolumeNumber(serializerCtx).value)
+                    .setVlmNr(vol.getVolumeDefinition().getVolumeNumber().value)
                     .setBlockDevice(vol.getBlockDevicePath(serializerCtx))
                     .setMetaDisk(vol.getMetaDiskPath(serializerCtx))
                     .setStorPoolName(vol.getStorPool(serializerCtx).getName().displayValue)

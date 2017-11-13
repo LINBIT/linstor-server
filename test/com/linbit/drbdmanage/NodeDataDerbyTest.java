@@ -618,7 +618,7 @@ public class NodeDataDerbyTest extends DerbyBase
                     }
                     assertEquals(res.getDefinition(), volDfn.getResourceDefinition());
                     assertEquals(volDfnUuid, volDfn.getUuid());
-                    assertEquals(volDfnNr, volDfn.getVolumeNumber(sysCtx));
+                    assertEquals(volDfnNr, volDfn.getVolumeNumber());
                     assertEquals(volDfnSize, volDfn.getVolumeSize(sysCtx));
                 }
                 {

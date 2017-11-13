@@ -314,7 +314,7 @@ public class CmdDisplayResourceDfn extends BaseDebugCmd
                         "%s  %s  Size:     %16d\n" +
                         "%s  %s  Minor Nr: %16d\n" +
                         "%s  %s  Flags:    %016x\n",
-                        itemPfx, vlmDfnRef.getVolumeNumber(accCtx).value,
+                        itemPfx, vlmDfnRef.getVolumeNumber().value,
                         vlmDfnRef.getUuid().toString().toUpperCase(),
                         treePfx, PFX_SUB, vlmDfnRef.getVolumeSize(accCtx),
                         treePfx, PFX_SUB, vlmDfnRef.getMinorNr(accCtx).value,

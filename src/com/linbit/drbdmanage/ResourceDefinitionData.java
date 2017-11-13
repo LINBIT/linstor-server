@@ -193,7 +193,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        volumeMap.put(volDfn.getVolumeNumber(accCtx), volDfn);
+        volumeMap.put(volDfn.getVolumeNumber(), volDfn);
     }
 
     synchronized void removeVolumeDefinition(AccessContext accCtx, VolumeDefinition volDfn)
@@ -201,7 +201,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
-        volumeMap.remove(volDfn.getVolumeNumber(accCtx));
+        volumeMap.remove(volDfn.getVolumeNumber());
     }
 
     @Override

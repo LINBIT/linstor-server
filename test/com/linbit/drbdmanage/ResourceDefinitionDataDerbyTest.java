@@ -348,7 +348,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(volDfn.getUuid(), loadedVolDfn.getUuid());
         assertEquals(volDfn.getFlags().getFlagsBits(sysCtx), loadedVolDfn.getFlags().getFlagsBits(sysCtx));
         assertEquals(minor, loadedVolDfn.getMinorNr(sysCtx));
-        assertEquals(volNr, loadedVolDfn.getVolumeNumber(sysCtx));
+        assertEquals(volNr, loadedVolDfn.getVolumeNumber());
         assertEquals(volSize, loadedVolDfn.getVolumeSize(sysCtx));
         assertEquals(loadedResDfn, loadedVolDfn.getResourceDefinition());
     }

@@ -75,10 +75,10 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
                         "Volume2: NodeName=%s, ResName=%s, VolNr=%d.",
                         sourceVolumeRef.getResource().getAssignedNode().getName().value,
                         sourceVolumeRef.getResourceDefinition().getName().value,
-                        sourceVolumeRef.getVolumeDefinition().getVolumeNumber(accCtx).value,
+                        sourceVolumeRef.getVolumeDefinition().getVolumeNumber().value,
                         targetVolumeRef.getResource().getAssignedNode().getName().value,
                         targetVolumeRef.getResourceDefinition().getName().value,
-                        targetVolumeRef.getVolumeDefinition().getVolumeNumber(accCtx).value
+                        targetVolumeRef.getVolumeDefinition().getVolumeNumber().value
                     ),
                 null
             );
@@ -105,7 +105,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
                 sourceNodeName,
                 targetNodeName,
                 sourceVolumeRef.getResourceDefinition().getName(),
-                sourceVolumeRef.getVolumeDefinition().getVolumeNumber(accCtx)
+                sourceVolumeRef.getVolumeDefinition().getVolumeNumber()
             ),
             transMgr
         );

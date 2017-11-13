@@ -221,7 +221,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        volumeMap.put(getVolumeKey(accCtx, volume), volume);
+        volumeMap.put(getVolumeKey(volume), volume);
     }
 
     @Override
@@ -230,7 +230,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        volumeMap.remove(getVolumeKey(accCtx, volume));
+        volumeMap.remove(getVolumeKey(volume));
     }
 
     @Override
@@ -242,11 +242,11 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         return volumeMap.values();
     }
 
-    private String getVolumeKey(AccessContext accCtx, Volume volume) throws AccessDeniedException
+    private String getVolumeKey(Volume volume)
     {
         NodeName nodeName = volume.getResource().getAssignedNode().getName();
         ResourceName rscName = volume.getResourceDefinition().getName();
-        VolumeNumber volNr = volume.getVolumeDefinition().getVolumeNumber(accCtx);
+        VolumeNumber volNr = volume.getVolumeDefinition().getVolumeNumber();
         return nodeName.value + "/" + rscName.value + "/" + volNr.value;
     }
 

@@ -124,7 +124,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             PropsContainer.buildPath(
                 resRef.getAssignedNode().getName(),
                 resRef.getDefinition().getName(),
-                volDfnRef.getVolumeNumber(accCtx)
+                volDfnRef.getVolumeNumber()
             ),
             transMgr
         );

@@ -146,7 +146,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertNotNull(loadedVd);
         assertEquals(uuid, loadedVd.getUuid());
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
-        assertEquals(volNr, loadedVd.getVolumeNumber(sysCtx));
+        assertEquals(volNr, loadedVd.getVolumeNumber());
         assertEquals(volSize, loadedVd.getVolumeSize(sysCtx));
         assertEquals(minor, loadedVd.getMinorNr(sysCtx));
         assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
@@ -171,7 +171,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         assertNotNull(loadedVd);
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
-        assertEquals(volNr, loadedVd.getVolumeNumber(sysCtx));
+        assertEquals(volNr, loadedVd.getVolumeNumber());
         assertEquals(volSize, loadedVd.getVolumeSize(sysCtx));
         assertEquals(minor, loadedVd.getMinorNr(sysCtx));
         assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
@@ -194,7 +194,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         assertNotNull(loadedVd);
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
-        assertEquals(volNr, loadedVd.getVolumeNumber(sysCtx));
+        assertEquals(volNr, loadedVd.getVolumeNumber());
         assertEquals(volSize, loadedVd.getVolumeSize(sysCtx));
         assertEquals(minor, loadedVd.getMinorNr(sysCtx));
         assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
@@ -399,7 +399,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         assertNotNull(volDfnSat);
         assertEquals(resName, volDfnSat.getResourceDefinition().getName());
-        assertEquals(volNr, volDfnSat.getVolumeNumber(sysCtx));
+        assertEquals(volNr, volDfnSat.getVolumeNumber());
         assertEquals(volSize, volDfnSat.getVolumeSize(sysCtx));
         assertEquals(minor, volDfnSat.getMinorNr(sysCtx));
         assertTrue(volDfnSat.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));

@@ -243,11 +243,9 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
     @Override
-    public VolumeNumber getVolumeNumber(AccessContext accCtx)
-        throws AccessDeniedException
+    public VolumeNumber getVolumeNumber()
     {
         checkDeleted();
-        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumeNr;
     }
 

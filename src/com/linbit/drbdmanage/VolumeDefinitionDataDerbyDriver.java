@@ -89,7 +89,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
             stmt.setBytes(1, UuidUtils.asByteArray(volumeDefinition.getUuid()));
             stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
-            stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
+            stmt.setInt(3, volumeDefinition.getVolumeNumber().value);
             stmt.setLong(4, volumeDefinition.getVolumeSize(dbCtx));
             stmt.setInt(5, volumeDefinition.getMinorNr(dbCtx).value);
             stmt.setLong(6, volumeDefinition.getFlags().getFlagsBits(dbCtx));
@@ -278,13 +278,9 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_DELETE))
         {
             stmt.setString(1, volumeDefinition.getResourceDefinition().getName().value);
-            stmt.setInt(2, volumeDefinition.getVolumeNumber(dbCtx).value);
+            stmt.setInt(2, volumeDefinition.getVolumeNumber().value);
             stmt.executeUpdate();
             errorReporter.logTrace("VolumeDefinition deleted %s", getDebugId(volumeDefinition));
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accDeniedExc);
         }
     }
 
@@ -326,7 +322,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     {
         return getDebugId(
             volDfn.getResourceDefinition(),
-            getVolNr(volDfn)
+            volDfn.getVolumeNumber()
         );
     }
 
@@ -342,7 +338,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     {
         return getTraceId(
             volDfn.getResourceDefinition(),
-            getVolNr(volDfn)
+            volDfn.getVolumeNumber()
         );
     }
 
@@ -354,25 +350,10 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         );
     }
 
-    private VolumeNumber getVolNr(VolumeDefinitionData volDfn) throws ImplementationError
-    {
-        VolumeNumber volumeNumber = null;
-        try
-        {
-            volumeNumber = volDfn.getVolumeNumber(dbCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return volumeNumber;
-    }
-
     private String getId(String resName, VolumeNumber volNum)
     {
         return "(ResName=" + resName + " VolNum=" + volNum.value + ")";
     }
-
 
     private class FlagDriver implements StateFlagsPersistence<VolumeDefinitionData>
     {
@@ -389,7 +370,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 );
                 stmt.setLong(1, flags);
                 stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
-                stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
+                stmt.setInt(3, volumeDefinition.getVolumeNumber().value);
                 stmt.executeUpdate();
 
                 errorReporter.logTrace(
@@ -422,7 +403,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                 );
                 stmt.setInt(1, newNumber.value);
                 stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
-                stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
+                stmt.setInt(3, volumeDefinition.getVolumeNumber().value);
                 stmt.executeUpdate();
 
                 errorReporter.logTrace(
@@ -455,7 +436,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
                 stmt.setLong(1, size);
                 stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
-                stmt.setInt(3, volumeDefinition.getVolumeNumber(dbCtx).value);
+                stmt.setInt(3, volumeDefinition.getVolumeNumber().value);
                 stmt.executeUpdate();
 
                 errorReporter.logTrace(
