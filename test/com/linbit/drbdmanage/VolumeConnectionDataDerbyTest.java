@@ -106,8 +106,8 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
 
         storPoolDfn = StorPoolDefinitionData.getInstance(sysCtx, storPoolName, transMgr, true, false);
 
-        storPool1 = StorPoolData.getInstance(sysCtx, nodeSrc, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, false, true, false);
-        storPool2 = StorPoolData.getInstance(sysCtx, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, false, true, false);
+        storPool1 = StorPoolData.getInstance(sysCtx, nodeSrc, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
+        storPool2 = StorPoolData.getInstance(sysCtx, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
 
         volSrc = VolumeData.getInstance(sysCtx, resSrc, volDfn, storPool1, volBlockDevSrc, volMetaDiskPathSrc, null, transMgr, true, false);
         volDst = VolumeData.getInstance(sysCtx, resDst, volDfn, storPool2, volBlockDevDst, volMetaDiskPathDst, null, transMgr, true, false);

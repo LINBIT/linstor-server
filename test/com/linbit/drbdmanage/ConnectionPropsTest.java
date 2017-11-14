@@ -90,8 +90,8 @@ public class ConnectionPropsTest extends DerbyBase
 
         storPoolDfn = StorPoolDefinitionData.getInstance(sysCtx, storPoolName, transMgr, true, false);
 
-        storPool1 = StorPoolData.getInstance(sysCtx, node1, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, false, true, false);
-        storPool2 = StorPoolData.getInstance(sysCtx, node2, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, false, true, false);
+        storPool1 = StorPoolData.getInstance(sysCtx, node1, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
+        storPool2 = StorPoolData.getInstance(sysCtx, node2, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
 
         volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true, false);
 

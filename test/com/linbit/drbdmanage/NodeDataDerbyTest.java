@@ -402,7 +402,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 storPoolDfn,
                 storPoolDriver1,
                 transMgr,
-                false,
                 true,
                 true
             );
@@ -415,7 +414,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 storPoolDfn,
                 storPoolDriver2,
                 transMgr,
-                false,
                 true,
                 true
             );

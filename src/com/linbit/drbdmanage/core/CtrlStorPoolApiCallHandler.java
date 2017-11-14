@@ -130,7 +130,6 @@ class CtrlStorPoolApiCallHandler
                     storPoolDfn,
                     driver,
                     transMgr,
-                    false, // do not create an instance of the storage driver
                     true,  // persist to db
                     true   // throw exception if already exists
                 );
@@ -428,7 +427,6 @@ class CtrlStorPoolApiCallHandler
                 storPoolDfn,
                 null,  // driver only needed for creation
                 transMgr,
-                false, // do not create an instance of the storage driver (which is null)
                 false, // do not persist
                 false  // do not throw exception if exists
             );

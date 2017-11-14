@@ -7,6 +7,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
@@ -119,6 +120,44 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
             storPoolDfn.initialized();
         }
 
+        return storPoolDfn;
+    }
+
+    public static StorPoolDefinitionData getInstanceSatellite(
+        AccessContext accCtx,
+        UUID uuid,
+        StorPoolName nameRef,
+        SatelliteTransactionMgr transMgr
+    )
+        throws ImplementationError
+    {
+        StorPoolDefinitionData storPoolDfn = null;
+
+        StorPoolDefinitionDataDatabaseDriver dbDriver = DrbdManage.getStorPoolDefinitionDataDatabaseDriver();
+        try
+        {
+            storPoolDfn = dbDriver.load(nameRef, false, transMgr);
+            if (storPoolDfn == null)
+            {
+                storPoolDfn = new StorPoolDefinitionData(
+                    uuid,
+                    ObjectProtection.getInstance(
+                        accCtx,
+                        "",
+                        true,
+                        transMgr
+                    ),
+                    nameRef
+                );
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new ImplementationError(
+                "This method should only be called with a satellite db in background!",
+                exc
+            );
+        }
         return storPoolDfn;
     }
 

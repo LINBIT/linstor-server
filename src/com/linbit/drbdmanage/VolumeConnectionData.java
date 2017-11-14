@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
@@ -180,6 +181,57 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         {
             volConData.initialized();
         }
+        return volConData;
+    }
+
+    public static VolumeConnectionData getInstanceSatellite(
+        AccessContext accCtx,
+        UUID uuid,
+        Volume sourceVolume,
+        Volume targetVolume,
+        SatelliteTransactionMgr transMgr
+    )
+        throws ImplementationError
+    {
+        VolumeConnectionData volConData = null;
+
+        Volume source;
+        Volume target;
+        NodeName sourceNodeName = sourceVolume.getResource().getAssignedNode().getName();
+        NodeName targetNodeName = targetVolume.getResource().getAssignedNode().getName();
+        if (sourceNodeName.compareTo(targetNodeName) < 0)
+        {
+            source = sourceVolume;
+            target = targetVolume;
+        }
+        else
+        {
+            source = targetVolume;
+            target = sourceVolume;
+        }
+        VolumeConnectionDataDatabaseDriver dbDriver = DrbdManage.getVolumeConnectionDatabaseDriver();
+
+        try
+        {
+            volConData = dbDriver.load(
+                source,
+                target,
+                false,
+                transMgr
+            );
+            if (volConData == null)
+            {
+                volConData = new VolumeConnectionData(uuid, accCtx, source, target, transMgr);
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new ImplementationError(
+                "This method should only be called with a satellite db in background!",
+                exc
+            );
+        }
+
         return volConData;
     }
 

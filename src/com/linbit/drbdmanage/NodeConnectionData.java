@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
@@ -151,6 +152,54 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         if (nodeConData != null)
         {
             nodeConData.initialized();
+        }
+        return nodeConData;
+    }
+
+    public static NodeConnectionData getInstanceSatellite(
+        AccessContext accCtx,
+        UUID uuid,
+        Node node1,
+        Node node2,
+        SatelliteTransactionMgr transMgr
+    )
+        throws ImplementationError
+    {
+        NodeConnectionData nodeConData = null;
+
+        Node source;
+        Node target;
+        if (node1.getName().compareTo(node2.getName()) < 0)
+        {
+            source = node1;
+            target = node2;
+        }
+        else
+        {
+            source = node2;
+            target = node1;
+        }
+
+        NodeConnectionDataDatabaseDriver dbDriver = DrbdManage.getNodeConnectionDatabaseDriver();
+        try
+        {
+            nodeConData = dbDriver.load(
+                source,
+                target,
+                false,
+                transMgr
+            );
+            if (nodeConData == null)
+            {
+                nodeConData = new NodeConnectionData(uuid, accCtx, source, target, transMgr);
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new ImplementationError(
+                "This method should only be called with a satellite db in background!",
+                exc
+            );
         }
         return nodeConData;
     }

@@ -86,7 +86,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
-            false, // do not instantiate
             true, // create
             false
         );
@@ -155,7 +154,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
-            false, // do not instantiate
             true,
             false
         );
@@ -174,7 +172,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
-            false, // do not instantiate
             false,
             false
         );
@@ -189,7 +186,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
-            false, // do not instantiate
             false,
             false
         );
@@ -211,7 +207,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
-            false, // do not instantiate
             true, // create
             false
         );
@@ -272,7 +267,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd2,
             LvmDriver.class.getSimpleName(),
             null,
-            true, // do instantiate
             true,
             false
         );
@@ -308,7 +302,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd2,
             LvmDriver.class.getSimpleName(),
             null,
-            true, // do instantiate
             false,
             false
         );
@@ -334,7 +327,6 @@ public class StorPoolDataDerbyTest extends DerbyBase
             spdd,
             LvmDriver.class.getSimpleName(),
             transMgr,
-            false,
             false,
             true
         );

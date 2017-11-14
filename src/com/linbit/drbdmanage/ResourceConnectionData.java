@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
@@ -127,7 +128,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     )
         throws AccessDeniedException, SQLException, DrbdDataAlreadyExistsException
     {
-        ResourceConnectionData resConData = null;
+        ResourceConnectionData rscConData = null;
 
         Resource source;
         Resource target;
@@ -150,33 +151,91 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
         ResourceConnectionDataDatabaseDriver dbDriver = DrbdManage.getResourceConnectionDatabaseDriver();
 
-        resConData = dbDriver.load(
+        rscConData = dbDriver.load(
             source,
             target,
             false,
             transMgr
         );
 
-        if (failIfExists && resConData != null)
+        if (failIfExists && rscConData != null)
         {
             throw new DrbdDataAlreadyExistsException("The ResourceConnection already exists");
         }
 
-        if (resConData == null && createIfNotExists)
+        if (rscConData == null && createIfNotExists)
         {
-            resConData = new ResourceConnectionData(
+            rscConData = new ResourceConnectionData(
                 accCtx,
                 source,
                 target,
                 transMgr
             );
-            dbDriver.create(resConData, transMgr);
+            dbDriver.create(rscConData, transMgr);
         }
-        if (resConData != null)
+        if (rscConData != null)
         {
-            resConData.initialized();
+            rscConData.initialized();
         }
-        return resConData;
+        return rscConData;
+    }
+
+    public static ResourceConnectionData getInstanceSatellite(
+        AccessContext accCtx,
+        UUID uuid,
+        Resource sourceResource,
+        Resource targetResource,
+        SatelliteTransactionMgr transMgr
+    )
+        throws ImplementationError
+    {
+        ResourceConnectionData rscConData = null;
+        Resource source;
+        Resource target;
+
+        NodeName sourceNodeName = sourceResource.getAssignedNode().getName();
+        NodeName targetNodeName = targetResource.getAssignedNode().getName();
+
+        if (sourceNodeName.compareTo(targetNodeName) < 0)
+        {
+            source = sourceResource;
+            target = targetResource;
+        }
+        else
+        {
+            source = targetResource;
+            target = sourceResource;
+        }
+        ResourceConnectionDataDatabaseDriver dbDriver = DrbdManage.getResourceConnectionDatabaseDriver();
+
+        try
+        {
+            rscConData = dbDriver.load(
+                source,
+                target,
+                false,
+                transMgr
+            );
+
+            if (rscConData == null)
+            {
+                rscConData = new ResourceConnectionData(
+                    uuid,
+                    accCtx,
+                    source,
+                    target,
+                    transMgr
+                );
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new ImplementationError(
+                "This method should only be called with a satellite db in background!",
+                exc
+            );
+        }
+        return rscConData;
     }
 
     @Override

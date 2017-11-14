@@ -288,7 +288,6 @@ class CtrlRscApiCallHandler
                                 storPoolDfn,
                                 null, // controller must not have a storage driver defined
                                 transMgr,
-                                false, // do not create an instance of the (not defined) storage driver
                                 false, // do not persist this entry
                                 false // do not throw exception if the entry exists
                             );

@@ -120,7 +120,6 @@ public class VolumeDataDerbyTest extends DerbyBase
             storPoolDfn,
             LvmDriver.class.getSimpleName(),
             transMgr,
-            false,
             true,
             false
         );

@@ -8,6 +8,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
@@ -105,7 +106,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         StorPoolDefinition storPoolDefRef,
         String storDriverSimpleClassNameRef,
         TransactionMgr transMgr,
-        boolean createStorageDriverInstance,
         boolean createIfNotExists,
         boolean failIfExists
     )
@@ -126,10 +126,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         if (storPoolData == null && createIfNotExists)
         {
             StorageDriver storDriver = null;
-            if (createStorageDriverInstance)
-            {
-                storDriver = StorageDriverUtils.createInstance(storDriverSimpleClassNameRef);
-            }
             storPoolData = new StorPoolData(
                 accCtx,
                 nodeRef,
@@ -144,6 +140,47 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         {
             storPoolData.initialized();
         }
+        return storPoolData;
+    }
+
+    public static StorPoolData getInstanceSatellite(
+        AccessContext accCtx,
+        UUID uuid,
+        Node nodeRef,
+        StorPoolDefinition storPoolDefRef,
+        String storDriverSimpleClassNameRef,
+        SatelliteTransactionMgr transMgr
+    )
+        throws ImplementationError
+    {
+        StorPoolData storPoolData = null;
+        StorPoolDataDatabaseDriver driver = DrbdManage.getStorPoolDataDatabaseDriver();
+
+        try
+        {
+            storPoolData = driver.load(nodeRef, storPoolDefRef, false, transMgr);
+            if (storPoolData == null)
+            {
+                storPoolData = new StorPoolData(
+                    uuid,
+                    accCtx,
+                    nodeRef,
+                    storPoolDefRef,
+                    StorageDriverUtils.createInstance(storDriverSimpleClassNameRef),
+                    storDriverSimpleClassNameRef,
+                    transMgr
+                );
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new ImplementationError(
+                "This method should only be called with a satellite db in background!",
+                exc
+            );
+        }
+
+
         return storPoolData;
     }
 

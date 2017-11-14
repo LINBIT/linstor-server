@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
@@ -134,6 +135,47 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             netData.initialized();
         }
 
+        return netData;
+    }
+
+    public static NetInterfaceData getInstanceSatellite(
+        AccessContext accCtx,
+        UUID uuid,
+        Node node,
+        NetInterfaceName netName,
+        DmIpAddress addr,
+        int port,
+        NetInterfaceType netType,
+        SatelliteTransactionMgr transMgr
+    )
+        throws ImplementationError
+    {
+        NetInterfaceDataDatabaseDriver driver = DrbdManage.getNetInterfaceDataDatabaseDriver();
+
+        NetInterfaceData netData;
+        try
+        {
+            netData = driver.load(node, netName, false, transMgr);
+            if (netData == null)
+            {
+                netData = new NetInterfaceData(
+                    uuid,
+                    accCtx,
+                    netName,
+                    node,
+                    addr,
+                    port,
+                    netType
+                );
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new ImplementationError(
+                "This method should only be called with a satellite db in background!",
+                exc
+            );
+        }
         return netData;
     }
 

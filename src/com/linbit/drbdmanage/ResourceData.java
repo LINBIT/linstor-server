@@ -214,7 +214,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
                 rscData = new ResourceData(
                     uuid,
                     accCtx,
-                    ObjectProtection.getInstance(null, "", false, transMgr),
+                    ObjectProtection.getInstance(accCtx, "", false, transMgr),
                     rscDfn,
                     node,
                     nodeId,
