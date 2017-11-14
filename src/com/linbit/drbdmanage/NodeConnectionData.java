@@ -191,8 +191,15 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
             );
             if (nodeConData == null)
             {
-                nodeConData = new NodeConnectionData(uuid, accCtx, source, target, transMgr);
+                nodeConData = new NodeConnectionData(
+                    uuid,
+                    accCtx,
+                    source,
+                    target,
+                    transMgr
+                );
             }
+            nodeConData.initialized();
         }
         catch (Exception exc)
         {

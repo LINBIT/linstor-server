@@ -150,6 +150,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
                     nameRef
                 );
             }
+            storPoolDfn.initialized();
         }
         catch (Exception exc)
         {

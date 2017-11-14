@@ -170,6 +170,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             volumeSize,
             flags
         );
+
+        ((ResourceDefinitionData) resourceDfn).putVolumeDefinition(accCtx, this);
     }
 
     public static VolumeDefinitionData getInstance(
@@ -213,7 +215,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
         if (volDfnData != null)
         {
-            ((ResourceDefinitionData) resDfn).putVolumeDefinition(accCtx, volDfnData);
             volDfnData.initialized();
         }
         return volDfnData;
@@ -249,6 +250,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
                     transMgr
                 );
             }
+            vlmDfnData.initialized();
         }
         catch (Exception exc)
         {

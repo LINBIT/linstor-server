@@ -193,6 +193,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                     transMgr
                 );
             }
+            rscDfn.initialized();
         }
         catch (Exception exc)
         {

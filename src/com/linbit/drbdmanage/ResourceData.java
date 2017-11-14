@@ -222,6 +222,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
                     transMgr
                 );
             }
+            rscData.initialized();
         }
         catch (Exception exc)
         {

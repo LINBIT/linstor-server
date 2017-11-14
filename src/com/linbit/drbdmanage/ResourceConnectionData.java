@@ -227,6 +227,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
                     transMgr
                 );
             }
+            rscConData.initialized();
         }
         catch (Exception exc)
         {

@@ -168,6 +168,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
                     netType
                 );
             }
+            netData.initialized();
         }
         catch (Exception exc)
         {

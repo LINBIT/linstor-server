@@ -221,8 +221,15 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
             );
             if (volConData == null)
             {
-                volConData = new VolumeConnectionData(uuid, accCtx, source, target, transMgr);
+                volConData = new VolumeConnectionData(
+                    uuid,
+                    accCtx,
+                    source,
+                    target,
+                    transMgr
+                );
             }
+            volConData.initialized();
         }
         catch (Exception exc)
         {

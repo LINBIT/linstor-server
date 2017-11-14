@@ -217,6 +217,7 @@ public class NodeData extends BaseTransactionObject implements Node
                     transMgr
                 );
             }
+            nodeData.initialized();
         }
         catch (Exception exc)
         {

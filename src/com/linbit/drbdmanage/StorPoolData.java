@@ -171,6 +171,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                     transMgr
                 );
             }
+            storPoolData.initialized();
         }
         catch (Exception exc)
         {

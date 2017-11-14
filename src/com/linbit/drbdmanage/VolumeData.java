@@ -221,6 +221,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
                     transMgr
                 );
             }
+            vlmData.initialized();
         }
         catch (Exception exc)
         {
