@@ -5,6 +5,7 @@ import static com.linbit.drbdmanage.api.ApiConsts.*;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -12,25 +13,37 @@ import com.linbit.TransactionMgr;
 import com.linbit.drbdmanage.DrbdDataAlreadyExistsException;
 import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeName;
+import com.linbit.drbdmanage.StorPool;
 import com.linbit.drbdmanage.StorPoolData;
 import com.linbit.drbdmanage.StorPoolDefinitionData;
 import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.Volume;
 import com.linbit.drbdmanage.api.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiCallRcImpl;
-import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.api.interfaces.Serializer;
+import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
+import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 
 class CtrlStorPoolApiCallHandler
 {
-    private Controller controller;
+    private final Controller controller;
+    private final Serializer<StorPool> serializer;
+    private final AccessContext apiCtx;
 
-    CtrlStorPoolApiCallHandler(Controller controllerRef)
+    CtrlStorPoolApiCallHandler(
+        Controller controllerRef,
+        Serializer<StorPool> serializerRef,
+        AccessContext apiCtxRef
+    )
     {
         controller = controllerRef;
+        serializer = serializerRef;
+        apiCtx = apiCtxRef;
     }
 
     public ApiCallRc createStorPool(
@@ -152,6 +165,8 @@ class CtrlStorPoolApiCallHandler
 
                 apiCallRc.addEntry(entry);
                 controller.getErrorReporter().logInfo(successMessage);
+
+                notifySatellite(storPool);
             }
         }
         catch (SQLException sqlExc)
@@ -378,6 +393,36 @@ class CtrlStorPoolApiCallHandler
             controller.dbConnPool.returnConnection(transMgr.dbCon);
         }
         return apiCallRc;
+    }
+
+    private void notifySatellite(StorPoolData storPool)
+    {
+        try
+        {
+            Peer satellitePeer = storPool.getNode().getPeer(apiCtx);
+            Message msg = satellitePeer.createMessage();
+            byte[] data = serializer.getChangedMessage(storPool);
+            msg.setData(data);
+            satellitePeer.sendMessage(msg);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Failed to contact all satellites about a resource change",
+                    accDeniedExc
+                )
+            );
+        }
+        catch (IllegalMessageStateException illegalMessageStateExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Controller could not send send a message to target node",
+                    illegalMessageStateExc
+                )
+            );
+        }
     }
 
     public ApiCallRc deleteStorPool(
@@ -738,6 +783,66 @@ class CtrlStorPoolApiCallHandler
             controller.dbConnPool.returnConnection(transMgr.dbCon);
         }
         return apiCallRc;
+    }
+
+    public void respondStorPool(String storPoolNameStr, UUID storPoolUuid, int msgId, Peer satellitePeer)
+    {
+        try
+        {
+            StorPoolName storPoolName = new StorPoolName(storPoolNameStr);
+
+            StorPool storPool = satellitePeer.getNode().getStorPool(apiCtx, storPoolName);
+            // TODO: check if the storPool has the same uuid as storPoolUuid
+            if (storPool != null)
+            {
+                byte[] data = serializer.getDataMessage(msgId, storPool);
+
+                Message response = satellitePeer.createMessage();
+                response.setData(data);
+                satellitePeer.sendMessage(response);
+            }
+            else
+            {
+                controller.getErrorReporter().reportError(
+                    new ImplementationError(
+                        String.format(
+                            "A requested storpool name '%s' with the uuid '%s' was not found "+
+                                "in the controllers list of stor pools",
+                                storPoolName,
+                                storPoolUuid.toString()
+                            ),
+                        null
+                    )
+                );
+            }
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Satellite requested data for invalid storpool name '" + storPoolNameStr + "'.",
+                    invalidNameExc
+                )
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Controller's api context has not enough privileges to gather requested storpool data.",
+                    accDeniedExc
+                )
+            );
+        }
+        catch (IllegalMessageStateException illegalMessageStateExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Failed to respond to storpool data request",
+                    illegalMessageStateExc
+                )
+            );
+        }
     }
 
 }

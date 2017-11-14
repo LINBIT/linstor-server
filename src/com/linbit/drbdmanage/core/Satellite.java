@@ -2,12 +2,17 @@ package com.linbit.drbdmanage.core;
 
 import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkerPool;
 import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.Node.NodeFlag;
+import com.linbit.drbdmanage.Node.NodeType;
+import com.linbit.drbdmanage.NodeData;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
@@ -54,6 +59,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -97,11 +103,13 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     // Command line arguments
     private String[] args;
 
+    private final StltApiCallHandler apiCallHandler;
+
     // ============================================================
     // Worker thread pool & message processing dispatcher
     //
     private WorkerPool workerThrPool = null;
-    private final CommonMessageProcessor msgProc;
+    private CommonMessageProcessor msgProc;
 
     // ============================================================
     // Core system services
@@ -131,6 +139,9 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     // Map of all storage pools
     Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
+    // Local NodeData received from the currently active controller
+    NodeData localNode;
+
     // File system watch service
     private FileSystemWatch fsWatchSvc;
 
@@ -141,6 +152,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     // Lock for major global changes
     public final ReadWriteLock reconfigurationLock;
     public final ReadWriteLock stltConfLock;
+
 
     public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
         throws IOException
@@ -165,6 +177,11 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         fsWatchSvc = new FileSystemWatch();
         systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
 
+        // Initialize LinStor objects maps
+        nodesMap = new TreeMap<>();
+        rscDfnMap = new TreeMap<>();
+        storPoolDfnMap = new TreeMap<>();
+
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
 
@@ -177,26 +194,11 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         securityDbDriver = new EmptySecurityDbDriver(sysCtx);
         persistenceDbDriver = new SatelliteDbDriver(sysCtx, nodesMap, rscDfnMap, storPoolDfnMap);
 
-        // Initialize the worker thread pool
-        // errorLogRef.logInfo("Starting worker thread pool");
         try
         {
-            AccessContext initCtx = sysCtx.clone();
-            initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
-            int cpuCount = getCpuCount();
-            int thrCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
-            int qSize = thrCount * getWorkerQueueFactor();
-            qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
-            setWorkerThreadCount(initCtx, thrCount);
-            setWorkerQueueSize(initCtx, qSize);
-            workerThrPool = WorkerPool.initialize(
-                thrCount, qSize, true, "MainWorkerPool", getErrorReporter(), null
-            );
-
-            // Initialize the message processor
-            // errorLogRef.logInfo("Initializing API call dispatcher");
-            msgProc = new CommonMessageProcessor(this, workerThrPool);
+            AccessContext apiCtx = sysCtxRef.clone();
+            apiCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+            apiCallHandler = new StltApiCallHandler(this, apiType, apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -253,10 +255,40 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                 // Initialize the error & exception reporting facility
                 setErrorLog(initCtx, errorLogRef);
 
+                // Initialize the worker thread pool
+                // errorLogRef.logInfo("Starting worker thread pool");
+                try
+                {
+                    int cpuCount = getCpuCount();
+                    int thrCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
+                    int qSize = thrCount * getWorkerQueueFactor();
+                    qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
+                    setWorkerThreadCount(initCtx, thrCount);
+                    setWorkerQueueSize(initCtx, qSize);
+                    workerThrPool = WorkerPool.initialize(
+                        thrCount, qSize, true, "MainWorkerPool", getErrorReporter(), null
+                    );
+
+                    // Initialize the message processor
+                    // errorLogRef.logInfo("Initializing API call dispatcher");
+                    msgProc = new CommonMessageProcessor(this, workerThrPool);
+                }
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    throw new ImplementationError(
+                        "Satellite's constructor cannot get system privileges",
+                        accDeniedExc
+                    );
+                }
+
+
                 // Set CONTROL access for the SYSTEM role on shutdown
                 try
                 {
+                    SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+                    shutdownProt.setConnection(transMgr);
                     shutdownProt.addAclEntry(initCtx, sysCtx.getRole(), AccessType.CONTROL);
+                    transMgr.commit();
                 }
                 catch (SQLException sqlExc)
                 {
@@ -287,6 +319,28 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                         accessExc
                     )
                 );
+            }
+
+            // FIXME remove this test block
+            {
+                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+                try
+                {
+                    localNode = NodeData.getInstanceSatellite(
+                        sysCtx,
+                        UUID.randomUUID(),
+                        new NodeName("TestNode"),
+                        NodeType.SATELLITE,
+                        new NodeFlag[] {},
+                        transMgr
+                    );
+                    transMgr.commit();
+                    nodesMap.put(localNode.getName(), localNode);
+                }
+                catch (SQLException | ImplementationError | InvalidNameException exc)
+                {
+                    errorLogRef.reportError(exc);
+                }
             }
         }
         finally
@@ -681,5 +735,15 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
         }
 
         System.out.println();
+    }
+
+    public StltApiCallHandler getApiCallHandler()
+    {
+        return apiCallHandler;
+    }
+
+    public NodeData getLocalNode()
+    {
+        return localNode;
     }
 }

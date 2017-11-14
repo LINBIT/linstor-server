@@ -4,12 +4,13 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 
 public class EmptySecurityDbDriver implements DbAccessor
 {
-    public static final SingleColumnDatabaseDriver<?, ?> NOOP_COL_DRIVER = new NoOpColDriver();
+    public static final SingleColumnDatabaseDriver<?, ?> NOOP_COL_DRIVER = new NoOpObjectDatabaseDriver<Object, Object>();
 
     private final ObjectProtection objProt;
 
@@ -160,16 +161,5 @@ public class EmptySecurityDbDriver implements DbAccessor
             // no-op
             return (SingleColumnDatabaseDriver<ObjectProtection, SecurityType>) NOOP_COL_DRIVER;
         }
-    }
-
-    private static class NoOpColDriver implements SingleColumnDatabaseDriver<Object, Object>
-    {
-
-        @Override
-        public void update(Object parent, Object element, TransactionMgr transMgr) throws SQLException
-        {
-            // no-op
-        }
-
     }
 }

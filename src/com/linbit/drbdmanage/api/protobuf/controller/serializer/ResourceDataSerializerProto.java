@@ -6,176 +6,115 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-import com.google.protobuf.ByteString;
-import com.linbit.ImplementationError;
+import java.util.UUID;
+
 import com.linbit.drbdmanage.InternalApiConsts;
 import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.Resource;
-import com.linbit.drbdmanage.ResourceData;
 import com.linbit.drbdmanage.ResourceDefinition;
+import com.linbit.drbdmanage.StorPool;
 import com.linbit.drbdmanage.Volume;
-import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.api.protobuf.BaseProtoApiCall;
-import com.linbit.drbdmanage.api.protobuf.controller.interfaces.ResourceDataSerializer;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.MsgCrtRsc;
 import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
-import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
-import com.linbit.drbdmanage.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherResourceData;
+import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.drbdmanage.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
-import com.linbit.drbdmanage.proto.javainternal.MsgIntRscIdOuterClass.MsgIntRscId;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
-import com.linbit.utils.UuidUtils;
 
-public class ResourceDataSerializerProto implements ResourceDataSerializer
+public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
 {
-    private AccessContext serializerCtx;
-    private ErrorReporter errorReporter;
-
     public ResourceDataSerializerProto(AccessContext serializerCtxRef, ErrorReporter errorReporterRef)
     {
-        serializerCtx = serializerCtxRef;
-        errorReporter = errorReporterRef;
+        super(
+            serializerCtxRef,
+            errorReporterRef,
+            InternalApiConsts.API_RSC_CHANGED,
+            InternalApiConsts.API_RSC_DATA
+        );
     }
 
     @Override
-    public byte[] getChangedMessage(ResourceData rsc)
+    protected String getName(Resource rsc)
     {
-        byte[] ret = null;
-
-        String rscNameStr = rsc.getDefinition().getName().value;
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        try
-        {
-            MsgHeader.newBuilder()
-                .setApiCall(InternalApiConsts.API_RSC_CHANGED)
-                .setMsgId(0) // TODO: change to something that defines this message as a protobuf msg
-                .build()
-                .writeDelimitedTo(baos);
-
-            MsgIntRscId.newBuilder()
-                .setResourceName(rscNameStr)
-                .setUuid(ByteString.copyFrom(UuidUtils.asByteArray(rsc.getUuid())))
-                .build()
-                .writeDelimitedTo(baos);
-
-            ret = baos.toByteArray();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        return ret;
+        return rsc.getDefinition().getName().displayValue;
     }
 
     @Override
-    public byte[] serialize(ResourceData rsc)
+    protected UUID getUuid(Resource rsc)
     {
-        byte[] ret = null;
+        return rsc.getUuid();
+    }
 
-        Iterator<Resource> rscIterator;
-        try
+    @Override
+    protected void writeData(Resource localResource, ByteArrayOutputStream baos) throws IOException, AccessDeniedException
+    {
+        List<Resource> otherResources = new ArrayList<>();
+        Iterator<Resource> rscIterator = localResource.getDefinition().iterateResource(serializerCtx);
+        while (rscIterator.hasNext())
         {
-            rscIterator = rsc.getDefinition().iterateResource(serializerCtx);
-            while (rscIterator.hasNext())
+            Resource rsc = rscIterator.next();
+            if (!rsc.equals(localResource))
             {
-                Resource currentRsc = rscIterator.next();
-
-                List<Vlm> vlms = new ArrayList<>();
-
-                Iterator<Volume> vlmIterator = rsc.iterateVolumes();
-                while (vlmIterator.hasNext())
-                {
-                    Volume currenctVlm = vlmIterator.next();
-                    vlms.add(
-                        Vlm.newBuilder()
-                        .setBlockDevice(currenctVlm.getBlockDevicePath(serializerCtx))
-                        .setMetaDisk(currenctVlm.getMetaDiskPath(serializerCtx))
-                        .setStorPoolName(currenctVlm.getStorPool(serializerCtx).getName().value)
-                        .setVlmNr(currenctVlm.getVolumeDefinition().getVolumeNumber().value)
-                        .build()
-                    );
-                }
-
-                Map<String, String> props = new TreeMap<>();
-                props.put(ApiConsts.KEY_NODE_ID, Integer.toString(rsc.getNodeId().value));
-                MsgCrtRsc crtRsc = MsgCrtRsc.newBuilder()
-                    .setNodeName(rsc.getAssignedNode().getName().value)
-                    .setRscName(rsc.getDefinition().getName().value)
-                    .addAllRscProps(BaseProtoApiCall.asLinStorMapEntryList(props))
-                    .addAllVlms(vlms)
-                    .build();
+                otherResources.add(rsc);
             }
         }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Access denied for ResourceDataSerializer",
-                    accDeniedExc
-                )
-            );
-        }
-        return ret;
+
+        ResourceDefinition rscDfn = localResource.getDefinition();
+        String rscName = rscDfn.getName().displayValue;
+        Map<String, String> rscDfnProps = rscDfn.getProps(serializerCtx).map();
+        Map<String, String> rscProps = localResource.getProps(serializerCtx).map();
+
+        MsgIntRscData.newBuilder()
+            .setRscName(rscName)
+            .setRscDfnUuid(asByteString(rscDfn.getUuid()))
+            .setRscDfnPort(rscDfn.getPort(serializerCtx).value)
+            .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
+            .addAllRscDfnProps(BaseProtoApiCall.fromMap(rscDfnProps))
+            .setLocalRscUuid(asByteString(localResource.getUuid()))
+            .setLocalRscFlags(localResource.getStateFlags().getFlagsBits(serializerCtx))
+            .setLocalRscNodeId(localResource.getNodeId().value)
+            .addAllLocalRscProps(BaseProtoApiCall.fromMap(rscProps))
+            .addAllVlmDfns(
+                buildVlmDfnMessages(localResource)
+            )
+            .addAllLocalVolumes(
+                buildVlmMessages(localResource)
+            )
+            .addAllOtherResources(
+                buildOtherResources(otherResources)
+            )
+            .build()
+            .writeDelimitedTo(baos);
     }
 
-    @Override
-    public byte[] getRscReqResponse(
-        int msgId,
-        Resource localResource,
-        List<Resource> otherResources
-    )
+    private Iterable<? extends VlmDfn> buildVlmDfnMessages(Resource localResource)
+        throws AccessDeniedException
     {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try
-        {
-            ResourceDefinition rscDfn = localResource.getDefinition();
-            String rscName = rscDfn.getName().displayValue;
-            byte[] rscDfnUuid = UuidUtils.asByteArray(rscDfn.getUuid());
-            Map<String, String> rscDfnProps = rscDfn.getProps(serializerCtx).map();
-            byte[] rscUuid = UuidUtils.asByteArray(localResource.getUuid());
-            Map<String, String> rscProps = localResource.getProps(serializerCtx).map();
+        List<VlmDfn> list = new ArrayList<>();
 
-            MsgHeader.newBuilder()
-                .setApiCall(InternalApiConsts.API_RSC_DATA)
-                .setMsgId(msgId)
-                .build()
-                .writeDelimitedTo(baos);
+        Iterator<Volume> localVolIterator = localResource.iterateVolumes();
+        while (localVolIterator.hasNext())
+        {
+            Volume vol = localVolIterator.next();
+            VolumeDefinition vlmDfn = vol.getVolumeDefinition();
 
-            MsgIntRscData.newBuilder()
-                .setResourceName(rscName)
-                .setResourceDfnUuid(ByteString.copyFrom(rscDfnUuid))
-                .addAllRscDfnProps(BaseProtoApiCall.asLinStorMapEntryList(rscDfnProps))
-                .setResourceUuid(ByteString.copyFrom(rscUuid))
-                .addAllLocalRscProps(BaseProtoApiCall.asLinStorMapEntryList(rscProps))
-                .addAllLocalVolumes(
-                    buildVlmMessages(localResource)
-                )
-                .addAllOtherResources(
-                    buildOtherResources(otherResources)
-                )
-                .build()
-                .writeDelimitedTo(baos);
-        }
-        catch (IOException ioExc)
-        {
-            errorReporter.reportError(ioExc);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Access denied for ResourceDataSerializer",
-                    accDeniedExc
-                )
+            Map<String, String> vlmDfnProps = vlmDfn.getProps(serializerCtx).map();
+            list.add(
+                VlmDfn.newBuilder()
+                    .setUuid(asByteString(vlmDfn.getUuid()))
+                    .setVlmNr(vlmDfn.getVolumeNumber().value)
+                    .setVlmSize(vlmDfn.getVolumeSize(serializerCtx))
+                    .setVlmMinor(vlmDfn.getMinorNr(serializerCtx).value)
+                    .setVlmFlags(vlmDfn.getFlags().getFlagsBits(serializerCtx))
+                    .addAllVlmProps(BaseProtoApiCall.fromMap(vlmDfnProps))
+                    .build()
             );
         }
-        return baos.toByteArray();
+
+        return list;
     }
 
     private List<Vlm> buildVlmMessages(Resource localResource)
@@ -188,39 +127,45 @@ public class ResourceDataSerializerProto implements ResourceDataSerializer
         {
             Volume vol = localVolIterator.next();
             Map<String, String> volProps = vol.getProps(serializerCtx).map();
+            StorPool vlmStorPool = vol.getStorPool(serializerCtx);
             vlmList.add(
                 Vlm.newBuilder()
+                    .setUuid(asByteString(vol.getUuid()))
                     .setVlmNr(vol.getVolumeDefinition().getVolumeNumber().value)
                     .setBlockDevice(vol.getBlockDevicePath(serializerCtx))
                     .setMetaDisk(vol.getMetaDiskPath(serializerCtx))
-                    .setStorPoolName(vol.getStorPool(serializerCtx).getName().displayValue)
-                    .addAllVlmProps(BaseProtoApiCall.asLinStorMapEntryList(volProps))
+                    .setVlmFlags(vol.getFlags().getFlagsBits(serializerCtx))
+                    .setStorPoolUuid(asByteString(vlmStorPool.getUuid()))
+                    .setStorPoolName(vlmStorPool.getName().displayValue)
+                    .addAllVlmProps(BaseProtoApiCall.fromMap(volProps))
                     .build()
             );
         }
         return vlmList;
     }
 
-    private List<MsgIntOtherResourceData> buildOtherResources(List<Resource> otherResources)
+    private List<MsgIntOtherRscData> buildOtherResources(List<Resource> otherResources)
         throws AccessDeniedException
     {
-        List<MsgIntOtherResourceData> list = new ArrayList<>();
+        List<MsgIntOtherRscData> list = new ArrayList<>();
 
         for (Resource rsc : otherResources)
         {
             Node node = rsc.getAssignedNode();
-            byte[] nodeUuid = UuidUtils.asByteArray(node.getUuid());
             Map<String, String> nodeProps = node.getProps(serializerCtx).map();
-            byte[] rscUuid = UuidUtils.asByteArray(rsc.getUuid());
             Map<String, String> rscProps = rsc.getProps(serializerCtx).map();
             list.add(
-                MsgIntOtherResourceData.newBuilder()
+                MsgIntOtherRscData.newBuilder()
                     .setNodeName(node.getName().displayValue)
-                    .setNodeUuid(ByteString.copyFrom(nodeUuid))
-                    .addAllNodeProps(BaseProtoApiCall.asLinStorMapEntryList(nodeProps))
-                    .setResourceUuid(ByteString.copyFrom(rscUuid))
-                    .addAllRscProps(BaseProtoApiCall.asLinStorMapEntryList(rscProps))
-                    .addAllLocalVolumes(
+                    .setNodeUuid(asByteString(node.getUuid()))
+                    .setNodeType(node.getNodeType(serializerCtx).getFlagValue())
+                    .setNodeFlags(node.getFlags().getFlagsBits(serializerCtx))
+                    .addAllNodeProps(BaseProtoApiCall.fromMap(nodeProps))
+                    .setRscUuid(asByteString(rsc.getUuid()))
+                    .setRscNodeId(rsc.getNodeId().value)
+                    .setRscFlags(rsc.getStateFlags().getFlagsBits(serializerCtx))
+                    .addAllRscProps(BaseProtoApiCall.fromMap(rscProps))
+                    .addAllLocalVlms(
                         buildVlmMessages(rsc)
                     )
                     .build()

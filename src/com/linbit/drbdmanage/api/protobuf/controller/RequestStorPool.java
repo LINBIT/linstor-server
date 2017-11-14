@@ -8,21 +8,20 @@ import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.Peer;
 
 @ProtobufApiCall
-public class RequestResource extends RequestObject
+public class RequestStorPool extends RequestObject
 {
-    public RequestResource(Controller controller)
+    public RequestStorPool(Controller controller)
     {
         super(
             controller,
-            InternalApiConsts.API_RSC_REQ,
-            "resource"
+            InternalApiConsts.API_STOR_POOL_REQ,
+            "storpool"
         );
     }
 
     @Override
     protected void handleRequest(String name, UUID objUuid, int msgId, Peer satellitePeer)
     {
-        controller.getApiCallHandler().requestResource(name, objUuid, msgId, satellitePeer);
+        controller.getApiCallHandler().requestStorPool(name, objUuid, msgId, satellitePeer);
     }
-
 }

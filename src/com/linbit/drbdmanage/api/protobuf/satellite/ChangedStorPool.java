@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.api.protobuf.satellite;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.InternalApiConsts;
@@ -17,9 +18,9 @@ import com.linbit.drbdmanage.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntO
 import com.linbit.drbdmanage.security.AccessContext;
 
 @ProtobufApiCall
-public class ChangedRsc extends BaseProtoApiCall
+public class ChangedStorPool extends BaseProtoApiCall
 {
-    public ChangedRsc(Satellite satellite)
+    public ChangedStorPool(Satellite satellite)
     {
         super(satellite.getErrorReporter());
     }
@@ -27,7 +28,7 @@ public class ChangedRsc extends BaseProtoApiCall
     @Override
     public String getName()
     {
-        return InternalApiConsts.API_RSC_CHANGED;
+        return InternalApiConsts.API_STOR_POOL_CHANGED;
     }
 
     @Override
@@ -55,9 +56,9 @@ public class ChangedRsc extends BaseProtoApiCall
             Message message = controllerPeer.createMessage();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-            MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-            String rscName = rscId.getName();
-            // TODO: UUID
+            MsgIntObjectId objId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+            String storPoolName = objId.getName();
+            UUID storPoolUuid = BaseProtoApiCall.asUuid(objId.getUuid());
 
             // TODO: remember to request this resource later.
 
@@ -65,11 +66,11 @@ public class ChangedRsc extends BaseProtoApiCall
             {
                 // do this when satellite has finished its current task
                 MsgHeader.newBuilder()
-                    .setApiCall(InternalApiConsts.API_RSC_REQ)
+                    .setApiCall(InternalApiConsts.API_STOR_POOL_REQ)
                     .setMsgId(msgId)
                     .build().writeDelimitedTo(baos);
 
-                rscId.writeDelimitedTo(baos); // only as a workaround
+                objId.writeDelimitedTo(baos); // only as a workaround
 
                 byte[] data = baos.toByteArray();
                 message.setData(data);
@@ -85,6 +86,6 @@ public class ChangedRsc extends BaseProtoApiCall
                 )
             );
         }
-
     }
+
 }

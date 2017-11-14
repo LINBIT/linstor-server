@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessageV3;
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.api.ApiCallRc;
@@ -21,6 +23,7 @@ import com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallRespon
 import com.linbit.drbdmanage.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse.Builder;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.drbdmanage.security.AccessContext;
+import com.linbit.utils.UuidUtils;
 
 public abstract class BaseProtoApiCall extends BaseApiCall
 {
@@ -55,7 +58,7 @@ public abstract class BaseProtoApiCall extends BaseApiCall
         return map;
     }
 
-    public static List<LinStorMapEntry> asLinStorMapEntryList(Map<String, String> map)
+    public static List<LinStorMapEntry> fromMap(Map<String, String> map)
     {
         List<LinStorMapEntry> entries = new ArrayList<>(map.size());
         for (Map.Entry<String, String> entry : map.entrySet())
@@ -67,6 +70,16 @@ public abstract class BaseProtoApiCall extends BaseApiCall
             );
         }
         return entries;
+    }
+
+    public static UUID asUuid(ByteString uuid)
+    {
+        return UuidUtils.asUuid(uuid.toByteArray());
+    }
+
+    public static ByteString fromUuid(UUID uuid)
+    {
+        return ByteString.copyFrom(UuidUtils.asByteArray(uuid));
     }
 
     @Override
@@ -100,8 +113,8 @@ public abstract class BaseProtoApiCall extends BaseApiCall
             {
                 msgApiCallResponseBuilder.setMessageFormat(apiCallEntry.getMessageFormat());
             }
-            msgApiCallResponseBuilder.addAllObjRefs(asLinStorMapEntryList(apiCallEntry.getObjRefs()));
-            msgApiCallResponseBuilder.addAllVariables(asLinStorMapEntryList(apiCallEntry.getVariables()));
+            msgApiCallResponseBuilder.addAllObjRefs(fromMap(apiCallEntry.getObjRefs()));
+            msgApiCallResponseBuilder.addAllVariables(fromMap(apiCallEntry.getVariables()));
 
             protoMsg = msgApiCallResponseBuilder.build();
             try

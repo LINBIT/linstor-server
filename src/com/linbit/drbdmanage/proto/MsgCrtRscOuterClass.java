@@ -2174,20 +2174,20 @@ public final class MsgCrtRscOuterClass {
 
     /**
      * <pre>
-     * Storage pool definition uuid
+     * Storage pool uuid
      * </pre>
      *
-     * <code>optional bytes stor_pool_dfn_uuid = 6;</code>
+     * <code>optional bytes stor_pool_uuid = 6;</code>
      */
-    boolean hasStorPoolDfnUuid();
+    boolean hasStorPoolUuid();
     /**
      * <pre>
-     * Storage pool definition uuid
+     * Storage pool uuid
      * </pre>
      *
-     * <code>optional bytes stor_pool_dfn_uuid = 6;</code>
+     * <code>optional bytes stor_pool_uuid = 6;</code>
      */
-    com.google.protobuf.ByteString getStorPoolDfnUuid();
+    com.google.protobuf.ByteString getStorPoolUuid();
 
     /**
      * <pre>
@@ -2220,10 +2220,27 @@ public final class MsgCrtRscOuterClass {
 
     /**
      * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>optional sint64 vlm_flags = 8;</code>
+     */
+    boolean hasVlmFlags();
+    /**
+     * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>optional sint64 vlm_flags = 8;</code>
+     */
+    long getVlmFlags();
+
+    /**
+     * <pre>
      * Volume properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
      */
     java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
         getVlmPropsList();
@@ -2232,7 +2249,7 @@ public final class MsgCrtRscOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
      */
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVlmProps(int index);
     /**
@@ -2240,7 +2257,7 @@ public final class MsgCrtRscOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
      */
     int getVlmPropsCount();
     /**
@@ -2248,7 +2265,7 @@ public final class MsgCrtRscOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
      */
     java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
         getVlmPropsOrBuilderList();
@@ -2257,7 +2274,7 @@ public final class MsgCrtRscOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
      */
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVlmPropsOrBuilder(
         int index);
@@ -2283,8 +2300,9 @@ public final class MsgCrtRscOuterClass {
       vlmNr_ = 0;
       blockDevice_ = "";
       metaDisk_ = "";
-      storPoolDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      storPoolUuid_ = com.google.protobuf.ByteString.EMPTY;
       storPoolName_ = "";
+      vlmFlags_ = 0L;
       vlmProps_ = java.util.Collections.emptyList();
     }
 
@@ -2345,7 +2363,7 @@ public final class MsgCrtRscOuterClass {
             }
             case 50: {
               bitField0_ |= 0x00000020;
-              storPoolDfnUuid_ = input.readBytes();
+              storPoolUuid_ = input.readBytes();
               break;
             }
             case 58: {
@@ -2354,10 +2372,15 @@ public final class MsgCrtRscOuterClass {
               storPoolName_ = bs;
               break;
             }
-            case 66: {
-              if (!((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
+            case 64: {
+              bitField0_ |= 0x00000080;
+              vlmFlags_ = input.readSInt64();
+              break;
+            }
+            case 74: {
+              if (!((mutable_bitField0_ & 0x00000100) == 0x00000100)) {
                 vlmProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
-                mutable_bitField0_ |= 0x00000080;
+                mutable_bitField0_ |= 0x00000100;
               }
               vlmProps_.add(
                   input.readMessage(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
@@ -2371,7 +2394,7 @@ public final class MsgCrtRscOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
+        if (((mutable_bitField0_ & 0x00000100) == 0x00000100)) {
           vlmProps_ = java.util.Collections.unmodifiableList(vlmProps_);
         }
         this.unknownFields = unknownFields.build();
@@ -2568,27 +2591,27 @@ public final class MsgCrtRscOuterClass {
       }
     }
 
-    public static final int STOR_POOL_DFN_UUID_FIELD_NUMBER = 6;
-    private com.google.protobuf.ByteString storPoolDfnUuid_;
+    public static final int STOR_POOL_UUID_FIELD_NUMBER = 6;
+    private com.google.protobuf.ByteString storPoolUuid_;
     /**
      * <pre>
-     * Storage pool definition uuid
+     * Storage pool uuid
      * </pre>
      *
-     * <code>optional bytes stor_pool_dfn_uuid = 6;</code>
+     * <code>optional bytes stor_pool_uuid = 6;</code>
      */
-    public boolean hasStorPoolDfnUuid() {
+    public boolean hasStorPoolUuid() {
       return ((bitField0_ & 0x00000020) == 0x00000020);
     }
     /**
      * <pre>
-     * Storage pool definition uuid
+     * Storage pool uuid
      * </pre>
      *
-     * <code>optional bytes stor_pool_dfn_uuid = 6;</code>
+     * <code>optional bytes stor_pool_uuid = 6;</code>
      */
-    public com.google.protobuf.ByteString getStorPoolDfnUuid() {
-      return storPoolDfnUuid_;
+    public com.google.protobuf.ByteString getStorPoolUuid() {
+      return storPoolUuid_;
     }
 
     public static final int STOR_POOL_NAME_FIELD_NUMBER = 7;
@@ -2648,14 +2671,37 @@ public final class MsgCrtRscOuterClass {
       }
     }
 
-    public static final int VLM_PROPS_FIELD_NUMBER = 8;
+    public static final int VLM_FLAGS_FIELD_NUMBER = 8;
+    private long vlmFlags_;
+    /**
+     * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>optional sint64 vlm_flags = 8;</code>
+     */
+    public boolean hasVlmFlags() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>optional sint64 vlm_flags = 8;</code>
+     */
+    public long getVlmFlags() {
+      return vlmFlags_;
+    }
+
+    public static final int VLM_PROPS_FIELD_NUMBER = 9;
     private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> vlmProps_;
     /**
      * <pre>
      * Volume properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
      */
     public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getVlmPropsList() {
       return vlmProps_;
@@ -2665,7 +2711,7 @@ public final class MsgCrtRscOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
      */
     public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
         getVlmPropsOrBuilderList() {
@@ -2676,7 +2722,7 @@ public final class MsgCrtRscOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
      */
     public int getVlmPropsCount() {
       return vlmProps_.size();
@@ -2686,7 +2732,7 @@ public final class MsgCrtRscOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
      */
     public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVlmProps(int index) {
       return vlmProps_.get(index);
@@ -2696,7 +2742,7 @@ public final class MsgCrtRscOuterClass {
      * Volume properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
      */
     public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVlmPropsOrBuilder(
         int index) {
@@ -2749,13 +2795,16 @@ public final class MsgCrtRscOuterClass {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 5, metaDisk_);
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        output.writeBytes(6, storPoolDfnUuid_);
+        output.writeBytes(6, storPoolUuid_);
       }
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 7, storPoolName_);
       }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeSInt64(8, vlmFlags_);
+      }
       for (int i = 0; i < vlmProps_.size(); i++) {
-        output.writeMessage(8, vlmProps_.get(i));
+        output.writeMessage(9, vlmProps_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -2785,14 +2834,18 @@ public final class MsgCrtRscOuterClass {
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(6, storPoolDfnUuid_);
+          .computeBytesSize(6, storPoolUuid_);
       }
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, storPoolName_);
       }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(8, vlmFlags_);
+      }
       for (int i = 0; i < vlmProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(8, vlmProps_.get(i));
+          .computeMessageSize(9, vlmProps_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -2836,15 +2889,20 @@ public final class MsgCrtRscOuterClass {
         result = result && getMetaDisk()
             .equals(other.getMetaDisk());
       }
-      result = result && (hasStorPoolDfnUuid() == other.hasStorPoolDfnUuid());
-      if (hasStorPoolDfnUuid()) {
-        result = result && getStorPoolDfnUuid()
-            .equals(other.getStorPoolDfnUuid());
+      result = result && (hasStorPoolUuid() == other.hasStorPoolUuid());
+      if (hasStorPoolUuid()) {
+        result = result && getStorPoolUuid()
+            .equals(other.getStorPoolUuid());
       }
       result = result && (hasStorPoolName() == other.hasStorPoolName());
       if (hasStorPoolName()) {
         result = result && getStorPoolName()
             .equals(other.getStorPoolName());
+      }
+      result = result && (hasVlmFlags() == other.hasVlmFlags());
+      if (hasVlmFlags()) {
+        result = result && (getVlmFlags()
+            == other.getVlmFlags());
       }
       result = result && getVlmPropsList()
           .equals(other.getVlmPropsList());
@@ -2879,13 +2937,18 @@ public final class MsgCrtRscOuterClass {
         hash = (37 * hash) + META_DISK_FIELD_NUMBER;
         hash = (53 * hash) + getMetaDisk().hashCode();
       }
-      if (hasStorPoolDfnUuid()) {
-        hash = (37 * hash) + STOR_POOL_DFN_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getStorPoolDfnUuid().hashCode();
+      if (hasStorPoolUuid()) {
+        hash = (37 * hash) + STOR_POOL_UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getStorPoolUuid().hashCode();
       }
       if (hasStorPoolName()) {
         hash = (37 * hash) + STOR_POOL_NAME_FIELD_NUMBER;
         hash = (53 * hash) + getStorPoolName().hashCode();
+      }
+      if (hasVlmFlags()) {
+        hash = (37 * hash) + VLM_FLAGS_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getVlmFlags());
       }
       if (getVlmPropsCount() > 0) {
         hash = (37 * hash) + VLM_PROPS_FIELD_NUMBER;
@@ -3024,13 +3087,15 @@ public final class MsgCrtRscOuterClass {
         bitField0_ = (bitField0_ & ~0x00000008);
         metaDisk_ = "";
         bitField0_ = (bitField0_ & ~0x00000010);
-        storPoolDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+        storPoolUuid_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000020);
         storPoolName_ = "";
         bitField0_ = (bitField0_ & ~0x00000040);
+        vlmFlags_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000080);
         if (vlmPropsBuilder_ == null) {
           vlmProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000080);
+          bitField0_ = (bitField0_ & ~0x00000100);
         } else {
           vlmPropsBuilder_.clear();
         }
@@ -3081,15 +3146,19 @@ public final class MsgCrtRscOuterClass {
         if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
           to_bitField0_ |= 0x00000020;
         }
-        result.storPoolDfnUuid_ = storPoolDfnUuid_;
+        result.storPoolUuid_ = storPoolUuid_;
         if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
           to_bitField0_ |= 0x00000040;
         }
         result.storPoolName_ = storPoolName_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        result.vlmFlags_ = vlmFlags_;
         if (vlmPropsBuilder_ == null) {
-          if (((bitField0_ & 0x00000080) == 0x00000080)) {
+          if (((bitField0_ & 0x00000100) == 0x00000100)) {
             vlmProps_ = java.util.Collections.unmodifiableList(vlmProps_);
-            bitField0_ = (bitField0_ & ~0x00000080);
+            bitField0_ = (bitField0_ & ~0x00000100);
           }
           result.vlmProps_ = vlmProps_;
         } else {
@@ -3156,19 +3225,22 @@ public final class MsgCrtRscOuterClass {
           metaDisk_ = other.metaDisk_;
           onChanged();
         }
-        if (other.hasStorPoolDfnUuid()) {
-          setStorPoolDfnUuid(other.getStorPoolDfnUuid());
+        if (other.hasStorPoolUuid()) {
+          setStorPoolUuid(other.getStorPoolUuid());
         }
         if (other.hasStorPoolName()) {
           bitField0_ |= 0x00000040;
           storPoolName_ = other.storPoolName_;
           onChanged();
         }
+        if (other.hasVlmFlags()) {
+          setVlmFlags(other.getVlmFlags());
+        }
         if (vlmPropsBuilder_ == null) {
           if (!other.vlmProps_.isEmpty()) {
             if (vlmProps_.isEmpty()) {
               vlmProps_ = other.vlmProps_;
-              bitField0_ = (bitField0_ & ~0x00000080);
+              bitField0_ = (bitField0_ & ~0x00000100);
             } else {
               ensureVlmPropsIsMutable();
               vlmProps_.addAll(other.vlmProps_);
@@ -3181,7 +3253,7 @@ public final class MsgCrtRscOuterClass {
               vlmPropsBuilder_.dispose();
               vlmPropsBuilder_ = null;
               vlmProps_ = other.vlmProps_;
-              bitField0_ = (bitField0_ & ~0x00000080);
+              bitField0_ = (bitField0_ & ~0x00000100);
               vlmPropsBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
                    getVlmPropsFieldBuilder() : null;
@@ -3582,53 +3654,53 @@ public final class MsgCrtRscOuterClass {
         return this;
       }
 
-      private com.google.protobuf.ByteString storPoolDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private com.google.protobuf.ByteString storPoolUuid_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <pre>
-       * Storage pool definition uuid
+       * Storage pool uuid
        * </pre>
        *
-       * <code>optional bytes stor_pool_dfn_uuid = 6;</code>
+       * <code>optional bytes stor_pool_uuid = 6;</code>
        */
-      public boolean hasStorPoolDfnUuid() {
+      public boolean hasStorPoolUuid() {
         return ((bitField0_ & 0x00000020) == 0x00000020);
       }
       /**
        * <pre>
-       * Storage pool definition uuid
+       * Storage pool uuid
        * </pre>
        *
-       * <code>optional bytes stor_pool_dfn_uuid = 6;</code>
+       * <code>optional bytes stor_pool_uuid = 6;</code>
        */
-      public com.google.protobuf.ByteString getStorPoolDfnUuid() {
-        return storPoolDfnUuid_;
+      public com.google.protobuf.ByteString getStorPoolUuid() {
+        return storPoolUuid_;
       }
       /**
        * <pre>
-       * Storage pool definition uuid
+       * Storage pool uuid
        * </pre>
        *
-       * <code>optional bytes stor_pool_dfn_uuid = 6;</code>
+       * <code>optional bytes stor_pool_uuid = 6;</code>
        */
-      public Builder setStorPoolDfnUuid(com.google.protobuf.ByteString value) {
+      public Builder setStorPoolUuid(com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000020;
-        storPoolDfnUuid_ = value;
+        storPoolUuid_ = value;
         onChanged();
         return this;
       }
       /**
        * <pre>
-       * Storage pool definition uuid
+       * Storage pool uuid
        * </pre>
        *
-       * <code>optional bytes stor_pool_dfn_uuid = 6;</code>
+       * <code>optional bytes stor_pool_uuid = 6;</code>
        */
-      public Builder clearStorPoolDfnUuid() {
+      public Builder clearStorPoolUuid() {
         bitField0_ = (bitField0_ & ~0x00000020);
-        storPoolDfnUuid_ = getDefaultInstance().getStorPoolDfnUuid();
+        storPoolUuid_ = getDefaultInstance().getStorPoolUuid();
         onChanged();
         return this;
       }
@@ -3739,12 +3811,60 @@ public final class MsgCrtRscOuterClass {
         return this;
       }
 
+      private long vlmFlags_ ;
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>optional sint64 vlm_flags = 8;</code>
+       */
+      public boolean hasVlmFlags() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>optional sint64 vlm_flags = 8;</code>
+       */
+      public long getVlmFlags() {
+        return vlmFlags_;
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>optional sint64 vlm_flags = 8;</code>
+       */
+      public Builder setVlmFlags(long value) {
+        bitField0_ |= 0x00000080;
+        vlmFlags_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>optional sint64 vlm_flags = 8;</code>
+       */
+      public Builder clearVlmFlags() {
+        bitField0_ = (bitField0_ & ~0x00000080);
+        vlmFlags_ = 0L;
+        onChanged();
+        return this;
+      }
+
       private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> vlmProps_ =
         java.util.Collections.emptyList();
       private void ensureVlmPropsIsMutable() {
-        if (!((bitField0_ & 0x00000080) == 0x00000080)) {
+        if (!((bitField0_ & 0x00000100) == 0x00000100)) {
           vlmProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(vlmProps_);
-          bitField0_ |= 0x00000080;
+          bitField0_ |= 0x00000100;
          }
       }
 
@@ -3756,7 +3876,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getVlmPropsList() {
         if (vlmPropsBuilder_ == null) {
@@ -3770,7 +3890,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public int getVlmPropsCount() {
         if (vlmPropsBuilder_ == null) {
@@ -3784,7 +3904,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVlmProps(int index) {
         if (vlmPropsBuilder_ == null) {
@@ -3798,7 +3918,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public Builder setVlmProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
@@ -3819,7 +3939,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public Builder setVlmProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -3837,7 +3957,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public Builder addVlmProps(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
         if (vlmPropsBuilder_ == null) {
@@ -3857,7 +3977,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public Builder addVlmProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
@@ -3878,7 +3998,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public Builder addVlmProps(
           com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -3896,7 +4016,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public Builder addVlmProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -3914,7 +4034,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public Builder addAllVlmProps(
           java.lang.Iterable<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
@@ -3933,12 +4053,12 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public Builder clearVlmProps() {
         if (vlmPropsBuilder_ == null) {
           vlmProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000080);
+          bitField0_ = (bitField0_ & ~0x00000100);
           onChanged();
         } else {
           vlmPropsBuilder_.clear();
@@ -3950,7 +4070,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public Builder removeVlmProps(int index) {
         if (vlmPropsBuilder_ == null) {
@@ -3967,7 +4087,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getVlmPropsBuilder(
           int index) {
@@ -3978,7 +4098,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVlmPropsOrBuilder(
           int index) {
@@ -3992,7 +4112,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
            getVlmPropsOrBuilderList() {
@@ -4007,7 +4127,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addVlmPropsBuilder() {
         return getVlmPropsFieldBuilder().addBuilder(
@@ -4018,7 +4138,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addVlmPropsBuilder(
           int index) {
@@ -4030,7 +4150,7 @@ public final class MsgCrtRscOuterClass {
        * Volume properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 8;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 9;</code>
        */
       public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
            getVlmPropsBuilderList() {
@@ -4043,7 +4163,7 @@ public final class MsgCrtRscOuterClass {
           vlmPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
                   vlmProps_,
-                  ((bitField0_ & 0x00000080) == 0x00000080),
+                  ((bitField0_ & 0x00000100) == 0x00000100),
                   getParentForChildren(),
                   isClean());
           vlmProps_ = null;
@@ -4124,13 +4244,13 @@ public final class MsgCrtRscOuterClass {
       "rsc_dfn_uuid\030\003 \001(\014\022\020\n\010rsc_name\030\004 \002(\t\022?\n\t" +
       "rsc_props\030\005 \003(\0132,.com.linbit.drbdmanage." +
       "proto.LinStorMapEntry\022.\n\004vlms\030\006 \003(\0132 .co" +
-      "m.linbit.drbdmanage.proto.Vlm\"\327\001\n\003Vlm\022\014\n" +
+      "m.linbit.drbdmanage.proto.Vlm\"\346\001\n\003Vlm\022\014\n" +
       "\004uuid\030\001 \001(\014\022\024\n\014vlm_dfn_uuid\030\002 \001(\014\022\016\n\006vlm" +
       "_nr\030\003 \002(\021\022\024\n\014block_device\030\004 \002(\t\022\021\n\tmeta_" +
-      "disk\030\005 \002(\t\022\032\n\022stor_pool_dfn_uuid\030\006 \001(\014\022\026",
-      "\n\016stor_pool_name\030\007 \001(\t\022?\n\tvlm_props\030\010 \003(" +
-      "\0132,.com.linbit.drbdmanage.proto.LinStorM" +
-      "apEntryP\000"
+      "disk\030\005 \002(\t\022\026\n\016stor_pool_uuid\030\006 \001(\014\022\026\n\016st",
+      "or_pool_name\030\007 \001(\t\022\021\n\tvlm_flags\030\010 \001(\022\022?\n" +
+      "\tvlm_props\030\t \003(\0132,.com.linbit.drbdmanage" +
+      ".proto.LinStorMapEntryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -4156,7 +4276,7 @@ public final class MsgCrtRscOuterClass {
     internal_static_com_linbit_drbdmanage_proto_Vlm_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_Vlm_descriptor,
-        new java.lang.String[] { "Uuid", "VlmDfnUuid", "VlmNr", "BlockDevice", "MetaDisk", "StorPoolDfnUuid", "StorPoolName", "VlmProps", });
+        new java.lang.String[] { "Uuid", "VlmDfnUuid", "VlmNr", "BlockDevice", "MetaDisk", "StorPoolUuid", "StorPoolName", "VlmFlags", "VlmProps", });
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 

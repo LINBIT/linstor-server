@@ -82,6 +82,10 @@ public class DerbyDriver implements DatabaseDriver
     private final ResourceConnectionDataDerbyDriver resourceConnectionDriver;
     private final VolumeConnectionDataDerbyDriver volumeConnectionDriver;
 
+    private Map<NodeName, Node> nodesMap;
+    private Map<ResourceName, ResourceDefinition> rscDfnMap;
+    private Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
+
     public DerbyDriver(
         AccessContext privCtx,
         ErrorReporter errorReporterRef,
@@ -90,6 +94,9 @@ public class DerbyDriver implements DatabaseDriver
         Map<StorPoolName, StorPoolDefinition> storPoolDfnMap
     )
     {
+        this.nodesMap = nodesMap;
+        this.rscDfnMap = rscDfnMap;
+        this.storPoolDfnMap = storPoolDfnMap;
         propsDriver = new PropsConDerbyDriver(errorReporterRef);
         nodeDriver = new NodeDataDerbyDriver(privCtx, errorReporterRef, nodesMap);
         resesourceDefinitionDriver = new ResourceDefinitionDataDerbyDriver(

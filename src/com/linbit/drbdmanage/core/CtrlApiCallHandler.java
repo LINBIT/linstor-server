@@ -5,12 +5,16 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.drbdmanage.Resource;
+import com.linbit.drbdmanage.StorPool;
 import com.linbit.drbdmanage.Volume;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.api.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiType;
-import com.linbit.drbdmanage.api.protobuf.controller.interfaces.ResourceDataSerializer;
+import com.linbit.drbdmanage.api.interfaces.Serializer;
 import com.linbit.drbdmanage.api.protobuf.controller.serializer.ResourceDataSerializerProto;
+import com.linbit.drbdmanage.api.protobuf.controller.serializer.StorPoolDataSerializerProto;
+import com.linbit.drbdmanage.logging.ErrorReporter;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.security.AccessContext;
 
@@ -30,11 +34,14 @@ public class CtrlApiCallHandler
     CtrlApiCallHandler(Controller controllerRef, ApiType type, AccessContext apiCtx)
     {
         controller = controllerRef;
-        ResourceDataSerializer rscSerializer;
+        ErrorReporter errorReporter = controller.getErrorReporter();
+        Serializer<Resource> rscSerializer;
+        Serializer<StorPool> storPoolSerializer;
         switch (type)
         {
             case PROTOBUF:
-                rscSerializer = new ResourceDataSerializerProto(apiCtx, controller.getErrorReporter());
+                rscSerializer = new ResourceDataSerializerProto(apiCtx, errorReporter);
+                storPoolSerializer = new StorPoolDataSerializerProto(apiCtx, errorReporter);
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
@@ -43,7 +50,7 @@ public class CtrlApiCallHandler
         rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, apiCtx);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, apiCtx);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef);
-        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef);
+        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef, storPoolSerializer, apiCtx);
         nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
         rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef);
         vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef);
@@ -492,7 +499,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public void requestResource(String rscName, UUID rscUuid, int msgId)
+    public void requestResource(String rscName, UUID rscUuid, int msgId, Peer satellite)
     {
         try
         {
@@ -500,12 +507,29 @@ public class CtrlApiCallHandler
             controller.rscDfnMapLock.readLock().lock();
             controller.storPoolDfnMapLock.readLock().lock();
 
-            rscApiCallHandler.respondResource(rscName, rscUuid, msgId);
+            rscApiCallHandler.respondResource(rscName, rscUuid, msgId, satellite);
         }
         finally
         {
             controller.nodesMapLock.readLock().unlock();
             controller.rscDfnMapLock.readLock().unlock();
+            controller.storPoolDfnMapLock.readLock().unlock();
+        }
+    }
+
+    public void requestStorPool(String storPoolName, UUID storPoolUuid, int msgId, Peer satellite)
+    {
+
+        try
+        {
+            controller.nodesMapLock.readLock().lock();
+            controller.storPoolDfnMapLock.readLock().lock();
+
+            storPoolApiCallHandler.respondStorPool(storPoolName, storPoolUuid, msgId, satellite);
+        }
+        finally
+        {
+            controller.nodesMapLock.readLock().unlock();
             controller.storPoolDfnMapLock.readLock().unlock();
         }
     }

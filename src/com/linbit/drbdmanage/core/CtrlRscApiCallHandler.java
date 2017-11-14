@@ -3,7 +3,6 @@ package com.linbit.drbdmanage.core;
 import static com.linbit.drbdmanage.api.ApiConsts.*;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,6 @@ import com.linbit.drbdmanage.PriorityProps;
 import com.linbit.drbdmanage.Resource;
 import com.linbit.drbdmanage.Resource.RscFlags;
 import com.linbit.drbdmanage.ResourceData;
-import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceDefinitionData;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.StorPool;
@@ -39,7 +37,7 @@ import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.api.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiCallRcImpl;
 import com.linbit.drbdmanage.api.ApiCallRcImpl.ApiCallRcEntry;
-import com.linbit.drbdmanage.api.protobuf.controller.interfaces.ResourceDataSerializer;
+import com.linbit.drbdmanage.api.interfaces.Serializer;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
@@ -51,17 +49,17 @@ import com.linbit.drbdmanage.security.AccessDeniedException;
 class CtrlRscApiCallHandler
 {
     private final Controller controller;
-    private final ResourceDataSerializer serializer;
+    private final Serializer<Resource> serializer;
     private final AccessContext apiCtx;
 
     CtrlRscApiCallHandler(
         Controller controllerRef,
-        ResourceDataSerializer serializerRef,
+        Serializer<Resource> rscSerializer,
         AccessContext apiCtxRef
     )
     {
         controller = controllerRef;
-        serializer = serializerRef;
+        serializer = rscSerializer;
         apiCtx = apiCtxRef;
     }
 
@@ -380,9 +378,7 @@ class CtrlRscApiCallHandler
                         apiCallRc = successApiCallRc;
                         controller.getErrorReporter().logInfo(rscSuccessMsg);
 
-                        notifyNodeRscChanged(accCtx, client, rsc);
-
-                        // TODO: tell satellite(s) to do their job
+                        notifySatellites(accCtx, rsc);
                         // TODO: if a satellite confirms creation, also log it to controller.info
                     }
                 }
@@ -794,7 +790,7 @@ class CtrlRscApiCallHandler
         return nodeId;
     }
 
-    private void notifyNodeRscChanged(AccessContext accCtx, Peer client, ResourceData rsc)
+    private void notifySatellites(AccessContext accCtx, ResourceData rsc)
     {
         try
         {
@@ -815,7 +811,7 @@ class CtrlRscApiCallHandler
         {
             controller.getErrorReporter().reportError(
                 new ImplementationError(
-                    "Default tcp connector peer has not a valid ServiceName",
+                    "Failed to contact all satellites about a resource change",
                     accDeniedExc
                 )
             );
@@ -1174,38 +1170,20 @@ class CtrlRscApiCallHandler
         return apiCallRc;
     }
 
-    public void respondResource(String rscNameStr, UUID rscUuid, int msgId)
+    public void respondResource(String rscNameStr, UUID rscUuid, int msgId, Peer satellitePeer)
     {
         try
         {
             ResourceName rscName = new ResourceName(rscNameStr);
-            ResourceDefinition rscDfn = controller.rscDfnMap.get(rscName);
-
-            Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
-            List<Resource> otherResources = new ArrayList<>();
-            Resource localResource = null;
-            while (rscIterator.hasNext())
-            {
-                Resource rsc = rscIterator.next();
-                if (rsc.getUuid().equals(rscUuid))
-                {
-                    localResource = rsc;
-                }
-                else
-                {
-                    otherResources.add(rsc);
-                }
-            }
-
+            Resource localResource = satellitePeer.getNode().getResource(apiCtx, rscName);
+            // TODO: check if the localResource has the same uuid as rscUuid
             if (localResource != null)
             {
-                byte[] data = serializer.getRscReqResponse(msgId, localResource, otherResources);
+                byte[] data = serializer.getDataMessage(msgId, localResource);
 
-                Peer peer = localResource.getAssignedNode().getPeer(apiCtx);
-
-                Message response = peer.createMessage();
+                Message response = satellitePeer.createMessage();
                 response.setData(data);
-                peer.sendMessage(response);
+                satellitePeer.sendMessage(response);
             }
             else
             {

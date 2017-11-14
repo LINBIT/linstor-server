@@ -1189,10 +1189,27 @@ public final class MsgCrtVlmDfnOuterClass {
 
     /**
      * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>optional sint64 vlm_flags = 5;</code>
+     */
+    boolean hasVlmFlags();
+    /**
+     * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>optional sint64 vlm_flags = 5;</code>
+     */
+    long getVlmFlags();
+
+    /**
+     * <pre>
      * Volume definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
      */
     java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
         getVlmPropsList();
@@ -1201,7 +1218,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
      */
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVlmProps(int index);
     /**
@@ -1209,7 +1226,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
      */
     int getVlmPropsCount();
     /**
@@ -1217,7 +1234,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
      */
     java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
         getVlmPropsOrBuilderList();
@@ -1226,7 +1243,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
      */
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVlmPropsOrBuilder(
         int index);
@@ -1251,6 +1268,7 @@ public final class MsgCrtVlmDfnOuterClass {
       vlmNr_ = 0;
       vlmSize_ = 0L;
       vlmMinor_ = 0;
+      vlmFlags_ = 0L;
       vlmProps_ = java.util.Collections.emptyList();
     }
 
@@ -1302,10 +1320,15 @@ public final class MsgCrtVlmDfnOuterClass {
               vlmMinor_ = input.readSInt32();
               break;
             }
-            case 42: {
-              if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+            case 40: {
+              bitField0_ |= 0x00000010;
+              vlmFlags_ = input.readSInt64();
+              break;
+            }
+            case 50: {
+              if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
                 vlmProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
-                mutable_bitField0_ |= 0x00000010;
+                mutable_bitField0_ |= 0x00000020;
               }
               vlmProps_.add(
                   input.readMessage(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
@@ -1319,7 +1342,7 @@ public final class MsgCrtVlmDfnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+        if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
           vlmProps_ = java.util.Collections.unmodifiableList(vlmProps_);
         }
         this.unknownFields = unknownFields.build();
@@ -1435,14 +1458,37 @@ public final class MsgCrtVlmDfnOuterClass {
       return vlmMinor_;
     }
 
-    public static final int VLM_PROPS_FIELD_NUMBER = 5;
+    public static final int VLM_FLAGS_FIELD_NUMBER = 5;
+    private long vlmFlags_;
+    /**
+     * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>optional sint64 vlm_flags = 5;</code>
+     */
+    public boolean hasVlmFlags() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>optional sint64 vlm_flags = 5;</code>
+     */
+    public long getVlmFlags() {
+      return vlmFlags_;
+    }
+
+    public static final int VLM_PROPS_FIELD_NUMBER = 6;
     private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> vlmProps_;
     /**
      * <pre>
      * Volume definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
      */
     public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getVlmPropsList() {
       return vlmProps_;
@@ -1452,7 +1498,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
      */
     public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
         getVlmPropsOrBuilderList() {
@@ -1463,7 +1509,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
      */
     public int getVlmPropsCount() {
       return vlmProps_.size();
@@ -1473,7 +1519,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
      */
     public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVlmProps(int index) {
       return vlmProps_.get(index);
@@ -1483,7 +1529,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
      */
     public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVlmPropsOrBuilder(
         int index) {
@@ -1532,8 +1578,11 @@ public final class MsgCrtVlmDfnOuterClass {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         output.writeSInt32(4, vlmMinor_);
       }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeSInt64(5, vlmFlags_);
+      }
       for (int i = 0; i < vlmProps_.size(); i++) {
-        output.writeMessage(5, vlmProps_.get(i));
+        output.writeMessage(6, vlmProps_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -1559,9 +1608,13 @@ public final class MsgCrtVlmDfnOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeSInt32Size(4, vlmMinor_);
       }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(5, vlmFlags_);
+      }
       for (int i = 0; i < vlmProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(5, vlmProps_.get(i));
+          .computeMessageSize(6, vlmProps_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -1600,6 +1653,11 @@ public final class MsgCrtVlmDfnOuterClass {
         result = result && (getVlmMinor()
             == other.getVlmMinor());
       }
+      result = result && (hasVlmFlags() == other.hasVlmFlags());
+      if (hasVlmFlags()) {
+        result = result && (getVlmFlags()
+            == other.getVlmFlags());
+      }
       result = result && getVlmPropsList()
           .equals(other.getVlmPropsList());
       result = result && unknownFields.equals(other.unknownFields);
@@ -1629,6 +1687,11 @@ public final class MsgCrtVlmDfnOuterClass {
       if (hasVlmMinor()) {
         hash = (37 * hash) + VLM_MINOR_FIELD_NUMBER;
         hash = (53 * hash) + getVlmMinor();
+      }
+      if (hasVlmFlags()) {
+        hash = (37 * hash) + VLM_FLAGS_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getVlmFlags());
       }
       if (getVlmPropsCount() > 0) {
         hash = (37 * hash) + VLM_PROPS_FIELD_NUMBER;
@@ -1765,9 +1828,11 @@ public final class MsgCrtVlmDfnOuterClass {
         bitField0_ = (bitField0_ & ~0x00000004);
         vlmMinor_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
+        vlmFlags_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000010);
         if (vlmPropsBuilder_ == null) {
           vlmProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000010);
+          bitField0_ = (bitField0_ & ~0x00000020);
         } else {
           vlmPropsBuilder_.clear();
         }
@@ -1811,10 +1876,14 @@ public final class MsgCrtVlmDfnOuterClass {
           to_bitField0_ |= 0x00000008;
         }
         result.vlmMinor_ = vlmMinor_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.vlmFlags_ = vlmFlags_;
         if (vlmPropsBuilder_ == null) {
-          if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          if (((bitField0_ & 0x00000020) == 0x00000020)) {
             vlmProps_ = java.util.Collections.unmodifiableList(vlmProps_);
-            bitField0_ = (bitField0_ & ~0x00000010);
+            bitField0_ = (bitField0_ & ~0x00000020);
           }
           result.vlmProps_ = vlmProps_;
         } else {
@@ -1874,11 +1943,14 @@ public final class MsgCrtVlmDfnOuterClass {
         if (other.hasVlmMinor()) {
           setVlmMinor(other.getVlmMinor());
         }
+        if (other.hasVlmFlags()) {
+          setVlmFlags(other.getVlmFlags());
+        }
         if (vlmPropsBuilder_ == null) {
           if (!other.vlmProps_.isEmpty()) {
             if (vlmProps_.isEmpty()) {
               vlmProps_ = other.vlmProps_;
-              bitField0_ = (bitField0_ & ~0x00000010);
+              bitField0_ = (bitField0_ & ~0x00000020);
             } else {
               ensureVlmPropsIsMutable();
               vlmProps_.addAll(other.vlmProps_);
@@ -1891,7 +1963,7 @@ public final class MsgCrtVlmDfnOuterClass {
               vlmPropsBuilder_.dispose();
               vlmPropsBuilder_ = null;
               vlmProps_ = other.vlmProps_;
-              bitField0_ = (bitField0_ & ~0x00000010);
+              bitField0_ = (bitField0_ & ~0x00000020);
               vlmPropsBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
                    getVlmPropsFieldBuilder() : null;
@@ -2145,12 +2217,60 @@ public final class MsgCrtVlmDfnOuterClass {
         return this;
       }
 
+      private long vlmFlags_ ;
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>optional sint64 vlm_flags = 5;</code>
+       */
+      public boolean hasVlmFlags() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>optional sint64 vlm_flags = 5;</code>
+       */
+      public long getVlmFlags() {
+        return vlmFlags_;
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>optional sint64 vlm_flags = 5;</code>
+       */
+      public Builder setVlmFlags(long value) {
+        bitField0_ |= 0x00000010;
+        vlmFlags_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>optional sint64 vlm_flags = 5;</code>
+       */
+      public Builder clearVlmFlags() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        vlmFlags_ = 0L;
+        onChanged();
+        return this;
+      }
+
       private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> vlmProps_ =
         java.util.Collections.emptyList();
       private void ensureVlmPropsIsMutable() {
-        if (!((bitField0_ & 0x00000010) == 0x00000010)) {
+        if (!((bitField0_ & 0x00000020) == 0x00000020)) {
           vlmProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(vlmProps_);
-          bitField0_ |= 0x00000010;
+          bitField0_ |= 0x00000020;
          }
       }
 
@@ -2162,7 +2282,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getVlmPropsList() {
         if (vlmPropsBuilder_ == null) {
@@ -2176,7 +2296,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public int getVlmPropsCount() {
         if (vlmPropsBuilder_ == null) {
@@ -2190,7 +2310,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVlmProps(int index) {
         if (vlmPropsBuilder_ == null) {
@@ -2204,7 +2324,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public Builder setVlmProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
@@ -2225,7 +2345,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public Builder setVlmProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -2243,7 +2363,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public Builder addVlmProps(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
         if (vlmPropsBuilder_ == null) {
@@ -2263,7 +2383,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public Builder addVlmProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
@@ -2284,7 +2404,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public Builder addVlmProps(
           com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -2302,7 +2422,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public Builder addVlmProps(
           int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -2320,7 +2440,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public Builder addAllVlmProps(
           java.lang.Iterable<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
@@ -2339,12 +2459,12 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public Builder clearVlmProps() {
         if (vlmPropsBuilder_ == null) {
           vlmProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000010);
+          bitField0_ = (bitField0_ & ~0x00000020);
           onChanged();
         } else {
           vlmPropsBuilder_.clear();
@@ -2356,7 +2476,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public Builder removeVlmProps(int index) {
         if (vlmPropsBuilder_ == null) {
@@ -2373,7 +2493,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getVlmPropsBuilder(
           int index) {
@@ -2384,7 +2504,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVlmPropsOrBuilder(
           int index) {
@@ -2398,7 +2518,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
            getVlmPropsOrBuilderList() {
@@ -2413,7 +2533,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addVlmPropsBuilder() {
         return getVlmPropsFieldBuilder().addBuilder(
@@ -2424,7 +2544,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addVlmPropsBuilder(
           int index) {
@@ -2436,7 +2556,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 5;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
        */
       public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
            getVlmPropsBuilderList() {
@@ -2449,7 +2569,7 @@ public final class MsgCrtVlmDfnOuterClass {
           vlmPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
                   vlmProps_,
-                  ((bitField0_ & 0x00000010) == 0x00000010),
+                  ((bitField0_ & 0x00000020) == 0x00000020),
                   getParentForChildren(),
                   isClean());
           vlmProps_ = null;
@@ -2528,10 +2648,11 @@ public final class MsgCrtVlmDfnOuterClass {
       "age.proto\032\025LinStorMapEntry.proto\"W\n\014MsgC" +
       "rtVlmDfn\022\020\n\010rsc_name\030\001 \002(\t\0225\n\010vlm_dfns\030\002" +
       " \003(\0132#.com.linbit.drbdmanage.proto.VlmDf" +
-      "n\"\214\001\n\006VlmDfn\022\014\n\004uuid\030\001 \001(\014\022\016\n\006vlm_nr\030\002 \002" +
+      "n\"\237\001\n\006VlmDfn\022\014\n\004uuid\030\001 \001(\014\022\016\n\006vlm_nr\030\002 \002" +
       "(\021\022\020\n\010vlm_size\030\003 \002(\003\022\021\n\tvlm_minor\030\004 \002(\021\022" +
-      "?\n\tvlm_props\030\005 \003(\0132,.com.linbit.drbdmana" +
-      "ge.proto.LinStorMapEntryP\000"
+      "\021\n\tvlm_flags\030\005 \001(\022\022?\n\tvlm_props\030\006 \003(\0132,." +
+      "com.linbit.drbdmanage.proto.LinStorMapEn" +
+      "tryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2557,7 +2678,7 @@ public final class MsgCrtVlmDfnOuterClass {
     internal_static_com_linbit_drbdmanage_proto_VlmDfn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_VlmDfn_descriptor,
-        new java.lang.String[] { "Uuid", "VlmNr", "VlmSize", "VlmMinor", "VlmProps", });
+        new java.lang.String[] { "Uuid", "VlmNr", "VlmSize", "VlmMinor", "VlmFlags", "VlmProps", });
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 
