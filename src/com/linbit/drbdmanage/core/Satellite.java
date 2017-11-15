@@ -75,8 +75,8 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     public static final String MODULE = "Satellite";
 
     public static final String NET_COM_DEFAULT_TYPE = "plain";
-    public static final String NET_COM_DEFAULT_ADDR = "0.0.0.0";
-    public static final String NET_COM_DEFAULT_PORT = "6996";
+    public static final String NET_COM_DEFAULT_ADDR = "::0";
+    public static final String NET_COM_DEFAULT_PORT = "3366";
 
 
     // TCP Service configuration file
