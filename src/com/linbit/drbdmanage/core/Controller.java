@@ -1396,9 +1396,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
     /**
      * Generates a random value for a DRBD resource's shared secret
      *
-     * @return
+     * @return a 20 character long random String
      */
-    private String generateSharedSecret()
+    public String generateSharedSecret()
     {
         byte[] randomBytes = new byte[DRBD_SHARED_SECRET_SIZE];
         new SecureRandom().nextBytes(randomBytes);

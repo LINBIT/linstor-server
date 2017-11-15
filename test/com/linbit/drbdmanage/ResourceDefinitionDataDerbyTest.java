@@ -87,6 +87,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             port,
             RscDfnFlags.DELETE.flagValue,
+            "secret",
             transMgr
         );
 
@@ -122,6 +123,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
+            "secret",
             transMgr,
             true,
             false
@@ -177,6 +179,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
+            "secret",
             transMgr,
             false,
             false
@@ -202,6 +205,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             null,
             null,
+            "secret",
             transMgr,
             false,
             false
@@ -222,6 +226,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             port,
             null,
+            "secret",
             transMgr,
             true,
             false
@@ -412,6 +417,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
+            "secret",
             null,
             true,
             false
@@ -438,6 +444,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
+            "secret",
             null,
             false,
             false
@@ -478,6 +485,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName2,
             port,
             null,
+            "secret",
             transMgr,
             true,
             false
@@ -497,6 +505,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(resDfn, transMgr);
 
-        ResourceDefinitionData.getInstance(sysCtx, resName, port, null, transMgr, false, true);
+        ResourceDefinitionData.getInstance(sysCtx, resName, port, null, "secret", transMgr, false, true);
     }
 }

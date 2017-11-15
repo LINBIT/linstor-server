@@ -104,6 +104,7 @@ public class CtrlApiCallHandler
         Peer client,
         String resourceName,
         int port,
+        String secret,
         Map<String, String> props,
         List<VolumeDefinition.VlmDfnApi> volDescrMap
     )
@@ -112,11 +113,16 @@ public class CtrlApiCallHandler
         try
         {
             controller.rscDfnMapLock.writeLock().lock();
+            if (secret == null || secret.trim().equals(""))
+            {
+                secret = controller.generateSharedSecret();
+            }
             apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
                 accCtx,
                 client,
                 resourceName,
                 port,
+                secret,
                 props,
                 volDescrMap
             );

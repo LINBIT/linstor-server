@@ -64,6 +64,7 @@ public class CreateResourceDefinition extends BaseProtoApiCall
             client,
             msgCreateRscDfn.getRscName(),
             msgCreateRscDfn.getRscPort(),
+            msgCreateRscDfn.getRscSecret(),
             asMap(msgCreateRscDfn.getRscPropsList()),
             vlmDfnApiList
         );

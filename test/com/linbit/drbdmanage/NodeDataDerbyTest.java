@@ -363,6 +363,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 resName,
                 resPort,
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
+                "secret",
                 transMgr,
                 true,
                 true

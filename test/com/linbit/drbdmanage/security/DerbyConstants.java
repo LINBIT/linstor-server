@@ -89,6 +89,7 @@ public interface DerbyConstants
     public static final String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
     public static final String TCP_PORT          = "TCP_PORT";
     public static final String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
+    public static final String SECRET            = "SECRET";
 
     // RESOURCES column names
     public static final String NODE_ID        = "NODE_ID";
@@ -133,7 +134,7 @@ public interface DerbyConstants
     public static final int TBL_COL_COUNT_SEC_ACL_MAP           = 3;
     public static final int TBL_COL_COUNT_NODES                 = 5;
     public static final int TBL_COL_COUNT_NODE_NET_INTERFACES   = 7;
-    public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 5;
+    public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 6;
     public static final int TBL_COL_COUNT_RESOURCES             = 5;
     public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS = 3;
     public static final int TBL_COL_COUNT_NODE_STOR_POOL        = 4;
@@ -277,6 +278,7 @@ public interface DerbyConstants
         "    RESOURCE_DSP_NAME VARCHAR(48) NOT NULL, \n" +
         "    TCP_PORT INTEGER NOT NULL, \n" +
         "    RESOURCE_FLAGS BIGINT NOT NULL, \n" +
+        "    SECRET VARCHAR(20) NOT NULL, \n" +
         "    CONSTRAINT RSC_DFN_CHKDSPNAME CHECK (UPPER(RESOURCE_DSP_NAME) = RESOURCE_NAME), \n" +
         "    CONSTRAINT RSC_DFN_PORT CHECK (TCP_PORT > 0 AND TCP_PORT < 65536) \n" +
         ")";
@@ -665,7 +667,7 @@ public interface DerbyConstants
         " VALUES (?, ?, ?, ?, ?, ?, ?)";
     public static final String INSERT_RESOURCE_DEFINITIONS =
         " INSERT INTO " + TBL_RESOURCE_DEFINITIONS +
-        " VALUES (?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?)";
     public static final String INSERT_RESOURCES =
         " INSERT INTO " + TBL_RESOURCES +
         " VALUES (?, ?, ?, ?, ?)";

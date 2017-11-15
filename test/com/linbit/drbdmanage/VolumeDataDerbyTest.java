@@ -88,6 +88,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             resName,
             resPort,
             null,
+            "secret",
             transMgr,
             true,
             false

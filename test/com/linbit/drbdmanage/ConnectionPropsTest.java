@@ -83,7 +83,7 @@ public class ConnectionPropsTest extends DerbyBase
         node1 = NodeData.getInstance(sysCtx, nodeName1, NodeType.CONTROLLER, null, transMgr, true, false);
         node2 = NodeData.getInstance(sysCtx, nodeName2, NodeType.CONTROLLER, null, transMgr, true, false);
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, "secret", transMgr, true, false);
 
         res1 = ResourceData.getInstance(sysCtx, resDfn, node1, nodeId1, null, transMgr, true, false);
         res2 = ResourceData.getInstance(sysCtx, resDfn, node2, nodeId2, null, transMgr, true, false);

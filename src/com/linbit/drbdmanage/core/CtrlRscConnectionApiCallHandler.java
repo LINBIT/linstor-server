@@ -83,7 +83,8 @@ class CtrlRscConnectionApiCallHandler
                 accCtx,
                 rscName,
                 null, // port only needed if we want to persist this entry
-                null, // rscFalgs are only needed if we want to persist this object
+                null, // rscFalgs only needed if we want to persist this object
+                null, // secret only needed if we want to persist this object
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists
@@ -560,7 +561,8 @@ class CtrlRscConnectionApiCallHandler
                 accCtx,
                 rscName,
                 null, // port only needed if we want to persist this entry
-                null, // rscFalgs are only needed if we want to persist this object
+                null, // rscFalgs only needed if we want to persist this object
+                null, // secret only needed if we want to persist this object
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists

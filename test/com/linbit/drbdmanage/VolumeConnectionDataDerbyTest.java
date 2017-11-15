@@ -95,7 +95,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
         nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, "secret", transMgr, true, false);
         volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true, false);
 
         nodeIdSrc = new NodeId(13);

@@ -44,6 +44,9 @@ public interface ResourceDefinition extends TransactionObject
     public Resource getResource(AccessContext accCtx, NodeName clNodeName)
         throws AccessDeniedException;
 
+    public String getSecret(AccessContext accCtx)
+        throws AccessDeniedException;
+
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 

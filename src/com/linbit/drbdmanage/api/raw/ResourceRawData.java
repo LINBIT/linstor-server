@@ -10,6 +10,7 @@ public class ResourceRawData
     private final UUID rscDfnUuid;
     private final int rscDfnPort;
     private final long rscDfnFlags;
+    private final String rscDfnSecret;
     private final Map<String, String> rscDfnProps;
     private final UUID localRscUuid;
     private final long localRscFlags;
@@ -24,6 +25,7 @@ public class ResourceRawData
         UUID rscDfnUuid,
         int port,
         long rscDfnFlags,
+        String rscDfnSecret,
         Map<String, String> rscDfnProps,
         UUID localRscUuid,
         long localRscFlags,
@@ -38,6 +40,7 @@ public class ResourceRawData
         this.rscDfnUuid = rscDfnUuid;
         this.rscDfnPort = port;
         this.rscDfnFlags = rscDfnFlags;
+        this.rscDfnSecret = rscDfnSecret;
         this.rscDfnProps = rscDfnProps;
         this.localRscUuid = localRscUuid;
         this.localRscFlags = localRscFlags;
@@ -66,6 +69,11 @@ public class ResourceRawData
     public long getRscDfnFlags()
     {
         return rscDfnFlags;
+    }
+
+    public String getRscDfnSecret()
+    {
+        return rscDfnSecret;
     }
 
     public Map<String, String> getRscDfnProps()

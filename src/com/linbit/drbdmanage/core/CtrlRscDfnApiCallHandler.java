@@ -49,6 +49,7 @@ class CtrlRscDfnApiCallHandler
         Peer client,
         String rscNameStr,
         int portInt,
+        String secret,
         Map<String, String> props,
         List<VlmDfnApi> volDescrMap
     )
@@ -88,6 +89,7 @@ class CtrlRscDfnApiCallHandler
                 new ResourceName(rscNameStr), // invalidNameExc1
                 new TcpPortNumber(portInt), // valOORangeExc1
                 rscDfnInitFlags,
+                secret,
                 transMgr,
                 true, // persist this entry
                 true // throw exception if the entry exists
@@ -442,6 +444,7 @@ class CtrlRscDfnApiCallHandler
                 resName,
                 null, // port only needed if we want to persist this entry
                 null, // rscFlags only needed if we want to persist this entry
+                null, // secret only needed if we want to persist this object
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists

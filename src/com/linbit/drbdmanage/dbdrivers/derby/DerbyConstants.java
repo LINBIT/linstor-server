@@ -89,6 +89,7 @@ public class DerbyConstants
     public static final String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
     public static final String TCP_PORT          = "TCP_PORT";
     public static final String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
+    public static final String SECRET            = "SECRET";
 
     // RESOURCES column names
     public static final String NODE_ID        = "NODE_ID";

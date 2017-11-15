@@ -61,7 +61,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(getConnection());
 
         node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true, false);
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, "secret", transMgr, true, false);
 
         resUuid = randomUUID();
         objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPath(nodeName, resName), true, transMgr);

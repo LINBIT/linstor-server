@@ -59,6 +59,7 @@ public class ApplyRsc extends BaseProtoApiCall
             UuidUtils.asUuid(rscData.getRscDfnUuid().toByteArray()),
             rscData.getRscDfnPort(),
             rscData.getRscDfnFlags(),
+            rscData.getRscDfnSecret(),
             asMap(rscData.getRscDfnPropsList()),
             UuidUtils.asUuid(rscData.getLocalRscUuid().toByteArray()),
             rscData.getLocalRscFlags(),

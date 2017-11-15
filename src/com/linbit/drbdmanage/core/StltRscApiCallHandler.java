@@ -66,6 +66,7 @@ public class StltRscApiCallHandler
         try
         {
             rscName = new ResourceName(rscRawData.getRscName());
+            String rscDfnSecret = rscRawData.getRscDfnSecret();
             TcpPortNumber port = new TcpPortNumber(rscRawData.getRscDfnPort());
             RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscRawData.getRscDfnFlags());
 
@@ -81,6 +82,7 @@ public class StltRscApiCallHandler
                     rscName,
                     port,
                     rscDfnFlags,
+                    rscDfnSecret,
                     transMgr
                 );
 

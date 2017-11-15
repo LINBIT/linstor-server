@@ -67,7 +67,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
 
         uuid = randomUUID();
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, "secret", transMgr, true, false);
         nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
         nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
 

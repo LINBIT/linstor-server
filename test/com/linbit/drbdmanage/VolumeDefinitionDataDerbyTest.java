@@ -56,7 +56,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         resName = new ResourceName("TestResource");
         resPort = new TcpPortNumber(9001);
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, "secret", transMgr, true, false);
 
         uuid = randomUUID();
         volNr = new VolumeNumber(13);

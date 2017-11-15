@@ -55,6 +55,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // Properties container for this resource definition
     private final Props rscDfnProps;
 
+    private final String secret;
+
     private final ResourceDefinitionDataDatabaseDriver dbDriver;
 
     private boolean deleted = false;
@@ -68,6 +70,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ResourceName resName,
         TcpPortNumber port,
         long initialFlags,
+        String secret,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -83,6 +86,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             resName,
             port,
             initialFlags,
+            secret,
             transMgr
         );
     }
@@ -96,6 +100,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ResourceName resName,
         TcpPortNumber portRef,
         long initialFlags,
+        String secretRef,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -105,6 +110,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         objId = objIdRef;
         objProt = objProtRef;
         resourceName = resName;
+        secret = secretRef;
 
         dbDriver = DrbdManage.getResourceDefinitionDataDatabaseDriver();
 
@@ -133,6 +139,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ResourceName resName,
         TcpPortNumber port,
         RscDfnFlags[] flags,
+        String secret,
         TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
@@ -156,6 +163,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                 resName,
                 port,
                 StateFlagsBits.getMask(flags),
+                secret,
                 transMgr
             );
             driver.create(resDfn, transMgr);
@@ -173,6 +181,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ResourceName rscName,
         TcpPortNumber portRef,
         RscDfnFlags[] initFlags,
+        String secret,
         SatelliteTransactionMgr transMgr
     )
         throws ImplementationError
@@ -190,6 +199,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                     rscName,
                     portRef,
                     StateFlagsBits.getMask(initFlags),
+                    secret,
                     transMgr
                 );
             }
@@ -321,6 +331,14 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     {
         checkDeleted();
         return flags;
+    }
+
+    @Override
+    public String getSecret(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return secret;
     }
 
     @Override

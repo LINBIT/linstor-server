@@ -33,20 +33,21 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private static final String RD_NAME = DerbyConstants.RESOURCE_NAME;
     private static final String RD_DSP_NAME = DerbyConstants.RESOURCE_DSP_NAME;
     private static final String RD_PORT = DerbyConstants.TCP_PORT;
+    private static final String RD_SECRET = DerbyConstants.SECRET;
     private static final String RD_FLAGS = DerbyConstants.RESOURCE_FLAGS;
 
     private static final String RD_SELECT =
         " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-                     RD_FLAGS + ", " + RD_PORT +
+                     RD_SECRET + ", " + RD_FLAGS + ", " + RD_PORT +
         " FROM " + TBL_RES_DEF +
         " WHERE " + RD_NAME + " = ?";
     private static final String RD_SELECT_ALL =
         " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-                     RD_FLAGS + ", " + RD_PORT +
+                     RD_SECRET + ", " + RD_FLAGS + ", " + RD_PORT +
         " FROM " + TBL_RES_DEF;
     private static final String RD_INSERT =
         " INSERT INTO " + TBL_RES_DEF +
-        " VALUES (?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?)";
     private static final String RD_UPDATE_FLAGS =
         " UPDATE " + TBL_RES_DEF +
         " SET " + RD_FLAGS + " = ? " +
@@ -107,6 +108,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
             stmt.setString(3, resourceDefinition.getName().displayValue);
             stmt.setInt(4, resourceDefinition.getPort(dbCtx).value);
             stmt.setLong(5, resourceDefinition.getFlags().getFlagsBits(dbCtx));
+            stmt.setString(6, resourceDefinition.getSecret(dbCtx));
             stmt.executeUpdate();
 
             errorReporter.logTrace("ResourceDefinition created %s", getDebugId(resourceDefinition));
@@ -236,6 +238,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     resourceName,
                     port,
                     resultSet.getLong(RD_FLAGS),
+                    resultSet.getString(RD_SECRET),
                     transMgr
                 );
                 // cache the resDfn BEFORE we load the conDfns
