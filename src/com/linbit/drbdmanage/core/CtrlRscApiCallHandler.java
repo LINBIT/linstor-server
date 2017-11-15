@@ -36,6 +36,7 @@ import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.api.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiCallRcImpl;
+import com.linbit.drbdmanage.api.ApiConsts;
 import com.linbit.drbdmanage.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.api.interfaces.Serializer;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
@@ -378,7 +379,7 @@ class CtrlRscApiCallHandler
                         apiCallRc = successApiCallRc;
                         controller.getErrorReporter().logInfo(rscSuccessMsg);
 
-                        notifySatellites(accCtx, rsc);
+                        notifySatellites(accCtx, rsc, apiCallRc);
                         // TODO: if a satellite confirms creation, also log it to controller.info
                     }
                 }
@@ -790,7 +791,7 @@ class CtrlRscApiCallHandler
         return nodeId;
     }
 
-    private void notifySatellites(AccessContext accCtx, ResourceData rsc)
+    private void notifySatellites(AccessContext accCtx, ResourceData rsc, ApiCallRcImpl apiCallRc)
     {
         try
         {
@@ -801,10 +802,31 @@ class CtrlRscApiCallHandler
                 Resource currentRsc = rscIterator.next();
                 Peer peer = currentRsc.getAssignedNode().getPeer(apiCtx);
 
-                Message message = peer.createMessage();
-                byte[] data = serializer.getChangedMessage(rsc);
-                message.setData(data);
-                peer.sendMessage(message);
+                if (peer.isConnected())
+                {
+                    Message message = peer.createMessage();
+                    byte[] data = serializer.getChangedMessage(currentRsc);
+                    message.setData(data);
+                    peer.sendMessage(message);
+                }
+                else
+                {
+                    ApiCallRcEntry notConnected = new ApiCallRcEntry();
+                    notConnected.setReturnCode(RC_RSC_CRT_WARN_NOT_CONNECTED);
+                    String nodeName = currentRsc.getAssignedNode().getName().displayValue;
+                    notConnected.setMessageFormat(
+                        "No active connection to satellite '" + nodeName + "'"
+                    );
+                    notConnected.setDetailsFormat(
+                        "The satellite was added and the controller tries to (re-) establish connection to it." +
+                        "The controller stored the new Resource and as soon the satellite is connected, it will " +
+                        "receive this update."
+                    );
+                    notConnected.putObjRef(ApiConsts.KEY_NODE, nodeName);
+                    notConnected.putObjRef(ApiConsts.KEY_RSC_DFN, currentRsc.getDefinition().getName().displayValue);
+                    notConnected.putVariable(ApiConsts.KEY_NODE_NAME, nodeName);
+                    apiCallRc.addEntry(notConnected);
+                }
             }
         }
         catch (AccessDeniedException accDeniedExc)
@@ -945,8 +967,8 @@ class CtrlRscApiCallHandler
                             "Resource '%s' marked to be deleted from node '%s'.",
                             rscNameStr,
                             nodeNameStr
-                            );
-                            entry.setMessageFormat(successMessage);
+                        );
+                        entry.setMessageFormat(successMessage);
                         entry.putObjRef(KEY_NODE, nodeNameStr);
                         entry.putObjRef(KEY_RSC_DFN, rscNameStr);
                         entry.putObjRef(KEY_NODE_NAME, nodeNameStr);

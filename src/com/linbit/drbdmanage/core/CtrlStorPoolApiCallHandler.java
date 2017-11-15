@@ -166,7 +166,7 @@ class CtrlStorPoolApiCallHandler
                 apiCallRc.addEntry(entry);
                 controller.getErrorReporter().logInfo(successMessage);
 
-                notifySatellite(storPool);
+                notifySatellite(storPool, apiCallRc);
             }
         }
         catch (SQLException sqlExc)
@@ -395,15 +395,33 @@ class CtrlStorPoolApiCallHandler
         return apiCallRc;
     }
 
-    private void notifySatellite(StorPoolData storPool)
+    private void notifySatellite(StorPoolData storPool, ApiCallRcImpl apiCallRc)
     {
         try
         {
             Peer satellitePeer = storPool.getNode().getPeer(apiCtx);
-            Message msg = satellitePeer.createMessage();
-            byte[] data = serializer.getChangedMessage(storPool);
-            msg.setData(data);
-            satellitePeer.sendMessage(msg);
+            if (satellitePeer.isConnected())
+            {
+                Message msg = satellitePeer.createMessage();
+                byte[] data = serializer.getChangedMessage(storPool);
+                msg.setData(data);
+                satellitePeer.sendMessage(msg);
+            }
+            else
+            {
+                ApiCallRcEntry notConnected = new ApiCallRcEntry();
+                notConnected.setReturnCode(RC_STOR_POOL_CRT_WARN_NOT_CONNECTED);
+                notConnected.setMessageFormat("No active connection to satellite '" + storPool.getNode().getName().displayValue + "'");
+                notConnected.setDetailsFormat(
+                    "The satellite was added and the controller tries to (re-) establish connection to it." +
+                    "The controller stored the new StorPool and as soon the satellite is connected, it will " +
+                    "receive this update."
+                );
+                notConnected.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPool.getName().displayValue);
+                notConnected.putObjRef(ApiConsts.KEY_NODE, storPool.getNode().getName().displayValue);
+                notConnected.putVariable(ApiConsts.KEY_NODE_NAME, storPool.getNode().getName().displayValue);
+                apiCallRc.addEntry(notConnected);
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
