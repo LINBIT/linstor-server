@@ -962,6 +962,12 @@ public class PropsContainer implements Props
     }
 
     @Override
+    public boolean hasTransMgr()
+    {
+        return transMgr != null;
+    }
+
+    @Override
     public void commit()
     {
         rootContainer.cachedPropMap.clear();

@@ -61,4 +61,9 @@ public interface TransactionObject
      * (this method is mostly used for internal purposes)
      */
     boolean isDbCacheDirty();
+
+    /**
+     * Returns true if the object has an active {@link TransactionMgr}
+     */
+    boolean hasTransMgr();
 }

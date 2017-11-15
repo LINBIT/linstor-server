@@ -114,12 +114,10 @@ public final class ObjectProtection extends BaseTransactionObject
             {
                 // satellite
                 objProt.persisted = false;
-                objProt.transMgr = null;
             }
             else
             {
                 transMgr.register(objProt);
-                objProt.transMgr = transMgr;
                 objProt.persisted = true;
             }
 

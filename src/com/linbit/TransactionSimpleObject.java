@@ -99,4 +99,10 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
     {
         return !(dbDriver instanceof NoOpObjectDatabaseDriver) && isDirty();
     }
+
+    @Override
+    public boolean hasTransMgr()
+    {
+        return transMgr != null;
+    }
 }

@@ -219,6 +219,12 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
     }
 
     @Override
+    public boolean hasTransMgr()
+    {
+        return transMgr != null;
+    }
+
+    @Override
     public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
         if (isDirty())

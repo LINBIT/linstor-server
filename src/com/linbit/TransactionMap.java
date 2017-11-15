@@ -20,6 +20,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     private Connection con;
 
     private boolean initialized = false;
+    private TransactionMgr transMgr;
 
     public TransactionMap(Map<T, U> mapRef, MapDatabaseDriver<T, U> driver)
     {
@@ -53,6 +54,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
         {
             transMgr.register(this);
             con = transMgr.dbCon;
+            this.transMgr = transMgr;
         }
         else
         {
@@ -94,6 +96,12 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     public boolean isDbCacheDirty()
     {
         return !(dbDriver instanceof NoOpMapDatabaseDriver) && isDirty();
+    }
+
+    @Override
+    public boolean hasTransMgr()
+    {
+        return transMgr != null;
     }
 
     @Override

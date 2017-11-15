@@ -194,6 +194,12 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
+    public boolean hasTransMgr()
+    {
+        return propsMap.hasTransMgr();
+    }
+
+    @Override
     public void commit()
     {
         // ignore - ReadOnlyProps cannot be changed. If the changes should be persisted,

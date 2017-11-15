@@ -37,6 +37,10 @@ public abstract class BaseTransactionObject implements TransactionObject
     @Override
     public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
+        if (transMgr != null && transMgrRef != null && transMgrRef != transMgr)
+        {
+            throw new ImplementationError("attempt to replace an active transMgr", null);
+        }
         if (isDbCacheDirty())
         {
             throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
@@ -46,11 +50,6 @@ public abstract class BaseTransactionObject implements TransactionObject
             transMgrRef.register(this);
         }
         transMgr = transMgrRef;
-
-        for (TransactionObject transObj : transObjs)
-        {
-            transObj.setConnection(transMgrRef);
-        }
     }
 
     @Override
@@ -68,6 +67,7 @@ public abstract class BaseTransactionObject implements TransactionObject
             }
             inCommit = false;
         }
+        transMgr = null;
     }
 
     @Override
@@ -108,12 +108,18 @@ public abstract class BaseTransactionObject implements TransactionObject
         boolean dirty = false;
         for (TransactionObject transObj : transObjs)
         {
-            if (transObj.isDbCacheDirty())
+            if (transObj.hasTransMgr() && transObj.isDbCacheDirty())
             {
                 dirty = true;
                 break;
             }
         }
         return dirty;
+    }
+
+    @Override
+    public boolean hasTransMgr()
+    {
+        return transMgr != null;
     }
 }
