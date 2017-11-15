@@ -3,6 +3,7 @@ package com.linbit.drbdmanage;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -99,6 +100,24 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         ((NodeData) nodeRef).addStorPool(accCtx, this);
         ((StorPoolDefinitionData)storPoolDefRef).addStorPool(accCtx, this);
     }
+
+    /*
+     * used by SatellitedummyStorPoolData ONLY
+     */
+    protected StorPoolData()
+    {
+        uuid = null;
+        storPoolDef = null;
+        storDriver = null;
+        storDriverSimpleClassName = null;
+        props = null;
+        node = null;
+        dbDriver = null;
+        volumeMap = null;
+
+        transObjs = Collections.emptyList();
+    }
+
 
     public static StorPoolData getInstance(
         AccessContext accCtx,

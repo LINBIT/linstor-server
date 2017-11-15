@@ -2,10 +2,11 @@ package com.linbit.drbdmanage.core;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -31,6 +32,7 @@ import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.TcpPortNumber;
 import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeData;
+import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
 import com.linbit.drbdmanage.api.raw.ResourceRawData;
 import com.linbit.drbdmanage.api.raw.ResourceRawData.OtherRscRawData;
@@ -69,6 +71,8 @@ public class StltRscApiCallHandler
 
             ResourceDefinitionData rscDfn = (ResourceDefinitionData) satellite.rscDfnMap.get(rscName);
 
+            Resource localRsc = null;
+            Set<Resource> otherRscs = new HashSet<>();
             if (rscDfn == null)
             {
                 rscDfn = ResourceDefinitionData.getInstanceSatellite(
@@ -84,7 +88,6 @@ public class StltRscApiCallHandler
                 rscDfnToRegister = rscDfn;
             }
             rscDfn.setConnection(transMgr);
-            // "restoring" rscDfn data (overriding whatever it had before, even if we just created it)
             rscDfn.setPort(apiCtx, port);
             Map<String, String> rscDfnProps = rscDfn.getProps(apiCtx).map();
             rscDfnProps.clear();
@@ -96,22 +99,6 @@ public class StltRscApiCallHandler
             {
                 // our rscDfn is empty
                 // that means, just create everything we need
-
-                NodeData localNode = satellite.getLocalNode();
-                NodeId localNodeId = new NodeId(rscRawData.getLocalRscNodeId());
-                RscFlags[] localRscFlags = RscFlags.restoreFlags(rscRawData.getLocalRscFlags());
-                ResourceData rsc = ResourceData.getInstanceSatellite(
-                    apiCtx,
-                    rscRawData.getLocalRscUuid(),
-                    localNode,
-                    rscDfn,
-                    localNodeId,
-                    localRscFlags,
-                    transMgr
-                );
-                rsc.getProps(apiCtx).map().putAll(rscRawData.getLocalRscProps());
-
-                Map<VolumeNumber, VolumeDefinitionData> vlmDfns = new HashMap<>();
 
                 for (VolumeDfnRawData vlmDfnRaw : rscRawData.getVlmDfns())
                 {
@@ -130,57 +117,53 @@ public class StltRscApiCallHandler
                     Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
                     vlmDfnPropsMap.clear();
                     vlmDfnPropsMap.putAll(vlmDfnRaw.getVlmDfnProps());
-
-                    vlmDfns.put(vlmNr, vlmDfn);
                 }
 
-                for (VolumeRawData vlmRaw : rscRawData.getLocalVlms())
-                {
-                    StorPool storPool = localNode.getStorPool(
-                        apiCtx,
-                        new StorPoolName(vlmRaw.getStorPoolName())
-                    );
-                    if (storPool == null)
-                    {
-                        throw new DivergentDataException("Unknown StorPool: '" + vlmRaw.getStorPoolName() + "'");
-                    }
-                    if (!storPool.getUuid().equals(vlmRaw.getStorPoolUuid()))
-                    {
-                        throw new DivergentUuidsException(
-                            "StorPool",
-                            storPool.toString(),
-                            vlmRaw.getStorPoolName(),
-                            storPool.getUuid(),
-                            vlmRaw.getStorPoolUuid()
-                        );
-                    }
+                NodeData localNode = satellite.getLocalNode();
 
-                    VolumeData vlm = VolumeData.getInstanceSatellite(
+                localRsc = createRsc(
+                    rscRawData.getLocalRscUuid(),
+                    localNode,
+                    rscDfn,
+                    new NodeId(rscRawData.getLocalRscNodeId()),
+                    RscFlags.restoreFlags(rscRawData.getLocalRscFlags()),
+                    rscRawData.getLocalRscProps(),
+                    rscRawData.getLocalVlms(),
+                    transMgr,
+                    false
+                );
+
+                for (OtherRscRawData otherRscRaw : rscRawData.getOtherRscList())
+                {
+                    NodeData remoteNode = NodeData.getInstanceSatellite(
                         apiCtx,
-                        vlmRaw.getVlmUuid(),
-                        rsc,
-                        vlmDfns.get(new VolumeNumber(vlmRaw.getVlmNr())),
-                        storPool,
-                        vlmRaw.getBlockDevice(),
-                        vlmRaw.getMetaDisk(),
-                        VlmFlags.restoreFlags(vlmRaw.getVlmFlags()),
+                        otherRscRaw.getNodeUuid(),
+                        new NodeName(otherRscRaw.getNodeName()),
+                        NodeType.getByValue(otherRscRaw.getNodeType()),
+                        NodeFlag.restoreFlags(otherRscRaw.getNodeFlags()),
                         transMgr
                     );
+                    checkUuid(remoteNode, otherRscRaw);
 
-                    checkUuid(vlm, vlmRaw, localNode.getName().displayValue, rscName.displayValue);
+                    otherRscs.add(
+                        createRsc(
+                            otherRscRaw.getRscUuid(),
+                            remoteNode,
+                            rscDfn,
+                            new NodeId(otherRscRaw.getRscNodeId()),
+                            RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
+                            otherRscRaw.getRscProps(),
+                            otherRscRaw.getVlms(),
+                            transMgr,
+                            true
+                        )
+                    );
                 }
             }
             else
             {
                 // iterator contains at least one resource.
-                // in this case, one of the resources has to be our local resource
-                // because if we had undeployed our local resource with the rscDfn's name, we should
-                // have also removed the rscDfn from satellite.rscDfnMap (as we would no longer need it)
-                // in that case the rscDfn.getInstanceSatellite would not find the rscDfn,
-                // therefore creating a new rscDfn with no resources,
-                // thus we should be on the "then" branch instead of this "else" branch.
 
-                Resource localRsc = null;
                 List<Resource> removedList = new ArrayList<>();
                 List<Resource> newResources = new ArrayList<>();
                 List<Resource> modifiedResources = new ArrayList<>();
@@ -199,11 +182,11 @@ public class StltRscApiCallHandler
                     {
                         removedList.add(rsc);
                     }
-                    rscIterator.remove();
+                    // TODO: resources will still remain in the rscDfn. maybe this will get a problem
                 }
+                // now we should have found our localRsc, and added all all other resources in removedList
+                // we will delete them from the list as we find them with matching uuid and node names
 
-                // now we should have found our localRsc, and marked all other resources for deletion
-                // we will "unmark" them as we find them with matching uuid and node names
                 if (localRsc == null)
                 {
                     throw new DivergentUuidsException(
@@ -217,7 +200,7 @@ public class StltRscApiCallHandler
                 }
                 for (OtherRscRawData otherRsc : rscRawData.getOtherRscList())
                 {
-                    Resource match = null;
+                    Resource remoteRsc = null;
                     for (Resource removed : removedList)
                     {
                         if (otherRsc.getRscUuid().equals(removed.getUuid()))
@@ -244,78 +227,79 @@ public class StltRscApiCallHandler
                                 );
                             }
 
-                            match = removed;
+                            remoteRsc = removed;
                             break;
                         }
                     }
-                    if (match == null)
+                    if (remoteRsc == null)
                     {
                         // controller sent us a resource that we don't know
                         // create its node
-                        NodeName otherNodeName = new NodeName(otherRsc.getNodeName());
-                        NodeType nodeType = NodeType.getByValue(otherRsc.getNodeType());
-                        NodeFlag[] nodeFlags = NodeFlag.restoreFlags(otherRsc.getNodeFlags());
-                        NodeData otherNode = NodeData.getInstanceSatellite(
-                            apiCtx,
-                            otherRsc.getNodeUuid(),
-                            otherNodeName,
-                            nodeType,
-                            nodeFlags,
-                            transMgr
-                        );
-                        nodesToRegister.add(otherNode);
+                        NodeName nodeName = new NodeName(otherRsc.getNodeName());
+                        NodeData remoteNode = (NodeData) satellite.nodesMap.get(nodeName);
+                        if (remoteNode == null)
+                        {
+                            remoteNode = NodeData.getInstanceSatellite(
+                                apiCtx,
+                                otherRsc.getNodeUuid(),
+                                nodeName,
+                                NodeType.getByValue(otherRsc.getNodeType()),
+                                NodeFlag.restoreFlags(otherRsc.getNodeFlags()),
+                                transMgr
+                            );
+                            nodesToRegister.add(remoteNode);
+                        }
+                        else
+                        {
+                            checkUuid(remoteNode, otherRsc);
+                        }
+                        Map<String, String> map = remoteNode.getProps(apiCtx).map();
+                        map.clear();
+                        map.putAll(otherRsc.getNodeProps());
 
-                        // as a node with that name could already exist, check the uuid
-                        checkUuid(otherNode, otherRsc);
-
-                        NodeId otherNodeId = new NodeId(otherRsc.getRscNodeId());
-                        RscFlags[] rscFlags = RscFlags.restoreFlags(otherRsc.getRscFlags());
                         // create resource
-                        match = ResourceData.getInstanceSatellite(
-                            apiCtx,
+                        remoteRsc = createRsc(
                             otherRsc.getRscUuid(),
-                            otherNode,
+                            remoteNode,
                             rscDfn,
-                            otherNodeId,
-                            rscFlags,
-                            transMgr
+                            new NodeId(otherRsc.getRscNodeId()),
+                            RscFlags.restoreFlags(otherRsc.getRscFlags()),
+                            otherRsc.getRscProps(),
+                            otherRsc.getVlms(),
+                            transMgr,
+                            true
                         );
-                        // we prior searched for a resource matching our uuid
-                        // however, it is possible that a known node already contains a resource with this name
-                        // but then, the uuids should mismatch.
-                        checkUuid(match, otherRsc, rscRawData.getRscName());
-
-                        // TODO: volumes
 
                         // everything ok, mark the resource as new
-                        newResources.add(match);
+                        newResources.add(remoteRsc);
                     }
                     else
                     {
                         // we found the resource by the uuid the controller sent us
-                        Node otherNode = match.getAssignedNode();
+                        Node remoteNode = remoteRsc.getAssignedNode();
                         // check if the node uuids also match
-                        checkUuid(otherNode, otherRsc);
+                        checkUuid(remoteNode, otherRsc);
 
                         // update node props
-                        otherNode.setConnection(transMgr);
-                        Map<String, String> otherNodeProps = otherNode.getProps(apiCtx).map();
-                        otherNodeProps.clear();
-                        otherNodeProps.putAll(otherRsc.getNodeProps());
+                        remoteNode.setConnection(transMgr);
+                        Map<String, String> remoteNodeProps = remoteNode.getProps(apiCtx).map();
+                        remoteNodeProps.clear();
+                        remoteNodeProps.putAll(otherRsc.getNodeProps());
 
                         // update matching resource props
-                        match.setConnection(transMgr);
-                        Map<String, String> otherRscProps = match.getProps(apiCtx).map();
-                        otherRscProps.clear();
-                        otherRscProps.putAll(otherRsc.getRscProps());
+                        remoteRsc.setConnection(transMgr);
+                        Map<String, String> remoteRscProps = remoteRsc.getProps(apiCtx).map();
+                        remoteRscProps.clear();
+                        remoteRscProps.putAll(otherRsc.getRscProps());
 
                         // TODO: volumes
                         List<VolumeRawData> otherRscVlms = otherRsc.getVlms();
 
                         // everything ok, mark the resource to be kept
-                        removedList.remove(match);
-                        modifiedResources.add(match);
+                        removedList.remove(remoteRsc);
+                        modifiedResources.add(remoteRsc);
                     }
+                    otherRscs.add(remoteRsc);
                 }
                 // all resources have been created or updated
 
@@ -369,6 +353,94 @@ public class StltRscApiCallHandler
                 )
             );
         }
+    }
+
+    private ResourceData createRsc(
+        UUID rscUuid,
+        NodeData node,
+        ResourceDefinitionData rscDfn,
+        NodeId nodeId,
+        RscFlags[] flags,
+        Map<String, String> rscProps,
+        List<VolumeRawData> vlms,
+        SatelliteTransactionMgr transMgr,
+        boolean remoteRsc
+    )
+        throws AccessDeniedException, ValueOutOfRangeException, InvalidNameException, DivergentDataException
+    {
+        ResourceData rsc = ResourceData.getInstanceSatellite(
+            apiCtx,
+            rscUuid,
+            node,
+            rscDfn,
+            nodeId,
+            flags,
+            transMgr
+        );
+
+        checkUuid(
+            rsc.getUuid(),
+            rscUuid,
+            "Resource",
+            rsc.toString(),
+            "Node: '" + node.getName().displayValue + "', RscName: '" + rscDfn.getName().displayValue + "'"
+        );
+        rsc.setConnection(transMgr);
+
+        Map<String, String> map = rsc.getProps(apiCtx).map();
+        map.clear();
+        map.putAll(rscProps);
+
+        for (VolumeRawData vlmRaw : vlms)
+        {
+            StorPool storPool = node.getStorPool(
+                apiCtx,
+                new StorPoolName(vlmRaw.getStorPoolName())
+            );
+            if (storPool == null)
+            {
+                if (remoteRsc)
+                {
+                    storPool = Satellite.DUMMY_REMOTE_STOR_POOL;
+                }
+                else
+                {
+                    throw new DivergentDataException("Unknown StorPool: '" + vlmRaw.getStorPoolName() + "'");
+                }
+            }
+            if (!remoteRsc && !storPool.getUuid().equals(vlmRaw.getStorPoolUuid()))
+            {
+                throw new DivergentUuidsException(
+                    "StorPool",
+                    storPool.toString(),
+                    vlmRaw.getStorPoolName(),
+                    storPool.getUuid(),
+                    vlmRaw.getStorPoolUuid()
+                );
+            }
+
+            VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(apiCtx, new VolumeNumber(vlmRaw.getVlmNr()));
+
+            VolumeData vlm = VolumeData.getInstanceSatellite(
+                apiCtx,
+                vlmRaw.getVlmUuid(),
+                rsc,
+                vlmDfn,
+                storPool,
+                vlmRaw.getBlockDevice(),
+                vlmRaw.getMetaDisk(),
+                VlmFlags.restoreFlags(vlmRaw.getVlmFlags()),
+                transMgr
+            );
+            checkUuid(
+                vlm,
+                vlmRaw,
+                node.getName().displayValue,
+                rscDfn.getName().displayValue
+            );
+        }
+
+        return rsc;
     }
 
     private void checkUuid(Node node, OtherRscRawData otherRsc)

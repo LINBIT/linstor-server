@@ -18,6 +18,7 @@ import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
 import com.linbit.drbdmanage.SatelliteCoreServices;
 import com.linbit.drbdmanage.SatelliteDbDriver;
+import com.linbit.drbdmanage.SatelliteDummyStorPoolData;
 import com.linbit.drbdmanage.SatellitePeerCtx;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolName;
@@ -93,6 +94,8 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
     public static final String NET_COM_CONF_SSL_KEYSTORE_PASS_KEY = "keystore-passwd";
     public static final String NET_COM_CONF_SSL_TRUST_PASS_KEY = "truststore-passwd";
     public static final String NET_COM_CONF_SSL_PROTOCOL_KEY = "ssl-protocol";
+
+    public static final SatelliteDummyStorPoolData DUMMY_REMOTE_STOR_POOL = new SatelliteDummyStorPoolData();
 
     // System security context
     private AccessContext sysCtx;
