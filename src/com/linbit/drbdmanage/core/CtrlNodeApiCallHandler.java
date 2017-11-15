@@ -127,9 +127,7 @@ class CtrlNodeApiCallHandler
 
                     NetInterfaceName netName = new NetInterfaceName(currentNetIfNameStr); // invalidnameExc2
                     String ipStr = netIfProps.getProp(KEY_IP_ADDR, currentNetIfNameStr);
-                    DmIpAddress addr = new DmIpAddress(
-                        ipStr
-                    );
+                    DmIpAddress addr = new DmIpAddress(ipStr);
                     portStr = netIfProps.getProp(KEY_PORT_NR, currentNetIfNameStr);
                     netComTypeStr = netIfProps.getProp(KEY_NETCOM_TYPE, currentNetIfNameStr);
                     if (portStr == null || netComTypeStr == null)

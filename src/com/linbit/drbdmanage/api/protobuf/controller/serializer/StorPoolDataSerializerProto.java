@@ -19,8 +19,8 @@ public class StorPoolDataSerializerProto extends AbsSerializerProto<StorPool>
         super(
             serializerCtx,
             errorReporter,
-            InternalApiConsts.API_STOR_POOL_CHANGED,
-            InternalApiConsts.API_STOR_POOL_DATA
+            InternalApiConsts.API_CHANGED_STOR_POOL,
+            InternalApiConsts.API_APPLY_STOR_POOL
         );
     }
 

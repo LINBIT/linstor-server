@@ -23,11 +23,11 @@ import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.utils.UuidUtils;
 
 @ProtobufApiCall
-public class RscData extends BaseProtoApiCall
+public class ApplyRsc extends BaseProtoApiCall
 {
     private Satellite satellite;
 
-    public RscData(Satellite satellite)
+    public ApplyRsc(Satellite satellite)
     {
         super(satellite.getErrorReporter());
         this.satellite = satellite;
@@ -36,7 +36,7 @@ public class RscData extends BaseProtoApiCall
     @Override
     public String getName()
     {
-        return InternalApiConsts.API_RSC_DATA;
+        return InternalApiConsts.API_APPLY_RSC;
     }
 
     @Override

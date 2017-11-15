@@ -14,7 +14,7 @@ public class RequestStorPool extends RequestObject
     {
         super(
             controller,
-            InternalApiConsts.API_STOR_POOL_REQ,
+            InternalApiConsts.API_REQUEST_STOR_POOL,
             "storpool"
         );
     }

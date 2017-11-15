@@ -14,7 +14,7 @@ public class RequestResource extends RequestObject
     {
         super(
             controller,
-            InternalApiConsts.API_RSC_REQ,
+            InternalApiConsts.API_REQUEST_RSC,
             "resource"
         );
     }

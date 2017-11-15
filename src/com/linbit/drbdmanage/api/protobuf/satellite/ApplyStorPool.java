@@ -14,11 +14,11 @@ import com.linbit.drbdmanage.proto.javainternal.MsgIntStorPoolDataOuterClass.Msg
 import com.linbit.drbdmanage.security.AccessContext;
 
 @ProtobufApiCall
-public class StorPoolData extends BaseProtoApiCall
+public class ApplyStorPool extends BaseProtoApiCall
 {
     private Satellite satellite;
 
-    public StorPoolData(Satellite satellite)
+    public ApplyStorPool(Satellite satellite)
     {
         super(satellite.getErrorReporter());
         this.satellite = satellite;
@@ -27,7 +27,7 @@ public class StorPoolData extends BaseProtoApiCall
     @Override
     public String getName()
     {
-        return InternalApiConsts.API_STOR_POOL_DATA;
+        return InternalApiConsts.API_APPLY_STOR_POOL;
     }
 
     @Override

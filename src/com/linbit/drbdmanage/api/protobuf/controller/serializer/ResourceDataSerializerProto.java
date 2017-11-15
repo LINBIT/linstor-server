@@ -31,8 +31,8 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
         super(
             serializerCtxRef,
             errorReporterRef,
-            InternalApiConsts.API_RSC_CHANGED,
-            InternalApiConsts.API_RSC_DATA
+            InternalApiConsts.API_CHANGED_RSC,
+            InternalApiConsts.API_APPLY_RSC
         );
     }
 

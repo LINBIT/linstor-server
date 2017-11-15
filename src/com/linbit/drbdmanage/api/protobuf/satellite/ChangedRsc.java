@@ -27,7 +27,7 @@ public class ChangedRsc extends BaseProtoApiCall
     @Override
     public String getName()
     {
-        return InternalApiConsts.API_RSC_CHANGED;
+        return InternalApiConsts.API_CHANGED_RSC;
     }
 
     @Override
@@ -65,7 +65,7 @@ public class ChangedRsc extends BaseProtoApiCall
             {
                 // do this when satellite has finished its current task
                 MsgHeader.newBuilder()
-                    .setApiCall(InternalApiConsts.API_RSC_REQ)
+                    .setApiCall(InternalApiConsts.API_REQUEST_RSC)
                     .setMsgId(msgId)
                     .build().writeDelimitedTo(baos);
 

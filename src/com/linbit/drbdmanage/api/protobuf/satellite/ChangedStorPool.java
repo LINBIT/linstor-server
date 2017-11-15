@@ -28,7 +28,7 @@ public class ChangedStorPool extends BaseProtoApiCall
     @Override
     public String getName()
     {
-        return InternalApiConsts.API_STOR_POOL_CHANGED;
+        return InternalApiConsts.API_CHANGED_STOR_POOL;
     }
 
     @Override
@@ -66,7 +66,7 @@ public class ChangedStorPool extends BaseProtoApiCall
             {
                 // do this when satellite has finished its current task
                 MsgHeader.newBuilder()
-                    .setApiCall(InternalApiConsts.API_STOR_POOL_REQ)
+                    .setApiCall(InternalApiConsts.API_REQUEST_STOR_POOL)
                     .setMsgId(msgId)
                     .build().writeDelimitedTo(baos);
 
