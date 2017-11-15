@@ -58,7 +58,8 @@ public interface Resource extends TransactionObject
     public enum RscFlags implements Flags
     {
         CLEAN(1L),
-        DELETE(2L);
+        DELETE(2L),
+        DISKLESS(4L);
 
         public final long flagValue;
 
