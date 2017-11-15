@@ -10,6 +10,7 @@ import com.linbit.drbdmanage.security.Privilege;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectableChannel;
 
 import java.nio.channels.SelectionKey;
@@ -136,7 +137,7 @@ public class TcpConnectorPeer implements Peer
     @Override
     public void connectionEstablished() throws SSLException
     {
-        connected = true;
+        connected = true; // TODO: only set to true when auth was successful
         pongReceived();
         synchronized (this)
         {
@@ -172,6 +173,11 @@ public class TcpConnectorPeer implements Peer
 
         synchronized (this)
         {
+            if (!connected)
+            {
+                throw new ImplementationError(new NotYetConnectedException());
+            }
+
             // Queue the message for sending
             if (msgOut == null)
             {

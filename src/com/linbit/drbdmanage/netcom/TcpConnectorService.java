@@ -716,6 +716,14 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
             {
                 // ignore, Reconnector will retry later
             }
+            else
+            {
+                coreSvcs.getErrorReporter().reportError(conExc);
+            }
+        }
+        catch (NoRouteToHostException noRouteExc)
+        {
+            // ignore, Reconnector will retry later
         }
     }
 
