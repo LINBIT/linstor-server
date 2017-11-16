@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.api.protobuf.satellite;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.InternalApiConsts;
@@ -57,7 +58,7 @@ public class ChangedRsc extends BaseProtoApiCall
 
             MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
             String rscName = rscId.getName();
-            // TODO: UUID
+            UUID rscUuid = asUuid(rscId.getUuid());
 
             // TODO: remember to request this resource later.
 
@@ -67,7 +68,8 @@ public class ChangedRsc extends BaseProtoApiCall
                 MsgHeader.newBuilder()
                     .setApiCall(InternalApiConsts.API_REQUEST_RSC)
                     .setMsgId(msgId)
-                    .build().writeDelimitedTo(baos);
+                    .build()
+                    .writeDelimitedTo(baos);
 
                 rscId.writeDelimitedTo(baos); // only as a workaround
 

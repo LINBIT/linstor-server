@@ -923,7 +923,7 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
         }
         finally
         {
-            dbConnPool.returnConnection(transMgr.dbCon);
+            dbConnPool.returnConnection(transMgr);
         }
         return config;
     }
