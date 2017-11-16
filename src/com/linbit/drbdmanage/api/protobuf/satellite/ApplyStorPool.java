@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import com.linbit.drbdmanage.InternalApiConsts;
+import com.linbit.drbdmanage.api.pojo.StorPoolPojo;
 import com.linbit.drbdmanage.api.protobuf.BaseProtoApiCall;
 import com.linbit.drbdmanage.api.protobuf.ProtobufApiCall;
-import com.linbit.drbdmanage.api.raw.StorPoolRawData;
 import com.linbit.drbdmanage.core.Satellite;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
@@ -42,7 +42,7 @@ public class ApplyStorPool extends BaseProtoApiCall
     {
         MsgIntStorPoolData storPoolData = MsgIntStorPoolData.parseDelimitedFrom(msgDataIn);
 
-        StorPoolRawData storPoolRaw = new StorPoolRawData(
+        StorPoolPojo storPoolRaw = new StorPoolPojo(
             asUuid(storPoolData.getStorPoolUuid()),
             asUuid(storPoolData.getNodeUuid()),
             storPoolData.getStorPoolName(),

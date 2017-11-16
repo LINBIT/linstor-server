@@ -1,10 +1,10 @@
-package com.linbit.drbdmanage.api.raw;
+package com.linbit.drbdmanage.api.pojo;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class ResourceRawData
+public class RscPojo
 {
     private final String rscName;
     private final UUID rscDfnUuid;
@@ -16,11 +16,11 @@ public class ResourceRawData
     private final long localRscFlags;
     private final int localRscNodeId;
     private final Map<String, String> localRscProps;
-    private final List<VolumeDfnRawData> vlmDfns;
-    private final List<VolumeRawData> localVlms;
-    private final List<OtherRscRawData> otherRscs;
+    private final List<VolumeDfnPojo> vlmDfns;
+    private final List<VolumePojo> localVlms;
+    private final List<OtherRscPojo> otherRscs;
 
-    public ResourceRawData(
+    public RscPojo(
         String rscName,
         UUID rscDfnUuid,
         int port,
@@ -31,9 +31,9 @@ public class ResourceRawData
         long localRscFlags,
         int localRscNodeId,
         Map<String, String> localRscProps,
-        List<VolumeDfnRawData> vlmDfns,
-        List<VolumeRawData> localVlms,
-        List<OtherRscRawData> otherRscList
+        List<VolumeDfnPojo> vlmDfns,
+        List<VolumePojo> localVlms,
+        List<OtherRscPojo> otherRscList
     )
     {
         this.rscName = rscName;
@@ -101,22 +101,22 @@ public class ResourceRawData
         return localRscProps;
     }
 
-    public List<VolumeDfnRawData> getVlmDfns()
+    public List<VolumeDfnPojo> getVlmDfns()
     {
         return vlmDfns;
     }
 
-    public List<VolumeRawData> getLocalVlms()
+    public List<VolumePojo> getLocalVlms()
     {
         return localVlms;
     }
 
-    public List<OtherRscRawData> getOtherRscList()
+    public List<OtherRscPojo> getOtherRscList()
     {
         return otherRscs;
     }
 
-    public static class VolumeDfnRawData
+    public static class VolumeDfnPojo
     {
         private final UUID vlmDfnUuid;
         private final int vlmNr;
@@ -125,7 +125,7 @@ public class ResourceRawData
         private final long flags;
         private final Map<String, String> vlmDfnProps;
 
-        public VolumeDfnRawData(
+        public VolumeDfnPojo(
             UUID uuid,
             int vlmNr,
             long vlmSize,
@@ -173,7 +173,7 @@ public class ResourceRawData
         }
     }
 
-    public static class VolumeRawData
+    public static class VolumePojo
     {
         private final UUID vlmUuid;
         private final int vlmNr;
@@ -184,7 +184,7 @@ public class ResourceRawData
         private final String storPoolName;
         private final Map<String, String> props;
 
-        public VolumeRawData(
+        public VolumePojo(
             UUID vlmUuid,
             int vlmNr,
             String blockDevice,
@@ -246,9 +246,8 @@ public class ResourceRawData
         }
     }
 
-    public static class OtherRscRawData
+    public static class OtherRscPojo
     {
-
         private final String nodeName;
         private final UUID nodeUuid;
         private final long nodeType;
@@ -258,9 +257,9 @@ public class ResourceRawData
         private final int rscNodeId;
         private final long rscFlags;
         private final Map<String, String> rscProps;
-        private final List<VolumeRawData> vlms;
+        private final List<VolumePojo> vlms;
 
-        public OtherRscRawData(
+        public OtherRscPojo(
             String nodeName,
             UUID nodeUuid,
             long nodeType,
@@ -270,7 +269,7 @@ public class ResourceRawData
             int rscNodeId,
             long rscFlags,
             Map<String, String> rscProps,
-            List<VolumeRawData> vlms
+            List<VolumePojo> vlms
         )
         {
             this.nodeName = nodeName;
@@ -330,7 +329,7 @@ public class ResourceRawData
             return rscProps;
         }
 
-        public List<VolumeRawData> getVlms()
+        public List<VolumePojo> getVlms()
         {
             return vlms;
         }

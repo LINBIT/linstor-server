@@ -1,9 +1,9 @@
-package com.linbit.drbdmanage.api.raw;
+package com.linbit.drbdmanage.api.pojo;
 
 import java.util.Map;
 import java.util.UUID;
 
-public class StorPoolRawData
+public class StorPoolPojo
 {
     private final UUID storPoolUuid;
     private final UUID nodeUuid;
@@ -13,7 +13,7 @@ public class StorPoolRawData
     private final Map<String, String> storPoolProps;
     private final Map<String, String> storPoolDfnProps;
 
-    public StorPoolRawData(
+    public StorPoolPojo(
         UUID storPoolUuid,
         UUID nodeUuid,
         String storPoolName,

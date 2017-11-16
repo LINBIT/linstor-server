@@ -2,8 +2,8 @@ package com.linbit.drbdmanage.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.drbdmanage.api.ApiType;
-import com.linbit.drbdmanage.api.raw.ResourceRawData;
-import com.linbit.drbdmanage.api.raw.StorPoolRawData;
+import com.linbit.drbdmanage.api.pojo.RscPojo;
+import com.linbit.drbdmanage.api.pojo.StorPoolPojo;
 import com.linbit.drbdmanage.security.AccessContext;
 
 public class StltApiCallHandler
@@ -19,7 +19,7 @@ public class StltApiCallHandler
         storPoolHandler = new StltStorPoolApiCallHandler(satellite, apiCtx);
     }
 
-    public void deployResource(ResourceRawData rscRawData)
+    public void deployResource(RscPojo rscRawData)
     {
         try
         {
@@ -37,7 +37,7 @@ public class StltApiCallHandler
         }
     }
 
-    public void deployStorPool(StorPoolRawData storPoolRaw)
+    public void deployStorPool(StorPoolPojo storPoolRaw)
     {
         try
         {

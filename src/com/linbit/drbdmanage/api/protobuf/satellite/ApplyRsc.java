@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.linbit.drbdmanage.InternalApiConsts;
+import com.linbit.drbdmanage.api.pojo.RscPojo;
+import com.linbit.drbdmanage.api.pojo.RscPojo.OtherRscPojo;
+import com.linbit.drbdmanage.api.pojo.RscPojo.VolumeDfnPojo;
+import com.linbit.drbdmanage.api.pojo.RscPojo.VolumePojo;
 import com.linbit.drbdmanage.api.protobuf.BaseProtoApiCall;
 import com.linbit.drbdmanage.api.protobuf.ProtobufApiCall;
-import com.linbit.drbdmanage.api.raw.ResourceRawData;
-import com.linbit.drbdmanage.api.raw.ResourceRawData.OtherRscRawData;
-import com.linbit.drbdmanage.api.raw.ResourceRawData.VolumeDfnRawData;
-import com.linbit.drbdmanage.api.raw.ResourceRawData.VolumeRawData;
 import com.linbit.drbdmanage.core.Satellite;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
@@ -51,10 +51,10 @@ public class ApplyRsc extends BaseProtoApiCall
     {
         MsgIntRscData rscData = MsgIntRscData.parseDelimitedFrom(msgDataIn);
 
-        List<VolumeDfnRawData> vlmDfns = extractVlmDfns(rscData.getVlmDfnsList());
-        List<VolumeRawData> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
-        List<OtherRscRawData> otherRscList = extractRawOtherRsc(rscData.getOtherResourcesList());
-        ResourceRawData rscRawData = new ResourceRawData(
+        List<VolumeDfnPojo> vlmDfns = extractVlmDfns(rscData.getVlmDfnsList());
+        List<VolumePojo> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
+        List<OtherRscPojo> otherRscList = extractRawOtherRsc(rscData.getOtherResourcesList());
+        RscPojo rscRawData = new RscPojo(
             rscData.getRscName(),
             UuidUtils.asUuid(rscData.getRscDfnUuid().toByteArray()),
             rscData.getRscDfnPort(),
@@ -72,13 +72,13 @@ public class ApplyRsc extends BaseProtoApiCall
         satellite.getApiCallHandler().deployResource(rscRawData);
     }
 
-    private List<VolumeDfnRawData> extractVlmDfns(List<VlmDfn> vlmDfnsList)
+    private List<VolumeDfnPojo> extractVlmDfns(List<VlmDfn> vlmDfnsList)
     {
-        List<VolumeDfnRawData> list = new ArrayList<>();
+        List<VolumeDfnPojo> list = new ArrayList<>();
         for (VlmDfn vlmDfn : vlmDfnsList)
         {
             list.add(
-                new VolumeDfnRawData(
+                new VolumeDfnPojo(
                     UuidUtils.asUuid(vlmDfn.getUuid().toByteArray()),
                     vlmDfn.getVlmNr(),
                     vlmDfn.getVlmSize(),
@@ -91,13 +91,13 @@ public class ApplyRsc extends BaseProtoApiCall
         return list;
     }
 
-    private List<VolumeRawData> extractRawVolumes(List<Vlm> localVolumesList)
+    private List<VolumePojo> extractRawVolumes(List<Vlm> localVolumesList)
     {
-        List<VolumeRawData> list = new ArrayList<>();
+        List<VolumePojo> list = new ArrayList<>();
         for (Vlm vol : localVolumesList)
         {
             list.add(
-                new VolumeRawData(
+                new VolumePojo(
                     UuidUtils.asUuid(vol.getUuid().toByteArray()),
                     vol.getVlmNr(),
                     vol.getBlockDevice(),
@@ -112,13 +112,13 @@ public class ApplyRsc extends BaseProtoApiCall
         return list;
     }
 
-    private List<OtherRscRawData> extractRawOtherRsc(List<MsgIntOtherRscData> otherResourcesList)
+    private List<OtherRscPojo> extractRawOtherRsc(List<MsgIntOtherRscData> otherResourcesList)
     {
-        List<OtherRscRawData> list = new ArrayList<>();
+        List<OtherRscPojo> list = new ArrayList<>();
         for (MsgIntOtherRscData otherRsc : otherResourcesList)
         {
             list.add(
-                new OtherRscRawData(
+                new OtherRscPojo(
                     otherRsc.getNodeName(),
                     UuidUtils.asUuid(otherRsc.getNodeUuid().toByteArray()),
                     otherRsc.getNodeType(),

@@ -11,7 +11,7 @@ import com.linbit.drbdmanage.StorPoolData;
 import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.StorPoolDefinitionData;
 import com.linbit.drbdmanage.StorPoolName;
-import com.linbit.drbdmanage.api.raw.StorPoolRawData;
+import com.linbit.drbdmanage.api.pojo.StorPoolPojo;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 
@@ -26,7 +26,7 @@ public class StltStorPoolApiCallHandler
         this.apiCtx = apiCtx;
     }
 
-    public void deployStorPool(StorPoolRawData storPoolRaw) throws DivergentDataException
+    public void deployStorPool(StorPoolPojo storPoolRaw) throws DivergentDataException
     {
         SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
         StorPoolName storPoolName;
@@ -98,7 +98,7 @@ public class StltStorPoolApiCallHandler
 
     }
 
-    private void checkUuid(Node node, StorPoolRawData storPoolRaw)
+    private void checkUuid(Node node, StorPoolPojo storPoolRaw)
         throws DivergentUuidsException
     {
         checkUuid(
@@ -110,7 +110,7 @@ public class StltStorPoolApiCallHandler
         );
     }
 
-    private void checkUuid(StorPool storPool, StorPoolRawData storPoolRaw)
+    private void checkUuid(StorPool storPool, StorPoolPojo storPoolRaw)
         throws DivergentUuidsException, AccessDeniedException
     {
         checkUuid(
@@ -122,7 +122,7 @@ public class StltStorPoolApiCallHandler
         );
     }
 
-    private void checkUuid(StorPoolDefinition storPoolDfn, StorPoolRawData storPoolRaw)
+    private void checkUuid(StorPoolDefinition storPoolDfn, StorPoolPojo storPoolRaw)
         throws DivergentUuidsException
     {
         checkUuid(

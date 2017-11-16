@@ -34,10 +34,10 @@ import com.linbit.drbdmanage.Volume.VlmFlags;
 import com.linbit.drbdmanage.VolumeData;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
-import com.linbit.drbdmanage.api.raw.ResourceRawData;
-import com.linbit.drbdmanage.api.raw.ResourceRawData.OtherRscRawData;
-import com.linbit.drbdmanage.api.raw.ResourceRawData.VolumeDfnRawData;
-import com.linbit.drbdmanage.api.raw.ResourceRawData.VolumeRawData;
+import com.linbit.drbdmanage.api.pojo.RscPojo;
+import com.linbit.drbdmanage.api.pojo.RscPojo.OtherRscPojo;
+import com.linbit.drbdmanage.api.pojo.RscPojo.VolumeDfnPojo;
+import com.linbit.drbdmanage.api.pojo.RscPojo.VolumePojo;
 import com.linbit.drbdmanage.VolumeDefinitionData;
 import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -54,7 +54,7 @@ public class StltRscApiCallHandler
         apiCtx = apiCtxRef;
     }
 
-    public void deployResource(ResourceRawData rscRawData)
+    public void deployResource(RscPojo rscRawData)
         throws DivergentDataException
     {
         SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
@@ -102,7 +102,7 @@ public class StltRscApiCallHandler
                 // our rscDfn is empty
                 // that means, just create everything we need
 
-                for (VolumeDfnRawData vlmDfnRaw : rscRawData.getVlmDfns())
+                for (VolumeDfnPojo vlmDfnRaw : rscRawData.getVlmDfns())
                 {
                     VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVlmNr());
                     VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstanceSatellite(
@@ -135,7 +135,7 @@ public class StltRscApiCallHandler
                     false
                 );
 
-                for (OtherRscRawData otherRscRaw : rscRawData.getOtherRscList())
+                for (OtherRscPojo otherRscRaw : rscRawData.getOtherRscList())
                 {
                     NodeData remoteNode = NodeData.getInstanceSatellite(
                         apiCtx,
@@ -200,7 +200,7 @@ public class StltRscApiCallHandler
                         )
                     );
                 }
-                for (OtherRscRawData otherRsc : rscRawData.getOtherRscList())
+                for (OtherRscPojo otherRsc : rscRawData.getOtherRscList())
                 {
                     Resource remoteRsc = null;
                     for (Resource removed : removedList)
@@ -295,7 +295,7 @@ public class StltRscApiCallHandler
                         remoteRscProps.putAll(otherRsc.getRscProps());
 
                         // TODO: volumes
-                        List<VolumeRawData> otherRscVlms = otherRsc.getVlms();
+                        List<VolumePojo> otherRscVlms = otherRsc.getVlms();
 
                         // everything ok, mark the resource to be kept
                         removedList.remove(remoteRsc);
@@ -364,7 +364,7 @@ public class StltRscApiCallHandler
         NodeId nodeId,
         RscFlags[] flags,
         Map<String, String> rscProps,
-        List<VolumeRawData> vlms,
+        List<VolumePojo> vlms,
         SatelliteTransactionMgr transMgr,
         boolean remoteRsc
     )
@@ -393,7 +393,7 @@ public class StltRscApiCallHandler
         map.clear();
         map.putAll(rscProps);
 
-        for (VolumeRawData vlmRaw : vlms)
+        for (VolumePojo vlmRaw : vlms)
         {
             StorPool storPool = node.getStorPool(
                 apiCtx,
@@ -445,7 +445,7 @@ public class StltRscApiCallHandler
         return rsc;
     }
 
-    private void checkUuid(Node node, OtherRscRawData otherRsc)
+    private void checkUuid(Node node, OtherRscPojo otherRsc)
         throws DivergentUuidsException
     {
         checkUuid(
@@ -457,7 +457,7 @@ public class StltRscApiCallHandler
         );
     }
 
-    private void checkUuid(ResourceDefinition rscDfn, ResourceRawData rscRawData)
+    private void checkUuid(ResourceDefinition rscDfn, RscPojo rscRawData)
         throws DivergentUuidsException
     {
         checkUuid(
@@ -469,7 +469,7 @@ public class StltRscApiCallHandler
         );
     }
 
-    private void checkUuid(Resource rsc, OtherRscRawData otherRsc, String otherRscName)
+    private void checkUuid(Resource rsc, OtherRscPojo otherRsc, String otherRscName)
         throws DivergentUuidsException
     {
         checkUuid(
@@ -489,7 +489,7 @@ public class StltRscApiCallHandler
 
     private void checkUuid(
         VolumeDefinitionData vlmDfn,
-        VolumeDfnRawData vlmDfnRaw,
+        VolumeDfnPojo vlmDfnRaw,
         String remoteRscName
     )
         throws DivergentUuidsException
@@ -509,7 +509,7 @@ public class StltRscApiCallHandler
 
     private void checkUuid(
         VolumeData vlm,
-        VolumeRawData vlmRaw,
+        VolumePojo vlmRaw,
         String remoteNodeName,
         String remoteRscName
     )
