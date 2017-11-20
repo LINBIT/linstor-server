@@ -26,10 +26,6 @@ public class AsyncOps
         try
         {
             syncPoint.await();
-            if (syncPoint.getCount() > 0)
-            {
-                timeout();
-            }
         }
         catch (InterruptedException intrExc)
         {
@@ -48,8 +44,7 @@ public class AsyncOps
     {
         try
         {
-            syncPoint.await(timeout, TimeUnit.MILLISECONDS);
-            if (syncPoint.getCount() > 0)
+            if (!syncPoint.await(timeout, TimeUnit.MILLISECONDS))
             {
                 timeout();
             }
