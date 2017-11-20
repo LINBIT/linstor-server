@@ -35,21 +35,28 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     private static final String RES_FLAGS = DerbyConstants.RESOURCE_FLAGS;
 
     private static final String RES_SELECT =
-        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " + RES_NODE_ID + ", " + RES_FLAGS +
+        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " +
+                     RES_NODE_ID + ", " + RES_FLAGS +
         " FROM " + TBL_RES +
         " WHERE " + RES_NODE_NAME + " = ? AND " +
         RES_NAME      + " = ?";
     private static final String RES_SELECT_BY_NODE =
-        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " + RES_NODE_ID + ", " + RES_FLAGS +
+        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " +
+                     RES_NODE_ID + ", " + RES_FLAGS +
         " FROM " + TBL_RES +
         " WHERE " + RES_NODE_NAME + " = ?";
     private static final String RES_SELECT_BY_RES_DFN =
-        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " + RES_NODE_ID + ", " + RES_FLAGS +
+        " SELECT " + RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " +
+                     RES_NODE_ID + ", " + RES_FLAGS +
         " FROM " + TBL_RES +
         " WHERE " + RES_NAME + " = ?";
 
     private static final String RES_INSERT =
-        " INSERT INTO " + TBL_RES + " VALUES (?, ?, ?, ?, ?)";
+        " INSERT INTO " + TBL_RES +
+        " (" +
+            RES_UUID + ", " + RES_NODE_NAME + ", " + RES_NAME + ", " +
+            RES_NODE_ID + ", " + RES_FLAGS +
+        ") VALUES (?, ?, ?, ?, ?)";
     private static final String RES_DELETE =
         " DELETE FROM " + TBL_RES +
         " WHERE " + RES_NODE_NAME + " = ? AND " +

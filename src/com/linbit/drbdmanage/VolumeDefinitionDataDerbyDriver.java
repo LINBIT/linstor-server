@@ -6,7 +6,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.linbit.ImplementationError;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
@@ -43,7 +42,10 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         " WHERE " + VD_RES_NAME  + " = ?";
     private static final String VD_INSERT =
         " INSERT INTO " + TBL_VOL_DFN +
-        " VALUES (?, ?, ?, ?, ?, ?)";
+        " (" +
+            VD_UUID + ", " + VD_RES_NAME + ", " + VD_ID + ", " +
+            VD_SIZE + ", " + VD_MINOR_NR  + ", " +  VD_FLAGS +
+        ") VALUES (?, ?, ?, ?, ?, ?)";
     private static final String VD_UPDATE_FLAGS =
         " UPDATE " + TBL_VOL_DFN +
         " SET " + VD_FLAGS + " = ? " +

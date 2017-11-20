@@ -47,6 +47,8 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         " FROM " + TBL_RES_DEF;
     private static final String RD_INSERT =
         " INSERT INTO " + TBL_RES_DEF +
+        " (" + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
+               RD_SECRET + ", " + RD_FLAGS + ", " + RD_PORT + ")" +
         " VALUES (?, ?, ?, ?, ?, ?)";
     private static final String RD_UPDATE_FLAGS =
         " UPDATE " + TBL_RES_DEF +
@@ -106,9 +108,9 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
             stmt.setBytes(1, UuidUtils.asByteArray(resourceDefinition.getUuid()));
             stmt.setString(2, resourceDefinition.getName().value);
             stmt.setString(3, resourceDefinition.getName().displayValue);
-            stmt.setInt(4, resourceDefinition.getPort(dbCtx).value);
+            stmt.setString(4, resourceDefinition.getSecret(dbCtx));
             stmt.setLong(5, resourceDefinition.getFlags().getFlagsBits(dbCtx));
-            stmt.setString(6, resourceDefinition.getSecret(dbCtx));
+            stmt.setInt(6, resourceDefinition.getPort(dbCtx).value);
             stmt.executeUpdate();
 
             errorReporter.logTrace("ResourceDefinition created %s", getDebugId(resourceDefinition));

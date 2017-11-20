@@ -36,6 +36,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
 
     private static final String INSERT =
         " INSERT INTO " + TBL_NODE_CON_DFN +
+        " (" + UUID + ", " + NODE_SRC + ", " + NODE_DST  + ")" +
         " VALUES (?, ?, ?)";
     private static final String DELETE =
         " DELETE FROM " + TBL_NODE_CON_DFN +

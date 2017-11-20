@@ -47,7 +47,10 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
     private static final String NNI_INSERT =
         " INSERT INTO " + TBL_NODE_NET +
-        " VALUES (?, ?, ?, ?, ?, ?, ?)";
+        " (" +
+            NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
+            INET_ADDRESS + ", " + INET_PORT + ", " + INET_TYPE +
+        ") VALUES (?, ?, ?, ?, ?, ?, ?)";
     private static final String NNI_DELETE =
         " DELETE FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ? AND " +

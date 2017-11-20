@@ -26,24 +26,25 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
 {
     private static final String TBL_NSP = DerbyConstants.TBL_NODE_STOR_POOL;
 
-    private static final String NSP_UUID = DerbyConstants.UUID;
-    private static final String NSP_NODE = DerbyConstants.NODE_NAME;
-    private static final String NSP_POOL = DerbyConstants.POOL_NAME;
-    private static final String NSP_DRIVER = DerbyConstants.DRIVER_NAME;
+    private static final String SP_UUID = DerbyConstants.UUID;
+    private static final String SP_NODE = DerbyConstants.NODE_NAME;
+    private static final String SP_POOL = DerbyConstants.POOL_NAME;
+    private static final String SP_DRIVER = DerbyConstants.DRIVER_NAME;
 
-    private static final String NSP_SELECT_BY_NODE =
-        " SElECT " + NSP_UUID + ", " + NSP_NODE + ", " + NSP_POOL + ", " + NSP_DRIVER +
+    private static final String SP_SELECT_BY_NODE =
+        " SElECT " + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER +
         " FROM " + TBL_NSP +
-        " WHERE " + NSP_NODE + " = ?";
-    private static final String NSP_SELECT = NSP_SELECT_BY_NODE +
-        " AND "  + NSP_POOL + " = ?";
-    private static final String NSP_INSERT =
+        " WHERE " + SP_NODE + " = ?";
+    private static final String SP_SELECT = SP_SELECT_BY_NODE +
+        " AND "  + SP_POOL + " = ?";
+    private static final String SP_INSERT =
         " INSERT INTO " + TBL_NSP +
+        " (" + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER + ")" +
         " VALUES (?, ?, ?, ?)";
-    private static final String NSP_DELETE =
+    private static final String SP_DELETE =
         " DELETE FROM " + TBL_NSP +
-        " WHERE " + NSP_NODE + " = ? AND " +
-        "       " + NSP_POOL + " = ?";
+        " WHERE " + SP_NODE + " = ? AND " +
+        "       " + SP_POOL + " = ?";
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -69,7 +70,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     public void create(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
     {
         errorReporter.logTrace("Creating StorPool %s", getTraceId(storPoolData));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_INSERT))
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(storPoolData.getUuid()));
             stmt.setString(2, storPoolData.getNode().getName().value);
@@ -93,7 +94,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         StorPoolData sp = cacheGet(node, storPoolDfn);
         if (sp == null)
         {
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT))
+            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT))
             {
                 stmt.setString(1, node.getName().value);
                 stmt.setString(2, storPoolDfn.getName().value);
@@ -138,7 +139,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     {
         errorReporter.logTrace("Loading all StorPools for Node (NodeName=%s)", node.getName().value);
         List<StorPoolData> storPoolList = new ArrayList<>();
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT_BY_NODE))
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT_BY_NODE))
         {
             stmt.setString(1, node.getName().value);
 
@@ -169,7 +170,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             StorPoolName storPoolName;
             try
             {
-                storPoolName = new StorPoolName(resultSet.getString(NSP_POOL));
+                storPoolName = new StorPoolName(resultSet.getString(SP_POOL));
             }
             catch (InvalidNameException invalidNameExc)
             {
@@ -178,8 +179,8 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                         "A StorPoolName of a stored StorPool in the table %s could not be restored. " +
                             "(NodeName=%s, invalid StorPoolName=%s)",
                         TBL_NSP,
-                        resultSet.getString(NSP_NODE),
-                        resultSet.getString(NSP_POOL)
+                        resultSet.getString(SP_NODE),
+                        resultSet.getString(SP_POOL)
                     ),
                     invalidNameExc
                 );
@@ -195,7 +196,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 NodeName nodeName;
                 try
                 {
-                    nodeName = new NodeName(resultSet.getString(NSP_NODE));
+                    nodeName = new NodeName(resultSet.getString(SP_NODE));
                 }
                 catch (InvalidNameException invalidNameExc)
                 {
@@ -204,8 +205,8 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                             "A NodeName of a stored StorPool in the table %s could not be restored. " +
                                 "(invalid NodeName=%s, StorPoolName=%s)",
                             TBL_NSP,
-                            resultSet.getString(NSP_NODE),
-                            resultSet.getString(NSP_POOL)
+                            resultSet.getString(SP_NODE),
+                            resultSet.getString(SP_POOL)
                         ),
                         invalidNameExc
                     );
@@ -226,12 +227,12 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 try
                 {
                     storPoolData = new StorPoolData(
-                        UuidUtils.asUuid(resultSet.getBytes(NSP_UUID)),
+                        UuidUtils.asUuid(resultSet.getBytes(SP_UUID)),
                         dbCtx,
                         node,
                         storPoolDef,
                         null, // controller should not have an instance of storage driver.
-                        resultSet.getString(NSP_DRIVER),
+                        resultSet.getString(SP_DRIVER),
                         transMgr
                     );
                 }
@@ -287,7 +288,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     public void delete(StorPoolData storPool, TransactionMgr transMgr) throws SQLException
     {
         errorReporter.logTrace("Deleting StorPool %s", getTraceId(storPool));
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_DELETE))
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_DELETE))
         {
             Node node = storPool.getNode();
             StorPoolDefinition storPoolDfn = storPool.getDefinition(dbCtx);
@@ -310,7 +311,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         errorReporter.logTrace("Ensuring StorPool exists %s", getTraceId(storPoolData));
         Node node = storPoolData.getNode();
         StorPoolDefinition storPoolDfn;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NSP_SELECT);)
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT);)
         {
             storPoolDfn = storPoolData.getDefinition(dbCtx);
 

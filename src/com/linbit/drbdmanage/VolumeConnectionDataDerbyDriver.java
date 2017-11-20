@@ -50,7 +50,10 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
 
     private static final String INSERT =
         " INSERT INTO " + TBL_VOL_CON_DFN +
-        " VALUES (?, ?, ?, ?, ?)";
+        " (" +
+            UUID + ", " + NODE_SRC + ", " + NODE_DST + ", " +
+            RES_NAME + ", " + VOL_NR +
+        ") VALUES (?, ?, ?, ?, ?)";
 
     private static final String DELETE =
         " DELETE FROM " + TBL_VOL_CON_DFN+

@@ -36,6 +36,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         " FROM " + TBL_SPD;
     private static final String SPD_INSERT =
         " INSERT INTO " + TBL_SPD +
+        " (" + SPD_UUID + ", " + SPD_NAME + ", " + SPD_DSP_NAME + ")" +
         " VALUES (?, ?, ?)";
     private static final String SPD_DELETE =
         " DELETE FROM " + TBL_SPD +

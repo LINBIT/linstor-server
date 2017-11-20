@@ -32,13 +32,10 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
     // ObjectProtection SQL statements
     private static final String OP_INSERT =
         " INSERT INTO " + TBL_OP +
-        " VALUES (?, ?, ?, ?)";
-    private static final String OP_UPDATE =
-        " UPDATE " + TBL_OP +
-        " SET " + OP_CREATOR       + " = ?, " +
-        "     " + OP_OWNER         + " = ?, " +
-        "     " + OP_SEC_TYPE_NAME + " = ? " +
-        " WHERE " + OP_OBJECT_PATH + " = ?";
+        " (" +
+            OP_OBJECT_PATH + ", " + OP_CREATOR + ", " +
+            OP_OWNER + ", " + OP_SEC_TYPE_NAME +
+        ") VALUES (?, ?, ?, ?)";
     private static final String OP_UPDATE_IDENTITY =
         " UPDATE " + TBL_OP +
         " SET " + OP_CREATOR +       " = ? " +
@@ -67,6 +64,7 @@ public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriv
         "     OP." + OP_OBJECT_PATH + " = ?";
     private static final String ACL_INSERT =
         " INSERT INTO " + TBL_ACL +
+        " (" + ACL_OBJECT_PATH + ", " + ACL_ROLE_NAME + ", " + ACL_ACCESS_TYPE + ")" +
         " VALUES (?, ?, ?)";
     private static final String ACL_UPDATE =
         " UPDATE " + TBL_ACL +

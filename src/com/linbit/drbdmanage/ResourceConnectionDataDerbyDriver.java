@@ -42,6 +42,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
 
     private static final String INSERT =
         " INSERT INTO " + TBL_RES_CON_DFN +
+        " (" + UUID + ", " + RES_NAME + ", " + NODE_SRC + ", " + NODE_DST + ")"+
         " VALUES (?, ?, ?, ?)";
     private static final String DELETE =
         " DELETE FROM " + TBL_RES_CON_DFN +
@@ -254,9 +255,9 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             ResourceName resName = conDfnData.getSourceResource(dbCtx).getDefinition().getName();
 
             stmt.setBytes(1, UuidUtils.asByteArray(conDfnData.getUuid()));
-            stmt.setString(2, sourceNodeName.value);
-            stmt.setString(3, targetNodeName.value);
-            stmt.setString(4, resName.value);
+            stmt.setString(2, resName.value);
+            stmt.setString(3, sourceNodeName.value);
+            stmt.setString(4, targetNodeName.value);
 
             stmt.executeUpdate();
 

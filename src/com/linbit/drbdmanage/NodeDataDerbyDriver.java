@@ -44,7 +44,10 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         " FROM " + TBL_NODE;
     private static final String NODE_INSERT =
         " INSERT INTO " + TBL_NODE +
-        " VALUES (?, ?, ?, ?, ?)";
+        " (" +
+            NODE_UUID + ", " + NODE_NAME + ", " + NODE_DSP_NAME + ", " +
+            NODE_FLAGS + ", " + NODE_TYPE +
+        ") VALUES (?, ?, ?, ?, ?)";
     private static final String NODE_UPDATE_FLAGS =
         " UPDATE " + TBL_NODE +
         " SET "   + NODE_FLAGS + " = ? " +

@@ -56,7 +56,11 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     VOL_STOR_POOL + " = ?";
     private static final String INSERT =
         " INSERT INTO " + TBL_VOL +
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        " ("+
+            VOL_UUID + ", " + VOL_NODE_NAME + ", " + VOL_RES_NAME + ", " +
+            VOL_ID + ", " + VOL_STOR_POOL + ", " + VOL_BLOCK_DEVICE + ", " +
+            VOL_META_DISK + ", " + VOL_FLAGS +
+        ") VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String UPDATE_FLAGS =
         " UPDATE " + TBL_VOL +
         " SET " + VOL_FLAGS + " = ? " +
