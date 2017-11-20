@@ -196,8 +196,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
     public static ResourceData getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
-        NodeData node,
-        ResourceDefinitionData rscDfn,
+        Node node,
+        ResourceDefinition rscDfn,
         NodeId nodeId,
         RscFlags[] initFlags,
         SatelliteTransactionMgr transMgr

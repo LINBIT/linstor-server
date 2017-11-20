@@ -35,7 +35,7 @@ public class StltStorPoolApiCallHandler
 
         try
         {
-            // TODO: uncomment the following line once the localNode gets requested from the controller
+            // TODO: uncomment the next line once the localNode gets requested from the controller
 //            checkUuid(satellite.localNode, storPoolRaw);
 
             storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
@@ -74,6 +74,10 @@ public class StltStorPoolApiCallHandler
                 if (storPoolDfnToRegister != null)
                 {
                     satellite.storPoolDfnMap.put(storPoolName, storPoolDfnToRegister);
+                    satellite.getErrorReporter().logInfo(
+                        "Storage pool '%s' successfully created.",
+                        storPoolName.displayValue
+                    );
                 }
             }
         }

@@ -52,8 +52,6 @@ public class ConfFile implements Comparator<Resource>
 
         // TODO: print options properties
 
-        // TODO: print disk properties
-
         if (localRsc.getStateFlags().isSet(accCtx, RscFlags.DISKLESS))
         {
             clients.add(localRsc);
@@ -206,6 +204,7 @@ public class ConfFile implements Comparator<Resource>
         conf.append("        volume %s\n", vlm.getVolumeDefinition().getVolumeNumber().value);
         conf.append("        {\n");
         conf.append("            disk        %s;\n", disk);
+        // TODO: print disk properties
         conf.append("            meta-disk   %s;\n", metaDisk);
         conf.append("            device      minor %d;\n",
             vlm.getVolumeDefinition().getMinorNr(accCtx).value

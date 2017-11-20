@@ -171,7 +171,6 @@ public class StltRscApiCallHandler
                 List<Resource> modifiedResources = new ArrayList<>();
                 List<Node> nodesToRemove = new ArrayList<>();
 
-
                 // first we split the existing resources into our local resource and a list of others
                 while (rscIterator.hasNext())
                 {
@@ -325,6 +324,11 @@ public class StltRscApiCallHandler
                 satellite.nodesMap.put(node.getName(), node);
             }
             transMgr.commit();
+
+            satellite.getErrorReporter().logInfo(
+                "Resource '%s' successfully created",
+                rscName.displayValue
+            );
 
             // TODO: deploy to drbd
         }

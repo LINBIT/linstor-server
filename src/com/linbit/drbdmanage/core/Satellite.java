@@ -76,7 +76,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
 
     public static final String NET_COM_DEFAULT_TYPE = "plain";
     public static final String NET_COM_DEFAULT_ADDR = "::0";
-    public static final String NET_COM_DEFAULT_PORT = "3366";
+    public static final int NET_COM_DEFAULT_PORT = 3366;
 
 
     // TCP Service configuration file
@@ -514,7 +514,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             );
             String portProp = netComProps.getProperty(
                 NET_COM_CONF_PORT_KEY,
-                NET_COM_DEFAULT_PORT
+                Integer.toString(NET_COM_DEFAULT_PORT)
             );
             int port = Integer.parseInt(portProp);
             SocketAddress bindAddress = new InetSocketAddress(addr, port);
