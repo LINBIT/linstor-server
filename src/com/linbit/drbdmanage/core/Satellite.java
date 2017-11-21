@@ -317,7 +317,7 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
             {
                 errorLogRef.reportError(
                     new ImplementationError(
-                        "The initialization security context does not have all privileges. " +
+                        "The initialization security context does not have all required privileges. " +
                         "Initialization failed.",
                         accessExc
                     )
@@ -636,9 +636,9 @@ public final class Satellite extends DrbdManage implements Runnable, SatelliteCo
                     netComSvc.start();
                     getErrorReporter().logInfo(
                         String.format(
-                            "%s started on port %d",
+                            "%s started on port %s:%d",
                             netComSvc.getInstanceName().displayValue,
-                            port
+                            addr, port
                         )
                     );
                 }
