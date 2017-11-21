@@ -110,6 +110,23 @@ public final class Identity implements Comparable<Identity>
         return result;
     }
 
+    public static int getIdentityCount()
+    {
+        Lock readLock = GLOBAL_IDENTITY_MAP_LOCK.readLock();
+
+        int count = 0;
+        try
+        {
+            readLock.lock();
+            count = GLOBAL_IDENTITY_MAP.size();
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+        return count;
+    }
+
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
         throws SQLException, InvalidNameException
     {

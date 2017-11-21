@@ -114,6 +114,23 @@ public final class Role implements Comparable<Role>
         return result;
     }
 
+    public static int getRoleCount()
+    {
+        int count = 0;
+
+        Lock readLock = GLOBAL_ROLE_MAP_LOCK.readLock();
+        try
+        {
+            readLock.lock();
+            count = GLOBAL_ROLE_MAP.size();
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+        return count;
+    }
+
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
         throws SQLException, InvalidNameException
     {

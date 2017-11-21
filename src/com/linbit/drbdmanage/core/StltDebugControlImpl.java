@@ -10,6 +10,8 @@ import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.StorPoolDefinition;
+import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.api.ApiCall;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.propscon.Props;
@@ -122,6 +124,12 @@ class StltDebugControlImpl implements StltDebugControl
     {
         return satellite.rscDfnMap;
     }
+    
+    @Override
+    public Map<StorPoolName, StorPoolDefinition> getStorPoolDfnMap()
+    {
+        return satellite.storPoolDfnMap;
+    }
 
     @Override
     public Props getConf()
@@ -183,6 +191,12 @@ class StltDebugControlImpl implements StltDebugControl
 
     @Override
     public ObjectProtection getRscDfnMapProt()
+    {
+        return null;
+    }
+
+    @Override
+    public ObjectProtection getStorPoolDfnMapProt()
     {
         return null;
     }

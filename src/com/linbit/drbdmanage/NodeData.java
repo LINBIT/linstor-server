@@ -340,6 +340,12 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
+    public int getResourceCount()
+    {
+        return resourceMap.size();
+    }
+
+    @Override
     public Iterator<Resource> iterateResources(AccessContext accCtx)
         throws AccessDeniedException
     {
@@ -410,6 +416,12 @@ public class NodeData extends BaseTransactionObject implements Node
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         storPoolMap.remove(pool.getName());
+    }
+
+    @Override
+    public int getStorPoolCount()
+    {
+        return storPoolMap.size();
     }
 
     @Override

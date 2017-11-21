@@ -47,8 +47,12 @@ public interface Node extends TransactionObject
     public void removeNodeConnection(AccessContext accCtx, NodeConnection nodeConnection)
         throws AccessDeniedException;
 
+    public int getResourceCount();
+
     public Iterator<Resource> iterateResources(AccessContext accCtx)
         throws AccessDeniedException;
+
+    public int getStorPoolCount();
 
     public StorPool getStorPool(AccessContext accCtx, StorPoolName poolName)
         throws AccessDeniedException;

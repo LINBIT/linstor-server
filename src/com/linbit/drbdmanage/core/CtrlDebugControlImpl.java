@@ -10,6 +10,8 @@ import com.linbit.drbdmanage.Node;
 import com.linbit.drbdmanage.NodeName;
 import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.ResourceName;
+import com.linbit.drbdmanage.StorPoolDefinition;
+import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.api.ApiCall;
 import com.linbit.drbdmanage.dbcp.DbConnectionPool;
 import com.linbit.drbdmanage.netcom.Peer;
@@ -124,6 +126,12 @@ class CtrlDebugControlImpl implements CtrlDebugControl
     }
 
     @Override
+    public Map<StorPoolName, StorPoolDefinition> getStorPoolDfnMap()
+    {
+        return controller.storPoolDfnMap;
+    }
+
+    @Override
     public Props getConf()
     {
         return controller.ctrlConf;
@@ -187,6 +195,12 @@ class CtrlDebugControlImpl implements CtrlDebugControl
     public ObjectProtection getRscDfnMapProt()
     {
         return controller.rscDfnMapProt;
+    }
+
+    @Override
+    public ObjectProtection getStorPoolDfnMapProt()
+    {
+        return controller.storPoolDfnMapProt;
     }
 
     @Override

@@ -32,6 +32,8 @@ public interface CommonDebugControl
     ObjectProtection getNodesMapProt();
     Map<ResourceName, ResourceDefinition> getRscDfnMap();
     ObjectProtection getRscDfnMapProt();
+    Map<StorPoolName, StorPoolDefinition> getStorPoolDfnMap();
+    ObjectProtection getStorPoolDfnMapProt();
     Props getConf();
     ObjectProtection getConfProt();
     ReadWriteLock getReconfigurationLock();

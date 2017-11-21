@@ -272,6 +272,12 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public int getResourceCount()
+    {
+        return resourceMap.size();
+    }
+
+    @Override
     public Iterator<Resource> iterateResource(AccessContext accCtx)
         throws AccessDeniedException
     {

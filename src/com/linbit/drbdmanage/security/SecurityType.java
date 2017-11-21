@@ -116,6 +116,41 @@ public final class SecurityType implements Comparable<SecurityType>
         return result;
     }
 
+    public static int getTypeCount()
+    {
+        int count = 0;
+        Lock readLock = GLOBAL_TYPE_MAP_LOCK.readLock();
+        try
+        {
+            readLock.lock();
+            count = GLOBAL_TYPE_MAP.size();
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+        return count;
+    }
+
+    public static long getRuleCount()
+    {
+        long count = 0;
+        Lock readLock = GLOBAL_TYPE_MAP_LOCK.readLock();
+        try
+        {
+            readLock.lock();
+            for (SecurityType secType : GLOBAL_TYPE_MAP.values())
+            {
+                count += secType.rules.size();
+            }
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+        return count;
+    }
+
     static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
         throws SQLException, InvalidNameException
     {
