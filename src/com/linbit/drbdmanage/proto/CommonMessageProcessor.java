@@ -3,6 +3,7 @@ package com.linbit.drbdmanage.proto;
 import com.linbit.ErrorCheck;
 import com.linbit.WorkQueue;
 import com.linbit.drbdmanage.CoreServices;
+import com.linbit.drbdmanage.DrbdManageException;
 import com.linbit.drbdmanage.api.ApiCall;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
@@ -23,6 +24,7 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.slf4j.event.Level;
 
 /**
  * Dispatcher for received messages
@@ -213,8 +215,22 @@ public class CommonMessageProcessor implements MessageProcessor
                 }
                 else
                 {
-                    // FIXME: Debug code
-                    System.err.printf("Unknown API call '%s'\n", apiCallName);
+                    coreSvcs.getErrorReporter().reportError(
+                        Level.TRACE,
+                        new DrbdManageException(
+                            "Non-existent API '" + apiCallName + "' called by the client",
+                            "The API call '" + apiCallName + "' cannot be executed.",
+                            "The specified API does not exist",
+                            "- Correct the client application to call a supported API\n" +
+                            "- Load the API module required by the client application into the server\n",
+                            "The API call name specified by the client was:\n" +
+                            apiCallName
+                        ),
+                        client.getAccessContext(),
+                        client,
+                        "The request was received on connector service '" + connector.getInstanceName() + "' " +
+                        "of type '" + connector.getServiceName() + "'"
+                    );
                 }
             }
         }
