@@ -383,28 +383,4 @@ public class CmdDisplayConnections extends BaseDebugCmd
             }
         }
     }
-
-    private static class InvalidDetailsException extends Exception
-    {
-        private final List<String> invalidDetails = new LinkedList<>();
-
-        void addInvalid(String value)
-        {
-            invalidDetails.add(value);
-        }
-
-        String list()
-        {
-            StringBuilder invList = new StringBuilder();
-            for (String detail : invalidDetails)
-            {
-                if (invList.length() > 0)
-                {
-                    invList.append('\n');
-                }
-                invList.append(detail);
-            }
-            return invList.toString();
-        }
-    }
 }
