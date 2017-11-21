@@ -541,7 +541,9 @@ public final class Controller extends DrbdManage implements Runnable, CoreServic
 //                    }
 //                }
 
+                errorLogRef.logInfo("Core objects load from database is in progress");
                 loadCoreObjects(initCtx);
+                errorLogRef.logInfo("Core objects load from database completed");
             }
             catch (AccessDeniedException accessExc)
             {
