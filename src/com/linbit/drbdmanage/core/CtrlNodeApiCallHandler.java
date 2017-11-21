@@ -44,7 +44,7 @@ class CtrlNodeApiCallHandler
         apiCtx = apiCtxRef;
     }
 
-    public ApiCallRc createNode(
+    ApiCallRc createNode(
         AccessContext accCtx,
         Peer client,
         String nodeNameStr,
@@ -648,7 +648,7 @@ class CtrlNodeApiCallHandler
         return entry;
     }
 
-    public ApiCallRc deleteNode(AccessContext accCtx, Peer client, String nodeNameStr)
+    ApiCallRc deleteNode(AccessContext accCtx, Peer client, String nodeNameStr)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 

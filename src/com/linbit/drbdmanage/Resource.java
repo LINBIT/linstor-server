@@ -1,18 +1,19 @@
 package com.linbit.drbdmanage;
 
+import com.linbit.InvalidNameException;
+import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.security.AccessContext;
 import com.linbit.drbdmanage.security.AccessDeniedException;
 import com.linbit.drbdmanage.security.ObjectProtection;
+import com.linbit.drbdmanage.stateflags.Flags;
+import com.linbit.drbdmanage.stateflags.StateFlags;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import com.linbit.drbdmanage.stateflags.Flags;
-import com.linbit.drbdmanage.stateflags.StateFlags;
 import java.util.UUID;
 
 /**
@@ -48,6 +49,13 @@ public interface Resource extends TransactionObject
         throws AccessDeniedException;
 
     public StateFlags<RscFlags> getStateFlags();
+
+    public void adjustVolumes(
+        AccessContext apiCtx,
+        TransactionMgr transMgr,
+        String defaultStorPoolName
+    )
+        throws InvalidNameException;
 
     public void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
@@ -87,5 +95,4 @@ public interface Resource extends TransactionObject
             return flagList.toArray(new RscFlags[flagList.size()]);
         }
     }
-
 }

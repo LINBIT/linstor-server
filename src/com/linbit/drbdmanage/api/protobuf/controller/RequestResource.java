@@ -22,7 +22,7 @@ public class RequestResource extends RequestObject
     @Override
     protected void handleRequest(String name, UUID objUuid, int msgId, Peer satellitePeer)
     {
-        controller.getApiCallHandler().requestResource(name, objUuid, msgId, satellitePeer);
+        controller.getApiCallHandler().requestResource(satellitePeer, msgId, name, objUuid);
     }
 
 }

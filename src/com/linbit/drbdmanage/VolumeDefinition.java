@@ -98,8 +98,8 @@ public interface VolumeDefinition extends TransactionObject
 
     public interface VlmDfnApi
     {
-        int getVolumeNr();
-        int getMinorNr();
+        Integer getVolumeNr();
+        Integer getMinorNr();
         long getSize();
         Map<String, String> getProps();
     }

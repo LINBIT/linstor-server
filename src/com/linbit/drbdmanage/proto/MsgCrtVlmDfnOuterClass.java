@@ -46,27 +46,44 @@ public final class MsgCrtVlmDfnOuterClass {
 
     /**
      * <pre>
+     * Resource definition uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_dfn_uuid = 2;</code>
+     */
+    boolean hasRscDfnUuid();
+    /**
+     * <pre>
+     * Resource definition uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_dfn_uuid = 2;</code>
+     */
+    com.google.protobuf.ByteString getRscDfnUuid();
+
+    /**
+     * <pre>
      * Volume definitions to add to the resource definition
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
      */
-    java.util.List<com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn> 
+    java.util.List<com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn> 
         getVlmDfnsList();
     /**
      * <pre>
      * Volume definitions to add to the resource definition
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
      */
-    com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn getVlmDfns(int index);
+    com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn getVlmDfns(int index);
     /**
      * <pre>
      * Volume definitions to add to the resource definition
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
      */
     int getVlmDfnsCount();
     /**
@@ -74,18 +91,18 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definitions to add to the resource definition
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
      */
-    java.util.List<? extends com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfnOrBuilder> 
+    java.util.List<? extends com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfnOrBuilder> 
         getVlmDfnsOrBuilderList();
     /**
      * <pre>
      * Volume definitions to add to the resource definition
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
      */
-    com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfnOrBuilder getVlmDfnsOrBuilder(
+    com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfnOrBuilder getVlmDfnsOrBuilder(
         int index);
   }
   /**
@@ -105,6 +122,7 @@ public final class MsgCrtVlmDfnOuterClass {
     }
     private MsgCrtVlmDfn() {
       rscName_ = "";
+      rscDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
       vlmDfns_ = java.util.Collections.emptyList();
     }
 
@@ -143,12 +161,17 @@ public final class MsgCrtVlmDfnOuterClass {
               break;
             }
             case 18: {
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                vlmDfns_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn>();
-                mutable_bitField0_ |= 0x00000002;
+              bitField0_ |= 0x00000002;
+              rscDfnUuid_ = input.readBytes();
+              break;
+            }
+            case 26: {
+              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+                vlmDfns_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn>();
+                mutable_bitField0_ |= 0x00000004;
               }
               vlmDfns_.add(
-                  input.readMessage(com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.PARSER, extensionRegistry));
+                  input.readMessage(com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.PARSER, extensionRegistry));
               break;
             }
           }
@@ -159,7 +182,7 @@ public final class MsgCrtVlmDfnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
           vlmDfns_ = java.util.Collections.unmodifiableList(vlmDfns_);
         }
         this.unknownFields = unknownFields.build();
@@ -233,16 +256,39 @@ public final class MsgCrtVlmDfnOuterClass {
       }
     }
 
-    public static final int VLM_DFNS_FIELD_NUMBER = 2;
-    private java.util.List<com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn> vlmDfns_;
+    public static final int RSC_DFN_UUID_FIELD_NUMBER = 2;
+    private com.google.protobuf.ByteString rscDfnUuid_;
+    /**
+     * <pre>
+     * Resource definition uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_dfn_uuid = 2;</code>
+     */
+    public boolean hasRscDfnUuid() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <pre>
+     * Resource definition uuid
+     * </pre>
+     *
+     * <code>optional bytes rsc_dfn_uuid = 2;</code>
+     */
+    public com.google.protobuf.ByteString getRscDfnUuid() {
+      return rscDfnUuid_;
+    }
+
+    public static final int VLM_DFNS_FIELD_NUMBER = 3;
+    private java.util.List<com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn> vlmDfns_;
     /**
      * <pre>
      * Volume definitions to add to the resource definition
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
      */
-    public java.util.List<com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn> getVlmDfnsList() {
+    public java.util.List<com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn> getVlmDfnsList() {
       return vlmDfns_;
     }
     /**
@@ -250,9 +296,9 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definitions to add to the resource definition
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
      */
-    public java.util.List<? extends com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfnOrBuilder> 
+    public java.util.List<? extends com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfnOrBuilder> 
         getVlmDfnsOrBuilderList() {
       return vlmDfns_;
     }
@@ -261,7 +307,7 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definitions to add to the resource definition
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
      */
     public int getVlmDfnsCount() {
       return vlmDfns_.size();
@@ -271,9 +317,9 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definitions to add to the resource definition
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
      */
-    public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn getVlmDfns(int index) {
+    public com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn getVlmDfns(int index) {
       return vlmDfns_.get(index);
     }
     /**
@@ -281,9 +327,9 @@ public final class MsgCrtVlmDfnOuterClass {
      * Volume definitions to add to the resource definition
      * </pre>
      *
-     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+     * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
      */
-    public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfnOrBuilder getVlmDfnsOrBuilder(
+    public com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfnOrBuilder getVlmDfnsOrBuilder(
         int index) {
       return vlmDfns_.get(index);
     }
@@ -313,8 +359,11 @@ public final class MsgCrtVlmDfnOuterClass {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, rscName_);
       }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, rscDfnUuid_);
+      }
       for (int i = 0; i < vlmDfns_.size(); i++) {
-        output.writeMessage(2, vlmDfns_.get(i));
+        output.writeMessage(3, vlmDfns_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -327,9 +376,13 @@ public final class MsgCrtVlmDfnOuterClass {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, rscName_);
       }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, rscDfnUuid_);
+      }
       for (int i = 0; i < vlmDfns_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, vlmDfns_.get(i));
+          .computeMessageSize(3, vlmDfns_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -353,6 +406,11 @@ public final class MsgCrtVlmDfnOuterClass {
         result = result && getRscName()
             .equals(other.getRscName());
       }
+      result = result && (hasRscDfnUuid() == other.hasRscDfnUuid());
+      if (hasRscDfnUuid()) {
+        result = result && getRscDfnUuid()
+            .equals(other.getRscDfnUuid());
+      }
       result = result && getVlmDfnsList()
           .equals(other.getVlmDfnsList());
       result = result && unknownFields.equals(other.unknownFields);
@@ -369,6 +427,10 @@ public final class MsgCrtVlmDfnOuterClass {
       if (hasRscName()) {
         hash = (37 * hash) + RSC_NAME_FIELD_NUMBER;
         hash = (53 * hash) + getRscName().hashCode();
+      }
+      if (hasRscDfnUuid()) {
+        hash = (37 * hash) + RSC_DFN_UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getRscDfnUuid().hashCode();
       }
       if (getVlmDfnsCount() > 0) {
         hash = (37 * hash) + VLM_DFNS_FIELD_NUMBER;
@@ -499,9 +561,11 @@ public final class MsgCrtVlmDfnOuterClass {
         super.clear();
         rscName_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
+        rscDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000002);
         if (vlmDfnsBuilder_ == null) {
           vlmDfns_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
+          bitField0_ = (bitField0_ & ~0x00000004);
         } else {
           vlmDfnsBuilder_.clear();
         }
@@ -533,10 +597,14 @@ public final class MsgCrtVlmDfnOuterClass {
           to_bitField0_ |= 0x00000001;
         }
         result.rscName_ = rscName_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.rscDfnUuid_ = rscDfnUuid_;
         if (vlmDfnsBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          if (((bitField0_ & 0x00000004) == 0x00000004)) {
             vlmDfns_ = java.util.Collections.unmodifiableList(vlmDfns_);
-            bitField0_ = (bitField0_ & ~0x00000002);
+            bitField0_ = (bitField0_ & ~0x00000004);
           }
           result.vlmDfns_ = vlmDfns_;
         } else {
@@ -589,11 +657,14 @@ public final class MsgCrtVlmDfnOuterClass {
           rscName_ = other.rscName_;
           onChanged();
         }
+        if (other.hasRscDfnUuid()) {
+          setRscDfnUuid(other.getRscDfnUuid());
+        }
         if (vlmDfnsBuilder_ == null) {
           if (!other.vlmDfns_.isEmpty()) {
             if (vlmDfns_.isEmpty()) {
               vlmDfns_ = other.vlmDfns_;
-              bitField0_ = (bitField0_ & ~0x00000002);
+              bitField0_ = (bitField0_ & ~0x00000004);
             } else {
               ensureVlmDfnsIsMutable();
               vlmDfns_.addAll(other.vlmDfns_);
@@ -606,7 +677,7 @@ public final class MsgCrtVlmDfnOuterClass {
               vlmDfnsBuilder_.dispose();
               vlmDfnsBuilder_ = null;
               vlmDfns_ = other.vlmDfns_;
-              bitField0_ = (bitField0_ & ~0x00000002);
+              bitField0_ = (bitField0_ & ~0x00000004);
               vlmDfnsBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
                    getVlmDfnsFieldBuilder() : null;
@@ -751,26 +822,77 @@ public final class MsgCrtVlmDfnOuterClass {
         return this;
       }
 
-      private java.util.List<com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn> vlmDfns_ =
+      private com.google.protobuf.ByteString rscDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <pre>
+       * Resource definition uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_dfn_uuid = 2;</code>
+       */
+      public boolean hasRscDfnUuid() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <pre>
+       * Resource definition uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_dfn_uuid = 2;</code>
+       */
+      public com.google.protobuf.ByteString getRscDfnUuid() {
+        return rscDfnUuid_;
+      }
+      /**
+       * <pre>
+       * Resource definition uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_dfn_uuid = 2;</code>
+       */
+      public Builder setRscDfnUuid(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        rscDfnUuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource definition uuid
+       * </pre>
+       *
+       * <code>optional bytes rsc_dfn_uuid = 2;</code>
+       */
+      public Builder clearRscDfnUuid() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        rscDfnUuid_ = getDefaultInstance().getRscDfnUuid();
+        onChanged();
+        return this;
+      }
+
+      private java.util.List<com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn> vlmDfns_ =
         java.util.Collections.emptyList();
       private void ensureVlmDfnsIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          vlmDfns_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn>(vlmDfns_);
-          bitField0_ |= 0x00000002;
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+          vlmDfns_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn>(vlmDfns_);
+          bitField0_ |= 0x00000004;
          }
       }
 
       private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfnOrBuilder> vlmDfnsBuilder_;
+          com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.Builder, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfnOrBuilder> vlmDfnsBuilder_;
 
       /**
        * <pre>
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
-      public java.util.List<com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn> getVlmDfnsList() {
+      public java.util.List<com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn> getVlmDfnsList() {
         if (vlmDfnsBuilder_ == null) {
           return java.util.Collections.unmodifiableList(vlmDfns_);
         } else {
@@ -782,7 +904,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
       public int getVlmDfnsCount() {
         if (vlmDfnsBuilder_ == null) {
@@ -796,9 +918,9 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
-      public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn getVlmDfns(int index) {
+      public com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn getVlmDfns(int index) {
         if (vlmDfnsBuilder_ == null) {
           return vlmDfns_.get(index);
         } else {
@@ -810,10 +932,10 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
       public Builder setVlmDfns(
-          int index, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn value) {
+          int index, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn value) {
         if (vlmDfnsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -831,10 +953,10 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
       public Builder setVlmDfns(
-          int index, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder builderForValue) {
+          int index, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.Builder builderForValue) {
         if (vlmDfnsBuilder_ == null) {
           ensureVlmDfnsIsMutable();
           vlmDfns_.set(index, builderForValue.build());
@@ -849,9 +971,9 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
-      public Builder addVlmDfns(com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn value) {
+      public Builder addVlmDfns(com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn value) {
         if (vlmDfnsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -869,10 +991,10 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
       public Builder addVlmDfns(
-          int index, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn value) {
+          int index, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn value) {
         if (vlmDfnsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -890,10 +1012,10 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
       public Builder addVlmDfns(
-          com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder builderForValue) {
+          com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.Builder builderForValue) {
         if (vlmDfnsBuilder_ == null) {
           ensureVlmDfnsIsMutable();
           vlmDfns_.add(builderForValue.build());
@@ -908,10 +1030,10 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
       public Builder addVlmDfns(
-          int index, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder builderForValue) {
+          int index, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.Builder builderForValue) {
         if (vlmDfnsBuilder_ == null) {
           ensureVlmDfnsIsMutable();
           vlmDfns_.add(index, builderForValue.build());
@@ -926,10 +1048,10 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
       public Builder addAllVlmDfns(
-          java.lang.Iterable<? extends com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn> values) {
+          java.lang.Iterable<? extends com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn> values) {
         if (vlmDfnsBuilder_ == null) {
           ensureVlmDfnsIsMutable();
           com.google.protobuf.AbstractMessageLite.Builder.addAll(
@@ -945,12 +1067,12 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
       public Builder clearVlmDfns() {
         if (vlmDfnsBuilder_ == null) {
           vlmDfns_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
+          bitField0_ = (bitField0_ & ~0x00000004);
           onChanged();
         } else {
           vlmDfnsBuilder_.clear();
@@ -962,7 +1084,7 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
       public Builder removeVlmDfns(int index) {
         if (vlmDfnsBuilder_ == null) {
@@ -979,9 +1101,9 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
-      public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder getVlmDfnsBuilder(
+      public com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.Builder getVlmDfnsBuilder(
           int index) {
         return getVlmDfnsFieldBuilder().getBuilder(index);
       }
@@ -990,9 +1112,9 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
-      public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfnOrBuilder getVlmDfnsOrBuilder(
+      public com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfnOrBuilder getVlmDfnsOrBuilder(
           int index) {
         if (vlmDfnsBuilder_ == null) {
           return vlmDfns_.get(index);  } else {
@@ -1004,9 +1126,9 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
-      public java.util.List<? extends com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfnOrBuilder> 
+      public java.util.List<? extends com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfnOrBuilder> 
            getVlmDfnsOrBuilderList() {
         if (vlmDfnsBuilder_ != null) {
           return vlmDfnsBuilder_.getMessageOrBuilderList();
@@ -1019,43 +1141,43 @@ public final class MsgCrtVlmDfnOuterClass {
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
-      public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder addVlmDfnsBuilder() {
+      public com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.Builder addVlmDfnsBuilder() {
         return getVlmDfnsFieldBuilder().addBuilder(
-            com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.getDefaultInstance());
+            com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.getDefaultInstance());
       }
       /**
        * <pre>
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
-      public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder addVlmDfnsBuilder(
+      public com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.Builder addVlmDfnsBuilder(
           int index) {
         return getVlmDfnsFieldBuilder().addBuilder(
-            index, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.getDefaultInstance());
+            index, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.getDefaultInstance());
       }
       /**
        * <pre>
        * Volume definitions to add to the resource definition
        * </pre>
        *
-       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 2;</code>
+       * <code>repeated .com.linbit.drbdmanage.proto.VlmDfn vlm_dfns = 3;</code>
        */
-      public java.util.List<com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder> 
+      public java.util.List<com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.Builder> 
            getVlmDfnsBuilderList() {
         return getVlmDfnsFieldBuilder().getBuilderList();
       }
       private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfnOrBuilder> 
+          com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.Builder, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfnOrBuilder> 
           getVlmDfnsFieldBuilder() {
         if (vlmDfnsBuilder_ == null) {
           vlmDfnsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfnOrBuilder>(
+              com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn.Builder, com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfnOrBuilder>(
                   vlmDfns_,
-                  ((bitField0_ & 0x00000002) == 0x00000002),
+                  ((bitField0_ & 0x00000004) == 0x00000004),
                   getParentForChildren(),
                   isClean());
           vlmDfns_ = null;
@@ -1111,1530 +1233,11 @@ public final class MsgCrtVlmDfnOuterClass {
 
   }
 
-  public interface VlmDfnOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:com.linbit.drbdmanage.proto.VlmDfn)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional bytes uuid = 1;</code>
-     */
-    boolean hasUuid();
-    /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional bytes uuid = 1;</code>
-     */
-    com.google.protobuf.ByteString getUuid();
-
-    /**
-     * <pre>
-     * Volume number
-     * -1 for automatic assignment
-     * </pre>
-     *
-     * <code>required sint32 vlm_nr = 2;</code>
-     */
-    boolean hasVlmNr();
-    /**
-     * <pre>
-     * Volume number
-     * -1 for automatic assignment
-     * </pre>
-     *
-     * <code>required sint32 vlm_nr = 2;</code>
-     */
-    int getVlmNr();
-
-    /**
-     * <pre>
-     * Volume size (in kiB)
-     * </pre>
-     *
-     * <code>required int64 vlm_size = 3;</code>
-     */
-    boolean hasVlmSize();
-    /**
-     * <pre>
-     * Volume size (in kiB)
-     * </pre>
-     *
-     * <code>required int64 vlm_size = 3;</code>
-     */
-    long getVlmSize();
-
-    /**
-     * <pre>
-     * Volume minor number
-     * -1 for automatic assignment
-     * </pre>
-     *
-     * <code>required sint32 vlm_minor = 4;</code>
-     */
-    boolean hasVlmMinor();
-    /**
-     * <pre>
-     * Volume minor number
-     * -1 for automatic assignment
-     * </pre>
-     *
-     * <code>required sint32 vlm_minor = 4;</code>
-     */
-    int getVlmMinor();
-
-    /**
-     * <pre>
-     * Volume flags
-     * </pre>
-     *
-     * <code>optional sint64 vlm_flags = 5;</code>
-     */
-    boolean hasVlmFlags();
-    /**
-     * <pre>
-     * Volume flags
-     * </pre>
-     *
-     * <code>optional sint64 vlm_flags = 5;</code>
-     */
-    long getVlmFlags();
-
-    /**
-     * <pre>
-     * Volume definition properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-     */
-    java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
-        getVlmPropsList();
-    /**
-     * <pre>
-     * Volume definition properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-     */
-    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVlmProps(int index);
-    /**
-     * <pre>
-     * Volume definition properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-     */
-    int getVlmPropsCount();
-    /**
-     * <pre>
-     * Volume definition properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-     */
-    java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getVlmPropsOrBuilderList();
-    /**
-     * <pre>
-     * Volume definition properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-     */
-    com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVlmPropsOrBuilder(
-        int index);
-  }
-  /**
-   * <pre>
-   * Embedded volume definition
-   * </pre>
-   *
-   * Protobuf type {@code com.linbit.drbdmanage.proto.VlmDfn}
-   */
-  public  static final class VlmDfn extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:com.linbit.drbdmanage.proto.VlmDfn)
-      VlmDfnOrBuilder {
-    // Use VlmDfn.newBuilder() to construct.
-    private VlmDfn(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private VlmDfn() {
-      uuid_ = com.google.protobuf.ByteString.EMPTY;
-      vlmNr_ = 0;
-      vlmSize_ = 0L;
-      vlmMinor_ = 0;
-      vlmFlags_ = 0L;
-      vlmProps_ = java.util.Collections.emptyList();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private VlmDfn(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-            case 10: {
-              bitField0_ |= 0x00000001;
-              uuid_ = input.readBytes();
-              break;
-            }
-            case 16: {
-              bitField0_ |= 0x00000002;
-              vlmNr_ = input.readSInt32();
-              break;
-            }
-            case 24: {
-              bitField0_ |= 0x00000004;
-              vlmSize_ = input.readInt64();
-              break;
-            }
-            case 32: {
-              bitField0_ |= 0x00000008;
-              vlmMinor_ = input.readSInt32();
-              break;
-            }
-            case 40: {
-              bitField0_ |= 0x00000010;
-              vlmFlags_ = input.readSInt64();
-              break;
-            }
-            case 50: {
-              if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
-                vlmProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
-                mutable_bitField0_ |= 0x00000020;
-              }
-              vlmProps_.add(
-                  input.readMessage(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
-          vlmProps_ = java.util.Collections.unmodifiableList(vlmProps_);
-        }
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.internal_static_com_linbit_drbdmanage_proto_VlmDfn_descriptor;
-    }
-
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.internal_static_com_linbit_drbdmanage_proto_VlmDfn_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.class, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder.class);
-    }
-
-    private int bitField0_;
-    public static final int UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString uuid_;
-    /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional bytes uuid = 1;</code>
-     */
-    public boolean hasUuid() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
-    }
-    /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional bytes uuid = 1;</code>
-     */
-    public com.google.protobuf.ByteString getUuid() {
-      return uuid_;
-    }
-
-    public static final int VLM_NR_FIELD_NUMBER = 2;
-    private int vlmNr_;
-    /**
-     * <pre>
-     * Volume number
-     * -1 for automatic assignment
-     * </pre>
-     *
-     * <code>required sint32 vlm_nr = 2;</code>
-     */
-    public boolean hasVlmNr() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <pre>
-     * Volume number
-     * -1 for automatic assignment
-     * </pre>
-     *
-     * <code>required sint32 vlm_nr = 2;</code>
-     */
-    public int getVlmNr() {
-      return vlmNr_;
-    }
-
-    public static final int VLM_SIZE_FIELD_NUMBER = 3;
-    private long vlmSize_;
-    /**
-     * <pre>
-     * Volume size (in kiB)
-     * </pre>
-     *
-     * <code>required int64 vlm_size = 3;</code>
-     */
-    public boolean hasVlmSize() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <pre>
-     * Volume size (in kiB)
-     * </pre>
-     *
-     * <code>required int64 vlm_size = 3;</code>
-     */
-    public long getVlmSize() {
-      return vlmSize_;
-    }
-
-    public static final int VLM_MINOR_FIELD_NUMBER = 4;
-    private int vlmMinor_;
-    /**
-     * <pre>
-     * Volume minor number
-     * -1 for automatic assignment
-     * </pre>
-     *
-     * <code>required sint32 vlm_minor = 4;</code>
-     */
-    public boolean hasVlmMinor() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
-    }
-    /**
-     * <pre>
-     * Volume minor number
-     * -1 for automatic assignment
-     * </pre>
-     *
-     * <code>required sint32 vlm_minor = 4;</code>
-     */
-    public int getVlmMinor() {
-      return vlmMinor_;
-    }
-
-    public static final int VLM_FLAGS_FIELD_NUMBER = 5;
-    private long vlmFlags_;
-    /**
-     * <pre>
-     * Volume flags
-     * </pre>
-     *
-     * <code>optional sint64 vlm_flags = 5;</code>
-     */
-    public boolean hasVlmFlags() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
-    }
-    /**
-     * <pre>
-     * Volume flags
-     * </pre>
-     *
-     * <code>optional sint64 vlm_flags = 5;</code>
-     */
-    public long getVlmFlags() {
-      return vlmFlags_;
-    }
-
-    public static final int VLM_PROPS_FIELD_NUMBER = 6;
-    private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> vlmProps_;
-    /**
-     * <pre>
-     * Volume definition properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-     */
-    public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getVlmPropsList() {
-      return vlmProps_;
-    }
-    /**
-     * <pre>
-     * Volume definition properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-     */
-    public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getVlmPropsOrBuilderList() {
-      return vlmProps_;
-    }
-    /**
-     * <pre>
-     * Volume definition properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-     */
-    public int getVlmPropsCount() {
-      return vlmProps_.size();
-    }
-    /**
-     * <pre>
-     * Volume definition properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-     */
-    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVlmProps(int index) {
-      return vlmProps_.get(index);
-    }
-    /**
-     * <pre>
-     * Volume definition properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-     */
-    public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVlmPropsOrBuilder(
-        int index) {
-      return vlmProps_.get(index);
-    }
-
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      if (!hasVlmNr()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasVlmSize()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasVlmMinor()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      for (int i = 0; i < getVlmPropsCount(); i++) {
-        if (!getVlmProps(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, uuid_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeSInt32(2, vlmNr_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeInt64(3, vlmSize_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        output.writeSInt32(4, vlmMinor_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeSInt64(5, vlmFlags_);
-      }
-      for (int i = 0; i < vlmProps_.size(); i++) {
-        output.writeMessage(6, vlmProps_.get(i));
-      }
-      unknownFields.writeTo(output);
-    }
-
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, uuid_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeSInt32Size(2, vlmNr_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(3, vlmSize_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeSInt32Size(4, vlmMinor_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(5, vlmFlags_);
-      }
-      for (int i = 0; i < vlmProps_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(6, vlmProps_.get(i));
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn)) {
-        return super.equals(obj);
-      }
-      com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn other = (com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn) obj;
-
-      boolean result = true;
-      result = result && (hasUuid() == other.hasUuid());
-      if (hasUuid()) {
-        result = result && getUuid()
-            .equals(other.getUuid());
-      }
-      result = result && (hasVlmNr() == other.hasVlmNr());
-      if (hasVlmNr()) {
-        result = result && (getVlmNr()
-            == other.getVlmNr());
-      }
-      result = result && (hasVlmSize() == other.hasVlmSize());
-      if (hasVlmSize()) {
-        result = result && (getVlmSize()
-            == other.getVlmSize());
-      }
-      result = result && (hasVlmMinor() == other.hasVlmMinor());
-      if (hasVlmMinor()) {
-        result = result && (getVlmMinor()
-            == other.getVlmMinor());
-      }
-      result = result && (hasVlmFlags() == other.hasVlmFlags());
-      if (hasVlmFlags()) {
-        result = result && (getVlmFlags()
-            == other.getVlmFlags());
-      }
-      result = result && getVlmPropsList()
-          .equals(other.getVlmPropsList());
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasUuid()) {
-        hash = (37 * hash) + UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getUuid().hashCode();
-      }
-      if (hasVlmNr()) {
-        hash = (37 * hash) + VLM_NR_FIELD_NUMBER;
-        hash = (53 * hash) + getVlmNr();
-      }
-      if (hasVlmSize()) {
-        hash = (37 * hash) + VLM_SIZE_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getVlmSize());
-      }
-      if (hasVlmMinor()) {
-        hash = (37 * hash) + VLM_MINOR_FIELD_NUMBER;
-        hash = (53 * hash) + getVlmMinor();
-      }
-      if (hasVlmFlags()) {
-        hash = (37 * hash) + VLM_FLAGS_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getVlmFlags());
-      }
-      if (getVlmPropsCount() > 0) {
-        hash = (37 * hash) + VLM_PROPS_FIELD_NUMBER;
-        hash = (53 * hash) + getVlmPropsList().hashCode();
-      }
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * <pre>
-     * Embedded volume definition
-     * </pre>
-     *
-     * Protobuf type {@code com.linbit.drbdmanage.proto.VlmDfn}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:com.linbit.drbdmanage.proto.VlmDfn)
-        com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfnOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.internal_static_com_linbit_drbdmanage_proto_VlmDfn_descriptor;
-      }
-
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.internal_static_com_linbit_drbdmanage_proto_VlmDfn_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.class, com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.Builder.class);
-      }
-
-      // Construct using com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-          getVlmPropsFieldBuilder();
-        }
-      }
-      public Builder clear() {
-        super.clear();
-        uuid_ = com.google.protobuf.ByteString.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        vlmNr_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000002);
-        vlmSize_ = 0L;
-        bitField0_ = (bitField0_ & ~0x00000004);
-        vlmMinor_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000008);
-        vlmFlags_ = 0L;
-        bitField0_ = (bitField0_ & ~0x00000010);
-        if (vlmPropsBuilder_ == null) {
-          vlmProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000020);
-        } else {
-          vlmPropsBuilder_.clear();
-        }
-        return this;
-      }
-
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.internal_static_com_linbit_drbdmanage_proto_VlmDfn_descriptor;
-      }
-
-      public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn getDefaultInstanceForType() {
-        return com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.getDefaultInstance();
-      }
-
-      public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn build() {
-        com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn buildPartial() {
-        com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn result = new com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-          to_bitField0_ |= 0x00000001;
-        }
-        result.uuid_ = uuid_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.vlmNr_ = vlmNr_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.vlmSize_ = vlmSize_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.vlmMinor_ = vlmMinor_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
-        }
-        result.vlmFlags_ = vlmFlags_;
-        if (vlmPropsBuilder_ == null) {
-          if (((bitField0_ & 0x00000020) == 0x00000020)) {
-            vlmProps_ = java.util.Collections.unmodifiableList(vlmProps_);
-            bitField0_ = (bitField0_ & ~0x00000020);
-          }
-          result.vlmProps_ = vlmProps_;
-        } else {
-          result.vlmProps_ = vlmPropsBuilder_.build();
-        }
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
-
-      public Builder clone() {
-        return (Builder) super.clone();
-      }
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
-        return (Builder) super.setField(field, value);
-      }
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
-      }
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
-      }
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
-      }
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
-        return (Builder) super.addRepeatedField(field, value);
-      }
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn) {
-          return mergeFrom((com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn other) {
-        if (other == com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn.getDefaultInstance()) return this;
-        if (other.hasUuid()) {
-          setUuid(other.getUuid());
-        }
-        if (other.hasVlmNr()) {
-          setVlmNr(other.getVlmNr());
-        }
-        if (other.hasVlmSize()) {
-          setVlmSize(other.getVlmSize());
-        }
-        if (other.hasVlmMinor()) {
-          setVlmMinor(other.getVlmMinor());
-        }
-        if (other.hasVlmFlags()) {
-          setVlmFlags(other.getVlmFlags());
-        }
-        if (vlmPropsBuilder_ == null) {
-          if (!other.vlmProps_.isEmpty()) {
-            if (vlmProps_.isEmpty()) {
-              vlmProps_ = other.vlmProps_;
-              bitField0_ = (bitField0_ & ~0x00000020);
-            } else {
-              ensureVlmPropsIsMutable();
-              vlmProps_.addAll(other.vlmProps_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.vlmProps_.isEmpty()) {
-            if (vlmPropsBuilder_.isEmpty()) {
-              vlmPropsBuilder_.dispose();
-              vlmPropsBuilder_ = null;
-              vlmProps_ = other.vlmProps_;
-              bitField0_ = (bitField0_ & ~0x00000020);
-              vlmPropsBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getVlmPropsFieldBuilder() : null;
-            } else {
-              vlmPropsBuilder_.addAllMessages(other.vlmProps_);
-            }
-          }
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      public final boolean isInitialized() {
-        if (!hasVlmNr()) {
-          return false;
-        }
-        if (!hasVlmSize()) {
-          return false;
-        }
-        if (!hasVlmMinor()) {
-          return false;
-        }
-        for (int i = 0; i < getVlmPropsCount(); i++) {
-          if (!getVlmProps(i).isInitialized()) {
-            return false;
-          }
-        }
-        return true;
-      }
-
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-      private int bitField0_;
-
-      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
-      /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional bytes uuid = 1;</code>
-       */
-      public boolean hasUuid() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
-      }
-      /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional bytes uuid = 1;</code>
-       */
-      public com.google.protobuf.ByteString getUuid() {
-        return uuid_;
-      }
-      /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional bytes uuid = 1;</code>
-       */
-      public Builder setUuid(com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        uuid_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional bytes uuid = 1;</code>
-       */
-      public Builder clearUuid() {
-        bitField0_ = (bitField0_ & ~0x00000001);
-        uuid_ = getDefaultInstance().getUuid();
-        onChanged();
-        return this;
-      }
-
-      private int vlmNr_ ;
-      /**
-       * <pre>
-       * Volume number
-       * -1 for automatic assignment
-       * </pre>
-       *
-       * <code>required sint32 vlm_nr = 2;</code>
-       */
-      public boolean hasVlmNr() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <pre>
-       * Volume number
-       * -1 for automatic assignment
-       * </pre>
-       *
-       * <code>required sint32 vlm_nr = 2;</code>
-       */
-      public int getVlmNr() {
-        return vlmNr_;
-      }
-      /**
-       * <pre>
-       * Volume number
-       * -1 for automatic assignment
-       * </pre>
-       *
-       * <code>required sint32 vlm_nr = 2;</code>
-       */
-      public Builder setVlmNr(int value) {
-        bitField0_ |= 0x00000002;
-        vlmNr_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume number
-       * -1 for automatic assignment
-       * </pre>
-       *
-       * <code>required sint32 vlm_nr = 2;</code>
-       */
-      public Builder clearVlmNr() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        vlmNr_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private long vlmSize_ ;
-      /**
-       * <pre>
-       * Volume size (in kiB)
-       * </pre>
-       *
-       * <code>required int64 vlm_size = 3;</code>
-       */
-      public boolean hasVlmSize() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      /**
-       * <pre>
-       * Volume size (in kiB)
-       * </pre>
-       *
-       * <code>required int64 vlm_size = 3;</code>
-       */
-      public long getVlmSize() {
-        return vlmSize_;
-      }
-      /**
-       * <pre>
-       * Volume size (in kiB)
-       * </pre>
-       *
-       * <code>required int64 vlm_size = 3;</code>
-       */
-      public Builder setVlmSize(long value) {
-        bitField0_ |= 0x00000004;
-        vlmSize_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume size (in kiB)
-       * </pre>
-       *
-       * <code>required int64 vlm_size = 3;</code>
-       */
-      public Builder clearVlmSize() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        vlmSize_ = 0L;
-        onChanged();
-        return this;
-      }
-
-      private int vlmMinor_ ;
-      /**
-       * <pre>
-       * Volume minor number
-       * -1 for automatic assignment
-       * </pre>
-       *
-       * <code>required sint32 vlm_minor = 4;</code>
-       */
-      public boolean hasVlmMinor() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
-      }
-      /**
-       * <pre>
-       * Volume minor number
-       * -1 for automatic assignment
-       * </pre>
-       *
-       * <code>required sint32 vlm_minor = 4;</code>
-       */
-      public int getVlmMinor() {
-        return vlmMinor_;
-      }
-      /**
-       * <pre>
-       * Volume minor number
-       * -1 for automatic assignment
-       * </pre>
-       *
-       * <code>required sint32 vlm_minor = 4;</code>
-       */
-      public Builder setVlmMinor(int value) {
-        bitField0_ |= 0x00000008;
-        vlmMinor_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume minor number
-       * -1 for automatic assignment
-       * </pre>
-       *
-       * <code>required sint32 vlm_minor = 4;</code>
-       */
-      public Builder clearVlmMinor() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        vlmMinor_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private long vlmFlags_ ;
-      /**
-       * <pre>
-       * Volume flags
-       * </pre>
-       *
-       * <code>optional sint64 vlm_flags = 5;</code>
-       */
-      public boolean hasVlmFlags() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
-      }
-      /**
-       * <pre>
-       * Volume flags
-       * </pre>
-       *
-       * <code>optional sint64 vlm_flags = 5;</code>
-       */
-      public long getVlmFlags() {
-        return vlmFlags_;
-      }
-      /**
-       * <pre>
-       * Volume flags
-       * </pre>
-       *
-       * <code>optional sint64 vlm_flags = 5;</code>
-       */
-      public Builder setVlmFlags(long value) {
-        bitField0_ |= 0x00000010;
-        vlmFlags_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume flags
-       * </pre>
-       *
-       * <code>optional sint64 vlm_flags = 5;</code>
-       */
-      public Builder clearVlmFlags() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        vlmFlags_ = 0L;
-        onChanged();
-        return this;
-      }
-
-      private java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> vlmProps_ =
-        java.util.Collections.emptyList();
-      private void ensureVlmPropsIsMutable() {
-        if (!((bitField0_ & 0x00000020) == 0x00000020)) {
-          vlmProps_ = new java.util.ArrayList<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(vlmProps_);
-          bitField0_ |= 0x00000020;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> vlmPropsBuilder_;
-
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getVlmPropsList() {
-        if (vlmPropsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(vlmProps_);
-        } else {
-          return vlmPropsBuilder_.getMessageList();
-        }
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public int getVlmPropsCount() {
-        if (vlmPropsBuilder_ == null) {
-          return vlmProps_.size();
-        } else {
-          return vlmPropsBuilder_.getCount();
-        }
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVlmProps(int index) {
-        if (vlmPropsBuilder_ == null) {
-          return vlmProps_.get(index);
-        } else {
-          return vlmPropsBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public Builder setVlmProps(
-          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (vlmPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVlmPropsIsMutable();
-          vlmProps_.set(index, value);
-          onChanged();
-        } else {
-          vlmPropsBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public Builder setVlmProps(
-          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (vlmPropsBuilder_ == null) {
-          ensureVlmPropsIsMutable();
-          vlmProps_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          vlmPropsBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public Builder addVlmProps(com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (vlmPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVlmPropsIsMutable();
-          vlmProps_.add(value);
-          onChanged();
-        } else {
-          vlmPropsBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public Builder addVlmProps(
-          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (vlmPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVlmPropsIsMutable();
-          vlmProps_.add(index, value);
-          onChanged();
-        } else {
-          vlmPropsBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public Builder addVlmProps(
-          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (vlmPropsBuilder_ == null) {
-          ensureVlmPropsIsMutable();
-          vlmProps_.add(builderForValue.build());
-          onChanged();
-        } else {
-          vlmPropsBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public Builder addVlmProps(
-          int index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (vlmPropsBuilder_ == null) {
-          ensureVlmPropsIsMutable();
-          vlmProps_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          vlmPropsBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public Builder addAllVlmProps(
-          java.lang.Iterable<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
-        if (vlmPropsBuilder_ == null) {
-          ensureVlmPropsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, vlmProps_);
-          onChanged();
-        } else {
-          vlmPropsBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public Builder clearVlmProps() {
-        if (vlmPropsBuilder_ == null) {
-          vlmProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000020);
-          onChanged();
-        } else {
-          vlmPropsBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public Builder removeVlmProps(int index) {
-        if (vlmPropsBuilder_ == null) {
-          ensureVlmPropsIsMutable();
-          vlmProps_.remove(index);
-          onChanged();
-        } else {
-          vlmPropsBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getVlmPropsBuilder(
-          int index) {
-        return getVlmPropsFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVlmPropsOrBuilder(
-          int index) {
-        if (vlmPropsBuilder_ == null) {
-          return vlmProps_.get(index);  } else {
-          return vlmPropsBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public java.util.List<? extends com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-           getVlmPropsOrBuilderList() {
-        if (vlmPropsBuilder_ != null) {
-          return vlmPropsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(vlmProps_);
-        }
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addVlmPropsBuilder() {
-        return getVlmPropsFieldBuilder().addBuilder(
-            com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addVlmPropsBuilder(
-          int index) {
-        return getVlmPropsFieldBuilder().addBuilder(
-            index, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Volume definition properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.drbdmanage.proto.LinStorMapEntry vlm_props = 6;</code>
-       */
-      public java.util.List<com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
-           getVlmPropsBuilderList() {
-        return getVlmPropsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-          getVlmPropsFieldBuilder() {
-        if (vlmPropsBuilder_ == null) {
-          vlmPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
-                  vlmProps_,
-                  ((bitField0_ & 0x00000020) == 0x00000020),
-                  getParentForChildren(),
-                  isClean());
-          vlmProps_ = null;
-        }
-        return vlmPropsBuilder_;
-      }
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:com.linbit.drbdmanage.proto.VlmDfn)
-    }
-
-    // @@protoc_insertion_point(class_scope:com.linbit.drbdmanage.proto.VlmDfn)
-    private static final com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn();
-    }
-
-    public static com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    @java.lang.Deprecated public static final com.google.protobuf.Parser<VlmDfn>
-        PARSER = new com.google.protobuf.AbstractParser<VlmDfn>() {
-      public VlmDfn parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-          return new VlmDfn(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<VlmDfn> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<VlmDfn> getParserForType() {
-      return PARSER;
-    }
-
-    public com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_linbit_drbdmanage_proto_MsgCrtVlmDfn_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_linbit_drbdmanage_proto_MsgCrtVlmDfn_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_linbit_drbdmanage_proto_VlmDfn_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_com_linbit_drbdmanage_proto_VlmDfn_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -2645,14 +1248,11 @@ public final class MsgCrtVlmDfnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\022MsgCrtVlmDfn.proto\022\033com.linbit.drbdman" +
-      "age.proto\032\025LinStorMapEntry.proto\"W\n\014MsgC" +
-      "rtVlmDfn\022\020\n\010rsc_name\030\001 \002(\t\0225\n\010vlm_dfns\030\002" +
-      " \003(\0132#.com.linbit.drbdmanage.proto.VlmDf" +
-      "n\"\237\001\n\006VlmDfn\022\014\n\004uuid\030\001 \001(\014\022\016\n\006vlm_nr\030\002 \002" +
-      "(\021\022\020\n\010vlm_size\030\003 \002(\003\022\021\n\tvlm_minor\030\004 \002(\021\022" +
-      "\021\n\tvlm_flags\030\005 \001(\022\022?\n\tvlm_props\030\006 \003(\0132,." +
-      "com.linbit.drbdmanage.proto.LinStorMapEn" +
-      "tryP\000"
+      "age.proto\032\025LinStorMapEntry.proto\032\014VlmDfn" +
+      ".proto\"m\n\014MsgCrtVlmDfn\022\020\n\010rsc_name\030\001 \002(\t" +
+      "\022\024\n\014rsc_dfn_uuid\030\002 \001(\014\0225\n\010vlm_dfns\030\003 \003(\013" +
+      "2#.com.linbit.drbdmanage.proto.VlmDfnP\000P" +
+      "\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2666,20 +1266,16 @@ public final class MsgCrtVlmDfnOuterClass {
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
           com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor(),
+          com.linbit.drbdmanage.proto.VlmDfnOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_drbdmanage_proto_MsgCrtVlmDfn_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_com_linbit_drbdmanage_proto_MsgCrtVlmDfn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgCrtVlmDfn_descriptor,
-        new java.lang.String[] { "RscName", "VlmDfns", });
-    internal_static_com_linbit_drbdmanage_proto_VlmDfn_descriptor =
-      getDescriptor().getMessageTypes().get(1);
-    internal_static_com_linbit_drbdmanage_proto_VlmDfn_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_com_linbit_drbdmanage_proto_VlmDfn_descriptor,
-        new java.lang.String[] { "Uuid", "VlmNr", "VlmSize", "VlmMinor", "VlmFlags", "VlmProps", });
+        new java.lang.String[] { "RscName", "RscDfnUuid", "VlmDfns", });
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
+    com.linbit.drbdmanage.proto.VlmDfnOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

@@ -1,14 +1,22 @@
 package com.linbit.drbdmanage.core;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.drbdmanage.Node;
+import com.linbit.drbdmanage.NodeConnection;
 import com.linbit.drbdmanage.Resource;
+import com.linbit.drbdmanage.ResourceConnection;
+import com.linbit.drbdmanage.ResourceDefinition;
 import com.linbit.drbdmanage.StorPool;
+import com.linbit.drbdmanage.StorPoolDefinition;
 import com.linbit.drbdmanage.Volume;
+import com.linbit.drbdmanage.VolumeConnection;
 import com.linbit.drbdmanage.VolumeDefinition;
+import com.linbit.drbdmanage.VolumeDefinition.VlmDfnApi;
 import com.linbit.drbdmanage.api.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiType;
 import com.linbit.drbdmanage.api.interfaces.Serializer;
@@ -22,6 +30,7 @@ public class CtrlApiCallHandler
 {
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
+    private final CtrlVlmDfnApiCallHandler vlmDfnApiCallHandler;
     private final CtrlRscApiCallHandler rscApiCallHandler;
     private final CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandler;
     private final CtrlStorPoolApiCallHandler storPoolApiCallHandler;
@@ -47,8 +56,9 @@ public class CtrlApiCallHandler
                 throw new ImplementationError("Unknown ApiType: " + type, null);
         }
         nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, apiCtx);
-        rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, apiCtx);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, apiCtx);
+        vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
+        rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, apiCtx);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef);
         storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef, storPoolSerializer, apiCtx);
         nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
@@ -56,6 +66,16 @@ public class CtrlApiCallHandler
         vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef);
     }
 
+    /**
+     * Creates a new {@link Node}
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeNameStr required
+     * @param nodeTypeStr required
+     * @param props not null, might be empty
+     * @return
+     */
     public ApiCallRc createNode(
         AccessContext accCtx,
         Peer client,
@@ -65,6 +85,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
+        if (props == null)
+        {
+            props = Collections.emptyMap();
+        }
         try
         {
             controller.nodesMapLock.writeLock().lock();
@@ -83,6 +107,17 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Marks the given {@link Node} for deletion.
+     *
+     * The node is only deleted once the satellite confirms that it has no more
+     * {@link Resource}s and {@link StorPool}s deployed.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName required
+     * @return
+     */
     public ApiCallRc deleteNode(AccessContext accCtx, Peer client, String nodeName)
     {
         ApiCallRc apiCallRc;
@@ -99,24 +134,48 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Creates new {@link ResourceDefinition}
+     *
+     * @param accCtx
+     * @param client
+     * @param resourceName required
+     * @param port optional
+     * @param secret optional
+     * @param props optional
+     * @param volDescrMap optional
+     * @return
+     */
     public ApiCallRc createResourceDefinition(
         AccessContext accCtx,
         Peer client,
         String resourceName,
-        int port,
+        Integer port,
         String secret,
         Map<String, String> props,
         List<VolumeDefinition.VlmDfnApi> volDescrMap
     )
     {
         ApiCallRc apiCallRc;
+        if (port == null)
+        {
+            port = 8042; // FIXME find free port with poolAllocator
+        }
+        if (secret == null || secret.trim().equals(""))
+        {
+            secret = controller.generateSharedSecret();
+        }
+        if (props == null)
+        {
+            props = Collections.emptyMap();
+        }
+        if (volDescrMap == null)
+        {
+            volDescrMap = Collections.emptyList();
+        }
         try
         {
             controller.rscDfnMapLock.writeLock().lock();
-            if (secret == null || secret.trim().equals(""))
-            {
-                secret = controller.generateSharedSecret();
-            }
             apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
                 accCtx,
                 client,
@@ -134,6 +193,17 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Marks a {@link ResourceDefinition} for deletion.
+     *
+     * It will only be removed when all satellites confirm the deletion of the corresponding
+     * {@link Resource}s.
+     *
+     * @param accCtx
+     * @param client
+     * @param resourceName required
+     * @return
+     */
     public ApiCallRc deleteResourceDefinition(
         AccessContext accCtx,
         Peer client,
@@ -157,6 +227,57 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Creates new {@link VolumeDefinition}s for a given {@link ResourceDefinition}.
+     *
+     * @param accCtx
+     * @param client
+     * @param rscName required
+     * @param vlmDfnApiList optional
+     * @return
+     */
+    public ApiCallRc createVlmDfns(
+        AccessContext accCtx,
+        Peer client,
+        String rscName,
+        List<VlmDfnApi> vlmDfnApiList
+    )
+    {
+        ApiCallRc apiCallRc;
+        if (vlmDfnApiList == null)
+        {
+            vlmDfnApiList = Collections.emptyList();
+        }
+        try
+        {
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = vlmDfnApiCallHandler.createVolumeDefinitions(
+                accCtx,
+                client,
+                rscName,
+                vlmDfnApiList
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
+    // TODO: deleteVlmDfns
+
+    /**
+     * Creates a new {@link Resource}
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName required
+     * @param rscName required
+     * @param rscPropsMap optional
+     * @param vlmApiDataList optional
+     * @return
+     */
     public ApiCallRc createResource(
         AccessContext accCtx,
         Peer client,
@@ -167,6 +288,14 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
+        if (rscPropsMap == null)
+        {
+            rscPropsMap = Collections.emptyMap();
+        }
+        if (vlmApiDataList == null)
+        {
+            vlmApiDataList = Collections.emptyList();
+        }
         try
         {
             controller.nodesMapLock.writeLock().lock();
@@ -190,6 +319,18 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Marks a {@link Resource} for deletion.
+     *
+     * The {@link Resource} is only deleted once the corresponding satellite confirmed
+     * that it has undeployed (deleted) the {@link Resource}
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName required
+     * @param rscName required
+     * @return
+     */
     public ApiCallRc deleteResource(
         AccessContext accCtx,
         Peer client,
@@ -219,6 +360,15 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Creates a new {@link StorPoolDefinition}.
+     *
+     * @param accCtx
+     * @param client
+     * @param storPoolName required
+     * @param storPoolDfnPropsMap optional
+     * @return
+     */
     public ApiCallRc createStoragePoolDefinition(
         AccessContext accCtx,
         Peer client,
@@ -227,6 +377,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
+        if (storPoolDfnPropsMap == null)
+        {
+            storPoolDfnPropsMap = Collections.emptyMap();
+        }
         try
         {
             controller.storPoolDfnMapLock.writeLock().lock();
@@ -244,6 +398,17 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Marks a {@link StorPoolDefinition} for deletion.
+     *
+     * The {@link StorPoolDefinition} is only deleted once all corresponding satellites
+     * confirmed that they have undeployed (deleted) the {@link StorPool}.
+     *
+     * @param accCtx
+     * @param client
+     * @param storPoolName required
+     * @return
+     */
     public ApiCallRc deleteStoragePoolDefinition(
         AccessContext accCtx,
         Peer client,
@@ -267,6 +432,17 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Creates a {@link StorPool}.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName required
+     * @param storPoolName required
+     * @param driver required
+     * @param storPoolPropsMap optional
+     * @return
+     */
     public ApiCallRc createStoragePool(
         AccessContext accCtx,
         Peer client,
@@ -277,6 +453,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
+        if (storPoolPropsMap == null)
+        {
+            storPoolPropsMap = Collections.emptyMap();
+        }
         try
         {
             controller.nodesMapLock.writeLock().lock();
@@ -300,6 +480,18 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Marks the {@link StorPool} for deletion.
+     *
+     * The {@link StorPool} is only deleted once the corresponding satellite
+     * confirms that it has undeployed (deleted) the {@link StorPool}.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName
+     * @param storPoolName
+     * @return
+     */
     public ApiCallRc deleteStoragePool(
         AccessContext accCtx,
         Peer client,
@@ -329,6 +521,16 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Creates a new {@link NodeConnection}.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName1 required
+     * @param nodeName2 required
+     * @param nodeConnPropsMap optional, recommended
+     * @return
+     */
     public ApiCallRc createNodeConnection(
         AccessContext accCtx,
         Peer client,
@@ -338,6 +540,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
+        if (nodeConnPropsMap == null)
+        {
+            nodeConnPropsMap = Collections.emptyMap();
+        }
         try
         {
             controller.nodesMapLock.writeLock().lock();
@@ -356,6 +562,15 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Deletes the {@link NodeConnection}.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName required
+     * @param storPoolName required
+     * @return
+     */
     public ApiCallRc deleteNodeConnection(
         AccessContext accCtx,
         Peer client,
@@ -381,6 +596,17 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Creates a new {@link ResourceConnection}.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName1 required
+     * @param nodeName2 required
+     * @param rscName required
+     * @param rscConnPropsMap optional, recommended
+     * @return
+     */
     public ApiCallRc createResourceConnection(
         AccessContext accCtx,
         Peer client,
@@ -391,6 +617,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
+        if (rscConnPropsMap == null)
+        {
+            rscConnPropsMap = Collections.emptyMap();
+        }
         try
         {
             controller.nodesMapLock.writeLock().lock();
@@ -412,6 +642,16 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Deletes a {@link ResourceConnection}.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName1 required
+     * @param nodeName2 required
+     * @param rscName required
+     * @return
+     */
     public ApiCallRc deleteResourceConnection(
         AccessContext accCtx,
         Peer client,
@@ -441,6 +681,18 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Creates a new {@link VolumeConnection}.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName1 required
+     * @param nodeName2 required
+     * @param rscName required
+     * @param vlmNr required
+     * @param vlmConnPropsMap optional, recommended
+     * @return
+     */
     public ApiCallRc createVolumeConnection(
         AccessContext accCtx,
         Peer client,
@@ -452,6 +704,10 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
+        if (vlmConnPropsMap == null)
+        {
+            vlmConnPropsMap = Collections.emptyMap();
+        }
         try
         {
             controller.nodesMapLock.writeLock().lock();
@@ -474,6 +730,17 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Deletes a {@link VolumeConnection}.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName1 required
+     * @param nodeName2 required
+     * @param rscName required
+     * @param vlmNr required
+     * @return
+     */
     public ApiCallRc deleteVolumeConnection(
         AccessContext accCtx,
         Peer client,
@@ -505,7 +772,19 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public void requestResource(String rscName, UUID rscUuid, int msgId, Peer satellite)
+    /**
+     * This method should be called when the controller sent a message to a satellite
+     * that its resources {@code rscName} has changed, and the satellite now queries those
+     * changes.
+     * Calling this method will collect the needed data and send it to the given
+     * satellite.
+     *
+     * @param satellite required
+     * @param msgId required
+     * @param rscName required
+     * @param rscUuid required (for double checking)
+     */
+    public void requestResource(Peer satellite, int msgId, String rscName, UUID rscUuid)
     {
         try
         {
@@ -523,9 +802,24 @@ public class CtrlApiCallHandler
         }
     }
 
-    public void requestStorPool(String storPoolName, UUID storPoolUuid, int msgId, Peer satellite)
+    /**
+     * This method should be called when the controller sent a message to a satellite
+     * that its storPools {@code storPoolName} has changed, and the satellite now
+     * queries those changes.
+     * Calling this method will collect the needed data and send it to the given
+     * satellite.
+     * @param satellite required
+     * @param msgId required
+     * @param storPoolName required
+     * @param storPoolUuid required (for double checking)
+     */
+    public void requestStorPool(
+        Peer satellite,
+        int msgId,
+        String storPoolName,
+        UUID storPoolUuid
+    )
     {
-
         try
         {
             controller.nodesMapLock.readLock().lock();
@@ -539,5 +833,4 @@ public class CtrlApiCallHandler
             controller.storPoolDfnMapLock.readLock().unlock();
         }
     }
-
 }

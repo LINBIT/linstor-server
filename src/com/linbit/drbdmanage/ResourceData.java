@@ -1,5 +1,7 @@
 package com.linbit.drbdmanage;
 
+import static com.linbit.drbdmanage.api.ApiConsts.KEY_STOR_POOL_NAME;
+
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,11 +12,14 @@ import java.util.UUID;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
+import com.linbit.drbdmanage.VolumeDefinition.VlmDfnFlags;
 import com.linbit.drbdmanage.core.DrbdManage;
 import com.linbit.drbdmanage.dbdrivers.interfaces.ResourceDataDatabaseDriver;
+import com.linbit.drbdmanage.propscon.InvalidKeyException;
 import com.linbit.drbdmanage.propscon.Props;
 import com.linbit.drbdmanage.propscon.PropsAccess;
 import com.linbit.drbdmanage.propscon.PropsContainer;
@@ -338,6 +343,82 @@ public class ResourceData extends BaseTransactionObject implements Resource
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         volumeMap.remove(vol.getVolumeDefinition().getVolumeNumber());
+    }
+
+    @Override
+    public void adjustVolumes(
+        AccessContext apiCtx,
+        TransactionMgr transMgr,
+        String defaultStorPoolName
+    )
+        throws InvalidNameException
+    {
+        Iterator<VolumeDefinition> vlmDfns;
+        try
+        {
+            vlmDfns = resourceDfn.iterateVolumeDfn(apiCtx);
+            while (vlmDfns.hasNext())
+            {
+                VolumeDefinition vlmDfn = vlmDfns.next();
+                PriorityProps prioProps = new PriorityProps(
+                    vlmDfn.getProps(apiCtx),
+                    this.getProps(apiCtx),
+                    assgNode.getProps(apiCtx)
+                );
+
+
+                if (vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.DELETE))
+                {
+                    // find corresponding volume (if exists) and also set DELETE flag
+                }
+
+                // if vlm not yet deployed
+                {
+                    String storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
+                    if (storPoolNameStr == null || "".equals(storPoolNameStr))
+                    {
+                        storPoolNameStr = defaultStorPoolName;
+                    }
+                    StorPool storPool = assgNode.getStorPool(
+                        apiCtx,
+                        new StorPoolName(storPoolNameStr)
+                    );
+
+                    VolumeData.getInstance(
+                        apiCtx,
+                        this,
+                        vlmDfn,
+                        storPool,
+                        null, // blockDevicePathRef,
+                        null, // metaDiskPathRef,
+                        null,
+                        transMgr,
+                        true,
+                        true
+                    );
+                }
+
+            }
+
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(
+                "AccCtx should have been privileged",
+                accDeniedExc
+            );
+        }
+        catch (InvalidKeyException invalidKeyExc)
+        {
+            throw new ImplementationError(
+                "Hardcoded props key is invalid",
+                invalidKeyExc
+            );
+        }
+        catch (DrbdDataAlreadyExistsException | SQLException implExc)
+        {
+            throw new ImplementationError(implExc);
+        }
     }
 
     @Override

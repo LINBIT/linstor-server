@@ -17,8 +17,8 @@ import com.linbit.drbdmanage.Volume;
 import com.linbit.drbdmanage.VolumeDefinition;
 import com.linbit.drbdmanage.api.protobuf.BaseProtoApiCall;
 import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
-import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.VlmOuterClass.Vlm;
 import com.linbit.drbdmanage.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.drbdmanage.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -104,7 +104,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
             Map<String, String> vlmDfnProps = vlmDfn.getProps(serializerCtx).map();
             list.add(
                 VlmDfn.newBuilder()
-                    .setUuid(asByteString(vlmDfn.getUuid()))
+                    .setVlmDfnUuid(asByteString(vlmDfn.getUuid()))
                     .setVlmNr(vlmDfn.getVolumeNumber().value)
                     .setVlmSize(vlmDfn.getVolumeSize(serializerCtx))
                     .setVlmMinor(vlmDfn.getMinorNr(serializerCtx).value)
@@ -130,7 +130,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
             StorPool vlmStorPool = vol.getStorPool(serializerCtx);
             vlmList.add(
                 Vlm.newBuilder()
-                    .setUuid(asByteString(vol.getUuid()))
+                    .setVlmUuid(asByteString(vol.getUuid()))
                     .setVlmNr(vol.getVolumeDefinition().getVolumeNumber().value)
                     .setBlockDevice(vol.getBlockDevicePath(serializerCtx))
                     .setMetaDisk(vol.getMetaDiskPath(serializerCtx))

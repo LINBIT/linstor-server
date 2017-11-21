@@ -13,17 +13,17 @@ import com.linbit.drbdmanage.api.protobuf.ProtobufApiCall;
 import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
+import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.MsgCrtVlmDfn;
 import com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.drbdmanage.proto.apidata.VlmDfnApiData;
 import com.linbit.drbdmanage.security.AccessContext;
 
 @ProtobufApiCall
-public class CreateResourceDefinition extends BaseProtoApiCall
+public class CreateVolumeDefinition extends BaseProtoApiCall
 {
-    private final Controller controller;
+    private Controller controller;
 
-    public CreateResourceDefinition(Controller controllerRef)
+    public CreateVolumeDefinition(Controller controllerRef)
     {
         super(controllerRef.getErrorReporter());
         controller = controllerRef;
@@ -32,17 +32,17 @@ public class CreateResourceDefinition extends BaseProtoApiCall
     @Override
     public String getName()
     {
-        return ApiConsts.API_CRT_RSC_DFN;
+        return ApiConsts.API_CRT_VLM_DFN;
     }
 
     @Override
     public String getDescription()
     {
-        return "Creates a resource definition";
+        return "Creates a volume definition";
     }
 
     @Override
-    public void executeImpl(
+    protected void executeImpl(
         AccessContext accCtx,
         Message msg,
         int msgId,
@@ -51,24 +51,20 @@ public class CreateResourceDefinition extends BaseProtoApiCall
     )
         throws IOException
     {
-        MsgCrtRscDfn msgCreateRscDfn = MsgCrtRscDfn.parseDelimitedFrom(msgDataIn);
+        MsgCrtVlmDfn msgCrtVlmDfn = MsgCrtVlmDfn.parseDelimitedFrom(msgDataIn);
 
         List<VlmDfnApi> vlmDfnApiList = new ArrayList<>();
-        for (final VlmDfn vlmDfn : msgCreateRscDfn.getVlmDfnsList())
+        for (final VlmDfn vlmDfn : msgCrtVlmDfn.getVlmDfnsList())
         {
             vlmDfnApiList.add(new VlmDfnApiData(vlmDfn));
         }
-
-        ApiCallRc apiCallRc = controller.getApiCallHandler().createResourceDefinition(
+        ApiCallRc apiCallRc = controller.getApiCallHandler().createVlmDfns(
             accCtx,
             client,
-            msgCreateRscDfn.getRscName(),
-            msgCreateRscDfn.hasRscPort() ? msgCreateRscDfn.getRscPort() : null,
-            msgCreateRscDfn.getRscSecret(),
-            asMap(msgCreateRscDfn.getRscPropsList()),
+            msgCrtVlmDfn.getRscName(),
             vlmDfnApiList
         );
-        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
+        answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }
 
 }

@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.linbit.drbdmanage.VolumeDefinition.VlmDfnApi;
 import com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
-import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn;
 
 public class VlmDfnApiData implements VlmDfnApi
 {
@@ -17,9 +17,14 @@ public class VlmDfnApiData implements VlmDfnApi
     }
 
     @Override
-    public int getVolumeNr()
+    public Integer getVolumeNr()
     {
-        return vlmDfn.getVlmNr();
+        Integer ret = null;
+        if (vlmDfn.hasVlmNr())
+        {
+            ret = vlmDfn.getVlmNr();
+        }
+        return ret;
     }
 
     @Override
@@ -40,8 +45,13 @@ public class VlmDfnApiData implements VlmDfnApi
     }
 
     @Override
-    public int getMinorNr()
+    public Integer getMinorNr()
     {
-        return vlmDfn.getVlmMinor();
+        Integer ret = null;
+        if (vlmDfn.hasVlmMinor())
+        {
+            ret = vlmDfn.getVlmMinor();
+        }
+        return ret;
     }
 }

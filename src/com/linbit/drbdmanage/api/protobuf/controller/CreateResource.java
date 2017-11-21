@@ -14,7 +14,7 @@ import com.linbit.drbdmanage.core.Controller;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
 import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.MsgCrtRsc;
-import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
+import com.linbit.drbdmanage.proto.VlmOuterClass.Vlm;
 import com.linbit.drbdmanage.proto.apidata.VlmApiData;
 import com.linbit.drbdmanage.security.AccessContext;
 

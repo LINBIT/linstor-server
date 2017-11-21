@@ -16,8 +16,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.protobuf.Message;
@@ -28,11 +28,10 @@ import com.linbit.drbdmanage.proto.MsgCrtNodeOuterClass.MsgCrtNode;
 import com.linbit.drbdmanage.proto.MsgCrtRscConnOuterClass.MsgCrtRscConn;
 import com.linbit.drbdmanage.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
 import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.MsgCrtRsc;
-import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
 import com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn;
 import com.linbit.drbdmanage.proto.MsgCrtStorPoolOuterClass.MsgCrtStorPool;
 import com.linbit.drbdmanage.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn;
-import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.MsgCrtVlmDfn;
 import com.linbit.drbdmanage.proto.MsgDelNodeConnOuterClass.MsgDelNodeConn;
 import com.linbit.drbdmanage.proto.MsgDelNodeOuterClass.MsgDelNode;
 import com.linbit.drbdmanage.proto.MsgDelRscConnOuterClass.MsgDelRscConn;
@@ -42,19 +41,23 @@ import com.linbit.drbdmanage.proto.MsgDelStorPoolDfnOuterClass.MsgDelStorPoolDfn
 import com.linbit.drbdmanage.proto.MsgDelStorPoolOuterClass.MsgDelStorPool;
 import com.linbit.drbdmanage.proto.MsgDelVlmConnOuterClass.MsgDelVlmConn;
 import com.linbit.drbdmanage.proto.MsgHeaderOuterClass.MsgHeader;
+import com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.VlmOuterClass.Vlm;
 
 public class ClientProtobuf implements Runnable
 {
+    public static final Object callbackLock = new Object();
+
     public static interface MessageCallback
     {
-        public void error(long retCode, String message, String cause, String correction, String details,
-            Map<String, String> objRefsMap, Map<String, String> variablesMap);
-        public void warn(long retCode, String message, String cause, String correction, String details,
-            Map<String, String> objRefsMap, Map<String, String> variablesMap);
-        public void info(long retCode, String message, String cause, String correction, String details,
-            Map<String, String> objRefsMap, Map<String, String> variablesMap);
-        public void success(long retCode, String message, String cause, String correction, String details,
-            Map<String, String> objRefsMap, Map<String, String> variablesMap);
+        public void error(int msgId, long retCode, String message, String cause, String correction,
+            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+        public void warn(int msgId, long retCode, String message, String cause, String correction,
+            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+        public void info(int msgId, long retCode, String message, String cause, String correction,
+            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
+        public void success(int msgId, long retCode, String message, String cause, String correction,
+            String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
     }
 
     private static final Map<Long, String> RET_CODES_TYPE = new HashMap<>();
@@ -214,7 +217,8 @@ public class ClientProtobuf implements Runnable
                     Map<String, String> objRefsMap = asMap(response.getObjRefsList());
                     Map<String, String> variablesMap = asMap(response.getVariablesList());
 
-                    callback(retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                    callback(protoHeader.getMsgId(), retCode, message, cause, correction,
+                        details, objRefsMap, variablesMap);
 
                     sb.append("Response ")
                         .append(responseIdx++)
@@ -287,39 +291,47 @@ public class ClientProtobuf implements Runnable
         callbacks.add(callback);
     }
 
+    public void unregisterCallback(MessageCallback callback)
+    {
+        callbacks.remove(callback);
+    }
+
     private void callback(
-        long retCode, String message, String cause, String correction, String details,
+        int msgId, long retCode, String message, String cause, String correction, String details,
         Map<String, String> objRefsMap, Map<String, String> variablesMap
     )
     {
-        if ((retCode & MASK_ERROR) == MASK_ERROR)
+        synchronized (callbackLock)
         {
-            for (MessageCallback cb : callbacks)
+            if ((retCode & MASK_ERROR) == MASK_ERROR)
             {
-                cb.error(retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                for (MessageCallback cb : callbacks)
+                {
+                    cb.error(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                }
             }
-        }
-        else
-        if ((retCode & MASK_WARN) == MASK_WARN)
-        {
-            for (MessageCallback cb : callbacks)
+            else
+            if ((retCode & MASK_WARN) == MASK_WARN)
             {
-                cb.warn(retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                for (MessageCallback cb : callbacks)
+                {
+                    cb.warn(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                }
             }
-        }
-        else
-        if ((retCode & MASK_INFO) == MASK_INFO)
-        {
-            for (MessageCallback cb : callbacks)
+            else
+            if ((retCode & MASK_INFO) == MASK_INFO)
             {
-                cb.info(retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                for (MessageCallback cb : callbacks)
+                {
+                    cb.info(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                }
             }
-        }
-        else
-        {
-            for (MessageCallback cb : callbacks)
+            else
             {
-                cb.success(retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                for (MessageCallback cb : callbacks)
+                {
+                    cb.success(msgId, retCode, message, cause, correction, details, objRefsMap, variablesMap);
+                }
             }
         }
     }
@@ -388,8 +400,7 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             API_CRT_NODE,
-            msgBuilder.
-                build()
+            msgBuilder.build()
         );
         return msgId;
     }
@@ -409,7 +420,7 @@ public class ClientProtobuf implements Runnable
 
     public int sendCreateRscDfn(
         String resName,
-        int port,
+        Integer port,
         Map<String, String> resDfnProps,
         Iterable<? extends VlmDfn> vlmDfn
     )
@@ -417,8 +428,11 @@ public class ClientProtobuf implements Runnable
     {
         int msgId = this.msgId.incrementAndGet();
         MsgCrtRscDfn.Builder msgBuilder = MsgCrtRscDfn.newBuilder().
-            setRscName(resName).
-            setRscPort(port);
+            setRscName(resName);
+        if (port != null)
+        {
+            msgBuilder.setRscPort(port);
+        }
         if (resDfnProps != null)
         {
             msgBuilder.addAllRscProps(asLinStorMapEntryList(resDfnProps));
@@ -544,6 +558,21 @@ public class ClientProtobuf implements Runnable
         );
         return msgId;
     }
+
+    public int sendCreateVlmDfn(String rscName, List<? extends VlmDfn> vlmDfns) throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        send(
+            msgId,
+            API_CRT_VLM_DFN,
+            MsgCrtVlmDfn.newBuilder()
+                .setRscName(rscName)
+                .addAllVlmDfns(vlmDfns)
+                .build()
+        );
+        return msgId;
+    }
+
 
     public int sendCreateNodeConn(String nodeName1, String nodeName2, Map<String, String> props)
         throws IOException
@@ -694,14 +723,19 @@ public class ClientProtobuf implements Runnable
         sentCount++;
     }
 
-    public VlmDfn createVlmDfn(int vlmNr, int minor, long vlmSize)
+    public VlmDfn createVlmDfn(Integer vlmNr, Integer minor, long vlmSize)
     {
-        return
-            VlmDfn.newBuilder().
-                setVlmNr(vlmNr).
-                setVlmSize(vlmSize).
-                setVlmMinor(minor).
-                build();
+        VlmDfn.Builder builder = VlmDfn.newBuilder()
+            .setVlmSize(vlmSize);
+        if (vlmNr != null)
+        {
+            builder.setVlmNr(vlmNr);
+        }
+        if (minor != null)
+        {
+            builder.setVlmMinor(minor);
+        }
+        return builder.build();
     }
 
     public Vlm createVlm(int vlmNr, String storPoolName, String blockDevice, String metaDisk)

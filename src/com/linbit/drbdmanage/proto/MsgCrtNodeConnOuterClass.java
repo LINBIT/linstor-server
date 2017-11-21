@@ -23,17 +23,17 @@ public final class MsgCrtNodeConnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes node_conn_uuid = 1;</code>
      */
-    boolean hasUuid();
+    boolean hasNodeConnUuid();
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes node_conn_uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getUuid();
+    com.google.protobuf.ByteString getNodeConnUuid();
 
     /**
      * <pre>
@@ -181,7 +181,7 @@ public final class MsgCrtNodeConnOuterClass {
       super(builder);
     }
     private MsgCrtNodeConn() {
-      uuid_ = com.google.protobuf.ByteString.EMPTY;
+      nodeConnUuid_ = com.google.protobuf.ByteString.EMPTY;
       nodeName1_ = "";
       node1Uuid_ = com.google.protobuf.ByteString.EMPTY;
       nodeName2_ = "";
@@ -219,7 +219,7 @@ public final class MsgCrtNodeConnOuterClass {
             }
             case 10: {
               bitField0_ |= 0x00000001;
-              uuid_ = input.readBytes();
+              nodeConnUuid_ = input.readBytes();
               break;
             }
             case 18: {
@@ -281,16 +281,16 @@ public final class MsgCrtNodeConnOuterClass {
     }
 
     private int bitField0_;
-    public static final int UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString uuid_;
+    public static final int NODE_CONN_UUID_FIELD_NUMBER = 1;
+    private com.google.protobuf.ByteString nodeConnUuid_;
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes node_conn_uuid = 1;</code>
      */
-    public boolean hasUuid() {
+    public boolean hasNodeConnUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
@@ -298,10 +298,10 @@ public final class MsgCrtNodeConnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes node_conn_uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getUuid() {
-      return uuid_;
+    public com.google.protobuf.ByteString getNodeConnUuid() {
+      return nodeConnUuid_;
     }
 
     public static final int NODE_NAME_1_FIELD_NUMBER = 3;
@@ -540,7 +540,7 @@ public final class MsgCrtNodeConnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, uuid_);
+        output.writeBytes(1, nodeConnUuid_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeBytes(2, node1Uuid_);
@@ -567,7 +567,7 @@ public final class MsgCrtNodeConnOuterClass {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, uuid_);
+          .computeBytesSize(1, nodeConnUuid_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
@@ -604,10 +604,10 @@ public final class MsgCrtNodeConnOuterClass {
       com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn other = (com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn) obj;
 
       boolean result = true;
-      result = result && (hasUuid() == other.hasUuid());
-      if (hasUuid()) {
-        result = result && getUuid()
-            .equals(other.getUuid());
+      result = result && (hasNodeConnUuid() == other.hasNodeConnUuid());
+      if (hasNodeConnUuid()) {
+        result = result && getNodeConnUuid()
+            .equals(other.getNodeConnUuid());
       }
       result = result && (hasNodeName1() == other.hasNodeName1());
       if (hasNodeName1()) {
@@ -642,9 +642,9 @@ public final class MsgCrtNodeConnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasUuid()) {
-        hash = (37 * hash) + UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getUuid().hashCode();
+      if (hasNodeConnUuid()) {
+        hash = (37 * hash) + NODE_CONN_UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getNodeConnUuid().hashCode();
       }
       if (hasNodeName1()) {
         hash = (37 * hash) + NODE_NAME_1_FIELD_NUMBER;
@@ -789,7 +789,7 @@ public final class MsgCrtNodeConnOuterClass {
       }
       public Builder clear() {
         super.clear();
-        uuid_ = com.google.protobuf.ByteString.EMPTY;
+        nodeConnUuid_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000001);
         nodeName1_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -832,7 +832,7 @@ public final class MsgCrtNodeConnOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.uuid_ = uuid_;
+        result.nodeConnUuid_ = nodeConnUuid_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
@@ -900,8 +900,8 @@ public final class MsgCrtNodeConnOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn other) {
         if (other == com.linbit.drbdmanage.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn.getDefaultInstance()) return this;
-        if (other.hasUuid()) {
-          setUuid(other.getUuid());
+        if (other.hasNodeConnUuid()) {
+          setNodeConnUuid(other.getNodeConnUuid());
         }
         if (other.hasNodeName1()) {
           bitField0_ |= 0x00000002;
@@ -984,15 +984,15 @@ public final class MsgCrtNodeConnOuterClass {
       }
       private int bitField0_;
 
-      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
+      private com.google.protobuf.ByteString nodeConnUuid_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes node_conn_uuid = 1;</code>
        */
-      public boolean hasUuid() {
+      public boolean hasNodeConnUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
@@ -1000,24 +1000,24 @@ public final class MsgCrtNodeConnOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes node_conn_uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getUuid() {
-        return uuid_;
+      public com.google.protobuf.ByteString getNodeConnUuid() {
+        return nodeConnUuid_;
       }
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes node_conn_uuid = 1;</code>
        */
-      public Builder setUuid(com.google.protobuf.ByteString value) {
+      public Builder setNodeConnUuid(com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-        uuid_ = value;
+        nodeConnUuid_ = value;
         onChanged();
         return this;
       }
@@ -1026,11 +1026,11 @@ public final class MsgCrtNodeConnOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes node_conn_uuid = 1;</code>
        */
-      public Builder clearUuid() {
+      public Builder clearNodeConnUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        uuid_ = getDefaultInstance().getUuid();
+        nodeConnUuid_ = getDefaultInstance().getNodeConnUuid();
         onChanged();
         return this;
       }
@@ -1712,12 +1712,12 @@ public final class MsgCrtNodeConnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\024MsgCrtNodeConn.proto\022\033com.linbit.drbdm" +
-      "anage.proto\032\025LinStorMapEntry.proto\"\271\001\n\016M" +
-      "sgCrtNodeConn\022\014\n\004uuid\030\001 \001(\014\022\023\n\013node_name" +
-      "_1\030\003 \002(\t\022\023\n\013node_1_uuid\030\002 \001(\014\022\023\n\013node_na" +
-      "me_2\030\005 \002(\t\022\023\n\013node_2_uuid\030\004 \001(\014\022E\n\017node_" +
-      "conn_props\030\006 \003(\0132,.com.linbit.drbdmanage" +
-      ".proto.LinStorMapEntryP\000"
+      "anage.proto\032\025LinStorMapEntry.proto\"\303\001\n\016M" +
+      "sgCrtNodeConn\022\026\n\016node_conn_uuid\030\001 \001(\014\022\023\n" +
+      "\013node_name_1\030\003 \002(\t\022\023\n\013node_1_uuid\030\002 \001(\014\022" +
+      "\023\n\013node_name_2\030\005 \002(\t\022\023\n\013node_2_uuid\030\004 \001(" +
+      "\014\022E\n\017node_conn_props\030\006 \003(\0132,.com.linbit." +
+      "drbdmanage.proto.LinStorMapEntryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1737,7 +1737,7 @@ public final class MsgCrtNodeConnOuterClass {
     internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgCrtNodeConn_descriptor,
-        new java.lang.String[] { "Uuid", "NodeName1", "Node1Uuid", "NodeName2", "Node2Uuid", "NodeConnProps", });
+        new java.lang.String[] { "NodeConnUuid", "NodeName1", "Node1Uuid", "NodeName2", "Node2Uuid", "NodeConnProps", });
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 

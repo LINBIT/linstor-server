@@ -6,6 +6,8 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -35,6 +37,8 @@ import com.linbit.drbdmanage.security.AccessType;
 
 class CtrlRscDfnApiCallHandler
 {
+    private static final AtomicInteger MINOR_GEN = new AtomicInteger(1000); // FIXME use poolAllocator instead
+
     private Controller controller;
     private AccessContext apiCtx;
 
@@ -104,8 +108,8 @@ class CtrlRscDfnApiCallHandler
                 volNr = null;
                 minorNr = null;
 
-                volNr = new VolumeNumber(vlmDfnApi.getVolumeNr()); // valOORangeExc2
-                minorNr = new MinorNumber(vlmDfnApi.getMinorNr()); // valOORangeExc3
+                volNr = new VolumeNumber(getVlmNr(vlmDfnApi, rscDfn, apiCtx)); // valOORangeExc2
+                minorNr = new MinorNumber(getMinor(vlmDfnApi)); // valOORangeExc3
 
                 long size = vlmDfnApi.getSize();
 
@@ -369,7 +373,7 @@ class CtrlRscDfnApiCallHandler
         {
             // handle any other exception
             String errorMessage = String.format(
-                "An unknown exception occured while creating a resource definition '%s'. ",
+                "An exception occured while creating a resource definition '%s'. ",
                 rscNameStr
             );
             controller.getErrorReporter().reportError(
@@ -423,6 +427,54 @@ class CtrlRscDfnApiCallHandler
             controller.dbConnPool.returnConnection(transMgr.dbCon);
         }
         return apiCallRc;
+    }
+
+    static int getVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
+    {
+        Integer vlmNr = vlmDfnApi.getVolumeNr();
+        if (vlmNr == null)
+        {
+            try
+            {
+                Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(accCtx);
+                TreeSet<Integer> occupiedVlmNrs = new TreeSet<>();
+                while (vlmDfnIt.hasNext())
+                {
+                    VolumeDefinition vlmDfn = vlmDfnIt.next();
+                    occupiedVlmNrs.add(vlmDfn.getVolumeNumber().value);
+                }
+                for (int idx = 0; idx < occupiedVlmNrs.size(); ++idx)
+                {
+                    if (!occupiedVlmNrs.contains(idx))
+                    {
+                        vlmNr = idx;
+                        break;
+                    }
+                }
+                if (vlmNr == null)
+                {
+                    vlmNr = occupiedVlmNrs.size();
+                }
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw new ImplementationError(
+                    "ApiCtx does not have enough privileges to iterate vlmDfns",
+                    accDeniedExc
+                );
+            }
+        }
+        return vlmNr;
+    }
+
+    static int getMinor(VlmDfnApi vlmDfnApi)
+    {
+        Integer minor = vlmDfnApi.getMinorNr();
+        if (minor == null)
+        {
+            minor = MINOR_GEN.incrementAndGet(); // FIXME: instead of atomicInt use the poolAllocator
+        }
+        return minor;
     }
 
     public ApiCallRc deleteResourceDefinition(AccessContext accCtx, Peer client, String rscNameStr)

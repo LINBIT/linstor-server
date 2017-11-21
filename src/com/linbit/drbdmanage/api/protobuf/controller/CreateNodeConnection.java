@@ -50,6 +50,7 @@ public class CreateNodeConnection extends BaseProtoApiCall
         ApiCallRc apiCallRc = controller.getApiCallHandler().createNodeConnection(
             accCtx,
             client,
+            // ignore nodeConnUuid
             msgCreateNodeConn.getNodeName1(),
             msgCreateNodeConn.getNodeName2(),
             asMap(msgCreateNodeConn.getNodeConnPropsList())

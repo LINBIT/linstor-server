@@ -20,8 +20,8 @@ import com.linbit.drbdmanage.StorPoolName;
 import com.linbit.drbdmanage.Volume;
 import com.linbit.drbdmanage.api.ApiCallRc;
 import com.linbit.drbdmanage.api.ApiCallRcImpl;
-import com.linbit.drbdmanage.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.api.ApiConsts;
+import com.linbit.drbdmanage.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.drbdmanage.api.interfaces.Serializer;
 import com.linbit.drbdmanage.netcom.IllegalMessageStateException;
 import com.linbit.drbdmanage.netcom.Message;
@@ -293,35 +293,6 @@ class CtrlStorPoolApiCallHandler
             );
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(dataAlreadyExistsExc.getMessage());
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (ClassNotFoundException | InstantiationException | IllegalAccessException implErrExc)
-        {
-            String errorMessage = String.format(
-                "A dynamic class instantiation related exception occured while this method shoud "+
-                    "not create such instances (Node name: '%s', storage pool name: '%s')",
-                nodeNameStr,
-                storPoolNameStr
-            );
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    errorMessage,
-                    implErrExc
-                )
-            );
-            entry.setMessageFormat(String.format(
-                "Failed to create the storage pool '%s' on node '%s' due to an implementation error.",
-                    storPoolNameStr,
-                    nodeNameStr
-                )
-            );
-            entry.setReturnCode(RC_STOR_POOL_CRT_FAIL_IMPL_ERROR);
             entry.putVariable(KEY_NODE_NAME, nodeNameStr);
             entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
             entry.putObjRef(KEY_NODE, nodeNameStr);
@@ -694,28 +665,15 @@ class CtrlStorPoolApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (ClassNotFoundException | InstantiationException |
-            IllegalAccessException | DrbdDataAlreadyExistsException implErrExc)
+        catch (DrbdDataAlreadyExistsException implErrExc)
         {
             String errorMessage;
-            if (implErrExc instanceof DrbdDataAlreadyExistsException)
-            { // dataAlreadyExistsExc0 cannot happen
-                errorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an AlreadyExistsException "+
-                        "(node name: '%s', storage pool name: '%s')",
-                    nodeNameStr,
-                    storPoolNameStr
-                );
-            }
-            else
-            {
-                errorMessage= String.format(
-                    "A dynamic class instantiation related exception occured while this method shoud "+
-                        "not create such instances (Node name: '%s', storage pool name: '%s')",
-                    nodeNameStr,
-                    storPoolNameStr
-                );
-            }
+            errorMessage = String.format(
+                ".getInstance was called with failIfExists=false, still threw an AlreadyExistsException "+
+                    "(node name: '%s', storage pool name: '%s')",
+                nodeNameStr,
+                storPoolNameStr
+            );
             ApiCallRcEntry entry = new ApiCallRcEntry();
             controller.getErrorReporter().reportError(
                 new ImplementationError(

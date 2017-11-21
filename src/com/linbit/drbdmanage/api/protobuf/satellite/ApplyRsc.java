@@ -15,8 +15,8 @@ import com.linbit.drbdmanage.api.protobuf.ProtobufApiCall;
 import com.linbit.drbdmanage.core.Satellite;
 import com.linbit.drbdmanage.netcom.Message;
 import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
-import com.linbit.drbdmanage.proto.MsgCrtVlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.VlmDfnOuterClass.VlmDfn;
+import com.linbit.drbdmanage.proto.VlmOuterClass.Vlm;
 import com.linbit.drbdmanage.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.drbdmanage.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.drbdmanage.security.AccessContext;
@@ -79,7 +79,7 @@ public class ApplyRsc extends BaseProtoApiCall
         {
             list.add(
                 new VolumeDfnPojo(
-                    UuidUtils.asUuid(vlmDfn.getUuid().toByteArray()),
+                    UuidUtils.asUuid(vlmDfn.getVlmDfnUuid().toByteArray()),
                     vlmDfn.getVlmNr(),
                     vlmDfn.getVlmSize(),
                     vlmDfn.getVlmMinor(),
@@ -98,7 +98,7 @@ public class ApplyRsc extends BaseProtoApiCall
         {
             list.add(
                 new VolumePojo(
-                    UuidUtils.asUuid(vol.getUuid().toByteArray()),
+                    UuidUtils.asUuid(vol.getVlmUuid().toByteArray()),
                     vol.getVlmNr(),
                     vol.getBlockDevice(),
                     vol.getMetaDisk(),

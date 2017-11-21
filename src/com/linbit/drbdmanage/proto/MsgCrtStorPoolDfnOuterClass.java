@@ -23,17 +23,17 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes stor_pool_dfn_uuid = 1;</code>
      */
-    boolean hasUuid();
+    boolean hasStorPoolDfnUuid();
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes stor_pool_dfn_uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getUuid();
+    com.google.protobuf.ByteString getStorPoolDfnUuid();
 
     /**
      * <pre>
@@ -121,7 +121,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
       super(builder);
     }
     private MsgCrtStorPoolDfn() {
-      uuid_ = com.google.protobuf.ByteString.EMPTY;
+      storPoolDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
       storPoolName_ = "";
       storPoolDfnProps_ = java.util.Collections.emptyList();
     }
@@ -156,7 +156,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
             }
             case 10: {
               bitField0_ |= 0x00000001;
-              uuid_ = input.readBytes();
+              storPoolDfnUuid_ = input.readBytes();
               break;
             }
             case 18: {
@@ -202,16 +202,16 @@ public final class MsgCrtStorPoolDfnOuterClass {
     }
 
     private int bitField0_;
-    public static final int UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString uuid_;
+    public static final int STOR_POOL_DFN_UUID_FIELD_NUMBER = 1;
+    private com.google.protobuf.ByteString storPoolDfnUuid_;
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes stor_pool_dfn_uuid = 1;</code>
      */
-    public boolean hasUuid() {
+    public boolean hasStorPoolDfnUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
@@ -219,10 +219,10 @@ public final class MsgCrtStorPoolDfnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes stor_pool_dfn_uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getUuid() {
-      return uuid_;
+    public com.google.protobuf.ByteString getStorPoolDfnUuid() {
+      return storPoolDfnUuid_;
     }
 
     public static final int STOR_POOL_NAME_FIELD_NUMBER = 2;
@@ -357,7 +357,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, uuid_);
+        output.writeBytes(1, storPoolDfnUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, storPoolName_);
@@ -375,7 +375,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, uuid_);
+          .computeBytesSize(1, storPoolDfnUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, storPoolName_);
@@ -401,10 +401,10 @@ public final class MsgCrtStorPoolDfnOuterClass {
       com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn other = (com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn) obj;
 
       boolean result = true;
-      result = result && (hasUuid() == other.hasUuid());
-      if (hasUuid()) {
-        result = result && getUuid()
-            .equals(other.getUuid());
+      result = result && (hasStorPoolDfnUuid() == other.hasStorPoolDfnUuid());
+      if (hasStorPoolDfnUuid()) {
+        result = result && getStorPoolDfnUuid()
+            .equals(other.getStorPoolDfnUuid());
       }
       result = result && (hasStorPoolName() == other.hasStorPoolName());
       if (hasStorPoolName()) {
@@ -424,9 +424,9 @@ public final class MsgCrtStorPoolDfnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasUuid()) {
-        hash = (37 * hash) + UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getUuid().hashCode();
+      if (hasStorPoolDfnUuid()) {
+        hash = (37 * hash) + STOR_POOL_DFN_UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getStorPoolDfnUuid().hashCode();
       }
       if (hasStorPoolName()) {
         hash = (37 * hash) + STOR_POOL_NAME_FIELD_NUMBER;
@@ -559,7 +559,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
       }
       public Builder clear() {
         super.clear();
-        uuid_ = com.google.protobuf.ByteString.EMPTY;
+        storPoolDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000001);
         storPoolName_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -596,7 +596,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.uuid_ = uuid_;
+        result.storPoolDfnUuid_ = storPoolDfnUuid_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
@@ -652,8 +652,8 @@ public final class MsgCrtStorPoolDfnOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn other) {
         if (other == com.linbit.drbdmanage.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn.getDefaultInstance()) return this;
-        if (other.hasUuid()) {
-          setUuid(other.getUuid());
+        if (other.hasStorPoolDfnUuid()) {
+          setStorPoolDfnUuid(other.getStorPoolDfnUuid());
         }
         if (other.hasStorPoolName()) {
           bitField0_ |= 0x00000002;
@@ -722,15 +722,15 @@ public final class MsgCrtStorPoolDfnOuterClass {
       }
       private int bitField0_;
 
-      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
+      private com.google.protobuf.ByteString storPoolDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes stor_pool_dfn_uuid = 1;</code>
        */
-      public boolean hasUuid() {
+      public boolean hasStorPoolDfnUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
@@ -738,24 +738,24 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes stor_pool_dfn_uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getUuid() {
-        return uuid_;
+      public com.google.protobuf.ByteString getStorPoolDfnUuid() {
+        return storPoolDfnUuid_;
       }
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes stor_pool_dfn_uuid = 1;</code>
        */
-      public Builder setUuid(com.google.protobuf.ByteString value) {
+      public Builder setStorPoolDfnUuid(com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-        uuid_ = value;
+        storPoolDfnUuid_ = value;
         onChanged();
         return this;
       }
@@ -764,11 +764,11 @@ public final class MsgCrtStorPoolDfnOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes stor_pool_dfn_uuid = 1;</code>
        */
-      public Builder clearUuid() {
+      public Builder clearStorPoolDfnUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        uuid_ = getDefaultInstance().getUuid();
+        storPoolDfnUuid_ = getDefaultInstance().getStorPoolDfnUuid();
         onChanged();
         return this;
       }
@@ -1248,11 +1248,11 @@ public final class MsgCrtStorPoolDfnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\027MsgCrtStorPoolDfn.proto\022\033com.linbit.dr" +
-      "bdmanage.proto\032\025LinStorMapEntry.proto\"\204\001" +
-      "\n\021MsgCrtStorPoolDfn\022\014\n\004uuid\030\001 \001(\014\022\026\n\016sto" +
-      "r_pool_name\030\002 \002(\t\022I\n\023stor_pool_dfn_props" +
-      "\030\003 \003(\0132,.com.linbit.drbdmanage.proto.Lin" +
-      "StorMapEntryP\000"
+      "bdmanage.proto\032\025LinStorMapEntry.proto\"\222\001" +
+      "\n\021MsgCrtStorPoolDfn\022\032\n\022stor_pool_dfn_uui" +
+      "d\030\001 \001(\014\022\026\n\016stor_pool_name\030\002 \002(\t\022I\n\023stor_" +
+      "pool_dfn_props\030\003 \003(\0132,.com.linbit.drbdma" +
+      "nage.proto.LinStorMapEntryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1272,7 +1272,7 @@ public final class MsgCrtStorPoolDfnOuterClass {
     internal_static_com_linbit_drbdmanage_proto_MsgCrtStorPoolDfn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgCrtStorPoolDfn_descriptor,
-        new java.lang.String[] { "Uuid", "StorPoolName", "StorPoolDfnProps", });
+        new java.lang.String[] { "StorPoolDfnUuid", "StorPoolName", "StorPoolDfnProps", });
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 

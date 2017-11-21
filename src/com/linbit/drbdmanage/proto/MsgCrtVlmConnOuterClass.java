@@ -23,17 +23,17 @@ public final class MsgCrtVlmConnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes vlm_conn_uuid = 1;</code>
      */
-    boolean hasUuid();
+    boolean hasVlmConnUuid();
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes vlm_conn_uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getUuid();
+    com.google.protobuf.ByteString getVlmConnUuid();
 
     /**
      * <pre>
@@ -224,7 +224,7 @@ public final class MsgCrtVlmConnOuterClass {
       super(builder);
     }
     private MsgCrtVlmConn() {
-      uuid_ = com.google.protobuf.ByteString.EMPTY;
+      vlmConnUuid_ = com.google.protobuf.ByteString.EMPTY;
       nodeName1_ = "";
       nodeName2_ = "";
       resourceName_ = "";
@@ -264,7 +264,7 @@ public final class MsgCrtVlmConnOuterClass {
             }
             case 10: {
               bitField0_ |= 0x00000001;
-              uuid_ = input.readBytes();
+              vlmConnUuid_ = input.readBytes();
               break;
             }
             case 18: {
@@ -337,16 +337,16 @@ public final class MsgCrtVlmConnOuterClass {
     }
 
     private int bitField0_;
-    public static final int UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString uuid_;
+    public static final int VLM_CONN_UUID_FIELD_NUMBER = 1;
+    private com.google.protobuf.ByteString vlmConnUuid_;
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes vlm_conn_uuid = 1;</code>
      */
-    public boolean hasUuid() {
+    public boolean hasVlmConnUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
@@ -354,10 +354,10 @@ public final class MsgCrtVlmConnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional bytes vlm_conn_uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getUuid() {
-      return uuid_;
+    public com.google.protobuf.ByteString getVlmConnUuid() {
+      return vlmConnUuid_;
     }
 
     public static final int NODE_NAME_1_FIELD_NUMBER = 2;
@@ -681,7 +681,7 @@ public final class MsgCrtVlmConnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, uuid_);
+        output.writeBytes(1, vlmConnUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName1_);
@@ -714,7 +714,7 @@ public final class MsgCrtVlmConnOuterClass {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, uuid_);
+          .computeBytesSize(1, vlmConnUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName1_);
@@ -758,10 +758,10 @@ public final class MsgCrtVlmConnOuterClass {
       com.linbit.drbdmanage.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn other = (com.linbit.drbdmanage.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn) obj;
 
       boolean result = true;
-      result = result && (hasUuid() == other.hasUuid());
-      if (hasUuid()) {
-        result = result && getUuid()
-            .equals(other.getUuid());
+      result = result && (hasVlmConnUuid() == other.hasVlmConnUuid());
+      if (hasVlmConnUuid()) {
+        result = result && getVlmConnUuid()
+            .equals(other.getVlmConnUuid());
       }
       result = result && (hasNodeName1() == other.hasNodeName1());
       if (hasNodeName1()) {
@@ -806,9 +806,9 @@ public final class MsgCrtVlmConnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasUuid()) {
-        hash = (37 * hash) + UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getUuid().hashCode();
+      if (hasVlmConnUuid()) {
+        hash = (37 * hash) + VLM_CONN_UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getVlmConnUuid().hashCode();
       }
       if (hasNodeName1()) {
         hash = (37 * hash) + NODE_NAME_1_FIELD_NUMBER;
@@ -961,7 +961,7 @@ public final class MsgCrtVlmConnOuterClass {
       }
       public Builder clear() {
         super.clear();
-        uuid_ = com.google.protobuf.ByteString.EMPTY;
+        vlmConnUuid_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000001);
         nodeName1_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -1008,7 +1008,7 @@ public final class MsgCrtVlmConnOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.uuid_ = uuid_;
+        result.vlmConnUuid_ = vlmConnUuid_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
@@ -1084,8 +1084,8 @@ public final class MsgCrtVlmConnOuterClass {
 
       public Builder mergeFrom(com.linbit.drbdmanage.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn other) {
         if (other == com.linbit.drbdmanage.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn.getDefaultInstance()) return this;
-        if (other.hasUuid()) {
-          setUuid(other.getUuid());
+        if (other.hasVlmConnUuid()) {
+          setVlmConnUuid(other.getVlmConnUuid());
         }
         if (other.hasNodeName1()) {
           bitField0_ |= 0x00000002;
@@ -1182,15 +1182,15 @@ public final class MsgCrtVlmConnOuterClass {
       }
       private int bitField0_;
 
-      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
+      private com.google.protobuf.ByteString vlmConnUuid_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes vlm_conn_uuid = 1;</code>
        */
-      public boolean hasUuid() {
+      public boolean hasVlmConnUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
@@ -1198,24 +1198,24 @@ public final class MsgCrtVlmConnOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes vlm_conn_uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getUuid() {
-        return uuid_;
+      public com.google.protobuf.ByteString getVlmConnUuid() {
+        return vlmConnUuid_;
       }
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes vlm_conn_uuid = 1;</code>
        */
-      public Builder setUuid(com.google.protobuf.ByteString value) {
+      public Builder setVlmConnUuid(com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-        uuid_ = value;
+        vlmConnUuid_ = value;
         onChanged();
         return this;
       }
@@ -1224,11 +1224,11 @@ public final class MsgCrtVlmConnOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional bytes vlm_conn_uuid = 1;</code>
        */
-      public Builder clearUuid() {
+      public Builder clearVlmConnUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        uuid_ = getDefaultInstance().getUuid();
+        vlmConnUuid_ = getDefaultInstance().getVlmConnUuid();
         onChanged();
         return this;
       }
@@ -2058,13 +2058,13 @@ public final class MsgCrtVlmConnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\023MsgCrtVlmConn.proto\022\033com.linbit.drbdma" +
-      "nage.proto\032\025LinStorMapEntry.proto\"\342\001\n\rMs" +
-      "gCrtVlmConn\022\014\n\004uuid\030\001 \001(\014\022\023\n\013node_name_1" +
-      "\030\002 \002(\t\022\023\n\013node_name_2\030\003 \002(\t\022\025\n\rresource_" +
-      "name\030\004 \002(\t\022\021\n\tvolume_nr\030\005 \002(\021\022\022\n\nvlm_1_u" +
-      "uid\030\006 \001(\014\022\022\n\nvlm_2_uuid\030\007 \001(\014\022G\n\021volume_" +
-      "conn_props\030\010 \003(\0132,.com.linbit.drbdmanage" +
-      ".proto.LinStorMapEntryP\000"
+      "nage.proto\032\025LinStorMapEntry.proto\"\353\001\n\rMs" +
+      "gCrtVlmConn\022\025\n\rvlm_conn_uuid\030\001 \001(\014\022\023\n\013no" +
+      "de_name_1\030\002 \002(\t\022\023\n\013node_name_2\030\003 \002(\t\022\025\n\r" +
+      "resource_name\030\004 \002(\t\022\021\n\tvolume_nr\030\005 \002(\021\022\022" +
+      "\n\nvlm_1_uuid\030\006 \001(\014\022\022\n\nvlm_2_uuid\030\007 \001(\014\022G" +
+      "\n\021volume_conn_props\030\010 \003(\0132,.com.linbit.d" +
+      "rbdmanage.proto.LinStorMapEntryP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2084,7 +2084,7 @@ public final class MsgCrtVlmConnOuterClass {
     internal_static_com_linbit_drbdmanage_proto_MsgCrtVlmConn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_drbdmanage_proto_MsgCrtVlmConn_descriptor,
-        new java.lang.String[] { "Uuid", "NodeName1", "NodeName2", "ResourceName", "VolumeNr", "Vlm1Uuid", "Vlm2Uuid", "VolumeConnProps", });
+        new java.lang.String[] { "VlmConnUuid", "NodeName1", "NodeName2", "ResourceName", "VolumeNr", "Vlm1Uuid", "Vlm2Uuid", "VolumeConnProps", });
     com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 

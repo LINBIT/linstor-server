@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.linbit.drbdmanage.Volume.VlmApi;
 import com.linbit.drbdmanage.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
-import com.linbit.drbdmanage.proto.MsgCrtRscOuterClass.Vlm;
+import com.linbit.drbdmanage.proto.VlmOuterClass.Vlm;
 
 public class VlmApiData implements VlmApi
 {

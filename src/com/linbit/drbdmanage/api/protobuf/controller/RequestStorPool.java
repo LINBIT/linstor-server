@@ -22,6 +22,6 @@ public class RequestStorPool extends RequestObject
     @Override
     protected void handleRequest(String name, UUID objUuid, int msgId, Peer satellitePeer)
     {
-        controller.getApiCallHandler().requestStorPool(name, objUuid, msgId, satellitePeer);
+        controller.getApiCallHandler().requestStorPool(satellitePeer, msgId, name, objUuid);
     }
 }
