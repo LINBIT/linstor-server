@@ -1,6 +1,5 @@
 package com.linbit.drbdmanage.debug;
 
-import com.linbit.drbdmanage.debug.BaseDebugCmd;
 import com.linbit.drbdmanage.logging.StdErrorReporter;
 import com.linbit.drbdmanage.security.AccessContext;
 import java.io.BufferedReader;

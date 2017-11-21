@@ -3,15 +3,9 @@ package com.linbit.drbdmanage.security;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.linbit.ServiceName;
-import com.linbit.SystemServiceStartException;
-import com.linbit.drbdmanage.ControllerDatabase;
 
 import static org.junit.Assert.*;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Properties;
 
 /**
  * Tests the security model
