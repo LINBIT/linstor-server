@@ -155,6 +155,19 @@ public class DerbyDriver implements DatabaseDriver
         resourceDriver.clearCache();
         volumeDriver.clearCache();
         storPoolDriver.clearCache();
+
+        for (Node curNode : nodeList)
+        {
+            nodesMap.put(curNode.getName(), curNode);
+        }
+        for (ResourceDefinition curRscDfn : rscDfnList)
+        {
+            rscDfnMap.put(curRscDfn.getName(), curRscDfn);
+        }
+        for (StorPoolDefinition curStorPoolDfn : storPoolDfnList)
+        {
+            storPoolDfnMap.put(curStorPoolDfn.getName(), curStorPoolDfn);
+        }
     }
 
     @Override
