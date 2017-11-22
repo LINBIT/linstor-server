@@ -39,6 +39,7 @@ import com.linbit.linstor.security.EmptySecurityDbDriver;
 import com.linbit.linstor.security.Initializer;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.security.PrivilegeSet;
 import com.linbit.linstor.security.SecurityLevel;
 import com.linbit.linstor.timer.CoreTimer;
 
@@ -147,6 +148,9 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
 
     // File system watch service
     private FileSystemWatch fsWatchSvc;
+
+    // Device manager
+    private DeviceManagerImpl devMgr = null;
 
     // Shutdown controls
     private boolean shutdownFinished;
@@ -305,6 +309,15 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
 
                 errorLogRef.logInfo("Initializing test APIs");
                 LinStor.loadApiCalls(msgProc, this, this, apiType);
+
+                errorLogRef.logInfo("Initializing device manager");
+                {
+                    AccessContext devMgrCtx = sysCtx.clone();
+                    PrivilegeSet devMgrPriv = devMgrCtx.getEffectivePrivs();
+                    devMgrPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
+                    devMgrPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
+                    devMgr = new DeviceManagerImpl(this, devMgrCtx, this);
+                }
 
                 // Initialize system services
                 startSystemServices(systemServicesMap.values());
