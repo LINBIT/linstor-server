@@ -11,10 +11,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.junit.Test;
 
 import com.linbit.InvalidNameException;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.DrbdDataAlreadyExistsException;
@@ -45,12 +45,13 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 {
     private static final String SELECT_ALL_RESOURCE_DEFINITIONS =
         " SELECT " + UUID + ", " + RESOURCE_NAME + ", " + RESOURCE_DSP_NAME + ", " +
-                     TCP_PORT + ", " + RESOURCE_FLAGS +
+                     TCP_PORT + ", " + SECRET + ", " + RESOURCE_FLAGS +
         " FROM " + TBL_RESOURCE_DEFINITIONS;
 
     private final ResourceName resName;
     private final TcpPortNumber port;
     private final NodeName nodeName;
+    private final String secret;
 
     private TransactionMgr transMgr;
     private java.util.UUID resDfnUuid;
@@ -67,13 +68,14 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         resName = new ResourceName("TestResName");
         port = new TcpPortNumber(4242);
         nodeName = new NodeName("TestNodeName1");
+        secret = "secret";
     }
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_RESOURCE_DEFINITIONS + " table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_RESOURCE_DEFINITIONS);
+        assertEquals(TBL_RESOURCE_DEFINITIONS + " table's column count has changed. Update tests accordingly!", 6, TBL_COL_COUNT_RESOURCE_DEFINITIONS);
 
         transMgr = new TransactionMgr(getConnection());
 
@@ -102,7 +104,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             port,
             RscDfnFlags.DELETE.flagValue,
-            "secret",
+            secret,
             transMgr
         );
 
@@ -123,6 +125,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
         assertEquals(port.value, resultSet.getInt(TCP_PORT));
+        assertEquals(secret, resultSet.getString(SECRET));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertFalse("Database persisted too many resourceDefinitions", resultSet.next());
 
@@ -138,7 +141,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
-            "secret",
+            secret,
             transMgr,
             true,
             false
@@ -155,6 +158,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resName.displayValue, resultSet.getString(RESOURCE_DSP_NAME));
         assertEquals(port.value, resultSet.getInt(TCP_PORT));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(secret, resultSet.getString(SECRET));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -183,6 +187,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
         assertEquals(port, loadedResDfn.getPort(sysCtx));
+        assertEquals(secret, loadedResDfn.getSecret(sysCtx));
         assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
     }
 
@@ -194,7 +199,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
-            "secret",
+            secret,
             transMgr,
             false,
             false
@@ -230,6 +235,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
         assertEquals(port, loadedResDfn.getPort(sysCtx));
+        assertEquals(secret, loadedResDfn.getSecret(sysCtx));
         assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
     }
 
@@ -241,7 +247,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             port,
             null,
-            "secret",
+            secret,
             transMgr,
             true,
             false
@@ -514,6 +520,38 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull(resDfnMap.get(resName2));
         assertNotEquals(resDfnMap.get(resName2), resDfnMap.get(resName));
     }
+
+    @Test
+    public void testDirtyParent() throws Exception
+    {
+        satelliteMode();
+        SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+        ResourceDefinitionData rscDfn = ResourceDefinitionData.getInstanceSatellite(
+            sysCtx,
+            resDfnUuid,
+            resName,
+            port,
+            null,
+            "notTellingYou",
+            transMgr
+        );
+        rscDfn.setConnection(transMgr);
+        rscDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
+
+        VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstanceSatellite(
+            sysCtx,
+            java.util.UUID.randomUUID(),
+            rscDfn,
+            new VolumeNumber(0),
+            1000,
+            new MinorNumber(10),
+            null,
+            transMgr
+        );
+        vlmDfn.setConnection(transMgr);
+
+    }
+
 
     @Test (expected = DrbdDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
