@@ -124,24 +124,27 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 ret = cacheGet(resourceDefinition, volumeNumber);
-                if (resultSet.next())
+                if(ret == null)
                 {
-                    ret = restoreVolumeDefinition(
-                        resultSet,
-                        resourceDefinition,
-                        volumeNumber,
-                        transMgr,
-                        dbCtx
-                    );
-                    errorReporter.logTrace("VolumeDefinition loaded %s", getDebugId(resourceDefinition, volumeNumber));
-                }
-                else
-                if (logWarnIfNotExists)
-                {
-                    errorReporter.logWarning(
-                        "Requested VolumeDefinition %s could not be found in the Database",
-                        getDebugId(resourceDefinition, volumeNumber)
-                    );
+                    if (resultSet.next())
+                    {
+                        ret = restoreVolumeDefinition(
+                            resultSet,
+                            resourceDefinition,
+                            volumeNumber,
+                            transMgr,
+                            dbCtx
+                        );
+                        errorReporter.logTrace("VolumeDefinition loaded %s", getDebugId(resourceDefinition, volumeNumber));
+                    }
+                    else
+                    if (logWarnIfNotExists)
+                    {
+                        errorReporter.logWarning(
+                            "Requested VolumeDefinition %s could not be found in the Database",
+                            getDebugId(resourceDefinition, volumeNumber)
+                        );
+                    }
                 }
             }
         }
