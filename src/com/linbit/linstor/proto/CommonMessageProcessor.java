@@ -19,6 +19,7 @@ import com.linbit.WorkQueue;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.MessageProcessor;
@@ -176,7 +177,13 @@ public class CommonMessageProcessor implements MessageProcessor
         }
         catch (IllegalMessageStateException msgExc)
         {
-            coreSvcs.getErrorReporter().reportError(msgExc);
+            coreSvcs.getErrorReporter().reportError(
+                Level.DEBUG,
+                msgExc,
+                client.getAccessContext(),
+                client,
+                null
+            );
         }
     }
 
@@ -210,6 +217,7 @@ public class CommonMessageProcessor implements MessageProcessor
                     ApiCallInvocation apiCallInv = new ApiCallInvocation(
                         apiCallObj,
                         client.getAccessContext(),
+                        coreSvcs.getErrorReporter(),
                         msg, msgId, msgDataIn,
                         client
                     );
@@ -243,7 +251,13 @@ public class CommonMessageProcessor implements MessageProcessor
             //         and from the satellite to a client; otherwise, this can create
             //         a loop if error reports are created due to receiving a
             //         malformed error report
-            coreSvcs.getErrorReporter().reportError(ioExc);
+            coreSvcs.getErrorReporter().reportError(
+                Level.DEBUG,
+                ioExc,
+                client.getAccessContext(),
+                client,
+                null
+            );
         }
     }
 
@@ -251,6 +265,7 @@ public class CommonMessageProcessor implements MessageProcessor
     {
         private ApiCall         apiCallObj;
         private AccessContext   accCtx;
+        private ErrorReporter   errLog;
         private Message         msg;
         private int             msgId;
         private InputStream     msgDataIn;
@@ -259,6 +274,7 @@ public class CommonMessageProcessor implements MessageProcessor
         ApiCallInvocation(
             ApiCall         apiCallRef,
             AccessContext   accCtxRef,
+            ErrorReporter   errLogRef,
             Message         msgRef,
             int             msgIdRef,
             InputStream     msgDataInRef,
@@ -267,6 +283,7 @@ public class CommonMessageProcessor implements MessageProcessor
         {
             apiCallObj  = apiCallRef;
             accCtx      = accCtxRef;
+            errLog      = errLogRef;
             msg         = msgRef;
             msgId       = msgIdRef;
             msgDataIn   = msgDataInRef;
@@ -276,7 +293,14 @@ public class CommonMessageProcessor implements MessageProcessor
         @Override
         public void run()
         {
-            apiCallObj.execute(accCtx, msg, msgId, msgDataIn, client);
+            try
+            {
+                apiCallObj.execute(accCtx, msg, msgId, msgDataIn, client);
+            }
+            catch (Exception exc)
+            {
+                errLog.reportError(Level.ERROR, exc, accCtx, client, null);
+            }
         }
     }
 }
