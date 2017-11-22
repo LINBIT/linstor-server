@@ -88,6 +88,12 @@ public final class StdErrorReporter implements ErrorReporter
     }
 
     @Override
+    public boolean isTraceEnabled()
+    {
+        return traceEnabled;
+    }
+
+    @Override
     public void setTraceEnabled(AccessContext accCtx, boolean flag)
         throws AccessDeniedException
     {

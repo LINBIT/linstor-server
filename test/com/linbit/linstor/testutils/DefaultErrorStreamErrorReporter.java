@@ -115,4 +115,10 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
     {
         // Tracing on/off not implemented, no-op
     }
+
+    @Override
+    public boolean isTraceEnabled()
+    {
+        return true;
+    }
 }

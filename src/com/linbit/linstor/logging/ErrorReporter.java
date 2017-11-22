@@ -17,6 +17,13 @@ public interface ErrorReporter
     // TODO: javadoc
 
     /**
+     * Indicates whether logging and reporting at the TRACE log level is enabled or not
+     *
+     * @return true if TRACE logging is enabled, false otherwise
+     */
+    boolean isTraceEnabled();
+
+    /**
      * Enables or disables logging and reporting at the TRACE log level
      *
      * @param accCtx The access context of the subject performing the change

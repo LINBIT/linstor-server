@@ -111,4 +111,10 @@ public class EmptyErrorReporter implements ErrorReporter
     {
         // Tracing on/off not implemented, no-op
     }
+
+    @Override
+    public boolean isTraceEnabled()
+    {
+        return true;
+    }
 }

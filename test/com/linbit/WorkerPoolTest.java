@@ -316,6 +316,12 @@ public class WorkerPoolTest
         {
             // Tracing on/off not implemented, no-op
         }
+
+        @Override
+        public boolean isTraceEnabled()
+        {
+            return true;
+        }
     }
 
     private static class WorkerPoolBuilder
