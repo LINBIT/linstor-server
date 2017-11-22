@@ -313,6 +313,10 @@ public class ApiConsts
      */
     public static final long RC_VLM_DFN_CREATED = MASK_VLM_DFN | CREATED;
     public static final long RC_VLM_DFN_DELETED = MASK_VLM_DFN | DELETED;
+    public static final long RC_VLM_DFN_CRT_FAIL_SQL = MASK_VLM_DFN | CRT_FAIL_SQL;
+    public static final long RC_VLM_DFN_CRT_FAIL_SQL_ROLLBACK = MASK_VLM_DFN | CRT_FAIL_SQL_ROLLBACK;
+    public static final long RC_VLM_DFN_CRT_FAIL_INVLD_RSC_NAME = MASK_VLM_DFN | CRT_FAIL_INVLD_RSC_NAME;
+    public static final long RC_VLM_DFN_CRT_FAIL_ACC_DENIED_RSC_DFN = MASK_VLM_DFN | CRT_FAIL_ACC_DENIED_RSC_DFN;
 
     /*
      * Volume return codes
@@ -570,7 +574,7 @@ public class ApiConsts
     /*
      * Object property keys
      */
-    public static final String KEY_UUID = "Uuid";
+    public static final String KEY_UUID = "UUID";
     public static final String KEY_NODE = "Node";
     public static final String KEY_RSC_DFN = "RscDfn";
     public static final String KEY_STOR_POOL_DFN = "StorPoolDfn";
@@ -592,7 +596,7 @@ public class ApiConsts
     public static final String KEY_PEER_COUNT = "PeerCount";
     public static final String KEY_AL_SIZE = "AlSize";
     public static final String KEY_AL_STRIPES = "AlStripes";
-    public static final String KEY_ID = "Id";
+    public static final String KEY_ID = "ID";
     public static final String KEY_ROLE = "Role";
     public static final String KEY_MISSING_NAMESPC = "MissingNameSpace";
 
@@ -609,7 +613,7 @@ public class ApiConsts
      * Property keys
      */
     public static final String KEY_PORT_NR = "PortNr";
-    public static final String KEY_IP_ADDR = "IpAddr";
+    public static final String KEY_IP_ADDR = "IPAddr";
     public static final String KEY_BIND_ADDR = "BindAddr";
     public static final String KEY_NETCOM_TYPE = "NetComType";
     public static final String KEY_NETIF_TYPE = "NetIfType";
@@ -624,7 +628,7 @@ public class ApiConsts
     /*
      * Property values
      */
-    public static final String VAL_NETCOM_TYPE_SSL = "Ssl";
+    public static final String VAL_NETCOM_TYPE_SSL = "SSL";
     public static final String VAL_NETCOM_TYPE_PLAIN = "Plain";
     public static final String VAL_SSL_PROTO_TLSv1 = "TLSv1";
 
@@ -635,6 +639,13 @@ public class ApiConsts
     public static final String VAL_NODE_TYPE_STLT = "Satellite";
     public static final String VAL_NODE_TYPE_CMBD = "Combined";
     public static final String VAL_NODE_TYPE_AUX = "Auxiliary";
+
+    /*
+     * Net interface Type values
+     */
+    public static final String VAL_NETIF_TYPE_IP = "IP";
+    public static final String VAL_NETIF_TYPE_RDMA = "RDMA";
+    public static final String VAL_NETIF_TYPE_ROCE = "RoCE";
 
     /*
      * Authentication keys
