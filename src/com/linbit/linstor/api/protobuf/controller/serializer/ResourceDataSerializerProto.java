@@ -72,6 +72,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
             .setRscDfnUuid(asByteString(rscDfn.getUuid()))
             .setRscDfnPort(rscDfn.getPort(serializerCtx).value)
             .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
+            .setRscDfnSecret(rscDfn.getSecret(serializerCtx))
             .addAllRscDfnProps(BaseProtoApiCall.fromMap(rscDfnProps))
             .setLocalRscUuid(asByteString(localResource.getUuid()))
             .setLocalRscFlags(localResource.getStateFlags().getFlagsBits(serializerCtx))
@@ -128,18 +129,24 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
             Volume vol = localVolIterator.next();
             Map<String, String> volProps = vol.getProps(serializerCtx).map();
             StorPool vlmStorPool = vol.getStorPool(serializerCtx);
-            vlmList.add(
-                Vlm.newBuilder()
-                    .setVlmUuid(asByteString(vol.getUuid()))
-                    .setVlmNr(vol.getVolumeDefinition().getVolumeNumber().value)
-                    .setBlockDevice(vol.getBlockDevicePath(serializerCtx))
-                    .setMetaDisk(vol.getMetaDiskPath(serializerCtx))
-                    .setVlmFlags(vol.getFlags().getFlagsBits(serializerCtx))
-                    .setStorPoolUuid(asByteString(vlmStorPool.getUuid()))
-                    .setStorPoolName(vlmStorPool.getName().displayValue)
-                    .addAllVlmProps(BaseProtoApiCall.fromMap(volProps))
-                    .build()
-            );
+            Vlm.Builder builder = Vlm.newBuilder()
+                .setVlmUuid(asByteString(vol.getUuid()))
+                .setVlmNr(vol.getVolumeDefinition().getVolumeNumber().value)
+                .setVlmFlags(vol.getFlags().getFlagsBits(serializerCtx))
+                .setStorPoolUuid(asByteString(vlmStorPool.getUuid()))
+                .setStorPoolName(vlmStorPool.getName().displayValue)
+                .addAllVlmProps(BaseProtoApiCall.fromMap(volProps));
+            String blockDev = vol.getBlockDevicePath(serializerCtx);
+            if (blockDev != null)
+            {
+                builder.setBlockDevice(blockDev);
+            }
+            String metaDisk = vol.getMetaDiskPath(serializerCtx);
+            if (metaDisk != null)
+            {
+                builder.setMetaDisk(metaDisk);
+            }
+            vlmList.add(builder.build());
         }
         return vlmList;
     }

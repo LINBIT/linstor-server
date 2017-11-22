@@ -263,6 +263,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
             {
                 apiCtx.getEffectivePrivs().enablePrivileges(
                     Privilege.PRIV_OBJ_VIEW,
+                    Privilege.PRIV_OBJ_USE,
+                    Privilege.PRIV_OBJ_CHANGE,
                     Privilege.PRIV_MAC_OVRD
                 );
                 apiCallHandler = new CtrlApiCallHandler(this, apiType, apiCtx);

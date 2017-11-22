@@ -116,6 +116,7 @@ public class ApiConsts
     public static final long CRT_FAIL_NOT_FOUND_VLM_CONN = 138 | MASK_ERROR;
     public static final long CRT_FAIL_NOT_FOUND_STOR_POOL_DFN = 139 | MASK_ERROR;
     public static final long CRT_FAIL_NOT_FOUND_STOR_POOL = 140 | MASK_ERROR;
+    public static final long CRT_FAIL_NOT_FOUND_DFLT_STOR_POOL = 141 | MASK_ERROR;
 
     /*
      * Codes 150-159: access denied creation failures
@@ -281,6 +282,7 @@ public class ApiConsts
     public static final long RC_RSC_CRT_FAIL_NOT_FOUND_RSC_DFN = MASK_RSC | CRT_FAIL_NOT_FOUND_RSC_DFN;
     public static final long RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL_DFN = MASK_RSC | CRT_FAIL_NOT_FOUND_STOR_POOL_DFN;
     public static final long RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL = MASK_RSC | CRT_FAIL_NOT_FOUND_STOR_POOL;
+    public static final long RC_RSC_CRT_FAIL_NOT_FOUND_DFLT_STOR_POOL = MASK_RSC | CRT_FAIL_NOT_FOUND_DFLT_STOR_POOL;
     public static final long RC_RSC_CRT_FAIL_NOT_FOUND_VLM_DFN = MASK_RSC | CRT_FAIL_NOT_FOUND_VLM_DFN;
     public static final long RC_RSC_CRT_FAIL_ACC_DENIED_NODE = MASK_RSC | CRT_FAIL_ACC_DENIED_NODE;
     public static final long RC_RSC_CRT_FAIL_ACC_DENIED_RSC_DFN = MASK_RSC | CRT_FAIL_ACC_DENIED_RSC_DFN;

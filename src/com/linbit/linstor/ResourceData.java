@@ -366,14 +366,14 @@ public class ResourceData extends BaseTransactionObject implements Resource
                     assgNode.getProps(apiCtx)
                 );
 
-
                 if (vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.DELETE))
                 {
                     // find corresponding volume (if exists) and also set DELETE flag
                 }
 
-                // if vlm not yet deployed
+                if (!volumeMap.containsKey(vlmDfn.getVolumeNumber()))
                 {
+                    // if vlm not yet deployed
                     String storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
                     if (storPoolNameStr == null || "".equals(storPoolNameStr))
                     {
@@ -397,7 +397,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
                         true
                     );
                 }
-
             }
 
         }

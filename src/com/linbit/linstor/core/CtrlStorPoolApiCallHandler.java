@@ -95,10 +95,12 @@ class CtrlStorPoolApiCallHandler
             {
                 ApiCallRcEntry nodeNotFoundEntry = new ApiCallRcEntry();
                 nodeNotFoundEntry.setReturnCode(RC_STOR_POOL_CRT_FAIL_NOT_FOUND_NODE);
-                nodeNotFoundEntry.setCauseFormat(String.format(
-                    "The specified node '%s' could not be found in the database",
-                    nodeNameStr
-                ));
+                nodeNotFoundEntry.setMessageFormat(
+                    String.format(
+                        "The specified node '%s' could not be found in the database",
+                        nodeNameStr
+                    )
+                );
                 nodeNotFoundEntry.setCorrectionFormat(
                     String.format(
                         "Create a node with the name '%s' first.",
@@ -117,10 +119,12 @@ class CtrlStorPoolApiCallHandler
             {
                 ApiCallRcEntry nodeNotFoundEntry = new ApiCallRcEntry();
                 nodeNotFoundEntry.setReturnCode(RC_STOR_POOL_CRT_FAIL_NOT_FOUND_STOR_POOL_DFN);
-                nodeNotFoundEntry.setCauseFormat(String.format(
-                    "The specified storage pool definition '%s' could not be found in the database",
-                    storPoolNameStr
-                ));
+                nodeNotFoundEntry.setMessageFormat(
+                    String.format(
+                        "The specified storage pool definition '%s' could not be found in the database",
+                        storPoolNameStr
+                    )
+                );
                 nodeNotFoundEntry.setCorrectionFormat(
                     String.format(
                         "Create a storage pool definition with the name '%s' first.",

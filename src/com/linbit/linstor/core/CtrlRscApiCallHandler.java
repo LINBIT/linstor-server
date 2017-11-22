@@ -253,6 +253,7 @@ class CtrlRscApiCallHandler
                         entry.putVariable(KEY_NODE_NAME, nodeNameStr);
                         entry.putVariable(KEY_RSC_NAME, rscNameStr);
                         entry.putVariable(KEY_VLM_NR, Integer.toString(volNr.value));
+                        apiCallRc.addEntry(entry);
                         break;
                     }
 
@@ -333,6 +334,7 @@ class CtrlRscApiCallHandler
                         entry.putVariable(KEY_NODE_NAME, nodeNameStr);
                         entry.putVariable(KEY_RSC_NAME, rscNameStr);
                         entry.putVariable(KEY_VLM_NR, Integer.toString(volNr.value));
+                        apiCallRc.addEntry(entry);
                         break;
                     }
                     else
@@ -401,21 +403,65 @@ class CtrlRscApiCallHandler
                             apiCtx,
                             new StorPoolName(storPoolNameStr)
                         );
-                        if (!vlmMap.containsKey(missingVlmDfn.getVolumeNumber().value))
+
+                        if (dfltStorPool == null)
                         {
-                            // create missing vlm with default values
-                            VolumeData.getInstance(
-                                accCtx,
-                                rsc,
-                                missingVlmDfn,
-                                dfltStorPool,
-                                null, // block device
-                                null, // metadisk
-                                null, // flags
-                                transMgr,
-                                true,
-                                true
+                            success = false;
+                            ApiCallRcEntry entry = new ApiCallRcEntry();
+                            String errorMessage = String.format(
+                                "The default storage pool '%s' for resource '%s' for volume number '%d' is not deployed on node '%s'.",
+                                storPoolNameStr,
+                                rsc.getDefinition().getName().displayValue,
+                                missingVlmDfn.getVolumeNumber().value,
+                                rsc.getAssignedNode().getName().displayValue
                             );
+                            entry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_DFLT_STOR_POOL);
+                            controller.getErrorReporter().reportError(
+                                new NullPointerException("Dependency not found"),
+                                accCtx,
+                                client,
+                                errorMessage
+                            );
+                            entry.setMessageFormat(errorMessage);
+                            entry.setDetailsFormat(
+                                String.format(
+                                    "The resource which should be deployed had at least one volume definition " +
+                                        "(volume number '%d') which LinStor tried to automatically create. " +
+                                        "The default storage pool's name for this new volume was looked for in " +
+                                        "its volume definition's properties, its resource's properties, its node's " +
+                                        "properties and finally in a system wide default storage pool name defined by " +
+                                        "the LinStor controller."
+                                    ,
+                                    missingVlmDfn.getVolumeNumber().value
+                                )
+                            );
+                            entry.putObjRef(KEY_NODE, nodeNameStr);
+                            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                            entry.putObjRef(KEY_VLM_NR, Integer.toString(missingVlmDfn.getVolumeNumber().value));
+                            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+                            entry.putVariable(KEY_RSC_NAME, rscNameStr);
+                            entry.putVariable(KEY_VLM_NR, Integer.toString(missingVlmDfn.getVolumeNumber().value));
+                            apiCallRc.addEntry(entry);
+                            break;
+                        }
+                        else
+                        {
+                            if (!vlmMap.containsKey(missingVlmDfn.getVolumeNumber().value))
+                            {
+                                // create missing vlm with default values
+                                VolumeData.getInstance(
+                                    accCtx,
+                                    rsc,
+                                    missingVlmDfn,
+                                    dfltStorPool,
+                                    null, // block device
+                                    null, // metadisk
+                                    null, // flags
+                                    transMgr,
+                                    true,
+                                    true
+                                );
+                            }
                         }
                     }
                 }

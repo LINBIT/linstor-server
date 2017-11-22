@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
@@ -31,6 +32,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.interfaces.Serializer;
+import com.linbit.linstor.netcom.IllegalMessageStateException;
+import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -144,15 +147,13 @@ public class CtrlVlmDfnApiCallHandler
             {
                 ApiCallRcEntry volSuccessEntry = new ApiCallRcEntry();
                 volSuccessEntry.setReturnCode(RC_VLM_DFN_CREATED);
-                volSuccessEntry.setMessageFormat(
-                    String.format(
-                        "Volume definition with number %d and minor number %d successfully " +
-                            " created in resource definition '%s'.",
-                        vlmDfn.getVolumeNumber().value,
-                        vlmDfn.getMinorNr(apiCtx).value,
-                        rscNameStr
-                    )
+                String successMessage = String.format(
+                    "Volume definition with number '%d' successfully " +
+                        " created in resource definition '%s'.",
+                    vlmDfn.getVolumeNumber().value,
+                    rscNameStr
                 );
+                volSuccessEntry.setMessageFormat(successMessage);
                 volSuccessEntry.putVariable(KEY_RSC_DFN, vlmDfn.getResourceDefinition().getName().displayValue);
                 volSuccessEntry.putVariable(KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
                 volSuccessEntry.putVariable(KEY_MINOR_NR, Integer.toString(vlmDfn.getMinorNr(apiCtx).value));
@@ -160,9 +161,10 @@ public class CtrlVlmDfnApiCallHandler
                 volSuccessEntry.putObjRef(KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
                 apiCallRc.addEntry(volSuccessEntry);
-            }
 
-            // TODO create volumes for already deployed resources
+                controller.getErrorReporter().logInfo(successMessage);
+            }
+            notifySatellites(rscList);
         }
         catch (SQLException sqlExc)
         {
@@ -231,5 +233,28 @@ public class CtrlVlmDfnApiCallHandler
             controller.dbConnPool.returnConnection(transMgr.dbCon);
         }
         return apiCallRc;
+    }
+
+    private void notifySatellites(List<Resource> rscList) throws AccessDeniedException
+    {
+        try
+        {
+            for (Resource rsc : rscList)
+            {
+                Peer peer = rsc.getAssignedNode().getPeer(apiCtx);
+                Message msg = peer.createMessage();
+                msg.setData(rscSerializer.getChangedMessage(rsc));
+                peer.sendMessage(msg);
+            }
+        }
+        catch (IllegalMessageStateException illegalMsgStateExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "VlmDfnApi could not send a message properly to a satellite",
+                    illegalMsgStateExc
+                )
+            );
+        }
     }
 }

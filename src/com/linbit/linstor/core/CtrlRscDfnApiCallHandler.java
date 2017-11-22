@@ -142,15 +142,13 @@ class CtrlRscDfnApiCallHandler
             {
                 ApiCallRcEntry volSuccessEntry = new ApiCallRcEntry();
                 volSuccessEntry.setReturnCode(RC_VLM_DFN_CREATED);
-                volSuccessEntry.setMessageFormat(
-                    String.format(
-                        "Volume definition with number %d and minor number %d successfully " +
-                            " created in resource definition '%s'.",
-                        volCrtData.getVolumeNr(),
-                        volCrtData.getMinorNr(),
-                        rscNameStr
-                    )
+                String successMessage = String.format(
+                    "Volume definition with number '%d' successfully " +
+                        " created in resource definition '%s'.",
+                    volCrtData.getVolumeNr(),
+                    rscNameStr
                 );
+                volSuccessEntry.setMessageFormat(successMessage);
                 volSuccessEntry.putVariable(KEY_RSC_DFN, rscNameStr);
                 volSuccessEntry.putVariable(KEY_VLM_NR, Integer.toString(volCrtData.getVolumeNr()));
                 volSuccessEntry.putVariable(KEY_MINOR_NR, Integer.toString(volCrtData.getMinorNr()));
@@ -158,6 +156,8 @@ class CtrlRscDfnApiCallHandler
                 volSuccessEntry.putObjRef(KEY_VLM_NR, Integer.toString(volCrtData.getVolumeNr()));
 
                 apiCallRc.addEntry(volSuccessEntry);
+
+                controller.getErrorReporter().logInfo(successMessage);
             }
 
             ApiCallRcEntry successEntry = new ApiCallRcEntry();
