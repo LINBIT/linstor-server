@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import com.linbit.drbdmanage.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbcp.DbConnectionPool;
 
 public class TransactionMgr
 {

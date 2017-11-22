@@ -16,11 +16,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.event.Level;
 
-import com.linbit.drbdmanage.DrbdManageException;
-import com.linbit.drbdmanage.logging.ErrorReporter;
-import com.linbit.drbdmanage.netcom.Peer;
-import com.linbit.drbdmanage.security.AccessContext;
-import com.linbit.drbdmanage.security.AccessDeniedException;
+import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 
 public class WorkerPoolTest
 {
@@ -222,7 +222,7 @@ public class WorkerPoolTest
         @Override
         public String getInstanceId()
         {
-            // Hex instance ID of drbdmanageNG's error reporter
+            // Hex instance ID of linstor's error reporter
             // Not significant for the test, just needs to return something to implement the interface
             return "CAFEAFFE";
         }
@@ -260,7 +260,7 @@ public class WorkerPoolTest
         @Override
         public String reportProblem(
             Level logLevel,
-            DrbdManageException errorInfo,
+            LinStorException errorInfo,
             AccessContext accCtx,
             Peer client,
             String contextInfo

@@ -1,11 +1,11 @@
 package com.linbit;
 
-import com.linbit.drbdmanage.dbcp.DbConnectionPool;
-import com.linbit.drbdmanage.logging.ErrorReporter;
-
 import java.util.ArrayDeque;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.logging.ErrorReporter;
 
 public class WorkerPool implements WorkQueue
 {

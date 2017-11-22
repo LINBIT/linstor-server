@@ -1,0 +1,121 @@
+package com.linbit.linstor.api.protobuf.controller;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.netcom.Message;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.MsgSignInOuterClass.MsgSignIn;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.IdentityName;
+import com.linbit.linstor.security.SignInException;
+
+@ProtobufApiCall
+public class SignIn extends BaseProtoApiCall
+{
+    private final Controller ctrl;
+    public SignIn(Controller ctrlRef)
+    {
+        super(ctrlRef.getErrorReporter());
+        ctrl = ctrlRef;
+    }
+
+    @Override
+    public String getName()
+    {
+        return SignIn.class.getSimpleName();
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return "Performs a sign-in with the specified credentials";
+    }
+
+    @Override
+    public void executeImpl(
+        AccessContext accCtx,
+        Message msg,
+        int msgId,
+        InputStream msgDataIn,
+        Peer client
+    )
+    {
+        ApiCallRcImpl reply = new ApiCallRcImpl();
+        String idNameText = null;
+        try
+        {
+            MsgSignIn signInData = MsgSignIn.parseDelimitedFrom(msgDataIn);
+            idNameText = signInData.getIdName();
+            byte[] password = signInData.getPasswordBytes().toByteArray();
+
+            IdentityName idName = new IdentityName(idNameText);
+
+            ctrl.peerSignIn(client, idName, password);
+
+            AccessContext clientCtx = client.getAccessContext();
+
+            ApiCallRcEntry rcEntry = new ApiCallRcEntry();
+            rcEntry.setMessageFormat("Sign-in successful");
+            rcEntry.putVariable(ApiConsts.KEY_SEC_IDENTITY, clientCtx.subjectId.name.displayValue);
+            rcEntry.putVariable(ApiConsts.KEY_SEC_ROLE, clientCtx.subjectRole.name.displayValue);
+            rcEntry.putVariable(ApiConsts.KEY_SEC_DOMAIN, clientCtx.subjectDomain.name.displayValue);
+            reply.addEntry(rcEntry);
+        }
+        catch (IOException ioExc)
+        {
+            String reportId = errorReporter.reportError(ioExc, accCtx, client, "Sign-in");
+            ApiCallRcEntry rcEntry = new ApiCallRcEntry();
+            rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
+            rcEntry.setMessageFormat("Sgn-in failed");
+            rcEntry.setCauseFormat("The sign-in request could not be processed due to an I/O error");
+            rcEntry.setCorrectionFormat(
+                "If this problem persists, refer to the problem report on the server system for more detailed " +
+                "information about the problem and possible solutions"
+            );
+            if (reportId != null)
+            {
+                rcEntry.setDetailsFormat("A problem report was filed under report ID " + reportId);
+            }
+            if (idNameText != null)
+            {
+                rcEntry.putVariable(ApiConsts.KEY_SEC_IDENTITY, idNameText);
+            }
+            reply.addEntry(rcEntry);
+        }
+        catch (InvalidNameException nameExc)
+        {
+            ApiCallRcEntry rcEntry = new ApiCallRcEntry();
+            rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
+            rcEntry.setMessageFormat(nameExc.getMessage());
+            if (idNameText != null)
+            {
+                rcEntry.putVariable(ApiConsts.KEY_SEC_IDENTITY, idNameText);
+            }
+            reply.addEntry(rcEntry);
+        }
+        catch (SignInException signInExc)
+        {
+            ApiCallRcEntry rcEntry = new ApiCallRcEntry();
+            rcEntry.setReturnCode(ApiConsts.RC_SIGNIN_FAIL);
+            rcEntry.setMessageFormat(signInExc.getDescriptionText());
+            rcEntry.setCauseFormat(signInExc.getCauseText());
+            rcEntry.setCorrectionFormat(signInExc.getCorrectionText());
+            rcEntry.setDetailsFormat(signInExc.getDetailsText());
+            if (idNameText != null)
+            {
+                rcEntry.putVariable(ApiConsts.KEY_SEC_IDENTITY, idNameText);
+            }
+            reply.addEntry(rcEntry);
+        }
+
+        answerApiCallRc(accCtx, client, msgId, reply);
+    }
+}

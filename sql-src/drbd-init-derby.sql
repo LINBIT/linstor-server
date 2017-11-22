@@ -1,7 +1,7 @@
--- drbdmanageNG security subsystem tables
+-- linstor security subsystem tables
 SET ISOLATION SERIALIZABLE;
 
--- Database schema for drbdmanageNG
+-- Database schema for linstor
 CREATE SCHEMA LINSTOR;
 SET SCHEMA LINSTOR;
 
@@ -114,7 +114,7 @@ CREATE TABLE SEC_ACL_MAP
     FOREIGN KEY (ACCESS_TYPE) REFERENCES SEC_ACCESS_TYPES(ACCESS_TYPE_VALUE) ON DELETE RESTRICT
 );
 
--- drbdmanageNG objects
+-- linstor objects
 
 CREATE TABLE NODES
 (

@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import com.linbit.drbdmanage.DrbdSqlRuntimeException;
+import com.linbit.linstor.LinStorSqlRuntimeException;
 
 public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
 {
@@ -208,7 +208,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
                     }
                     catch (SQLException sqlExc)
                     {
-                        throw new DrbdSqlRuntimeException(
+                        throw new LinStorSqlRuntimeException(
                             "Inserting to the database from a TransactionMap caused exception",
                             sqlExc
                         );
@@ -224,7 +224,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
                         }
                         catch (SQLException sqlExc)
                         {
-                            throw new DrbdSqlRuntimeException(
+                            throw new LinStorSqlRuntimeException(
                                 "Deleting from the database from a TransactionMap caused exception",
                                 sqlExc
                             );
@@ -238,7 +238,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
                         }
                         catch (SQLException sqlExc)
                         {
-                            throw new DrbdSqlRuntimeException(
+                            throw new LinStorSqlRuntimeException(
                                 "Updating the database from a TransactionMap caused exception",
                                 sqlExc
                             );

@@ -1,13 +1,13 @@
 package com.linbit;
 
-import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.linstor.LinStorException;
 
 /**
  * Thrown to indicate that a service failed to start
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class SystemServiceStartException extends DrbdManageException
+public class SystemServiceStartException extends LinStorException
 {
     public SystemServiceStartException(String message)
     {

@@ -1,7 +1,7 @@
 package com.linbit;
 
 /**
- * Base class for classes keeping the name of a drbdmanageNG object
+ * Base class for classes keeping the name of a linstor object
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */

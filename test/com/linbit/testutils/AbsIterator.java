@@ -3,7 +3,7 @@ package com.linbit.testutils;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import com.linbit.drbdmanage.security.SecurityLevel;
+import com.linbit.linstor.security.SecurityLevel;
 
 public abstract class AbsIterator <T> implements Iterator<T>, Iterable<T>
 {

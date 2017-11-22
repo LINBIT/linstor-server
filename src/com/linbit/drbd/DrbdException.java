@@ -1,13 +1,13 @@
 package com.linbit.drbd;
 
-import com.linbit.drbdmanage.DrbdManageException;
+import com.linbit.linstor.LinStorException;
 
 /**
  * Indicates failure to modify DRBD's state
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class DrbdException extends DrbdManageException
+public class DrbdException extends LinStorException
 {
     public DrbdException(String message)
     {

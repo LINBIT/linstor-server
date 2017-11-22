@@ -7,13 +7,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.linbit.ChildProcessTimeoutException;
-import com.linbit.drbdmanage.CoreServices;
-import com.linbit.drbdmanage.MinorNumber;
-import com.linbit.drbdmanage.NodeId;
-import com.linbit.drbdmanage.ResourceName;
-import com.linbit.drbdmanage.VolumeNumber;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.linstor.CoreServices;
+import com.linbit.linstor.MinorNumber;
+import com.linbit.linstor.NodeId;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.extproc.ExtCmdFailedException;
 
 public class DrbdAdm
@@ -312,7 +312,7 @@ public class DrbdAdm
         if (!resourceName.toLowerCase().equals(ALL_KEYWORD) &&
             !resourceName.equals(DRBDCTRL_RES_NAME))
         {
-            String resourcePath = configPath.resolve("drbdmanage_" + resourceName + ".res").toString();
+            String resourcePath = configPath.resolve("linstor_" + resourceName + ".res").toString();
             ret = new String[]
             {
                 "-c", resourcePath
