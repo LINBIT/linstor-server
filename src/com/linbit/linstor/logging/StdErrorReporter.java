@@ -35,6 +35,8 @@ public final class StdErrorReporter implements ErrorReporter
     private static final String ERROR_FIELD_FORMAT = "%-32s    %s\n";
 
     public static final String LOG_DIRECTORY = "logs";
+    public static final String RPT_PREFIX = "ErrorReport-";
+    public static final String RPT_SUFFIX = ".log";
 
     private static final String SECTION_SEPARATOR;
     private static final int SEPARATOR_WIDTH = 60;
@@ -768,13 +770,7 @@ public final class StdErrorReporter implements ErrorReporter
         PrintStream reportPrinter = null;
         try
         {
-            reportStream = new FileOutputStream(
-                String.format(
-                    "%s/ErrorReport-%s.log",
-                    LOG_DIRECTORY,
-                    logName
-                )
-            );
+            reportStream = new FileOutputStream(LOG_DIRECTORY + "/" + RPT_PREFIX + logName + RPT_SUFFIX);
             reportPrinter = new PrintStream(reportStream);
         }
         catch (IOException ioExc)

@@ -51,6 +51,7 @@ class CtrlDebugConsoleImpl extends BaseDebugConsole
         "CmdDisplayTraceMode",
         "CmdSetTraceMode",
         "CmdDisplayReport",
+        "CmdDisplayReportList",
         "CmdTestErrorLog",
         "CmdShutdown"
     };
