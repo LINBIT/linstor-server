@@ -48,6 +48,8 @@ class CtrlDebugConsoleImpl extends BaseDebugConsole
         "CmdSetConfValue",
         "CmdDeleteConfValue",
         "CmdDisplayObjectStatistics",
+        "CmdDisplayTraceMode",
+        "CmdSetTraceMode",
         "CmdDisplayReport",
         "CmdTestErrorLog",
         "CmdShutdown"
