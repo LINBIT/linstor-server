@@ -166,7 +166,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         final String objPath = "testPath";
 
         ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, objPath, true, transMgr);
-
+        objProt.setConnection(transMgr);
         Role testRole = Role.create(sysCtx, new RoleName("test"));
 
         PreparedStatement stmt = con.prepareStatement(ROLES_INSERT);
@@ -207,6 +207,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
         final String objPath = "testPath";
         ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, objPath, true, transMgr);
+        objProt.setConnection(transMgr);
         objProt.addAclEntry(sysCtx, sysCtx.subjectRole, AccessType.CHANGE);
 
         objProt.delAclEntry(sysCtx, sysCtx.subjectRole);

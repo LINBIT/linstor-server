@@ -245,6 +245,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         transMgr.commit();
 
+        volDfn.setConnection(transMgr);
         Map<String, String> map = new HashMap<>();
         map.put(testKey, testValue);
         testProps(transMgr, PropsContainer.buildPath(resName, volNr), map);
