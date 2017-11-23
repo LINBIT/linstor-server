@@ -19,6 +19,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.NetInterface.NetInterfaceType;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
@@ -219,7 +220,10 @@ class CtrlNodeApiCallHandler
                     controller.nodesMap.put(nodeName, node);
                     controller.getErrorReporter().logInfo(successMessage);
 
-                    startConnecting(node, accCtx, client);
+                    if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
+                    {
+                        startConnecting(node, accCtx, client);
+                    }
                 }
             }
         }
@@ -655,6 +659,7 @@ class CtrlNodeApiCallHandler
         TransactionMgr transMgr = null;
         NodeData nodeData = null;
         Iterator<Resource> rscIterator = null;
+        Iterator<StorPool> storPoolIterator = null;
 
         try
         {
@@ -672,32 +677,80 @@ class CtrlNodeApiCallHandler
             if (nodeData != null)
             {
                 nodeData.setConnection(transMgr);
-                nodeData.markDeleted(accCtx); // sqlExc3, accDeniedExc3
 
-                rscIterator = nodeData.iterateResources(apiCtx); //accDeniedExc4
+                boolean success = true;
+                boolean hasRsc = false;
+
+                rscIterator = nodeData.iterateResources(apiCtx); //accDeniedExc3
                 while (rscIterator.hasNext())
                 {
+                    hasRsc = true;
                     Resource rsc = rscIterator.next();
                     rsc.setConnection(transMgr);
-                    rsc.markDeleted(apiCtx); // sqlExc4, accDeniedExc4
+                    rsc.markDeleted(apiCtx); // sqlExc3, accDeniedExc4
+                }
+                storPoolIterator = nodeData.iterateStorPools(apiCtx); // accDeniedExc5
+                while (storPoolIterator.hasNext())
+                {
+                    StorPool storPool = storPoolIterator.next();
+                    if (storPool.getVolumes(apiCtx).isEmpty())
+                    {
+                        storPool.setConnection(transMgr);
+                        storPool.delete(apiCtx);
+                    }
+                    else
+                    {
+                        success = false;
+                        ApiCallRcEntry entry = new ApiCallRcEntry();
+                        entry.setReturnCode(RC_NODE_DEL_FAIL_EXISTS_VLM);
+                        String errorMessage = String.format(
+                            "Node '%s' cannot be deleted as it still hase volumes deployed " +
+                                "on storage pool '%s'.",
+                            nodeNameStr,
+                            storPool.getName().displayValue
+                        );
+                        entry.setMessageFormat(errorMessage);
+                        entry.putObjRef(KEY_NODE, nodeNameStr);
+                        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+                        entry.putVariable(KEY_STOR_POOL_NAME, storPool.getName().displayValue);
+                        apiCallRc.addEntry(entry);
+                        controller.getErrorReporter().logInfo(errorMessage);
+                    }
                 }
 
-                transMgr.commit(); // sqlExc5
+                if (success)
+                {
+                    ApiCallRcEntry entry = new ApiCallRcEntry();
+                    String successMessage;
+                    if (hasRsc)
+                    {
+                        nodeData.markDeleted(accCtx); // sqlExc4, accDeniedExc6
+                        entry.setReturnCodeBit(RC_NODE_DELETED);
+                        successMessage = String.format(
+                            "Node '%s' marked to be deleted.",
+                            nodeNameStr
+                        );
+                    }
+                    else
+                    {
+                        nodeData.delete(accCtx); // sqlExc5, accDenied7
+                        successMessage = String.format(
+                            "Node '%s' deleted.",
+                            nodeNameStr
+                        );
+                    }
 
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_NODE_DELETED);
-                String successMessage = String.format(
-                    "Node '%s' marked to be deleted.",
-                    nodeNameStr
-                );
-                entry.setMessageFormat(successMessage);
-                entry.putObjRef(KEY_NODE, nodeNameStr);
-                entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                apiCallRc.addEntry(entry);
-                controller.getErrorReporter().logInfo(successMessage);
+                    transMgr.commit(); // sqlExc6
 
-                // TODO: tell satellites to remove all the corresponding resources
-                // TODO: if satellites finished, cleanup the storPools and then remove the node from DB
+                    entry.setMessageFormat(successMessage);
+                    entry.putObjRef(KEY_NODE, nodeNameStr);
+                    entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+                    apiCallRc.addEntry(entry);
+                    controller.getErrorReporter().logInfo(successMessage);
+
+                    // TODO: tell satellites to remove all the corresponding resources
+                    // TODO: if satellites finished, cleanup the storPools and then remove the node from DB
+                }
             }
             else
             {

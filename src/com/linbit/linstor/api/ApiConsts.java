@@ -194,6 +194,7 @@ public class ApiConsts
     public static final long DEL_FAIL_ACC_DENIED_NODE_CONN = 357 | MASK_ERROR;
     public static final long DEL_FAIL_ACC_DENIED_RSC_CONN = 358 | MASK_ERROR;
     public static final long DEL_FAIL_ACC_DENIED_VLM_CONN = 359 | MASK_ERROR;
+    public static final long DEL_FAIL_EXISTS_VLM = 364 | MASK_ERROR;
     public static final long DEL_FAIL_UNKNOWN_ERROR = 397 | MASK_ERROR;
     public static final long DEL_FAIL_IN_USE = 398 | MASK_ERROR;
     public static final long DEL_FAIL_IMPL_ERROR = 399 | MASK_ERROR;
@@ -234,6 +235,7 @@ public class ApiConsts
     public static final long RC_NODE_DEL_FAIL_SQL = MASK_NODE | DEL_FAIL_SQL;
     public static final long RC_NODE_DEL_FAIL_SQL_ROLLBACK = MASK_NODE | DEL_FAIL_SQL_ROLLBACK;
     public static final long RC_NODE_DEL_FAIL_INVLD_NODE_NAME = MASK_NODE | DEL_FAIL_INVLD_NODE_NAME;
+    public static final long RC_NODE_DEL_FAIL_EXISTS_VLM = MASK_NODE | DEL_FAIL_EXISTS_VLM;
     public static final long RC_NODE_DEL_FAIL_ACC_DENIED_NODE = MASK_NODE | DEL_FAIL_ACC_DENIED_NODE;
     public static final long RC_NODE_DEL_FAIL_UNKNOWN_ERROR = MASK_NODE | DEL_FAIL_UNKNOWN_ERROR;
     public static final long RC_NODE_DEL_FAIL_IMPL_ERROR = MASK_NODE | DEL_FAIL_IMPL_ERROR;
