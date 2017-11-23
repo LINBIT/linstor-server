@@ -40,6 +40,7 @@ import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
+import java.util.List;
 
 public class ResourceDefinitionDataDerbyTest extends DerbyBase
 {
@@ -98,6 +99,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             true,
             false
         );
+        nodesMap.put(node1.getName(), node1);
         resDfn = new ResourceDefinitionData(
             resDfnUuid,
             resDfnObjProt,
@@ -209,6 +211,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         driver.create(resDfn, transMgr);
 
+        resDfnMap.put(resDfn.getName(), resDfn);
+
         ResourceData.getInstance(
             sysCtx,
             resDfn,
@@ -298,28 +302,14 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testLoadProps() throws Exception
-    {
-        driver.create(resDfn, transMgr);
-        String testKey = "TestKey";
-        String testValue = "TestValue";
-        insertProp(transMgr, PropsContainer.buildPath(resName), testKey, testValue);
-
-        ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
-
-        Props props = loadedResDfn.getProps(sysCtx);
-
-        assertNotNull(props);
-        assertEquals(testValue, props.getProp(testKey));
-        assertEquals(1, props.size());
-    }
-
-    @Test
     public void testLoadResources() throws Exception
     {
         driver.create(resDfn, transMgr);
+        resDfnMap.put(resDfn.getName(), resDfn);
         NodeName nodeName = new NodeName("TestNodeName");
         Node node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true, false);
+        nodesMap.put(node.getName(), node);
+
         NodeId nodeId = new NodeId(13);
         ResourceData res = ResourceData.getInstance(
             sysCtx,
@@ -455,7 +445,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testGetInstanceSatelliteNoCreate() throws Exception
+    public void testGetInstanceNoCreate() throws Exception
     {
         satelliteMode();
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
@@ -494,6 +484,18 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resDfn.getUuid(), loadedResDfn.getUuid());
     }
 
+    private ResourceDefinitionData findResourceDefinitionDatabyName(
+            List<ResourceDefinitionData> listResourceDefData,
+            ResourceName spName)
+    {
+        for(ResourceDefinitionData rdd : listResourceDefData)
+        {
+            if(rdd.getName().equals(spName))
+                return rdd;
+        }
+        return null;
+    }
+
     @Test
     public void testLoadAll() throws Exception
     {
@@ -512,11 +514,13 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         clearCaches();
 
-        driver.loadAll(transMgr);
+        List<ResourceDefinitionData> resourceDefDataList = driver.loadAll(transMgr);
 
-        assertNotNull(resDfnMap.get(resName));
-        assertNotNull(resDfnMap.get(resName2));
-        assertNotEquals(resDfnMap.get(resName2), resDfnMap.get(resName));
+        ResourceDefinitionData res1 = findResourceDefinitionDatabyName(resourceDefDataList, resName);
+        ResourceDefinitionData res2 = findResourceDefinitionDatabyName(resourceDefDataList, resName2);
+        assertNotNull(res1);
+        assertNotNull(res2);
+        assertNotEquals(res1, res2);
     }
 
     @Test

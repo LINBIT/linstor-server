@@ -121,9 +121,19 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
+        ResourceDefinition resDefinitionTest = ResourceDefinitionData.getInstance(
+                sysCtx,
+                new ResourceName("TestResource2"),
+                resPort,
+                null,
+                "secret",
+                transMgr,
+                true,
+                false);
+
         VolumeDefinitionData.getInstance(
             sysCtx,
-            resDfn,
+            resDefinitionTest,
             volNr,
             minor,
             volSize,
@@ -135,7 +145,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         resultSet = stmt.executeQuery();
         assertTrue(resultSet.next());
-        assertEquals(resName.value, resultSet.getString(RESOURCE_NAME));
+        assertEquals("TESTRESOURCE2", resultSet.getString(RESOURCE_NAME));
         assertEquals(volNr.value, resultSet.getInt(VLM_NR));
         assertEquals(volSize, resultSet.getLong(VLM_SIZE));
         assertEquals(minor.value, resultSet.getInt(VLM_MINOR_NR));
@@ -249,21 +259,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         Map<String, String> map = new HashMap<>();
         map.put(testKey, testValue);
         testProps(transMgr, PropsContainer.buildPath(resName, volNr), map);
-    }
-
-    @Test
-    public void testPropsConLoad() throws Exception
-    {
-        driver.create(volDfn, transMgr);
-        String testKey = "TestKey";
-        String testValue = "TestValue";
-        insertProp(transMgr, PropsContainer.buildPath(resName, volNr), testKey, testValue);
-
-        VolumeDefinitionData loadedVd = driver.load(resDfn, volNr, true, transMgr);
-        Props props = loadedVd.getProps(sysCtx);
-
-        assertEquals(testValue, props.getProp(testKey));
-        assertEquals(1, props.size());
     }
 
     @Test
@@ -425,13 +420,23 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testSatelliteNoCreate() throws Exception
+    public void testNoCreate() throws Exception
     {
         satelliteMode();
 
+        ResourceDefinitionData resDfn2 = ResourceDefinitionData.getInstance(
+                sysCtx,
+                new ResourceName("Resource2"),
+                resPort,
+                null,
+                "secret",
+                transMgr,
+                true,
+                false);
+
         VolumeDefinitionData volDfnSat = VolumeDefinitionData.getInstance(
             sysCtx,
-            resDfn,
+            resDfn2,
             volNr,
             minor,
             volSize,

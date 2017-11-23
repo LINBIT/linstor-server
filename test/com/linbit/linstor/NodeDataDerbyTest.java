@@ -365,6 +365,8 @@ public class NodeDataDerbyTest extends DerbyBase
             node1.getProps(sysCtx).setProp(node1TestKey, node1TestValue);
             node1Uuid = node1.getUuid();
 
+            nodesMap.put(node1.getName(), node1);
+
             // node1's netIface
             NetInterfaceData netIf = NetInterfaceData.getInstance(
                 sysCtx,
@@ -390,6 +392,8 @@ public class NodeDataDerbyTest extends DerbyBase
                 true
             );
 
+            nodesMap.put(node2.getName(), node2);
+
             // resDfn
             ResourceDefinitionData resDfn = ResourceDefinitionData.getInstance(
                 sysCtx,
@@ -403,6 +407,8 @@ public class NodeDataDerbyTest extends DerbyBase
             );
             resDfn.getProps(sysCtx).setProp(resDfnTestKey, resDfnTestValue);
             resDfnUuid = resDfn.getUuid();
+
+            resDfnMap.put(resDfn.getName(), resDfn);
 
             // volDfn
             VolumeDefinitionData volDfn = VolumeDefinitionData.getInstance(
@@ -428,6 +434,8 @@ public class NodeDataDerbyTest extends DerbyBase
                 true
             );
             storPoolDfnUuid = storPoolDfn.getUuid();
+
+            storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
             // node1 storPool
             StorPoolData storPool1 = StorPoolData.getInstance(

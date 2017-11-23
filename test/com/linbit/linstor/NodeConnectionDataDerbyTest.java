@@ -61,7 +61,9 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
         uuid = randomUUID();
 
         nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
+        nodesMap.put(nodeSrc.getName(), nodeSrc);
         nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
+        nodesMap.put(nodeDst.getName(), nodeDst);
 
         nodeCon = new NodeConnectionData(uuid, sysCtx, nodeSrc, nodeDst, transMgr);
         driver = (NodeConnectionDataDerbyDriver) LinStor.getNodeConnectionDatabaseDriver();

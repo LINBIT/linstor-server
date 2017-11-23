@@ -112,9 +112,12 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         uuid = randomUUID();
 
         nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
+        nodesMap.put(nodeSrc.getName(), nodeSrc);
         nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
+        nodesMap.put(nodeDst.getName(), nodeDst);
 
         resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, "secret", transMgr, true, false);
+        resDfnMap.put(resDfn.getName(), resDfn);
         volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true, false);
 
         nodeIdSrc = new NodeId(13);
@@ -124,6 +127,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         resDst = ResourceData.getInstance(sysCtx, resDfn, nodeDst, nodeIdDst, null, transMgr, true, false);
 
         storPoolDfn = StorPoolDefinitionData.getInstance(sysCtx, storPoolName, transMgr, true, false);
+        storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
         storPool1 = StorPoolData.getInstance(sysCtx, nodeSrc, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
         storPool2 = StorPoolData.getInstance(sysCtx, nodeDst, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
