@@ -305,8 +305,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         String testValue = "TestValue";
         insertProp(transMgr, PropsContainer.buildPath(resName), testKey, testValue);
 
-        clearCaches();
-
         ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
 
         Props props = loadedResDfn.getProps(sysCtx);
