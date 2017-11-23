@@ -47,3 +47,39 @@ dependencies
 task showMeCache << {
   configurations.compile.each { println it }
 }
+
+task buildTestCommands(type:Exec) {
+  workingDir 'test-support'
+
+  commandLine 'make'
+
+  //store the output instead of printing to the console:
+  standardOutput = new ByteArrayOutputStream()
+
+  //extension method buildTestCommands.output() can be used to obtain the output:
+  ext.output = {
+    return standardOutput.toString()
+  }
+}
+
+task cleanTestCommands(type:Exec) {
+  workingDir 'test-support'
+
+  commandLine 'make', 'clean'
+
+  //store the output instead of printing to the console:
+  standardOutput = new ByteArrayOutputStream()
+
+  //extension method buildTestCommands.output() can be used to obtain the output:
+  ext.output = {
+    return standardOutput.toString()
+  }
+}
+
+compileTestJava {
+  dependsOn buildTestCommands
+}
+
+clean {
+  dependsOn cleanTestCommands
+}
