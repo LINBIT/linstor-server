@@ -889,6 +889,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         {
             transMgr = new TransactionMgr(dbConnPool);
             config = PropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
+            transMgr.commit();
         }
         catch (SQLException sqlExc)
         {
