@@ -270,14 +270,13 @@ public class StorPoolDataDerbyTest extends DerbyBase
         StorPoolName spName2 = new StorPoolName("OtherStorPool");
         StorPoolDefinitionData spdd2 = StorPoolDefinitionData.getInstance(sysCtx, spName2, transMgr, true, false);
 
-        StorPoolData storPoolData = StorPoolData.getInstance(
+        StorPoolData storPoolData = StorPoolData.getInstanceSatellite(
             sysCtx,
+            uuid,
             node,
             spdd2,
             LvmDriver.class.getSimpleName(),
-            null,
-            true,
-            false
+            null
         );
 
         assertNotNull(storPoolData);
