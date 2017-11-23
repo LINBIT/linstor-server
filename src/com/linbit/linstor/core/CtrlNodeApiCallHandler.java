@@ -553,14 +553,14 @@ class CtrlNodeApiCallHandler
             NAMESPC_NETIF
         );
         entry.setMessageFormat(errorMessage);
-        entry.setCorrectionFormat("Example: \n" +
+        entry.setCorrectionFormat("Example for creating a netinterface named 'netIfName0': \n" +
             NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 0.0.0.0\n" +
-            NAMESPC_NETIF + "/netIfName0/" + KEY_PORT_NR + " = 9501\n" +
+            NAMESPC_NETIF + "/netIfName0/" + KEY_PORT_NR + " = " + DFLT_STLT_PORT_PLAIN + "\n" +
             NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_TYPE + " = " + VAL_NETCOM_TYPE_PLAIN + "\n" +
             NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_ENABLED + " = " + VAL_TRUE + "\n" +
             "   for a linstor node connection (" + KEY_NETCOM_ENABLED + " is optional and default " + VAL_TRUE+ ") or \n" +
             NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 10.0.0.103\n" +
-            "   for a drbd resource interface"
+            "   for a drbd resource interface (no " + KEY_PORT_NR + ", no " + KEY_NETCOM_TYPE + ")"
         );
         entry.putVariable(KEY_NODE_NAME, nodeNameStr);
         entry.putVariable(KEY_MISSING_NAMESPC, NAMESPC_NETCOM);

@@ -659,8 +659,9 @@ public class ApiConsts
     /*
      * Default ports
      */
-    public static final int DM_DFLT_SERVER_PORT_SSL = 6996;
-    public static final int DM_DFLT_SERVER_PORT_PLAIN = 6995;
+    public static final int DFLT_CTRL_PORT_SSL = 3377;
+    public static final int DFLT_CTRL_PORT_PLAIN = 3376;
+    public static final int DFLT_STLT_PORT_PLAIN = 3366;
 
     /*
      * Boolean values
