@@ -188,12 +188,6 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
-    public boolean isDbCacheDirty()
-    {
-        return propsMap.isDbCacheDirty();
-    }
-
-    @Override
     public boolean hasTransMgr()
     {
         return propsMap.hasTransMgr();

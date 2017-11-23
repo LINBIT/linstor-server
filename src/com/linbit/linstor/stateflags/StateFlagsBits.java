@@ -213,12 +213,6 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
     }
 
     @Override
-    public boolean isDbCacheDirty()
-    {
-        return persistence != null && isDirty();
-    }
-
-    @Override
     public boolean hasTransMgr()
     {
         return transMgr != null;

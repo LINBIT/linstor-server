@@ -46,10 +46,6 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     @Override
     public void setConnection(TransactionMgr transMgr)
     {
-        if (isDbCacheDirty())
-        {
-            throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
-        }
         if (transMgr != null)
         {
             transMgr.register(this);
@@ -90,12 +86,6 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     public boolean isDirty()
     {
         return !oldValues.isEmpty();
-    }
-
-    @Override
-    public boolean isDbCacheDirty()
-    {
-        return !(dbDriver instanceof NoOpMapDatabaseDriver) && isDirty();
     }
 
     @Override

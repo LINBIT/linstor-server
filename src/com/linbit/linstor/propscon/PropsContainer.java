@@ -925,11 +925,11 @@ public class PropsContainer implements Props
     }
 
     @Override
-    public void setConnection(TransactionMgr transMgrRef)
+    public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
-        if (isDbCacheDirty())
+        if (transMgr != null && transMgrRef != null && transMgrRef != transMgr)
         {
-            throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
+            throw new ImplementationError("attempt to replace an active transMgr", null);
         }
         if (transMgrRef != null)
         {
@@ -941,13 +941,7 @@ public class PropsContainer implements Props
     @Override
     public boolean isDirty()
     {
-        return !rootContainer.cachedPropMap.isEmpty();
-    }
-
-    @Override
-    public boolean isDbCacheDirty()
-    {
-        return isDirty();
+        return !hasTransMgr() && !rootContainer.cachedPropMap.isEmpty();
     }
 
     private void cache(String key, String value)

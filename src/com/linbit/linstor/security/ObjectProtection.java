@@ -340,14 +340,6 @@ public final class ObjectProtection extends BaseTransactionObject
     }
 
     @Override
-    public boolean isDbCacheDirty()
-    {
-        return dbDriver != null &&
-            !(dbDriver instanceof NoOpObjectDatabaseDriver) &&
-            isDirty();
-    }
-
-    @Override
     public void commit()
     {
         super.commit();

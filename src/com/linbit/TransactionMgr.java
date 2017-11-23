@@ -35,13 +35,6 @@ public class TransactionMgr
 
     public void register(TransactionObject transObj)
     {
-        if (transObj.isDbCacheDirty())
-        {
-            throw new ImplementationError(
-                "Connection set after TransactionObject modified",
-                null
-            );
-        }
         transObjects.add(transObj);
     }
 
