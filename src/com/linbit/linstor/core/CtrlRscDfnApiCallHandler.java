@@ -108,8 +108,8 @@ class CtrlRscDfnApiCallHandler
                 volNr = null;
                 minorNr = null;
 
-                volNr = new VolumeNumber(getVlmNr(vlmDfnApi, rscDfn, apiCtx)); // valOORangeExc2
-                minorNr = new MinorNumber(getMinor(vlmDfnApi)); // valOORangeExc3
+                volNr = getVlmNr(vlmDfnApi, rscDfn, apiCtx);
+                minorNr = getMinor(vlmDfnApi);
 
                 long size = vlmDfnApi.getSize();
 
@@ -429,10 +429,11 @@ class CtrlRscDfnApiCallHandler
         return apiCallRc;
     }
 
-    static int getVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
+    static VolumeNumber getVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx) throws ValueOutOfRangeException
     {
-        Integer vlmNr = vlmDfnApi.getVolumeNr();
-        if (vlmNr == null)
+        Integer vlmNrRaw = vlmDfnApi.getVolumeNr();
+        VolumeNumber vlmNr;
+        if (vlmNrRaw == null)
         {
             try
             {
@@ -447,14 +448,16 @@ class CtrlRscDfnApiCallHandler
                 {
                     if (!occupiedVlmNrs.contains(idx))
                     {
-                        vlmNr = idx;
+                        vlmNrRaw = idx;
                         break;
                     }
                 }
-                if (vlmNr == null)
+                if (vlmNrRaw == null)
                 {
-                    vlmNr = occupiedVlmNrs.size();
+                    vlmNrRaw = occupiedVlmNrs.size();
                 }
+
+                vlmNr = new VolumeNumber(vlmNrRaw);
             }
             catch (AccessDeniedException accDeniedExc)
             {
@@ -463,18 +466,45 @@ class CtrlRscDfnApiCallHandler
                     accDeniedExc
                 );
             }
+            catch (ValueOutOfRangeException valueOutOfrangeExc)
+            {
+                throw new ImplementationError(
+                    "Failed to find an unused valid volume number. Tried: '" + vlmNrRaw + "'",
+                    valueOutOfrangeExc
+                );
+            }
+        }
+        else
+        {
+            vlmNr = new VolumeNumber(vlmNrRaw);
         }
         return vlmNr;
     }
 
-    static int getMinor(VlmDfnApi vlmDfnApi)
+    static MinorNumber getMinor(VlmDfnApi vlmDfnApi) throws ValueOutOfRangeException
     {
         Integer minor = vlmDfnApi.getMinorNr();
+        MinorNumber minorNr;
         if (minor == null)
         {
             minor = MINOR_GEN.incrementAndGet(); // FIXME: instead of atomicInt use the poolAllocator
+            try
+            {
+                minorNr = new MinorNumber(minor);
+            }
+            catch (ValueOutOfRangeException valueOutOfRangExc)
+            {
+                throw new ImplementationError(
+                    "Failed to generate a valid minor number. Tried: '" + minor + "'",
+                    valueOutOfRangExc
+                );
+            }
         }
-        return minor;
+        else
+        {
+            minorNr = new MinorNumber(minor);
+        }
+        return minorNr;
     }
 
     public ApiCallRc deleteResourceDefinition(AccessContext accCtx, Peer client, String rscNameStr)

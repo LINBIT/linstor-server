@@ -92,6 +92,7 @@ public class ClientProtobuf implements Runnable
     private boolean shutdown;
 
     private int sentCount;
+    private int successCount;
     private int infoCount;
     private int warnCount;
     private int errorCount;
@@ -124,6 +125,7 @@ public class ClientProtobuf implements Runnable
 
     public void resetAllCounts()
     {
+        resetSuccessCount();
         resetInfoCount();
         resetWarnCount();
         resetErrorCount();
@@ -132,6 +134,11 @@ public class ClientProtobuf implements Runnable
     public void resetSentCount()
     {
         sentCount = 0;
+    }
+
+    public void resetSuccessCount()
+    {
+        successCount = 0;
     }
 
     public void resetInfoCount()
@@ -282,14 +289,15 @@ public class ClientProtobuf implements Runnable
                 }
             }
         }
-        println("shutting down");
+        println("clientprotobuf shutting down");
 
         println("");
         println("Sent messages: " + sentCount);
-        println("Responses    : " + (infoCount + warnCount + errorCount));
-        println("   info : " + infoCount);
-        println("   warn : " + warnCount);
-        println("   error: " + errorCount);
+        println("Responses    : " + (infoCount + warnCount + errorCount + successCount));
+        println("   success : " + successCount);
+        println("   info    : " + infoCount);
+        println("   warn    : " + warnCount);
+        println("   error   : " + errorCount);
     }
 
     public void registerCallback(MessageCallback callback)
@@ -362,6 +370,10 @@ public class ClientProtobuf implements Runnable
         if ((retCode & MASK_INFO) == MASK_INFO)
         {
             infoCount++;
+        }
+        else
+        {
+            successCount++;
         }
 
         decode(sb, retCode, 0xC000000000000000L, RET_CODES_TYPE);

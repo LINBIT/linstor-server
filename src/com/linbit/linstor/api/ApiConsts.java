@@ -316,7 +316,14 @@ public class ApiConsts
     public static final long RC_VLM_DFN_CRT_FAIL_SQL = MASK_VLM_DFN | CRT_FAIL_SQL;
     public static final long RC_VLM_DFN_CRT_FAIL_SQL_ROLLBACK = MASK_VLM_DFN | CRT_FAIL_SQL_ROLLBACK;
     public static final long RC_VLM_DFN_CRT_FAIL_INVLD_RSC_NAME = MASK_VLM_DFN | CRT_FAIL_INVLD_RSC_NAME;
+    public static final long RC_VLM_DFN_CRT_FAIL_INVLD_STOR_POOL_NAME = MASK_VLM_DFN | CRT_FAIL_INVLD_STOR_POOL_NAME;
+    public static final long RC_VLM_DFN_CRT_FAIL_INVLD_VLM_NR = MASK_VLM_DFN | CRT_FAIL_INVLD_VLM_NR;
+    public static final long RC_VLM_DFN_CRT_FAIL_INVLD_MINOR_NR = MASK_VLM_DFN | CRT_FAIL_INVLD_MINOR_NR;
+    public static final long RC_VLM_DFN_CRT_FAIL_INVLD_SIZE = MASK_VLM_DFN | CRT_FAIL_INVLD_VLM_SIZE;
     public static final long RC_VLM_DFN_CRT_FAIL_ACC_DENIED_RSC_DFN = MASK_VLM_DFN | CRT_FAIL_ACC_DENIED_RSC_DFN;
+    public static final long RC_VLM_DFN_CRT_FAIL_ACC_DENIED_VLM_DFN = MASK_VLM_DFN | CRT_FAIL_ACC_DENIED_VLM_DFN;
+    public static final long RC_VLM_DFN_CRT_FAIL_EXISTS_VLM_DFN = MASK_VLM_DFN | CRT_FAIL_EXISTS_VLM_DFN;
+    public static final long RC_VLM_DFN_CRT_FAIL_IMPL_ERROR = MASK_VLM_DFN | CRT_FAIL_IMPL_ERROR;
 
     /*
      * Volume return codes
