@@ -1,4 +1,4 @@
-#include <loremipsum.h>
+#include "loremipsum.h"
 
 const char *LOREM_IPSUM =
 "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor."

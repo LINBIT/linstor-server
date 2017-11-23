@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <loremipsum.h>
+#include "loremipsum.h"
 
 const int IDX_EXIT_CODE = 1;
 const int IDX_LENGTH = 2;

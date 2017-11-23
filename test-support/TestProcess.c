@@ -6,7 +6,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
-#include <bits/sigset.h>
 #include <time.h>
 #include <errno.h>
 
