@@ -197,6 +197,7 @@ public class ClientProtobuf implements Runnable
                     }
                     offset += read;
                 }
+
                 ByteArrayInputStream bais = new ByteArrayInputStream(data);
 
                 MsgHeader protoHeader = MsgHeader.parseDelimitedFrom(bais);
@@ -206,6 +207,11 @@ public class ClientProtobuf implements Runnable
                     .append(protoHeader.getMsgId())
                     .append("\n");
                 int responseIdx = 1;
+                if (bais.available() == 0)
+                {
+                    // maybe a pong or a header-only answer
+                    sb.append(protoHeader.getApiCall()).append("\n");
+                }
                 while (bais.available() > 0)
                 {
                     MsgApiCallResponse response = MsgApiCallResponse.parseDelimitedFrom(bais);
@@ -384,6 +390,13 @@ public class ClientProtobuf implements Runnable
         {
             outStream.println(str);
         }
+    }
+
+    public int sendPing() throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        send(msgId, API_PING, null);
+        return msgId;
     }
 
     public int sendCreateNode(String nodeName, String nodeType, Map<String, String> props)
