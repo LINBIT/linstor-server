@@ -5,17 +5,13 @@ package com.linbit;
  */
 public class InvalidNameException extends Exception
 {
-    public InvalidNameException()
-    {
-    }
+    private static final long serialVersionUID = 8630329749041929643L;
 
-    public InvalidNameException(String message)
+    public final String invalidName;
+
+    public InvalidNameException(String message, String invalidName)
     {
         super(message);
-    }
-
-    public InvalidNameException(String message, Exception nestedException)
-    {
-        super(message, nestedException);
+        this.invalidName = invalidName;
     }
 }

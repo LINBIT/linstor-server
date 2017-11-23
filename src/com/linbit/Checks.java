@@ -69,7 +69,8 @@ public class Checks
                 String.format(
                     "Invalid name: Name length %d is less than minimum length %d",
                     nameBuffer.length, minLength
-                )
+                ),
+                name
             );
         }
         if (nameBuffer.length > maxLength)
@@ -78,7 +79,8 @@ public class Checks
                 String.format(
                     "Invalid name: Name length %d is greater than maximum length %d",
                     nameBuffer.length, maxLength
-                )
+                ),
+                name
             );
         }
 
@@ -98,7 +100,8 @@ public class Checks
             if (!alpha)
             {
                 throw new InvalidNameException(
-                    "Invalid name: Name must contain at least one character that matches [a-zA-Z]"
+                    "Invalid name: Name must contain at least one character that matches [a-zA-Z]",
+                    name
                 );
             }
         }
@@ -124,7 +127,8 @@ public class Checks
                         String.format(
                             "Invalid name: Cannot begin with character '%c'",
                             (char) letter
-                        )
+                        ),
+                        name
                     );
                 }
             }
@@ -153,7 +157,8 @@ public class Checks
                         String.format(
                             "Invalid name: Cannot contain character '%c'",
                             (char) letter
-                        )
+                        ),
+                        name
                     );
                 }
             }
@@ -180,19 +185,22 @@ public class Checks
         if (name.startsWith("."))
         {
             throw new InvalidNameException(
-                "Hostname cannot begin with '.'"
+                "Hostname cannot begin with '.'",
+                name
             );
         }
         if (name.startsWith("-"))
         {
             throw new InvalidNameException(
-                "Hostname cannot begin with '-'"
+                "Hostname cannot begin with '-'",
+                name
             );
         }
         if (name.endsWith("-"))
         {
             throw new InvalidNameException(
-                "Hostname cannot end with '-'"
+                "Hostname cannot end with '-'",
+                name
             );
         }
 
@@ -205,7 +213,8 @@ public class Checks
                 String.format(
                     "Hostname length of %d violates RFC1123 minimum length of %d",
                     nameBuffer.length, HOSTNAME_MIN_LENGTH
-                )
+                ),
+                name
             );
         }
         if (nameBuffer.length > HOSTNAME_MAX_LENGTH)
@@ -214,7 +223,8 @@ public class Checks
                 String.format(
                     "Hostname length of %d violates RFC1123 maximum length of %d",
                     nameBuffer.length, HOSTNAME_MAX_LENGTH
-                )
+                ),
+                name
             );
         }
 
@@ -237,7 +247,8 @@ public class Checks
                             String.format(
                                 "Domain name component length of %d violates RFC1123 maximum length of %d",
                                 labelLength, HOSTNAME_LABEL_MAX_LENGTH
-                            )
+                            ),
+                            name
                         );
                     }
                     if (!((letter >= 'a' && letter <= 'z') ||
@@ -249,7 +260,8 @@ public class Checks
                             String.format(
                                 "Domain name cannot contain character '%c'",
                                 (char) letter
-                            )
+                            ),
+                            name
                         );
                     }
                 }

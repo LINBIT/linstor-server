@@ -106,7 +106,8 @@ public enum AccessType
                         "The name '%s' requested in an AccessType lookup does not match any " +
                         "known access type names",
                         upperName
-                    )
+                    ),
+                    name
                 );
         }
         return accType;
