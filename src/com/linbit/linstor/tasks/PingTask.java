@@ -40,8 +40,8 @@ public class PingTask implements Task
             final long lastPingSent = peer.getLastPingSent();
             if (lastPingReceived + PING_TIMEOUT < lastPingSent)
             {
-                controller.getErrorReporter().logWarning(
-                    "lost connection to peer " + peer.getId() + ". -pingList, +reconnectList"
+                controller.getErrorReporter().logTrace(
+                    "Connection to peer " + peer.getId() + " lost. Removed from pingList, added to reconnectList."
                 );
                 peerList.remove(peer);
                 --idx;

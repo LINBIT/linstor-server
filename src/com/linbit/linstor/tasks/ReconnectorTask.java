@@ -44,8 +44,9 @@ public class ReconnectorTask implements Task
             final Peer peer = peerList.get(idx);
             if (peer.isConnected())
             {
-                controller.getErrorReporter().logInfo(
-                    "peer " + peer.getId() + " has connected. -reconnectList, +pingList");
+                controller.getErrorReporter().logTrace(
+                    "Peer " + peer.getId() + " has connected. Removed from reconnectList, added to pingList."
+                );
                 peerList.remove(idx);
                 --idx;
                 if (pingTask != null)
@@ -55,8 +56,9 @@ public class ReconnectorTask implements Task
             }
             else
             {
-                controller.getErrorReporter().logInfo(
-                    "peer " + peer.getId() + " has not connected yet - retrying connect");
+                controller.getErrorReporter().logTrace(
+                    "Peer " + peer.getId() + " has not connected yet, retrying connect."
+                );
                 try
                 {
                     peer.getConnector().reconnect(peer);

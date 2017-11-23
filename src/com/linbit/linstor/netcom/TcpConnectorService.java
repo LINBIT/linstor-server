@@ -700,10 +700,10 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
 
         @SuppressWarnings("resource")
         SocketChannel channel = (SocketChannel) currentKey.channel();
+        Peer peer = (Peer) currentKey.attachment();
         try
         {
             channel.finishConnect();
-            Peer peer = (Peer) currentKey.attachment();
             peer.connectionEstablished();
             if (connObserver != null)
             {
@@ -712,14 +712,12 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         }
         catch (ConnectException conExc)
         {
-            if (conExc.getMessage().equals("Connection refused"))
-            {
-                // ignore, Reconnector will retry later
-            }
-            else
-            {
-                coreSvcs.getErrorReporter().reportError(conExc);
-            }
+            String message = conExc.getMessage();
+            coreSvcs.getErrorReporter().logTrace(
+                "Outbound connection to peer ID '" + peer.getId() +
+                "' failed" +
+                (message != null ? ": " + message : "")
+            );
         }
         catch (NoRouteToHostException noRouteExc)
         {
