@@ -7,13 +7,10 @@ import java.sql.ResultSet;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
-import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolDefinitionDataDerbyDriver;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
+import java.util.List;
 
 public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 {
@@ -210,6 +207,18 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         assertEquals(spdd.getUuid(), loadedSpdd.getUuid());
     }
 
+    private StorPoolDefinitionData findStorPoolDefinitionDatabyName(
+            List<StorPoolDefinitionData> listStorPoolDefs,
+            StorPoolName spName)
+    {
+        for(StorPoolDefinitionData spdd : listStorPoolDefs)
+        {
+            if(spdd.getName().equals(spName))
+                return spdd;
+        }
+        return null;
+    }
+
     @Test
     public void testLoadAll() throws Exception
     {
@@ -217,12 +226,15 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         StorPoolName spName2 = new StorPoolName("StorPoolName2");
         StorPoolDefinitionData.getInstance(sysCtx, spName2, transMgr, true, false);
 
-        driver.loadAll(transMgr);
+        List<StorPoolDefinitionData> storpools = driver.loadAll(transMgr);
 
-        assertNotNull(storPoolDfnMap.get(new StorPoolName("DEFAULT")));
-        assertNotNull(storPoolDfnMap.get(spName));
-        assertNotNull(storPoolDfnMap.get(spName2));
-        assertNotEquals(storPoolDfnMap.get(spName2), storPoolDfnMap.get(spName));
+        assertNotNull(findStorPoolDefinitionDatabyName(storpools, new StorPoolName("DEFAULT")));
+        assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName));
+        assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName2));
+        assertNotEquals(
+                findStorPoolDefinitionDatabyName(storpools, spName),
+                findStorPoolDefinitionDatabyName(storpools, spName2)
+        );
     }
 
     @Test (expected = DrbdDataAlreadyExistsException.class)
