@@ -43,7 +43,7 @@ public final class StdErrorReporter implements ErrorReporter
 
     private static final String RPT_ID_TRACE_DISABLED = "TRACE_LEVEL_REPORTING_DISABLED";
 
-    private boolean traceEnabled = false;
+    private volatile boolean traceEnabled = false;
 
     static
     {
