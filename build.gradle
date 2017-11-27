@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
+apply plugin: 'application'
 
 sourceCompatibility = 1.7
 version = '1.0'
@@ -42,6 +43,31 @@ dependencies
     testCompile group: 'junit', name: 'junit', version: '4.+'
     // testCompile group: 'org.mockito', name: 'mockito', version: '2.7.19'
     testCompile group: 'org.powermock', name: 'powermock-mockito-release-full', version: '1.6.4'
+}
+
+mainClassName = 'com.linbit.linstor.core.Controller'
+jar {
+  manifest {
+    attributes(
+      'Main-Class': mainClassName
+    )
+  }
+
+  from {
+    configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+  }
+}
+
+task moreStartScripts(type: CreateStartScripts) {
+    mainClassName = 'com.linbit.linstor.core.Satellite'
+    applicationName = "Satellite"
+     outputDir = new File(project.buildDir, 'scripts')
+    classpath = jar.outputs.files + project.configurations.runtime
+}
+
+applicationDistribution.into("bin") {
+            from(moreStartScripts)
+            fileMode = 0755
 }
 
 task showMeCache << {
