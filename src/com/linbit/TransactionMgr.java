@@ -47,11 +47,6 @@ public class TransactionMgr
 
     public void commit() throws SQLException
     {
-        commit(true);
-    }
-
-    public void commit(boolean clearTransObjects) throws SQLException
-    {
         if (!isSatellite)
         {
             dbCon.commit();
@@ -64,17 +59,8 @@ public class TransactionMgr
                 transObj.commit();
             }
         }
-        if (clearTransObjects)
-        {
-            clearTransactionObjects();
-        }
 
-        // if no SQLException happened so far
-        for (TransactionObject transObj : transObjects)
-        {
-            // remove the active connection to force the next transaction to be explicit
-            transObj.setConnection(null);
-        }
+        clearTransactionObjects();
     }
 
 
@@ -92,10 +78,19 @@ public class TransactionMgr
         {
             dbCon.rollback();
         }
+
+        clearTransactionObjects();
     }
 
     public void clearTransactionObjects()
     {
+        // if no SQLException happened so far
+        for (TransactionObject transObj : transObjects)
+        {
+            // remove the active connection to force the next transaction to be explicit
+            transObj.setConnection(null);
+        }
+
         transObjects.clear();
     }
 
@@ -111,5 +106,10 @@ public class TransactionMgr
             }
         }
         return dirty;
+    }
+
+    public int sizeObjects()
+    {
+        return transObjects.size();
     }
 }

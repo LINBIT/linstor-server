@@ -40,6 +40,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.storage.LvmDriver;
 import com.linbit.utils.UuidUtils;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 
 public class VolumeDataDerbyTest extends DerbyBase
 {
@@ -595,5 +598,19 @@ public class VolumeDataDerbyTest extends DerbyBase
             false,
             true
         );
+    }
+
+    @Test
+    public void testTransactionObjects() throws Exception
+    {
+        assertNotEquals(transMgr.sizeObjects(), 0);
+        transMgr.commit();
+        assertEquals(0, transMgr.sizeObjects());
+        assertFalse(node.hasTransMgr());
+        assertFalse(resDfn.hasTransMgr());
+        assertFalse(res.hasTransMgr());
+        assertFalse(storPoolDfn.hasTransMgr());
+        assertFalse(storPool.hasTransMgr());
+        assertFalse(volDfn.hasTransMgr());
     }
 }

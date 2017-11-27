@@ -465,7 +465,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                     // Set CONTROL access for the SYSTEM role on shutdown
                     shutdownProt.addAclEntry(initCtx, initCtx.getRole(), AccessType.CONTROL);
 
-                    transMgr.commit(true);
+                    transMgr.commit();
                 }
                 catch (Exception rollbackExc)
                 {
