@@ -188,6 +188,12 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
+    public boolean isDirtyWithoutTransMgr()
+    {
+        return !hasTransMgr() && isDirty();
+    }
+
+    @Override
     public boolean hasTransMgr()
     {
         return propsMap.hasTransMgr();

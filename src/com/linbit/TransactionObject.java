@@ -57,6 +57,13 @@ public interface TransactionObject
     boolean isDirty();
 
     /**
+     * Returns true if there are any uncommited changes in this object
+     * and a transaction manager is set.
+     * @return
+     */
+    boolean isDirtyWithoutTransMgr();
+
+    /**
      * Returns true if the object has an active {@link TransactionMgr}
      */
     boolean hasTransMgr();

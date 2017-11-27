@@ -65,6 +65,10 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
     @Override
     public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
+        if (!hasTransMgr() && isDirtyWithoutTransMgr())
+        {
+            throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
+        }
         if (transMgrRef != null)
         {
             transMgrRef.register(this);
@@ -88,6 +92,12 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
     public boolean isDirty()
     {
         return object != cachedObject;
+    }
+
+    @Override
+    public boolean isDirtyWithoutTransMgr()
+    {
+        return !hasTransMgr() && isDirty();
     }
 
     @Override

@@ -213,6 +213,12 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
     }
 
     @Override
+    public boolean isDirtyWithoutTransMgr()
+    {
+        return !hasTransMgr() && isDirty();
+    }
+
+    @Override
     public boolean hasTransMgr()
     {
         return transMgr != null;
@@ -221,7 +227,7 @@ public abstract class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> implements
     @Override
     public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
-        if (isDirty())
+        if (!hasTransMgr() && isDirtyWithoutTransMgr())
         {
             throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
         }

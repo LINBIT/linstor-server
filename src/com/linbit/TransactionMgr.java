@@ -35,6 +35,13 @@ public class TransactionMgr
 
     public void register(TransactionObject transObj)
     {
+        if(transObj.isDirtyWithoutTransMgr())
+        {
+            throw new ImplementationError(
+                "Connection set after TransactionObject modified " + transObj,
+                null
+            );
+        }
         transObjects.add(transObj);
     }
 
