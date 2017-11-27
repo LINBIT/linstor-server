@@ -47,7 +47,7 @@ public class TransactionMgr
 
     public void commit() throws SQLException
     {
-        commit(false);
+        commit(true);
     }
 
     public void commit(boolean clearTransObjects) throws SQLException
