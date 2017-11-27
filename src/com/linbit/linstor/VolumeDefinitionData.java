@@ -216,6 +216,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         if (volDfnData != null)
         {
             volDfnData.initialized();
+            volDfnData.setConnection(transMgr);
         }
         return volDfnData;
     }
@@ -251,6 +252,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
                 );
             }
             vlmDfnData.initialized();
+            vlmDfnData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

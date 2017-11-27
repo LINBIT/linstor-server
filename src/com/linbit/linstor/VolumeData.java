@@ -186,6 +186,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         if (volData != null)
         {
             volData.initialized();
+            volData.setConnection(transMgr);
         }
         return volData;
     }
@@ -222,6 +223,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 );
             }
             vlmData.initialized();
+            vlmData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

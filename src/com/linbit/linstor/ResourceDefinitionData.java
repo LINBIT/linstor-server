@@ -171,6 +171,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         if (resDfn != null)
         {
             resDfn.initialized();
+            resDfn.setConnection(transMgr);
         }
         return resDfn;
     }
@@ -204,6 +205,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                 );
             }
             rscDfn.initialized();
+            rscDfn.setConnection(transMgr);
         }
         catch (Exception exc)
         {

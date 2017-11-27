@@ -158,6 +158,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         if (storPoolData != null)
         {
             storPoolData.initialized();
+            storPoolData.setConnection(transMgr);
         }
         return storPoolData;
     }
@@ -191,6 +192,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                 );
             }
             storPoolData.initialized();
+            storPoolData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

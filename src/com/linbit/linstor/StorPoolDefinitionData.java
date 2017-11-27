@@ -118,6 +118,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         if (storPoolDfn != null)
         {
             storPoolDfn.initialized();
+            storPoolDfn.setConnection(transMgr);
         }
 
         return storPoolDfn;
@@ -151,6 +152,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
                 );
             }
             storPoolDfn.initialized();
+            storPoolDfn.setConnection(transMgr);
         }
         catch (Exception exc)
         {

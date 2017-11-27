@@ -180,6 +180,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         if (volConData != null)
         {
             volConData.initialized();
+            volConData.setConnection(transMgr);
         }
         return volConData;
     }
@@ -230,6 +231,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
                 );
             }
             volConData.initialized();
+            volConData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

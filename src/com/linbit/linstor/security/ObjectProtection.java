@@ -122,6 +122,7 @@ public final class ObjectProtection extends BaseTransactionObject
             }
 
             objProt.initialized();
+            objProt.setConnection(transMgr);
         }
 
         return objProt;

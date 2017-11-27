@@ -176,6 +176,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         if (rscConData != null)
         {
             rscConData.initialized();
+            rscConData.setConnection(transMgr);
         }
         return rscConData;
     }
@@ -228,6 +229,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
                 );
             }
             rscConData.initialized();
+            rscConData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

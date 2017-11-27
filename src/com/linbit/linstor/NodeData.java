@@ -182,6 +182,7 @@ public class NodeData extends BaseTransactionObject implements Node
         if (nodeData != null)
         {
             nodeData.initialized();
+            nodeData.setConnection(transMgr);
         }
         return nodeData;
     }
@@ -218,6 +219,7 @@ public class NodeData extends BaseTransactionObject implements Node
                 );
             }
             nodeData.initialized();
+            nodeData.setConnection(transMgr);
         }
         catch (Exception exc)
         {

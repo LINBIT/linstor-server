@@ -152,6 +152,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         if (nodeConData != null)
         {
             nodeConData.initialized();
+            nodeConData.setConnection(transMgr);
         }
         return nodeConData;
     }
@@ -200,6 +201,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
                 );
             }
             nodeConData.initialized();
+            nodeConData.setConnection(transMgr);
         }
         catch (Exception exc)
         {
