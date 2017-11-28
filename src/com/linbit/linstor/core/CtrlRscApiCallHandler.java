@@ -241,7 +241,7 @@ class CtrlRscApiCallHandler
                         );
                         entry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_VLM_DFN);
                         controller.getErrorReporter().reportError(
-                            new NullPointerException("Dependency not found"),
+                            new LinStorException("Dependency not found"),
                             accCtx,
                             client,
                             errorMessage
@@ -322,7 +322,7 @@ class CtrlRscApiCallHandler
                             entry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL);
                         }
                         controller.getErrorReporter().reportError(
-                            new NullPointerException("Dependency not found"),
+                            new LinStorException("Dependency not found"),
                             accCtx,
                             client,
                             errorMessage
@@ -417,7 +417,7 @@ class CtrlRscApiCallHandler
                             );
                             entry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_DFLT_STOR_POOL);
                             controller.getErrorReporter().reportError(
-                                new NullPointerException("Dependency not found"),
+                                new LinStorException("Dependency not found"),
                                 accCtx,
                                 client,
                                 errorMessage

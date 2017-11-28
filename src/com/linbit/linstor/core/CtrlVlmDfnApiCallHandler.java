@@ -41,16 +41,14 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 
-public class CtrlVlmDfnApiCallHandler
+public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 {
     private enum ApiType
     {
         CREATE, DELETE
     }
 
-    private Controller controller;
     private Serializer<Resource> rscSerializer;
-    private AccessContext apiCtx;
 
     private ThreadLocal<ApiCallRcImpl> currentApiCallRc = new ThreadLocal<>();
     private ThreadLocal<ApiType> currentApiCallType = new ThreadLocal<>();
@@ -65,9 +63,8 @@ public class CtrlVlmDfnApiCallHandler
         AccessContext apiCtx
     )
     {
-        this.controller = controller;
+        super(controller, apiCtx);
         this.rscSerializer = rscSerializer;
-        this.apiCtx = apiCtx;
     }
 
     public ApiCallRc createVolumeDefinitions(
@@ -86,6 +83,13 @@ public class CtrlVlmDfnApiCallHandler
 
         TransactionMgr transMgr = null;
 
+
+
+        // TODO: use try-with-resource
+        currentObjRefs.get().clear();
+        currentObjRefs.get().put(KEY_RSC_DFN, currentRscNameStr.get());
+        currentVariables.get().clear();
+        currentVariables.get().put(KEY_RSC_NAME, currentRscNameStr.get());
         try
         {
             transMgr = getTransactionMgr();
@@ -106,6 +110,20 @@ public class CtrlVlmDfnApiCallHandler
             for (VolumeDefinition.VlmDfnApi vlmDfnApi : vlmDfnApiList)
             {
                 currentVlmDfnApi.set(vlmDfnApi);
+                currentObjRefs.get().put(
+                    KEY_VLM_NR,
+                    vlmDfnApi.getVolumeNr() + "" // possibly null, DO NOT change to Integer.toString
+                );
+                currentVariables.get().put(
+                    KEY_VLM_NR,
+                    vlmDfnApi.getVolumeNr() + "" // possibly null, DO NOT change to Integer.toString
+                );
+                currentVariables.get().put(
+                    KEY_MINOR_NR,
+                    vlmDfnApi.getMinorNr() + ""  // possibly null, DO NOT change to Integer.toString
+                );
+
+                currentObjRefs.get().put(KEY_VLM_NR, vlmDfnApi.getVolumeNr() + "");
 
                 VolumeNumber volNr = null;
                 MinorNumber minorNr = null;
@@ -135,6 +153,10 @@ public class CtrlVlmDfnApiCallHandler
 
                 vlmDfnsCreated.add(vlmDfn);
             }
+            currentObjRefs.get().remove(KEY_VLM_NR);
+            currentVariables.get().remove(KEY_VLM_NR);
+            currentVariables.get().remove(KEY_MINOR_NR);
+
             for (Resource rsc : rscList)
             {
                 adjustRscVolumes(rsc, transMgr);
@@ -643,34 +665,8 @@ public class CtrlVlmDfnApiCallHandler
         );
     }
 
-    private void report(Exception exc, String errorMessage, long retCode)
-    {
-        controller.getErrorReporter().reportError(
-            exc,
-            currentAccCtx.get(),
-            currentPeer.get(),
-            errorMessage
-        );
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-        entry.setReturnCodeBit(retCode);
-        entry.setMessageFormat(errorMessage);
-
-        VlmDfnApi vlmDfn = currentVlmDfnApi.get();
-        if (vlmDfn != null)
-        {
-            entry.putObjRef(KEY_VLM_NR, vlmDfn.getVolumeNr() + "");     // nullable, DO NOT change to Integer.toString
-            entry.putVariable(KEY_VLM_NR, vlmDfn.getVolumeNr() + "");   // nullable, DO NOT change to Integer.toString
-            entry.putVariable(KEY_MINOR_NR, vlmDfn.getMinorNr() + "" ); // nullable, DO NOT change to Integer.toString
-        }
-        entry.putObjRef(KEY_RSC_DFN, currentRscNameStr.get());
-        entry.putVariable(KEY_RSC_NAME, currentRscNameStr.get());
-
-        currentApiCallRc.get().addEntry(entry);
-    }
-
     private static class CtrlVlmDfnApiCallHandlerFailedException extends RuntimeException
     {
         private static final long serialVersionUID = 3922462817645686356L;
-
     }
 }

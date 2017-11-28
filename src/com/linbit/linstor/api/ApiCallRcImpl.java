@@ -65,10 +65,21 @@ public class ApiCallRcImpl implements ApiCallRc
             objRefs.put(key, value);
         }
 
+        public void putAllObjRef(Map<String, String> map)
+        {
+            objRefs.putAll(map);
+        }
+
         public void putVariable(String key, String value)
         {
             variables.put(key, value);
         }
+
+        public void putAllVariables(Map<String, String> map)
+        {
+            variables.putAll(map);
+        }
+
         @Override
         public long getReturnCode()
         {

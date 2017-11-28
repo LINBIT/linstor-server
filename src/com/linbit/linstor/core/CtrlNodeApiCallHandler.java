@@ -6,7 +6,9 @@ import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
+
 import com.linbit.ImplementationError;
+import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
@@ -25,6 +27,7 @@ import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
@@ -34,15 +37,14 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 
-class CtrlNodeApiCallHandler
+class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
-    private final Controller controller;
-    private final AccessContext apiCtx;
+    private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
+    private final ThreadLocal<String> currentNodeType = new ThreadLocal<>();
 
     CtrlNodeApiCallHandler(Controller controllerRef, AccessContext apiCtxRef)
     {
-        controller = controllerRef;
-        apiCtx = apiCtxRef;
+        super(controllerRef, apiCtxRef);
     }
 
     ApiCallRc createNode(
@@ -65,6 +67,7 @@ class CtrlNodeApiCallHandler
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
+
         TransactionMgr transMgr = null;
         Node node = null;
         NodeType type = null;
@@ -74,42 +77,37 @@ class CtrlNodeApiCallHandler
         String netComTypeStr = null;
         String portStr = null;
         Integer port = null;
-        String netTypeStr = null;
-        String enabledStr = null;
         boolean enabled = true;
         NetInterfaceType netType = null;
         Props netIfProps = null;
-        try
-        {
-            controller.nodesMapProt.requireAccess(accCtx, AccessType.CHANGE);// accDeniedExc1
-            transMgr = new TransactionMgr(controller.dbConnPool.getConnection()); // sqlExc1
-            nodeName = new NodeName(nodeNameStr); // invalidNameExc1
-
-            type = NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
-
-            NodeFlag[] flags = null;
-            node = NodeData.getInstance( // sqlExc2, accDeniedExc2, alreadyExists1
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
                 accCtx,
-                nodeName,
-                type,
-                flags,
-                transMgr,
-                true,
-                true
-            );
+                client,
+                ApiCallType.CREATE,
+                apiCallRc,
+                nodeNameStr,
+                nodeTypeStr
+            )
+        )
+        {
+            requireNodesMapChangeAccess();
+            transMgr = createNewTransMgr();
+            nodeName = asNodeName(nodeNameStr);
+
+            type = asNodeType(nodeTypeStr);
+
+            node = createNode(nodeName, type, transMgr);
             node.setConnection(transMgr);
 
-            nodeProps = node.getProps(accCtx); // accDeniedExc0 (implError)
+            nodeProps = node.getProps(accCtx); // accDeniedExc (implError)
             nodeProps.map().putAll(propsMap);
 
             netIfProps = nodeProps.getNamespace(NAMESPC_NETIF);
             if (netIfProps == null)
             {
-                apiCallRc.addEntry(
-                    getApiCallRcMissingNetIfNamespace(
-                        nodeNameStr
-                    )
-                );
+                // TODO for auxiliary nodes maybe the netIf-namespace is not required?
+                reportMissingNetIfNamespace();
             }
             else
             {
@@ -121,75 +119,43 @@ class CtrlNodeApiCallHandler
                     portStr = null;
                     port = null;
                     netComTypeStr = null;
-                    netTypeStr = null;
                     netType = null;
-                    enabledStr = null;
                     enabled = true;
 
-                    NetInterfaceName netName = new NetInterfaceName(currentNetIfNameStr); // invalidnameExc2
-                    String ipStr = netIfProps.getProp(KEY_IP_ADDR, currentNetIfNameStr);
-                    DmIpAddress addr = new DmIpAddress(ipStr);
+                    NetInterfaceName netName = asNetInterfaceName(currentNetIfNameStr);
+                    DmIpAddress addr = asDmIpAddress(netIfProps.getProp(KEY_IP_ADDR, currentNetIfNameStr));
+
                     portStr = netIfProps.getProp(KEY_PORT_NR, currentNetIfNameStr);
                     netComTypeStr = netIfProps.getProp(KEY_NETCOM_TYPE, currentNetIfNameStr);
                     if (portStr == null || netComTypeStr == null)
                     {
                         if (portStr == null && netComTypeStr != null)
                         {
-                            apiCallRc.addEntry(
-                                getApiCallRcMissingPropNetComType(
-                                    nodeNameStr,
-                                    currentNetIfNameStr
-                                )
-                            );
+                            reportMissingPort(currentNetIfNameStr);
                         }
                         else
                         if (portStr != null && netComTypeStr == null)
                         {
-                            apiCallRc.addEntry(
-                                getApiCallRcMissingPropNetComPort(
-                                    nodeNameStr,
-                                    currentNetIfNameStr
-                                )
-                            );
+                            reportMissingNetComType(currentNetIfNameStr);
                         }
+                        // TODO if both are null, it is still valid (not as a LinStor connection, but as a drbd connection)
                     }
                     else
                     {
-                        port = Integer.parseInt(portStr);
-                        netTypeStr = netIfProps.getProp(KEY_NETIF_TYPE, currentNetIfNameStr);
-                        netType = NetInterfaceType.valueOfIgnoreCase(netTypeStr, NetInterfaceType.IP);
-                        enabledStr = netIfProps.getProp(KEY_NETCOM_ENABLED, currentNetIfNameStr);
-                        if (VAL_FALSE.equalsIgnoreCase(enabledStr) || VAL_TRUE.equalsIgnoreCase(enabledStr))
-                        {
-                            enabled = Boolean.parseBoolean(enabledStr);
-                        }
-                        else
-                        {
-                            enabled = true;
-                            if (enabledStr != null && !enabledStr.trim().equals(""))
-                            {
-                                apiCallRc.addEntry(
-                                    getApiCallRcWarnInvalidNetComEnabled(
-                                        nodeNameStr,
-                                        enabledStr
-                                    )
-                                );
-                            }
-                        }
+                        port = asPort(portStr, currentNetIfNameStr);
+                        netType = getNetIfType(netIfProps, currentNetIfNameStr, NetInterfaceType.IP);
+                        enabled = isEnabled(netIfProps, currentNetIfNameStr, true);
 
                         if (enabled)
                         {
                             atLeastOneEnabled = true;
-                            NetInterfaceData.getInstance( // sqlExc3, accDeniedExc4, alreadyExists2
-                                accCtx,
+                            createNetInterface(
                                 node,
                                 netName,
                                 addr,
                                 port,
                                 netType,
-                                transMgr,
-                                true,
-                                true
+                                transMgr
                             );
                         }
                     }
@@ -197,27 +163,17 @@ class CtrlNodeApiCallHandler
 
                 if (atLeastOneEnabled == false)
                 {
-                    apiCallRc.addEntry(
-                        getApiCallRcMissingEnabledNetCom(
-                            nodeNameStr
-                        )
-                    );
+                    reportMissingEnabledNetCom();
                 }
                 else
                 {
-                    transMgr.commit(); // sqlExc4
+                    commit(transMgr);
 
                     String successMessage = String.format(
                         "Node '%s' successfully created.",
                         nodeNameStr
                     );
-                    apiCallRc.addEntry(
-                        getApiCallRcNodeCreated(
-                            nodeNameStr,
-                            successMessage
-                        )
-                    );
-                    controller.nodesMap.put(nodeName, node);
+                    addAnswer(successMessage, RC_NODE_CREATED);
                     controller.getErrorReporter().logInfo(successMessage);
 
                     if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
@@ -227,202 +183,23 @@ class CtrlNodeApiCallHandler
                 }
             }
         }
-        catch (SQLException sqlExc)
+
+
+        catch (ApiCallHandlerFailedException ignore)
         {
-            String errorMessage = String.format(
-                "A database error occured while trying to create a new node '%s'.",
-                nodeNameStr
-            );
-            controller.getErrorReporter().reportError(
-                sqlExc,
-                accCtx,
-                client,
-                errorMessage
-            );
-
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_SQL);
-            entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(sqlExc.getMessage());
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-
-            apiCallRc.addEntry(entry);
+            // a report and a corresponding api-response already created. nothing to do here
         }
-        catch (InvalidNameException invalidNameExc)
+        catch (Exception exc)
         {
-            String errorMessage;
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            if (nodeName == null)
-            { // handle invalidNameExc1
-                errorMessage = String.format(
-                    "The given node name '%s' is invalid.",
-                    nodeNameStr
-                );
-
-                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NODE_NAME);
-            }
-            else
-            { // handle invalidNameExc2
-                errorMessage = String.format(
-                    "The given network interface name '%s' is invalid",
-                    currentNetIfNameStr
-                );
-                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NET_NAME);
-                entry.putVariable(KEY_NET_IF_NAME, currentNetIfNameStr);
-            }
-            controller.getErrorReporter().reportError(
-                invalidNameExc,
-                accCtx,
-                client,
-                errorMessage
-            );
-            entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(invalidNameExc.getMessage());
-
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            Throwable exc;
-            String errorMessage;
-            if (node == null)
-            { // handle accDeniedExc1 && accDeniedExc2
-                errorMessage = String.format(
-                    "The access context (user: '%s', role: '%s') has no permission to " +
-                        "create the new node '%s'.",
-                    accCtx.subjectId.name.displayValue,
-                    accCtx.subjectRole.name.displayValue,
-                    nodeNameStr
-                );
-                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_ACC_DENIED_NODE);
-                exc = accDeniedExc;
-            }
-            else
-            { // handle accDeniedExc3 && accDeniedExc4
-                errorMessage = String.format(
-                    "The node '%s' could not be created due to an implementation error",
-                    nodeNameStr
-                );
-                entry.setReturnCode(RC_NODE_CRT_FAIL_IMPL_ERROR);
-                exc = new ImplementationError(errorMessage, accDeniedExc);
-            }
-            controller.getErrorReporter().reportError(
+            report(
                 exc,
-                accCtx,
-                client,
-                errorMessage
+                "Node could not be created due to an unknown exception.",
+                RC_NODE_CRT_FAIL_UNKNOWN_ERROR
             );
-
-            entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(accDeniedExc.getMessage());
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-
-            apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException alreadyExistsExc)
+        catch (ImplementationError implErr)
         {
-            String errorMessage;
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            Throwable exc;
-            if (node == null)
-            { // handle alreadyExists1
-                errorMessage = String.format(
-                    "A node with the name '%s' already exists",
-                    nodeNameStr
-                );
-                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_EXISTS_NODE);
-                exc = alreadyExistsExc;
-            }
-            else
-            {
-                errorMessage = String.format(
-                    "The node '%s' could not be created due to an implementation error",
-                    nodeNameStr
-                );
-                entry.setReturnCode(RC_NODE_CRT_FAIL_IMPL_ERROR);
-                exc = new ImplementationError(errorMessage, alreadyExistsExc);
-            }
-            controller.getErrorReporter().reportError(
-                alreadyExistsExc,
-                accCtx,
-                client,
-                errorMessage
-            );
-
-            entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(alreadyExistsExc.getMessage());
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (IllegalArgumentException illegalArgExc)
-        {
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            String errorMessage;
-            if (type == null)
-            {
-                errorMessage = String.format("Unknown node type '%s'.", nodeTypeStr);
-                entry.setReturnCodeBit(RC_NODE_CRT_FAIL_INVLD_NODE_TYPE);
-            }
-            else
-            if (port == null)
-            {
-                errorMessage = String.format(
-                    "Invalid port '%s' for net name '%s'.",
-                    portStr,
-                    currentNetIfNameStr
-                );
-                entry.setReturnCode(RC_NODE_CRT_FAIL_INVLD_NET_PORT);
-            }
-            else
-            {
-                errorMessage = String.format(
-                    "Invalid network interface type '%s' for net name '%s'.",
-                    netTypeStr,
-                    currentNetIfNameStr
-                );
-                entry.setReturnCode(RC_NODE_CRT_FAIL_INVLD_NET_TYPE);
-            }
-            controller.getErrorReporter().reportError(
-                illegalArgExc,
-                accCtx,
-                client,
-                errorMessage
-            );
-            entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(illegalArgExc.getMessage());
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-            entry.putVariable(KEY_NODE_TYPE, nodeTypeStr);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            String errorMessage = String.format(
-                "An unknown exception occured while creating node '%s'.",
-                nodeNameStr
-            );
-            controller.getErrorReporter().reportError(
-                exc,
-                accCtx,
-                client,
-                errorMessage
-            );
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_NODE_CRT_FAIL_UNKNOWN_ERROR);
-            entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(exc.getMessage());
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-
-            apiCallRc.addEntry(entry);
+            reportImplError(implErr);
         }
 
         if (transMgr != null)
@@ -544,112 +321,6 @@ class CtrlNodeApiCallHandler
                 )
             );
         }
-    }
-
-    private ApiCallRcEntry getApiCallRcMissingNetIfNamespace(String nodeNameStr)
-    {
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-        entry.setReturnCodeBit(RC_NODE_CRT_FAIL_MISSING_PROPS);
-
-        String errorMessage = String.format(
-            "Node '%s' is missing the props-namespace '%s'.",
-            nodeNameStr,
-            NAMESPC_NETIF
-        );
-        entry.setMessageFormat(errorMessage);
-        entry.setCorrectionFormat("Example for creating a netinterface named 'netIfName0': \n" +
-            NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 0.0.0.0\n" +
-            NAMESPC_NETIF + "/netIfName0/" + KEY_PORT_NR + " = " + DFLT_STLT_PORT_PLAIN + "\n" +
-            NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_TYPE + " = " + VAL_NETCOM_TYPE_PLAIN + "\n" +
-            NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_ENABLED + " = " + VAL_TRUE + "\n" +
-            "   for a linstor node connection (" + KEY_NETCOM_ENABLED + " is optional and default " + VAL_TRUE+ ") or \n" +
-            NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 10.0.0.103\n" +
-            "   for a drbd resource interface (no " + KEY_PORT_NR + ", no " + KEY_NETCOM_TYPE + ")"
-        );
-        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-        entry.putVariable(KEY_MISSING_NAMESPC, NAMESPC_NETCOM);
-        entry.putObjRef(KEY_NODE, nodeNameStr);
-        return entry;
-    }
-
-    private ApiCallRcEntry getApiCallRcNodeCreated(String nodeNameStr, String successMessage)
-    {
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-        entry.setReturnCodeBit(RC_NODE_CREATED);
-        entry.setMessageFormat(successMessage);
-        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-        entry.putObjRef(KEY_NODE, nodeNameStr);
-        return entry;
-    }
-
-    private ApiCallRcEntry getApiCallRcMissingEnabledNetCom(String nodeNameStr)
-    {
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-        entry.setReturnCodeBit(RC_NODE_CRT_FAIL_MISSING_NETCOM);
-
-        String errorMessage = String.format(
-            "No (enabled) network interface for linstor communication was specified for node '%s'.",
-            nodeNameStr
-        );
-        entry.setMessageFormat(errorMessage);
-        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-        entry.putObjRef(KEY_NODE, nodeNameStr);
-        return entry;
-    }
-
-    private ApiCallRcEntry getApiCallRcWarnInvalidNetComEnabled(String nodeNameStr, String enabledStr)
-    {
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-        entry.setReturnCodeBit(RC_NODE_CRT_WARN_INVLD_OPT_PROP_NETCOM_ENABLED);
-
-        String errorMessage = String.format(
-            "The property '%s' for node '%s' was '%s', which is invalid. The property defaults to '%s'.",
-            KEY_NETCOM_ENABLED,
-            nodeNameStr,
-            enabledStr,
-            VAL_TRUE
-        );
-        entry.setMessageFormat(errorMessage);
-        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-        entry.putVariable(KEY_NETCOM_ENABLED, enabledStr);
-        entry.putObjRef(KEY_NODE, nodeNameStr);
-        return entry;
-    }
-
-    private ApiCallRcEntry getApiCallRcMissingPropNetComPort(String nodeNameStr, String currentNetIfNameStr)
-    {
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-        entry.setReturnCodeBit(RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_PORT);
-
-        String errorMessage = String.format(
-            "The property '%s' for node '%s' for network interface '%s' is missing.",
-            KEY_PORT_NR,
-            nodeNameStr,
-            currentNetIfNameStr
-        );
-        entry.setMessageFormat(errorMessage);
-        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-        entry.putVariable(KEY_PORT_NR, "");
-        entry.putObjRef(KEY_NODE, nodeNameStr);
-        return entry;
-    }
-
-    private ApiCallRcEntry getApiCallRcMissingPropNetComType(String nodeNameStr, String currentNetIfNameStr)
-    {
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-        entry.setReturnCodeBit(RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_TYPE);
-
-        String errorMessage = String.format(
-            "The property '%s' for node '%s' for network interface '%s' is missing.",
-            KEY_NETCOM_TYPE,
-            nodeNameStr,
-            currentNetIfNameStr
-        );
-        entry.setMessageFormat(errorMessage);
-        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-        entry.putVariable(KEY_NETCOM_TYPE, "");
-        entry.putObjRef(KEY_NODE, nodeNameStr);
-        return entry;
     }
 
     ApiCallRc deleteNode(AccessContext accCtx, Peer client, String nodeNameStr)
@@ -943,4 +614,473 @@ class CtrlNodeApiCallHandler
         return apiCallRc;
     }
 
+    private void requireNodesMapChangeAccess() throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            controller.nodesMapProt.requireAccess(
+                currentAccCtx.get(),
+                AccessType.CHANGE
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            if (currentApiCallType.get().equals(ApiCallType.CREATE))
+            {
+                handleAccDeniedExc(
+                    accDeniedExc,
+                    "create any node",
+                    RC_NODE_CRT_FAIL_ACC_DENIED_NODE
+                );
+            }
+            else
+            {
+                handleAccDeniedExc(
+                    accDeniedExc,
+                    "delete any node",
+                    RC_NODE_DEL_FAIL_ACC_DENIED_NODE
+                );
+            }
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private TransactionMgr createNewTransMgr() throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return new TransactionMgr(controller.dbConnPool.getConnection());
+        }
+        catch (SQLException sqlExc)
+        {
+            String action = "creating a new transaction manager";
+
+            if (currentApiCallType.get().equals(ApiCallType.CREATE))
+            {
+                handleSqlExc(sqlExc, action, ApiConsts.RC_NODE_CRT_FAIL_SQL);
+            }
+            else
+            {
+                handleSqlExc(sqlExc, action, ApiConsts.RC_NODE_DEL_FAIL_SQL);
+            }
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private NodeName asNodeName(String nodeNameStr) throws ApiCallHandlerFailedException
+    {
+        NodeName nodeName;
+        if (currentApiCallType.get().equals(ApiCallType.CREATE))
+        {
+            nodeName = asNodeName(nodeNameStr, RC_NODE_CRT_FAIL_INVLD_NODE_NAME);
+        }
+        else
+        {
+            nodeName = asNodeName(nodeNameStr, RC_NODE_DEL_FAIL_INVLD_NODE_NAME);
+        }
+        return nodeName;
+    }
+
+    private NodeType asNodeType(String nodeTypeStr) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return NodeType.valueOfIgnoreCase(nodeTypeStr, NodeType.SATELLITE);
+        }
+        catch (IllegalArgumentException illegalArgExc)
+        {
+            report(
+                illegalArgExc,
+                "The given node type '" + nodeTypeStr + "' is invalid.",
+                RC_NODE_CRT_FAIL_INVLD_NODE_TYPE
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private NodeData createNode(NodeName nodeName, NodeType type, TransactionMgr transMgr)
+        throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return NodeData.getInstance(
+                currentAccCtx.get(),
+                nodeName,
+                type,
+                new NodeFlag[0],
+                transMgr,
+                true,
+                true
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            handleAccDeniedExc(
+                accDeniedExc,
+                "create the node '" + nodeName + "'.",
+                RC_NODE_CRT_FAIL_ACC_DENIED_NODE
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            report(
+                dataAlreadyExistsExc,
+                String.format(
+                    "A node with the name '%s' already exists",
+                    nodeName.displayValue
+                ),
+                RC_NODE_CRT_FAIL_EXISTS_NODE
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+        catch (SQLException sqlExc)
+        {
+            handleSqlExc(sqlExc);
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private NetInterfaceName asNetInterfaceName(String netIfNameStr)
+        throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return new NetInterfaceName(netIfNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            report(
+                invalidNameExc,
+                "The given net interface name'" + netIfNameStr + "' is invalid.",
+                RC_NODE_CRT_FAIL_INVLD_NET_NAME
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private DmIpAddress asDmIpAddress(String ipAddrStr)
+        throws ApiCallHandlerFailedException
+    {
+        if (ipAddrStr == null)
+        {
+            report(
+                null,
+                "The IP address is missing",
+                RC_NODE_CRT_FAIL_INVLD_NET_ADDR
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+        try
+        {
+            return new DmIpAddress(ipAddrStr);
+        }
+        catch (InvalidIpAddressException invalidIpExc)
+        {
+            report(
+                invalidIpExc,
+                "The IP address '" + ipAddrStr + "' is not valid.",
+                RC_NODE_CRT_FAIL_INVLD_NET_ADDR
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private void reportMissingNetIfNamespace()
+    {
+        currentVariables.get().put(KEY_MISSING_NAMESPC, NAMESPC_NETIF);
+        report(
+            null,
+            String.format(
+                "Node '%s' is missing the props-namespace '%s'.",
+                currentNodeName.get(),
+                NAMESPC_NETIF
+            ),
+            null,
+            null,
+            "Example for creating a netinterface named 'netIfName0': \n" +
+                NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 0.0.0.0\n" +
+                NAMESPC_NETIF + "/netIfName0/" + KEY_PORT_NR + " = " + DFLT_STLT_PORT_PLAIN + "\n" +
+                NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_TYPE + " = " + VAL_NETCOM_TYPE_PLAIN + "\n" +
+                NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_ENABLED + " = " + VAL_TRUE + "\n" +
+                "   for a linstor node connection (" + KEY_NETCOM_ENABLED + " is optional and default " + VAL_TRUE+ ") or \n" +
+                NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 10.0.0.103\n" +
+                "   for a drbd resource interface (no " + KEY_PORT_NR + ", no " + KEY_NETCOM_TYPE + ")",
+            RC_NODE_CRT_FAIL_MISSING_PROPS
+        );
+        throw new ApiCallHandlerFailedException();
+    }
+
+    private void reportMissingPort(String netIfNameStr) throws ApiCallHandlerFailedException
+    {
+        report(
+            null,
+            String.format(
+                "The property '%s' for node '%s' for network interface '%s' is missing.",
+                KEY_PORT_NR,
+                currentNodeName.get(),
+                netIfNameStr
+            ),
+            RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_PORT
+        );
+        throw new ApiCallHandlerFailedException();
+    }
+
+    private void reportMissingNetComType(String netIfNameStr) throws ApiCallHandlerFailedException
+    {
+        report(
+            null,
+            String.format(
+                "The property '%s' for node '%s' for network interface '%s' is missing.",
+                KEY_NETCOM_TYPE,
+                currentNodeName.get(),
+                netIfNameStr
+            ),
+            RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_TYPE
+        );
+        throw new ApiCallHandlerFailedException();
+    }
+
+    private int asPort(String portStr, String netIfNameStr) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return Integer.parseInt(portStr);
+        }
+        catch (NumberFormatException numberFormatExc)
+        {
+            report(
+                numberFormatExc,
+                "The given port '" + portStr + "' for network interface '" + netIfNameStr + "' is invalid.",
+                RC_NODE_CRT_FAIL_INVLD_NET_PORT
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private NetInterfaceType getNetIfType(
+        Props props,
+        String netIfNameStr,
+        NetInterfaceType defaultType
+    )
+        throws ApiCallHandlerFailedException
+    {
+        String netIfTypeStr = null;
+        try
+        {
+            netIfTypeStr = props.getProp(KEY_NETIF_TYPE, netIfNameStr);
+            return NetInterfaceType.valueOfIgnoreCase(netIfTypeStr, defaultType);
+        }
+        catch (InvalidKeyException invalidKeyExc)
+        {
+            reportImplError(invalidKeyExc);
+            throw new ApiCallHandlerFailedException();
+        }
+        catch (IllegalArgumentException illegalArgumentExc)
+        {
+            report(
+                illegalArgumentExc,
+                "The given network interface type '" + netIfTypeStr + "' for network interface '" +
+                    netIfNameStr + "' is invalid.",
+                RC_NODE_CRT_FAIL_INVLD_NET_TYPE
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private boolean isEnabled(
+        Props props,
+        String netIfNameStr,
+        boolean defaultValue
+    )
+        throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            boolean retVal = defaultValue;
+            String enabledStr = props.getProp(KEY_NETCOM_ENABLED, netIfNameStr);
+            if (VAL_TRUE.equalsIgnoreCase(enabledStr))
+            {
+                retVal = true;
+            }
+            else
+            if (VAL_FALSE.equalsIgnoreCase(enabledStr))
+            {
+                retVal = false;
+            }
+            else
+            if (enabledStr != null && !enabledStr.trim().equals(""))
+            {
+                addAnswer(
+                    String.format(
+                        "The property '%s' for node '%s' was '%s', which is invalid. The property defaults to '%s'.",
+                        KEY_NETCOM_ENABLED,
+                        currentNodeName.get(),
+                        enabledStr,
+                        VAL_TRUE
+                    ),
+                    null,
+                    null,
+                    null,
+                    RC_NODE_CRT_WARN_INVLD_OPT_PROP_NETCOM_ENABLED
+                );
+                // no throw
+                retVal = Boolean.parseBoolean(VAL_TRUE);// hopefully VAL_TRUE's value does not change, but still.
+            }
+            return retVal;
+        }
+        catch (InvalidKeyException invalidKeyExc)
+        {
+            reportImplError(invalidKeyExc);
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private NetInterfaceData createNetInterface(
+        Node node,
+        NetInterfaceName netName,
+        DmIpAddress addr,
+        int port,
+        NetInterfaceType netType,
+        TransactionMgr transMgr
+    )
+        throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return NetInterfaceData.getInstance(
+                currentAccCtx.get(),
+                node,
+                netName,
+                addr,
+                port,
+                netType,
+                transMgr,
+                true,   // persist node
+                true    // throw DrbdDataAlreadyExistsException if needed
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            handleAccDeniedExc(
+                accDeniedExc,
+                "create the netinterface '" + netName + "' on node '" + node.getName() + "'.",
+                RC_NODE_CRT_FAIL_ACC_DENIED_NODE
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            report(
+                dataAlreadyExistsExc,
+                "The node '" + node.getName() + "' already has a network interface with the name '" +
+                    netName + "'.",
+                RC_NODE_CRT_FAIL_EXISTS_NET_IF
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+        catch (SQLException sqlExc)
+        {
+            handleSqlExc(sqlExc);
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private void commit(TransactionMgr transMgr) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            transMgr.commit();
+        }
+        catch (SQLException sqlExc)
+        {
+            handleSqlExc(sqlExc);
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private void reportMissingEnabledNetCom() throws ApiCallHandlerFailedException
+    {
+        report(
+            null,
+            "No (enabled) network interface for linstor communication was specified for node " +
+                "'" + currentNodeName.get() + "'.",
+            RC_NODE_CRT_FAIL_MISSING_NETCOM
+        );
+    }
+
+    private void handleSqlExc(SQLException sqlExc)
+    {
+        if (currentApiCallType.get().equals(ApiCallType.CREATE))
+        {
+            handleSqlExc(
+                sqlExc,
+                "creating node '" + currentNodeName.get() + "'",
+                RC_NODE_CRT_FAIL_SQL
+            );
+        }
+        else
+        {
+            handleSqlExc(
+                sqlExc,
+                "deleting node '" + currentNodeName.get() + "'",
+                RC_NODE_DEL_FAIL_SQL
+            );
+        }
+        throw new ApiCallHandlerFailedException();
+    }
+
+    private void reportImplError(Throwable throwable)
+    {
+        if (!(throwable instanceof ImplementationError))
+        {
+            throwable = new ImplementationError(throwable);
+        }
+
+        if (currentApiCallType.get().equals(ApiCallType.CREATE))
+        {
+            report(
+                throwable,
+                "The node could not be created due to an implementation error",
+                RC_NODE_CRT_FAIL_IMPL_ERROR
+            );
+        }
+        else
+        {
+            report(
+                throwable,
+                "The node could not be deleted due to an implementation error",
+                RC_NODE_DEL_FAIL_IMPL_ERROR
+            );
+        }
+    }
+
+    private AbsApiCallHandler setCurrent(
+        AccessContext accCtx,
+        Peer client,
+        ApiCallType apiCallType,
+        ApiCallRcImpl apiCallRc,
+        String nodeNameStr,
+        String nodeTypeStr
+    )
+    {
+        super.setCurrent(accCtx, client, apiCallType, apiCallRc);
+        currentNodeName.set(nodeNameStr);
+        currentNodeType.set(nodeTypeStr);
+        Map<String, String> objRefs = currentObjRefs.get();
+        objRefs.clear();
+        objRefs.put(KEY_NODE, nodeNameStr);
+        Map<String, String> vars = currentVariables.get();
+        vars.clear();
+        vars.put(KEY_NODE, nodeNameStr);
+        return this;
+    }
+
+    @Override
+    public void close() throws Exception
+    {
+        super.close();
+        currentNodeName.set(null);
+        currentNodeType.set(null);
+    }
 }

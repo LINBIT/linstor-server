@@ -87,7 +87,7 @@ public class ApiConsts
     public static final long CRT_FAIL_SQL_ROLLBACK = 101 | MASK_ERROR;
 
     /*
-     * Codes 110-119: invalid * creation failures
+     * Codes 110-129: invalid * creation failures
      */
     public static final long CRT_FAIL_INVLD_NODE_NAME = 110 | MASK_ERROR;
     public static final long CRT_FAIL_INVLD_NODE_TYPE = 111 | MASK_ERROR;
@@ -99,8 +99,10 @@ public class ApiConsts
     public static final long CRT_FAIL_INVLD_MINOR_NR = 117 | MASK_ERROR;
     public static final long CRT_FAIL_INVLD_STOR_POOL_NAME = 118 | MASK_ERROR;
     public static final long CRT_FAIL_INVLD_NET_NAME = 119 | MASK_ERROR;
-    public static final long CRT_FAIL_INVLD_NET_PORT = 120 | MASK_ERROR;
-    public static final long CRT_FAIL_INVLD_NET_TYPE = 121 | MASK_ERROR;
+    public static final long CRT_FAIL_INVLD_NET_ADDR = 120 | MASK_ERROR;
+    public static final long CRT_FAIL_INVLD_NET_PORT = 121 | MASK_ERROR;
+    public static final long CRT_FAIL_INVLD_NET_TYPE = 122 | MASK_ERROR;
+    public static final long CRT_FAIL_INVLD_PROP = 123 | MASK_ERROR;
 
     /*
      * Codes 130-149: dependency not found creation failures
@@ -220,10 +222,13 @@ public class ApiConsts
     public static final long RC_NODE_CRT_FAIL_SQL_ROLLBACK = MASK_NODE | CRT_FAIL_SQL_ROLLBACK;
     public static final long RC_NODE_CRT_FAIL_INVLD_NODE_NAME = MASK_NODE | CRT_FAIL_INVLD_NODE_NAME;
     public static final long RC_NODE_CRT_FAIL_INVLD_NODE_TYPE = MASK_NODE | CRT_FAIL_INVLD_NODE_TYPE;
+    public static final long RC_NODE_CRT_FAIL_INVLD_NET_ADDR = MASK_NODE | CRT_FAIL_INVLD_NET_ADDR;
     public static final long RC_NODE_CRT_FAIL_INVLD_NET_PORT = MASK_NODE | CRT_FAIL_INVLD_NET_PORT;
     public static final long RC_NODE_CRT_FAIL_INVLD_NET_TYPE = MASK_NODE | CRT_FAIL_INVLD_NET_TYPE;
     public static final long RC_NODE_CRT_FAIL_INVLD_NET_NAME = MASK_NODE | CRT_FAIL_INVLD_NET_NAME;
+    public static final long RC_NODE_CRT_FAIL_INVLD_PROP = MASK_NODE | CRT_FAIL_INVLD_PROP;
     public static final long RC_NODE_CRT_FAIL_EXISTS_NODE = MASK_NODE | CRT_FAIL_EXISTS_NODE;
+    public static final long RC_NODE_CRT_FAIL_EXISTS_NET_IF = MASK_NODE | CRT_FAIL_EXISTS_NET_IF;
     public static final long RC_NODE_CRT_FAIL_MISSING_PROPS = MASK_NODE | CRT_FAIL_MISSING_PROPS;
     public static final long RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_TYPE = MASK_NODE | CRT_FAIL_MISSING_PROPS_NETCOM_TYPE;
     public static final long RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_PORT = MASK_NODE | CRT_FAIL_MISSING_PROPS_NETCOM_PORT;
