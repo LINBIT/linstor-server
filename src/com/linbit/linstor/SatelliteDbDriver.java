@@ -499,9 +499,9 @@ public class SatelliteDbDriver implements DatabaseDriver
     {
         @SuppressWarnings("unchecked")
         @Override
-        public SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> getNetInterfaceAddressDriver()
+        public SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver()
         {
-            return (SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress>) singleColDriver;
+            return (SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress>) singleColDriver;
         }
 
         @SuppressWarnings("unchecked")

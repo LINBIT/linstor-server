@@ -164,7 +164,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException, DrbdDataAlreadyExistsException
+        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         resDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         ResourceData resData = null;
@@ -175,7 +175,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         if (failIfExists && resData != null)
         {
-            throw new DrbdDataAlreadyExistsException("The Resource already exists");
+            throw new LinStorDataAlreadyExistsException("The Resource already exists");
         }
 
         if (resData == null && createIfNotExists)
@@ -416,7 +416,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
                 invalidKeyExc
             );
         }
-        catch (DrbdDataAlreadyExistsException | SQLException implExc)
+        catch (LinStorDataAlreadyExistsException | SQLException implExc)
         {
             throw new ImplementationError(implExc);
         }

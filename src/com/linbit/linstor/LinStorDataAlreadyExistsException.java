@@ -1,10 +1,10 @@
 package com.linbit.linstor;
 
-public class DrbdDataAlreadyExistsException extends LinStorException
+public class LinStorDataAlreadyExistsException extends LinStorException
 {
     private static final long serialVersionUID = -996556995066979100L;
 
-    public DrbdDataAlreadyExistsException(
+    public LinStorDataAlreadyExistsException(
         String message,
         String descriptionText,
         String causeText,
@@ -16,7 +16,7 @@ public class DrbdDataAlreadyExistsException extends LinStorException
         super(message, descriptionText, causeText, correctionText, detailsText, cause);
     }
 
-    public DrbdDataAlreadyExistsException(
+    public LinStorDataAlreadyExistsException(
         String message,
         String descriptionText,
         String causeText,
@@ -27,12 +27,12 @@ public class DrbdDataAlreadyExistsException extends LinStorException
         super(message, descriptionText, causeText, correctionText, detailsText);
     }
 
-    public DrbdDataAlreadyExistsException(String message, Throwable cause)
+    public LinStorDataAlreadyExistsException(String message, Throwable cause)
     {
         super(message, cause);
     }
 
-    public DrbdDataAlreadyExistsException(String message)
+    public LinStorDataAlreadyExistsException(String message)
     {
         super(message);
     }

@@ -16,8 +16,8 @@ import org.junit.Test;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DmIpAddress;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LsIpAddress;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceDataDerbyDriver;
 import com.linbit.linstor.NetInterfaceName;
@@ -39,7 +39,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     private final NodeName nodeName;
 
     private final String niAddrStr = "127.0.0.1";
-    private final DmIpAddress niAddr;
+    private final LsIpAddress niAddr;
     private final int port = 9001;
     private final NetInterfaceType niInterfaceType = NetInterfaceType.IP;
 
@@ -51,14 +51,14 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
 
     private java.util.UUID niUuid;
     private NetInterfaceData niData;
-    private SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> niAddrDriver;
+    private SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> niAddrDriver;
     private SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> niTypeDriver;
 
     public NetInterfaceDataDerbyTest() throws Exception
     {
         nodeName = new NodeName("TestNodeName");
         niName = new NetInterfaceName("TestNetInterfaceName");
-        niAddr = new DmIpAddress(niAddrStr);
+        niAddr = new LsIpAddress(niAddrStr);
     }
 
     @Override
@@ -311,7 +311,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         dbDriver.create(niData, transMgr);
 
         String addrStr = "::1";
-        DmIpAddress addr = new DmIpAddress(addrStr);
+        LsIpAddress addr = new LsIpAddress(addrStr);
 
         niData.setConnection(transMgr);
         niData.setAddress(sysCtx, addr);
@@ -334,7 +334,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         niData.initialized();
         dbDriver.create(niData, transMgr);
         String addrStr = "::1";
-        DmIpAddress addr = new DmIpAddress(addrStr);
+        LsIpAddress addr = new LsIpAddress(addrStr);
         niAddrDriver.update(niData, addr, transMgr);
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
@@ -468,7 +468,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niData.getUuid(), loadedNi.getUuid());
     }
 
-    @Test (expected = DrbdDataAlreadyExistsException.class)
+    @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
         dbDriver.create(niData, transMgr);

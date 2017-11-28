@@ -17,7 +17,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 
 /**
- * Defines a connection between two DRBD volumes
+ * Defines a connection between two LinStor volumes
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
@@ -131,7 +131,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws AccessDeniedException, SQLException, DrbdDataAlreadyExistsException
+        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
     {
         VolumeConnectionData volConData = null;
 
@@ -163,7 +163,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
 
         if (failIfExists && volConData != null)
         {
-            throw new DrbdDataAlreadyExistsException("The VolumeConnection already exists");
+            throw new LinStorDataAlreadyExistsException("The VolumeConnection already exists");
         }
 
         if (volConData == null && createIfNotExists)

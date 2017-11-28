@@ -8,7 +8,7 @@ import java.util.Map;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
@@ -236,7 +236,7 @@ class CtrlNodeConnectionApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             String errorMessage;
             ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -246,7 +246,7 @@ class CtrlNodeConnectionApiCallHandler
                 controller.getErrorReporter().reportError(
                     new ImplementationError(
                         String.format(
-                            ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s",
+                            ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s",
                             failedNodeNameStr
                         ),
                         dataAlreadyExistsExc
@@ -577,7 +577,7 @@ class CtrlNodeConnectionApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             String implErrorMessage;
             ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -586,7 +586,7 @@ class CtrlNodeConnectionApiCallHandler
                 String failedNodeNameStr;
                 failedNodeNameStr = node1 == null ? nodeName1Str : nodeName2Str;
                 implErrorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s",
+                    ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s",
                     failedNodeNameStr
                 );
                 entry.putVariable(ApiConsts.KEY_NODE_NAME, failedNodeNameStr);
@@ -594,7 +594,7 @@ class CtrlNodeConnectionApiCallHandler
             else
             {
                 implErrorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. " +
+                    ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. " +
                         " First NodeName=%s, Second NodeName=%s",
                     nodeName1Str,
                     nodeName2Str

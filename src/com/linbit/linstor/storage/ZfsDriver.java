@@ -15,7 +15,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 
 public class ZfsDriver extends AbsStorageDriver
 {
-    public static final String ZFS_POOL_DEFAULT = "drbdpool";
+    public static final String ZFS_POOL_DEFAULT = "linstorpool";
     public static final String ZFS_COMMAND_DEFAULT = "zfs";
 
     protected String zfsCommand = ZFS_COMMAND_DEFAULT;

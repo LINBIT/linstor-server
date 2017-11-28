@@ -144,7 +144,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException, DrbdDataAlreadyExistsException
+        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         ResourceDefinitionDataDatabaseDriver driver = LinStor.getResourceDefinitionDataDatabaseDriver();
 
@@ -153,7 +153,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
         if (failIfExists && resDfn != null)
         {
-            throw new DrbdDataAlreadyExistsException("The ResourceDefinition already exists");
+            throw new LinStorDataAlreadyExistsException("The ResourceDefinition already exists");
         }
 
         if (resDfn == null && createIfNotExists)

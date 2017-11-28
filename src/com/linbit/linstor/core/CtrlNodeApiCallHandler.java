@@ -12,8 +12,8 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DmIpAddress;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LsIpAddress;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
@@ -123,7 +123,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     enabled = true;
 
                     NetInterfaceName netName = asNetInterfaceName(currentNetIfNameStr);
-                    DmIpAddress addr = asDmIpAddress(netIfProps.getProp(KEY_IP_ADDR, currentNetIfNameStr));
+                    LsIpAddress addr = asDmIpAddress(netIfProps.getProp(KEY_IP_ADDR, currentNetIfNameStr));
 
                     portStr = netIfProps.getProp(KEY_PORT_NR, currentNetIfNameStr);
                     netComTypeStr = netIfProps.getProp(KEY_NETCOM_TYPE, currentNetIfNameStr);
@@ -527,12 +527,12 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             controller.getErrorReporter().reportError(
                 new ImplementationError(
                     String.format(
-                        ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s",
+                        ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s",
                         nodeNameStr
                     ),
                     dataAlreadyExistsExc
@@ -722,7 +722,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             );
             throw new ApiCallHandlerFailedException();
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             report(
                 dataAlreadyExistsExc,
@@ -759,7 +759,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private DmIpAddress asDmIpAddress(String ipAddrStr)
+    private LsIpAddress asDmIpAddress(String ipAddrStr)
         throws ApiCallHandlerFailedException
     {
         if (ipAddrStr == null)
@@ -773,7 +773,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         try
         {
-            return new DmIpAddress(ipAddrStr);
+            return new LsIpAddress(ipAddrStr);
         }
         catch (InvalidIpAddressException invalidIpExc)
         {
@@ -939,7 +939,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private NetInterfaceData createNetInterface(
         Node node,
         NetInterfaceName netName,
-        DmIpAddress addr,
+        LsIpAddress addr,
         int port,
         NetInterfaceType netType,
         TransactionMgr transMgr
@@ -957,7 +957,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 netType,
                 transMgr,
                 true,   // persist node
-                true    // throw DrbdDataAlreadyExistsException if needed
+                true    // throw LinStorDataAlreadyExistsException if needed
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -969,7 +969,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             );
             throw new ApiCallHandlerFailedException();
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             report(
                 dataAlreadyExistsExc,

@@ -15,7 +15,7 @@ import org.junit.Test;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeId;
@@ -325,7 +325,7 @@ public class VolumeConnectionDataDerbyTest extends DerbyBase
         assertEquals(sourceVolume.getVolumeDefinition(), targetVolume.getVolumeDefinition());
     }
 
-    @Test (expected = DrbdDataAlreadyExistsException.class)
+    @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
         VolumeConnectionData volCon = new VolumeConnectionData(uuid, sysCtx, volSrc, volDst, transMgr);

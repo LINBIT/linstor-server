@@ -15,7 +15,7 @@ import org.junit.Test;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
@@ -285,7 +285,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         assertEquals(sourceResource.getDefinition().getName(), targetResource.getDefinition().getName());
     }
 
-    @Test (expected = DrbdDataAlreadyExistsException.class)
+    @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
         driver.create(resCon, transMgr);

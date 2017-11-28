@@ -10,7 +10,7 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.StorPool;
@@ -279,7 +279,7 @@ class CtrlStorPoolApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             // dataAlreadyExistsExc0 cannot happen
             ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -669,7 +669,7 @@ class CtrlStorPoolApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException implErrExc)
+        catch (LinStorDataAlreadyExistsException implErrExc)
         {
             String errorMessage;
             errorMessage = String.format(

@@ -18,7 +18,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
@@ -630,7 +630,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
 
-    @Test (expected = DrbdDataAlreadyExistsException.class)
+    @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
         driver.create(resDfn, transMgr);

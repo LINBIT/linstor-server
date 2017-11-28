@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.BaseTransactionObject;
-import com.linbit.linstor.DmIpAddress;
+import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
@@ -69,7 +69,7 @@ public interface NetInterfaceDataDatabaseDriver
     /**
      * A special sub-driver to update the persisted ipAddress.
      */
-    public SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> getNetInterfaceAddressDriver();
+    public SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver();
 
     /**
      * A special sub-driver to update the persisted transportType.

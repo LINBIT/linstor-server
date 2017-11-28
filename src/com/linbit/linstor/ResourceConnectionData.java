@@ -17,7 +17,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 
 /**
- * Defines a connection between two DRBD resources
+ * Defines a connection between two LinStor resources
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
@@ -126,7 +126,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws AccessDeniedException, SQLException, DrbdDataAlreadyExistsException
+        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
     {
         ResourceConnectionData rscConData = null;
 
@@ -160,7 +160,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
         if (failIfExists && rscConData != null)
         {
-            throw new DrbdDataAlreadyExistsException("The ResourceConnection already exists");
+            throw new LinStorDataAlreadyExistsException("The ResourceConnection already exists");
         }
 
         if (rscConData == null && createIfNotExists)

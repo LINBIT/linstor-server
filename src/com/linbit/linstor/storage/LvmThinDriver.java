@@ -21,7 +21,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
  */
 public class LvmThinDriver extends LvmDriver
 {
-    public static final String LVM_THIN_POOL_DEFAULT = "drbdthinpool";
+    public static final String LVM_THIN_POOL_DEFAULT = "linstorthinpool";
 
     public static final String LVM_CONVERT_DEFAULT = "lvconvert";
 

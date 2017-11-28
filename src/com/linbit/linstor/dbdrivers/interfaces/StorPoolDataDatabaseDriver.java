@@ -19,7 +19,7 @@ import com.linbit.linstor.StorPoolDefinition;
 public interface StorPoolDataDatabaseDriver
 {
     /**
-     * Loads the {@link com.linbit.drbd.ApplyStorPool} specified by the parameters
+     * Loads the {@link com.linbit.linstor.StorPool} specified by the parameters
      * {@code node} and {@code storPoolDefinition}.
      *
      * @param node

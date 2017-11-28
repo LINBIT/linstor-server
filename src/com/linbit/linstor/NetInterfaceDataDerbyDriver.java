@@ -72,7 +72,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         "       " + NET_NAME  + " = ?";
 
 
-    private final SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> netIfAddressDriver;
+    private final SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> netIfAddressDriver;
     private final SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> netIfTypeDriver;
     private final SingleColumnDatabaseDriver<NetInterfaceData, Integer> netIfPortDriver;
 
@@ -143,7 +143,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         errorReporter.logTrace("Creating NetInterface %s", getTraceId(netInterfaceData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_INSERT))
         {
-            DmIpAddress inetAddress = getAddress(netInterfaceData);
+            LsIpAddress inetAddress = getAddress(netInterfaceData);
             NetInterfaceType type = getNetInterfaceType(netInterfaceData);
 
             stmt.setBytes(1, UuidUtils.asByteArray(netInterfaceData.getUuid()));
@@ -192,7 +192,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
     @Override
-    public SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress> getNetInterfaceAddressDriver()
+    public SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver()
     {
         return netIfAddressDriver;
     }
@@ -252,9 +252,9 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return netIfDataList;
     }
 
-    private DmIpAddress getAddress(NetInterface value)
+    private LsIpAddress getAddress(NetInterface value)
     {
-        DmIpAddress ip = null;
+        LsIpAddress ip = null;
         try
         {
             ip = value.getAddress(dbCtx);
@@ -291,13 +291,13 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         if (ret == null)
         {
             UUID uuid = UuidUtils.asUuid(resultSet.getBytes(NET_UUID));
-            DmIpAddress addr;
+            LsIpAddress addr;
             String type = resultSet.getString(INET_TYPE);
             int port = resultSet.getInt(INET_PORT);
 
             try
             {
-                addr = new DmIpAddress(resultSet.getString(INET_ADDRESS));
+                addr = new LsIpAddress(resultSet.getString(INET_ADDRESS));
             }
             catch (InvalidIpAddressException invalidIpAddressExc)
             {
@@ -414,10 +414,10 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     }
 
 
-    private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<NetInterfaceData, DmIpAddress>
+    private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress>
     {
         @Override
-        public void update(NetInterfaceData parent, DmIpAddress inetAddress, TransactionMgr transMgr) throws SQLException
+        public void update(NetInterfaceData parent, LsIpAddress inetAddress, TransactionMgr transMgr) throws SQLException
         {
             errorReporter.logTrace(
                 "Updating NetInterface's address from [%s] to [%s] %s",

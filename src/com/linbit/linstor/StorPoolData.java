@@ -128,7 +128,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException, ClassNotFoundException, InstantiationException, IllegalAccessException, DrbdDataAlreadyExistsException
+        throws SQLException, AccessDeniedException, ClassNotFoundException, InstantiationException, IllegalAccessException, LinStorDataAlreadyExistsException
     {
         nodeRef.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDefRef.getObjProt().requireAccess(accCtx, AccessType.USE);
@@ -139,7 +139,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
         if (failIfExists && storPoolData != null)
         {
-            throw new DrbdDataAlreadyExistsException("The StorPool already exists");
+            throw new LinStorDataAlreadyExistsException("The StorPool already exists");
         }
 
         if (storPoolData == null && createIfNotExists)

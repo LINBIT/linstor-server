@@ -17,7 +17,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 
 /**
- * Defines a connection between two DRBD nodes
+ * Defines a connection between two LinStor nodes
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
@@ -106,7 +106,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws AccessDeniedException, SQLException, DrbdDataAlreadyExistsException
+        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
     {
         NodeConnectionData nodeConData = null;
 
@@ -136,7 +136,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
 
         if (failIfExists && nodeConData != null)
         {
-            throw new DrbdDataAlreadyExistsException("The NodeConnection already exists");
+            throw new LinStorDataAlreadyExistsException("The NodeConnection already exists");
         }
 
         if (nodeConData == null && createIfNotExists)

@@ -10,7 +10,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceData;
@@ -537,7 +537,7 @@ class CtrlVlmConnectionApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException | MdException exc)
+        catch (LinStorDataAlreadyExistsException | MdException exc)
         {
             String errorMessage;
             ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -552,7 +552,7 @@ class CtrlVlmConnectionApiCallHandler
                 {
                     String failedNodeNameStr = node1 == null ? nodeName1Str : nodeName2Str;
                     implErrorMessage = String.format(
-                        ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s",
+                        ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s",
                         failedNodeNameStr
                     );
                 }
@@ -560,7 +560,7 @@ class CtrlVlmConnectionApiCallHandler
                 if (rscDfn == null)
                 {
                     implErrorMessage = String.format(
-                        ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. RscName=%s",
+                        ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. RscName=%s",
                         rscNameStr
                     );
                 }
@@ -569,7 +569,7 @@ class CtrlVlmConnectionApiCallHandler
                 {
                     String failedNodeNameStr = rsc1 == null ? nodeName1Str : nodeName2Str;
                     implErrorMessage = String.format(
-                        ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s, ResName=%s",
+                        ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s, ResName=%s",
                         failedNodeNameStr,
                         rscNameStr
                     );
@@ -578,7 +578,7 @@ class CtrlVlmConnectionApiCallHandler
                 if (vlmDfn == null || (exc instanceof MdException))
                 {
                     implErrorMessage = String.format(
-                        ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. ResName=%s, VlmNr=%d",
+                        ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. ResName=%s, VlmNr=%d",
                         rscNameStr,
                         vlmNrInt
                     );
@@ -587,7 +587,7 @@ class CtrlVlmConnectionApiCallHandler
                 {
                     String failedNodeNameStr = vlm1 == null ? nodeName1Str : nodeName2Str;
                     implErrorMessage = String.format(
-                        ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s, ResName=%s, vlmNr=%d",
+                        ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s, ResName=%s, vlmNr=%d",
                         failedNodeNameStr,
                         rscNameStr,
                         vlmNrInt
@@ -1257,7 +1257,7 @@ class CtrlVlmConnectionApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException | MdException exc)
+        catch (LinStorDataAlreadyExistsException | MdException exc)
         {
             String errorMessage;
             ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -1266,7 +1266,7 @@ class CtrlVlmConnectionApiCallHandler
             {
                 String failedNodeNameStr = node1 == null ? nodeName1Str : nodeName2Str;
                 implErrorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s",
+                    ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s",
                     failedNodeNameStr
                 );
             }
@@ -1274,7 +1274,7 @@ class CtrlVlmConnectionApiCallHandler
             if (rscDfn == null)
             {
                 implErrorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. RscName=%s",
+                    ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. RscName=%s",
                     rscNameStr
                 );
             }
@@ -1283,7 +1283,7 @@ class CtrlVlmConnectionApiCallHandler
             {
                 String failedNodeNameStr = rsc1 == null ? nodeName1Str : nodeName2Str;
                 implErrorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s, ResName=%s",
+                    ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s, ResName=%s",
                     failedNodeNameStr,
                     rscNameStr
                 );
@@ -1292,7 +1292,7 @@ class CtrlVlmConnectionApiCallHandler
             if (vlmDfn == null || (exc instanceof MdException))
             {
                 implErrorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. ResName=%s, VlmNr=%d",
+                    ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. ResName=%s, VlmNr=%d",
                     rscNameStr,
                     vlmNrInt
                 );
@@ -1301,7 +1301,7 @@ class CtrlVlmConnectionApiCallHandler
             {
                 String failedNodeNameStr = vlm1 == null ? nodeName1Str : nodeName2Str;
                 implErrorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s, ResName=%s, vlmNr=%d",
+                    ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s, ResName=%s, vlmNr=%d",
                     failedNodeNameStr,
                     rscNameStr,
                     vlmNrInt

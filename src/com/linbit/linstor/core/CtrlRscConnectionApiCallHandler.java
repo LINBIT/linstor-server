@@ -8,7 +8,7 @@ import java.util.Map;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceConnectionData;
@@ -365,7 +365,7 @@ class CtrlRscConnectionApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             String errorMessage;
             ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -376,7 +376,7 @@ class CtrlRscConnectionApiCallHandler
                 {
                     String failedNodeNameStr = node1 == null ? nodeName1Str : nodeName2Str;
                     implErrorMessage = String.format(
-                        ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s",
+                        ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s",
                         failedNodeNameStr
                     );
                 }
@@ -384,7 +384,7 @@ class CtrlRscConnectionApiCallHandler
                 if (rscDfn == null)
                 {
                     implErrorMessage = String.format(
-                        ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. RscName=%s",
+                        ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. RscName=%s",
                         rscNameStr
                     );
                 }
@@ -392,7 +392,7 @@ class CtrlRscConnectionApiCallHandler
                 {
                     String failedNodeNameStr = rsc1 == null ? nodeName1Str : nodeName2Str;
                     implErrorMessage = String.format(
-                        ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s, ResName=%s",
+                        ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s, ResName=%s",
                         failedNodeNameStr,
                         rscNameStr
                     );
@@ -879,7 +879,7 @@ class CtrlRscConnectionApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             String errorMessage;
             ApiCallRcEntry entry = new ApiCallRcEntry();
@@ -888,7 +888,7 @@ class CtrlRscConnectionApiCallHandler
             {
                 String failedNodeNameStr = node1 == null ? nodeName1Str : nodeName2Str;
                 implErrorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s",
+                    ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s",
                     failedNodeNameStr
                 );
             }
@@ -896,7 +896,7 @@ class CtrlRscConnectionApiCallHandler
             if (rscDfn == null)
             {
                 implErrorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. RscName=%s",
+                    ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. RscName=%s",
                     rscNameStr
                 );
             }
@@ -904,7 +904,7 @@ class CtrlRscConnectionApiCallHandler
             {
                 String failedNodeNameStr = rsc1 == null ? nodeName1Str : nodeName2Str;
                 implErrorMessage = String.format(
-                    ".getInstance was called with failIfExists=false, still threw an DrbdDataAlreadyExistsException. NodeName=%s, ResName=%s",
+                    ".getInstance was called with failIfExists=false, still threw an LinStorDataAlreadyExistsException. NodeName=%s, ResName=%s",
                     failedNodeNameStr,
                     rscNameStr
                 );

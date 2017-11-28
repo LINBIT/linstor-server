@@ -14,7 +14,7 @@ import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnection;
 import com.linbit.linstor.NodeConnectionData;
@@ -220,7 +220,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    @Test (expected = DrbdDataAlreadyExistsException.class)
+    @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
         driver.create(nodeCon, transMgr);

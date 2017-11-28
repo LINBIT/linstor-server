@@ -17,7 +17,7 @@ import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -270,7 +270,7 @@ public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             );
             throw new CtrlVlmDfnApiCallHandlerFailedException();
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             handleImplError(dataAlreadyExistsExc);
             throw new CtrlVlmDfnApiCallHandlerFailedException();
@@ -410,7 +410,7 @@ public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             );
             throw new CtrlVlmDfnApiCallHandlerFailedException();
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             handleDataExists(dataAlreadyExistsExc);
             throw new CtrlVlmDfnApiCallHandlerFailedException();
@@ -609,7 +609,7 @@ public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         );
     }
 
-    private void handleDataExists(DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+    private void handleDataExists(LinStorDataAlreadyExistsException dataAlreadyExistsExc)
     {
         report(
             dataAlreadyExistsExc,

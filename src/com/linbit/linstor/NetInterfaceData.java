@@ -26,7 +26,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     private final Node niNode;
     private final NetInterfaceName niName;
 
-    private final TransactionSimpleObject<NetInterfaceData, DmIpAddress> niAddress;
+    private final TransactionSimpleObject<NetInterfaceData, LsIpAddress> niAddress;
     private final TransactionSimpleObject<NetInterfaceData, Integer> niPort;
     private final TransactionSimpleObject<NetInterfaceData, NetInterfaceType> niType;
 
@@ -39,7 +39,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         AccessContext accCtx,
         Node node,
         NetInterfaceName name,
-        DmIpAddress addr,
+        LsIpAddress addr,
         int port,
         NetInterfaceType netType,
         TransactionMgr transMgr
@@ -65,7 +65,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         AccessContext accCtx,
         NetInterfaceName netName,
         Node node,
-        DmIpAddress addr,
+        LsIpAddress addr,
         int port,
         NetInterfaceType netType
     )
@@ -104,14 +104,14 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         AccessContext accCtx,
         Node node,
         NetInterfaceName name,
-        DmIpAddress addr,
+        LsIpAddress addr,
         int port,
         NetInterfaceType netType,
         TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException, DrbdDataAlreadyExistsException
+        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
@@ -122,7 +122,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         if (failIfExists && netData != null)
         {
-            throw new DrbdDataAlreadyExistsException("The NetInterface already exists");
+            throw new LinStorDataAlreadyExistsException("The NetInterface already exists");
         }
 
         if (netData == null && createIfNotExists)
@@ -143,7 +143,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         UUID uuid,
         Node node,
         NetInterfaceName netName,
-        DmIpAddress addr,
+        LsIpAddress addr,
         int port,
         NetInterfaceType netType,
         SatelliteTransactionMgr transMgr
@@ -202,7 +202,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     }
 
     @Override
-    public DmIpAddress getAddress(AccessContext accCtx)
+    public LsIpAddress getAddress(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -211,7 +211,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     }
 
     @Override
-    public void setAddress(AccessContext accCtx, DmIpAddress newAddress)
+    public void setAddress(AccessContext accCtx, LsIpAddress newAddress)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();

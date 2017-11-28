@@ -96,7 +96,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws AccessDeniedException, SQLException, DrbdDataAlreadyExistsException
+        throws AccessDeniedException, SQLException, LinStorDataAlreadyExistsException
     {
         StorPoolDefinitionData storPoolDfn = null;
 
@@ -105,7 +105,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
 
         if (failIfExists && storPoolDfn != null)
         {
-            throw new DrbdDataAlreadyExistsException("The StorPoolDefinition already exists");
+            throw new LinStorDataAlreadyExistsException("The StorPoolDefinition already exists");
         }
 
         if (storPoolDfn == null && createIfNotExists)

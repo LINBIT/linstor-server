@@ -20,10 +20,10 @@ public interface NetInterface extends TransactionObject
 
     public Node getNode();
 
-    public DmIpAddress getAddress(AccessContext accCtx)
+    public LsIpAddress getAddress(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public void setAddress(AccessContext accCtx, DmIpAddress newAddress)
+    public void setAddress(AccessContext accCtx, LsIpAddress newAddress)
         throws AccessDeniedException, SQLException;
 
     public NetInterfaceType getNetInterfaceType(AccessContext accCtx)

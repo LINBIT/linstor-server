@@ -15,7 +15,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -457,7 +457,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    @Test (expected = DrbdDataAlreadyExistsException.class)
+    @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
         driver.create(volDfn, transMgr);

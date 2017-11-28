@@ -237,7 +237,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
         );
     }
 
-    @Test (expected = DrbdDataAlreadyExistsException.class)
+    @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
         driver.create(spdd, transMgr);

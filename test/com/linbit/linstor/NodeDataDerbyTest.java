@@ -9,8 +9,8 @@ import java.util.List;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DmIpAddress;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LsIpAddress;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterfaceData;
@@ -372,7 +372,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 sysCtx,
                 node1,
                 netName,
-                new DmIpAddress(netHost),
+                new LsIpAddress(netHost),
                 netPort,
                 NetInterfaceType.IP,
                 transMgr,
@@ -572,7 +572,7 @@ public class NodeDataDerbyTest extends DerbyBase
             NetInterface netIf = loadedNode.getNetInterface(sysCtx, netName);
             assertNotNull(netIf);
             {
-                DmIpAddress address = netIf.getAddress(sysCtx);
+                LsIpAddress address = netIf.getAddress(sysCtx);
                 assertNotNull(address);
                 assertEquals(netHost, address.getAddress());
                 assertEquals(netPort, netIf.getNetInterfacePort(sysCtx));
@@ -862,7 +862,7 @@ public class NodeDataDerbyTest extends DerbyBase
         assertEquals(node2.getUuid(), allNodes.get(1).getUuid());
     }
 
-    @Test (expected = DrbdDataAlreadyExistsException.class)
+    @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
         dbDriver.create(node, transMgr);

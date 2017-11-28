@@ -14,7 +14,7 @@ import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.StorPool;
@@ -323,7 +323,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         stmt.close();
     }
 
-    @Test (expected = DrbdDataAlreadyExistsException.class)
+    @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
         StorPoolData storPool = new StorPoolData(uuid, sysCtx, node, spdd, null, LvmDriver.class.getSimpleName(), transMgr);

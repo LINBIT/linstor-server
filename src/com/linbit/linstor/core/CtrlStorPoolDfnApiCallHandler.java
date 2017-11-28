@@ -8,7 +8,7 @@ import java.util.Map;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
@@ -140,7 +140,7 @@ class CtrlStorPoolDfnApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException alreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException alreadyExistsExc)
         {
             String errorMsg = String.format(
                 "A storage pool definition with the name '%s' already exists.",
@@ -343,7 +343,7 @@ class CtrlStorPoolDfnApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             controller.getErrorReporter().reportError(
                 new ImplementationError(

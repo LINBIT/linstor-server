@@ -3,10 +3,10 @@ package com.linbit.extproc;
 import java.io.IOException;
 
 import com.linbit.ChildProcessTimeoutException;
-import com.linbit.drbd.DrbdException;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.linstor.LinStorException;
 
-public class ExtCmdFailedException extends DrbdException
+public class ExtCmdFailedException extends LinStorException
 {
     private static final long serialVersionUID = 5779506237459279868L;
 

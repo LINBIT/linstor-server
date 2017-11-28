@@ -15,7 +15,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 
 public class LvmDriver extends AbsStorageDriver
 {
-    public static final String LVM_VOLUME_GROUP_DEFAULT = "drbdpool";
+    public static final String LVM_VOLUME_GROUP_DEFAULT = "linstorpool";
 
     public static final String LVM_CREATE_DEFAULT = "lvcreate";
     public static final String LVM_REMOVE_DEFAULT = "lvremove";

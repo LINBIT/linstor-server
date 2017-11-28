@@ -14,7 +14,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
-import com.linbit.linstor.DrbdDataAlreadyExistsException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -331,7 +331,7 @@ class CtrlRscDfnApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException alreadyExistsExc)
+        catch (LinStorDataAlreadyExistsException alreadyExistsExc)
         {
             ApiCallRcEntry entry = new ApiCallRcEntry();
             String errorMsg;
@@ -670,8 +670,8 @@ class CtrlRscDfnApiCallHandler
 
             apiCallRc.addEntry(entry);
         }
-        catch (DrbdDataAlreadyExistsException dataAlreadyExistsExc)
-        { // handle drbdAlreadyExistsExc1
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        { // handle LinStorAlreadyExistsExc1
             controller.getErrorReporter().reportError(
                 new ImplementationError(
                     String.format(

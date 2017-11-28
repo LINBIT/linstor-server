@@ -156,7 +156,7 @@ public class NodeData extends BaseTransactionObject implements Node
         boolean createIfNotExists,
         boolean failIfExists
     )
-        throws SQLException, AccessDeniedException, DrbdDataAlreadyExistsException
+        throws SQLException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
         NodeData nodeData = null;
 
@@ -165,7 +165,7 @@ public class NodeData extends BaseTransactionObject implements Node
 
         if (failIfExists && nodeData != null)
         {
-            throw new DrbdDataAlreadyExistsException("The Node already exists");
+            throw new LinStorDataAlreadyExistsException("The Node already exists");
         }
 
         if (nodeData == null && createIfNotExists)
