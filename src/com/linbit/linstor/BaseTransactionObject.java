@@ -60,6 +60,7 @@ public abstract class BaseTransactionObject implements TransactionObject
     @Override
     public void commit()
     {
+        assert(TransactionMgr.isCalledFromTransactionMgr("commit"));
         if (!inCommit)
         {
             inCommit = true;
@@ -78,6 +79,7 @@ public abstract class BaseTransactionObject implements TransactionObject
     @Override
     public void rollback()
     {
+        assert(TransactionMgr.isCalledFromTransactionMgr("rollback"));
         if (!inRollback)
         {
             inRollback = true;

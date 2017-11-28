@@ -65,12 +65,14 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     @Override
     public void commit()
     {
+        assert(TransactionMgr.isCalledFromTransactionMgr("commit"));
         oldValues.clear();
     }
 
     @Override
     public void rollback()
     {
+        assert(TransactionMgr.isCalledFromTransactionMgr("rollback"));
         for (Entry<T, U> entry : oldValues.entrySet())
         {
             T key = entry.getKey();

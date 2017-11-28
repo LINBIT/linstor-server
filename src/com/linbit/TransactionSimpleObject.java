@@ -79,12 +79,14 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
     @Override
     public void commit()
     {
+        assert(TransactionMgr.isCalledFromTransactionMgr("commit"));
         cachedObject = object;
     }
 
     @Override
     public void rollback()
     {
+        assert(TransactionMgr.isCalledFromTransactionMgr("rollback"));
         object = cachedObject;
     }
 

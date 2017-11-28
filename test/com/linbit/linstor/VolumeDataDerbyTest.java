@@ -634,6 +634,12 @@ public class VolumeDataDerbyTest extends DerbyBase
         assertFalse(volDfn.hasTransMgr());
     }
 
+    @Test (expected = AssertionError.class)
+    public void testObjectCommitFail() throws Exception
+    {
+        node.commit();
+    }
+
     @Test
     /**
      * Checks that after a transaction rollback, all transaction objects are cleared
