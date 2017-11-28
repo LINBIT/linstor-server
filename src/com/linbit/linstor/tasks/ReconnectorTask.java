@@ -1,6 +1,7 @@
 package com.linbit.linstor.tasks;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import com.linbit.linstor.core.Controller;
@@ -11,6 +12,7 @@ public class ReconnectorTask implements Task
 {
     private static final int RECONNECT_SLEEP = 10_000;
 
+    private final Object syncObj = new Object();
     private final LinkedList<Peer> peerList = new LinkedList<>();
     private final Controller controller;
     private PingTask pingTask;
@@ -27,32 +29,39 @@ public class ReconnectorTask implements Task
 
     public void add(Peer peer)
     {
-        peerList.add(peer);
+        synchronized (syncObj)
+        {
+            peerList.add(peer);
+        }
     }
 
     public void peerConnected(Peer peer)
     {
-        peerList.remove(peer);
-        pingTask.add(peer);
+        System.out.println("attempt peer connected: " + peer.getId() + " " + peer);
+        synchronized (syncObj)
+        {
+            if (peerList.remove(peer) && pingTask != null)
+            {
+                System.out.println("reconnected...  completing auth");
+                controller.getApiCallHandler().completeSatelliteAuthentication(peer);
+                pingTask.add(peer);
+            }
+        }
     }
 
     @Override
     public long run()
     {
-        for (int idx = 0; idx < peerList.size(); ++idx)
+        ArrayList<Peer> localList = new ArrayList<>(peerList);
+        for (int idx = 0; idx < localList.size(); ++idx)
         {
-            final Peer peer = peerList.get(idx);
+            final Peer peer = localList.get(idx);
             if (peer.isConnected())
             {
                 controller.getErrorReporter().logTrace(
                     "Peer " + peer.getId() + " has connected. Removed from reconnectList, added to pingList."
                 );
-                peerList.remove(idx);
-                --idx;
-                if (pingTask != null)
-                {
-                    pingTask.add(peer);
-                }
+                peerConnected(peer);
             }
             else
             {
@@ -61,7 +70,11 @@ public class ReconnectorTask implements Task
                 );
                 try
                 {
-                    peer.getConnector().reconnect(peer);
+                    synchronized (syncObj)
+                    {
+                        peerList.remove(peer);
+                        peerList.add(peer.getConnector().reconnect(peer));
+                    }
                 }
                 catch (IOException ioExc)
                 {

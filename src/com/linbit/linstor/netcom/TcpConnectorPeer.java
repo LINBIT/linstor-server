@@ -138,7 +138,7 @@ public class TcpConnectorPeer implements Peer
     public void connectionEstablished() throws SSLException
     {
         connected = true; // TODO: only set to true when auth was successful
-        pongReceived();
+        pongReceived(); // in order to calculate the first "real" pong correctly.
         synchronized (this)
         {
             this.notifyAll();
@@ -217,8 +217,8 @@ public class TcpConnectorPeer implements Peer
     @Override
     public void closeConnection()
     {
-        connector.closeConnection(this);
         connected = false;
+        connector.closeConnection(this);
     }
 
     @Override

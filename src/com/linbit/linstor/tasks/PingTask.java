@@ -38,27 +38,38 @@ public class PingTask implements Task
 
             final long lastPingReceived = peer.getLastPongReceived();
             final long lastPingSent = peer.getLastPingSent();
-            if (lastPingReceived + PING_TIMEOUT < lastPingSent)
+            boolean reconnect = false;
+            if (!peer.isConnected() || lastPingReceived + PING_TIMEOUT < lastPingSent)
+            {
+                reconnect = true;
+            }
+            if (!reconnect)
+            {
+                try
+                {
+                    peer.sendPing();
+                }
+                catch (Exception exc)
+                {
+                    reconnect = true;
+                }
+            }
+            if (reconnect)
             {
                 controller.getErrorReporter().logTrace(
                     "Connection to peer " + peer.getId() + " lost. Removed from pingList, added to reconnectList."
                 );
                 peerList.remove(peer);
                 --idx;
-                reconnector.add(peer);
                 try
                 {
-                    peer.getConnector().reconnect(peer);
+                    reconnector.add(peer.getConnector().reconnect(peer));
                 }
                 catch (IOException ioExc)
                 {
                     // TODO: detailed error reporting
                     controller.getErrorReporter().reportError(ioExc);
                 }
-            }
-            else
-            {
-                peer.sendPing();
             }
         }
         return PING_SLEEP;

@@ -1356,13 +1356,14 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                         );
                         node.setPeer(connectorCtx, peer);
                     }
-                    if (!peer.isConnected())
+                    if (peer.isConnected())
                     {
-                        reconnectorTask.add(peer);
+                        apiCallHandler.completeSatelliteAuthentication(peer);
+                        pingTask.add(peer);
                     }
                     else
                     {
-                        pingTask.add(peer);
+                        reconnectorTask.add(peer);
                     }
                 }
                 catch (IOException ioExc)
@@ -1394,7 +1395,6 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 }
             }
         };
-
         workerThrPool.submit(connectRunnable);
     }
 

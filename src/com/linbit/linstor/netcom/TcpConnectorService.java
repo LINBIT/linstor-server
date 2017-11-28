@@ -737,6 +737,10 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         if (connObserver != null && client != null)
         {
             connObserver.connectionClosed(client);
+            if (client.isConnected())
+            {
+                client.closeConnection();
+            }
         }
         try
         {
