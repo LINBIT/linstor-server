@@ -550,6 +550,7 @@ public class ApiConsts
     /*
      * Authentication APIs
      */
+    public static final String API_AUTH = "Auth";
     public static final String API_SIGN_IN = "SignIn";
 
     /*

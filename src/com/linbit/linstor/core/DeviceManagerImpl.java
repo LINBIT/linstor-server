@@ -122,6 +122,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
+    @Override
     public void nodeUpdateApplied(Set<NodeName> nodeSet)
     {
         synchronized (sched)
@@ -134,6 +135,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
+    @Override
     public void rscDefUpdateApplied(Set<ResourceName> rscDfnSet)
     {
         synchronized (sched)
@@ -146,6 +148,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
+    @Override
     public void storPoolUpdateApplied(Set<StorPoolName> storPoolSet)
     {
         synchronized (sched)
@@ -158,6 +161,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
+    @Override
     public void rscUpdateApplied(Map<ResourceName, Set<NodeName>> rscMap)
     {
         synchronized (sched)
@@ -170,6 +174,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
+    @Override
     public void updateApplied(
         Set<NodeName> nodeSet,
         Set<ResourceName> rscDfnSet,
@@ -203,6 +208,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
+    @Override
     public StltUpdateTracker getUpdateTracker()
     {
         return updTracker;
@@ -253,8 +259,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         break;
                     }
 
-                    // Request updates from the controller
                     chgPendingBundle.copyUpdateRequestsTo(rcvPendingBundle);
+                    // Request updates from the controller
 
                     // Wait for the notification that all requested updates
                     // have been received and applied

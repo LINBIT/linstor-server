@@ -19,7 +19,9 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiType;
+import com.linbit.linstor.api.interfaces.AuthSerializer;
 import com.linbit.linstor.api.interfaces.Serializer;
+import com.linbit.linstor.api.protobuf.controller.serializer.AuthSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDataSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolDataSerializerProto;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -28,6 +30,7 @@ import com.linbit.linstor.security.AccessContext;
 
 public class CtrlApiCallHandler
 {
+    private final CtrlAuthenticationApiCallHandler authApiCallHandler;
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
     private final CtrlVlmDfnApiCallHandler vlmDfnApiCallHandler;
@@ -44,17 +47,20 @@ public class CtrlApiCallHandler
     {
         controller = controllerRef;
         ErrorReporter errorReporter = controller.getErrorReporter();
+        AuthSerializer authSerializer;
         Serializer<Resource> rscSerializer;
         Serializer<StorPool> storPoolSerializer;
         switch (type)
         {
             case PROTOBUF:
+                authSerializer = new AuthSerializerProto();
                 rscSerializer = new ResourceDataSerializerProto(apiCtx, errorReporter);
                 storPoolSerializer = new StorPoolDataSerializerProto(apiCtx, errorReporter);
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
         }
+        authApiCallHandler = new CtrlAuthenticationApiCallHandler(controllerRef, authSerializer);
         nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, apiCtx);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, apiCtx);
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
@@ -64,6 +70,12 @@ public class CtrlApiCallHandler
         nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
         rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef);
         vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef);
+    }
+
+    public void completeSatelliteAuthentication(Peer peer)
+    {
+        // no locks needed
+        authApiCallHandler.completeAuthentication(peer);
     }
 
     /**

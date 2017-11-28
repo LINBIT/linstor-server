@@ -37,12 +37,10 @@ public class ReconnectorTask implements Task
 
     public void peerConnected(Peer peer)
     {
-        System.out.println("attempt peer connected: " + peer.getId() + " " + peer);
         synchronized (syncObj)
         {
             if (peerList.remove(peer) && pingTask != null)
             {
-                System.out.println("reconnected...  completing auth");
                 controller.getApiCallHandler().completeSatelliteAuthentication(peer);
                 pingTask.add(peer);
             }

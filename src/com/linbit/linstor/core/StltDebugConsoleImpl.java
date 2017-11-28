@@ -34,6 +34,7 @@ class StltDebugConsoleImpl extends BaseDebugConsole
             "CmdDisplaySecLevel",
             "CmdDisplayModuleInfo",
             "CmdDisplayVersion",
+            "CmdDisplayTraceMode",
             "CmdStartService",
             "CmdEndService",
             "CmdDisplayConnections",
@@ -41,6 +42,7 @@ class StltDebugConsoleImpl extends BaseDebugConsole
             "CmdDisplaySystemStatus",
             "CmdDisplayApis",
             "CmdTestErrorLog",
+            "CmdSetTraceMode",
             "CmdShutdown"
         };
         public static final String STLT_COMMAND_CLASS_PKG = "com.linbit.linstor.debug";

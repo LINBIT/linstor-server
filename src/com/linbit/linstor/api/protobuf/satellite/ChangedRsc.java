@@ -3,12 +3,17 @@ package com.linbit.linstor.api.protobuf.satellite;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -20,9 +25,14 @@ import com.linbit.linstor.security.AccessContext;
 @ProtobufApiCall
 public class ChangedRsc extends BaseProtoApiCall
 {
+    private DeviceManager devMgr;
+    private Satellite satellite;
+
     public ChangedRsc(Satellite satellite)
     {
         super(satellite.getErrorReporter());
+        this.satellite = satellite;
+        devMgr = satellite.getDeviceManager();
     }
 
     @Override
@@ -51,17 +61,25 @@ public class ChangedRsc extends BaseProtoApiCall
         // TODO: we should wait until our current task is done
         // but for testing purposes, we immediately ask the controller for the update
 
+        String rscName = null;
         try
         {
             Message message = controllerPeer.createMessage();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
             MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-            String rscName = rscId.getName();
+            rscName = rscId.getName();
             UUID rscUuid = asUuid(rscId.getUuid());
 
             // TODO: remember to request this resource later.
+            HashSet<NodeName> changedNodes = new HashSet<>();
+            // controller could notify us (in future) about changes in other nodes
+            changedNodes.add(satellite.getLocalNode().getName());
 
+            devMgr.getUpdateTracker().updateResource(
+                new ResourceName(rscName),
+                changedNodes
+            );
             // FIXME: remove this testblock and replace it with an async request
             {
                 // do this when satellite has finished its current task
@@ -87,6 +105,14 @@ public class ChangedRsc extends BaseProtoApiCall
                 )
             );
         }
-
+        catch (InvalidNameException invalidNameExc)
+        {
+            errorReporter.reportError(
+                new ImplementationError(
+                    "Controller sent an illegal resource name: " + rscName + ".",
+                    invalidNameExc
+                )
+            );
+        }
     }
 }

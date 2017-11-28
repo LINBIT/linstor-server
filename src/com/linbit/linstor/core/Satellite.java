@@ -146,6 +146,9 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     // Local NodeData received from the currently active controller
     NodeData localNode;
 
+    // The currently connected controller peer (can be null)
+    private Peer controllerPeer;
+
     // File system watch service
     private FileSystemWatch fsWatchSvc;
 
@@ -716,6 +719,11 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         }
     }
 
+    public DeviceManager getDeviceManager()
+    {
+        return devMgr;
+    }
+
     public static void main(String[] args)
     {
         System.out.printf(
@@ -761,5 +769,15 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     public NodeData getLocalNode()
     {
         return localNode;
+    }
+
+    public Peer getControllerPeer()
+    {
+        return controllerPeer;
+    }
+
+    public void setControllerPeer(Peer controllerPeerRef)
+    {
+        controllerPeer = controllerPeerRef;
     }
 }

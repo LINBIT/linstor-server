@@ -179,5 +179,4 @@ public interface Peer
      * @return
      */
     long getLastPongReceived();
-
 }
