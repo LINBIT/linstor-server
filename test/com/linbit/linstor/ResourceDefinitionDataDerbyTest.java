@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -537,7 +538,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             "notTellingYou",
             transMgr
         );
-        rscDfn.setConnection(transMgr);
         rscDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
 
         VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstanceSatellite(
@@ -552,6 +552,81 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         );
         vlmDfn.setConnection(transMgr);
 
+    }
+
+    @Test (expected = ImplementationError.class)
+    /**
+     * Check that an active transaction on an object can't be replaced
+     */
+    public void testReplaceActiveTransaction() throws Exception
+    {
+        satelliteMode();
+        SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+        ResourceDefinitionData rscDfn = ResourceDefinitionData.getInstanceSatellite(
+            sysCtx,
+            resDfnUuid,
+            resName,
+            port,
+            null,
+            "notTellingYou",
+            transMgr
+        );
+        SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
+        rscDfn.setConnection(transMgrOther); // throws ImplementationError
+        rscDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
+    }
+
+    @Test
+    /**
+     * This test checks that a new transaction can be set after a commit.
+     */
+    public void testNewTransaction() throws Exception
+    {
+        satelliteMode();
+        SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+        ResourceDefinitionData rscDfn = ResourceDefinitionData.getInstanceSatellite(
+            sysCtx,
+            resDfnUuid,
+            resName,
+            port,
+            null,
+            "notTellingYou",
+            transMgr
+        );
+        transMgr.commit();
+
+        assertEquals(0, transMgr.sizeObjects());
+        assertFalse(rscDfn.hasTransMgr());
+
+        SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
+        rscDfn.setConnection(transMgrOther);
+        rscDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
+        assertTrue(rscDfn.hasTransMgr());
+        assertTrue(rscDfn.isDirty());
+    }
+
+    @Test (expected = ImplementationError.class)
+    /**
+     * This test should fail because the resourcedef properties are changed without an active transaction.
+     */
+    public void testDirtyObject() throws Exception
+    {
+        satelliteMode();
+        SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+        ResourceDefinitionData rscDfn = ResourceDefinitionData.getInstanceSatellite(
+            sysCtx,
+            resDfnUuid,
+            resName,
+            port,
+            null,
+            "notTellingYou",
+            transMgr
+        );
+        transMgr.commit();
+
+        rscDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
+        SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
+        rscDfn.setConnection(transMgrOther); // throws ImplementationError
     }
 
 

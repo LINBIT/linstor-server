@@ -601,10 +601,30 @@ public class VolumeDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testTransactionObjects() throws Exception
+    /**
+     * Checks that after a transaction commit, all transaction objects are cleared
+     */
+    public void testTransactionObjectsCommit() throws Exception
     {
         assertNotEquals(transMgr.sizeObjects(), 0);
         transMgr.commit();
+        assertEquals(0, transMgr.sizeObjects());
+        assertFalse(node.hasTransMgr());
+        assertFalse(resDfn.hasTransMgr());
+        assertFalse(res.hasTransMgr());
+        assertFalse(storPoolDfn.hasTransMgr());
+        assertFalse(storPool.hasTransMgr());
+        assertFalse(volDfn.hasTransMgr());
+    }
+
+    @Test
+    /**
+     * Checks that after a transaction rollback, all transaction objects are cleared
+     */
+    public void testTransactionObjectsRollback() throws Exception
+    {
+        assertNotEquals(transMgr.sizeObjects(), 0);
+        transMgr.rollback();
         assertEquals(0, transMgr.sizeObjects());
         assertFalse(node.hasTransMgr());
         assertFalse(resDfn.hasTransMgr());
