@@ -1021,17 +1021,6 @@ public class PropsContainer implements Props
             }
         }
         root.cachedPropMap.clear();
-        if (transMgr != null)
-        {
-            try
-            {
-                transMgr.rollback();
-            }
-            catch (SQLException rollbackExc)
-            {
-                throw new LinStorRuntimeException("Transaction rollback threw an SQLException", rollbackExc);
-            }
-        }
     }
 
     private void dbPersist(String key, String value, String oldValue) throws SQLException
