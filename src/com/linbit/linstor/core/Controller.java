@@ -302,8 +302,6 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 // Initialize the worker thread pool
                 try
                 {
-                    initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
                     int cpuCount = getCpuCount();
                     int thrCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
                     int qSize = thrCount * getWorkerQueueFactor();
@@ -512,7 +510,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                     {
                         initNetComServices(
                             config.getNamespace(PROPSCON_KEY_NETCOM),
-                            errorLogRef
+                            errorLogRef,
+                            initCtx
                         );
                     }
                     catch (InvalidKeyException e)
@@ -933,7 +932,11 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         return config;
     }
 
-    private List<TcpConnector> initNetComServices(Props netComProps, ErrorReporter errorLogRef)
+    private List<TcpConnector> initNetComServices(
+        Props netComProps,
+        ErrorReporter errorLogRef,
+        AccessContext initCtx
+    )
     {
         List<TcpConnector> tcpCons = new ArrayList<>();
         if (netComProps == null)
@@ -958,7 +961,12 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 try
                 {
                     String namespaceStr = namespaces.next();
-                    TcpConnector netComSvc = createNetComService(namespaceStr, netComProps, errorLogRef);
+                    TcpConnector netComSvc = createNetComService(
+                        namespaceStr,
+                        netComProps,
+                        errorLogRef,
+                        initCtx
+                    );
                     if (netComSvc != null)
                     {
                         tcpCons.add(netComSvc);
@@ -976,7 +984,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     TcpConnector createNetComService(
         String serviceNameStr,
         Props netComProps,
-        ErrorReporter errorLogRef
+        ErrorReporter errorLogRef,
+        AccessContext initCtx
     )
         throws SystemServiceStartException
     {
@@ -1034,6 +1043,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 msgProc,
                 bindAddress,
                 publicCtx,
+                initCtx,
                 new CtrlConnTracker(
                     this,
                     peerMap,
@@ -1101,8 +1111,9 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 netComSvc = new SslTcpConnectorService(
                     this,
                     msgProc,
-                    bindAddress ,
+                    bindAddress,
                     publicCtx,
+                    initCtx,
                     new CtrlConnTracker(
                         this,
                         peerMap,

@@ -22,7 +22,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
-import com.linbit.linstor.api.interfaces.Serializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -32,12 +32,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 class CtrlStorPoolApiCallHandler
 {
     private final Controller controller;
-    private final Serializer<StorPool> serializer;
+    private final CtrlSerializer<StorPool> serializer;
     private final AccessContext apiCtx;
 
     CtrlStorPoolApiCallHandler(
         Controller controllerRef,
-        Serializer<StorPool> serializerRef,
+        CtrlSerializer<StorPool> serializerRef,
         AccessContext apiCtxRef
     )
     {

@@ -1,6 +1,6 @@
-package com.linbit.linstor.api.interfaces;
+package com.linbit.linstor.api.interfaces.serializer;
 
-public interface Serializer<TYPE>
+public interface CtrlSerializer<TYPE>
 {
     public byte[] getChangedMessage(TYPE data);
 

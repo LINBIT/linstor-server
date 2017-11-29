@@ -5,11 +5,11 @@ import java.io.IOException;
 
 import com.google.protobuf.ByteString;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.AuthSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlAuthSerializer;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthSecretOuterClass.MsgIntAuthSecret;
 
-public class AuthSerializerProto implements AuthSerializer
+public class AuthSerializerProto implements CtrlAuthSerializer
 {
     @Override
     public byte[] getAuthMessage(byte[] sharedSecret) throws IOException

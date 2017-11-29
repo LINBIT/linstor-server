@@ -327,7 +327,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
 
                 // Initialize the network communications service
                 errorLogRef.logInfo("Initializing main network communications service");
-                initMainNetComService();
+                initMainNetComService(initCtx);
             }
             catch (AccessDeniedException accessExc)
             {
@@ -505,7 +505,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         return fsWatchSvc;
     }
 
-    private void initMainNetComService()
+    private void initMainNetComService(AccessContext initCtx)
     {
         try
         {
@@ -545,6 +545,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                     msgProc,
                     bindAddress,
                     publicCtx,
+                    initCtx,
                     new StltConnTracker(this, peerMap)
                 );
             }
@@ -565,6 +566,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                         msgProc,
                         bindAddress,
                         publicCtx,
+                        initCtx,
                         new StltConnTracker(this, peerMap),
                         sslProtocol,
                         keyStoreFile,

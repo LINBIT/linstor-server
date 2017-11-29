@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import com.google.protobuf.ByteString;
 import com.linbit.ImplementationError;
-import com.linbit.linstor.api.interfaces.Serializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -18,7 +18,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.UuidUtils;
 
-abstract class AbsSerializerProto<TYPE> implements Serializer<TYPE>
+abstract class AbsSerializerProto<TYPE> implements CtrlSerializer<TYPE>
 {
     protected final AccessContext serializerCtx;
     protected final ErrorReporter errorReporter;

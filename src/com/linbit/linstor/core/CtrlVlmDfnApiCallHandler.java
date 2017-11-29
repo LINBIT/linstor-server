@@ -31,8 +31,8 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
-import com.linbit.linstor.api.interfaces.Serializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -48,7 +48,7 @@ public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         CREATE, DELETE
     }
 
-    private Serializer<Resource> rscSerializer;
+    private CtrlSerializer<Resource> rscSerializer;
 
     private ThreadLocal<ApiCallRcImpl> currentApiCallRc = new ThreadLocal<>();
     private ThreadLocal<ApiType> currentApiCallType = new ThreadLocal<>();
@@ -59,7 +59,7 @@ public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
     CtrlVlmDfnApiCallHandler(
         Controller controller,
-        Serializer<Resource> rscSerializer,
+        CtrlSerializer<Resource> rscSerializer,
         AccessContext apiCtx
     )
     {

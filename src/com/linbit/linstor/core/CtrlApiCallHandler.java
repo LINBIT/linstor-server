@@ -19,8 +19,8 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiType;
-import com.linbit.linstor.api.interfaces.AuthSerializer;
-import com.linbit.linstor.api.interfaces.Serializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlAuthSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.protobuf.controller.serializer.AuthSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDataSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolDataSerializerProto;
@@ -47,9 +47,9 @@ public class CtrlApiCallHandler
     {
         controller = controllerRef;
         ErrorReporter errorReporter = controller.getErrorReporter();
-        AuthSerializer authSerializer;
-        Serializer<Resource> rscSerializer;
-        Serializer<StorPool> storPoolSerializer;
+        CtrlAuthSerializer authSerializer;
+        CtrlSerializer<Resource> rscSerializer;
+        CtrlSerializer<StorPool> storPoolSerializer;
         switch (type)
         {
             case PROTOBUF:

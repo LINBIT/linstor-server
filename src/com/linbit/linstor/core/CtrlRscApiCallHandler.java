@@ -40,7 +40,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
-import com.linbit.linstor.api.interfaces.Serializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -52,12 +52,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 class CtrlRscApiCallHandler
 {
     private final Controller controller;
-    private final Serializer<Resource> serializer;
+    private final CtrlSerializer<Resource> serializer;
     private final AccessContext apiCtx;
 
     CtrlRscApiCallHandler(
         Controller controllerRef,
-        Serializer<Resource> rscSerializer,
+        CtrlSerializer<Resource> rscSerializer,
         AccessContext apiCtxRef
     )
     {
@@ -1303,6 +1303,10 @@ class CtrlRscApiCallHandler
                         null
                     )
                 );
+
+                // satellite has divergent data. cut the connection, let reconnector task
+                // establish new connection and satellite will ask for a full resync.
+                satellitePeer.closeConnection();
             }
         }
         catch (InvalidNameException invalidNameExc)

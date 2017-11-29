@@ -7,6 +7,7 @@ import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.netcom.TcpConnectorMessage.ReadState;
 import com.linbit.linstor.netcom.TcpConnectorMessage.WriteState;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 
 import java.io.IOException;
 import java.net.*;
@@ -25,7 +26,7 @@ import static java.nio.channels.SelectionKey.*;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class TcpConnectorService implements Runnable, TcpConnector, SystemService
+public class TcpConnectorService implements Runnable, TcpConnector
 {
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "TCP/IP network communications service";
@@ -123,6 +124,9 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
     // Default access context for a newly connected peer
     protected AccessContext defaultPeerAccCtx;
 
+    // Privileged access context for e.g. setting peer to node
+    private final AccessContext privilegedAccCtx;
+
     // List of SocketChannels to register for OP_CONNECT
     private final LinkedList<SocketChannel> registerToConnect = new LinkedList<>();
 
@@ -134,12 +138,14 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         CoreServices coreSvcsRef,
         MessageProcessor msgProcessorRef,
         AccessContext defaultPeerAccCtxRef,
+        AccessContext privilegedAccCtxRef,
         ConnectionObserver connObserverRef
     )
     {
         ErrorCheck.ctorNotNull(TcpConnectorService.class, CoreServices.class, coreSvcsRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, MessageProcessor.class, msgProcessorRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, AccessContext.class, defaultPeerAccCtxRef);
+        ErrorCheck.ctorNotNull(TcpConnectorService.class, AccessContext.class, privilegedAccCtxRef);
         serviceInstanceName = SERVICE_NAME;
 
         bindAddress     = DEFAULT_BIND_ADDRESS;
@@ -153,6 +159,7 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         connObserver    = connObserverRef;
 
         defaultPeerAccCtx = defaultPeerAccCtxRef;
+        privilegedAccCtx = privilegedAccCtxRef;
     }
 
     public TcpConnectorService(
@@ -160,10 +167,11 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
         MessageProcessor msgProcessorRef,
         SocketAddress bindAddressRef,
         AccessContext defaultPeerAccCtxRef,
+        AccessContext privilegedAccCtxRef,
         ConnectionObserver connObserverRef
     )
     {
-        this(coreSvcsRef, msgProcessorRef, defaultPeerAccCtxRef, connObserverRef);
+        this(coreSvcsRef, msgProcessorRef, defaultPeerAccCtxRef, privilegedAccCtxRef, connObserverRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, SocketAddress.class, bindAddressRef);
         bindAddress = bindAddressRef;
     }
@@ -201,6 +209,18 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
                 peer.connectionEstablished();
             }
             connKey.attach(peer);
+            try
+            {
+                node.setPeer(privilegedAccCtx, peer);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw new ImplementationError(
+                    "TcpConnectorService's privileged access context has not enough rights to " +
+                        "set new peer to node upon reconnect.",
+                    accDeniedExc
+                );
+            }
         }
         return peer;
     }
@@ -215,6 +235,18 @@ public class TcpConnectorService implements Runnable, TcpConnector, SystemServic
 
         final InetSocketAddress address = new InetSocketAddress(host, port);
         Peer newPeer = this.connect(address, peer.getNode());
+        try
+        {
+            peer.getNode().setPeer(privilegedAccCtx, newPeer);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(
+                "TcpConnectorService's privileged access context has not enough rights to " +
+                    "set new peer to node upon reconnect.",
+                accDeniedExc
+            );
+        }
 
         return newPeer;
     }

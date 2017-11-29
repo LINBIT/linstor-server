@@ -35,6 +35,7 @@ public class SslTcpConnectorService extends TcpConnectorService
         final CoreServices coreSvcsRef,
         final MessageProcessor msgProcessorRef,
         final AccessContext peerAccCtxRef,
+        final AccessContext privAccCtxRef,
         final ConnectionObserver connObserverRef,
         final String sslProtocol,
         final String keyStoreFile,
@@ -46,7 +47,7 @@ public class SslTcpConnectorService extends TcpConnectorService
         throws IOException, NoSuchAlgorithmException, KeyManagementException,
         UnrecoverableKeyException, KeyStoreException, CertificateException
     {
-        super(coreSvcsRef, msgProcessorRef, peerAccCtxRef, connObserverRef);
+        super(coreSvcsRef, msgProcessorRef, peerAccCtxRef, privAccCtxRef, connObserverRef);
         sslCtx = SSLContext.getInstance(sslProtocol);
         initialize(keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
     }
@@ -56,6 +57,7 @@ public class SslTcpConnectorService extends TcpConnectorService
         final MessageProcessor msgProcessorRef,
         final SocketAddress bindAddress,
         final AccessContext peerAccCtxRef,
+        final AccessContext privAccCtxRef,
         final ConnectionObserver connObserverRef,
         final String sslProtocol,
         final String keyStoreFile,
@@ -67,7 +69,7 @@ public class SslTcpConnectorService extends TcpConnectorService
         throws IOException, NoSuchAlgorithmException, KeyManagementException,
         UnrecoverableKeyException, KeyStoreException, CertificateException
     {
-        super(coreSvcsRef, msgProcessorRef, bindAddress, peerAccCtxRef, connObserverRef);
+        super(coreSvcsRef, msgProcessorRef, bindAddress, peerAccCtxRef, privAccCtxRef, connObserverRef);
         sslCtx = SSLContext.getInstance(sslProtocol);
         initialize(keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
     }

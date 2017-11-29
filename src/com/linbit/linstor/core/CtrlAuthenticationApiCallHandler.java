@@ -3,7 +3,7 @@ package com.linbit.linstor.core;
 import java.io.IOException;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.api.interfaces.AuthSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlAuthSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -11,11 +11,11 @@ import com.linbit.linstor.netcom.Peer;
 public class CtrlAuthenticationApiCallHandler
 {
     private Controller controller;
-    private AuthSerializer serializer;
+    private CtrlAuthSerializer serializer;
 
     public CtrlAuthenticationApiCallHandler(
         Controller controllerRef,
-        AuthSerializer serializerRef)
+        CtrlAuthSerializer serializerRef)
     {
         controller = controllerRef;
         serializer = serializerRef;
