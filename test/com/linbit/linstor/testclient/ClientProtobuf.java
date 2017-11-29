@@ -21,6 +21,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.protobuf.Message;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn;
@@ -263,7 +264,15 @@ public class ClientProtobuf implements Runnable
                     }
                     else
                     {
-                        sb.append("\n   No ObjRefs defined! Report this to the dev - this should not happen!");
+                        if (retCode == ApiConsts.UNKNOWN_API_CALL)
+                        {
+                            sb.append("\n   No ObjRefs");
+                        }
+                        else
+                        {
+                            sb.append("\n   No ObjRefs defined! Report this to the dev - this should not happen!");
+                        }
+
                     }
                     if (variablesMap != null && !variablesMap.isEmpty())
                     {

@@ -63,6 +63,7 @@ public class ApiConsts
      * 0x08_00000000000000L;
      * 0x04_00000000000000L;
      */
+    public static final long UNKNOWN_API_CALL = 0xC00FFFFFFFFFFFFFL;
 
     /*
      * Codes 1-9: success

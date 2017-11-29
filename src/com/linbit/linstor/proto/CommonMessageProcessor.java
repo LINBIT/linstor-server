@@ -1,6 +1,7 @@
 package com.linbit.linstor.proto;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -19,6 +20,7 @@ import com.linbit.WorkQueue;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -26,6 +28,7 @@ import com.linbit.linstor.netcom.MessageProcessor;
 import com.linbit.linstor.netcom.MessageTypes;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
+import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.security.AccessContext;
 
@@ -241,6 +244,32 @@ public class CommonMessageProcessor implements MessageProcessor
                         "The request was received on connector service '" + connector.getInstanceName() + "' " +
                         "of type '" + connector.getServiceName() + "'"
                     );
+
+                    // answer the client
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    MsgHeader.newBuilder()
+                        .setApiCall(ApiConsts.API_REPLY)
+                        .setMsgId(msgId)
+                        .build()
+                        .writeDelimitedTo(baos);
+
+                    MsgApiCallResponse.newBuilder()
+                        .setMessageFormat("The requested function call cannot be executed.")
+                        .setCauseFormat(
+                            "Common causes of this error are:\n" +
+                            "   - The function call name specified by the caller\n" +
+                            "     (client side) is incorrect\n" +
+                            "   - The requested function call was not loaded into\n" +
+                            "     the system (server side)"
+                        )
+                        .setDetailsFormat("The requested function call name was '" + apiCallName + "'.")
+                        .setRetCode(ApiConsts.UNKNOWN_API_CALL)
+                        .build()
+                        .writeDelimitedTo(baos);
+
+                    Message message = client.createMessage();
+                    message.setData(baos.toByteArray());
+                    client.sendMessage(message);
                 }
             }
         }
@@ -260,6 +289,7 @@ public class CommonMessageProcessor implements MessageProcessor
             );
         }
     }
+
 
     static class ApiCallInvocation implements Runnable
     {
