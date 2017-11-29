@@ -1,5 +1,6 @@
 package com.linbit.linstor.core;
 
+import java.sql.SQLException;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -73,6 +74,8 @@ public class StltStorPoolApiCallHandler
 
                 if (storPoolDfnToRegister != null)
                 {
+                    transMgr.commit();
+
                     satellite.storPoolDfnMap.put(storPoolName, storPoolDfnToRegister);
                     satellite.getErrorReporter().logInfo(
                         "Storage pool '%s' successfully created.",
@@ -96,6 +99,15 @@ public class StltStorPoolApiCallHandler
                 new ImplementationError(
                     "Satellite's apiContext has not enough privileges to deploy resource",
                     accDeniedExc
+                )
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            satellite.getErrorReporter().reportError(
+                new ImplementationError(
+                    "SatelliteTransactionMgr caused an sqlException",
+                    sqlExc
                 )
             );
         }
