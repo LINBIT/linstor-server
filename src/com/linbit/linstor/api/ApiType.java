@@ -7,16 +7,19 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 
 public enum ApiType
 {
-    PROTOBUF (BaseProtoApiCall.class, ProtobufApiCall.class);
+    PROTOBUF (
+        BaseProtoApiCall.class.getPackage().getName(),
+        ProtobufApiCall.class
+    );
 
     private final String basePackageName;
     private final Class<? extends Annotation> requiredAnnotation;
 
     private ApiType(
-        final Class<? extends BaseApiCall> baseClass,
+        final String basePackageName,
         final Class<? extends Annotation> annot)
     {
-        this.basePackageName = baseClass.getPackage().getName();
+        this.basePackageName = basePackageName;
         this.requiredAnnotation = annot;
     }
 
