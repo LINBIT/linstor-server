@@ -1,16 +1,13 @@
 package com.linbit.linstor.core;
 
-import static com.linbit.linstor.api.ApiConsts.KEY_MINOR_NR;
-import static com.linbit.linstor.api.ApiConsts.KEY_RSC_DFN;
-import static com.linbit.linstor.api.ApiConsts.KEY_RSC_NAME;
-import static com.linbit.linstor.api.ApiConsts.KEY_VLM_NR;
-import static com.linbit.linstor.api.ApiConsts.RC_STOR_POOL_DEL_FAIL_SQL_ROLLBACK;
-import static com.linbit.linstor.api.ApiConsts.RC_VLM_DFN_CREATED;
+import static com.linbit.linstor.api.ApiConsts.*;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
@@ -43,17 +40,8 @@ import com.linbit.linstor.security.AccessType;
 
 public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 {
-    private enum ApiType
-    {
-        CREATE, DELETE
-    }
-
     private CtrlSerializer<Resource> rscSerializer;
 
-    private ThreadLocal<ApiCallRcImpl> currentApiCallRc = new ThreadLocal<>();
-    private ThreadLocal<ApiType> currentApiCallType = new ThreadLocal<>();
-    private ThreadLocal<AccessContext> currentAccCtx = new ThreadLocal<>();
-    private ThreadLocal<Peer> currentPeer = new ThreadLocal<>();
     private ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
     private ThreadLocal<VlmDfnApi> currentVlmDfnApi = new ThreadLocal<>();
 
@@ -76,21 +64,16 @@ public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        this.currentApiCallRc.set(apiCallRc);
-        this.currentApiCallType.set(ApiType.CREATE);
-        this.currentRscNameStr.set(rscNameStr);
-        currentVlmDfnApi.set(null);
-
         TransactionMgr transMgr = null;
-
-
-
-        // TODO: use try-with-resource
-        currentObjRefs.get().clear();
-        currentObjRefs.get().put(KEY_RSC_DFN, currentRscNameStr.get());
-        currentVariables.get().clear();
-        currentVariables.get().put(KEY_RSC_NAME, currentRscNameStr.get());
-        try
+        try (
+            AbsApiCallHandler basicallyThis = setCurrentImpl(
+                accCtx,
+                client,
+                ApiCallType.CREATE,
+                apiCallRc,
+                rscNameStr
+            );
+        )
         {
             transMgr = getTransactionMgr();
 
@@ -178,6 +161,16 @@ public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             // nothing to do here.
             // the only reason we have this catch block here is for flow-control
         }
+        catch (Exception exc)
+        {
+            report(
+                exc,
+                "Volume definition could not be created due to an unknown exception.",
+                ApiConsts.RC_VLM_DFN_CRT_FAIL_UNKNOWN_ERROR
+            );
+        }
+
+
         if (transMgr != null)
         {
             if (transMgr.isDirty())
@@ -570,7 +563,7 @@ public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         String errorMessage = null;
         long apiRc = 0;
         VlmDfnApi vlmDfnApi = currentVlmDfnApi.get();
-        if (currentApiCallType.get().equals(ApiType.CREATE))
+        if (currentApiCallType.get().equals(ApiCallType.CREATE))
         {
             apiRc = ApiConsts.RC_VLM_DFN_CRT_FAIL_IMPL_ERROR;
             if (vlmDfnApi != null)
@@ -663,6 +656,29 @@ public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             ),
             ApiConsts.RC_VLM_DFN_CRT_FAIL_INVLD_SIZE
         );
+    }
+
+    private AbsApiCallHandler setCurrentImpl(
+        AccessContext accCtx,
+        Peer client,
+        ApiCallType apiCallType,
+        ApiCallRcImpl apiCallRc,
+        String rscNameStr
+    )
+    {
+        super.setCurrent(accCtx, client, apiCallType, apiCallRc);
+
+        this.currentRscNameStr.set(rscNameStr);
+        currentVlmDfnApi.set(null);
+
+
+        Map<String, String> objRefs = currentObjRefs.get();
+        objRefs.clear();
+        objRefs.put(KEY_RSC_DFN, currentRscNameStr.get());
+        Map<String, String> vars = currentVariables.get();
+        vars.clear();
+        vars.put(KEY_RSC_NAME, currentRscNameStr.get());
+        return this;
     }
 
     private static class CtrlVlmDfnApiCallHandlerFailedException extends RuntimeException

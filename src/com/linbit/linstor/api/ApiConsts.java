@@ -330,6 +330,7 @@ public class ApiConsts
     public static final long RC_VLM_DFN_CRT_FAIL_ACC_DENIED_RSC_DFN = MASK_VLM_DFN | CRT_FAIL_ACC_DENIED_RSC_DFN;
     public static final long RC_VLM_DFN_CRT_FAIL_ACC_DENIED_VLM_DFN = MASK_VLM_DFN | CRT_FAIL_ACC_DENIED_VLM_DFN;
     public static final long RC_VLM_DFN_CRT_FAIL_EXISTS_VLM_DFN = MASK_VLM_DFN | CRT_FAIL_EXISTS_VLM_DFN;
+    public static final long RC_VLM_DFN_CRT_FAIL_UNKNOWN_ERROR = MASK_VLM_DFN | CRT_FAIL_UNKNOWN_ERROR;
     public static final long RC_VLM_DFN_CRT_FAIL_IMPL_ERROR = MASK_VLM_DFN | CRT_FAIL_IMPL_ERROR;
 
     /*
