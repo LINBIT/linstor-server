@@ -1,12 +1,12 @@
 package com.linbit.linstor.core;
 
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * Tracks update notifications received from a controller
@@ -17,72 +17,77 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
 {
     private final Object sched;
 
-    private final Set<ResourceName> rscDfnCache;
-    private final Map<ResourceName, Set<NodeName>> rscCache;
-    private final Set<NodeName> nodesCache;
-    private final Set<StorPoolName> storPoolCache;
-    private final Set<ResourceName> chkRscCache;
+    private final Map<ResourceName, UUID> rscDfnCache;
+    private final Map<ResourceName, Map<NodeName, UUID>> rscCache;
+    private final Map<NodeName, UUID> nodesCache;
+    private final Map<StorPoolName, UUID> storPoolCache;
+    private final Map<ResourceName, UUID> chkRscCache;
 
     StltUpdateTrackerImpl(Object schedRef)
     {
         sched = schedRef;
-        rscDfnCache = new TreeSet<>();
+        rscDfnCache = new TreeMap<>();
         rscCache = new TreeMap<>();
-        nodesCache = new TreeSet<>();
-        storPoolCache = new TreeSet<>();
-        chkRscCache = new TreeSet<>();
+        nodesCache = new TreeMap<>();
+        storPoolCache = new TreeMap<>();
+        chkRscCache = new TreeMap<>();
     }
 
-    public void updateNode(NodeName name)
+    @Override
+    public void updateNode(UUID nodeUuid, NodeName name)
     {
         synchronized (sched)
         {
-            nodesCache.add(name);
+            nodesCache.put(name, nodeUuid);
             sched.notify();
         }
     }
 
-    public void updateResourceDfn(ResourceName name)
+    @Override
+    public void updateResourceDfn(UUID rscDfnUuid, ResourceName name)
     {
         synchronized (sched)
         {
-            rscDfnCache.add(name);
+            rscDfnCache.put(name, rscDfnUuid);
             sched.notify();
         }
     }
 
-    public void updateResource(ResourceName rscName, Set<NodeName> updNodeSet)
+    @Override
+    public void updateResource(ResourceName rscName, Map<NodeName, UUID> updNodeSet)
     {
         if (!updNodeSet.isEmpty())
         {
             synchronized (sched)
             {
-                    Set<NodeName> nodeSet = rscCache.get(rscName);
-                    if (nodeSet == null)
-                    {
-                        nodeSet = new TreeSet<>();
-                        rscCache.put(rscName, nodeSet);
-                    }
-                    nodeSet.addAll(updNodeSet);
-                    sched.notify();
+                Map<NodeName, UUID> nodeSet = rscCache.get(rscName);
+                if (nodeSet == null)
+                {
+                    nodeSet = new TreeMap<>();
+                    rscCache.put(rscName, nodeSet);
+                }
+                nodeSet.putAll(updNodeSet);
+                sched.notify();
             }
         }
     }
 
-    public void updateStorPool(StorPoolName name)
+    @Override
+    public void updateStorPool(UUID storPoolUuid, StorPoolName name)
     {
         synchronized (sched)
         {
-            storPoolCache.add(name);
+            storPoolCache.put(name, storPoolUuid);
             sched.notify();
         }
     }
 
-    public void checkResource(ResourceName name)
+    @Override
+    public void checkResource(UUID rscUuid, ResourceName name)
     {
         synchronized (sched)
         {
-            chkRscCache.add(name);
+            chkRscCache.put(name, rscUuid);
             sched.notify();
         }
     }
@@ -106,11 +111,11 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
                 }
             }
             // Collect all queued updates
-            updates.updNodeSet.addAll(nodesCache);
-            updates.updRscDfnSet.addAll(rscDfnCache);
+            updates.updNodeMap.putAll(nodesCache);
+            updates.updRscDfnMap.putAll(rscDfnCache);
             updates.updRscMap.putAll(rscCache);
-            updates.updStorPoolSet.addAll(storPoolCache);
-            updates.chkRscSet.addAll(chkRscCache);
+            updates.updStorPoolMap.putAll(storPoolCache);
+            updates.chkRscMap.putAll(chkRscCache);
 
             // Clear queued updates
             clearImpl();
@@ -140,11 +145,11 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
      */
     static class UpdateBundle
     {
-        final Set<NodeName> updNodeSet = new TreeSet<>();
-        final Set<ResourceName> updRscDfnSet = new TreeSet<>();
-        final Map<ResourceName, Set<NodeName>> updRscMap = new TreeMap<>();
-        final Set<StorPoolName> updStorPoolSet = new TreeSet<>();
-        final Set<ResourceName> chkRscSet = new TreeSet<>();
+        final Map<NodeName, UUID> updNodeMap = new TreeMap<>();
+        final Map<ResourceName, UUID> updRscDfnMap = new TreeMap<>();
+        final Map<ResourceName, Map<NodeName, UUID>> updRscMap = new TreeMap<>();
+        final Map<StorPoolName, UUID> updStorPoolMap = new TreeMap<>();
+        final Map<ResourceName, UUID> chkRscMap = new TreeMap<>();
 
         /**
          * Copies the update notifications, but not the check notifications, to another UpdateBundle
@@ -156,10 +161,10 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         {
             other.clear();
 
-            other.updNodeSet.addAll(updNodeSet);
-            other.updRscDfnSet.addAll(updRscDfnSet);
+            other.updNodeMap.putAll(updNodeMap);
+            other.updRscDfnMap.putAll(updRscDfnMap);
             other.updRscMap.putAll(updRscMap);
-            other.updStorPoolSet.addAll(updStorPoolSet);
+            other.updStorPoolMap.putAll(updStorPoolMap);
         }
 
         /**
@@ -169,8 +174,8 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
          */
         boolean isEmpty()
         {
-            return updNodeSet.isEmpty() && updRscDfnSet.isEmpty() && updRscMap.isEmpty() &&
-                   updStorPoolSet.isEmpty() && chkRscSet.isEmpty();
+            return updNodeMap.isEmpty() && updRscDfnMap.isEmpty() && updRscMap.isEmpty() &&
+                   updStorPoolMap.isEmpty() && chkRscMap.isEmpty();
         }
 
         /**
@@ -179,11 +184,11 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         void clear()
         {
             // Clear the collected updates
-            updNodeSet.clear();
-            updRscDfnSet.clear();
+            updNodeMap.clear();
+            updRscDfnMap.clear();
             updRscMap.clear();
-            updStorPoolSet.clear();
-            chkRscSet.clear();
+            updStorPoolMap.clear();
+            chkRscMap.clear();
         }
     }
 }

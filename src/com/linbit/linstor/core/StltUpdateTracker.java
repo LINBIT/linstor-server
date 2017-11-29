@@ -3,13 +3,15 @@ package com.linbit.linstor.core;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
-import java.util.Set;
+
+import java.util.Map;
+import java.util.UUID;
 
 public interface StltUpdateTracker
 {
-    void updateNode(NodeName name);
-    void updateResourceDfn(ResourceName name);
-    void updateResource(ResourceName rscName, Set<NodeName> updNodeSet);
-    void updateStorPool(StorPoolName name);
-    void checkResource(ResourceName name);
+    void updateNode(UUID nodeUuid, NodeName name);
+    void updateResourceDfn(UUID rscDfnUuid, ResourceName name);
+    void updateResource(ResourceName rscName, Map<NodeName, UUID> updNodeSet);
+    void updateStorPool(UUID storPoolUuid, StorPoolName name);
+    void checkResource(UUID rscUuid, ResourceName name);
 }

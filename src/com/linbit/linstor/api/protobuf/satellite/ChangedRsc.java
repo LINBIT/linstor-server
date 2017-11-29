@@ -3,7 +3,8 @@ package com.linbit.linstor.api.protobuf.satellite;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -72,9 +73,12 @@ public class ChangedRsc extends BaseProtoApiCall
             UUID rscUuid = asUuid(rscId.getUuid());
 
             // TODO: remember to request this resource later.
-            HashSet<NodeName> changedNodes = new HashSet<>();
+            Map<NodeName, UUID> changedNodes = new TreeMap<>();
             // controller could notify us (in future) about changes in other nodes
-            changedNodes.add(satellite.getLocalNode().getName());
+            changedNodes.put(
+                satellite.getLocalNode().getName(),
+                rscUuid
+            );
 
             devMgr.getUpdateTracker().updateResource(
                 new ResourceName(rscName),

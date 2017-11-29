@@ -16,7 +16,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.event.Level;
 
@@ -127,7 +129,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         synchronized (sched)
         {
-            rcvPendingBundle.updNodeSet.removeAll(nodeSet);
+            for (NodeName nodeName : nodeSet)
+            {
+                rcvPendingBundle.updNodeMap.remove(nodeName);
+            }
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -140,7 +145,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         synchronized (sched)
         {
-            rcvPendingBundle.updRscDfnSet.removeAll(rscDfnSet);
+            for (ResourceName rscName : rscDfnSet)
+            {
+                rcvPendingBundle.updRscDfnMap.remove(rscName);
+            }
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -153,7 +161,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         synchronized (sched)
         {
-            rcvPendingBundle.updStorPoolSet.removeAll(storPoolSet);
+            for (StorPoolName storPoolName : storPoolSet)
+            {
+                rcvPendingBundle.updStorPoolMap.remove(storPoolName);
+            }
             if (rcvPendingBundle.isEmpty())
             {
                 sched.notify();
@@ -186,15 +197,24 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             if (nodeSet != null)
             {
-                rcvPendingBundle.updNodeSet.removeAll(nodeSet);
+                for (NodeName nodeName : nodeSet)
+                {
+                    rcvPendingBundle.updNodeMap.remove(nodeName);
+                }
             }
             if (rscDfnSet != null)
             {
-                rcvPendingBundle.updRscDfnSet.removeAll(rscDfnSet);
+                for (ResourceName rscName : rscDfnSet)
+                {
+                    rcvPendingBundle.updRscDfnMap.remove(rscName);
+                }
             }
             if (storPoolSet != null)
             {
-                rcvPendingBundle.updStorPoolSet.removeAll(storPoolSet);
+                for (StorPoolName storPoolName : storPoolSet)
+                {
+                    rcvPendingBundle.updStorPoolMap.remove(storPoolName);
+                }
             }
             if (rscMap != null)
             {
@@ -220,11 +240,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         for (Map.Entry<ResourceName, Set<NodeName>> entry : rscMap.entrySet())
         {
             ResourceName rscName = entry.getKey();
-            Set<NodeName> pendNodeSet = rcvPendingBundle.updRscMap.get(rscName);
+            Map<NodeName, UUID> pendNodeSet = rcvPendingBundle.updRscMap.get(rscName);
             if (pendNodeSet != null)
             {
                 Set<NodeName> updNodeSet = entry.getValue();
-                pendNodeSet.removeAll(updNodeSet);
+                for (NodeName nodeName : updNodeSet)
+                {
+                    pendNodeSet.remove(nodeName);
+                }
                 if (pendNodeSet.isEmpty())
                 {
                     rcvPendingBundle.updRscMap.remove(rscName);
@@ -260,7 +283,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     }
 
                     chgPendingBundle.copyUpdateRequestsTo(rcvPendingBundle);
+
                     // Request updates from the controller
+                    requestNodeUpdates(chgPendingBundle.updNodeMap);
+                    requestRscDfnUpdates(chgPendingBundle.updRscDfnMap);
+                    requestRscUpdates(chgPendingBundle.updRscMap);
+                    requestStorPoolUpdates(chgPendingBundle.updStorPoolMap);
 
                     // Wait for the notification that all requested updates
                     // have been received and applied
@@ -280,11 +308,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     }
 
                     // Merge check requests into update requests and clear the check requests
-                    chgPendingBundle.updRscDfnSet.addAll(chgPendingBundle.chkRscSet);
-                    chgPendingBundle.chkRscSet.clear();
+                    chgPendingBundle.updRscDfnMap.putAll(chgPendingBundle.chkRscMap);
+                    chgPendingBundle.chkRscMap.clear();
                 }
 
-                for (ResourceName rscName : chgPendingBundle.updRscDfnSet)
+                for (ResourceName rscName : chgPendingBundle.updRscDfnMap.keySet())
                 {
                     // Dispatch resources that were affected by changes to worker threads
                     // and to the resource's respective handler
@@ -315,6 +343,60 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         finally
         {
             runningFlag.set(false);
+        }
+    }
+
+    private void requestNodeUpdates(Map<NodeName, UUID> nodesMap)
+    {
+        StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
+        for (Entry<NodeName, UUID> entry : nodesMap.entrySet())
+        {
+//            apiCallHandler.requestNodeUpdate(
+//                entry.getValue(),
+//                entry.getKey()
+//            );
+        }
+    }
+
+    private void requestRscDfnUpdates(Map<ResourceName, UUID> rscDfnMap)
+    {
+        StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
+        for (Entry<ResourceName, UUID> entry : rscDfnMap.entrySet())
+        {
+//            apiCallHandler.requestRscDfnUpate(
+//                entry.getValue(),
+//                entry.getKey()
+//            );
+        }
+    }
+
+    private void requestRscUpdates(Map<ResourceName, Map<NodeName, UUID>> updRscMap)
+    {
+        StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
+        for (Entry<ResourceName, Map<NodeName, UUID>> entry : updRscMap.entrySet())
+        {
+            ResourceName rscName = entry.getKey();
+            Map<NodeName, UUID> nodes = entry.getValue();
+            for (Entry<NodeName, UUID> nodeEntry : nodes.entrySet())
+            {
+//                apiCallHandler.requestRscUpdate(
+//                    nodeEntry.getValue(),
+//                    nodeEntry.getKey(),
+//                    rscName
+//                );
+            }
+        }
+    }
+
+    private void requestStorPoolUpdates(Map<StorPoolName, UUID> updStorPoolMap)
+    {
+        StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
+        for (Entry<StorPoolName, UUID> entry : updStorPoolMap.entrySet())
+        {
+//            apiCallHandler.requestStorPoolUpdate(
+//                 entry.getValue(),
+//                 entry.getKey()
+//             );
         }
     }
 
