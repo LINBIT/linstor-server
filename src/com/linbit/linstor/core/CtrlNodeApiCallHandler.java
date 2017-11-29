@@ -168,6 +168,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 else
                 {
                     commit(transMgr);
+                    controller.nodesMap.put(nodeName, node);
 
                     String successMessage = String.format(
                         "Node '%s' successfully created.",
