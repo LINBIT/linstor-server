@@ -245,31 +245,34 @@ public class CommonMessageProcessor implements MessageProcessor
                         "of type '" + connector.getServiceName() + "'"
                     );
 
-                    // answer the client
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    MsgHeader.newBuilder()
-                        .setApiCall(ApiConsts.API_REPLY)
-                        .setMsgId(msgId)
-                        .build()
-                        .writeDelimitedTo(baos);
+                    if (client.getNode() == null) // client, no satellite or controller
+                    {
+                        // answer the client
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        MsgHeader.newBuilder()
+                            .setApiCall(ApiConsts.API_REPLY)
+                            .setMsgId(msgId)
+                            .build()
+                            .writeDelimitedTo(baos);
 
-                    MsgApiCallResponse.newBuilder()
-                        .setMessageFormat("The requested function call cannot be executed.")
-                        .setCauseFormat(
-                            "Common causes of this error are:\n" +
-                            "   - The function call name specified by the caller\n" +
-                            "     (client side) is incorrect\n" +
-                            "   - The requested function call was not loaded into\n" +
-                            "     the system (server side)"
-                        )
-                        .setDetailsFormat("The requested function call name was '" + apiCallName + "'.")
-                        .setRetCode(ApiConsts.UNKNOWN_API_CALL)
-                        .build()
-                        .writeDelimitedTo(baos);
+                        MsgApiCallResponse.newBuilder()
+                            .setMessageFormat("The requested function call cannot be executed.")
+                            .setCauseFormat(
+                                "Common causes of this error are:\n" +
+                                "   - The function call name specified by the caller\n" +
+                                "     (client side) is incorrect\n" +
+                                "   - The requested function call was not loaded into\n" +
+                                "     the system (server side)"
+                            )
+                            .setDetailsFormat("The requested function call name was '" + apiCallName + "'.")
+                            .setRetCode(ApiConsts.UNKNOWN_API_CALL)
+                            .build()
+                            .writeDelimitedTo(baos);
 
-                    Message message = client.createMessage();
-                    message.setData(baos.toByteArray());
-                    client.sendMessage(message);
+                        Message message = client.createMessage();
+                        message.setData(baos.toByteArray());
+                        client.sendMessage(message);
+                    }
                 }
             }
         }
