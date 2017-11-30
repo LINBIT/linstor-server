@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -15,27 +17,27 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Node.NodeFlag;
+import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.Node.NodeFlag;
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.Resource.RscFlags;
-import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.Volume.VlmFlags;
-import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.VolumeDfnPojo;
@@ -63,6 +65,8 @@ public class StltRscApiCallHandler
         ResourceDefinitionData rscDfnToRegister = null;
         List<NodeData> nodesToRegister = new ArrayList<>();
 
+        Map<ResourceName, Set<NodeName>> updatedRscMap = new TreeMap<>();
+
         try
         {
             rscName = new ResourceName(rscRawData.getRscName());
@@ -71,6 +75,10 @@ public class StltRscApiCallHandler
             RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscRawData.getRscDfnFlags());
 
             ResourceDefinitionData rscDfn = (ResourceDefinitionData) satellite.rscDfnMap.get(rscName);
+
+            Set<NodeName> updatedNodes = new TreeSet<>();
+            updatedRscMap.put(rscName, updatedNodes);
+            updatedNodes.add(satellite.localNode.getName());
 
             Resource localRsc = null;
             Set<Resource> otherRscs = new HashSet<>();
@@ -160,6 +168,8 @@ public class StltRscApiCallHandler
                             true
                         )
                     );
+
+                    updatedNodes.add(remoteNode.getName());
                 }
             }
             else
@@ -273,6 +283,7 @@ public class StltRscApiCallHandler
 
                         // everything ok, mark the resource as new
                         newResources.add(remoteRsc);
+                        updatedNodes.add(nodeName);
                     }
                     else
                     {
@@ -299,6 +310,7 @@ public class StltRscApiCallHandler
                         // everything ok, mark the resource to be kept
                         removedList.remove(remoteRsc);
                         modifiedResources.add(remoteRsc);
+                        updatedNodes.add(remoteNode.getName());
                     }
                     otherRscs.add(remoteRsc);
                 }
@@ -329,8 +341,7 @@ public class StltRscApiCallHandler
                 "Resource '%s' successfully created",
                 rscName.displayValue
             );
-
-            // TODO: deploy to drbd
+            satellite.getDeviceManager().rscUpdateApplied(updatedRscMap);
         }
         catch (InvalidNameException | ValueOutOfRangeException | NullPointerException invalidDataExc)
         {

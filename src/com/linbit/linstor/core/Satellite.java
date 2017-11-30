@@ -320,6 +320,8 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                     devMgrPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
                     devMgrPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
                     devMgr = new DeviceManagerImpl(this, devMgrCtx, this);
+
+                    systemServicesMap.put(devMgr.getInstanceName(), devMgr);
                 }
 
                 // Initialize system services

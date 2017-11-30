@@ -248,6 +248,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 {
                     pendNodeSet.remove(nodeName);
                 }
+
                 if (pendNodeSet.isEmpty())
                 {
                     rcvPendingBundle.updRscMap.remove(rscName);
@@ -273,10 +274,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 // Wait until resource updates are pending
                 synchronized (sched)
                 {
-                    while (!shutdownFlag.get())
-                    {
-                        updTracker.collectUpdateNotifications(chgPendingBundle);
-                    }
+                    updTracker.collectUpdateNotifications(chgPendingBundle, shutdownFlag);
                     if (shutdownFlag.get())
                     {
                         break;
@@ -351,10 +349,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
         for (Entry<NodeName, UUID> entry : nodesMap.entrySet())
         {
-//            apiCallHandler.requestNodeUpdate(
-//                entry.getValue(),
-//                entry.getKey()
-//            );
+            apiCallHandler.requestNodeUpdate(
+                entry.getValue(),
+                entry.getKey()
+            );
         }
     }
 
@@ -363,10 +361,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
         for (Entry<ResourceName, UUID> entry : rscDfnMap.entrySet())
         {
-//            apiCallHandler.requestRscDfnUpate(
-//                entry.getValue(),
-//                entry.getKey()
-//            );
+            apiCallHandler.requestRscDfnUpate(
+                entry.getValue(),
+                entry.getKey()
+            );
         }
     }
 
@@ -379,11 +377,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             Map<NodeName, UUID> nodes = entry.getValue();
             for (Entry<NodeName, UUID> nodeEntry : nodes.entrySet())
             {
-//                apiCallHandler.requestRscUpdate(
-//                    nodeEntry.getValue(),
-//                    nodeEntry.getKey(),
-//                    rscName
-//                );
+                apiCallHandler.requestRscUpdate(
+                    nodeEntry.getValue(),
+                    nodeEntry.getKey(),
+                    rscName
+                );
             }
         }
     }
@@ -393,10 +391,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
         for (Entry<StorPoolName, UUID> entry : updStorPoolMap.entrySet())
         {
-//            apiCallHandler.requestStorPoolUpdate(
-//                 entry.getValue(),
-//                 entry.getKey()
-//             );
+            apiCallHandler.requestStorPoolUpdate(
+                 entry.getValue(),
+                 entry.getKey()
+             );
         }
     }
 

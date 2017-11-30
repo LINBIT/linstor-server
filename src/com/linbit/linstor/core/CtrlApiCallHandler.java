@@ -796,7 +796,7 @@ public class CtrlApiCallHandler
      * @param rscName required
      * @param rscUuid required (for double checking)
      */
-    public void requestResource(Peer satellite, int msgId, String rscName, UUID rscUuid)
+    public void requestResource(Peer satellite, int msgId, String nodeName, String rscName, UUID rscUuid)
     {
         try
         {
@@ -804,7 +804,7 @@ public class CtrlApiCallHandler
             controller.rscDfnMapLock.readLock().lock();
             controller.storPoolDfnMapLock.readLock().lock();
 
-            rscApiCallHandler.respondResource(rscName, rscUuid, msgId, satellite);
+            rscApiCallHandler.respondResource(msgId, satellite, nodeName, rscUuid, rscName);
         }
         finally
         {

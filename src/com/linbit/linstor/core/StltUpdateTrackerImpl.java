@@ -1,8 +1,10 @@
 package com.linbit.linstor.core;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
@@ -17,20 +19,12 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
 {
     private final Object sched;
 
-    private final Map<ResourceName, UUID> rscDfnCache;
-    private final Map<ResourceName, Map<NodeName, UUID>> rscCache;
-    private final Map<NodeName, UUID> nodesCache;
-    private final Map<StorPoolName, UUID> storPoolCache;
-    private final Map<ResourceName, UUID> chkRscCache;
+    private final UpdateBundle cachedUpdates;
 
     StltUpdateTrackerImpl(Object schedRef)
     {
         sched = schedRef;
-        rscDfnCache = new TreeMap<>();
-        rscCache = new TreeMap<>();
-        nodesCache = new TreeMap<>();
-        storPoolCache = new TreeMap<>();
-        chkRscCache = new TreeMap<>();
+        cachedUpdates = new UpdateBundle();
     }
 
     @Override
@@ -38,7 +32,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     {
         synchronized (sched)
         {
-            nodesCache.put(name, nodeUuid);
+            cachedUpdates.updNodeMap.put(name, nodeUuid);
             sched.notify();
         }
     }
@@ -48,7 +42,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     {
         synchronized (sched)
         {
-            rscDfnCache.put(name, rscDfnUuid);
+            cachedUpdates.updRscDfnMap.put(name, rscDfnUuid);
             sched.notify();
         }
     }
@@ -60,11 +54,11 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         {
             synchronized (sched)
             {
-                Map<NodeName, UUID> nodeSet = rscCache.get(rscName);
+                Map<NodeName, UUID> nodeSet = cachedUpdates.updRscMap.get(rscName);
                 if (nodeSet == null)
                 {
                     nodeSet = new TreeMap<>();
-                    rscCache.put(rscName, nodeSet);
+                    cachedUpdates.updRscMap.put(rscName, nodeSet);
                 }
                 nodeSet.putAll(updNodeSet);
                 sched.notify();
@@ -77,7 +71,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     {
         synchronized (sched)
         {
-            storPoolCache.put(name, storPoolUuid);
+            cachedUpdates.updStorPoolMap.put(name, storPoolUuid);
             sched.notify();
         }
     }
@@ -87,20 +81,19 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     {
         synchronized (sched)
         {
-            chkRscCache.put(name, rscUuid);
+            cachedUpdates.chkRscMap.put(name, rscUuid);
             sched.notify();
         }
     }
 
-    void collectUpdateNotifications(UpdateBundle updates)
+    void collectUpdateNotifications(UpdateBundle updates, AtomicBoolean shutdownFlag)
     {
         updates.clear();
 
         synchronized (sched)
         {
             // If no updates are queued, wait for updates
-            if (nodesCache.isEmpty() && rscDfnCache.isEmpty() && rscCache.isEmpty() &&
-                storPoolCache.isEmpty() && chkRscCache.isEmpty())
+            while (cachedUpdates.isEmpty() && !shutdownFlag.get())
             {
                 try
                 {
@@ -111,11 +104,8 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
                 }
             }
             // Collect all queued updates
-            updates.updNodeMap.putAll(nodesCache);
-            updates.updRscDfnMap.putAll(rscDfnCache);
-            updates.updRscMap.putAll(rscCache);
-            updates.updStorPoolMap.putAll(storPoolCache);
-            updates.chkRscMap.putAll(chkRscCache);
+            cachedUpdates.copyUpdateRequestsTo(updates);
+            updates.chkRscMap.putAll(cachedUpdates.chkRscMap);
 
             // Clear queued updates
             clearImpl();
@@ -133,11 +123,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     // Must hold the scheduler lock ('synchronized (sched)')
     private void clearImpl()
     {
-        nodesCache.clear();
-        rscDfnCache.clear();
-        rscCache.clear();
-        storPoolCache.clear();
-        chkRscCache.clear();
+        cachedUpdates.clear();
     }
 
     /**
@@ -163,7 +149,10 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
 
             other.updNodeMap.putAll(updNodeMap);
             other.updRscDfnMap.putAll(updRscDfnMap);
-            other.updRscMap.putAll(updRscMap);
+            for (Entry<ResourceName, Map<NodeName, UUID>> entry : updRscMap.entrySet())
+            {
+                other.updRscMap.put(entry.getKey(), new TreeMap<>(entry.getValue()));
+            }
             other.updStorPoolMap.putAll(updStorPoolMap);
         }
 

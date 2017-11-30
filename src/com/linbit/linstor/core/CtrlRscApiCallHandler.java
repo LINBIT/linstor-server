@@ -1275,45 +1275,88 @@ class CtrlRscApiCallHandler
         return apiCallRc;
     }
 
-    public void respondResource(String rscNameStr, UUID rscUuid, int msgId, Peer satellitePeer)
+    public void respondResource(
+        int msgId,
+        Peer satellitePeer,
+        String nodeNameStr,
+        UUID rscUuid,
+        String rscNameStr
+    )
     {
         try
         {
-            ResourceName rscName = new ResourceName(rscNameStr);
-            Resource localResource = satellitePeer.getNode().getResource(apiCtx, rscName);
-            // TODO: check if the localResource has the same uuid as rscUuid
-            if (localResource != null)
-            {
-                byte[] data = serializer.getDataMessage(msgId, localResource);
+            NodeName nodeName = new NodeName(nodeNameStr);
 
-                Message response = satellitePeer.createMessage();
-                response.setData(data);
-                satellitePeer.sendMessage(response);
+            TransactionMgr transMgr = new TransactionMgr(controller.dbConnPool);
+            NodeData node = NodeData.getInstance(
+                apiCtx,
+                nodeName,
+                null,
+                null,
+                transMgr,
+                false,
+                false
+            );
+            if (node != null)
+            {
+                ResourceName rscName = new ResourceName(rscNameStr);
+                Resource rsc = node.getResource(apiCtx, rscName);
+                // TODO: check if the localResource has the same uuid as rscUuid
+                if (rsc != null)
+                {
+                    byte[] data = serializer.getDataMessage(msgId, rsc);
+
+                    Message response = satellitePeer.createMessage();
+                    response.setData(data);
+                    satellitePeer.sendMessage(response);
+                }
+                else
+                {
+                    controller.getErrorReporter().reportError(
+                        new ImplementationError(
+                            String.format(
+                                "A requested resource name '%s' with the uuid '%s' was not found "+
+                                    "in the controllers list of resources",
+                                    rscName,
+                                    rscUuid.toString()
+                                ),
+                            null
+                        )
+                    );
+
+                    // satellite has divergent data. cut the connection, let reconnector task
+                    // establish new connection and satellite will ask for a full resync.
+                    satellitePeer.closeConnection();
+                }
             }
             else
             {
                 controller.getErrorReporter().reportError(
                     new ImplementationError(
-                        String.format(
-                            "A requested resource name '%s' with the uuid '%s' was not found "+
-                                "in the controllers list of resources",
-                                rscName,
-                                rscUuid.toString()
-                            ),
+                        "Satellite requested resource '" + rscNameStr + "' on node '" + nodeNameStr + "' " +
+                            "but that node does not exist.",
                         null
                     )
                 );
-
-                // satellite has divergent data. cut the connection, let reconnector task
-                // establish new connection and satellite will ask for a full resync.
                 satellitePeer.closeConnection();
             }
+            transMgr.rollback(); // just to be sure
+            controller.dbConnPool.returnConnection(transMgr);
+        }
+        catch (SQLException sqlExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Could not create a transMgr",
+                    sqlExc
+                )
+            );
         }
         catch (InvalidNameException invalidNameExc)
         {
             controller.getErrorReporter().reportError(
                 new ImplementationError(
-                    "Satellite requested data for invalid resource name '" + rscNameStr + "'.",
+                    "Satellite requested data for invalid name (node or rsc name).",
                     invalidNameExc
                 )
             );
@@ -1333,6 +1376,15 @@ class CtrlRscApiCallHandler
                 new ImplementationError(
                     "Failed to respond to resource data request",
                     illegalMessageStateExc
+                )
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Read-only NodeData.getInstance threw a dataAlreadyExistsException",
+                    dataAlreadyExistsExc
                 )
             );
         }

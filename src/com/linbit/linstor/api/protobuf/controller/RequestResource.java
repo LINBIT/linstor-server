@@ -1,28 +1,58 @@
 package com.linbit.linstor.api.protobuf.controller;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.UUID;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
+import com.linbit.linstor.security.AccessContext;
 
 @ProtobufApiCall
-public class RequestResource extends RequestObject
+public class RequestResource extends BaseProtoApiCall
 {
+    private Controller controller;
+
     public RequestResource(Controller controller)
     {
-        super(
-            controller,
-            InternalApiConsts.API_REQUEST_RSC,
-            "resource"
-        );
+        super(controller.getErrorReporter());
+        this.controller = controller;
     }
 
     @Override
-    protected void handleRequest(String name, UUID objUuid, int msgId, Peer satellitePeer)
+    public String getName()
     {
-        controller.getApiCallHandler().requestResource(satellitePeer, msgId, name, objUuid);
+        return InternalApiConsts.API_REQUEST_RSC;
     }
 
+    @Override
+    public String getDescription()
+    {
+        return "This request is answered with a full data response of the requested resource";
+    }
+
+    @Override
+    protected void executeImpl(
+        AccessContext accCtx,
+        Message msg,
+        int msgId,
+        InputStream msgDataIn,
+        Peer satellitePeer
+    )
+        throws IOException
+    {
+        MsgIntObjectId nodeId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        String nodeName = nodeId.getName();
+
+        MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        UUID rscUuid = asUuid(rscId.getUuid());
+        String rscName = rscId.getName();
+
+        controller.getApiCallHandler().requestResource(satellitePeer, msgId, nodeName, rscName, rscUuid);
+    }
 }

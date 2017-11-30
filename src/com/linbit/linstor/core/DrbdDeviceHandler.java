@@ -22,7 +22,17 @@ class DrbdDeviceHandler implements DeviceHandler
     public void dispatchResource(Resource rsc)
     {
         // TODO: Implement
-        throw new UnsupportedOperationException("Not supported yet.");
+        coreSvcs.getErrorReporter().logTrace("DrbdDeviceHandler: dispatchRsc - TODO");
+
+        try
+        {
+            // FIXME: remove this sleep
+            // this is only for testing / simulating work
+            Thread.sleep(5000);
+        }
+        catch (InterruptedException e)
+        {
+        }
     }
 
     /**
