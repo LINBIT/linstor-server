@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import java.io.IOException;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.api.interfaces.serializer.CtrlAuthSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -27,7 +28,7 @@ public class CtrlAuthenticationApiCallHandler
         {
             Message msg = peer.createMessage();
             // TODO make the shared secret customizable
-            msg.setData(serializer.getAuthMessage("Hello LinStor!".getBytes()));
+            msg.setData(serializer.getAuthMessage(peer.getNode(), "Hello LinStor!".getBytes()));
             peer.sendMessage(msg);
         }
         catch (IllegalMessageStateException illegalMessageStateExc)

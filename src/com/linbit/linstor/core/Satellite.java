@@ -10,6 +10,8 @@ import com.linbit.WorkerPool;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Node.NodeType;
+import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -20,8 +22,6 @@ import com.linbit.linstor.SatelliteDummyStorPoolData;
 import com.linbit.linstor.SatellitePeerCtx;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.Node.NodeFlag;
-import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -338,28 +338,6 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                         accessExc
                     )
                 );
-            }
-
-            // FIXME remove this test block
-            {
-                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-                try
-                {
-                    localNode = NodeData.getInstanceSatellite(
-                        sysCtx,
-                        UUID.randomUUID(),
-                        new NodeName("TestNode"),
-                        NodeType.SATELLITE,
-                        new NodeFlag[] {},
-                        transMgr
-                    );
-                    transMgr.commit();
-                    nodesMap.put(localNode.getName(), localNode);
-                }
-                catch (SQLException | ImplementationError | InvalidNameException exc)
-                {
-                    errorLogRef.reportError(exc);
-                }
             }
         }
         finally
@@ -778,8 +756,55 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         return controllerPeer;
     }
 
-    public void setControllerPeer(Peer controllerPeerRef)
+    public void setControllerPeer(Peer controllerPeerRef, UUID nodeUuid, String nodeName)
     {
-        controllerPeer = controllerPeerRef;
+        try
+        {
+            reconfigurationLock.writeLock().lock();
+
+            controllerPeer = controllerPeerRef;
+
+            AccessContext tmpCtx = sysCtx.clone();
+            tmpCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+            try
+            {
+                localNode = NodeData.getInstanceSatellite(
+                    sysCtx,
+                    nodeUuid,
+                    new NodeName(nodeName),
+                    NodeType.SATELLITE,
+                    new NodeFlag[] {},
+                    transMgr
+                );
+                transMgr.commit();
+                nodesMap.put(localNode.getName(), localNode);
+            }
+            catch (ImplementationError | SQLException | InvalidNameException exc)
+            {
+                getErrorReporter().reportError(exc);
+            }
+
+            // TODO: make sure everything is cleared
+
+            nodesMap.clear();
+            rscDfnMap.clear();
+            storPoolDfnMap.clear();
+
+            nodesMap.put(localNode.getName(), localNode);
+            localNode.setPeer(tmpCtx, controllerPeerRef);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(
+                "sysCtx does not have enough privileges to call node.setPeer",
+                accDeniedExc
+            );
+        }
+        finally
+        {
+            reconfigurationLock.writeLock().unlock();
+        }
     }
 }
