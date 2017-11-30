@@ -7,6 +7,7 @@ package com.linbit.linstor.core;
 
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,11 +40,12 @@ public class ApiCallLoadingTest {
         }
 
         {
+            Path jarpath = Paths.get("build/libs").toFile().listFiles()[0].toPath().toAbsolutePath();
             String cp = "." + File.pathSeparator + "build" + File.separator + "libs" + File.separator + "*";
             List<String> p = LinStor.expandClassPath(cp);
             ArrayList<String> a = new ArrayList<>();
             a.add(Paths.get(".").toAbsolutePath().toString());
-            a.add(Paths.get("build/libs/linstor-1.0.jar").toAbsolutePath().toString());
+            a.add(jarpath.toString());
             assertArrayEquals(a.toArray(), p.toArray());
         }
 
