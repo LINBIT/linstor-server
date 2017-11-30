@@ -3,8 +3,8 @@ package com.linbit.linstor.api.protobuf.controller.serializer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import com.google.protobuf.ByteString;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlAuthSerializer;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth;
@@ -17,7 +17,7 @@ public class AuthSerializerProto implements CtrlAuthSerializer
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         MsgHeader.newBuilder()
-            .setApiCall(ApiConsts.API_AUTH)
+            .setApiCall(InternalApiConsts.API_AUTH)
             .setMsgId(0)
             .build()
             .writeDelimitedTo(baos);

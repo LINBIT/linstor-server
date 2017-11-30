@@ -53,6 +53,7 @@ public class TcpConnectorPeer implements Peer
     private Object attachment;
 
     protected boolean connected = false;
+    protected boolean authenticated = false;
 
     // Volatile guarantees atomic read and write
     //
@@ -137,7 +138,7 @@ public class TcpConnectorPeer implements Peer
     @Override
     public void connectionEstablished() throws SSLException
     {
-        connected = true; // TODO: only set to true when auth was successful
+        connected = true;
         pongReceived(); // in order to calculate the first "real" pong correctly.
         synchronized (this)
         {
@@ -218,13 +219,47 @@ public class TcpConnectorPeer implements Peer
     public void closeConnection()
     {
         connected = false;
+        authenticated = false;
         connector.closeConnection(this);
     }
 
     @Override
     public boolean isConnected()
     {
-        return connected;
+        return isConnected(true);
+    }
+
+    @Override
+    public boolean isConnected(boolean ensureAuthenticated)
+    {
+        boolean ret = false;
+        if (connected)
+        {
+            if (ensureAuthenticated)
+            {
+                if (authenticated)
+                {
+                    ret = true;
+                }
+            }
+            else
+            {
+                ret = true;
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public boolean isAuthenticated()
+    {
+        return authenticated;
+    }
+
+    @Override
+    public void setAuthenticated(boolean authenticated)
+    {
+        this.authenticated = authenticated;
     }
 
     protected void nextInMessage()

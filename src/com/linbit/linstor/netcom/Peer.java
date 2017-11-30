@@ -92,9 +92,20 @@ public interface Peer
     void closeConnection();
 
     /**
-     * Returns true if the connection has been established. False otherwise.
+     * This is the same as calling {@code isConnected(true)}
      */
     boolean isConnected();
+
+    /**
+     * Returns false if no connection is established yet.
+     * Returns false if connection is established but not authenticated and {@code ensureAuthenticated} is true.
+     * Returns true otherwise.
+     */
+    boolean isConnected(boolean ensureAuthenticated);
+
+    boolean isAuthenticated();
+
+    void setAuthenticated(boolean authenticated);
 
     /**
      * Returns the capacity of the queue for outbound messages

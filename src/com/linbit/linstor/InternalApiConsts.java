@@ -2,6 +2,9 @@ package com.linbit.linstor;
 
 public class InternalApiConsts
 {
+    public static final String API_AUTH              = "Auth";
+    public static final String API_AUTH_ACCEPT       = "AuthAccept";
+
     public static final String API_CHANGED_NODE      = "ChangedNode";
     public static final String API_REQUEST_NODE      = "RequestNode";
     public static final String API_APPLY_NODE        = "ApplyNode";
