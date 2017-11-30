@@ -455,8 +455,7 @@ public abstract class LinStor
             return;
         }
 
-        try {
-            JarFile jarFile = new JarFile(jarPath.toFile());
+        try (JarFile jarFile = new JarFile(jarPath.toFile())) {
             Enumeration<JarEntry> e = jarFile.entries();
 
             while(e.hasMoreElements())
