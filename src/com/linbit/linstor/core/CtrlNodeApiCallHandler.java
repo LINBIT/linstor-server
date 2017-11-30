@@ -439,8 +439,8 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     "Node '%s' was not deleted because it does not exist.",
                     nodeNameStr
                 );
-                entry.setMessageFormat("Deletion of node '%s' had no effect.");
-                entry.setCauseFormat("Node '%s' does not exist.");
+                entry.setMessageFormat("Deletion of node '" + currentNodeName.get() + "' had no effect.");
+                entry.setCauseFormat("Node '" + currentNodeName.get() + "' does not exist.");
                 entry.putObjRef(KEY_NODE, nodeNameStr);
                 entry.putVariable(KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
