@@ -40,14 +40,21 @@ import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Properties;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import org.slf4j.event.Level;
 
 /**
@@ -279,6 +286,51 @@ public abstract class LinStor
     }
 
     /**
+     * Returns classpath entries expanded and absolute.
+     *
+     * @param classpath to expand entries from
+     * @return List of classpath entries
+     */
+    public static List<String> expandClassPath(String classpath)
+    {
+        final ArrayList<String> paths = new ArrayList<>();
+        for(String sp : classpath.split(File.pathSeparator))
+        {
+            Path p = Paths.get(sp);
+            // make path absolute
+            if(!p.isAbsolute())
+            {
+                p = p.toAbsolutePath();
+            }
+
+            // check if path contains wildcard
+            // java classpath wildcards are no standard and to current knowledge limited to '*'
+            if(p.toString().contains("*"))
+            {
+                if(p.getFileName().toString().equals("*"))
+                {
+                    String glob = "glob:" + p.getFileName();
+                    final PathMatcher matcher = FileSystems.getDefault().getPathMatcher(glob);
+                    for(File file : p.getParent().toFile().listFiles())
+                    {
+                        if(matcher.matches(file.toPath().getFileName())
+                                && (file.toString().endsWith(".jar") || file.toString().endsWith(".JAR")))
+                        {
+                            paths.add(file.toString());
+                        }
+                    }
+                }
+            }
+            else
+            {
+                paths.add(p.toString());
+            }
+        }
+
+        return paths;
+    }
+
+    /**
      * Loads implementations of the {@link ApiCall} from the package
      * where {@link BaseApiCall} is currently placed + ".common"
      * and stores them into msgProc.
@@ -291,6 +343,8 @@ public abstract class LinStor
      *
      * @param msgProc
      * @param componentRef
+     * @param coreService
+     * @param apiType
      */
     protected static void loadApiCalls(
         final CommonMessageProcessor msgProc,
@@ -322,50 +376,133 @@ public abstract class LinStor
             };
         }
 
-        final Path basePath = Paths.get("bin").toAbsolutePath();
-
-        for (final String pkgToLoad : pkgsToload)
+        List<String> loadPaths = expandClassPath(System.getProperty("java.class.path"));
+        for(String loadPath : loadPaths)
         {
-            Path pkgPath = Paths.get(pkgToLoad.replaceAll("\\.", File.separator));
-            pkgPath = basePath.resolve(pkgPath);
+            final Path basePath = Paths.get(loadPath);
 
-            if (!pkgPath.toFile().exists())
+            if(Files.isDirectory(basePath))
             {
-                componentRef.errorLog.logWarning(
-                    "Package '%s' does not exist - skipping dynamic load of ApiCalls",
-                    pkgToLoad
-                );
-            }
-            else
-            try
-            {
-                Files.walkFileTree(basePath.resolve(pkgPath), new SimpleFileVisitor<Path>()
+                for (final String pkgToLoad : pkgsToload)
                 {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+                    Path pkgPath = Paths.get(pkgToLoad.replaceAll("\\.", File.separator));
+                    pkgPath = basePath.resolve(pkgPath);
+
+                    if (!pkgPath.toFile().exists())
                     {
-                        loadClass(msgProc, componentRef, coreService, cl, basePath, pkgToLoad, file, apiType);
-                        return FileVisitResult.CONTINUE;
+                        componentRef.errorLog.logWarning(
+                            "Package '%s' does not exist - skipping dynamic load of ApiCalls",
+                            pkgToLoad
+                        );
                     }
-                });
+                    else
+                    try
+                    {
+                        Files.walkFileTree(basePath.resolve(pkgPath), new SimpleFileVisitor<Path>()
+                        {
+                            @Override
+                            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+                            {
+                                loadClassFromFile(msgProc, componentRef, coreService, cl, basePath, pkgToLoad, file, apiType);
+                                return FileVisitResult.CONTINUE;
+                            }
+                        });
+                    }
+                    catch (IOException ioExc)
+                    {
+                        componentRef.errorLog.reportError(
+                            new LinStorException(
+                                "Failed to load classes from " + pkgPath,
+                                "See cause for more details",
+                                ioExc.getLocalizedMessage(),
+                                null,
+                                null,
+                                ioExc
+                            )
+                        );
+                    }
+                }
             }
-            catch (IOException ioExc)
+            else // must be a jar file
             {
-                componentRef.errorLog.reportError(
-                    new LinStorException(
-                        "Failed to load classes from " + pkgPath,
-                        "See cause for more details",
-                        ioExc.getLocalizedMessage(),
-                        null,
-                        null,
-                        ioExc
-                    )
-                );
+                loadApiCallsFromJar(msgProc, componentRef, coreService, cl, apiType, basePath, pkgsToload);
             }
         }
     }
 
-    private static void loadClass(
+    /**
+     * Load api calls from the given jar file.
+     * @param msgProc
+     * @param componentRef
+     * @param coreService
+     * @param cl
+     * @param apiType
+     * @param jarPath
+     * @param pkgsToload
+     */
+    private static void loadApiCallsFromJar(
+        final CommonMessageProcessor msgProc,
+        final LinStor componentRef,
+        final CoreServices coreService,
+        final ClassLoader cl,
+        final ApiType apiType,
+        final Path jarPath,
+        final String[] pkgsToload
+    )
+    {
+        if(!jarPath.toString().toLowerCase().endsWith(".jar"))
+        {
+            return;
+        }
+
+        try {
+            JarFile jarFile = new JarFile(jarPath.toFile());
+            Enumeration<JarEntry> e = jarFile.entries();
+
+            while(e.hasMoreElements())
+            {
+                JarEntry je = e.nextElement();
+
+                for (final String pkgToLoad : pkgsToload)
+                {
+                    Path pkgPath = Paths.get(pkgToLoad.replaceAll("\\.", File.separator));
+
+                    if(je.getName().startsWith(pkgPath.toString()) && je.getName().endsWith(".class"))
+                    {
+                        String fullQualifiedClassName = je.getName().replaceAll(File.separator, ".");
+                        fullQualifiedClassName = fullQualifiedClassName.substring(0, fullQualifiedClassName.lastIndexOf(".")); // cut the ".class"
+                        loadClass(msgProc, componentRef, coreService, cl, pkgToLoad, fullQualifiedClassName, apiType);
+                    }
+                }
+            }
+        }
+        catch (IOException ioExc)
+        {
+            componentRef.errorLog.reportError(
+                new LinStorException(
+                    "Failed to load classes from " + jarPath,
+                    "See cause for more details",
+                    ioExc.getLocalizedMessage(),
+                    null,
+                    null,
+                    ioExc
+                )
+            );
+        }
+    }
+
+    /**
+     * Load the given class file.
+     * @param msgProc
+     * @param componentRef
+     * @param coreService
+     * @param cl
+     * @param basePath
+     * @param pkgToLoad
+     * @param file
+     * @param apiType
+     */
+    private static void loadClassFromFile(
         final CommonMessageProcessor msgProc,
         final LinStor componentRef,
         final CoreServices coreService,
@@ -384,56 +521,122 @@ public abstract class LinStor
             }
             String fullQualifiedClassName = file.toString().replaceAll(File.separator, ".");
             fullQualifiedClassName = fullQualifiedClassName.substring(0, fullQualifiedClassName.lastIndexOf(".")); // cut the ".class"
-            Class<?> clazz = null;
-            try
+            loadClass(msgProc, componentRef, coreService, cl, pkgToLoad, fullQualifiedClassName, apiType);
+        }
+    }
+
+    /**
+     * Load and check the given fullQualifiedClassName.
+     * If all signature tests are passed the loaded class will be added to the msgProc apicalls
+     *
+     * @param msgProc
+     * @param componentRef
+     * @param coreService
+     * @param cl
+     * @param pkgToLoad
+     * @param fullQualifiedClassName
+     * @param apiType
+     */
+    private static void loadClass(
+        final CommonMessageProcessor msgProc,
+        final LinStor componentRef,
+        final CoreServices coreService,
+        final ClassLoader cl,
+        final String pkgToLoad,
+        final String fullQualifiedClassName,
+        final ApiType apiType
+    )
+    {
+        Class<?> clazz = null;
+        try
+        {
+            clazz = cl.loadClass(fullQualifiedClassName);
+        }
+        catch (ClassNotFoundException e)
+        {
+            componentRef.errorLog.reportProblem(Level.DEBUG,
+                new LinStorException(
+                    "Dynamic loading of API classes threw ClassNotFoundException",
+                    String.format(
+                        "Loading the class '%s' resulted in a ClassNotFoundException",
+                        fullQualifiedClassName),
+                    String.format(
+                        "While loading all classes from package '%s', the class '%s' could not be laoded",
+                        pkgToLoad,
+                        fullQualifiedClassName),
+                    null,
+                    null,
+                    e),
+                null, // accCtx
+                null, // client
+                null  // contextInfo
+            );
+        }
+
+        if (clazz != null && clazz.getAnnotation(apiType.getRequiredAnnotation()) != null)
+        {
+            if (Modifier.isAbstract(clazz.getModifiers()))
             {
-                clazz = cl.loadClass(fullQualifiedClassName);
-            }
-            catch (ClassNotFoundException e)
-            {
-                componentRef.errorLog.reportProblem(Level.DEBUG,
+                String message = String.format(
+                    "Skipping dynamic loading of api class '%s' as it is abstract",
+                    fullQualifiedClassName
+                );
+                componentRef.errorLog.reportError(
                     new LinStorException(
-                        "Dynamic loading of API classes threw ClassNotFoundException",
-                        String.format(
-                            "Loading the class '%s' resulted in a ClassNotFoundException",
-                            fullQualifiedClassName),
-                        String.format(
-                            "While loading all classes from package '%s', the class '%s' could not be laoded",
-                            pkgToLoad,
-                            fullQualifiedClassName),
+                        message,
+                        message,
+                        "Cannot instantiate abstract class",
+                        "Make the class instantiable or move the class from the api package",
+                        null
+                    )
+                );
+
+            }
+            else
+            if (!ApiCall.class.isAssignableFrom(clazz))
+            {
+                String message = String.format(
+                    "Skipping dynamic loading of api class '%s' as it does not implement ApiCall",
+                    fullQualifiedClassName
+                );
+                componentRef.errorLog.reportError(
+                    new LinStorException(
+                        message,
+                        message,
                         null,
-                        null,
-                        e),
-                    null, // accCtx
-                    null, // client
-                    null  // contextInfo
+                        "Let the class implement ApiCall or move the class from the api package",
+                        null
+                    )
                 );
             }
-
-            if (clazz != null && clazz.getAnnotation(apiType.getRequiredAnnotation()) != null)
+            else
             {
-                if (Modifier.isAbstract(clazz.getModifiers()))
+                Constructor<?>[] declaredConstructors = clazz.getDeclaredConstructors();
+                Constructor<?> ctor = null;
+                for (Constructor<?> declaredConstructor : declaredConstructors)
                 {
-                    String message = String.format(
-                        "Skipping dynamic loading of api class '%s' as it is abstract",
-                        fullQualifiedClassName
-                    );
-                    componentRef.errorLog.reportError(
-                        new LinStorException(
-                            message,
-                            message,
-                            "Cannot instantiate abstract class",
-                            "Make the class instantiable or move the class from the api package",
-                            null
-                        )
-                    );
+                    Class<?>[] parameterTypes = declaredConstructor.getParameterTypes();
 
+                    if (Modifier.isPublic(declaredConstructor.getModifiers()))
+                    {
+                        if ((parameterTypes.length == 2 &&
+                            parameterTypes[0].isAssignableFrom(componentRef.getClass()) &&
+                            parameterTypes[1].isAssignableFrom(CoreServices.class)) ||
+
+                            parameterTypes.length == 1 &&
+                            parameterTypes[0].isAssignableFrom(componentRef.getClass()) ||
+
+                            parameterTypes.length == 0)
+                        {
+                            ctor = declaredConstructor;
+                            break;
+                        }
+                    }
                 }
-                else
-                if (!ApiCall.class.isAssignableFrom(clazz))
+                if (ctor == null)
                 {
                     String message = String.format(
-                        "Skipping dynamic loading of api class '%s' as it does not implement ApiCall",
+                        "Skipping dynamic loading of api class '%s' as it does not contain the expected constructor",
                         fullQualifiedClassName
                     );
                     componentRef.errorLog.reportError(
@@ -441,117 +644,76 @@ public abstract class LinStor
                             message,
                             message,
                             null,
-                            "Let the class implement ApiCall or move the class from the api package",
+                            String.format(
+                                "Create a public constructor with the parameters %s and %s",
+                                componentRef.getClass().getName(),
+                                CoreServices.class.getName()
+                            ),
                             null
                         )
                     );
                 }
                 else
                 {
-                    Constructor<?>[] declaredConstructors = clazz.getDeclaredConstructors();
-                    Constructor<?> ctor = null;
-                    for (Constructor<?> declaredConstructor : declaredConstructors)
+                    Object instance = null;
+                    try
                     {
-                        Class<?>[] parameterTypes = declaredConstructor.getParameterTypes();
-
-                        if (Modifier.isPublic(declaredConstructor.getModifiers()))
+                        if (ctor.getParameterCount() == 2)
                         {
-                            if ((parameterTypes.length == 2 &&
-                                parameterTypes[0].isAssignableFrom(componentRef.getClass()) &&
-                                parameterTypes[1].isAssignableFrom(CoreServices.class)) ||
-
-                                parameterTypes.length == 1 &&
-                                parameterTypes[0].isAssignableFrom(componentRef.getClass()) ||
-
-                                parameterTypes.length == 0)
-                            {
-                                ctor = declaredConstructor;
-                                break;
-                            }
+                            instance = ctor.newInstance(componentRef, coreService);
+                        }
+                        else if (ctor.getParameterCount() == 1)
+                        {
+                            instance = ctor.newInstance(componentRef);
+                        }
+                        else if (ctor.getParameterCount() == 0)
+                        {
+                            instance = ctor.newInstance();
+                        }
+                        else
+                        {
+                            componentRef.errorLog.reportError(
+                                new ImplementationError("Unexpected API class constructor", null)
+                            );
                         }
                     }
-                    if (ctor == null)
+                    catch (
+                        InstantiationException | IllegalAccessException |
+                        IllegalArgumentException | InvocationTargetException exc
+                    )
                     {
                         String message = String.format(
-                            "Skipping dynamic loading of api class '%s' as it does not contain the expected constructor",
+                            "Creating new instance of %s failed. See cause for more details",
                             fullQualifiedClassName
                         );
                         componentRef.errorLog.reportError(
                             new LinStorException(
                                 message,
                                 message,
+                                exc.getLocalizedMessage(),
                                 null,
-                                String.format(
-                                    "Create a public constructor with the parameters %s and %s",
-                                    componentRef.getClass().getName(),
-                                    CoreServices.class.getName()
-                                ),
-                                null
+                                null,
+                                exc
                             )
                         );
                     }
-                    else
+                    if (instance != null)
                     {
-                        Object instance = null;
                         try
                         {
-                            if (ctor.getParameterCount() == 2)
-                            {
-                                instance = ctor.newInstance(componentRef, coreService);
-                            }
-                            else if (ctor.getParameterCount() == 1)
-                            {
-                                instance = ctor.newInstance(componentRef);
-                            }
-                            else if (ctor.getParameterCount() == 0)
-                            {
-                                instance = ctor.newInstance();
-                            }
-                            else
-                            {
-                                componentRef.errorLog.reportError(
-                                    new ImplementationError("Unexpected API class constructor", null)
-                                );
-                            }
+                            ApiCall baseInstance = (ApiCall) instance;
+                            msgProc.addApiCall(baseInstance);
+                            componentRef.errorLog.logTrace("Loaded API class: " + fullQualifiedClassName);
                         }
-                        catch (
-                            InstantiationException | IllegalAccessException |
-                            IllegalArgumentException | InvocationTargetException exc
-                        )
+                        catch (ClassCastException ccExc)
                         {
-                            String message = String.format(
-                                "Creating new instance of %s failed. See cause for more details",
-                                fullQualifiedClassName
-                            );
+                            // technically this should never occur
                             componentRef.errorLog.reportError(
-                                new LinStorException(
-                                    message,
-                                    message,
-                                    exc.getLocalizedMessage(),
-                                    null,
-                                    null,
-                                    exc
+                                new ImplementationError(
+                                    "Previous checks if dynamically loaded api class is castable failed",
+                                    ccExc
                                 )
                             );
-                        }
-                        if (instance != null)
-                        {
-                            try
-                            {
-                                ApiCall baseInstance = (ApiCall) instance;
-                                msgProc.addApiCall(baseInstance);
-                                componentRef.errorLog.logTrace("Loaded API class: " + fullQualifiedClassName);
-                            }
-                            catch (ClassCastException ccExc)
-                            {
-                                // technically this should never occur
-                                componentRef.errorLog.reportError(
-                                    new ImplementationError(
-                                        "Previous checks if dynamically loaded api class is castable failed",
-                                        ccExc
-                                    )
-                                );
-                            }
                         }
                     }
                 }
