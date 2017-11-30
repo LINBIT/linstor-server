@@ -12,6 +12,6 @@ public interface StltUpdateTracker
     void updateNode(UUID nodeUuid, NodeName name);
     void updateResourceDfn(UUID rscDfnUuid, ResourceName name);
     void updateResource(ResourceName rscName, Map<NodeName, UUID> updNodeSet);
-    void updateStorPool(UUID storPoolUuid, StorPoolName name);
+    void updateStorPool(UUID storPoolUuid, StorPoolName storPoolName);
     void checkResource(UUID rscUuid, ResourceName name);
 }

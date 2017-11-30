@@ -765,7 +765,7 @@ class CtrlStorPoolApiCallHandler
         return apiCallRc;
     }
 
-    public void respondStorPool(String storPoolNameStr, UUID storPoolUuid, int msgId, Peer satellitePeer)
+    public void respondStorPool(int msgId, Peer satellitePeer, UUID storPoolUuid, String storPoolNameStr)
     {
         try
         {

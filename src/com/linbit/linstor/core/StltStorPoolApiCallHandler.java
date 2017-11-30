@@ -1,6 +1,8 @@
 package com.linbit.linstor.core;
 
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -71,18 +73,22 @@ public class StltStorPoolApiCallHandler
                     storPoolRaw.getDriver(),
                     transMgr
                 );
-
-                if (storPoolDfnToRegister != null)
-                {
-                    transMgr.commit();
-
-                    satellite.storPoolDfnMap.put(storPoolName, storPoolDfnToRegister);
-                    satellite.getErrorReporter().logInfo(
-                        "Storage pool '%s' successfully created.",
-                        storPoolName.displayValue
-                    );
-                }
             }
+
+            transMgr.commit();
+            satellite.getErrorReporter().logInfo(
+                "Storage pool '%s' successfully created.",
+                storPoolName.displayValue
+            );
+
+            if (storPoolDfnToRegister != null)
+            {
+                satellite.storPoolDfnMap.put(storPoolName, storPoolDfnToRegister);
+            }
+
+            Set<StorPoolName> storPoolSet = new HashSet<>();
+            storPoolSet.add(storPoolName);
+            satellite.getDeviceManager().storPoolUpdateApplied(storPoolSet);
         }
         catch (InvalidNameException invalidDataExc)
         {

@@ -67,11 +67,11 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
     }
 
     @Override
-    public void updateStorPool(UUID storPoolUuid, StorPoolName name)
+    public void updateStorPool(UUID storPoolUuid, StorPoolName storPoolName)
     {
         synchronized (sched)
         {
-            cachedUpdates.updStorPoolMap.put(name, storPoolUuid);
+            cachedUpdates.updStorPoolMap.put(storPoolName, storPoolUuid);
             sched.notify();
         }
     }
@@ -104,6 +104,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
                 }
             }
             // Collect all queued updates
+
             cachedUpdates.copyUpdateRequestsTo(updates);
             updates.chkRscMap.putAll(cachedUpdates.chkRscMap);
 

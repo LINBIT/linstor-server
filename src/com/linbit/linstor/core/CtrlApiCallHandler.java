@@ -822,13 +822,13 @@ public class CtrlApiCallHandler
      * satellite.
      * @param satellite required
      * @param msgId required
-     * @param storPoolName required
+     * @param storPoolNameStr required
      * @param storPoolUuid required (for double checking)
      */
     public void requestStorPool(
         Peer satellite,
         int msgId,
-        String storPoolName,
+        String storPoolNameStr,
         UUID storPoolUuid
     )
     {
@@ -837,7 +837,12 @@ public class CtrlApiCallHandler
             controller.nodesMapLock.readLock().lock();
             controller.storPoolDfnMapLock.readLock().lock();
 
-            storPoolApiCallHandler.respondStorPool(storPoolName, storPoolUuid, msgId, satellite);
+            storPoolApiCallHandler.respondStorPool(
+                msgId,
+                satellite,
+                storPoolUuid,
+                storPoolNameStr
+            );
         }
         finally
         {

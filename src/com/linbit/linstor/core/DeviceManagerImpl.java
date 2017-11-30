@@ -392,9 +392,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         for (Entry<StorPoolName, UUID> entry : updStorPoolMap.entrySet())
         {
             apiCallHandler.requestStorPoolUpdate(
-                 entry.getValue(),
-                 entry.getKey()
-             );
+                entry.getValue(),
+                entry.getKey()
+            );
         }
     }
 
