@@ -54,7 +54,7 @@ public class ReconnectorTask implements Task
         for (int idx = 0; idx < localList.size(); ++idx)
         {
             final Peer peer = localList.get(idx);
-            if (peer.isConnected())
+            if (peer.isConnected(false))
             {
                 controller.getErrorReporter().logTrace(
                     "Peer " + peer.getId() + " has connected. Removed from reconnectList, added to pingList."

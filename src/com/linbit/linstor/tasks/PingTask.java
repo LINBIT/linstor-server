@@ -39,7 +39,7 @@ public class PingTask implements Task
             final long lastPingReceived = peer.getLastPongReceived();
             final long lastPingSent = peer.getLastPingSent();
             boolean reconnect = false;
-            if (!peer.isConnected() || lastPingReceived + PING_TIMEOUT < lastPingSent)
+            if (!peer.isConnected(false) || lastPingReceived + PING_TIMEOUT < lastPingSent)
             {
                 reconnect = true;
             }

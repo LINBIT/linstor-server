@@ -1367,7 +1367,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                         );
                         node.setPeer(connectorCtx, peer);
                     }
-                    if (peer.isConnected())
+                    if (peer.isConnected(false))
                     {
                         apiCallHandler.completeSatelliteAuthentication(peer);
                         pingTask.add(peer);
