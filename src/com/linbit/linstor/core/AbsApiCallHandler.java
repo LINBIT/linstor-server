@@ -146,13 +146,12 @@ abstract class AbsApiCallHandler implements AutoCloseable
         currentApiCallRc.get().addEntry(entry);
     }
 
-
     protected final void handleAccDeniedExc(Exception exc, String action, long retCode)
     {
         AccessContext accCtx = currentAccCtx.get();
         report(
             exc,
-            String.format("The access context (user: '%s', role: '%s') has no permission to %s.",
+            String.format("Identity '%s' using role: '%s' is not authorized to %s.",
                 accCtx.subjectId.name.displayValue,
                 accCtx.subjectRole.name.displayValue,
                 action

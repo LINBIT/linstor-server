@@ -171,10 +171,11 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     controller.nodesMap.put(nodeName, node);
 
                     String successMessage = String.format(
-                        "Node '%s' successfully created.",
+                        "New node '%s' created.",
                         nodeNameStr
                     );
-                    addAnswer(successMessage, RC_NODE_CREATED);
+                    String detailsMessage = "Node '" + nodeNameStr + "' UUID is " + node.getUuid();
+                    addAnswer(successMessage, null, detailsMessage, null, RC_NODE_CREATED);
                     controller.getErrorReporter().logInfo(successMessage);
 
                     if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
@@ -184,8 +185,6 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 }
             }
         }
-
-
         catch (ApiCallHandlerFailedException ignore)
         {
             // a report and a corresponding api-response already created. nothing to do here
@@ -194,7 +193,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             report(
                 exc,
-                "Node could not be created due to an unknown exception.",
+                "Creation of a node object failed due to an unhandled exception.",
                 RC_NODE_CRT_FAIL_UNKNOWN_ERROR
             );
         }
@@ -215,7 +214,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 {
                     String errorMessage = String.format(
                         "A database error occured while trying to rollback the creation of " +
-                            "node '%s'.",
+                        "node '%s'.",
                         nodeNameStr
                     );
                     controller.getErrorReporter().reportError(
@@ -272,13 +271,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                         String dfltConSvc = controller.ctrlConf.getProp(serviceType);
                         if (dfltConSvc == null)
                         {
+                            // TODO: Add correction instructions for adding a default TCP connector
                             controller.getErrorReporter().reportError(
                                 new LinStorException(
                                     "The controller has no default " + type.toLowerCase() + " tcp connector "
                                 ),
                                 accCtx,
                                 client,
-                                "Controller tried to establish connection to other node, but default tcp connector is missing"
+                                "The controller cannot connect to satellite nodes because no " +
+                                "default TCP connector is defined"
                             );
                         }
                         ServiceName dfltConSvcName = new ServiceName(dfltConSvc);
@@ -292,8 +293,8 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 catch (InvalidNameException invalidNameExc)
                 {
                     controller.getErrorReporter().reportError(
-                        new ImplementationError(
-                            "Default tcp connector peer has not a valid ServiceName",
+                        new LinStorException(
+                            "The ServiceName of the default TCP connector is not valid",
                             invalidNameExc
                         )
                     );
@@ -302,7 +303,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 {
                     controller.getErrorReporter().reportError(
                         new ImplementationError(
-                            "Hardcoded props key threw InvalidKeyException",
+                            "A constant for a PropsContainer key generated an InvalidKeyException",
                             invalidKeyExc
                         )
                     );
@@ -318,7 +319,8 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             controller.getErrorReporter().reportError(
                 new LinStorException(
-                    "An already validated access suddenly has no more access", exc
+                    "Access to an object protected by access controls was revoked while a " +
+                    "controller<->satellite connect operation was in progress.", exc
                 )
             );
         }
@@ -361,32 +363,37 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     rsc.setConnection(transMgr);
                     rsc.markDeleted(apiCtx); // sqlExc3, accDeniedExc4
                 }
-                storPoolIterator = nodeData.iterateStorPools(apiCtx); // accDeniedExc5
-                while (storPoolIterator.hasNext())
+                if (!hasRsc)
                 {
-                    StorPool storPool = storPoolIterator.next();
-                    if (storPool.getVolumes(apiCtx).isEmpty())
+                    // If the node has no resources, then there should not be any volumes referenced
+                    // by the storage pool -- double check
+                    storPoolIterator = nodeData.iterateStorPools(apiCtx); // accDeniedExc5
+                    while (storPoolIterator.hasNext())
                     {
-                        storPool.setConnection(transMgr);
-                        storPool.delete(apiCtx);
-                    }
-                    else
-                    {
-                        success = false;
-                        ApiCallRcEntry entry = new ApiCallRcEntry();
-                        entry.setReturnCode(RC_NODE_DEL_FAIL_EXISTS_VLM);
-                        String errorMessage = String.format(
-                            "Node '%s' cannot be deleted as it still hase volumes deployed " +
-                                "on storage pool '%s'.",
-                            nodeNameStr,
-                            storPool.getName().displayValue
-                        );
-                        entry.setMessageFormat(errorMessage);
-                        entry.putObjRef(KEY_NODE, nodeNameStr);
-                        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                        entry.putVariable(KEY_STOR_POOL_NAME, storPool.getName().displayValue);
-                        apiCallRc.addEntry(entry);
-                        controller.getErrorReporter().logInfo(errorMessage);
+                        StorPool storPool = storPoolIterator.next();
+                        if (storPool.getVolumes(apiCtx).isEmpty())
+                        {
+                            storPool.setConnection(transMgr);
+                            storPool.delete(apiCtx);
+                        }
+                        else
+                        {
+                            success = false;
+                            ApiCallRcEntry entry = new ApiCallRcEntry();
+                            entry.setReturnCode(RC_NODE_DEL_FAIL_EXISTS_VLM);
+                            String errorMessage = String.format(
+                                "Deletion of node '%s' failed because the storage pool '%s' references volumes " +
+                                "on this node, although the node does not reference any resources",
+                                nodeNameStr,
+                                storPool.getName().displayValue
+                            );
+                            entry.setMessageFormat(errorMessage);
+                            entry.putObjRef(KEY_NODE, nodeNameStr);
+                            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+                            entry.putVariable(KEY_STOR_POOL_NAME, storPool.getName().displayValue);
+                            apiCallRc.addEntry(entry);
+                            controller.getErrorReporter().logInfo(errorMessage);
+                        }
                     }
                 }
 
@@ -399,7 +406,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                         nodeData.markDeleted(accCtx); // sqlExc4, accDeniedExc6
                         entry.setReturnCodeBit(RC_NODE_DELETED);
                         successMessage = String.format(
-                            "Node '%s' marked to be deleted.",
+                            "Node '%s' marked for deletion.",
                             nodeNameStr
                         );
                     }
@@ -429,10 +436,11 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(RC_NODE_DEL_NOT_FOUND);
                 String notFoundMessage = String.format(
-                    "Node '%s' was not deleted as it was not found",
+                    "Node '%s' was not deleted because it does not exist.",
                     nodeNameStr
                 );
-                entry.setMessageFormat(notFoundMessage);
+                entry.setMessageFormat("Deletion of node '%s' had no effect.");
+                entry.setCauseFormat("Node '%s' does not exist.");
                 entry.putObjRef(KEY_NODE, nodeNameStr);
                 entry.putVariable(KEY_NODE_NAME, nodeNameStr);
                 apiCallRc.addEntry(entry);
@@ -488,23 +496,29 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             String errorMessage;
+            String causeMessage = null;
+            String detailsMessage = null;
             Throwable exc;
             if (rscIterator == null)
-            { // handle accDeniedExc1 && accDeniedExc2 && accDeniedExc3
-                errorMessage = String.format(
-                    "The access context (user: '%s', role: '%s') has no permission to " +
-                        "delete the node '%s'.",
+            {
+                // handle accDeniedExc1 && accDeniedExc2 && accDeniedExc3
+                errorMessage = "Deletion of node '" + nodeNameStr + "' failed.";
+                causeMessage = String.format(
+                    "Identity '%s' using role '%s' is not authorized to delete node '%s'.",
                     accCtx.subjectId.name.displayValue,
                     accCtx.subjectRole.name.displayValue,
                     nodeNameStr
                 );
+                causeMessage += "\n";
+                causeMessage += accDeniedExc.getMessage();
                 exc = accDeniedExc;
             }
             else
-            { // handle accDeniedExc4 && accDeniedExc5
+            {
+                // handle accDeniedExc4 && accDeniedExc5
                 errorMessage = String.format(
                     "The resources deployed on node '%s' could not be marked for "+
-                        "deletion due to an implementation error.",
+                    "deletion due to an implementation error.",
                     nodeNameStr
                 );
                 exc = new ImplementationError(
@@ -590,7 +604,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 {
                     String errorMessage = String.format(
                         "A database error occured while trying to rollback the deletion of " +
-                            "node '%s'.",
+                        "node '%s'.",
                         nodeNameStr
                     );
                     controller.getErrorReporter().reportError(
@@ -630,7 +644,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             {
                 handleAccDeniedExc(
                     accDeniedExc,
-                    "create any node",
+                    "create node entries",
                     RC_NODE_CRT_FAIL_ACC_DENIED_NODE
                 );
             }
@@ -638,7 +652,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             {
                 handleAccDeniedExc(
                     accDeniedExc,
-                    "delete any node",
+                    "delete node entries",
                     RC_NODE_DEL_FAIL_ACC_DENIED_NODE
                 );
             }
@@ -692,7 +706,13 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             report(
                 illegalArgExc,
-                "The given node type '" + nodeTypeStr + "' is invalid.",
+                "The specified node type '" + nodeTypeStr + "' is invalid.",
+                null, null,
+                "Valid node types are:\n" +
+                NodeType.CONTROLLER.name() + "\n" +
+                NodeType.SATELLITE.name() + "\n" +
+                NodeType.COMBINED.name() + "\n" +
+                NodeType.AUXILIARY.name() + "\n",
                 RC_NODE_CRT_FAIL_INVLD_NODE_TYPE
             );
             throw new ApiCallHandlerFailedException();
@@ -727,10 +747,12 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             report(
                 dataAlreadyExistsExc,
-                String.format(
-                    "A node with the name '%s' already exists",
-                    nodeName.displayValue
-                ),
+                "Creation of node '" + nodeName.displayValue + "' failed.",
+                "A node with the specified name '" + nodeName.displayValue + "' already exists.",
+                null,
+                "- Specify another name for the new node\n" +
+                "or\n" +
+                "- Delete the existing node before creating a new node with the same name",
                 RC_NODE_CRT_FAIL_EXISTS_NODE
             );
             throw new ApiCallHandlerFailedException();
@@ -753,7 +775,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             report(
                 invalidNameExc,
-                "The given net interface name'" + netIfNameStr + "' is invalid.",
+                "The specified net interface name '" + netIfNameStr + "' is invalid.",
                 RC_NODE_CRT_FAIL_INVLD_NET_NAME
             );
             throw new ApiCallHandlerFailedException();
@@ -767,7 +789,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             report(
                 null,
-                "The IP address is missing",
+                "Node creation failed.",
+                "No IP address for the new node was specified",
+                null,
+                "At least one network interface with a valid IP address must be defined for the new node.",
                 RC_NODE_CRT_FAIL_INVLD_NET_ADDR
             );
             throw new ApiCallHandlerFailedException();
@@ -780,7 +805,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             report(
                 invalidIpExc,
-                "The IP address '" + ipAddrStr + "' is not valid.",
+                "Node creation failed.",
+                "The specified IP address is not valid",
+                "The specified input '" + ipAddrStr + "' is not a valid IP address.",
+                "Specify a valid IPv4 or IPv6 address.",
                 RC_NODE_CRT_FAIL_INVLD_NET_ADDR
             );
             throw new ApiCallHandlerFailedException();
@@ -792,14 +820,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         currentVariables.get().put(KEY_MISSING_NAMESPC, NAMESPC_NETIF);
         report(
             null,
+            "Creation of the node '%s' failed.",
             String.format(
-                "Node '%s' is missing the props-namespace '%s'.",
-                currentNodeName.get(),
+                "The path '%s' is not present in the properties specified for the node.\n" +
+                "The path contains mandatory parameters required for node creation.",
                 NAMESPC_NETIF
             ),
             null,
-            null,
-            "Example for creating a netinterface named 'netIfName0': \n" +
+            "Specify the mandatory parameters.\n" +
+            "Example for creating a netinterface named 'netIfName0':\n" +
                 NAMESPC_NETIF + "/netIfName0/" + KEY_IP_ADDR + " = 0.0.0.0\n" +
                 NAMESPC_NETIF + "/netIfName0/" + KEY_PORT_NR + " = " + DFLT_STLT_PORT_PLAIN + "\n" +
                 NAMESPC_NETIF + "/netIfName0/" + KEY_NETCOM_TYPE + " = " + VAL_NETCOM_TYPE_PLAIN + "\n" +
@@ -816,12 +845,14 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         report(
             null,
+            "Creation of the node '" + currentNodeName.get() + " failed.",
             String.format(
-                "The property '%s' for node '%s' for network interface '%s' is missing.",
+                "The mandatory property '%s' for network interface '%s' is unset.",
                 KEY_PORT_NR,
-                currentNodeName.get(),
                 netIfNameStr
             ),
+            null,
+            null,
             RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_PORT
         );
         throw new ApiCallHandlerFailedException();
@@ -831,12 +862,14 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         report(
             null,
+            "Creation of the node '" + currentNodeName.get() + " failed.",
             String.format(
-                "The property '%s' for node '%s' for network interface '%s' is missing.",
+                "The mandatory property '%s' for the network interface '%s' is unset.",
                 KEY_NETCOM_TYPE,
-                currentNodeName.get(),
                 netIfNameStr
             ),
+            null,
+            "The mandatory property must be set when requesting node creation.",
             RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_TYPE
         );
         throw new ApiCallHandlerFailedException();
@@ -852,7 +885,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             report(
                 numberFormatExc,
-                "The given port '" + portStr + "' for network interface '" + netIfNameStr + "' is invalid.",
+                "Node creation failed.",
+                "The specified TCP/IP port number is invalid",
+                "The input specified for the TCP/IP port number field was '" + portStr + "'.",
+                "A valid TCP/IP port number must be specified.",
                 RC_NODE_CRT_FAIL_INVLD_NET_PORT
             );
             throw new ApiCallHandlerFailedException();
@@ -881,8 +917,8 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             report(
                 illegalArgumentExc,
-                "The given network interface type '" + netIfTypeStr + "' for network interface '" +
-                    netIfNameStr + "' is invalid.",
+                "The specified network interface type '" + netIfTypeStr + "' for network interface '" +
+                netIfNameStr + "' is invalid.",
                 RC_NODE_CRT_FAIL_INVLD_NET_TYPE
             );
             throw new ApiCallHandlerFailedException();
@@ -913,16 +949,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             if (enabledStr != null && !enabledStr.trim().equals(""))
             {
                 addAnswer(
+                    "The node creation request for node '" + currentNodeName.get() + "' was modified automatically.",
+                    null,
                     String.format(
-                        "The property '%s' for node '%s' was '%s', which is invalid. The property defaults to '%s'.",
-                        KEY_NETCOM_ENABLED,
-                        currentNodeName.get(),
+                        "Invalid value '%s' for property '%s' was replaced by default value '%s'.",
                         enabledStr,
+                        KEY_NETCOM_ENABLED,
                         VAL_TRUE
                     ),
-                    null,
-                    null,
-                    null,
+                    "This problem was automatically resolved.",
                     RC_NODE_CRT_WARN_INVLD_OPT_PROP_NETCOM_ENABLED
                 );
                 // no throw
@@ -974,8 +1009,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             report(
                 dataAlreadyExistsExc,
-                "The node '" + node.getName() + "' already has a network interface with the name '" +
-                    netName + "'.",
+                "Creation of node '" + node.getName() + "' failed.",
+                "A duplicate network interface name was encountered during node creation.",
+                "The network interface name '" + netName + "' was specified for more than one network interface.",
+                "A name that is unique per node must be specified for each network interface.",
                 RC_NODE_CRT_FAIL_EXISTS_NET_IF
             );
             throw new ApiCallHandlerFailedException();
@@ -1004,8 +1041,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         report(
             null,
-            "No (enabled) network interface for linstor communication was specified for node " +
-                "'" + currentNodeName.get() + "'.",
+            "Creation of node '" + currentNodeName.get() + "' failed.",
+            "No enabled network interface for controller-satellite communication was specified.",
+            null,
+            "At least one network interface of the node must be enabled for controller-satellite communication.",
             RC_NODE_CRT_FAIL_MISSING_NETCOM
         );
     }
