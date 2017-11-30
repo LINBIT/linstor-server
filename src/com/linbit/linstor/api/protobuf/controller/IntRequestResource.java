@@ -14,11 +14,11 @@ import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObje
 import com.linbit.linstor.security.AccessContext;
 
 @ProtobufApiCall
-public class RequestResource extends BaseProtoApiCall
+public class IntRequestResource extends BaseProtoApiCall
 {
     private Controller controller;
 
-    public RequestResource(Controller controller)
+    public IntRequestResource(Controller controller)
     {
         super(controller.getErrorReporter());
         this.controller = controller;

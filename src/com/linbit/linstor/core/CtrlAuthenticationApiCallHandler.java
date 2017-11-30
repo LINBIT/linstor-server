@@ -28,7 +28,7 @@ public class CtrlAuthenticationApiCallHandler
             controller.getErrorReporter().logDebug("Sending authentication to satellite '" + peer.getNode().getName() + "'");
             Message msg = peer.createMessage();
             // TODO make the shared secret customizable
-            msg.setData(serializer.getAuthMessage(peer.getNode(), "Hello LinStor!".getBytes()));
+            msg.setData(serializer.getAuthMessage(peer.getNode(), "Hello, LinStor!".getBytes()));
             peer.sendMessage(msg);
         }
         catch (IllegalMessageStateException illegalMessageStateExc)

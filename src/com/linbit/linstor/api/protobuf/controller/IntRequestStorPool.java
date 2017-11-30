@@ -15,11 +15,11 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.utils.UuidUtils;
 
 @ProtobufApiCall
-public class RequestStorPool extends BaseProtoApiCall
+public class IntRequestStorPool extends BaseProtoApiCall
 {
     private Controller controller;
 
-    public RequestStorPool(Controller controller)
+    public IntRequestStorPool(Controller controller)
     {
         super(controller.getErrorReporter());
         this.controller = controller;
