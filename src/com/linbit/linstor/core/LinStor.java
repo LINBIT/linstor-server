@@ -388,14 +388,7 @@ public abstract class LinStor
                     Path pkgPath = Paths.get(pkgToLoad.replaceAll("\\.", File.separator));
                     pkgPath = basePath.resolve(pkgPath);
 
-                    if (!pkgPath.toFile().exists())
-                    {
-                        componentRef.errorLog.logWarning(
-                            "Package '%s' does not exist - skipping dynamic load of ApiCalls",
-                            pkgToLoad
-                        );
-                    }
-                    else
+                    if (pkgPath.toFile().exists())
                     try
                     {
                         Files.walkFileTree(basePath.resolve(pkgPath), new SimpleFileVisitor<Path>()
