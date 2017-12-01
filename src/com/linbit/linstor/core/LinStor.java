@@ -650,23 +650,20 @@ public abstract class LinStor
                     Object instance = null;
                     try
                     {
-                        if (ctor.getParameterCount() == 2)
-                        {
-                            instance = ctor.newInstance(componentRef, coreService);
-                        }
-                        else if (ctor.getParameterCount() == 1)
-                        {
-                            instance = ctor.newInstance(componentRef);
-                        }
-                        else if (ctor.getParameterCount() == 0)
-                        {
-                            instance = ctor.newInstance();
-                        }
-                        else
-                        {
-                            componentRef.errorLog.reportError(
-                                new ImplementationError("Unexpected API class constructor", null)
-                            );
+                        switch (ctor.getParameterTypes().length) {
+                            case 2:
+                                instance = ctor.newInstance(componentRef, coreService);
+                                break;
+                            case 1:
+                                instance = ctor.newInstance(componentRef);
+                                break;
+                            case 0:
+                                instance = ctor.newInstance();
+                                break;
+                            default:
+                                componentRef.errorLog.reportError(
+                                        new ImplementationError("Unexpected API class constructor", null)
+                                );  break;
                         }
                     }
                     catch (

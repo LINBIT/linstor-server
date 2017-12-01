@@ -317,11 +317,11 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
         if (this == sourceVolume)
         {
-            volumeConnections.remove(targetVolume, volumeConnection);
+            volumeConnections.remove(targetVolume);
         }
         else
         {
-            volumeConnections.remove(sourceVolume, volumeConnection);
+            volumeConnections.remove(sourceVolume);
         }
     }
 

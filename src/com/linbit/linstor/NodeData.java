@@ -300,11 +300,11 @@ public class NodeData extends BaseTransactionObject implements Node
 
         if (sourceNode == this)
         {
-            nodeConnections.remove(targetNode, nodeConnection);
+            nodeConnections.remove(targetNode);
         }
         else
         {
-            nodeConnections.remove(sourceNode, nodeConnection);
+            nodeConnections.remove(sourceNode);
         }
     }
 

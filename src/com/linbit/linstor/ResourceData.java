@@ -305,11 +305,11 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
         if (this == sourceResource)
         {
-            resourceConnections.remove(targetResource, con);
+            resourceConnections.remove(targetResource);
         }
         else
         {
-            resourceConnections.remove(sourceResource, con);
+            resourceConnections.remove(sourceResource);
         }
     }
 
