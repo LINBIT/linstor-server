@@ -31,7 +31,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "TCP/IP network communications service";
 
-    private static final Object syncObj = new Object();
+    private final Object syncObj = new Object();
 
     protected ServiceName serviceInstanceName;
 
