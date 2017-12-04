@@ -45,7 +45,7 @@ import com.linbit.linstor.api.pojo.RscPojo.VolumePojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-public class StltRscApiCallHandler
+class StltRscApiCallHandler
 {
     private final Satellite satellite;
     private final AccessContext apiCtx;

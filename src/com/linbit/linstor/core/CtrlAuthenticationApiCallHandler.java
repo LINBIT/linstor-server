@@ -8,7 +8,7 @@ import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 
-public class CtrlAuthenticationApiCallHandler
+class CtrlAuthenticationApiCallHandler
 {
     private Controller controller;
     private CtrlAuthSerializer serializer;

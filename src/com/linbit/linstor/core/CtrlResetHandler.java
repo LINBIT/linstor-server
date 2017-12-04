@@ -18,7 +18,7 @@ import com.linbit.linstor.security.Privilege;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public class CtrlResetHandler
+class CtrlResetHandler
 {
     public static void reset(Controller controller)
     {

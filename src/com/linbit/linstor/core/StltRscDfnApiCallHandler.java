@@ -2,7 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.security.AccessContext;
 
-public class StltRscDfnApiCallHandler
+class StltRscDfnApiCallHandler
 {
     private Satellite satelliteRef;
     private AccessContext apiCtx;

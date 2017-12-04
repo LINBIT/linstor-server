@@ -4,7 +4,7 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.api.interfaces.serializer.StltRequestSerializer;
 import com.linbit.linstor.security.AccessContext;
 
-public class StltNodeApiCallHandler
+class StltNodeApiCallHandler
 {
     private Satellite satellite;
     private AccessContext apiCtx;

@@ -38,7 +38,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 
-public class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
+class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 {
     private CtrlSerializer<Resource> rscSerializer;
 

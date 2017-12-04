@@ -18,7 +18,7 @@ import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-public class StltStorPoolApiCallHandler
+class StltStorPoolApiCallHandler
 {
     private final Satellite satellite;
     private final AccessContext apiCtx;
