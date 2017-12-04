@@ -481,6 +481,8 @@ public class NodeData extends BaseTransactionObject implements Node
     @Override
     public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
         getFlags().enableFlags(accCtx, NodeFlag.DELETE);
     }
 
