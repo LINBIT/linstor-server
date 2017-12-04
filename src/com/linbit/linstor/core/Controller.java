@@ -1402,7 +1402,12 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 }
             }
         };
-        workerThrPool.submit(connectRunnable);
+        // This could possibly be offloaded to some specialized worker pool in the future,
+        // but not to the main worker pool used for submitting inbound requests,
+        // because submitting to the main worker pool from the Controller's initialization
+        // routines or from another task that already runs on the main worker pool
+        // can potentially deadlock if the worker pool's queue is full
+        connectRunnable.run();
     }
 
     /**
