@@ -808,7 +808,7 @@ class CtrlRscApiCallHandler
                     apiCallRc.addEntry(entry);
                 }
             }
-            controller.dbConnPool.returnConnection(transMgr.dbCon);
+            controller.dbConnPool.returnConnection(transMgr);
         }
         return apiCallRc;
     }
@@ -1269,7 +1269,7 @@ class CtrlRscApiCallHandler
                     apiCallRc.addEntry(entry);
                 }
             }
-            controller.dbConnPool.returnConnection(transMgr.dbCon);
+            controller.dbConnPool.returnConnection(transMgr);
         }
 
         return apiCallRc;

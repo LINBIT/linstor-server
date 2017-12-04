@@ -339,7 +339,7 @@ class CtrlNodeConnectionApiCallHandler
                     apiCallRc.addEntry(entry);
                 }
             }
-            controller.dbConnPool.returnConnection(transMgr.dbCon);
+            controller.dbConnPool.returnConnection(transMgr);
         }
         return apiCallRc;
     }
@@ -686,7 +686,7 @@ class CtrlNodeConnectionApiCallHandler
                     apiCallRc.addEntry(entry);
                 }
             }
-            controller.dbConnPool.returnConnection(transMgr.dbCon);
+            controller.dbConnPool.returnConnection(transMgr);
         }
         return apiCallRc;
     }

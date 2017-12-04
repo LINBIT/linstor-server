@@ -137,6 +137,7 @@ public class DbConnectionPool implements ControllerDatabase
         if (transMgr != null)
         {
             returnConnection(transMgr.dbCon);
+            transMgr.clearTransactionObjects();
         }
     }
 

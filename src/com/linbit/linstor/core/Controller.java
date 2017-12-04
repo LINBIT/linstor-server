@@ -477,7 +477,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 {
                     if (transMgr != null)
                     {
-                        dbConnPool.returnConnection(transMgr.dbCon);
+                        dbConnPool.returnConnection(transMgr);
                     }
                 }
 
@@ -632,7 +632,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 }
                 if (dbConnPool != null)
                 {
-                    dbConnPool.returnConnection(transMgr.dbCon);
+                    dbConnPool.returnConnection(transMgr);
                 }
             }
         }

@@ -215,7 +215,7 @@ class CtrlStorPoolDfnApiCallHandler
                     apiCallRc.addEntry(entry);
                 }
             }
-            controller.dbConnPool.returnConnection(transMgr.dbCon);
+            controller.dbConnPool.returnConnection(transMgr);
         }
         return apiCallRc;
     }
@@ -426,7 +426,7 @@ class CtrlStorPoolDfnApiCallHandler
                     apiCallRc.addEntry(entry);
                 }
             }
-            controller.dbConnPool.returnConnection(transMgr.dbCon);
+            controller.dbConnPool.returnConnection(transMgr);
         }
         return apiCallRc;
     }
