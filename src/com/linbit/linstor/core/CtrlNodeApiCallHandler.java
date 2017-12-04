@@ -404,6 +404,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
                 if (success)
                 {
+                    NodeName delNodeName = nodeData.getName();
                     ApiCallRcEntry entry = new ApiCallRcEntry();
                     String successMessage;
                     if (hasRsc)
@@ -427,7 +428,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     transMgr.commit(); // sqlExc6
                     if (!hasRsc)
                     {
-                        controller.nodesMap.remove(nodeData.getName());
+                        controller.nodesMap.remove(delNodeName);
                     }
 
                     entry.setMessageFormat(successMessage);
