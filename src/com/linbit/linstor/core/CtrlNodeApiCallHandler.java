@@ -420,6 +420,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     }
 
                     transMgr.commit(); // sqlExc6
+                    if (!hasRsc)
+                    {
+                        controller.nodesMap.remove(nodeData.getName());
+                    }
 
                     entry.setMessageFormat(successMessage);
                     entry.putObjRef(KEY_NODE, nodeNameStr);
@@ -427,7 +431,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     apiCallRc.addEntry(entry);
                     controller.getErrorReporter().logInfo(successMessage);
 
-                    // TODO: tell satellites to remove all the corresponding resources
+                    // TODO: tell satellites to remove all the corresponding resources and storPools
                     // TODO: if satellites finished, cleanup the storPools and then remove the node from DB
                 }
             }

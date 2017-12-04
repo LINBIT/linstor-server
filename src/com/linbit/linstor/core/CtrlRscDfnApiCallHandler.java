@@ -561,7 +561,7 @@ class CtrlRscDfnApiCallHandler
 
                 // TODO: tell satellites to remove all the corresponding resources
                 // TODO: if satellites are finished (or no satellite had such a resource deployed)
-                //       remove the rscDfn from the DB
+                //       remove the rscDfn from the DB and from controller.rscDfnMap
                 controller.getErrorReporter().logInfo(
                     "Resource definition '%s' marked to be deleted",
                     rscNameStr

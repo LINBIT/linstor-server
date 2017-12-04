@@ -1009,6 +1009,8 @@ class CtrlVlmConnectionApiCallHandler
                             vlmConn.setConnection(transMgr);
                             vlmConn.delete(accCtx); // accDeniedExc9
 
+                            transMgr.commit();
+
                             ApiCallRcEntry successEntry = new ApiCallRcEntry();
                             successEntry.setReturnCodeBit(RC_VLM_CONN_DELETED);
                             String successMessage = String.format(

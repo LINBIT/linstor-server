@@ -702,6 +702,8 @@ class CtrlRscConnectionApiCallHandler
                         rscConn.setConnection(transMgr);
                         rscConn.delete(accCtx);
 
+                        transMgr.commit();
+
                         ApiCallRcEntry successEntry = new ApiCallRcEntry();
                         successEntry.setReturnCodeBit(RC_RSC_CONN_DELETED);
                         String successMessage = String.format(
