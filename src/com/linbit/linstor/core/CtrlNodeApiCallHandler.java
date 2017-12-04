@@ -503,33 +503,16 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             String causeMessage = null;
             String detailsMessage = null;
             Throwable exc;
-            if (rscIterator == null)
-            {
-                // handle accDeniedExc1 && accDeniedExc2 && accDeniedExc3
-                errorMessage = "Deletion of node '" + nodeNameStr + "' failed.";
-                causeMessage = String.format(
-                    "Identity '%s' using role '%s' is not authorized to delete node '%s'.",
-                    accCtx.subjectId.name.displayValue,
-                    accCtx.subjectRole.name.displayValue,
-                    nodeNameStr
-                );
-                causeMessage += "\n";
-                causeMessage += accDeniedExc.getMessage();
-                exc = accDeniedExc;
-            }
-            else
-            {
-                // handle accDeniedExc4 && accDeniedExc5
-                errorMessage = String.format(
-                    "The resources deployed on node '%s' could not be marked for "+
-                    "deletion due to an implementation error.",
-                    nodeNameStr
-                );
-                exc = new ImplementationError(
-                    "ApiContext does not haven sufficent permission to mark resources as deleted",
-                    accDeniedExc
-                );
-            }
+            errorMessage = "Deletion of node '" + nodeNameStr + "' failed.";
+            causeMessage = String.format(
+                "Identity '%s' using role '%s' is not authorized to delete node '%s'.",
+                accCtx.subjectId.name.displayValue,
+                accCtx.subjectRole.name.displayValue,
+                nodeNameStr
+            );
+            causeMessage += "\n";
+            causeMessage += accDeniedExc.getMessage();
+            exc = accDeniedExc;
             controller.getErrorReporter().reportError(
                 exc,
                 accCtx,
@@ -540,7 +523,8 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             ApiCallRcEntry entry = new ApiCallRcEntry();
             entry.setReturnCodeBit(RC_NODE_DEL_FAIL_ACC_DENIED_NODE);
             entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(accDeniedExc.getMessage());
+            entry.setCauseFormat(causeMessage);
+            entry.setDetailsFormat(detailsMessage);
             entry.putObjRef(KEY_NODE, nodeNameStr);
             entry.putVariable(KEY_NODE_NAME, nodeNameStr);
 
