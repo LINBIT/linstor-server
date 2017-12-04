@@ -180,7 +180,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
                     if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
                     {
-                        startConnecting(node, accCtx, client);
+                        startConnecting(node, accCtx, client, controller);
                     }
                 }
             }
@@ -238,7 +238,12 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
-    private void startConnecting(Node node, AccessContext accCtx, Peer client)
+    public static void startConnecting(
+        Node node,
+        AccessContext accCtx,
+        Peer client,
+        Controller controller
+    )
     {
         Props netIfProps;
         try
