@@ -377,50 +377,88 @@ public abstract class LinStor
         }
 
         List<String> loadPaths = expandClassPath(System.getProperty("java.class.path"));
+        int loadedClasses = 0;
         for(String loadPath : loadPaths)
         {
             final Path basePath = Paths.get(loadPath);
-
             if(Files.isDirectory(basePath))
             {
-                for (final String pkgToLoad : pkgsToload)
-                {
-                    Path pkgPath = Paths.get(pkgToLoad.replaceAll("\\.", File.separator));
-                    pkgPath = basePath.resolve(pkgPath);
-
-                    if (pkgPath.toFile().exists())
-                    try
-                    {
-                        Files.walkFileTree(basePath.resolve(pkgPath), new SimpleFileVisitor<Path>()
-                        {
-                            @Override
-                            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
-                            {
-                                loadClassFromFile(msgProc, componentRef, coreService, cl, basePath, pkgToLoad, file, apiType);
-                                return FileVisitResult.CONTINUE;
-                            }
-                        });
-                    }
-                    catch (IOException ioExc)
-                    {
-                        componentRef.errorLog.reportError(
-                            new LinStorException(
-                                "Failed to load classes from " + pkgPath,
-                                "See cause for more details",
-                                ioExc.getLocalizedMessage(),
-                                null,
-                                null,
-                                ioExc
-                            )
-                        );
-                    }
-                }
+                loadedClasses += loadApiCallsFromDirectory(msgProc, componentRef, coreService, cl, apiType, basePath, pkgsToload);
             }
             else // must be a jar file
             {
-                loadApiCallsFromJar(msgProc, componentRef, coreService, cl, apiType, basePath, pkgsToload);
+                loadedClasses += loadApiCallsFromJar(msgProc, componentRef, coreService, cl, apiType, basePath, pkgsToload);
             }
         }
+
+        if(loadedClasses == 0)
+        {
+            componentRef.errorLog.logWarning(
+                "No api classes were found in classpath."
+            );
+        }
+    }
+
+    /**
+     * Load api calls from the given directory path.
+     * @param msgProc
+     * @param componentRef
+     * @param coreService
+     * @param cl
+     * @param apiType
+     * @param directoryPath
+     * @param pkgsToload
+     */
+    private static int loadApiCallsFromDirectory(
+        final CommonMessageProcessor msgProc,
+        final LinStor componentRef,
+        final CoreServices coreService,
+        final ClassLoader cl,
+        final ApiType apiType,
+        final Path directoryPath,
+        final String[] pkgsToload
+    )
+    {
+        // this is an ugly hack to get a mutable counter
+        // all other ways to do this would result in exposing the static loadApiCalls methods
+        // to public and create wrapper classes for the FileVisitor
+        final int[] loadedClasses = {0};
+        for (final String pkgToLoad : pkgsToload)
+        {
+            Path pkgPath = Paths.get(pkgToLoad.replaceAll("\\.", File.separator));
+            pkgPath = directoryPath.resolve(pkgPath);
+
+            if (pkgPath.toFile().exists())
+            try
+            {
+                Files.walkFileTree(directoryPath.resolve(pkgPath), new SimpleFileVisitor<Path>()
+                {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+                    {
+                        if(loadClassFromFile(msgProc, componentRef, coreService, cl, directoryPath, pkgToLoad, file, apiType))
+                        {
+                            loadedClasses[0]++;
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            }
+            catch (IOException ioExc)
+            {
+                componentRef.errorLog.reportError(
+                    new LinStorException(
+                        "Failed to load classes from " + pkgPath,
+                        "See cause for more details",
+                        ioExc.getLocalizedMessage(),
+                        null,
+                        null,
+                        ioExc
+                    )
+                );
+            }
+        }
+        return loadedClasses[0];
     }
 
     /**
@@ -433,7 +471,7 @@ public abstract class LinStor
      * @param jarPath
      * @param pkgsToload
      */
-    private static void loadApiCallsFromJar(
+    private static int loadApiCallsFromJar(
         final CommonMessageProcessor msgProc,
         final LinStor componentRef,
         final CoreServices coreService,
@@ -443,9 +481,10 @@ public abstract class LinStor
         final String[] pkgsToload
     )
     {
+        int loadedClasses = 0;
         if(!jarPath.toString().toLowerCase().endsWith(".jar"))
         {
-            return;
+            return loadedClasses;
         }
 
         try (JarFile jarFile = new JarFile(jarPath.toFile())) {
@@ -463,7 +502,10 @@ public abstract class LinStor
                     {
                         String fullQualifiedClassName = je.getName().replaceAll(File.separator, ".");
                         fullQualifiedClassName = fullQualifiedClassName.substring(0, fullQualifiedClassName.lastIndexOf(".")); // cut the ".class"
-                        loadClass(msgProc, componentRef, coreService, cl, pkgToLoad, fullQualifiedClassName, apiType);
+                        if(loadClass(msgProc, componentRef, coreService, cl, pkgToLoad, fullQualifiedClassName, apiType))
+                        {
+                            loadedClasses++;
+                        }
                     }
                 }
             }
@@ -481,6 +523,8 @@ public abstract class LinStor
                 )
             );
         }
+
+        return loadedClasses;
     }
 
     /**
@@ -494,7 +538,7 @@ public abstract class LinStor
      * @param file
      * @param apiType
      */
-    private static void loadClassFromFile(
+    private static boolean loadClassFromFile(
         final CommonMessageProcessor msgProc,
         final LinStor componentRef,
         final CoreServices coreService,
@@ -513,8 +557,9 @@ public abstract class LinStor
             }
             String fullQualifiedClassName = file.toString().replaceAll(File.separator, ".");
             fullQualifiedClassName = fullQualifiedClassName.substring(0, fullQualifiedClassName.lastIndexOf(".")); // cut the ".class"
-            loadClass(msgProc, componentRef, coreService, cl, pkgToLoad, fullQualifiedClassName, apiType);
+            return loadClass(msgProc, componentRef, coreService, cl, pkgToLoad, fullQualifiedClassName, apiType);
         }
+        return false;
     }
 
     /**
@@ -528,8 +573,9 @@ public abstract class LinStor
      * @param pkgToLoad
      * @param fullQualifiedClassName
      * @param apiType
+     * @return true if class was loaded.
      */
-    private static void loadClass(
+    private static boolean loadClass(
         final CommonMessageProcessor msgProc,
         final LinStor componentRef,
         final CoreServices coreService,
@@ -539,6 +585,7 @@ public abstract class LinStor
         final ApiType apiType
     )
     {
+        boolean classLoaded = false;
         Class<?> clazz = null;
         try
         {
@@ -693,6 +740,7 @@ public abstract class LinStor
                             ApiCall baseInstance = (ApiCall) instance;
                             msgProc.addApiCall(baseInstance);
                             componentRef.errorLog.logTrace("Loaded API class: " + fullQualifiedClassName);
+                            classLoaded = true;
                         }
                         catch (ClassCastException ccExc)
                         {
@@ -708,6 +756,7 @@ public abstract class LinStor
                 }
             }
         }
+        return classLoaded;
     }
 
     public static void printStartupInfo()
