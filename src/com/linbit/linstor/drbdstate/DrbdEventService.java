@@ -53,7 +53,7 @@ public class DrbdEventService implements SystemService, Runnable
         try
         {
             instanceName = new ServiceName(INSTANCE_PREFIX + INSTANCE_COUNT.incrementAndGet());
-            eventDeque = new LinkedBlockingDeque<>();
+            eventDeque = new LinkedBlockingDeque<>(10_000);
             thread = new Thread(this, "DrbdEventService");
             demonHandler = new DaemonHandler(eventDeque, "drbdsetup", "events2", "all");
             startable = true;
