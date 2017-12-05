@@ -1,20 +1,33 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.Node;
 import java.util.Map;
 import java.util.UUID;
 
-public class NodePojo
+public class NodePojo implements Node.NodeApi
 {
     private final UUID nodeUuid;
     private final String nodeName;
+    private final String nodeType;
     private final long nodeFlags;
     private final Map<String, NetIfPojo> nodeNetInterfaces;
     private final Map<String, Map<String, String>> nodeConnProps;
     private final Map<String, String> nodeProps;
 
+    public NodePojo(String name, UUID uuid, String type) {
+        this.nodeName = name;
+        this.nodeUuid = uuid;
+        this.nodeType = type;
+        this.nodeFlags = 0;
+        this.nodeNetInterfaces = null;
+        this.nodeConnProps = null;
+        this.nodeProps = null;
+    }
+
     public NodePojo(
         UUID nodeUuid,
         String nodeName,
+        String nodeType,
         long nodeFlags,
         Map<String, NetIfPojo> nodeNetInterfaces,
         Map<String, Map<String, String>> nodeConnProps,
@@ -23,18 +36,26 @@ public class NodePojo
     {
         this.nodeUuid = nodeUuid;
         this.nodeName = nodeName;
+        this.nodeType = nodeType;
         this.nodeFlags = nodeFlags;
         this.nodeNetInterfaces = nodeNetInterfaces;
         this.nodeConnProps = nodeConnProps;
         this.nodeProps = nodeProps;
     }
 
-    public String getNodeName()
+    @Override
+    public String getName()
     {
         return nodeName;
     }
 
-    public UUID getNodeUuid()
+    @Override
+    public String getType() {
+        return nodeType;
+    }
+
+    @Override
+    public UUID getUuid()
     {
         return nodeUuid;
     }
@@ -54,7 +75,8 @@ public class NodePojo
         return nodeConnProps;
     }
 
-    public Map<String, String> getNodeProps()
+    @Override
+    public Map<String, String> getProps()
     {
         return nodeProps;
     }
