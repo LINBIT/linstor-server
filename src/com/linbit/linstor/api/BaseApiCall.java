@@ -66,13 +66,22 @@ public abstract class BaseApiCall implements ApiCall
         ApiCallRc apiCallRc
     )
     {
-        Message apiCallAnswer = peer.createMessage();
+        byte[] apiCallMsgData = createApiCallResponse(accCtx, apiCallRc, peer);
+        byte[] apiCallData = prepareMessage(accCtx, apiCallMsgData, peer, msgId, ApiConsts.API_REPLY);
 
-        byte[] apiCallData = getDataForResponse(accCtx, apiCallRc, peer, msgId);
+        sendAnswer(peer, apiCallData);
+    }
+
+    protected void sendAnswer(
+        Peer peer,
+        byte[] preparedMsgData
+    )
+    {
+        Message apiCallAnswer = peer.createMessage();
 
         try
         {
-            apiCallAnswer.setData(apiCallData);
+            apiCallAnswer.setData(preparedMsgData);
         }
         catch (IllegalMessageStateException illegalMsgStateExc)
         {
@@ -99,10 +108,17 @@ public abstract class BaseApiCall implements ApiCall
         }
     }
 
-    protected abstract byte[] getDataForResponse(
+    protected abstract byte[] createApiCallResponse(
         AccessContext accCtx,
         ApiCallRc apiCallRc,
+        Peer peer
+    );
+
+    protected abstract byte[] prepareMessage(
+        AccessContext accCtx,
+        byte[] protoMsgsBytes,
         Peer peer,
-        int msgId
+        int msgId,
+        String apicalltype
     );
 }

@@ -82,12 +82,10 @@ public abstract class BaseProtoApiCall extends BaseApiCall
         return ByteString.copyFrom(UuidUtils.asByteArray(uuid));
     }
 
-    @Override
-    protected byte[] getDataForResponse(
+    protected byte[] createApiCallResponse(
         AccessContext accCtx,
         ApiCallRc apiCallRc,
-        Peer peer,
-        int msgId
+        Peer peer
     )
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -132,6 +130,7 @@ public abstract class BaseProtoApiCall extends BaseApiCall
                 );
             }
         }
+
         byte[] protoMsgsBytes = baos.toByteArray();
         try
         {
@@ -146,12 +145,23 @@ public abstract class BaseProtoApiCall extends BaseApiCall
                 )
             );
         }
+        return protoMsgsBytes;
+    }
 
+    @Override
+    protected byte[] prepareMessage(
+        AccessContext accCtx,
+        byte[] protoMsgsBytes,
+        Peer peer,
+        int msgId,
+        String apicalltype
+    )
+    {
         MsgHeader protoHeader = MsgHeader.newBuilder()
-            .setApiCall(ApiConsts.API_REPLY)
+            .setApiCall(apicalltype)
             .setMsgId(msgId)
             .build();
-        baos = new ByteArrayOutputStream();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try
         {
             protoHeader.writeDelimitedTo(baos);
