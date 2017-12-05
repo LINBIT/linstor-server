@@ -21,7 +21,7 @@ public abstract class BaseTransactionObject implements TransactionObject
         if (!initialized)
         {
             initialized = true;
-            for(TransactionObject transObj : transObjs)
+            for (TransactionObject transObj : transObjs)
             {
                 transObj.initialized();
             }
@@ -51,7 +51,7 @@ public abstract class BaseTransactionObject implements TransactionObject
         }
         transMgr = transMgrRef;
 
-        for(TransactionObject to : transObjs)
+        for (TransactionObject to : transObjs)
         {
             to.setConnection(transMgr);
         }
@@ -112,16 +112,16 @@ public abstract class BaseTransactionObject implements TransactionObject
     @Override
     public boolean isDirtyWithoutTransMgr()
     {
-        if(!hasTransMgr())
-            return false;
-
         boolean dirty = false;
-        for (TransactionObject transObj : transObjs)
+        if (transMgr != null)
         {
-            if (transObj.isDirtyWithoutTransMgr())
+            for (TransactionObject transObj : transObjs)
             {
-                dirty = true;
-                break;
+                if (transObj.isDirtyWithoutTransMgr())
+                {
+                    dirty = true;
+                    break;
+                }
             }
         }
         return dirty;

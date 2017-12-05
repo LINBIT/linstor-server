@@ -7,18 +7,6 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.Identity;
-import com.linbit.linstor.security.IdentityName;
-import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.security.PrivilegeSet;
-import com.linbit.linstor.security.Role;
-import com.linbit.linstor.security.RoleName;
-import com.linbit.linstor.security.SecTypeName;
-import com.linbit.linstor.security.SecurityLevel;
-import com.linbit.linstor.security.SecurityType;
 
 public class SecurityTypeTest
 {

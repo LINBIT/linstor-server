@@ -14,8 +14,6 @@ import java.util.Set;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsContainer;
 
 public class DerbyPropsConTest extends DerbyPropsConBase
 {

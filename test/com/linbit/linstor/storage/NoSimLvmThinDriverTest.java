@@ -7,9 +7,6 @@ import java.nio.file.Paths;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.linstor.storage.LvmThinDriver;
-import com.linbit.linstor.storage.StorageDriver;
-import com.linbit.linstor.storage.StorageException;
 
 /**
  * Although this class is in the test folder, this class is

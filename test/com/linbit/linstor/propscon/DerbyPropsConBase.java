@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsConDerbyDriver;
 import com.linbit.linstor.security.DerbyBase;
 
 public class DerbyPropsConBase extends DerbyBase

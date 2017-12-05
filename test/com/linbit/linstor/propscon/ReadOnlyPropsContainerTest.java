@@ -23,9 +23,6 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.core.CoreUtils;
-import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsContainer;
-import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.TestAccessContextProvider;
 

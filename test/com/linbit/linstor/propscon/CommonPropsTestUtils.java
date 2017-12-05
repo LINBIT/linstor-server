@@ -13,9 +13,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.InvalidValueException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 
 public class CommonPropsTestUtils

@@ -16,14 +16,6 @@ import org.junit.Test;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.NetInterfaceData;
-import com.linbit.linstor.NetInterfaceDataDerbyDriver;
-import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NetInterface.NetInterfaceType;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.utils.UuidUtils;

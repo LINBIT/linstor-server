@@ -15,11 +15,6 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.utils.TestExtCmd.Command;
 import com.linbit.extproc.utils.TestExtCmd.TestOutputData;
-import com.linbit.linstor.storage.DriverTraits;
-import com.linbit.linstor.storage.LvmThinDriver;
-import com.linbit.linstor.storage.StorageConstants;
-import com.linbit.linstor.storage.StorageDriver;
-import com.linbit.linstor.storage.StorageException;
 
 public class LvmThinDriverTest extends LvmDriverTest
 {

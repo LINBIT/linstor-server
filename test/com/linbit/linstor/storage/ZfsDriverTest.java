@@ -31,12 +31,6 @@ import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
-import com.linbit.linstor.storage.AbsStorageDriver;
-import com.linbit.linstor.storage.DriverTraits;
-import com.linbit.linstor.storage.StorageConstants;
-import com.linbit.linstor.storage.StorageDriver;
-import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.ZfsDriver;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(ZfsDriver.class)

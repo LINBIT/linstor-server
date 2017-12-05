@@ -11,19 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.Identity;
-import com.linbit.linstor.security.IdentityName;
-import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.security.PrivilegeSet;
-import com.linbit.linstor.security.Role;
-import com.linbit.linstor.security.RoleName;
-import com.linbit.linstor.security.SecTypeName;
-import com.linbit.linstor.security.SecurityLevel;
-import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.testutils.SimpleIterator;
@@ -752,7 +739,7 @@ public class StateFlagBitsTest
 
     private class StateFlagBitsImpl extends StateFlagsBits<Object, FlagImpl>
     {
-        public StateFlagBitsImpl(ObjectProtection objProtRef, long validFlagsMask)
+        StateFlagBitsImpl(ObjectProtection objProtRef, long validFlagsMask)
         {
             super(objProtRef, new Object(), validFlagsMask, null);
             // as this test should not test persistence, this should be no problem.

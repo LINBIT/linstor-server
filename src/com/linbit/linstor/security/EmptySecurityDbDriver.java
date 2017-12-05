@@ -81,7 +81,7 @@ public class EmptySecurityDbDriver implements DbAccessor
 
     private class EmptyObjectProtectionDatabaseDriver implements ObjectProtectionDatabaseDriver
     {
-        public EmptyObjectProtectionDatabaseDriver()
+        EmptyObjectProtectionDatabaseDriver()
         {
         }
 

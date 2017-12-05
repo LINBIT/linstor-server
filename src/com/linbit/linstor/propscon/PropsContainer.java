@@ -26,7 +26,6 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
@@ -927,7 +926,7 @@ public class PropsContainer implements Props
     @Override
     public void setConnection(TransactionMgr transMgrRef) throws ImplementationError
     {
-        if(!hasTransMgr() && isDirtyWithoutTransMgr())
+        if (!hasTransMgr() && isDirtyWithoutTransMgr())
         {
             throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
         }

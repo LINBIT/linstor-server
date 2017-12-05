@@ -68,7 +68,7 @@ public abstract class LinStor
     // Product and version information
     //
     public static final String PROGRAM = "LINSTOR";
-    public static final String VERSION = "0.1.0-experimental [2017-10-24_001]";
+    public static final String VERSION = "0.1.0-experimental [2017-12-05_001]";
 
     // ============================================================
     // Worker thread pool defaults
@@ -294,27 +294,27 @@ public abstract class LinStor
     public static List<String> expandClassPath(String classpath)
     {
         final ArrayList<String> paths = new ArrayList<>();
-        for(String sp : classpath.split(File.pathSeparator))
+        for (String pathItems : classpath.split(File.pathSeparator))
         {
-            Path p = Paths.get(sp);
+            Path clPath = Paths.get(pathItems);
             // make path absolute
-            if(!p.isAbsolute())
+            if (!clPath.isAbsolute())
             {
-                p = p.toAbsolutePath();
+                clPath = clPath.toAbsolutePath();
             }
 
             // check if path contains wildcard
             // java classpath wildcards are no standard and to current knowledge limited to '*'
-            if(p.toString().contains("*"))
+            if (clPath.toString().contains("*"))
             {
-                if(p.getFileName().toString().equals("*"))
+                if (clPath.getFileName().toString().equals("*"))
                 {
-                    String glob = "glob:" + p.getFileName();
+                    String glob = "glob:" + clPath.getFileName();
                     final PathMatcher matcher = FileSystems.getDefault().getPathMatcher(glob);
-                    for(File file : p.getParent().toFile().listFiles())
+                    for (File file : clPath.getParent().toFile().listFiles())
                     {
-                        if(matcher.matches(file.toPath().getFileName())
-                                && (file.toString().endsWith(".jar") || file.toString().endsWith(".JAR")))
+                        if (matcher.matches(file.toPath().getFileName()) &&
+                            (file.toString().endsWith(".jar") || file.toString().endsWith(".JAR")))
                         {
                             paths.add(file.toString());
                         }
@@ -323,7 +323,7 @@ public abstract class LinStor
             }
             else
             {
-                paths.add(p.toString());
+                paths.add(clPath.toString());
             }
         }
 
@@ -378,10 +378,10 @@ public abstract class LinStor
 
         List<String> loadPaths = expandClassPath(System.getProperty("java.class.path"));
         int loadedClasses = 0;
-        for(String loadPath : loadPaths)
+        for (String loadPath : loadPaths)
         {
             final Path basePath = Paths.get(loadPath);
-            if(Files.isDirectory(basePath))
+            if (Files.isDirectory(basePath))
             {
                 loadedClasses += loadApiCallsFromDirectory(msgProc, componentRef, coreService, cl, apiType, basePath, pkgsToload);
             }
@@ -391,7 +391,7 @@ public abstract class LinStor
             }
         }
 
-        if(loadedClasses == 0)
+        if (loadedClasses == 0)
         {
             componentRef.errorLog.logWarning(
                 "No api classes were found in classpath."
@@ -429,33 +429,35 @@ public abstract class LinStor
             pkgPath = directoryPath.resolve(pkgPath);
 
             if (pkgPath.toFile().exists())
-            try
             {
-                Files.walkFileTree(directoryPath.resolve(pkgPath), new SimpleFileVisitor<Path>()
+                try
                 {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+                    Files.walkFileTree(directoryPath.resolve(pkgPath), new SimpleFileVisitor<Path>()
                     {
-                        if(loadClassFromFile(msgProc, componentRef, coreService, cl, directoryPath, pkgToLoad, file, apiType))
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
                         {
-                            loadedClasses[0]++;
+                            if (loadClassFromFile(msgProc, componentRef, coreService, cl, directoryPath, pkgToLoad, file, apiType))
+                            {
+                                loadedClasses[0]++;
+                            }
+                            return FileVisitResult.CONTINUE;
                         }
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            }
-            catch (IOException ioExc)
-            {
-                componentRef.errorLog.reportError(
-                    new LinStorException(
-                        "Failed to load classes from " + pkgPath,
-                        "See cause for more details",
-                        ioExc.getLocalizedMessage(),
-                        null,
-                        null,
-                        ioExc
-                    )
-                );
+                    });
+                }
+                catch (IOException ioExc)
+                {
+                    componentRef.errorLog.reportError(
+                        new LinStorException(
+                            "Failed to load classes from " + pkgPath,
+                            "See cause for more details",
+                            ioExc.getLocalizedMessage(),
+                            null,
+                            null,
+                            ioExc
+                        )
+                    );
+                }
             }
         }
         return loadedClasses[0];
@@ -482,27 +484,28 @@ public abstract class LinStor
     )
     {
         int loadedClasses = 0;
-        if(!jarPath.toString().toLowerCase().endsWith(".jar"))
+        if (!jarPath.toString().toLowerCase().endsWith(".jar"))
         {
             return loadedClasses;
         }
 
-        try (JarFile jarFile = new JarFile(jarPath.toFile())) {
-            Enumeration<JarEntry> e = jarFile.entries();
+        try (JarFile jarFile = new JarFile(jarPath.toFile()))
+        {
+            Enumeration<JarEntry> entry = jarFile.entries();
 
-            while(e.hasMoreElements())
+            while (entry.hasMoreElements())
             {
-                JarEntry je = e.nextElement();
+                JarEntry je = entry.nextElement();
 
                 for (final String pkgToLoad : pkgsToload)
                 {
                     Path pkgPath = Paths.get(pkgToLoad.replaceAll("\\.", File.separator));
 
-                    if(je.getName().startsWith(pkgPath.toString()) && je.getName().endsWith(".class"))
+                    if (je.getName().startsWith(pkgPath.toString()) && je.getName().endsWith(".class"))
                     {
                         String fullQualifiedClassName = je.getName().replaceAll(File.separator, ".");
-                        fullQualifiedClassName = fullQualifiedClassName.substring(0, fullQualifiedClassName.lastIndexOf(".")); // cut the ".class"
-                        if(loadClass(msgProc, componentRef, coreService, cl, pkgToLoad, fullQualifiedClassName, apiType))
+                        fullQualifiedClassName = fullQualifiedClassName.substring(0, fullQualifiedClassName.lastIndexOf('.')); // cut the ".class"
+                        if (loadClass(msgProc, componentRef, coreService, cl, pkgToLoad, fullQualifiedClassName, apiType))
                         {
                             loadedClasses++;
                         }
@@ -556,7 +559,7 @@ public abstract class LinStor
                 file = basePath.relativize(file);
             }
             String fullQualifiedClassName = file.toString().replaceAll(File.separator, ".");
-            fullQualifiedClassName = fullQualifiedClassName.substring(0, fullQualifiedClassName.lastIndexOf(".")); // cut the ".class"
+            fullQualifiedClassName = fullQualifiedClassName.substring(0, fullQualifiedClassName.lastIndexOf('.')); // cut the ".class"
             return loadClass(msgProc, componentRef, coreService, cl, pkgToLoad, fullQualifiedClassName, apiType);
         }
         return false;
@@ -697,7 +700,8 @@ public abstract class LinStor
                     Object instance = null;
                     try
                     {
-                        switch (ctor.getParameterTypes().length) {
+                        switch (ctor.getParameterTypes().length)
+                        {
                             case 2:
                                 instance = ctor.newInstance(componentRef, coreService);
                                 break;
@@ -709,8 +713,9 @@ public abstract class LinStor
                                 break;
                             default:
                                 componentRef.errorLog.reportError(
-                                        new ImplementationError("Unexpected API class constructor", null)
-                                );  break;
+                                    new ImplementationError("Unexpected API class constructor", null)
+                                );
+                                break;
                         }
                     }
                     catch (

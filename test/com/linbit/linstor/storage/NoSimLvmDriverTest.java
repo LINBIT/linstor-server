@@ -5,9 +5,6 @@ import java.io.IOException;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.linstor.storage.LvmDriver;
-import com.linbit.linstor.storage.StorageDriver;
-import com.linbit.linstor.storage.StorageException;
 
 /**
  * Although this class is in the test folder, this class is

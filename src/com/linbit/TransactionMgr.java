@@ -35,7 +35,7 @@ public class TransactionMgr
 
     public void register(TransactionObject transObj)
     {
-        if(transObj.isDirtyWithoutTransMgr())
+        if (transObj.isDirtyWithoutTransMgr())
         {
             throw new ImplementationError(
                 "Connection set after TransactionObject modified " + transObj,
@@ -116,9 +116,9 @@ public class TransactionMgr
     static public boolean isCalledFromTransactionMgr(String methodName)
     {
         StackTraceElement[] stack = new Throwable().getStackTrace();
-        for(StackTraceElement elem : stack)
+        for (StackTraceElement elem : stack)
         {
-            if(elem.getClassName().equals(TransactionMgr.class.getName()) && elem.getMethodName().equals(methodName))
+            if (elem.getClassName().equals(TransactionMgr.class.getName()) && elem.getMethodName().equals(methodName))
             {
                 return true;
             }

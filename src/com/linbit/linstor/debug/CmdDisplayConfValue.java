@@ -328,7 +328,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
 
     private static class NamespaceException extends Exception
     {
-        public NamespaceException(String message)
+        NamespaceException(String message)
         {
             super(message);
         }

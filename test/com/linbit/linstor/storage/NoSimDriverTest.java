@@ -18,10 +18,6 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.SatelliteCoreServices;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.storage.AbsStorageDriver;
-import com.linbit.linstor.storage.StorageConstants;
-import com.linbit.linstor.storage.StorageDriver;
-import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.testutils.DefaultErrorStreamErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.GenericTimer;
@@ -941,7 +937,7 @@ public abstract class NoSimDriverTest
 
     protected class DebugExtCmd extends ExtCmd
     {
-        public DebugExtCmd(Timer<String, Action<String>> timer)
+        DebugExtCmd(Timer<String, Action<String>> timer)
         {
             super(timer);
         }

@@ -85,7 +85,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     @Override
     public void create(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException
     {
-        try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_INSERT))
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_INSERT))
         {
             errorReporter.logTrace("Creating VolumeDefinition %s", getTraceId(volumeDefinition));
 
@@ -124,7 +124,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
             try (ResultSet resultSet = stmt.executeQuery())
             {
                 ret = cacheGet(resourceDefinition, volumeNumber);
-                if(ret == null)
+                if (ret == null)
                 {
                     if (resultSet.next())
                     {

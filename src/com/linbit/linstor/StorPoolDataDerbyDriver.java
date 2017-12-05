@@ -101,7 +101,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 try (ResultSet resultSet = stmt.executeQuery())
                 {
                     List<StorPoolData> list = restore(node, resultSet, transMgr);
-                    if (list.size() == 0)
+                    if (list.isEmpty())
                     {
                         if (logWarnIfNotExists)
                         {
@@ -165,7 +165,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     {
         List<StorPoolData> storPoolList = new ArrayList<>();
         NodeDataDatabaseDriver nodeDriver = LinStor.getNodeDataDatabaseDriver();
-        while(resultSet.next())
+        while (resultSet.next())
         {
             StorPoolName storPoolName;
             try

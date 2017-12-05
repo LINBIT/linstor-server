@@ -20,4 +20,8 @@ public class StorageDriverUtils
 
         return driver;
     }
+
+    private StorageDriverUtils()
+    {
+    }
 }

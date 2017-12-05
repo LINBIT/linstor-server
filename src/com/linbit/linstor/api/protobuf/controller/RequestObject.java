@@ -18,7 +18,7 @@ abstract class RequestObject extends BaseProtoApiCall
     private String apiCallName;
     private String descriptionType;
 
-    public RequestObject(
+    RequestObject(
         Controller controller,
         String apiCallName,
         String descriptionType

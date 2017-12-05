@@ -42,7 +42,7 @@ public class StltApiCallHandler
         satellite = satelliteRef;
         this.apiCtx = apiCtx;
         ErrorReporter errorReporter = satelliteRef.getErrorReporter();
-        switch(apiType)
+        switch (apiType)
         {
             case PROTOBUF:
                 nodeRequestSerializer = new GenericRequestSerializerProto<>(

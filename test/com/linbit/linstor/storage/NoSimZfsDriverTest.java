@@ -5,8 +5,6 @@ import java.io.IOException;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.ZfsDriver;
 
 /**
  * Although this class is in the test folder, this class is

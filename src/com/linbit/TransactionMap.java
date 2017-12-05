@@ -46,7 +46,7 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
     @Override
     public void setConnection(TransactionMgr transMgr)
     {
-        if(!hasTransMgr() && isDirtyWithoutTransMgr())
+        if (!hasTransMgr() && isDirtyWithoutTransMgr())
         {
             throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
         }

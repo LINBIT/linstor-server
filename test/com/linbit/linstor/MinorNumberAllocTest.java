@@ -1,8 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ExhaustedPoolException;
-import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.MinorNumberAlloc;
 
 import java.util.Arrays;
 import org.junit.After;

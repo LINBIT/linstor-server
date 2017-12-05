@@ -2,8 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.VolumeNumberAlloc;
 
 import java.util.Arrays;
 import org.junit.Test;

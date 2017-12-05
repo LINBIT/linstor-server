@@ -1,7 +1,5 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -15,23 +13,6 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeId;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolData;
-import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.VolumeData;
-import com.linbit.linstor.VolumeDataDerbyDriver;
-import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.propscon.Props;

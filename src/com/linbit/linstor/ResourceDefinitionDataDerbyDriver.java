@@ -125,7 +125,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     public boolean exists(ResourceName resourceName, TransactionMgr transMgr) throws SQLException
     {
         boolean exists = false;
-        try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_SELECT))
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_SELECT))
         {
             stmt.setString(1, resourceName.value);
             try (ResultSet resultSet = stmt.executeQuery())

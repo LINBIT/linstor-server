@@ -14,13 +14,6 @@ import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeConnection;
-import com.linbit.linstor.NodeConnectionData;
-import com.linbit.linstor.NodeConnectionDataDerbyDriver;
-import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeName;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;

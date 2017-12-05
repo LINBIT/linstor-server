@@ -9,7 +9,6 @@ import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.linbit.linstor.debug.BaseDebugCmd;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 

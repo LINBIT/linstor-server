@@ -116,7 +116,7 @@ public enum AccessType
     public static AccessType get(int flag)
     {
         AccessType accType;
-        switch(flag)
+        switch (flag)
         {
             case 1:
                 accType = VIEW;

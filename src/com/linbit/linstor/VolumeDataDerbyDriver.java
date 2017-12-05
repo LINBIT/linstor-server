@@ -402,7 +402,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     @Override
     public void create(VolumeData vol, TransactionMgr transMgr) throws SQLException
     {
-        try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
         {
             errorReporter.logTrace("Creating Volume %s", getDebugId(vol));
 
@@ -427,7 +427,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     @Override
     public void delete(VolumeData volume, TransactionMgr transMgr) throws SQLException
     {
-        try(PreparedStatement stmt = transMgr.dbCon.prepareStatement(DELETE))
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(DELETE))
         {
             errorReporter.logTrace("Deleting Volume %s", getTraceId(volume));
 

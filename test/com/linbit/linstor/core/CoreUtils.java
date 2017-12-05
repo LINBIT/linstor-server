@@ -9,7 +9,6 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteDbDriver;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.DbAccessor;
@@ -37,5 +36,9 @@ public class CoreUtils
             resDfnMap,
             storPoolDfnMap
         );
+    }
+
+    private CoreUtils()
+    {
     }
 }

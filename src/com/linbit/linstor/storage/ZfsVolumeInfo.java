@@ -45,7 +45,7 @@ public class ZfsVolumeInfo extends VolumeInfo
         String stringSize = new String(outputData.stdoutData);
         if (stringSize.contains("\n"))
         {
-            stringSize = stringSize.substring(0, stringSize.indexOf("\n"));
+            stringSize = stringSize.substring(0, stringSize.indexOf('\n'));
         }
         long size = Long.parseLong(stringSize);
         size >>= 10; // driver wants the count in KiB...

@@ -208,7 +208,7 @@ public class CmdDisplayReportList extends BaseDebugCmd
                         boolean instanceMatches = instanceId == null;
                         if (instanceId != null)
                         {
-                            int splitIdx = reportId.indexOf("-");
+                            int splitIdx = reportId.indexOf('-');
                             if (splitIdx != -1)
                             {
                                 String reportInstanceId = reportId.substring(0, splitIdx);

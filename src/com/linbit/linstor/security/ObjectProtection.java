@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;

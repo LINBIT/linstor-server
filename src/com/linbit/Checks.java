@@ -441,7 +441,7 @@ public class Checks
     private static void fillIpv6(String[] parts, String[] leftParts, String[] rightParts)
     {
         Arrays.fill(parts, "0");
-        if (leftParts.length > 1 || !leftParts[0].equals(""))
+        if (leftParts.length > 1 || !leftParts[0].isEmpty())
         {
             System.arraycopy(leftParts, 0, parts, 0, leftParts.length);
         }

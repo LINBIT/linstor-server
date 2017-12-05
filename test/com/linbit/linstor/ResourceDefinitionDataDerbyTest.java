@@ -18,21 +18,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeData;
-import com.linbit.linstor.NodeId;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceData;
-import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceDefinitionDataDerbyDriver;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.core.LinStor;
@@ -489,9 +474,9 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             List<ResourceDefinitionData> listResourceDefData,
             ResourceName spName)
     {
-        for(ResourceDefinitionData rdd : listResourceDefData)
+        for (ResourceDefinitionData rdd : listResourceDefData)
         {
-            if(rdd.getName().equals(spName))
+            if (rdd.getName().equals(spName))
                 return rdd;
         }
         return null;

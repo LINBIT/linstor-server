@@ -120,4 +120,8 @@ public class DerbyConstants
     public static final String PROPS_INSTANCE = "PROPS_INSTANCE";
     public static final String PROP_KEY       = "PROP_KEY";
     public static final String PROP_VALUE     = "PROP_VALUE";
+
+    private DerbyConstants()
+    {
+    }
 }

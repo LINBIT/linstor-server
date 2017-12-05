@@ -194,10 +194,10 @@ public class LvmDriver extends AbsStorageDriver
 
             String rawOut = new String(output.stdoutData);
             // cut everything after the decimal dot
-            int indexOf = rawOut.indexOf(".");
+            int indexOf = rawOut.indexOf('.');
             if (indexOf == -1)
             {
-                indexOf = rawOut.indexOf(",");
+                indexOf = rawOut.indexOf(',');
             }
             rawOut = rawOut.substring(0, indexOf);
             extentSize = Long.parseLong(rawOut.trim());

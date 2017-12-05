@@ -20,4 +20,8 @@ public class UuidUtils
         long leastSig = buffer.getLong();
         return new UUID(mostSig, leastSig);
     }
+
+    private UuidUtils()
+    {
+    }
 }

@@ -371,7 +371,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
     private void  printPrivString(PrintStream output, PrivilegeSet privSet)
     {
         List<Privilege> privList = privSet.getEnabledPrivileges();
-        if (privList.size() == 0)
+        if (privList.isEmpty())
         {
             AutoIndent.printWithIndent(output, 8, "NONE");
         }

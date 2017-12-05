@@ -2,11 +2,6 @@ package com.linbit.linstor.drbdstate;
 
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.drbdstate.DrbdConnection;
-import com.linbit.linstor.drbdstate.DrbdResource;
-import com.linbit.linstor.drbdstate.DrbdVolume;
-import com.linbit.linstor.drbdstate.ResourceObserver;
-import com.linbit.linstor.drbdstate.StateTracker;
 
 import org.junit.After;
 import org.junit.Before;

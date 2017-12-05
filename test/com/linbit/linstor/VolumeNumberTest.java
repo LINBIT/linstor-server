@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.VolumeNumber;
 
 import org.junit.Test;
 import static org.junit.Assert.*;

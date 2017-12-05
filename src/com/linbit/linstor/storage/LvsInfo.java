@@ -59,10 +59,10 @@ public class LvsInfo extends VolumeInfo
             final String path = data[1];
             final String rawSize = data[2];
 
-            int indexOf = rawSize.indexOf(".");
+            int indexOf = rawSize.indexOf('.');
             if (indexOf == -1)
             {
-                indexOf = rawSize.indexOf(","); // localization
+                indexOf = rawSize.indexOf(','); // localization
             }
             final String rawSizeLong = rawSize.substring(0, indexOf);
             final long size = Long.parseLong(rawSizeLong);

@@ -939,7 +939,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 retVal = false;
             }
             else
-            if (enabledStr != null && !enabledStr.trim().equals(""))
+            if (enabledStr != null && !enabledStr.trim().isEmpty())
             {
                 addAnswer(
                     "The node creation request for node '" + currentNodeName.get() + "' was modified automatically.",

@@ -347,7 +347,7 @@ public abstract class BaseDebugConsole implements DebugConsole
             else
             {
                 // Check for an attempt to enter multiple command names at a time
-                if (cmdName.indexOf(" ") != -1 || cmdName.indexOf("\t") != -1)
+                if (cmdName.indexOf(' ') != -1 || cmdName.indexOf('\t') != -1)
                 {
                     debugErr.print(
                         "Error:\n" +

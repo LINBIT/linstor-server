@@ -15,16 +15,6 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.MinorNumber;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceDefinitionData;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeDefinitionDataDerbyDriver;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;

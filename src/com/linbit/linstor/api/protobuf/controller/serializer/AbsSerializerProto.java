@@ -26,7 +26,7 @@ abstract class AbsSerializerProto<TYPE> implements CtrlSerializer<TYPE>
     private final String apiCallChanged;
     private final String apiCallData;
 
-    public AbsSerializerProto(
+    AbsSerializerProto(
         AccessContext serializerCtxRef,
         ErrorReporter errorReporterRef,
         String apiCallChangedRef,

@@ -2,8 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.TcpPortNumber;
-import com.linbit.linstor.TcpPortNumberAlloc;
 
 import java.util.Arrays;
 import org.junit.Test;

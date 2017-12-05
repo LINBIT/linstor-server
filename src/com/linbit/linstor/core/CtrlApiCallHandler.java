@@ -173,7 +173,7 @@ public class CtrlApiCallHandler
         {
             port = 8042; // FIXME find free port with poolAllocator
         }
-        if (secret == null || secret.trim().equals(""))
+        if (secret == null || secret.trim().isEmpty())
         {
             secret = controller.generateSharedSecret();
         }

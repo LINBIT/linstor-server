@@ -527,7 +527,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         private Node node;
         private ResourceDefinition resDfn;
 
-        public ResPrimaryKey(Node node, ResourceDefinition resDfn)
+        ResPrimaryKey(Node node, ResourceDefinition resDfn)
         {
             this.node = node;
             this.resDfn = resDfn;
