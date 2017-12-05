@@ -80,6 +80,8 @@ public interface Node extends TransactionObject
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    public NodeApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+
     public enum NodeType implements Flags
     {
         CONTROLLER(1),
@@ -183,9 +185,11 @@ public interface Node extends TransactionObject
         }
     }
 
-    public interface NodeApiData
+    public interface NodeApi
     {
         String getName();
+        String getType();
+        UUID getUuid();
         Map<String, String> getProps();
     }
 }

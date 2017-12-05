@@ -20,6 +20,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.proto.apidata.NodeApiData;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -508,6 +509,11 @@ public class NodeData extends BaseTransactionObject implements Node
         {
             throw new ImplementationError("Access to deleted node", null);
         }
+    }
+
+    @Override
+    public NodeApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+        return new NodeApiData(getName().getName(), getUuid(), getNodeType(accCtx).name());
     }
 
     @Override
