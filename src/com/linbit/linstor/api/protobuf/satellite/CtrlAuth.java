@@ -56,6 +56,7 @@ public class CtrlAuth extends BaseProtoApiCall
         String nodeName = auth.getNodeName();
         UUID nodeUuid = UuidUtils.asUuid(auth.getNodeUuid().toByteArray());
 
+        satellite.getErrorReporter().logInfo("Controller connected and authenticated");
         satellite.setControllerPeer(controllerPeer, nodeUuid, nodeName);
 
         try
