@@ -228,25 +228,24 @@ public class CommonMessageProcessor implements MessageProcessor
                 }
                 else
                 {
-                    coreSvcs.getErrorReporter().reportError(
-                        Level.TRACE,
-                        new LinStorException(
-                            "Non-existent API '" + apiCallName + "' called by the client",
-                            "The API call '" + apiCallName + "' cannot be executed.",
-                            "The specified API does not exist",
-                            "- Correct the client application to call a supported API\n" +
-                            "- Load the API module required by the client application into the server\n",
-                            "The API call name specified by the client was:\n" +
-                            apiCallName
-                        ),
-                        client.getAccessContext(),
-                        client,
-                        "The request was received on connector service '" + connector.getInstanceName() + "' " +
-                        "of type '" + connector.getServiceName() + "'"
-                    );
-
                     if (client.getNode() == null) // client, no satellite or controller
                     {
+                        coreSvcs.getErrorReporter().reportError(
+                            Level.TRACE,
+                            new LinStorException(
+                                "Non-existent API '" + apiCallName + "' called by the client",
+                                "The API call '" + apiCallName + "' cannot be executed.",
+                                "The specified API does not exist",
+                                "- Correct the client application to call a supported API\n" +
+                                    "- Load the API module required by the client application into the server\n",
+                                    "The API call name specified by the client was:\n" +
+                                        apiCallName
+                                ),
+                            client.getAccessContext(),
+                            client,
+                            "The request was received on connector service '" + connector.getInstanceName() + "' " +
+                                "of type '" + connector.getServiceName() + "'"
+                        );
                         // answer the client
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         MsgHeader.newBuilder()
@@ -272,6 +271,12 @@ public class CommonMessageProcessor implements MessageProcessor
                         Message message = client.createMessage();
                         message.setData(baos.toByteArray());
                         client.sendMessage(message);
+                    }
+                    else
+                    {
+                        coreSvcs.getErrorReporter().logDebug(
+                            "Non-existent API '" + apiCallName + "' called by controller or satellite " + client.getId()
+                        );
                     }
                 }
             }
