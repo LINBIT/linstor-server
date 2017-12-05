@@ -16,14 +16,14 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final List<NodeConnPojo> nodeConns;
     private final Map<String, String> nodeProps;
 
-    public NodePojo(String name, UUID uuid, String type) {
+    public NodePojo(String name, UUID uuid, String type, long nodeFlags, Map<String, String> nodeProps) {
         this.nodeName = name;
         this.nodeUuid = uuid;
         this.nodeType = type;
-        this.nodeFlags = 0;
+        this.nodeFlags = nodeFlags;
         this.nodeNetInterfaces = null;
         this.nodeConns = null;
-        this.nodeProps = null;
+        this.nodeProps = nodeProps;
     }
 
     public NodePojo(

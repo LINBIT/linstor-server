@@ -36,15 +36,20 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
+import java.util.ArrayList;
+import java.io.IOException;
 
 class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeType = new ThreadLocal<>();
+    private final CtrlListSerializer nodeListSerializer;
 
-    CtrlNodeApiCallHandler(Controller controllerRef, AccessContext apiCtxRef)
+    CtrlNodeApiCallHandler(Controller controllerRef, CtrlListSerializer nodeListSerializer, AccessContext apiCtxRef)
     {
         super(controllerRef, apiCtxRef);
+        this.nodeListSerializer = nodeListSerializer;
     }
 
     ApiCallRc createNode(
@@ -620,6 +625,57 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    byte[] listNodes(int msgId, AccessContext accCtx, Peer client)
+    {
+        ArrayList<Node.NodeApi> nodes = new ArrayList<Node.NodeApi>();
+        try {
+            controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            for(Node n : controller.nodesMap.values())
+            {
+                nodes.add(n.getApiData(accCtx));
+            }
+        } catch (AccessDeniedException accDeniedExc) {
+            // for now return an empty list.
+            /*
+            String errorMessage;
+            String causeMessage = null;
+            String detailsMessage = null;
+            Throwable exc;
+            errorMessage = "List nodes failed.";
+            causeMessage = String.format(
+                "Identity '%s' using role '%s' is not authorized to list nodes",
+                accCtx.subjectId.name.displayValue,
+                accCtx.subjectRole.name.displayValue
+            );
+            causeMessage += "\n";
+            causeMessage += accDeniedExc.getMessage();
+            exc = accDeniedExc;
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            */
+        }
+
+        try
+        {
+            return nodeListSerializer.getListMessage(msgId, nodes);
+        }
+        catch (IOException e)
+        {
+            controller.getErrorReporter().reportError(
+                e,
+                null,
+                client,
+                "Could not complete authentication due to an IOException"
+            );
+        }
+
+        return null;
     }
 
     private void requireNodesMapChangeAccess() throws ApiCallHandlerFailedException

@@ -26,11 +26,13 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.protobuf.controller.serializer.AuthSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.FullSyncSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.NodeDataSerializerProto;
+import com.linbit.linstor.api.protobuf.controller.serializer.NodeListSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDataSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolDataSerializerProto;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 
 public class CtrlApiCallHandler
 {
@@ -57,6 +59,8 @@ public class CtrlApiCallHandler
         final CtrlNodeSerializer nodeSerializer;
         final CtrlSerializer<Resource> rscSerializer;
         final CtrlSerializer<StorPool> storPoolSerializer;
+        final CtrlListSerializer<Node.NodeApi> nodeListSerializer;
+
         switch (type)
         {
             case PROTOBUF:
@@ -70,13 +74,14 @@ public class CtrlApiCallHandler
                     (ResourceDataSerializerProto) rscSerializer,
                     (StorPoolDataSerializerProto) storPoolSerializer
                 );
+                nodeListSerializer = new NodeListSerializerProto();
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
         }
         authApiCallHandler = new CtrlAuthenticationApiCallHandler(controllerRef, authSerializer);
         fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(controllerRef, apiCtx, fullSyncSerializer);
-        nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, apiCtx);
+        nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, nodeListSerializer, apiCtx);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, apiCtx);
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
         rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, apiCtx);
@@ -177,6 +182,19 @@ public class CtrlApiCallHandler
 
         }
         return apiCallRc;
+    }
+
+    public byte[] listNode(int msgId, AccessContext accCtx, Peer client)
+    {
+        try
+        {
+            controller.nodesMapLock.readLock().lock();
+            return nodeApiCallHandler.listNodes(msgId, accCtx, client);
+        }
+        finally
+        {
+            controller.nodesMapLock.readLock().unlock();
+        }
     }
 
     /**

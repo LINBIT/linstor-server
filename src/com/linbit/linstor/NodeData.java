@@ -513,7 +513,13 @@ public class NodeData extends BaseTransactionObject implements Node
 
     @Override
     public NodeApi getApiData(AccessContext accCtx) throws AccessDeniedException {
-        return new NodePojo(getName().getName(), getUuid(), getNodeType(accCtx).name());
+        return new NodePojo(
+            getName().getDisplayName(),
+            getUuid(),
+            getNodeType(accCtx).name(),
+            getFlags().getFlagsBits(accCtx),
+            getProps(accCtx).map()
+        );
     }
 
     @Override
