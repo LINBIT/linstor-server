@@ -5,6 +5,7 @@ import com.linbit.linstor.security.AccessContext;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -116,6 +117,9 @@ public class CmdDisplayReportList extends BaseDebugCmd
                 {
                     reportFileList = reportDir.listFiles(new ReportFileFilter(null, matchPattern));
                 }
+                // Objects of type File are supposed to sort lexicographically,
+                // some details are platform-dependent (e.g., case sensitivity)
+                Arrays.sort(reportFileList);
 
                 int pfxLength = StdErrorReporter.RPT_PREFIX.length();
                 int sfxLength = StdErrorReporter.RPT_SUFFIX.length();
