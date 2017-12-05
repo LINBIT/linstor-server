@@ -10,6 +10,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.core.Controller;
+import org.slf4j.event.Level;
 
 public class TaskScheduleService implements SystemService, Runnable
 {
@@ -231,6 +232,19 @@ public class TaskScheduleService implements SystemService, Runnable
                 {
                 }
             }
+        }
+        catch (Exception exc)
+        {
+            controller.getErrorReporter().reportError(
+                Level.ERROR,
+                new ImplementationError(
+                    "Unhandled exception caught in " + TaskScheduleService.class.getName(),
+                    exc
+                ),
+                null,
+                null,
+                "This exception was generated in the service thread of the service '" + SERVICE_NAME + "'"
+            );
         }
         finally
         {
