@@ -13,9 +13,9 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessageV3;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BaseApiCall;
-import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
@@ -117,6 +117,7 @@ public abstract class BaseProtoApiCall extends BaseApiCall
             msgApiCallResponseBuilder.addAllVariables(fromMap(apiCallEntry.getVariables()));
 
             protoMsg = msgApiCallResponseBuilder.build();
+
             try
             {
                 protoMsg.writeDelimitedTo(baos);
@@ -138,7 +139,6 @@ public abstract class BaseProtoApiCall extends BaseApiCall
         }
         catch (IOException ioExc)
         {
-            // cannot happen
             errorReporter.reportError(
                 new ImplementationError(
                     "ByteArrayOutputStream.close() should never throw an IOException, but it did",

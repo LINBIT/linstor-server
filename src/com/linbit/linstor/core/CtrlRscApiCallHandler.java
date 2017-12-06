@@ -132,6 +132,7 @@ class CtrlRscApiCallHandler
             {
                 ApiCallRcEntry nodeNotFoundEntry = new ApiCallRcEntry();
                 nodeNotFoundEntry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_NODE);
+                nodeNotFoundEntry.setMessageFormat("Node '" + nodeNameStr + "' not found.");
                 nodeNotFoundEntry.setCauseFormat(
                     String.format(
                         "The specified node '%s' could not be found in the database",
@@ -155,6 +156,7 @@ class CtrlRscApiCallHandler
             {
                 ApiCallRcEntry rscDfnNotFoundEntry = new ApiCallRcEntry();
                 rscDfnNotFoundEntry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_RSC_DFN);
+                rscDfnNotFoundEntry.setMessageFormat("Resource definition '" + rscNameStr + "' not found.");
                 rscDfnNotFoundEntry.setCauseFormat(
                     String.format(
                         "The specified resource definition '%s' could not be found in the database",

@@ -1,8 +1,14 @@
 package com.linbit.linstor.core;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
@@ -10,7 +16,9 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.interfaces.serializer.StltRequestSerializer;
 import com.linbit.linstor.api.interfaces.serializer.StltResourceRequestSerializer;
+import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.satellite.serializer.GenericRequestSerializerProto;
 import com.linbit.linstor.api.protobuf.satellite.serializer.ResourceRequestSerializerProto;
@@ -69,6 +77,73 @@ public class StltApiCallHandler
         storPoolHandler = new StltStorPoolApiCallHandler(satelliteRef, apiCtx);
     }
 
+
+    public void applyFullSync(Set<NodePojo> nodes, Set<StorPoolPojo> storPools, Set<RscPojo> resources)
+    {
+        try
+        {
+            satellite.reconfigurationLock.writeLock().lock();
+
+            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+            for (NodePojo node : nodes)
+            {
+                nodeHandler.applyChanges(node, transMgr);
+            }
+            for (StorPoolPojo storPool : storPools)
+            {
+                storPoolHandler.applyChanges(storPool, transMgr);
+            }
+            for (RscPojo rsc : resources)
+            {
+                rscHandler.applyChanges(rsc, transMgr);
+            }
+
+            transMgr.commit();
+
+            Set<NodeName> updatedNodeSet = new TreeSet<>();
+            Set<StorPoolName> updatedStorPools = new TreeSet<>();
+            Map<ResourceName, Set<NodeName>> updatedRscMap = new TreeMap<>();
+            for (NodePojo node : nodes)
+            {
+                updatedNodeSet.add(new NodeName(node.getName()));
+                satellite.getErrorReporter().logInfo("Node '" + node.getName() + "' created.");
+            }
+            for (StorPoolPojo storPool : storPools)
+            {
+                updatedStorPools.add(new StorPoolName(storPool.getStorPoolName()));
+                satellite.getErrorReporter().logInfo("StorPool '" + storPool.getStorPoolName() + "' created.");
+            }
+            for (RscPojo rsc : resources)
+            {
+                Set<NodeName> nodeSet = new HashSet<>();
+                nodeSet.add(satellite.getLocalNode().getName());
+                for (OtherRscPojo otherRsc : rsc.getOtherRscList())
+                {
+                    nodeSet.add(new NodeName(otherRsc.getNodeName()));
+                }
+                updatedRscMap.put(
+                    new ResourceName(rsc.getRscName()),
+                    nodeSet
+                );
+                satellite.getErrorReporter().logInfo("Resource '" + rsc.getRscName() + "' created.");
+            }
+            satellite.getErrorReporter().logInfo("Full sync completed");
+
+            DeviceManager deviceManager = satellite.getDeviceManager();
+            deviceManager.nodeUpdateApplied(updatedNodeSet);
+            deviceManager.storPoolUpdateApplied(updatedStorPools);
+            deviceManager.rscUpdateApplied(updatedRscMap);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            satellite.getErrorReporter().reportError(exc);
+        }
+        finally
+        {
+            satellite.reconfigurationLock.writeLock().unlock();
+        }
+    }
+
     public void requestNodeUpdate(UUID nodeUuid, NodeName nodeName)
     {
         sendRequest(
@@ -114,15 +189,32 @@ public class StltApiCallHandler
         );
     }
 
+    public void applyNodeChanges(NodePojo nodePojo)
+    {
+        try
+        {
+            satellite.reconfigurationLock.writeLock().lock();
+            nodeHandler.applyChanges(nodePojo);
+        }
+        catch (ImplementationError | Exception exc)
+        {
+            satellite.getErrorReporter().reportError(exc);
+        }
+        finally
+        {
+            satellite.reconfigurationLock.writeLock().unlock();
+        }
+    }
+
     public void deployResource(RscPojo rscRawData)
     {
         try
         {
             satellite.reconfigurationLock.writeLock().lock();
             // TODO: acquire nodesMapLock and rscDfnMapLock
-            rscHandler.deployResource(rscRawData);
+            rscHandler.applyChanges(rscRawData);
         }
-        catch (DivergentDataException | ImplementationError exc)
+        catch (ImplementationError exc)
         {
             satellite.getErrorReporter().reportError(exc);
         }
@@ -138,9 +230,9 @@ public class StltApiCallHandler
         {
             satellite.reconfigurationLock.writeLock().lock();
             // TODO: acquire nodesMapLock and storPoolDfnMapLock
-            storPoolHandler.deployStorPool(storPoolRaw);
+            storPoolHandler.applyChanges(storPoolRaw);
         }
-        catch (DivergentDataException | ImplementationError exc)
+        catch (ImplementationError exc)
         {
             satellite.getErrorReporter().reportError(exc);
         }

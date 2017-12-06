@@ -1,6 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.linstor.Node;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -12,8 +12,8 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final String nodeName;
     private final String nodeType;
     private final long nodeFlags;
-    private final Map<String, NetIfPojo> nodeNetInterfaces;
-    private final Map<String, Map<String, String>> nodeConnProps;
+    private final List<NetIfPojo> nodeNetInterfaces;
+    private final List<NodeConnPojo> nodeConns;
     private final Map<String, String> nodeProps;
 
     public NodePojo(String name, UUID uuid, String type) {
@@ -22,7 +22,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         this.nodeType = type;
         this.nodeFlags = 0;
         this.nodeNetInterfaces = null;
-        this.nodeConnProps = null;
+        this.nodeConns = null;
         this.nodeProps = null;
     }
 
@@ -31,8 +31,8 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         String nodeName,
         String nodeType,
         long nodeFlags,
-        Map<String, NetIfPojo> nodeNetInterfaces,
-        Map<String, Map<String, String>> nodeConnProps,
+        List<NetIfPojo> nodeNetInterfaces,
+        List<NodeConnPojo> nodeConns,
         Map<String, String> nodeProps
     )
     {
@@ -41,7 +41,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         this.nodeType = nodeType;
         this.nodeFlags = nodeFlags;
         this.nodeNetInterfaces = nodeNetInterfaces;
-        this.nodeConnProps = nodeConnProps;
+        this.nodeConns = nodeConns;
         this.nodeProps = nodeProps;
     }
 
@@ -67,14 +67,14 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         return nodeFlags;
     }
 
-    public Map<String, NetIfPojo> getNodeNetInterfaces()
+    public List<NetIfPojo> getNodeNetInterfaces()
     {
         return nodeNetInterfaces;
     }
 
-    public Map<String, Map<String, String>> getNodeConnProps()
+    public List<NodeConnPojo> getNodeConns()
     {
-        return nodeConnProps;
+        return nodeConns;
     }
 
     @Override
@@ -135,6 +135,63 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         public int getNetIfPort()
         {
             return netIfPort;
+        }
+    }
+
+    public static class NodeConnPojo
+    {
+        private final UUID nodeConnUuid;
+        private final UUID otherNodeUuid;
+        private final String otherNodeName;
+        private final String otherNodeType;
+        private final long otherNodeFlags;
+        private final Map<String, String> nodeConnProps;
+
+        public NodeConnPojo(
+            UUID nodeConnUuidRef,
+            UUID otherNodeUuidRef,
+            String otherNodeNameRef,
+            String otherNodeTypeRef,
+            long otherNodeFlagsRef,
+            Map<String, String> nodeConnPropsRef
+        )
+        {
+            nodeConnUuid = nodeConnUuidRef;
+            otherNodeUuid = otherNodeUuidRef;
+            otherNodeName = otherNodeNameRef;
+            otherNodeType = otherNodeTypeRef;
+            otherNodeFlags = otherNodeFlagsRef;
+            nodeConnProps = nodeConnPropsRef;
+        }
+
+        public UUID getNodeConnUuid()
+        {
+            return nodeConnUuid;
+        }
+
+        public UUID getOtherNodeUuid()
+        {
+            return otherNodeUuid;
+        }
+
+        public String getOtherNodeName()
+        {
+            return otherNodeName;
+        }
+
+        public String getOtherNodeType()
+        {
+            return otherNodeType;
+        }
+
+        public long getOtherNodeFlags()
+        {
+            return otherNodeFlags;
+        }
+
+        public Map<String, String> getNodeConnProps()
+        {
+            return nodeConnProps;
         }
     }
 }

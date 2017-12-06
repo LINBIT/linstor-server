@@ -20,8 +20,12 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.interfaces.serializer.CtrlAuthSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlFullSyncSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlNodeSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.protobuf.controller.serializer.AuthSerializerProto;
+import com.linbit.linstor.api.protobuf.controller.serializer.FullSyncSerializerProto;
+import com.linbit.linstor.api.protobuf.controller.serializer.NodeDataSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDataSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolDataSerializerProto;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -31,6 +35,7 @@ import com.linbit.linstor.security.AccessContext;
 public class CtrlApiCallHandler
 {
     private final CtrlAuthenticationApiCallHandler authApiCallHandler;
+    private final CtrlFullSyncApiCallHandler fullSyncApiCallHandler;
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
     private final CtrlVlmDfnApiCallHandler vlmDfnApiCallHandler;
@@ -46,21 +51,31 @@ public class CtrlApiCallHandler
     CtrlApiCallHandler(Controller controllerRef, ApiType type, AccessContext apiCtx)
     {
         controller = controllerRef;
-        ErrorReporter errorReporter = controller.getErrorReporter();
-        CtrlAuthSerializer authSerializer;
-        CtrlSerializer<Resource> rscSerializer;
-        CtrlSerializer<StorPool> storPoolSerializer;
+        final ErrorReporter errorReporter = controller.getErrorReporter();
+        final CtrlAuthSerializer authSerializer;
+        final CtrlFullSyncSerializer fullSyncSerializer;
+        final CtrlNodeSerializer nodeSerializer;
+        final CtrlSerializer<Resource> rscSerializer;
+        final CtrlSerializer<StorPool> storPoolSerializer;
         switch (type)
         {
             case PROTOBUF:
                 authSerializer = new AuthSerializerProto();
+                nodeSerializer = new NodeDataSerializerProto(apiCtx, errorReporter);
                 rscSerializer = new ResourceDataSerializerProto(apiCtx, errorReporter);
                 storPoolSerializer = new StorPoolDataSerializerProto(apiCtx, errorReporter);
+                fullSyncSerializer = new FullSyncSerializerProto(
+                    errorReporter,
+                    (NodeDataSerializerProto) nodeSerializer,
+                    (ResourceDataSerializerProto) rscSerializer,
+                    (StorPoolDataSerializerProto) storPoolSerializer
+                );
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
         }
         authApiCallHandler = new CtrlAuthenticationApiCallHandler(controllerRef, authSerializer);
+        fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(controllerRef, apiCtx, fullSyncSerializer);
         nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, apiCtx);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, apiCtx);
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
@@ -76,6 +91,24 @@ public class CtrlApiCallHandler
     {
         // no locks needed
         authApiCallHandler.completeAuthentication(peer);
+    }
+
+    public void sendFullSync(Peer client)
+    {
+        try
+        {
+            controller.nodesMapLock.readLock().lock();
+            controller.rscDfnMapLock.readLock().lock();
+            controller.storPoolDfnMapLock.readLock().lock();
+
+            fullSyncApiCallHandler.sendFullSync(client);
+        }
+        finally
+        {
+            controller.nodesMapLock.readLock().unlock();
+            controller.rscDfnMapLock.readLock().unlock();
+            controller.storPoolDfnMapLock.readLock().unlock();
+        }
     }
 
     /**

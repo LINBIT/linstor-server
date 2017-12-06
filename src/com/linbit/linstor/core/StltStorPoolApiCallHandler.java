@@ -1,6 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -29,95 +28,85 @@ class StltStorPoolApiCallHandler
         this.apiCtx = apiCtx;
     }
 
-    public void deployStorPool(StorPoolPojo storPoolRaw) throws DivergentDataException
+    public void applyChanges(StorPoolPojo storPoolRaw)
     {
-        SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-        StorPoolName storPoolName;
-
-        StorPoolDefinition storPoolDfnToRegister = null;
-
         try
         {
-            // TODO: uncomment the next line once the localNode gets requested from the controller
-//            checkUuid(satellite.localNode, storPoolRaw);
+            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+            StorPoolDefinition storPoolDfnToRegister = applyChanges(storPoolRaw, transMgr);
 
-            storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
-            StorPool storPool = satellite.localNode.getStorPool(apiCtx, storPoolName);
-
-            if (storPool != null)
-            {
-                checkUuid(storPool, storPoolRaw);
-                checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
-            }
-            else
-            {
-                StorPoolDefinition storPoolDfn = satellite.storPoolDfnMap.get(storPoolName);
-                if (storPoolDfn == null)
-                {
-                    storPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
-                        apiCtx,
-                        storPoolRaw.getStorPoolDfnUuid(),
-                        storPoolName,
-                        transMgr
-                    );
-                    checkUuid(storPoolDfn, storPoolRaw);
-
-                    storPoolDfnToRegister = storPoolDfn;
-                }
-
-                storPool = StorPoolData.getInstanceSatellite(
-                    apiCtx,
-                    storPoolRaw.getStorPoolUuid(),
-                    satellite.localNode,
-                    storPoolDfn,
-                    storPoolRaw.getDriver(),
-                    transMgr
-                );
-            }
+            StorPoolName storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
 
             transMgr.commit();
+
+
             satellite.getErrorReporter().logInfo(
-                "Storage pool '%s' successfully created.",
+                "Storage pool '%s' created.",
                 storPoolName.displayValue
             );
 
             if (storPoolDfnToRegister != null)
             {
-                satellite.storPoolDfnMap.put(storPoolName, storPoolDfnToRegister);
+                satellite.storPoolDfnMap.put(
+                    storPoolName,
+                    storPoolDfnToRegister
+                );
             }
 
             Set<StorPoolName> storPoolSet = new HashSet<>();
             storPoolSet.add(storPoolName);
             satellite.getDeviceManager().storPoolUpdateApplied(storPoolSet);
         }
-        catch (InvalidNameException invalidDataExc)
+        catch (Exception | ImplementationError exc)
         {
-            satellite.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Controller sent invalid Data for resource deployment",
-                    invalidDataExc
-                )
-            );
+            satellite.getErrorReporter().reportError(exc);
         }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            satellite.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Satellite's apiContext has not enough privileges to deploy resource",
-                    accDeniedExc
-                )
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            satellite.getErrorReporter().reportError(
-                new ImplementationError(
-                    "SatelliteTransactionMgr caused an sqlException",
-                    sqlExc
-                )
-            );
-        }
+    }
 
+    public StorPoolDefinition applyChanges(StorPoolPojo storPoolRaw, SatelliteTransactionMgr transMgr)
+        throws DivergentDataException, InvalidNameException, AccessDeniedException
+    {
+        StorPoolName storPoolName;
+
+        StorPoolDefinition storPoolDfnToRegister = null;
+
+        // TODO: uncomment the next line once the localNode gets requested from the controller
+//          checkUuid(satellite.localNode, storPoolRaw);
+
+        storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
+        StorPool storPool = satellite.localNode.getStorPool(apiCtx, storPoolName);
+
+        if (storPool != null)
+        {
+            checkUuid(storPool, storPoolRaw);
+            checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
+        }
+        else
+        {
+            StorPoolDefinition storPoolDfn = satellite.storPoolDfnMap.get(storPoolName);
+            if (storPoolDfn == null)
+            {
+                storPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
+                    apiCtx,
+                    storPoolRaw.getStorPoolDfnUuid(),
+                    storPoolName,
+                    transMgr
+                );
+                checkUuid(storPoolDfn, storPoolRaw);
+
+                storPoolDfnToRegister = storPoolDfn;
+            }
+
+            storPool = StorPoolData.getInstanceSatellite(
+                apiCtx,
+                storPoolRaw.getStorPoolUuid(),
+                satellite.localNode,
+                storPoolDfn,
+                storPoolRaw.getDriver(),
+                transMgr
+            );
+        }
+        return storPoolDfnToRegister;
     }
 
     private void checkUuid(Node node, StorPoolPojo storPoolRaw)

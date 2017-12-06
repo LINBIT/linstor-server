@@ -14,9 +14,12 @@ import com.linbit.linstor.security.AccessContext;
 @ProtobufApiCall
 public class IntAuthAccept extends BaseProtoApiCall
 {
+    private Controller controller;
+
     public IntAuthAccept(Controller controller)
     {
         super(controller.getErrorReporter());
+        this.controller = controller;
     }
 
     @Override
@@ -43,5 +46,7 @@ public class IntAuthAccept extends BaseProtoApiCall
     {
         client.setAuthenticated(true);
         errorReporter.logDebug("Satellite '" + client.getNode().getName() + "' authenticated");
+
+        controller.getApiCallHandler().sendFullSync(client);
     }
 }

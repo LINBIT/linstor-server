@@ -15,7 +15,8 @@ class CtrlAuthenticationApiCallHandler
 
     public CtrlAuthenticationApiCallHandler(
         Controller controllerRef,
-        CtrlAuthSerializer serializerRef)
+        CtrlAuthSerializer serializerRef
+    )
     {
         controller = controllerRef;
         serializer = serializerRef;

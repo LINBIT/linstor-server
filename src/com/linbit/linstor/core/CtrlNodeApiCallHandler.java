@@ -813,7 +813,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         currentVariables.get().put(KEY_MISSING_NAMESPC, NAMESPC_NETIF);
         report(
             null,
-            "Creation of the node '%s' failed.",
+            String.format(
+                "Creation of the node '%s' failed.",
+                currentNodeName.get()
+            ),
             String.format(
                 "The path '%s' is not present in the properties specified for the node.\n" +
                 "The path contains mandatory parameters required for node creation.",
