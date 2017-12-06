@@ -62,7 +62,7 @@ public class ConfFile implements Comparator<Resource>
         }
         NetInterface localNetIf = localRsc.getAssignedNode().iterateNetInterfaces(accCtx).next();
         String localAddr = localNetIf.getAddress(accCtx).getAddress();
-        int localPort = localNetIf.getNetInterfacePort(accCtx);
+        int port =  localRsc.getDefinition().getPort(accCtx).value;
         conf.append("    on %s\n", localRsc.getAssignedNode().getName().displayValue);
         conf.append("    {\n");
         Iterator<Volume> vlmIterator = localRsc.iterateVolumes();
@@ -71,7 +71,7 @@ public class ConfFile implements Comparator<Resource>
             final Volume vlm = vlmIterator.next();
             appendVlm(vlm, localRsc, accCtx, conf);
         }
-        conf.append("        address    %s:%d;\n", localAddr, localPort);
+        conf.append("        address    %s:%d;\n", localAddr, port);
         conf.append("        nodeid     %d;\n", localRsc.getNodeId().value);
         conf.append("    }\n");
 
@@ -79,7 +79,6 @@ public class ConfFile implements Comparator<Resource>
         {
             NetInterface peerNetIf = peerRsc.getAssignedNode().iterateNetInterfaces(accCtx).next();
             String peerAddr = peerNetIf.getAddress(accCtx).getAddress();
-            int peerPort = peerNetIf.getNetInterfacePort(accCtx);
             conf.append("\n");
             conf.append("    on %s\n", peerRsc.getAssignedNode().getName().displayValue);
             conf.append("    {\n");
@@ -90,7 +89,7 @@ public class ConfFile implements Comparator<Resource>
                 appendVlm(peerVlm, peerRsc, accCtx, conf);
             }
 
-            conf.append("        address     %s:%d;\n", peerAddr, peerPort);
+            conf.append("        address     %s:%d;\n", peerAddr, port);
             conf.append("        node-id     %s;\n", peerRsc.getNodeId().value);
 
             // TODO: implement "multi-connection / path magic" (nodeMeshes + singleConnections vars)
