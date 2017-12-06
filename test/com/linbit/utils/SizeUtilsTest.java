@@ -9,14 +9,14 @@ import org.junit.Test;
 public class SizeUtilsTest
 {
     @Test
-    public void testApproxSizeAllSupportedMagnitutes()
+    public void testApproxSizeAllSupportedMagnitudes()
     {
         BigInteger kib = BigInteger.valueOf(1);
-        for (String magnitute : SizeUtils.UNITS)
+        for (String magnitude : SizeUtils.UNITS)
         {
-            assertEquals("1.00 " + magnitute, SizeUtils.approximateSizeString(kib));
+            assertEquals("1.00 " + magnitude, SizeUtils.approximateSizeString(kib));
             kib = kib.shiftLeft(9);
-            assertEquals("512.00 " + magnitute, SizeUtils.approximateSizeString(kib));
+            assertEquals("512.00 " + magnitude, SizeUtils.approximateSizeString(kib));
             kib = kib.shiftLeft(1);
         }
     }
