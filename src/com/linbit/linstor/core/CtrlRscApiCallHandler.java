@@ -92,8 +92,9 @@ class CtrlRscApiCallHandler
         VolumeNumber volNr = null;
         VolumeDefinition vlmDfn = null;
         String storPoolNameStr = null;
-        Props vlmProps = null;
+        Props vlmDfnProps = null;
         Props rscProps = null;
+        Props rscDfnProps = null;
         Props nodeProps = null;
         StorPoolName storPoolName = null;
         StorPoolDefinition storPoolDfn = null;
@@ -216,6 +217,11 @@ class CtrlRscApiCallHandler
 
                 successApiCallRc.addEntry(rscSuccess);
 
+                // TODO rework accDeniedExceptions
+                rscProps = rsc.getProps(accCtx); // accDeniedExc7
+                rscDfnProps = rscDfn.getProps(accCtx); // accDeniedExc7.5
+                nodeProps = node.getProps(accCtx); // accDeniedExc8
+
                 Map<Integer, Volume> vlmMap = new TreeMap<>();
                 for (VlmApi vlmApi : vlmApiList)
                 {
@@ -226,9 +232,7 @@ class CtrlRscApiCallHandler
                     storPoolName = null;
                     storPoolDfn = null;
                     storPool = null;
-                    vlmProps = null;
-                    rscProps = null;
-                    nodeProps = null;
+                    vlmDfnProps = null;
 
                     volNr = new VolumeNumber(vlmApi.getVlmNr()); // valueOutOfRangeExc1
                     vlmDfn = rscDfn.getVolumeDfn(accCtx, volNr); // accDeniedExc5
@@ -262,12 +266,11 @@ class CtrlRscApiCallHandler
                     storPoolNameStr = vlmApi.getStorPoolName();
                     if (storPoolNameStr == null || "".equals(storPoolNameStr))
                     {
-                        vlmProps = vlmDfn.getProps(accCtx); // accDeniedExc6
-                        rscProps = rsc.getProps(accCtx); // accDeniedExc7
-                        nodeProps = node.getProps(accCtx); // accDeniedExc8
+                        vlmDfnProps = vlmDfn.getProps(accCtx); // accDeniedExc6
                         PriorityProps prioProps = new PriorityProps(
-                            vlmProps,
                             rscProps,
+                            vlmDfnProps,
+                            rscDfnProps,
                             nodeProps
                         );
                         storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);

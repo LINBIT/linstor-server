@@ -363,8 +363,9 @@ public class ResourceData extends BaseTransactionObject implements Resource
             {
                 VolumeDefinition vlmDfn = vlmDfns.next();
                 PriorityProps prioProps = new PriorityProps(
-                    vlmDfn.getProps(apiCtx),
                     this.getProps(apiCtx),
+                    vlmDfn.getProps(apiCtx),
+                    resourceDfn.getProps(apiCtx),
                     assgNode.getProps(apiCtx)
                 );
 
