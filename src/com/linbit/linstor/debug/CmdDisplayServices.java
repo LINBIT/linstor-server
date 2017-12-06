@@ -5,7 +5,6 @@ import com.linbit.SystemService;
 import com.linbit.linstor.security.AccessContext;
 
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -42,17 +41,13 @@ public class CmdDisplayServices extends BaseDebugCmd
 
         if (services.size() > 0)
         {
-            char[] rulerData = new char[78];
-            Arrays.fill(rulerData, '-');
-            String ruler = new String(rulerData);
-
             debugOut.printf(
                 "%-32s %-7s %s\n",
                 "Service instance name",
                 "Started",
                 "Service type identifier"
             );
-            debugOut.println(ruler);
+            printSectionSeparator(debugOut);
             int startedCtr = 0;
             for (Map.Entry<ServiceName, SystemService> sysSvcEntry : services.entrySet())
             {
@@ -70,7 +65,7 @@ public class CmdDisplayServices extends BaseDebugCmd
                     sysSvc.getServiceName().getDisplayName()
                 );
             }
-            debugOut.println(ruler);
+            printSectionSeparator(debugOut);
             debugOut.printf("%d services, %d started\n", services.size(), startedCtr);
         }
         else

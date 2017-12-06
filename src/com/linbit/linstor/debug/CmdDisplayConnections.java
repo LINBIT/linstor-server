@@ -13,7 +13,6 @@ import com.linbit.linstor.security.SecurityType;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -166,9 +165,6 @@ public class CmdDisplayConnections extends BaseDebugCmd
 
             if (peerList.size() > 0)
             {
-                char[] rulerData = new char[78];
-                Arrays.fill(rulerData, '-');
-                String ruler = new String(rulerData);
                 debugOut.printf(
                     "%-46s %5s %8s %8s\n",
                     "Endpoint address",
@@ -176,7 +172,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
                     "MsgRecv",
                     "MsgSent"
                 );
-                debugOut.println(ruler);
+                printSectionSeparator(debugOut);
 
                 int count = 0;
                 for (Peer curPeer : peerList.values())
@@ -253,7 +249,7 @@ public class CmdDisplayConnections extends BaseDebugCmd
                     }
                 }
 
-                debugOut.println(ruler);
+                printSectionSeparator(debugOut);
                 if (connIdMatch != null || connSvcMatch != null || addrMatch != null)
                 {
                     String countFormat;

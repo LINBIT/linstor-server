@@ -8,7 +8,6 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
@@ -99,9 +98,6 @@ public class CmdDisplayConfValue extends BaseDebugCmd
                         confProt.requireAccess(accCtx, AccessType.VIEW);
                     }
                 }
-                char[] rulerData = new char[78];
-                Arrays.fill(rulerData, '-');
-                String ruler = new String(rulerData);
 
                 Props searchRoot = conf;
                 if (prmNamespace != null)
@@ -124,14 +120,14 @@ public class CmdDisplayConfValue extends BaseDebugCmd
                         if (count == 0)
                         {
                             debugOut.printf(ENTRY_HEADER_FORMAT, HEADER_KEY, HEADER_VALUE);
-                            debugOut.println(ruler);
+                            printSectionSeparator(debugOut);
                         }
                         debugOut.printf(ENTRY_OUTPUT_FORMAT, confEntry.getKey(), confEntry.getValue());
                         ++count;
                     }
                     if (count > 0)
                     {
-                        debugOut.println(ruler);
+                        printSectionSeparator(debugOut);
                         if (count == 1)
                         {
                             debugOut.println("1 entry");
@@ -160,9 +156,9 @@ public class CmdDisplayConfValue extends BaseDebugCmd
                     else
                     {
                         debugOut.printf(ENTRY_HEADER_FORMAT, HEADER_KEY, HEADER_VALUE);
-                        debugOut.println(ruler);
+                        printSectionSeparator(debugOut);
                         debugOut.printf(ENTRY_OUTPUT_FORMAT, prmKey, value);
-                        debugOut.println(ruler);
+                        printSectionSeparator(debugOut);
                     }
                 }
                 else
@@ -221,7 +217,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
                            if (count == 0)
                            {
                                debugOut.printf(ENTRY_HEADER_FORMAT, HEADER_KEY, HEADER_VALUE);
-                               debugOut.println(ruler);
+                               printSectionSeparator(debugOut);
                            }
                            debugOut.printf(ENTRY_OUTPUT_FORMAT, confEntry.getKey(), confEntry.getValue());
                            ++count;
@@ -229,7 +225,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
                    }
                    if (count > 0)
                    {
-                       debugOut.println(ruler);
+                       printSectionSeparator(debugOut);
                        if (count == 1)
                        {
                            debugOut.println("1 entry matches");

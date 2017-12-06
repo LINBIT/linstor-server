@@ -1,7 +1,6 @@
 package com.linbit.linstor.debug;
 
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.Map;
 
 import com.linbit.linstor.security.AccessContext;
@@ -42,16 +41,12 @@ public class CmdDisplayThreads extends BaseDebugCmd
         Thread[] activeThreads = new Thread[thrCount + OVERFLOW_SPACE];
         thrCount = Thread.enumerate(activeThreads);
 
-        char[] rulerData = new char[78];
-        Arrays.fill(rulerData, '-');
-        String ruler = new String(rulerData);
-
         debugOut.printf(
             "\u001b[1;37mA\u001b[0m Alive / \u001b[1;37mD\u001b[0m Daemon / \u001b[1;37mI\u001b[0m Interrupted\n" +
             "%-32s %18s %4s %-15s A D I\n",
             "Thread name", "Id", "Prio", "State"
         );
-        debugOut.println(ruler);
+        printSectionSeparator(debugOut);
 
         int slot = 0;
         int aliveCtr = 0;
@@ -91,7 +86,7 @@ public class CmdDisplayThreads extends BaseDebugCmd
             }
         }
 
-        debugOut.println(ruler);
+        printSectionSeparator(debugOut);
         debugOut.printf(
             "%d threads, %d alive, %d ended, %d daemon\n",
             thrCount, aliveCtr, thrCount - aliveCtr, daemonCtr
