@@ -4,8 +4,11 @@ import static com.linbit.linstor.api.ApiConsts.*;
 
 import java.net.InetSocketAddress;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeSet;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
@@ -28,7 +31,9 @@ import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlNodeSerializer;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -44,11 +49,18 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeType = new ThreadLocal<>();
+    private final CtrlNodeSerializer nodeSerializer;
     private final CtrlListSerializer nodeListSerializer;
 
-    CtrlNodeApiCallHandler(Controller controllerRef, CtrlListSerializer nodeListSerializer, AccessContext apiCtxRef)
+    CtrlNodeApiCallHandler(
+        Controller controllerRef,
+        AccessContext apiCtxRef,
+        CtrlNodeSerializer nodeSerializer,
+        CtrlListSerializer nodeListSerializer
+    )
     {
         super(controllerRef, apiCtxRef);
+        this.nodeSerializer = nodeSerializer;
         this.nodeListSerializer = nodeListSerializer;
     }
 
@@ -678,6 +690,70 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         return null;
     }
 
+    void respondNode(int msgId, Peer satellite, UUID nodeUuid, String nodeNameStr)
+    {
+        try
+        {
+            NodeName nodeName = new NodeName(nodeNameStr);
+
+            Node node = controller.nodesMap.get(nodeName);
+            if (node != null)
+            {
+                if (node.getUuid().equals(nodeUuid))
+                {
+                    Collection<Node> otherNodes = new TreeSet<>();
+                    // otherNodes can be filled with all nodes (except the current 'node')
+                    // related to the satellite. The serializer only needs the other nodes for
+                    // the nodeConnections.
+                    Iterator<Resource> rscIterator = satellite.getNode().iterateResources(apiCtx);
+                    while (rscIterator.hasNext())
+                    {
+                        Resource rsc = rscIterator.next();
+                        Iterator<Resource> otherRscIterator = rsc.getDefinition().iterateResource(apiCtx);
+                        while (otherRscIterator.hasNext())
+                        {
+                            Resource otherRsc = otherRscIterator.next();
+                            if (otherRsc != rsc)
+                            {
+                                otherNodes.add(otherRsc.getAssignedNode());
+                            }
+                        }
+                    }
+                    byte[] data = nodeSerializer.getDataMessage(msgId, node, otherNodes);
+                    Message message = satellite.createMessage();
+                    message.setData(data);
+                    satellite.sendMessage(message);
+                }
+                else
+                {
+                    controller.getErrorReporter().reportError(
+                        new ImplementationError(
+                            "Satellite '" + satellite.getId() + "' requested a node with an outdated " +
+                            "UUID. Current UUID: " + node.getUuid() + ", satellites outdated UUID: " +
+                            nodeUuid,
+                            null
+                        )
+                    );
+                }
+            }
+            else
+            {
+                controller.getErrorReporter().reportError(
+                    new ImplementationError(
+                        "A requested node '" + nodeNameStr + "' was not found in controllers nodesMap",
+                        null
+                    )
+                );
+            }
+        }
+        catch (Exception exc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(exc)
+            );
+        }
+    }
+
     private void requireNodesMapChangeAccess() throws ApiCallHandlerFailedException
     {
         try
@@ -938,7 +1014,8 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             report(
                 numberFormatExc,
                 "Node creation failed.",
-                "The specified TCP/IP port number is invalid",
+                "The specified TCP/IP port number of the network interface '" + netIfNameStr +
+                "' is invalid",
                 "The input specified for the TCP/IP port number field was '" + portStr + "'.",
                 "A valid TCP/IP port number must be specified.",
                 RC_NODE_CRT_FAIL_INVLD_NET_PORT

@@ -53,6 +53,6 @@ public class IntRequestResource extends BaseProtoApiCall
         UUID rscUuid = asUuid(rscId.getUuid());
         String rscName = rscId.getName();
 
-        controller.getApiCallHandler().requestResource(satellitePeer, msgId, nodeName, rscName, rscUuid);
+        controller.getApiCallHandler().handleResourceRequest(satellitePeer, msgId, nodeName, rscUuid, rscName);
     }
 }

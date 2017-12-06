@@ -15,11 +15,11 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.utils.UuidUtils;
 
 @ProtobufApiCall
-public class IntRequestStorPool extends BaseProtoApiCall
+public class IntRequestNode extends BaseProtoApiCall
 {
-    private Controller controller;
+    private final Controller controller;
 
-    public IntRequestStorPool(Controller controller)
+    public IntRequestNode(Controller controller)
     {
         super(controller.getErrorReporter());
         this.controller = controller;
@@ -28,29 +28,24 @@ public class IntRequestStorPool extends BaseProtoApiCall
     @Override
     public String getName()
     {
-        return InternalApiConsts.API_REQUEST_STOR_POOL;
+        return InternalApiConsts.API_REQUEST_NODE;
     }
 
     @Override
     public String getDescription()
     {
-        return "This request is answered with a full data response of the requested storpool";
+        return "Requests the information about the given node";
     }
 
     @Override
-    protected void executeImpl(
-        AccessContext accCtx,
-        Message msg,
-        int msgId,
-        InputStream msgDataIn,
-        Peer satellitePeer
-    )
+    protected void executeImpl(AccessContext accCtx, Message msg, int msgId, InputStream msgDataIn, Peer client)
         throws IOException
     {
-        MsgIntObjectId storPoolId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-        UUID storPoolUuid = UuidUtils.asUuid(storPoolId.getUuid().toByteArray());
-        String storPoolName = storPoolId.getName();
+        MsgIntObjectId objId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
+        UUID nodeUuid = UuidUtils.asUuid(objId.getUuid().toByteArray());
+        String nodeName = objId.getName();
 
-        controller.getApiCallHandler().handleStorPoolRequest(satellitePeer, msgId, storPoolUuid, storPoolName);
+        controller.getApiCallHandler().handleNodeRequest(client, msgId, nodeUuid, nodeName);
     }
+
 }

@@ -84,7 +84,7 @@ public class CtrlApiCallHandler
         }
         authApiCallHandler = new CtrlAuthenticationApiCallHandler(controllerRef, authSerializer);
         fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(controllerRef, apiCtx, fullSyncSerializer);
-        nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, nodeListSerializer, apiCtx);
+        nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, apiCtx, nodeSerializer, nodeListSerializer);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, rscDfnListSerializer, apiCtx);
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
         rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, apiCtx);
@@ -860,10 +860,16 @@ public class CtrlApiCallHandler
      *
      * @param satellite required
      * @param msgId required
-     * @param rscName required
      * @param rscUuid required (for double checking)
+     * @param rscName required
      */
-    public void requestResource(Peer satellite, int msgId, String nodeName, String rscName, UUID rscUuid)
+    public void handleResourceRequest(
+        Peer satellite,
+        int msgId,
+        String nodeName,
+        UUID rscUuid,
+        String rscName
+    )
     {
         try
         {
@@ -889,14 +895,14 @@ public class CtrlApiCallHandler
      * satellite.
      * @param satellite required
      * @param msgId required
-     * @param storPoolNameStr required
      * @param storPoolUuid required (for double checking)
+     * @param storPoolNameStr required
      */
-    public void requestStorPool(
+    public void handleStorPoolRequest(
         Peer satellite,
         int msgId,
-        String storPoolNameStr,
-        UUID storPoolUuid
+        UUID storPoolUuid,
+        String storPoolNameStr
     )
     {
         try
@@ -915,6 +921,30 @@ public class CtrlApiCallHandler
         {
             controller.nodesMapLock.readLock().unlock();
             controller.storPoolDfnMapLock.readLock().unlock();
+        }
+    }
+
+    public void handleNodeRequest(
+        Peer satellite,
+        int msgId,
+        UUID nodeUuid,
+        String nodeNameStr
+    )
+    {
+        try
+        {
+            controller.nodesMapLock.readLock().lock();
+
+            nodeApiCallHandler.respondNode(
+                msgId,
+                satellite,
+                nodeUuid,
+                nodeNameStr
+            );
+        }
+        finally
+        {
+            controller.nodesMapLock.readLock().unlock();
         }
     }
 }
