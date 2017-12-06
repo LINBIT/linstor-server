@@ -60,7 +60,7 @@ public class MinorNumber implements Comparable<MinorNumber>
         {
             try
             {
-                if (value == ((MinorNumber) other).value)
+                if (other != null && value == ((MinorNumber) other).value)
                 {
                     result = true;
                 }

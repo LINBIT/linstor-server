@@ -24,6 +24,8 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.debug.DebugConsole;
+import com.linbit.linstor.drbdstate.DrbdEventService;
+import com.linbit.linstor.drbdstate.StateTracker;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -155,6 +157,9 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     // Device manager
     private DeviceManagerImpl devMgr = null;
 
+    // Drbd Event Tracker
+    private DrbdEventService drbdEvent;
+
     // Shutdown controls
     private boolean shutdownFinished;
     private ObjectProtection shutdownProt;
@@ -162,7 +167,6 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     // Lock for major global changes
     public final ReadWriteLock reconfigurationLock;
     public final ReadWriteLock stltConfLock;
-
 
     public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
         throws IOException
@@ -313,13 +317,27 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                 errorLogRef.logInfo("Initializing test APIs");
                 LinStor.loadApiCalls(msgProc, this, this, apiType);
 
+
+                errorLogRef.logInfo("Initializing StateTracker");
+                {
+                    AccessContext drbdEventCtx = sysCtx.clone();
+                    PrivilegeSet drbdEventPriv = drbdEventCtx.getEffectivePrivs();
+                    drbdEventPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
+                    drbdEventPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
+
+                    StateTracker stateTracker = new StateTracker();
+                    drbdEvent = new DrbdEventService(stateTracker);
+
+                    systemServicesMap.put(drbdEvent.getInstanceName(), drbdEvent);
+                }
+
                 errorLogRef.logInfo("Initializing device manager");
                 {
                     AccessContext devMgrCtx = sysCtx.clone();
                     PrivilegeSet devMgrPriv = devMgrCtx.getEffectivePrivs();
                     devMgrPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
                     devMgrPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
-                    devMgr = new DeviceManagerImpl(this, devMgrCtx, this);
+                    devMgr = new DeviceManagerImpl(this, devMgrCtx, this, drbdEvent);
 
                     systemServicesMap.put(devMgr.getInstanceName(), devMgr);
                 }

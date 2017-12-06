@@ -3,6 +3,7 @@ package com.linbit.linstor.drbdstate;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.DrbdStateChange;
 
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -28,10 +29,11 @@ public class EventsTracker
     public static final String OBJ_VOLUME       = "device";
     public static final String OBJ_PEER_VOLUME  = "peer-device";
     public static final String OBJ_CONNECTION   = "connection";
+    public static final String OBJ_END_OF_INIT  = "-";
 
     // DRBD state tracker & events multiplexer reference
     private final StateTracker tracker;
-
+    private boolean stateAvailable = false;
 
     public EventsTracker(StateTracker trackerRef)
     {
@@ -103,11 +105,6 @@ public class EventsTracker
         }
     }
 
-    public void reinitializing()
-    {
-
-    }
-
     private void create(Map<String, String> props, String object) throws EventsSourceException
     {
         switch (object)
@@ -124,11 +121,37 @@ public class EventsTracker
             case OBJ_PEER_VOLUME:
                 createPeerVolume(props);
                 break;
+            case OBJ_END_OF_INIT:
+                drbdStateAvailable();
+                break;
             default:
                 // Other object type, such as a connection path
                 // Those types are currently ignored
                 break;
         }
+    }
+
+    public void reinitializing()
+    {
+        stateAvailable = false;
+        for (DrbdStateChange obs : tracker.drbdStateChangeObservers)
+        {
+            obs.drbdStateUnavailable();
+        }
+    }
+
+    private void drbdStateAvailable()
+    {
+        stateAvailable = true;
+        for (DrbdStateChange obs : tracker.drbdStateChangeObservers)
+        {
+            obs.drbdStateAvailable();
+        }
+    }
+
+    public boolean isStateAvailable()
+    {
+        return stateAvailable;
     }
 
     private void change(Map<String, String> props, String object) throws EventsSourceException

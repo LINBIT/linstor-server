@@ -54,7 +54,7 @@ public class OutputProxy implements Runnable
     public void run()
     {
         int read = 0;
-        while (read != EOF)
+        while (read != EOF && !shutdown)
         {
             // First read from the InputStream
             try
@@ -75,11 +75,19 @@ public class OutputProxy implements Runnable
                             addToDeque(delimitedData);
 
                             // Skip the delimiter
-                            dataPos += 2;
+                            dataPos += 1;
 
-                            // Copy all remaining data to the start of our array
-                            System.arraycopy(data, dataPos, data, 0, dataLimit - dataPos);
-                            dataLimit -= dataPos;
+                            if (dataPos == dataLimit)
+                            {
+                                // no need to copy, all data will be overridden anyways
+                                dataLimit = 0;
+                            }
+                            else
+                            {
+                                // Copy all remaining data to the start of our array
+                                System.arraycopy(data, dataPos, data, 0, dataLimit - dataPos);
+                                dataLimit -= dataPos;
+                            }
                             dataPos = 0;
                         }
                         else

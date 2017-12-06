@@ -533,14 +533,17 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 errorLogRef.logInfo("Core objects load from database completed");
 
                 // attempt to reconnect to known nodes
-                errorLogRef.logInfo("Reconnecting to previously known nodes");
-                Collection<Node> nodes = nodesMap.values();
-                for (Node node : nodes)
+                if (nodesMap.isEmpty())
                 {
-                    errorLogRef.logDebug("Reconnecting to node '" + node.getName() + "'.");
-                    CtrlNodeApiCallHandler.startConnecting(node, initCtx, null, this);
+                    errorLogRef.logInfo("Reconnecting to previously known nodes");
+                    Collection<Node> nodes = nodesMap.values();
+                    for (Node node : nodes)
+                    {
+                        errorLogRef.logDebug("Reconnecting to node '" + node.getName() + "'.");
+                        CtrlNodeApiCallHandler.startConnecting(node, initCtx, null, this);
+                    }
+                    errorLogRef.logInfo("Reconnect requests sent");
                 }
-                errorLogRef.logInfo("Reconnect requests sent");
             }
             catch (AccessDeniedException accessExc)
             {

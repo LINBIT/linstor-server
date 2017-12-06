@@ -2,9 +2,12 @@ package com.linbit.linstor.drbdstate;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.MinorNumber;
+import com.linbit.linstor.core.DrbdStateChange;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -72,13 +75,14 @@ public class StateTracker
     private int obsSlotCount;
     private Set<ResourceObserver>[] observers;
     private Map<ResourceObserver, Long> obsMaskMap;
+    List<DrbdStateChange> drbdStateChangeObservers;
 
     private final Map<String, DrbdResource> resList;
     protected final ResObsMux multiplexer;
 
     private final long validEventsMask;
 
-    StateTracker()
+    public StateTracker()
     {
         // Initialize number of observer slots to minimum
         // The number of actually required slots is set by the
@@ -113,6 +117,8 @@ public class StateTracker
         validEventsMask = (1 << obsSlotCount) - 1;
 
         multiplexer = new ResObsMux(this);
+
+        drbdStateChangeObservers = new ArrayList<>();
     }
 
     public DrbdResource getResource(String name)
@@ -218,6 +224,11 @@ public class StateTracker
             }
         }
         obsMaskMap.remove(obs);
+    }
+
+    public void addDrbdStateChangeObserver(DrbdStateChange obs)
+    {
+        drbdStateChangeObservers.add(obs);
     }
 
     /**

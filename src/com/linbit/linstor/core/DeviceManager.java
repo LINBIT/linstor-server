@@ -6,7 +6,7 @@ import com.linbit.linstor.StorPoolName;
 import java.util.Map;
 import java.util.Set;
 
-public interface DeviceManager
+public interface DeviceManager extends DrbdStateChange
 {
     void nodeUpdateApplied(Set<NodeName> nodeSet);
     void rscDefUpdateApplied(Set<ResourceName> rscDfnSet);

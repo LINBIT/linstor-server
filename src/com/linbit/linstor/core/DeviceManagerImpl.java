@@ -11,6 +11,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteCoreServices;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
@@ -58,16 +59,28 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private DeviceHandler drbdHnd;
 
-    DeviceManagerImpl(Satellite stltRef, AccessContext wrkCtxRef, SatelliteCoreServices coreSvcsRef)
+    private boolean stateAvailable;
+    private DrbdEventService drbdEvent;
+
+    DeviceManagerImpl(
+        Satellite stltRef,
+        AccessContext wrkCtxRef,
+        SatelliteCoreServices coreSvcsRef,
+        DrbdEventService drbdEventRef
+    )
     {
         stltInstance = stltRef;
         wrkCtx = wrkCtxRef;
         coreSvcs = coreSvcsRef;
+        drbdEvent = drbdEventRef;
         updTracker = new StltUpdateTrackerImpl(sched);
         rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
         svcThr = null;
         devMgrInstName = devMgrName;
         drbdHnd = new DrbdDeviceHandler(coreSvcs);
+
+        drbdEvent.addDrbdStateChangeObserver(this);
+        stateAvailable = drbdEvent.isDrbdStateAvailable();
     }
 
     /**
@@ -122,6 +135,22 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             waitThr.join(timeout);
         }
+    }
+
+    @Override
+    public void drbdStateAvailable()
+    {
+        synchronized (sched)
+        {
+            stateAvailable = true;
+            sched.notify();
+        }
+    }
+
+    @Override
+    public void drbdStateUnavailable()
+    {
+        stateAvailable = false;
     }
 
     @Override
@@ -322,6 +351,20 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     }
                 }
 
+                // TODO: if !stateAvailable try to collect additional updates (without losing the current)
+                synchronized (sched)
+                {
+                    while (!shutdownFlag.get() && !stateAvailable)
+                    {
+                        try
+                        {
+                            sched.wait();
+                        }
+                        catch (InterruptedException ignored)
+                        {
+                        }
+                    }
+                }
                 // TODO: Wait for the worker threads to finish
             }
             while (!shutdownFlag.get());

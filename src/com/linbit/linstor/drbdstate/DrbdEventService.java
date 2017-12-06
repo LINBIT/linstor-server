@@ -14,6 +14,7 @@ import com.linbit.extproc.OutputProxy.Event;
 import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
+import com.linbit.linstor.core.DrbdStateChange;
 
 public class DrbdEventService implements SystemService, Runnable
 {
@@ -26,15 +27,15 @@ public class DrbdEventService implements SystemService, Runnable
     private boolean started = false;
 
     private final BlockingDeque<Event> eventDeque;
-    private final Thread thread;
+    private Thread thread;
     private boolean running;
-    private boolean startable;
     private boolean waitingForRestart;
 
     private final EventsTracker eventsTracker;
     private boolean needsReinitialize = false;
 
     private DaemonHandler demonHandler;
+    private StateTracker tracker;
 
     static
     {
@@ -54,10 +55,9 @@ public class DrbdEventService implements SystemService, Runnable
         {
             instanceName = new ServiceName(INSTANCE_PREFIX + INSTANCE_COUNT.incrementAndGet());
             eventDeque = new LinkedBlockingDeque<>(10_000);
-            thread = new Thread(this, "DrbdEventService");
             demonHandler = new DaemonHandler(eventDeque, "drbdsetup", "events2", "all");
-            startable = true;
             running = false;
+            tracker = trackerRef;
             eventsTracker = new EventsTracker(trackerRef);
         }
         catch (InvalidNameException invalidNameExc)
@@ -69,66 +69,45 @@ public class DrbdEventService implements SystemService, Runnable
     @Override
     public void run()
     {
-        while (startable)
+        while (running)
         {
-            while (running)
+            Event event;
+            try
             {
-                Event event;
-                try
+                event = eventDeque.take();
+                if (event instanceof StdOutEvent)
                 {
-                    event = eventDeque.take();
-                    if (event instanceof StdOutEvent)
-                    {
-                        eventsTracker.receiveEvent(new String(((StdOutEvent) event).data));
-                    }
-                    else
-                    if (event instanceof StdErrEvent)
-                    {
-                        demonHandler.stop(true);
-                        demonHandler.start();
-                    }
-                    else
-                    if (event instanceof ExceptionEvent)
-                    {
-                        // FIXME: Report the exception to the controller
-                    }
-                    else
-                    if (event instanceof PoisonEvent)
-                    {
-                        break;
-                    }
+                    eventsTracker.receiveEvent(new String(((StdOutEvent) event).data));
                 }
-                catch (InterruptedException | IOException exc)
+                else
+                if (event instanceof StdErrEvent)
                 {
-                    if (running)
-                    {
-                        // FIXME: Error reporting required
-                        exc.printStackTrace();
-                    }
+                    demonHandler.stop(true);
+                    demonHandler.start();
                 }
-                catch (EventsSourceException exc)
+                else
+                if (event instanceof ExceptionEvent)
+                {
+                    // FIXME: Report the exception to the controller
+                }
+                else
+                if (event instanceof PoisonEvent)
+                {
+                    break;
+                }
+            }
+            catch (InterruptedException | IOException exc)
+            {
+                if (running)
                 {
                     // FIXME: Error reporting required
                     exc.printStackTrace();
                 }
             }
-            synchronized (this)
+            catch (EventsSourceException exc)
             {
-                if (startable && !running)
-                {
-                    try
-                    {
-                        waitingForRestart = true;
-                        notifyAll();
-                        wait();
-                        waitingForRestart = false;
-                    }
-                    catch (InterruptedException intrExc)
-                    {
-                        // FIXME: Error reporting required
-                        intrExc.printStackTrace();
-                    }
-                }
+                // FIXME: Error reporting required
+                exc.printStackTrace();
             }
         }
     }
@@ -172,6 +151,7 @@ public class DrbdEventService implements SystemService, Runnable
         }
         needsReinitialize = true;
         running = true;
+        thread = new Thread(this, "DrbdEventService");
         thread.start();
         try
         {
@@ -202,13 +182,26 @@ public class DrbdEventService implements SystemService, Runnable
     @Override
     public void awaitShutdown(long timeout) throws InterruptedException
     {
-        synchronized (this)
+        thread.join(timeout);
+    }
+
+    public void addDrbdStateChangeObserver(DrbdStateChange obs)
+    {
+        tracker.addDrbdStateChangeObserver(obs);
+    }
+
+    public boolean isDrbdStateAvailable()
+    {
+        return eventsTracker.isStateAvailable();
+    }
+
+    public DrbdResource getDrbdResource(String name) throws NoInitialStateException
+    {
+        if (!isDrbdStateAvailable())
         {
-            if (!waitingForRestart)
-            {
-                wait(timeout);
-            }
+            throw new NoInitialStateException("drbdsetup events2 not fully parsed yet");
         }
+        return tracker.getResource(name);
     }
 
     private static class PoisonEvent implements Event
