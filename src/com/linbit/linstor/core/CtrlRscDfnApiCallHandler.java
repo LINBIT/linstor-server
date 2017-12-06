@@ -765,7 +765,7 @@ class CtrlRscDfnApiCallHandler
     {
         ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
         try {
-            controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            controller.rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
             for(ResourceDefinition rscdfn : controller.rscDfnMap.values())
             {
                 rscdfns.add(rscdfn.getApiData(accCtx));
