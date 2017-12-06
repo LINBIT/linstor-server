@@ -33,6 +33,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
+import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDefinitionListSerializerProto;
 
 public class CtrlApiCallHandler
 {
@@ -60,6 +61,7 @@ public class CtrlApiCallHandler
         final CtrlSerializer<Resource> rscSerializer;
         final CtrlSerializer<StorPool> storPoolSerializer;
         final CtrlListSerializer<Node.NodeApi> nodeListSerializer;
+        final CtrlListSerializer rscDfnListSerializer;
 
         switch (type)
         {
@@ -75,6 +77,7 @@ public class CtrlApiCallHandler
                     (StorPoolDataSerializerProto) storPoolSerializer
                 );
                 nodeListSerializer = new NodeListSerializerProto();
+                rscDfnListSerializer = new ResourceDefinitionListSerializerProto();
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
@@ -82,7 +85,7 @@ public class CtrlApiCallHandler
         authApiCallHandler = new CtrlAuthenticationApiCallHandler(controllerRef, authSerializer);
         fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(controllerRef, apiCtx, fullSyncSerializer);
         nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, nodeListSerializer, apiCtx);
-        rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, apiCtx);
+        rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, rscDfnListSerializer, apiCtx);
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
         rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, apiCtx);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef);
@@ -288,6 +291,19 @@ public class CtrlApiCallHandler
             controller.rscDfnMapLock.writeLock().unlock();
         }
         return apiCallRc;
+    }
+
+    public byte[] listResourceDefinition(int msgId, AccessContext accCtx, Peer client)
+    {
+        try
+        {
+            controller.rscDfnMapLock.readLock().lock();
+            return rscDfnApiCallHandler.listResourceDefinitions(msgId, accCtx, client);
+        }
+        finally
+        {
+            controller.rscDfnMapLock.readLock().unlock();
+        }
     }
 
     /**

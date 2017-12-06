@@ -45,6 +45,8 @@ public interface VolumeDefinition extends TransactionObject
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    public VlmDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+
     public enum VlmDfnFlags implements Flags
     {
         DELETE(1L);
@@ -98,9 +100,11 @@ public interface VolumeDefinition extends TransactionObject
 
     public interface VlmDfnApi
     {
+        UUID getUuid();
         Integer getVolumeNr();
         Integer getMinorNr();
         long getSize();
+        long getFlags();
         Map<String, String> getProps();
     }
 }

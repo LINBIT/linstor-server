@@ -1,11 +1,16 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.google.protobuf.ByteString;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.List;
 
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
+import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
+import java.util.ArrayList;
 
 public class VlmDfnApiData implements VlmDfnApi
 {
@@ -53,5 +58,49 @@ public class VlmDfnApiData implements VlmDfnApi
             ret = vlmDfn.getVlmMinor();
         }
         return ret;
+    }
+
+    @Override
+    public UUID getUuid() {
+        return UUID.nameUUIDFromBytes(vlmDfn.getVlmDfnUuid().toByteArray());
+    }
+
+    @Override
+    public long getFlags() {
+        return vlmDfn.getVlmFlags();
+    }
+
+    public static VlmDfn fromVlmDfnApi(final VlmDfnApi vlmDfnApi)
+    {
+        VlmDfn.Builder bld = VlmDfn.newBuilder();
+        bld.setVlmDfnUuid(ByteString.copyFrom(vlmDfnApi.getUuid().toString().getBytes()));
+        if(vlmDfnApi.getVolumeNr() != null)
+            bld.setVlmNr(vlmDfnApi.getVolumeNr());
+        if(vlmDfnApi.getMinorNr() != null)
+            bld.setVlmMinor(vlmDfnApi.getMinorNr());
+        bld.setVlmSize(vlmDfnApi.getSize());
+        bld.setVlmFlags(vlmDfnApi.getFlags());
+        bld.addAllVlmProps(BaseProtoApiCall.fromMap(vlmDfnApi.getProps()));
+        return bld.build();
+    }
+
+    public static List<VlmDfn> fromApiList(List<VlmDfnApi> volumedefs)
+    {
+        ArrayList<VlmDfn> protoVlmDfs = new ArrayList<>();
+        for(VlmDfnApi vlmdfnapi : volumedefs)
+        {
+            protoVlmDfs.add(VlmDfnApiData.fromVlmDfnApi(vlmdfnapi));
+        }
+        return protoVlmDfs;
+    }
+
+    public static List<VlmDfnApi> toApiList(List<VlmDfn> volumedefs)
+    {
+        ArrayList<VlmDfnApi> apiVlmDfns = new ArrayList<>();
+        for(VlmDfn vlmdfn : volumedefs)
+        {
+            apiVlmDfns.add(new VlmDfnApiData(vlmdfn));
+        }
+        return apiVlmDfns;
     }
 }

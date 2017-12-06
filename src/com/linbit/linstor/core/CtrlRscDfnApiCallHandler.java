@@ -30,10 +30,13 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import java.io.IOException;
+import java.util.ArrayList;
 
 class CtrlRscDfnApiCallHandler
 {
@@ -41,11 +44,13 @@ class CtrlRscDfnApiCallHandler
 
     private Controller controller;
     private AccessContext apiCtx;
+    private CtrlListSerializer rscDfnListSerializer;
 
-    CtrlRscDfnApiCallHandler(Controller controllerRef, AccessContext apiCtxRef)
+    CtrlRscDfnApiCallHandler(Controller controllerRef, CtrlListSerializer rscDfnListSerializer, AccessContext apiCtxRef)
     {
         controller = controllerRef;
         apiCtx = apiCtxRef;
+        this.rscDfnListSerializer = rscDfnListSerializer;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -756,6 +761,56 @@ class CtrlRscDfnApiCallHandler
         return apiCallRc;
     }
 
+    byte[] listResourceDefinitions(int msgId, AccessContext accCtx, Peer client)
+    {
+        ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
+        try {
+            controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            for(ResourceDefinition rscdfn : controller.rscDfnMap.values())
+            {
+                rscdfns.add(rscdfn.getApiData(accCtx));
+            }
+        } catch (AccessDeniedException accDeniedExc) {
+            // for now return an empty list.
+            /*
+            String errorMessage;
+            String causeMessage = null;
+            String detailsMessage = null;
+            Throwable exc;
+            errorMessage = "List nodes failed.";
+            causeMessage = String.format(
+                "Identity '%s' using role '%s' is not authorized to list nodes",
+                accCtx.subjectId.name.displayValue,
+                accCtx.subjectRole.name.displayValue
+            );
+            causeMessage += "\n";
+            causeMessage += accDeniedExc.getMessage();
+            exc = accDeniedExc;
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            */
+        }
+
+        try
+        {
+            return rscDfnListSerializer.getListMessage(msgId, rscdfns);
+        }
+        catch (IOException e)
+        {
+            controller.getErrorReporter().reportError(
+                e,
+                null,
+                client,
+                "Could not complete authentication due to an IOException"
+            );
+        }
+
+        return null;
+    }
 
     private short getAsShort(Map<String, String> props, String key, short defaultValue)
     {

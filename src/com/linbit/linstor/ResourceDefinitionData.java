@@ -12,6 +12,8 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
+import com.linbit.linstor.api.pojo.NodePojo;
+import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -24,6 +26,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import java.util.ArrayList;
 
 /**
  *
@@ -372,6 +375,24 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         {
             throw new ImplementationError("Access to deleted node", null);
         }
+    }
+
+    @Override
+    public ResourceDefinition.RscDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+        ArrayList<VolumeDefinition.VlmDfnApi> vlmdfns = new ArrayList<>();
+        while(iterateVolumeDfn(accCtx).hasNext())
+        {
+            VolumeDefinition vd = iterateVolumeDfn(accCtx).next();
+            vlmdfns.add(vd.getApiData(accCtx));
+        }
+        return new RscDfnPojo(
+                getUuid(),
+                getName().getDisplayName(),
+                getPort(accCtx).value,
+                getSecret(accCtx),
+                getProps(accCtx).map(),
+                vlmdfns
+        );
     }
 
     @Override

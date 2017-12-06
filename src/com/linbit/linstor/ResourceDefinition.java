@@ -59,6 +59,8 @@ public interface ResourceDefinition extends TransactionObject
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    public RscDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+
     public enum RscDfnFlags implements Flags
     {
         DELETE(1L);
@@ -90,10 +92,13 @@ public interface ResourceDefinition extends TransactionObject
         }
     }
 
-    public interface RscDfnApiData
+    public interface RscDfnApi
     {
-        String getName();
+        UUID getUuid();
+        String getResourceName();
+        int getPort();
+        String getSecret();
         Map<String, String> getProps();
-        VolumeDefinition.VlmDfnApi[] getVlmDfnList();
+        List<VolumeDefinition.VlmDfnApi> getVlmDfnList();
     }
 }

@@ -17,6 +17,7 @@ import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
+import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -373,6 +374,19 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             throw new ImplementationError("Access to deleted node", null);
         }
     }
+
+    @Override
+    public VlmDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+        return new VlmDfnPojo(
+                getUuid(),
+                getVolumeNumber().value,
+                getMinorNr(accCtx).value,
+                getVolumeSize(accCtx),
+                getFlags().getFlagsBits(accCtx),
+                getProps(accCtx).map());
+    }
+
+
 
     @Override
     public String toString()
