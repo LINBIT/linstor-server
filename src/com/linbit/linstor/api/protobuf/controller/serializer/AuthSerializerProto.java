@@ -13,7 +13,8 @@ import com.linbit.utils.UuidUtils;
 public class AuthSerializerProto implements CtrlAuthSerializer
 {
     @Override
-    public byte[] getAuthMessage(Node node, byte[] sharedSecret) throws IOException
+    public byte[] getAuthMessage(Node satelliteNode, byte[] sharedSecret)
+        throws IOException
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         MsgHeader.newBuilder()
@@ -22,8 +23,8 @@ public class AuthSerializerProto implements CtrlAuthSerializer
             .build()
             .writeDelimitedTo(baos);
         MsgIntAuth.newBuilder()
-            .setNodeUuid(ByteString.copyFrom(UuidUtils.asByteArray(node.getUuid())))
-            .setNodeName(node.getName().displayValue)
+            .setNodeUuid(ByteString.copyFrom(UuidUtils.asByteArray(satelliteNode.getUuid())))
+            .setNodeName(satelliteNode.getName().displayValue)
             .setSharedSecret(ByteString.copyFrom(sharedSecret))
             .build()
             .writeDelimitedTo(baos);

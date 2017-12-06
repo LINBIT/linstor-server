@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.protobuf.controller.serializer;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.UUID;
 
 import com.linbit.linstor.InternalApiConsts;
@@ -37,11 +35,10 @@ public class StorPoolDataSerializerProto extends AbsSerializerProto<StorPool>
     }
 
     @Override
-    protected void writeData(StorPool storPool, ByteArrayOutputStream baos)
-        throws IOException, AccessDeniedException
+    protected MsgIntStorPoolData buildData(StorPool storPool) throws AccessDeniedException
     {
         StorPoolDefinition storPoolDfn = storPool.getDefinition(serializerCtx);
-        MsgIntStorPoolData.newBuilder()
+        return MsgIntStorPoolData.newBuilder()
             .setStorPoolUuid(asByteString(storPool.getUuid()))
             .setNodeUuid(asByteString(storPool.getNode().getUuid()))
             .setStorPoolDfnUuid(asByteString(storPoolDfn.getUuid()))
@@ -49,8 +46,6 @@ public class StorPoolDataSerializerProto extends AbsSerializerProto<StorPool>
             .setDriver(storPool.getDriverName())
             .addAllStorPoolProps(asLinStorList(storPool.getConfiguration(serializerCtx)))
             .addAllStorPoolDfnProps(asLinStorList(storPoolDfn.getConfiguration(serializerCtx)))
-            .build()
-            .writeDelimitedTo(baos);
+            .build();
     }
-
 }

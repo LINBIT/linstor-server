@@ -42,6 +42,12 @@ public class ApplyStorPool extends BaseProtoApiCall
     {
         MsgIntStorPoolData storPoolData = MsgIntStorPoolData.parseDelimitedFrom(msgDataIn);
 
+        StorPoolPojo storPoolRaw = asStorPoolPojo(storPoolData);
+        satellite.getApiCallHandler().deployStorPool(storPoolRaw);
+    }
+
+    static StorPoolPojo asStorPoolPojo(MsgIntStorPoolData storPoolData)
+    {
         StorPoolPojo storPoolRaw = new StorPoolPojo(
             asUuid(storPoolData.getStorPoolUuid()),
             asUuid(storPoolData.getNodeUuid()),
@@ -51,7 +57,7 @@ public class ApplyStorPool extends BaseProtoApiCall
             asMap(storPoolData.getStorPoolPropsList()),
             asMap(storPoolData.getStorPoolDfnPropsList())
         );
-        satellite.getApiCallHandler().deployStorPool(storPoolRaw);
+        return storPoolRaw;
     }
 
 }

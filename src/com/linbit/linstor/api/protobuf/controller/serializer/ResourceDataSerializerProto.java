@@ -1,6 +1,5 @@
 package com.linbit.linstor.api.protobuf.controller.serializer;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -49,7 +48,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
     }
 
     @Override
-    protected void writeData(Resource localResource, ByteArrayOutputStream baos) throws IOException, AccessDeniedException
+    protected MsgIntRscData buildData(Resource localResource) throws IOException, AccessDeniedException
     {
         List<Resource> otherResources = new ArrayList<>();
         Iterator<Resource> rscIterator = localResource.getDefinition().iterateResource(serializerCtx);
@@ -67,7 +66,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
         Map<String, String> rscDfnProps = rscDfn.getProps(serializerCtx).map();
         Map<String, String> rscProps = localResource.getProps(serializerCtx).map();
 
-        MsgIntRscData.newBuilder()
+        return MsgIntRscData.newBuilder()
             .setRscName(rscName)
             .setRscDfnUuid(asByteString(rscDfn.getUuid()))
             .setRscDfnPort(rscDfn.getPort(serializerCtx).value)
@@ -87,8 +86,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
             .addAllOtherResources(
                 buildOtherResources(otherResources)
             )
-            .build()
-            .writeDelimitedTo(baos);
+            .build();
     }
 
     private Iterable<? extends VlmDfn> buildVlmDfnMessages(Resource localResource)

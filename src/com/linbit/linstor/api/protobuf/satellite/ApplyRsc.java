@@ -51,6 +51,12 @@ public class ApplyRsc extends BaseProtoApiCall
     {
         MsgIntRscData rscData = MsgIntRscData.parseDelimitedFrom(msgDataIn);
 
+        RscPojo rscRawData = asRscPojo(rscData);
+        satellite.getApiCallHandler().deployResource(rscRawData);
+    }
+
+    static RscPojo asRscPojo(MsgIntRscData rscData)
+    {
         List<VolumeDfnPojo> vlmDfns = extractVlmDfns(rscData.getVlmDfnsList());
         List<VolumePojo> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
         List<OtherRscPojo> otherRscList = extractRawOtherRsc(rscData.getOtherResourcesList());
@@ -69,10 +75,10 @@ public class ApplyRsc extends BaseProtoApiCall
             localVlms,
             otherRscList
         );
-        satellite.getApiCallHandler().deployResource(rscRawData);
+        return rscRawData;
     }
 
-    private List<VolumeDfnPojo> extractVlmDfns(List<VlmDfn> vlmDfnsList)
+    static List<VolumeDfnPojo> extractVlmDfns(List<VlmDfn> vlmDfnsList)
     {
         List<VolumeDfnPojo> list = new ArrayList<>();
         for (VlmDfn vlmDfn : vlmDfnsList)
@@ -91,7 +97,7 @@ public class ApplyRsc extends BaseProtoApiCall
         return list;
     }
 
-    private List<VolumePojo> extractRawVolumes(List<Vlm> localVolumesList)
+    static List<VolumePojo> extractRawVolumes(List<Vlm> localVolumesList)
     {
         List<VolumePojo> list = new ArrayList<>();
         for (Vlm vol : localVolumesList)
@@ -112,7 +118,7 @@ public class ApplyRsc extends BaseProtoApiCall
         return list;
     }
 
-    private List<OtherRscPojo> extractRawOtherRsc(List<MsgIntOtherRscData> otherResourcesList)
+    static List<OtherRscPojo> extractRawOtherRsc(List<MsgIntOtherRscData> otherResourcesList)
     {
         List<OtherRscPojo> list = new ArrayList<>();
         for (MsgIntOtherRscData otherRsc : otherResourcesList)

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.GeneratedMessageV3;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
@@ -54,7 +55,7 @@ abstract class AbsSerializerProto<TYPE> implements CtrlSerializer<TYPE>
 
             MsgHeader.newBuilder()
                 .setApiCall(apiCallChanged)
-                .setMsgId(0) // TODO: change to something that defines this message as a protobuf msg
+                .setMsgId(0)
                 .build()
                 .writeDelimitedTo(baos);
 
@@ -89,7 +90,7 @@ abstract class AbsSerializerProto<TYPE> implements CtrlSerializer<TYPE>
                 .build()
                 .writeDelimitedTo(baos);
 
-            writeData(data, baos);
+            buildData(data).writeDelimitedTo(baos);
 
             toSend = baos.toByteArray();
         }
@@ -117,7 +118,7 @@ abstract class AbsSerializerProto<TYPE> implements CtrlSerializer<TYPE>
         return BaseProtoApiCall.fromMap(props.map());
     }
 
-    protected abstract void writeData(TYPE data, ByteArrayOutputStream baos)
+    protected abstract GeneratedMessageV3 buildData(TYPE data)
         throws IOException, AccessDeniedException;
 
     protected abstract String getName(TYPE data);
