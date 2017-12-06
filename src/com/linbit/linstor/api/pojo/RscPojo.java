@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class RscPojo
+public class RscPojo implements Comparable<RscPojo>
 {
     private final String rscName;
     private final UUID rscDfnUuid;
@@ -114,6 +114,12 @@ public class RscPojo
     public List<OtherRscPojo> getOtherRscList()
     {
         return otherRscs;
+    }
+
+    @Override
+    public int compareTo(RscPojo otherRscPojo)
+    {
+        return rscName.compareTo(otherRscPojo.rscName);
     }
 
     public static class VolumeDfnPojo

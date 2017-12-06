@@ -4,7 +4,9 @@ import com.linbit.linstor.Node;
 import java.util.Map;
 import java.util.UUID;
 
-public class NodePojo implements Node.NodeApi
+import com.linbit.linstor.Node.NodeApi;
+
+public class NodePojo implements NodeApi, Comparable<NodePojo>
 {
     private final UUID nodeUuid;
     private final String nodeName;
@@ -79,6 +81,12 @@ public class NodePojo implements Node.NodeApi
     public Map<String, String> getProps()
     {
         return nodeProps;
+    }
+
+    @Override
+    public int compareTo(NodePojo otherNodePojo)
+    {
+        return nodeName.compareTo(otherNodePojo.nodeName);
     }
 
     public static class NetIfPojo

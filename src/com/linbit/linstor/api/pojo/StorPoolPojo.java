@@ -3,7 +3,7 @@ package com.linbit.linstor.api.pojo;
 import java.util.Map;
 import java.util.UUID;
 
-public class StorPoolPojo
+public class StorPoolPojo implements Comparable<StorPoolPojo>
 {
     private final UUID storPoolUuid;
     private final UUID nodeUuid;
@@ -67,5 +67,9 @@ public class StorPoolPojo
         return storPoolDfnProps;
     }
 
-
+    @Override
+    public int compareTo(StorPoolPojo otherStorPoolPojo)
+    {
+        return storPoolName.compareTo(otherStorPoolPojo.storPoolName);
+    }
 }
