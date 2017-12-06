@@ -684,4 +684,8 @@ public class ApiConsts
      */
     public static final String VAL_TRUE = "True";
     public static final String VAL_FALSE = "False";
+
+    private ApiConsts()
+    {
+    }
 }
