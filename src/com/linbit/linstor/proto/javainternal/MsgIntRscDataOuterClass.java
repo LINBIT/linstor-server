@@ -6236,30 +6236,31 @@ public final class MsgIntRscDataOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n javainternal/MsgIntRscData.proto\022%com." +
-      "linbit.linstor.proto.javainternal\032\025LinSt" +
-      "orMapEntry.proto\032\014VlmDfn.proto\032\tVlm.prot" +
-      "o\"\214\004\n\rMsgIntRscData\022\020\n\010rsc_name\030\001 \001(\t\022\024\n" +
-      "\014rsc_dfn_uuid\030\002 \001(\014\022\024\n\014rsc_dfn_port\030\003 \001(" +
-      "\021\022\025\n\rrsc_dfn_flags\030\004 \001(\022\022\026\n\016rsc_dfn_secr" +
-      "et\030\005 \001(\t\022@\n\rrsc_dfn_props\030\006 \003(\0132).com.li" +
-      "nbit.linstor.proto.LinStorMapEntry\022\026\n\016lo" +
-      "cal_rsc_uuid\030\007 \001(\014\022\027\n\017local_rsc_flags\030\010 " +
-      "\001(\022\022\031\n\021local_rsc_node_id\030\t \001(\021\022B\n\017local_",
-      "rsc_props\030\n \003(\0132).com.linbit.linstor.pro" +
-      "to.LinStorMapEntry\0222\n\010vlm_dfns\030\013 \003(\0132 .c" +
-      "om.linbit.linstor.proto.VlmDfn\0224\n\rlocal_" +
-      "volumes\030\014 \003(\0132\035.com.linbit.linstor.proto" +
-      ".Vlm\022R\n\017other_resources\030\r \003(\01329.com.linb" +
-      "it.linstor.proto.javainternal.MsgIntOthe" +
-      "rRscData\"\313\002\n\022MsgIntOtherRscData\022\021\n\tnode_" +
-      "name\030\001 \001(\t\022\021\n\tnode_uuid\030\002 \001(\014\022\021\n\tnode_ty" +
-      "pe\030\003 \001(\022\022\022\n\nnode_flags\030\004 \001(\022\022=\n\nnode_pro" +
-      "ps\030\005 \003(\0132).com.linbit.linstor.proto.LinS",
-      "torMapEntry\022\020\n\010rsc_uuid\030\006 \001(\014\022\023\n\013rsc_nod" +
-      "e_id\030\007 \001(\021\022\021\n\trsc_flags\030\010 \001(\022\022<\n\trsc_pro" +
-      "ps\030\t \003(\0132).com.linbit.linstor.proto.LinS" +
-      "torMapEntry\0221\n\nlocal_vlms\030\n \003(\0132\035.com.li" +
-      "nbit.linstor.proto.Vlmb\006proto3"
+      "linbit.linstor.proto.javainternal\032\033proto" +
+      "/LinStorMapEntry.proto\032\022proto/VlmDfn.pro" +
+      "to\032\017proto/Vlm.proto\"\214\004\n\rMsgIntRscData\022\020\n" +
+      "\010rsc_name\030\001 \001(\t\022\024\n\014rsc_dfn_uuid\030\002 \001(\014\022\024\n" +
+      "\014rsc_dfn_port\030\003 \001(\021\022\025\n\rrsc_dfn_flags\030\004 \001" +
+      "(\022\022\026\n\016rsc_dfn_secret\030\005 \001(\t\022@\n\rrsc_dfn_pr" +
+      "ops\030\006 \003(\0132).com.linbit.linstor.proto.Lin" +
+      "StorMapEntry\022\026\n\016local_rsc_uuid\030\007 \001(\014\022\027\n\017" +
+      "local_rsc_flags\030\010 \001(\022\022\031\n\021local_rsc_node_",
+      "id\030\t \001(\021\022B\n\017local_rsc_props\030\n \003(\0132).com." +
+      "linbit.linstor.proto.LinStorMapEntry\0222\n\010" +
+      "vlm_dfns\030\013 \003(\0132 .com.linbit.linstor.prot" +
+      "o.VlmDfn\0224\n\rlocal_volumes\030\014 \003(\0132\035.com.li" +
+      "nbit.linstor.proto.Vlm\022R\n\017other_resource" +
+      "s\030\r \003(\01329.com.linbit.linstor.proto.javai" +
+      "nternal.MsgIntOtherRscData\"\313\002\n\022MsgIntOth" +
+      "erRscData\022\021\n\tnode_name\030\001 \001(\t\022\021\n\tnode_uui" +
+      "d\030\002 \001(\014\022\021\n\tnode_type\030\003 \001(\022\022\022\n\nnode_flags" +
+      "\030\004 \001(\022\022=\n\nnode_props\030\005 \003(\0132).com.linbit.",
+      "linstor.proto.LinStorMapEntry\022\020\n\010rsc_uui" +
+      "d\030\006 \001(\014\022\023\n\013rsc_node_id\030\007 \001(\021\022\021\n\trsc_flag" +
+      "s\030\010 \001(\022\022<\n\trsc_props\030\t \003(\0132).com.linbit." +
+      "linstor.proto.LinStorMapEntry\0221\n\nlocal_v" +
+      "lms\030\n \003(\0132\035.com.linbit.linstor.proto.Vlm" +
+      "b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

@@ -3437,7 +3437,7 @@ public final class MsgIntNodeDataOuterClass {
 
     /**
      * <pre>
-     * Other node's name 
+     * Other node's name
      * </pre>
      *
      * <code>string other_node_name = 2;</code>
@@ -3445,7 +3445,7 @@ public final class MsgIntNodeDataOuterClass {
     java.lang.String getOtherNodeName();
     /**
      * <pre>
-     * Other node's name 
+     * Other node's name
      * </pre>
      *
      * <code>string other_node_name = 2;</code>
@@ -3658,7 +3658,7 @@ public final class MsgIntNodeDataOuterClass {
     private volatile java.lang.Object otherNodeName_;
     /**
      * <pre>
-     * Other node's name 
+     * Other node's name
      * </pre>
      *
      * <code>string other_node_name = 2;</code>
@@ -3677,7 +3677,7 @@ public final class MsgIntNodeDataOuterClass {
     }
     /**
      * <pre>
-     * Other node's name 
+     * Other node's name
      * </pre>
      *
      * <code>string other_node_name = 2;</code>
@@ -4271,7 +4271,7 @@ public final class MsgIntNodeDataOuterClass {
       private java.lang.Object otherNodeName_ = "";
       /**
        * <pre>
-       * Other node's name 
+       * Other node's name
        * </pre>
        *
        * <code>string other_node_name = 2;</code>
@@ -4290,7 +4290,7 @@ public final class MsgIntNodeDataOuterClass {
       }
       /**
        * <pre>
-       * Other node's name 
+       * Other node's name
        * </pre>
        *
        * <code>string other_node_name = 2;</code>
@@ -4310,7 +4310,7 @@ public final class MsgIntNodeDataOuterClass {
       }
       /**
        * <pre>
-       * Other node's name 
+       * Other node's name
        * </pre>
        *
        * <code>string other_node_name = 2;</code>
@@ -4327,7 +4327,7 @@ public final class MsgIntNodeDataOuterClass {
       }
       /**
        * <pre>
-       * Other node's name 
+       * Other node's name
        * </pre>
        *
        * <code>string other_node_name = 2;</code>
@@ -4340,7 +4340,7 @@ public final class MsgIntNodeDataOuterClass {
       }
       /**
        * <pre>
-       * Other node's name 
+       * Other node's name
        * </pre>
        *
        * <code>string other_node_name = 2;</code>
@@ -4910,24 +4910,24 @@ public final class MsgIntNodeDataOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n!javainternal/MsgIntNodeData.proto\022%com" +
-      ".linbit.linstor.proto.javainternal\032\025LinS" +
-      "torMapEntry.proto\"\245\002\n\016MsgIntNodeData\022\021\n\t" +
-      "node_uuid\030\001 \001(\014\022\021\n\tnode_name\030\002 \001(\t\022\022\n\nno" +
-      "de_flags\030\003 \001(\022\022\021\n\tnode_type\030\004 \001(\t\022B\n\014nod" +
-      "e_net_ifs\030\005 \003(\0132,.com.linbit.linstor.pro" +
-      "to.javainternal.NetIf\022C\n\nnode_conns\030\006 \003(" +
-      "\0132/.com.linbit.linstor.proto.javainterna" +
-      "l.NodeConn\022=\n\nnode_props\030\007 \003(\0132).com.lin" +
-      "bit.linstor.proto.LinStorMapEntry\"p\n\005Net",
-      "If\022\023\n\013net_if_uuid\030\001 \001(\014\022\023\n\013net_if_name\030\002" +
-      " \001(\t\022\023\n\013net_if_addr\030\003 \001(\t\022\023\n\013net_if_type" +
-      "\030\004 \001(\t\022\023\n\013net_if_port\030\005 \001(\021\"\313\001\n\010NodeConn" +
-      "\022\027\n\017other_node_uuid\030\001 \001(\014\022\027\n\017other_node_" +
-      "name\030\002 \001(\t\022\027\n\017other_node_type\030\003 \001(\t\022\030\n\020o" +
-      "ther_node_flags\030\004 \001(\022\022\026\n\016node_conn_uuid\030" +
-      "\005 \001(\014\022B\n\017node_conn_props\030\006 \003(\0132).com.lin" +
-      "bit.linstor.proto.LinStorMapEntryP\000b\006pro" +
-      "to3"
+      ".linbit.linstor.proto.javainternal\032\033prot" +
+      "o/LinStorMapEntry.proto\"\245\002\n\016MsgIntNodeDa" +
+      "ta\022\021\n\tnode_uuid\030\001 \001(\014\022\021\n\tnode_name\030\002 \001(\t" +
+      "\022\022\n\nnode_flags\030\003 \001(\022\022\021\n\tnode_type\030\004 \001(\t\022" +
+      "B\n\014node_net_ifs\030\005 \003(\0132,.com.linbit.linst" +
+      "or.proto.javainternal.NetIf\022C\n\nnode_conn" +
+      "s\030\006 \003(\0132/.com.linbit.linstor.proto.javai" +
+      "nternal.NodeConn\022=\n\nnode_props\030\007 \003(\0132).c" +
+      "om.linbit.linstor.proto.LinStorMapEntry\"",
+      "p\n\005NetIf\022\023\n\013net_if_uuid\030\001 \001(\014\022\023\n\013net_if_" +
+      "name\030\002 \001(\t\022\023\n\013net_if_addr\030\003 \001(\t\022\023\n\013net_i" +
+      "f_type\030\004 \001(\t\022\023\n\013net_if_port\030\005 \001(\021\"\313\001\n\010No" +
+      "deConn\022\027\n\017other_node_uuid\030\001 \001(\014\022\027\n\017other" +
+      "_node_name\030\002 \001(\t\022\027\n\017other_node_type\030\003 \001(" +
+      "\t\022\030\n\020other_node_flags\030\004 \001(\022\022\026\n\016node_conn" +
+      "_uuid\030\005 \001(\014\022B\n\017node_conn_props\030\006 \003(\0132).c" +
+      "om.linbit.linstor.proto.LinStorMapEntryP" +
+      "\000b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

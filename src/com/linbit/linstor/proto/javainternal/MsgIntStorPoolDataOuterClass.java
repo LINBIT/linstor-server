@@ -1992,15 +1992,15 @@ public final class MsgIntStorPoolDataOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n%javainternal/MsgIntStorPoolData.proto\022" +
-      "%com.linbit.linstor.proto.javainternal\032\025" +
-      "LinStorMapEntry.proto\"\217\002\n\022MsgIntStorPool" +
-      "Data\022\026\n\016stor_pool_uuid\030\001 \001(\014\022\021\n\tnode_uui" +
-      "d\030\002 \001(\014\022\032\n\022stor_pool_dfn_uuid\030\004 \001(\014\022\026\n\016s" +
-      "tor_pool_name\030\005 \001(\t\022\016\n\006driver\030\006 \001(\t\022B\n\017s" +
-      "tor_pool_props\030\007 \003(\0132).com.linbit.linsto" +
-      "r.proto.LinStorMapEntry\022F\n\023stor_pool_dfn" +
-      "_props\030\010 \003(\0132).com.linbit.linstor.proto." +
-      "LinStorMapEntryP\000b\006proto3"
+      "%com.linbit.linstor.proto.javainternal\032\033" +
+      "proto/LinStorMapEntry.proto\"\217\002\n\022MsgIntSt" +
+      "orPoolData\022\026\n\016stor_pool_uuid\030\001 \001(\014\022\021\n\tno" +
+      "de_uuid\030\002 \001(\014\022\032\n\022stor_pool_dfn_uuid\030\004 \001(" +
+      "\014\022\026\n\016stor_pool_name\030\005 \001(\t\022\016\n\006driver\030\006 \001(" +
+      "\t\022B\n\017stor_pool_props\030\007 \003(\0132).com.linbit." +
+      "linstor.proto.LinStorMapEntry\022F\n\023stor_po" +
+      "ol_dfn_props\030\010 \003(\0132).com.linbit.linstor." +
+      "proto.LinStorMapEntryP\000b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
