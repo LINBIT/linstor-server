@@ -33,7 +33,7 @@ public class ListStorPoolDefinition extends BaseProtoApiCall {
     @Override
     public String getDescription()
     {
-        return "List resource definitions";
+        return "List storage pool definitions";
     }
 
     @Override
