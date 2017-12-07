@@ -151,7 +151,7 @@ class CtrlStorPoolApiCallHandler
                     true   // throw exception if already exists
                 );
                 storPool.setConnection(transMgr);
-                storPool.getConfiguration(accCtx).map().putAll(storPoolPropsMap);
+                storPool.getProps(accCtx).map().putAll(storPoolPropsMap);
                 transMgr.commit();
 
                 String successMessage = String.format(

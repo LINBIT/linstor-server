@@ -58,7 +58,7 @@ public class SatelliteDummyStorPoolData extends StorPoolData
     }
 
     @Override
-    public Props getConfiguration(AccessContext accCtx) throws AccessDeniedException
+    public Props getProps(AccessContext accCtx) throws AccessDeniedException
     {
         throw new UnsupportedOperationException(EXC_MSG);
     }

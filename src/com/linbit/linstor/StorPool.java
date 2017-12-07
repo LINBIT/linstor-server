@@ -57,7 +57,7 @@ public interface StorPool extends TransactionObject
     /**
      * Returns the configuration {@link Props}. This {@link Props} is also used to configure the {@link StorageDriver}.
      */
-    public Props getConfiguration(AccessContext accCtx)
+    public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
     /**
