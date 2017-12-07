@@ -10,23 +10,29 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.StorPoolDefinitionData;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import java.io.IOException;
+import java.util.ArrayList;
 
 class CtrlStorPoolDfnApiCallHandler
 {
     private Controller controller;
+    final private CtrlListSerializer listSerializer;
 
-    CtrlStorPoolDfnApiCallHandler(Controller controllerRef)
+    CtrlStorPoolDfnApiCallHandler(Controller controllerRef, CtrlListSerializer storPoolDfnSerializer)
     {
         controller = controllerRef;
+        listSerializer = storPoolDfnSerializer;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -56,7 +62,7 @@ class CtrlStorPoolDfnApiCallHandler
                 true // throw exception if the entry exists
             );
             storPoolDfn.setConnection(transMgr);
-            storPoolDfn.getConfiguration(accCtx).map().putAll(storPoolDfnProps);
+            storPoolDfn.getProps(accCtx).map().putAll(storPoolDfnProps);
 
             transMgr.commit();
 
@@ -429,5 +435,56 @@ class CtrlStorPoolDfnApiCallHandler
             controller.dbConnPool.returnConnection(transMgr);
         }
         return apiCallRc;
+    }
+
+    byte[] listStorPoolDefinitions(int msgId, AccessContext accCtx, Peer client)
+    {
+        ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
+        try {
+            controller.storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            for(StorPoolDefinition storPoolDfn : controller.storPoolDfnMap.values())
+            {
+                storPoolDfns.add(storPoolDfn.getApiData(accCtx));
+            }
+        } catch (AccessDeniedException accDeniedExc) {
+            // for now return an empty list.
+            /*
+            String errorMessage;
+            String causeMessage = null;
+            String detailsMessage = null;
+            Throwable exc;
+            errorMessage = "List nodes failed.";
+            causeMessage = String.format(
+                "Identity '%s' using role '%s' is not authorized to list nodes",
+                accCtx.subjectId.name.displayValue,
+                accCtx.subjectRole.name.displayValue
+            );
+            causeMessage += "\n";
+            causeMessage += accDeniedExc.getMessage();
+            exc = accDeniedExc;
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            */
+        }
+
+        try
+        {
+            return listSerializer.getListMessage(msgId, storPoolDfns);
+        }
+        catch (IOException e)
+        {
+            controller.getErrorReporter().reportError(
+                e,
+                null,
+                client,
+                "Could not complete authentication due to an IOException"
+            );
+        }
+
+        return null;
     }
 }

@@ -11,6 +11,7 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
+import com.linbit.linstor.api.pojo.StorPoolDfnPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -209,7 +210,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     }
 
     @Override
-    public Props getConfiguration(AccessContext accCtx) throws AccessDeniedException
+    public Props getProps(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         return PropsAccess.secureGetProps(accCtx, objProt, props);
@@ -225,6 +226,13 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         dbDriver.delete(this, transMgr);
         deleted = true;
     }
+
+    @Override
+    public StorPoolDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+        return new StorPoolDfnPojo(getUuid(), getName().getDisplayName(), getProps(accCtx).map());
+    }
+
+
 
     private void checkDeleted()
     {

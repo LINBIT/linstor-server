@@ -8,6 +8,7 @@ import com.linbit.linstor.security.ObjectProtection;
 
 import java.sql.SQLException;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -26,11 +27,18 @@ public interface StorPoolDefinition extends TransactionObject
     public Iterator<StorPool> iterateStorPools(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public Props getConfiguration(AccessContext accCtx)
+    public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    public StorPoolDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
+    public interface StorPoolDfnApi
+    {
+        UUID getUuid();
+        String getName();
+        Map<String, String> getProps();
+    }
 }

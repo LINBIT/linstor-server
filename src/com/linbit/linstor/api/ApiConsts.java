@@ -571,6 +571,7 @@ public class ApiConsts
     public static final String API_LST_VLM = "LstVlm";
     public static final String API_LST_SNPSHT = "LstSnpsht";
     public static final String API_LST_STOR_POOL = "LstStorPool";
+    public static final String API_LST_STOR_POOL_DFN = "LstStorPoolDfn";
 
     /*
      * Subscription APIs
