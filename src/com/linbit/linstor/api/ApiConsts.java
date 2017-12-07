@@ -70,12 +70,14 @@ public class ApiConsts
      */
     public static final long CREATED = 1 | MASK_SUCCESS;
     public static final long DELETED = 2 | MASK_SUCCESS;
+    public static final long MODIFIED = 3 | MASK_SUCCESS;
 
     /*
      * Codes 10-99: special cases (like "failed to delete non existent data")
      */
     public static final long CRT_FAIL_IMPL_ERROR = 10 | MASK_ERROR;
     public static final long DEL_NOT_FOUND = 11 | MASK_WARN;
+    public static final long MOD_FAIL_IMPL_ERROR = 12 | MASK_ERROR;
 
     /*
      * Codes 100-199: creation failures
@@ -153,71 +155,150 @@ public class ApiConsts
     public static final long CRT_FAIL_MISSING_PROPS_NETCOM_TYPE = 181 | MASK_ERROR;
     public static final long CRT_FAIL_MISSING_PROPS_NETCOM_PORT = 182 | MASK_ERROR;
     public static final long CRT_FAIL_MISSING_NETCOM = 183 | MASK_ERROR;
-    public static final long CRT_FAIL_UNKNOWN_ERROR = 197 | MASK_ERROR;
+    public static final long CRT_FAIL_UNKNOWN_ERROR = 997 | MASK_ERROR;
 
     /*
-     * Codes 200-299: creation warnings
+     * Codes 1000-1999: creation warnings
      */
-    public static final long CRT_WARN_INVLD_OPT_PROP_NETCOM_ENABLED = 200 | MASK_WARN;
-    public static final long CRT_WARN_NOT_CONNECTED = 201 | MASK_WARN;
+    public static final long CRT_WARN_INVLD_OPT_PROP_NETCOM_ENABLED = 1000 | MASK_WARN;
+    public static final long CRT_WARN_NOT_CONNECTED = 1001 | MASK_WARN;
 
     /*
-     * Codes 300-399: deletion failures
+     * Codes 2000-2999: deletion failures
      * sub-codes same as for creation failures, except data exists, which can only yield in IMPL_ERROR
      */
-    public static final long DEL_FAIL_SQL = 300 | MASK_ERROR;
-    public static final long DEL_FAIL_SQL_ROLLBACK = 301 | MASK_ERROR;
-    public static final long DEL_FAIL_INVLD_NODE_NAME = 310 | MASK_ERROR;
-    public static final long DEL_FAIL_INVLD_NODE_TYPE = 311 | MASK_ERROR;
-    public static final long DEL_FAIL_INVLD_RSC_NAME = 312 | MASK_ERROR;
-    public static final long DEL_FAIL_INVLD_NODE_ID = 313 | MASK_ERROR;
-    public static final long DEL_FAIL_INVLD_VLM_NR = 314 | MASK_ERROR;
-    public static final long DEL_FAIL_INVLD_VLM_SIZE = 315 | MASK_ERROR;
-    public static final long DEL_FAIL_INVLD_MINOR_NR = 316 | MASK_ERROR;
-    public static final long DEL_FAIL_INVLD_STOR_POOL_NAME = 317 | MASK_ERROR;
-    public static final long DEL_FAIL_INVLD_NET_NAME = 318 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_NODE = 330 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_RSC_DFN = 331 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_RSC = 332 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_VLM_DFN = 333 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_VLM = 334 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_NET_IF = 335 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_NODE_CONN = 336 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_RSC_CONN = 337 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_VLM_CONN = 338 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_STOR_POOL_DFN = 339 | MASK_ERROR;
-    public static final long DEL_FAIL_NOT_FOUND_STOR_POOL = 340 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_NODE = 350 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_RSC_DFN = 351 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_RSC = 352 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_VLM_DFN = 353 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_VLM = 354 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_STOR_POOL_DFN = 355 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_STOR_POOL = 356 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_NODE_CONN = 357 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_RSC_CONN = 358 | MASK_ERROR;
-    public static final long DEL_FAIL_ACC_DENIED_VLM_CONN = 359 | MASK_ERROR;
-    public static final long DEL_FAIL_EXISTS_VLM = 364 | MASK_ERROR;
-    public static final long DEL_FAIL_UNKNOWN_ERROR = 397 | MASK_ERROR;
-    public static final long DEL_FAIL_IN_USE = 398 | MASK_ERROR;
-    public static final long DEL_FAIL_IMPL_ERROR = 399 | MASK_ERROR;
+    public static final long DEL_FAIL_SQL = 2000 | MASK_ERROR;
+    public static final long DEL_FAIL_SQL_ROLLBACK = 2001 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_NODE_NAME = 2010 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_NODE_TYPE = 2011 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_RSC_NAME = 2012 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_NODE_ID = 2013 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_VLM_NR = 2014 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_VLM_SIZE = 2015 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_MINOR_NR = 2016 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_STOR_POOL_NAME = 2017 | MASK_ERROR;
+    public static final long DEL_FAIL_INVLD_NET_NAME = 2018 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_NODE = 2030 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_RSC_DFN = 2031 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_RSC = 2032 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_VLM_DFN = 2033 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_VLM = 2034 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_NET_IF = 2035 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_NODE_CONN = 2036 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_RSC_CONN = 2037 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_VLM_CONN = 2038 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_STOR_POOL_DFN = 2039 | MASK_ERROR;
+    public static final long DEL_FAIL_NOT_FOUND_STOR_POOL = 2040 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_NODE = 2050 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_RSC_DFN = 2051 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_RSC = 2052 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_VLM_DFN = 2053 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_VLM = 2054 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_STOR_POOL_DFN = 2055 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_STOR_POOL = 2056 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_NODE_CONN = 2057 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_RSC_CONN = 2058 | MASK_ERROR;
+    public static final long DEL_FAIL_ACC_DENIED_VLM_CONN = 2059 | MASK_ERROR;
+    public static final long DEL_FAIL_EXISTS_VLM = 2064 | MASK_ERROR;
+    public static final long DEL_FAIL_UNKNOWN_ERROR = 2997 | MASK_ERROR;
+    public static final long DEL_FAIL_IN_USE = 2998 | MASK_ERROR;
+    public static final long DEL_FAIL_IMPL_ERROR = 2999 | MASK_ERROR;
 
     /*
-     * Codes 400-499: deletion warnings
+     * Codes 3000-3999: deletion warnings
      */
-    public static final long DEL_WARN_NOT_CONNECTED = 400 | MASK_WARN;
+    public static final long DEL_WARN_NOT_CONNECTED = 3000 | MASK_WARN;
+
+    /*
+     * Codes 4000-4999: modification failures
+     */
+
+    /*
+     * Codes 4000-4009: sql creation failures
+     */
+    public static final long MOD_FAIL_SQL = 4000 | MASK_ERROR;
+    public static final long MOD_FAIL_SQL_ROLLBACK = 4001 | MASK_ERROR;
+
+    /*
+     * Codes 4010-4029: invalid * creation failures
+     */
+    public static final long MOD_FAIL_INVLD_NODE_NAME = 4010 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_NODE_TYPE = 4011 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_RSC_NAME = 4012 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_RSC_PORT = 4013 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_NODE_ID = 4014 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_VLM_NR = 4015 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_VLM_SIZE = 4016 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_MINOR_NR = 4017 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_STOR_POOL_NAME = 4018 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_NET_NAME = 4019 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_NET_ADDR = 4020 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_NET_PORT = 4021 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_NET_TYPE = 4022 | MASK_ERROR;
+    public static final long MOD_FAIL_INVLD_PROP = 4023 | MASK_ERROR;
+
+    /*
+     * Codes 4030-4049: dependency not found creation failures
+     */
+    public static final long MOD_FAIL_NOT_FOUND_NODE = 4030 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_RSC_DFN = 4031 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_RSC = 4032 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_VLM_DFN = 4033 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_VLM = 4034 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_NET_IF = 4035 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_NODE_CONN = 4036 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_RSC_CONN = 4037 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_VLM_CONN = 4038 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_STOR_POOL_DFN = 4039 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_STOR_POOL = 4040 | MASK_ERROR;
+    public static final long MOD_FAIL_NOT_FOUND_DFLT_STOR_POOL = 4041 | MASK_ERROR;
+
+    /*
+     * Codes 4050-4059: access denied creation failures
+     */
+    public static final long MOD_FAIL_ACC_DENIED_NODE = 4050 | MASK_ERROR;
+    public static final long MOD_FAIL_ACC_DENIED_RSC_DFN = 4051 | MASK_ERROR;
+    public static final long MOD_FAIL_ACC_DENIED_RSC = 4052 | MASK_ERROR;
+    public static final long MOD_FAIL_ACC_DENIED_VLM_DFN = 4053 | MASK_ERROR;
+    public static final long MOD_FAIL_ACC_DENIED_VLM = 4054 | MASK_ERROR;
+    public static final long MOD_FAIL_ACC_DENIED_STOR_POOL_DFN = 4055 | MASK_ERROR;
+    public static final long MOD_FAIL_ACC_DENIED_STOR_POOL = 4056 | MASK_ERROR;
+    public static final long MOD_FAIL_ACC_DENIED_NODE_CONN = 4057 | MASK_ERROR;
+    public static final long MOD_FAIL_ACC_DENIED_RSC_CONN = 4058 | MASK_ERROR;
+    public static final long MOD_FAIL_ACC_DENIED_VLM_CONN = 4059 | MASK_ERROR;
+
+    /*
+     * Codes 4100-4119: UUID checks failures
+     */
+    public static final long MOD_FAIL_UUID_NODE = 4010 | MASK_ERROR;
+    public static final long MOD_FAIL_UUID_RSC_DFN = 4011 | MASK_ERROR;
+    public static final long MOD_FAIL_UUID_RSC = 4012 | MASK_ERROR;
+    public static final long MOD_FAIL_UUID_VLM_DFN = 4013 | MASK_ERROR;
+    public static final long MOD_FAIL_UUID_VLM = 4014 | MASK_ERROR;
+    public static final long MOD_FAIL_UUID_NET_IF = 4015 | MASK_ERROR;
+    public static final long MOD_FAIL_UUID_NODE_CONN = 4016 | MASK_ERROR;
+    public static final long MOD_FAIL_UUID_RSC_CONN = 4017 | MASK_ERROR;
+    public static final long MOD_FAIL_UUID_VLM_CONN = 4018 | MASK_ERROR;
+    public static final long MOD_FAIL_UUID_STOR_POOL_DFN = 4019 | MASK_ERROR;
+    public static final long MOD_FAIL_UUID_STOR_POOL = 4020 | MASK_ERROR;
+    public static final long MOD_FAIL_UNKNOWN_ERROR = 4997 | MASK_ERROR;
+
+    /*
+     * Codes 5000-5999: modification warnings
+     */
 
     /*
      * Sign in codes
      */
-    public static final long RC_SIGNIN_PASS = 500 | MASK_SUCCESS;
-    public static final long RC_SIGNIN_FAIL = 500 | MASK_ERROR;
+    public static final long RC_SIGNIN_PASS = 10000 | MASK_SUCCESS;
+    public static final long RC_SIGNIN_FAIL = 10000 | MASK_ERROR;
 
     /*
      * Node return codes
      */
     public static final long RC_NODE_CREATED = MASK_NODE | CREATED;
     public static final long RC_NODE_DELETED = MASK_NODE | DELETED;
+    public static final long RC_NODE_MODIFIED = MASK_NODE | MODIFIED;
     public static final long RC_NODE_DEL_NOT_FOUND = MASK_NODE | DEL_NOT_FOUND;
     public static final long RC_NODE_CRT_FAIL_SQL = MASK_NODE | CRT_FAIL_SQL;
     public static final long RC_NODE_CRT_FAIL_SQL_ROLLBACK = MASK_NODE | CRT_FAIL_SQL_ROLLBACK;
@@ -245,6 +326,19 @@ public class ApiConsts
     public static final long RC_NODE_DEL_FAIL_ACC_DENIED_NODE = MASK_NODE | DEL_FAIL_ACC_DENIED_NODE;
     public static final long RC_NODE_DEL_FAIL_UNKNOWN_ERROR = MASK_NODE | DEL_FAIL_UNKNOWN_ERROR;
     public static final long RC_NODE_DEL_FAIL_IMPL_ERROR = MASK_NODE | DEL_FAIL_IMPL_ERROR;
+    public static final long RC_NODE_MOD_FAIL_SQL = MASK_NODE | MOD_FAIL_SQL;
+    public static final long RC_NODE_MOD_FAIL_SQL_ROLLBACK = MASK_NODE | MOD_FAIL_SQL_ROLLBACK;
+    public static final long RC_NODE_MOD_FAIL_INVLD_NODE_NAME = MASK_NODE | MOD_FAIL_INVLD_NODE_NAME;
+    public static final long RC_NODE_MOD_FAIL_INVLD_NODE_TYPE = MASK_NODE | MOD_FAIL_INVLD_NODE_TYPE;
+    public static final long RC_NODE_MOD_FAIL_INVLD_NET_ADDR = MASK_NODE | MOD_FAIL_INVLD_NET_ADDR;
+    public static final long RC_NODE_MOD_FAIL_INVLD_NET_PORT = MASK_NODE | MOD_FAIL_INVLD_NET_PORT;
+    public static final long RC_NODE_MOD_FAIL_INVLD_NET_TYPE = MASK_NODE | MOD_FAIL_INVLD_NET_TYPE;
+    public static final long RC_NODE_MOD_FAIL_INVLD_NET_NAME = MASK_NODE | MOD_FAIL_INVLD_NET_NAME;
+    public static final long RC_NODE_MOD_FAIL_INVLD_PROP = MASK_NODE | MOD_FAIL_INVLD_PROP;
+    public static final long RC_NODE_MOD_FAIL_ACC_DENIED_NODE = MASK_NODE | MOD_FAIL_ACC_DENIED_NODE;
+    public static final long RC_NODE_MOD_FAIL_UUID_NODE = MASK_NODE | MOD_FAIL_UUID_NODE;
+    public static final long RC_NODE_MOD_FAIL_UNKNOWN_ERROR = MASK_NODE | MOD_FAIL_UNKNOWN_ERROR;
+    public static final long RC_NODE_MOD_FAIL_IMPL_ERROR = MASK_NODE | MOD_FAIL_IMPL_ERROR;
 
     /*
      * ResourceDefinition return codes
@@ -523,12 +617,12 @@ public class ApiConsts
     /*
      * Modify object APIs
      */
-    public static final String API_MFY_NODE = "MfyNode";
-    public static final String API_MFY_RSC = "MfyRsc";
-    public static final String API_MFY_RSC_DFN = "MfyRscDfn";
-    public static final String API_MFY_NET_IF = "MfyNetIf";
-    public static final String API_MFY_VLM_DFN = "MfyVlmDfn";
-    public static final String API_MFY_SNPSHT = "MfySnpsht";
+    public static final String API_MOD_NODE = "ModNode";
+    public static final String API_MOD_RSC = "ModRsc";
+    public static final String API_MOD_RSC_DFN = "ModRscDfn";
+    public static final String API_MOD_NET_IF = "ModNetIf";
+    public static final String API_MOD_VLM_DFN = "ModVlmDfn";
+    public static final String API_MOD_SNPSHT = "ModSnpsht";
 
     /*
      * Delete object APIs

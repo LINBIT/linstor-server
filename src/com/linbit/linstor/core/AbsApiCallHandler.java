@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorException;
@@ -17,7 +18,9 @@ abstract class AbsApiCallHandler implements AutoCloseable
 {
     protected enum ApiCallType
     {
-        CREATE, DELETE
+        CREATE,
+        MODIFY,
+        DELETE
     }
 
     protected final ThreadLocal<AccessContext> currentAccCtx = new ThreadLocal<>();
@@ -40,13 +43,22 @@ abstract class AbsApiCallHandler implements AutoCloseable
         AccessContext accCtx,
         Peer peer,
         ApiCallType type,
-        ApiCallRcImpl apiCallRc
+        ApiCallRcImpl apiCallRc,
+        TransactionMgr transMgr
     )
     {
         currentAccCtx.set(accCtx);
         currentPeer.set(peer);
         currentApiCallType.set(type);
         currentApiCallRc.set(apiCallRc);
+        if (transMgr == null)
+        {
+            currentTransMgr.set(createNewTransMgr());
+        }
+        else
+        {
+            currentTransMgr.set(transMgr);
+        }
         currentObjRefs.set(new TreeMap<String, String>());
         currentVariables.set(new TreeMap<String, String>());
         return this;
@@ -55,10 +67,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
     @Override
     public void close() throws Exception
     {
+        rollbackIfDirty();
+
         currentAccCtx.set(null);
         currentPeer.set(null);
         currentApiCallType.set(null);
         currentApiCallRc.set(null);
+        currentObjRefs.set(null);
+        currentTransMgr.set(null);
+        currentVariables.set(null);
     }
 
     protected final NodeName asNodeName(String nodeNameStr, long retCode) throws ApiCallHandlerFailedException
@@ -172,8 +189,20 @@ abstract class AbsApiCallHandler implements AutoCloseable
         );
     }
 
+    protected void handleUnknownApiCallType()
+    {
+        throw new ImplementationError(
+            "Unknown api call type: " + currentApiCallType.get(),
+            null
+        );
+    }
+
     protected static class ApiCallHandlerFailedException extends RuntimeException
     {
         private static final long serialVersionUID = -3941266567336938181L;
     }
+
+    protected abstract TransactionMgr createNewTransMgr() throws ApiCallHandlerFailedException;
+
+    protected abstract void rollbackIfDirty();
 }

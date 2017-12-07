@@ -437,6 +437,15 @@ public class NodeData extends BaseTransactionObject implements Node
         return storPoolMap.values().iterator();
     }
 
+    public void setNodeType(AccessContext accCtx, NodeType newType)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        nodeType.set(newType);
+    }
+
     @Override
     public NodeType getNodeType(AccessContext accCtx)
         throws AccessDeniedException

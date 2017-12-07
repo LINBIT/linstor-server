@@ -55,7 +55,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         this.rscSerializer = rscSerializer;
     }
 
-    public ApiCallRc createVolumeDefinitions(
+    ApiCallRc createVolumeDefinitions(
         AccessContext accCtx,
         Peer client,
         String rscNameStr,
@@ -64,23 +64,21 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        TransactionMgr transMgr = null;
         try (
             AbsApiCallHandler basicallyThis = setCurrentImpl(
                 accCtx,
                 client,
                 ApiCallType.CREATE,
                 apiCallRc,
+                null, // create new transMgr
                 rscNameStr
             );
         )
         {
-            transMgr = getTransactionMgr();
 
             ensureRscMapProtAccess(accCtx);
 
-            ResourceDefinition rscDfn = getRscDfn(accCtx, rscNameStr, transMgr);
-            rscDfn.setConnection(transMgr); // the vlmDfns will inject themselves here
+            ResourceDefinition rscDfn = getRscDfn(accCtx, rscNameStr);
 
             Iterator<Resource> iterateResource = getRscIterator(rscDfn);
             List<Resource> rscList = new ArrayList<>();
@@ -128,10 +126,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                     volNr,
                     minorNr,
                     size,
-                    vlmDfnInitFlags,
-                    transMgr
+                    vlmDfnInitFlags
                 );
-                vlmDfn.setConnection(transMgr);
                 getVlmDfnProps(accCtx, vlmDfn).map().putAll(vlmDfnApi.getProps());
 
                 vlmDfnsCreated.add(vlmDfn);
@@ -142,10 +138,10 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
             for (Resource rsc : rscList)
             {
-                adjustRscVolumes(rsc, transMgr);
+                adjustRscVolumes(rsc);
             }
 
-            commit(transMgr);
+            commit();
 
             controller.rscDfnMap.put(rscDfn.getName(), rscDfn);
 
@@ -170,46 +166,11 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             );
         }
 
-
-        if (transMgr != null)
-        {
-            if (transMgr.isDirty())
-            {
-                try
-                {
-                    transMgr.rollback();
-                }
-                catch (SQLException sqlExc)
-                {
-                    String errorMessage = String.format(
-                        "A database error occured while trying to rollback the creation of "
-                            + "Volume definitions for Resource definition '%s'.",
-                        // TODO: improve this error message - maybe mention the vlmNrs
-                        rscNameStr
-                    );
-                    controller.getErrorReporter().reportError(
-                        sqlExc,
-                        accCtx,
-                        client,
-                        errorMessage
-                    );
-
-                    ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(RC_STOR_POOL_DEL_FAIL_SQL_ROLLBACK);
-                    entry.setMessageFormat(errorMessage);
-                    entry.setCauseFormat(sqlExc.getMessage());
-                    entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
-                    entry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
-
-                    apiCallRc.addEntry(entry);
-                }
-            }
-            controller.dbConnPool.returnConnection(transMgr);
-        }
         return apiCallRc;
     }
 
-    private TransactionMgr getTransactionMgr()
+    @Override
+    protected TransactionMgr createNewTransMgr() throws ApiCallHandlerFailedException
     {
         try
         {
@@ -239,7 +200,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private ResourceDefinition getRscDfn(AccessContext accCtx, String rscNameStr, TransactionMgr transMgr)
+    private ResourceDefinition getRscDfn(AccessContext accCtx, String rscNameStr)
     {
         try
         {
@@ -249,7 +210,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 null, // tcpPortNumber only needed when we want to persist this object
                 null, // flags         only needed when we want to persist this object
                 null, // secret        only needed when we want to persist this object
-                transMgr,
+                currentTransMgr.get(),
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists
             );
@@ -372,8 +333,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         VolumeNumber volNr,
         MinorNumber minorNr,
         long size,
-        VlmDfnFlags[] vlmDfnInitFlags,
-        TransactionMgr transMgr
+        VlmDfnFlags[] vlmDfnInitFlags
     )
     {
         try
@@ -385,7 +345,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 minorNr,
                 size,
                 vlmDfnInitFlags,
-                transMgr,
+                currentTransMgr.get(),
                 true, // persist this entry
                 true // throw exception if the entry exists
             );
@@ -441,11 +401,11 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private void adjustRscVolumes(Resource rsc, TransactionMgr transMgr)
+    private void adjustRscVolumes(Resource rsc)
     {
         try
         {
-            rsc.adjustVolumes(apiCtx, transMgr, controller.getDefaultStorPoolName());
+            rsc.adjustVolumes(apiCtx, currentTransMgr.get(), controller.getDefaultStorPoolName());
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -454,11 +414,11 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private void commit(TransactionMgr transMgr)
+    private void commit()
     {
         try
         {
-            transMgr.commit();
+            currentTransMgr.get().commit();
         }
         catch (SQLException sqlExc)
         {
@@ -663,10 +623,11 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         Peer client,
         ApiCallType apiCallType,
         ApiCallRcImpl apiCallRc,
+        TransactionMgr transMgr,
         String rscNameStr
     )
     {
-        super.setCurrent(accCtx, client, apiCallType, apiCallRc);
+        super.setCurrent(accCtx, client, apiCallType, apiCallRc, transMgr);
 
         this.currentRscNameStr.set(rscNameStr);
         currentVlmDfnApi.set(null);
@@ -679,6 +640,33 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         vars.clear();
         vars.put(KEY_RSC_NAME, currentRscNameStr.get());
         return this;
+    }
+
+    @Override
+    protected void rollbackIfDirty()
+    {
+        TransactionMgr transMgr = currentTransMgr.get();
+        if (transMgr != null)
+        {
+            if (transMgr.isDirty())
+            {
+                try
+                {
+                    transMgr.rollback();
+                }
+                catch (SQLException sqlExc)
+                {
+                    report(sqlExc, String.format(
+                        "A database error occured while trying to rollback the creation of "
+                            + "Volume definitions for Resource definition '%s'.",
+                            // TODO: improve this error message - maybe mention the vlmNrs
+                            currentRscNameStr.get()
+                        ),
+                        RC_STOR_POOL_DEL_FAIL_SQL_ROLLBACK);
+                }
+            }
+            controller.dbConnPool.returnConnection(transMgr);
+        }
     }
 
     private static class CtrlVlmDfnApiCallHandlerFailedException extends RuntimeException
