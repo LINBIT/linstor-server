@@ -136,7 +136,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
         assertEquals(1, storPools.size());
         StorPoolData storPoolData = storPools.get(0);
         assertNotNull(storPoolData);
-        assertNotNull(storPoolData.getConfiguration(sysCtx));
+        assertNotNull(storPoolData.getProps(sysCtx));
         StorPoolDefinition spDfn = storPoolData.getDefinition(sysCtx);
         assertNotNull(spDfn);
         assertEquals(spName, spDfn.getName());
@@ -272,7 +272,7 @@ public class StorPoolDataDerbyTest extends DerbyBase
 
         assertNotNull(storPoolData);
 
-        assertNotNull(storPoolData.getConfiguration(sysCtx));
+        assertNotNull(storPoolData.getProps(sysCtx));
         assertEquals(spdd2, storPoolData.getDefinition(sysCtx));
         assertNotNull(storPoolData.getDriver(sysCtx));
         assertTrue(storPoolData.getDriver(sysCtx) instanceof LvmDriver);

@@ -414,7 +414,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            storPool1.getConfiguration(sysCtx).setProp(storPool1TestKey, storPool1TestValue);
+            storPool1.getProps(sysCtx).setProp(storPool1TestKey, storPool1TestValue);
 
             // node2 storPool
             StorPoolData storPool2 = StorPoolData.getInstance(
@@ -426,7 +426,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            storPool2.getConfiguration(sysCtx).setProp(storPool2TestKey, storPool2TestValue);
+            storPool2.getProps(sysCtx).setProp(storPool2TestKey, storPool2TestValue);
 
             // node1 res
             ResourceData res1 = ResourceData.getInstance(
@@ -668,7 +668,7 @@ public class NodeDataDerbyTest extends DerbyBase
             StorPool storPool = loadedNode.getStorPool(sysCtx, poolName);
             assertNotNull(storPool);
             {
-                Props storPoolConfig = storPool.getConfiguration(sysCtx);
+                Props storPoolConfig = storPool.getProps(sysCtx);
                 assertNotNull(storPoolConfig);
                 assertEquals(storPool1TestValue, storPoolConfig.getProp(storPool1TestKey));
                 assertEquals(1, storPoolConfig.size());
