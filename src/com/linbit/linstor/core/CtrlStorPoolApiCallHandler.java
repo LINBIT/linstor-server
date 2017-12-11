@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Iterator;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -13,8 +14,10 @@ import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
@@ -22,27 +25,34 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
+import java.io.IOException;
+import java.util.ArrayList;
 
 class CtrlStorPoolApiCallHandler
 {
     private final Controller controller;
     private final CtrlSerializer<StorPool> serializer;
     private final AccessContext apiCtx;
+    private final CtrlListSerializer<StorPool.StorPoolApi> listSerializer;
 
     CtrlStorPoolApiCallHandler(
         Controller controllerRef,
         CtrlSerializer<StorPool> serializerRef,
+        CtrlListSerializer<StorPool.StorPoolApi> listSerializer,
         AccessContext apiCtxRef
     )
     {
         controller = controllerRef;
         serializer = serializerRef;
+        this.listSerializer = listSerializer;
         apiCtx = apiCtxRef;
     }
 
@@ -823,6 +833,63 @@ class CtrlStorPoolApiCallHandler
                 )
             );
         }
+    }
+
+    byte[] listStorPools(int msgId, AccessContext accCtx, Peer client)
+    {
+        ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
+        try {
+            controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+            controller.storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            for(StorPoolDefinition storPoolDfn : controller.storPoolDfnMap.values())
+            {
+                Iterator<StorPool> storPoolIterator = storPoolDfn.iterateStorPools(accCtx);
+                while (storPoolIterator.hasNext())
+                {
+                    StorPool storPool = storPoolIterator.next();
+                    storPools.add(storPool.getApiData(accCtx));
+                }
+            }
+        } catch (AccessDeniedException accDeniedExc) {
+            // for now return an empty list.
+            /*
+            String errorMessage;
+            String causeMessage = null;
+            String detailsMessage = null;
+            Throwable exc;
+            errorMessage = "List nodes failed.";
+            causeMessage = String.format(
+                "Identity '%s' using role '%s' is not authorized to list nodes",
+                accCtx.subjectId.name.displayValue,
+                accCtx.subjectRole.name.displayValue
+            );
+            causeMessage += "\n";
+            causeMessage += accDeniedExc.getMessage();
+            exc = accDeniedExc;
+            controller.getErrorReporter().reportError(
+                exc,
+                accCtx,
+                client,
+                errorMessage
+            );
+            */
+        }
+
+        try
+        {
+            return listSerializer.getListMessage(msgId, storPools);
+        }
+        catch (IOException e)
+        {
+            controller.getErrorReporter().reportError(
+                e,
+                null,
+                client,
+                "Could not complete authentication due to an IOException"
+            );
+        }
+
+        return null;
     }
 
 }

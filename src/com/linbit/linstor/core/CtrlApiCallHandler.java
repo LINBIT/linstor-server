@@ -36,6 +36,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDefinitionListSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolDefinitionListSerializerProto;
+import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolListSerializerProto;
 
 public class CtrlApiCallHandler
 {
@@ -65,6 +66,7 @@ public class CtrlApiCallHandler
         final CtrlListSerializer<Node.NodeApi> nodeListSerializer;
         final CtrlListSerializer rscDfnListSerializer;
         final CtrlListSerializer storPoolDfnListSerializer;
+        final CtrlListSerializer storPoolListSerializer;
 
         switch (type)
         {
@@ -82,6 +84,7 @@ public class CtrlApiCallHandler
                 nodeListSerializer = new NodeListSerializerProto();
                 rscDfnListSerializer = new ResourceDefinitionListSerializerProto();
                 storPoolDfnListSerializer = new StorPoolDefinitionListSerializerProto();
+                storPoolListSerializer = new StorPoolListSerializerProto();
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
@@ -93,7 +96,7 @@ public class CtrlApiCallHandler
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
         rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, apiCtx);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef, storPoolDfnListSerializer);
-        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef, storPoolSerializer, apiCtx);
+        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef, storPoolSerializer, storPoolListSerializer, apiCtx);
         nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
         rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef);
         vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef);
@@ -521,6 +524,19 @@ public class CtrlApiCallHandler
         {
             controller.storPoolDfnMapLock.readLock().lock();
             return storPoolDfnApiCallHandler.listStorPoolDefinitions(msgId, accCtx, client);
+        }
+        finally
+        {
+            controller.storPoolDfnMapLock.readLock().unlock();
+        }
+    }
+
+    public byte[] listStorPool(int msgId, AccessContext accCtx, Peer client)
+    {
+        try
+        {
+            controller.storPoolDfnMapLock.readLock().lock();
+            return storPoolApiCallHandler.listStorPools(msgId, accCtx, client);
         }
         finally
         {
