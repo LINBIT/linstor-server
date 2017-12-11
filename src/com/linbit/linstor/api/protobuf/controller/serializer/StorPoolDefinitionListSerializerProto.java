@@ -5,14 +5,11 @@
  */
 package com.linbit.linstor.api.protobuf.controller.serializer;
 
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
-import com.linbit.linstor.proto.MsgLstRscDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
-import com.linbit.linstor.proto.apidata.RscDfnApiData;
 import com.linbit.linstor.proto.apidata.StorPoolDfnApiData;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
