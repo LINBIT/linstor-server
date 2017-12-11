@@ -350,9 +350,10 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
                     if ((ops & OP_READ) != 0)
                     {
+                        TcpConnectorPeer connPeer = null;
                         try
                         {
-                            TcpConnectorPeer connPeer = (TcpConnectorPeer) currentKey.attachment();
+                            connPeer = (TcpConnectorPeer) currentKey.attachment();
                             ReadState state = connPeer.msgIn.read((SocketChannel) currentKey.channel());
                             switch (state)
                             {
@@ -402,9 +403,15 @@ public class TcpConnectorService implements Runnable, TcpConnector
                         {
                             // Protocol error - I/O error while reading a message
                             // Close the connection
-                            // FIXME: This should only produce an error report when the system
-                            //        is at DEBUG or TRACE logging level
-                            coreSvcs.getErrorReporter().reportError(ioExc);
+                            AccessContext peerAccCtx = null;
+                            if (connPeer != null)
+                            {
+                                peerAccCtx = connPeer.getAccessContext();
+                            }
+                            coreSvcs.getErrorReporter().reportError(
+                                Level.TRACE, ioExc, peerAccCtx, connPeer,
+                                "I/O exception while attempting to receive data from the peer"
+                            );
                             closeConnection(currentKey);
                         }
                     }
@@ -449,15 +456,19 @@ public class TcpConnectorService implements Runnable, TcpConnector
                         }
                         catch (IOException ioExc)
                         {
-                            coreSvcs.getErrorReporter().reportError(ioExc);
+                            coreSvcs.getErrorReporter().reportError(
+                                Level.TRACE, ioExc, null, null,
+                                "I/O exception while attempting to accept a peer connection"
+                            );
                         }
                     }
                     else
                     if ((ops & OP_WRITE) != 0)
                     {
+                        TcpConnectorPeer connPeer = null;
                         try
                         {
-                            TcpConnectorPeer connPeer = (TcpConnectorPeer) currentKey.attachment();
+                            connPeer = (TcpConnectorPeer) currentKey.attachment();
                             WriteState state = connPeer.msgOut.write((SocketChannel) currentKey.channel());
                             switch (state)
                             {
@@ -501,23 +512,42 @@ public class TcpConnectorService implements Runnable, TcpConnector
                         }
                         catch (IOException ioExc)
                         {
-                            // Protocol error:
-                            // I/O error while writing a message
+                            // Protocol error - I/O error while writing a message
                             // Close channel / disconnect peer, invalidate SelectionKey
-                            coreSvcs.getErrorReporter().reportError(ioExc);
+                            // Close the connection
+                            AccessContext peerAccCtx = null;
+                            if (connPeer != null)
+                            {
+                                peerAccCtx = connPeer.getAccessContext();
+                            }
+                            coreSvcs.getErrorReporter().reportError(
+                                Level.TRACE, ioExc, peerAccCtx, connPeer,
+                                "I/O exception while attempting to send data to the peer"
+                            );
+                            closeConnection(currentKey);
                             closeConnection(currentKey);
                         }
                     }
                     else
                     if ((ops & OP_CONNECT) != 0)
                     {
+                        TcpConnectorPeer connPeer = null;
                         try
                         {
+                            connPeer = (TcpConnectorPeer) currentKey.attachment();
                             establishConnection(currentKey);
                         }
                         catch (IOException ioExc)
                         {
-                            coreSvcs.getErrorReporter().reportError(ioExc);
+                            AccessContext peerAccCtx = null;
+                            if (connPeer != null)
+                            {
+                                peerAccCtx = connPeer.getAccessContext();
+                            }
+                            coreSvcs.getErrorReporter().reportError(
+                                Level.TRACE, ioExc, peerAccCtx, connPeer,
+                                "I/O exception while attempting to connect to the peer"
+                            );
                         }
                     }
                 }
