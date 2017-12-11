@@ -28,7 +28,7 @@ public class StorPoolDefinitionListSerializerProto implements CtrlListSerializer
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         MsgHeaderOuterClass.MsgHeader.newBuilder()
-            .setApiCall(ApiConsts.API_LST_RSC_DFN)
+            .setApiCall(ApiConsts.API_LST_STOR_POOL_DFN)
             .setMsgId(msgId)
             .build()
             .writeDelimitedTo(baos);
