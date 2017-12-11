@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.WorkQueue;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.event.Level;
 
@@ -62,11 +64,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private boolean stateAvailable;
     private DrbdEventService drbdEvent;
 
+    private WorkQueue workQ;
+
     DeviceManagerImpl(
         Satellite stltRef,
         AccessContext wrkCtxRef,
         SatelliteCoreServices coreSvcsRef,
-        DrbdEventService drbdEventRef
+        DrbdEventService drbdEventRef,
+        WorkQueue workQRef
     )
     {
         stltInstance = stltRef;
@@ -78,6 +83,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         svcThr = null;
         devMgrInstName = devMgrName;
         drbdHnd = new DrbdDeviceHandler(coreSvcs);
+        workQ = workQRef;
 
         drbdEvent.addDrbdStateChangeObserver(this);
         stateAvailable = drbdEvent.isDrbdStateAvailable();
@@ -86,14 +92,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     /**
      * Dispatch resource to a specific handler depending on type
      */
-    void dispatchResource(AccessContext wrkCtx, Resource rsc)
+    void dispatchResource(AccessContext wrkCtx, Resource rsc, Phaser phaseLockRef)
     {
         // Select the resource handler for the resource depeding on resource type
         // Currently, the DRBD resource handler is used for all resources
-        DeviceHandlerInvocation devHndInv = new DeviceHandlerInvocation(drbdHnd, rsc);
+        DeviceHandlerInvocation devHndInv = new DeviceHandlerInvocation(drbdHnd, rsc, phaseLockRef);
 
-        // TODO: Schedule the invocation on a worker pool
-        devHndInv.run();
+        workQ.submit(devHndInv);
     }
 
     @Override
@@ -289,6 +294,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     @Override
     public void run()
     {
+        Phaser phaseLock = new Phaser();
         StltUpdateTrackerImpl.UpdateBundle chgPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
         try
         {
@@ -339,18 +345,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     chgPendingBundle.chkRscMap.clear();
                 }
 
-                for (ResourceName rscName : chgPendingBundle.updRscDfnMap.keySet())
-                {
-                    // Dispatch resources that were affected by changes to worker threads
-                    // and to the resource's respective handler
-                    ResourceDefinition rscDfn = stltInstance.rscDfnMap.get(rscName);
-                    if (rscDfn != null)
-                    {
-                        Resource rsc = rscDfn.getResource(wrkCtx, stltInstance.localNode.getName());
-                        dispatchResource(wrkCtx, rsc);
-                    }
-                }
-
                 // TODO: if !stateAvailable try to collect additional updates (without losing the current)
                 synchronized (sched)
                 {
@@ -365,7 +359,23 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         }
                     }
                 }
-                // TODO: Wait for the worker threads to finish
+
+                // Remember the current phase number for this run of device handlers
+                int currentPhase = phaseLock.getPhase();
+                for (ResourceName rscName : chgPendingBundle.updRscDfnMap.keySet())
+                {
+                    // Dispatch resources that were affected by changes to worker threads
+                    // and to the resource's respective handler
+                    ResourceDefinition rscDfn = stltInstance.rscDfnMap.get(rscName);
+                    if (rscDfn != null)
+                    {
+                        Resource rsc = rscDfn.getResource(wrkCtx, stltInstance.localNode.getName());
+                        dispatchResource(wrkCtx, rsc, phaseLock);
+                    }
+                }
+                // Wait until the phase advances from the current phase number after all
+                // device handlers have finished
+                phaseLock.awaitAdvance(currentPhase);
             }
             while (!shutdownFlag.get());
         }
@@ -469,17 +479,27 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         private final DeviceHandler handler;
         private final Resource rsc;
+        private final Phaser phaseLock;
 
-        DeviceHandlerInvocation(DeviceHandler handlerRef, Resource rscRef)
+        DeviceHandlerInvocation(DeviceHandler handlerRef, Resource rscRef, Phaser phaseLockRef)
         {
             handler = handlerRef;
             rsc = rscRef;
+            phaseLock = phaseLockRef;
+            phaseLock.register();
         }
 
         @Override
         public void run()
         {
-            handler.dispatchResource(rsc);
+            try
+            {
+                handler.dispatchResource(rsc);
+            }
+            finally
+            {
+                phaseLock.arriveAndDeregister();
+            }
         }
     }
 }
