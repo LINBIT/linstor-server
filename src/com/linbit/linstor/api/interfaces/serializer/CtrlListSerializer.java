@@ -14,5 +14,5 @@ import java.util.List;
  */
 public interface CtrlListSerializer<T> {
 
-    byte[] getListMessage(int msgId, List<T> nodes) throws IOException;
+    byte[] getListMessage(int msgId, List<T> elements) throws IOException;
 }
