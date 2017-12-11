@@ -79,12 +79,18 @@ public interface Volume extends TransactionObject
         }
     }
 
+    public VlmApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+
     public interface VlmApi
     {
+        public UUID getVlmUuid();
+        public UUID getVlmDfnUuid();
         public String getStorPoolName();
+        public UUID getStorPoolUuid();
         public String getBlockDevice();
         public String getMetaDisk();
         public int getVlmNr();
+        public long getFlags();
         public Map<String, String> getVlmProps();
     }
 

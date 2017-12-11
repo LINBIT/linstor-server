@@ -9,6 +9,7 @@ import com.linbit.ImplementationError;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -382,6 +383,21 @@ public class VolumeData extends BaseTransactionObject implements Volume
         return "Node: '" + resource.getAssignedNode().getName() + "', " +
                "Rsc: '" + resource.getDefinition().getName() + "', " +
                "VlmNr: '" + volumeDfn.getVolumeNumber() + "'";
+    }
+
+    @Override
+    public Volume.VlmApi getApiData(AccessContext accCtx) throws AccessDeniedException
+    {
+        return new VlmPojo(
+                getStorPool(accCtx).getName().getDisplayName(),
+                getStorPool(accCtx).getUuid(),
+                getVolumeDefinition().getUuid(),
+                getUuid(),
+                getBlockDevicePath(accCtx),
+                getMetaDiskPath(accCtx),
+                getVolumeDefinition().getVolumeNumber().value,
+                getFlags().getFlagsBits(accCtx),
+                getProps(accCtx).map());
     }
 
     private final class VlmFlagsImpl extends StateFlagsBits<VolumeData, VlmFlags>
