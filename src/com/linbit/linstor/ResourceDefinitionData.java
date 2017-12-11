@@ -378,20 +378,23 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
-    public ResourceDefinition.RscDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException {
-        ArrayList<VolumeDefinition.VlmDfnApi> vlmdfns = new ArrayList<>();
-        while(iterateVolumeDfn(accCtx).hasNext())
+    public ResourceDefinition.RscDfnApi getApiData(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        ArrayList<VolumeDefinition.VlmDfnApi> vlmDfnList = new ArrayList<>();
+        Iterator<VolumeDefinition> vlmDfnIter = iterateVolumeDfn(accCtx);
+        while (vlmDfnIter.hasNext())
         {
-            VolumeDefinition vd = iterateVolumeDfn(accCtx).next();
-            vlmdfns.add(vd.getApiData(accCtx));
+            VolumeDefinition vd = vlmDfnIter.next();
+            vlmDfnList.add(vd.getApiData(accCtx));
         }
         return new RscDfnPojo(
-                getUuid(),
-                getName().getDisplayName(),
-                getPort(accCtx).value,
-                getSecret(accCtx),
-                getProps(accCtx).map(),
-                vlmdfns
+            getUuid(),
+            getName().getDisplayName(),
+            getPort(accCtx).value,
+            getSecret(accCtx),
+            getProps(accCtx).map(),
+            vlmDfnList
         );
     }
 
