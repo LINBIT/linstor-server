@@ -13,6 +13,7 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
+import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -25,6 +26,7 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageDriverUtils;
 import com.linbit.linstor.storage.StorageException;
+import java.util.ArrayList;
 
 public class StorPoolData extends BaseTransactionObject implements StorPool
 {
@@ -337,4 +339,24 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         return "Node: '" + node.getName() + "', " +
                "StorPool: '" + storPoolDef.getName() + "'";
     }
+
+    @Override
+    public StorPoolApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+        ArrayList<Volume.VlmApi> vlms = new ArrayList<>();
+        for(Volume vlm : getVolumes(accCtx))
+            vlms.add(vlm.getApiData(accCtx));
+        return new StorPoolPojo(
+                getUuid(),
+                getNode().getUuid(),
+                node.getName().getDisplayName(),
+                getName().getDisplayName(),
+                getDefinition(accCtx).getUuid(),
+                getDriverName(),
+                getProps(accCtx).map(),
+                getDefinition(accCtx).getProps(accCtx).map(),
+                vlms
+        );
+    }
+
+
 }

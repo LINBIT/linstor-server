@@ -12,6 +12,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -87,4 +89,19 @@ public interface StorPool extends TransactionObject
 
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
+
+    public StorPoolApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+
+    public interface StorPoolApi
+    {
+        UUID getStorPoolUuid();
+        String getStorPoolName();
+        UUID getStorPoolDfnUuid();
+        String getNodeName();
+        UUID getNodeUuid();
+        String getDriver();
+
+        Map<String, String> getStorPoolProps();
+        List<Volume.VlmApi> getVlmList();
+    }
 }
