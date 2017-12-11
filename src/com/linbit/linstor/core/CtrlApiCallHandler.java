@@ -907,7 +907,7 @@ public class CtrlApiCallHandler
         }
         finally
         {
-            controller.rscDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }

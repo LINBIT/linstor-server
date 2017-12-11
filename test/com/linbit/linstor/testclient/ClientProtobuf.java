@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +43,7 @@ import com.linbit.linstor.proto.MsgDelStorPoolDfnOuterClass.MsgDelStorPoolDfn;
 import com.linbit.linstor.proto.MsgDelStorPoolOuterClass.MsgDelStorPool;
 import com.linbit.linstor.proto.MsgDelVlmConnOuterClass.MsgDelVlmConn;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
+import com.linbit.linstor.proto.MsgModNodeOuterClass.MsgModNode;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 
@@ -434,6 +436,38 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             API_CRT_NODE,
+            msgBuilder.build()
+        );
+        return msgId;
+    }
+
+    public int sendModifyNode(
+        String nodeName,
+        String typeName,
+        Map<String, String> overrideProps,
+        Set<String> delProps
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgModNode.Builder msgBuilder = MsgModNode.newBuilder()
+            .setNodeName(nodeName);
+        if (typeName != null)
+        {
+            msgBuilder.setNodeType(typeName);
+        }
+        if (overrideProps != null)
+        {
+            msgBuilder.addAllOverrideNodeProps(asLinStorMapEntryList(overrideProps));
+        }
+        if (delProps != null)
+        {
+            msgBuilder.addAllDeletePropKeys(delProps);
+        }
+
+        send(
+            msgId,
+            API_MOD_NODE,
             msgBuilder.build()
         );
         return msgId;
