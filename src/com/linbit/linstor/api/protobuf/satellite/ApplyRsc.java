@@ -6,10 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
-import com.linbit.linstor.api.pojo.RscPojo.VolumeDfnPojo;
-import com.linbit.linstor.api.pojo.RscPojo.VolumePojo;
+import com.linbit.linstor.api.pojo.VlmDfnPojo;
+import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Satellite;
@@ -17,6 +20,7 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
+import com.linbit.linstor.proto.apidata.VlmApiData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.security.AccessContext;
@@ -57,38 +61,43 @@ public class ApplyRsc extends BaseProtoApiCall
 
     static RscPojo asRscPojo(MsgIntRscData rscData)
     {
-        List<VolumeDfnPojo> vlmDfns = extractVlmDfns(rscData.getVlmDfnsList());
-        List<VolumePojo> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
+        List<VolumeDefinition.VlmDfnApi> vlmDfns = extractVlmDfns(rscData.getVlmDfnsList());
+        List<Volume.VlmApi> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
         List<OtherRscPojo> otherRscList = extractRawOtherRsc(rscData.getOtherResourcesList());
+        RscDfnPojo rscDfnPojo = new RscDfnPojo(
+                UuidUtils.asUuid(rscData.getRscDfnUuid().toByteArray()),
+                rscData.getRscName(),
+                rscData.getRscDfnPort(),
+                rscData.getRscDfnSecret(),
+                rscData.getRscDfnFlags(),
+                asMap(rscData.getRscDfnPropsList()),
+                vlmDfns);
         RscPojo rscRawData = new RscPojo(
             rscData.getRscName(),
-            UuidUtils.asUuid(rscData.getRscDfnUuid().toByteArray()),
-            rscData.getRscDfnPort(),
-            rscData.getRscDfnFlags(),
-            rscData.getRscDfnSecret(),
-            asMap(rscData.getRscDfnPropsList()),
+            null,
+            null,
+            rscDfnPojo,
             UuidUtils.asUuid(rscData.getLocalRscUuid().toByteArray()),
             rscData.getLocalRscFlags(),
             rscData.getLocalRscNodeId(),
             asMap(rscData.getLocalRscPropsList()),
-            vlmDfns,
             localVlms,
             otherRscList
         );
         return rscRawData;
     }
 
-    static List<VolumeDfnPojo> extractVlmDfns(List<VlmDfn> vlmDfnsList)
+    static List<VolumeDefinition.VlmDfnApi> extractVlmDfns(List<VlmDfn> vlmDfnsList)
     {
-        List<VolumeDfnPojo> list = new ArrayList<>();
+        List<VolumeDefinition.VlmDfnApi> list = new ArrayList<>();
         for (VlmDfn vlmDfn : vlmDfnsList)
         {
             list.add(
-                new VolumeDfnPojo(
+                new VlmDfnPojo(
                     UuidUtils.asUuid(vlmDfn.getVlmDfnUuid().toByteArray()),
                     vlmDfn.getVlmNr(),
-                    vlmDfn.getVlmSize(),
                     vlmDfn.getVlmMinor(),
+                    vlmDfn.getVlmSize(),
                     vlmDfn.getVlmFlags(),
                     asMap(vlmDfn.getVlmPropsList())
                 )
@@ -97,20 +106,21 @@ public class ApplyRsc extends BaseProtoApiCall
         return list;
     }
 
-    static List<VolumePojo> extractRawVolumes(List<Vlm> localVolumesList)
+    static List<Volume.VlmApi> extractRawVolumes(List<Vlm> localVolumesList)
     {
-        List<VolumePojo> list = new ArrayList<>();
+        List<Volume.VlmApi> list = new ArrayList<>();
         for (Vlm vol : localVolumesList)
         {
             list.add(
-                new VolumePojo(
+                new VlmPojo(
+                    vol.getStorPoolName(),
+                    UuidUtils.asUuid(vol.getStorPoolUuid().toByteArray()),
+                    UuidUtils.asUuid(vol.getVlmDfnUuid().toByteArray()),
                     UuidUtils.asUuid(vol.getVlmUuid().toByteArray()),
-                    vol.getVlmNr(),
                     vol.getBlockDevice(),
                     vol.getMetaDisk(),
+                    vol.getVlmNr(),
                     vol.getVlmFlags(),
-                    UuidUtils.asUuid(vol.getStorPoolUuid().toByteArray()),
-                    vol.getStorPoolName(),
                     asMap(vol.getVlmPropsList())
                 )
             );

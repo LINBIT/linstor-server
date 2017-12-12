@@ -32,6 +32,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
@@ -40,8 +41,8 @@ import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
-import com.linbit.linstor.api.pojo.RscPojo.VolumeDfnPojo;
-import com.linbit.linstor.api.pojo.RscPojo.VolumePojo;
+import com.linbit.linstor.api.pojo.VlmDfnPojo;
+import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -67,7 +68,7 @@ class StltRscApiCallHandler
 
             satellite.getErrorReporter().logInfo(
                 "Resource '%s' successfully created",
-                rscRawData.getRscName()
+                rscRawData.getName()
             );
             satellite.getDeviceManager().rscUpdateApplied(updatedObjects.updatedRscMap);
         }
@@ -88,7 +89,7 @@ class StltRscApiCallHandler
 
         Map<ResourceName, Set<NodeName>> updatedRscMap = new TreeMap<>();
 
-        rscName = new ResourceName(rscRawData.getRscName());
+        rscName = new ResourceName(rscRawData.getName());
         String rscDfnSecret = rscRawData.getRscDfnSecret();
         TcpPortNumber port = new TcpPortNumber(rscRawData.getRscDfnPort());
         RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscRawData.getRscDfnFlags());
@@ -129,23 +130,23 @@ class StltRscApiCallHandler
             // our rscDfn is empty
             // that means, just create everything we need
 
-            for (VolumeDfnPojo vlmDfnRaw : rscRawData.getVlmDfns())
+            for (VolumeDefinition.VlmDfnApi vlmDfnRaw : rscRawData.getVlmDfns())
             {
-                VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVlmNr());
+                VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
                 VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstanceSatellite(
                     apiCtx,
-                    vlmDfnRaw.getVlmDfnUuid(),
+                    vlmDfnRaw.getUuid(),
                     rscDfn,
                     vlmNr,
-                    vlmDfnRaw.getVlmSize(),
-                    new MinorNumber(vlmDfnRaw.getVlmMinor()),
+                    vlmDfnRaw.getSize(),
+                    new MinorNumber(vlmDfnRaw.getMinorNr()),
                     VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags()),
                     transMgr
                 );
                 checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
                 Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
                 vlmDfnPropsMap.clear();
-                vlmDfnPropsMap.putAll(vlmDfnRaw.getVlmDfnProps());
+                vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
             }
 
             NodeData localNode = satellite.getLocalNode();
@@ -324,7 +325,7 @@ class StltRscApiCallHandler
                     remoteRscProps.putAll(otherRsc.getRscProps());
 
                     // TODO: volumes
-                    List<VolumePojo> otherRscVlms = otherRsc.getVlms();
+                    List<Volume.VlmApi> otherRscVlms = otherRsc.getVlms();
 
                     // everything ok, mark the resource to be kept
                     removedList.remove(remoteRsc);
@@ -365,7 +366,7 @@ class StltRscApiCallHandler
         NodeId nodeId,
         RscFlags[] flags,
         Map<String, String> rscProps,
-        List<VolumePojo> vlms,
+        List<VolumeData.VlmApi> vlms,
         SatelliteTransactionMgr transMgr,
         boolean remoteRsc
     )
@@ -394,7 +395,7 @@ class StltRscApiCallHandler
         map.clear();
         map.putAll(rscProps);
 
-        for (VolumePojo vlmRaw : vlms)
+        for (Volume.VlmApi vlmRaw : vlms)
         {
             StorPool storPool = node.getStorPool(
                 apiCtx,
@@ -432,7 +433,7 @@ class StltRscApiCallHandler
                 storPool,
                 vlmRaw.getBlockDevice(),
                 vlmRaw.getMetaDisk(),
-                VlmFlags.restoreFlags(vlmRaw.getVlmFlags()),
+                VlmFlags.restoreFlags(vlmRaw.getFlags()),
                 transMgr
             );
             checkUuid(
@@ -466,7 +467,7 @@ class StltRscApiCallHandler
             rscRawData.getRscDfnUuid(),
             "ResourceDefinition",
             rscDfn.getName().displayValue,
-            rscRawData.getRscName()
+            rscRawData.getName()
         );
     }
 
@@ -490,27 +491,27 @@ class StltRscApiCallHandler
 
     private void checkUuid(
         VolumeDefinitionData vlmDfn,
-        VolumeDfnPojo vlmDfnRaw,
+        VolumeDefinition.VlmDfnApi vlmDfnRaw,
         String remoteRscName
     )
         throws DivergentUuidsException
     {
         checkUuid(
             vlmDfn.getUuid(),
-            vlmDfnRaw.getVlmDfnUuid(),
+            vlmDfnRaw.getUuid(),
             "VolumeDefinition",
             vlmDfn.toString(),
             String.format(
                 "Rsc: '%s', VlmNr: '%d'",
                 remoteRscName,
-                vlmDfnRaw.getVlmNr()
+                vlmDfnRaw.getVolumeNr()
             )
         );
     }
 
     private void checkUuid(
         VolumeData vlm,
-        VolumePojo vlmRaw,
+        Volume.VlmApi vlmRaw,
         String remoteNodeName,
         String remoteRscName
     )

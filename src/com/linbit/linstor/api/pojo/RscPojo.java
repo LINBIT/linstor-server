@@ -1,84 +1,99 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class RscPojo implements Comparable<RscPojo>
+public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
 {
     private final String rscName;
-    private final UUID rscDfnUuid;
-    private final int rscDfnPort;
-    private final long rscDfnFlags;
-    private final String rscDfnSecret;
-    private final Map<String, String> rscDfnProps;
+    private final String nodeName;
+    private final UUID nodeUuid;
+    private final ResourceDefinition.RscDfnApi rscDefinition;
     private final UUID localRscUuid;
     private final long localRscFlags;
     private final int localRscNodeId;
     private final Map<String, String> localRscProps;
-    private final List<VolumeDfnPojo> vlmDfns;
-    private final List<VolumePojo> localVlms;
+    private final List<Volume.VlmApi> localVlms;
     private final List<OtherRscPojo> otherRscs;
 
     public RscPojo(
         String rscName,
-        UUID rscDfnUuid,
-        int port,
-        long rscDfnFlags,
-        String rscDfnSecret,
-        Map<String, String> rscDfnProps,
+        String nodeName,
+        UUID nodeUuid,
+        ResourceDefinition.RscDfnApi rscDefinition,
         UUID localRscUuid,
         long localRscFlags,
         int localRscNodeId,
         Map<String, String> localRscProps,
-        List<VolumeDfnPojo> vlmDfns,
-        List<VolumePojo> localVlms,
+        List<Volume.VlmApi> localVlms,
         List<OtherRscPojo> otherRscList
     )
     {
         this.rscName = rscName;
-        this.rscDfnUuid = rscDfnUuid;
-        this.rscDfnPort = port;
-        this.rscDfnFlags = rscDfnFlags;
-        this.rscDfnSecret = rscDfnSecret;
-        this.rscDfnProps = rscDfnProps;
+        this.nodeName = nodeName;
+        this.nodeUuid = nodeUuid;
+        this.rscDefinition = rscDefinition;
         this.localRscUuid = localRscUuid;
         this.localRscFlags = localRscFlags;
         this.localRscNodeId = localRscNodeId;
         this.localRscProps = localRscProps;
-        this.vlmDfns = vlmDfns;
         this.localVlms = localVlms;
         this.otherRscs = otherRscList;
     }
 
-    public String getRscName()
+    @Override
+    public String getName()
     {
         return rscName;
     }
 
+    @Override
+    public UUID getUuid()
+    {
+        return localRscUuid;
+    }
+
+    @Override
+    public String getNodeName()
+    {
+        return nodeName;
+    }
+
+    @Override
+    public UUID getNodeUuid()
+    {
+        return nodeUuid;
+    }
+
+    @Override
     public UUID getRscDfnUuid()
     {
-        return rscDfnUuid;
+        return rscDefinition.getUuid();
     }
 
     public int getRscDfnPort()
     {
-        return rscDfnPort;
+        return rscDefinition.getPort();
     }
 
     public long getRscDfnFlags()
     {
-        return rscDfnFlags;
+        return rscDefinition.getFlags();
     }
 
     public String getRscDfnSecret()
     {
-        return rscDfnSecret;
+        return rscDefinition.getSecret();
     }
 
     public Map<String, String> getRscDfnProps()
     {
-        return rscDfnProps;
+        return rscDefinition.getProps();
     }
 
     public UUID getLocalRscUuid()
@@ -101,13 +116,23 @@ public class RscPojo implements Comparable<RscPojo>
         return localRscProps;
     }
 
-    public List<VolumeDfnPojo> getVlmDfns()
+    public List<VolumeDefinition.VlmDfnApi> getVlmDfns()
     {
-        return vlmDfns;
+        return rscDefinition.getVlmDfnList();
     }
 
-    public List<VolumePojo> getLocalVlms()
+    public List<Volume.VlmApi> getLocalVlms()
     {
+        return localVlms;
+    }
+
+    @Override
+    public Map<String, String> getProps() {
+        return localRscProps;
+    }
+
+    @Override
+    public List<? extends Volume.VlmApi> getVlmList() {
         return localVlms;
     }
 
@@ -122,136 +147,6 @@ public class RscPojo implements Comparable<RscPojo>
         return rscName.compareTo(otherRscPojo.rscName);
     }
 
-    public static class VolumeDfnPojo
-    {
-        private final UUID vlmDfnUuid;
-        private final int vlmNr;
-        private final long vlmSize;
-        private final int vlmMinor;
-        private final long flags;
-        private final Map<String, String> vlmDfnProps;
-
-        public VolumeDfnPojo(
-            UUID uuid,
-            int vlmNr,
-            long vlmSize,
-            int vlmMinor,
-            long flags,
-            Map<String, String> vlmDfnProps
-        )
-        {
-            this.vlmDfnUuid = uuid;
-            this.vlmNr = vlmNr;
-            this.vlmSize = vlmSize;
-            this.vlmMinor = vlmMinor;
-            this.flags = flags;
-            this.vlmDfnProps = vlmDfnProps;
-        }
-
-        public UUID getVlmDfnUuid()
-        {
-            return vlmDfnUuid;
-        }
-
-        public int getVlmNr()
-        {
-            return vlmNr;
-        }
-
-        public long getVlmSize()
-        {
-            return vlmSize;
-        }
-
-        public int getVlmMinor()
-        {
-            return vlmMinor;
-        }
-
-        public long getFlags()
-        {
-            return flags;
-        }
-
-        public Map<String, String> getVlmDfnProps()
-        {
-            return vlmDfnProps;
-        }
-    }
-
-    public static class VolumePojo
-    {
-        private final UUID vlmUuid;
-        private final int vlmNr;
-        private final String blockDevice;
-        private final String metaDisk;
-        private final long vlmFlags;
-        private final UUID storPoolUuid;
-        private final String storPoolName;
-        private final Map<String, String> props;
-
-        public VolumePojo(
-            UUID vlmUuid,
-            int vlmNr,
-            String blockDevice,
-            String metaDisk,
-            long vlmFlags,
-            UUID storPoolUuid,
-            String storPoolName,
-            Map<String, String> props
-        )
-        {
-            this.vlmUuid = vlmUuid;
-            this.vlmNr = vlmNr;
-            this.blockDevice = blockDevice;
-            this.metaDisk = metaDisk;
-            this.vlmFlags = vlmFlags;
-            this.storPoolUuid = storPoolUuid;
-            this.storPoolName = storPoolName;
-            this.props = props;
-        }
-
-        public UUID getVlmUuid()
-        {
-            return vlmUuid;
-        }
-
-        public int getVlmNr()
-        {
-            return vlmNr;
-        }
-
-        public String getBlockDevice()
-        {
-            return blockDevice;
-        }
-
-        public String getMetaDisk()
-        {
-            return metaDisk;
-        }
-
-        public long getVlmFlags()
-        {
-            return vlmFlags;
-        }
-
-        public UUID getStorPoolUuid()
-        {
-            return storPoolUuid;
-        }
-
-        public String getStorPoolName()
-        {
-            return storPoolName;
-        }
-
-        public Map<String, String> getProps()
-        {
-            return props;
-        }
-    }
-
     public static class OtherRscPojo
     {
         private final String nodeName;
@@ -263,7 +158,7 @@ public class RscPojo implements Comparable<RscPojo>
         private final int rscNodeId;
         private final long rscFlags;
         private final Map<String, String> rscProps;
-        private final List<VolumePojo> vlms;
+        private final List<Volume.VlmApi> vlms;
 
         public OtherRscPojo(
             String nodeName,
@@ -275,7 +170,7 @@ public class RscPojo implements Comparable<RscPojo>
             int rscNodeId,
             long rscFlags,
             Map<String, String> rscProps,
-            List<VolumePojo> vlms
+            List<Volume.VlmApi> vlms
         )
         {
             this.nodeName = nodeName;
@@ -335,7 +230,7 @@ public class RscPojo implements Comparable<RscPojo>
             return rscProps;
         }
 
-        public List<VolumePojo> getVlms()
+        public List<Volume.VlmApi> getVlms()
         {
             return vlms;
         }

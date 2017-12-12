@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -63,6 +64,8 @@ public interface Resource extends TransactionObject
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    public RscApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+
     public enum RscFlags implements Flags
     {
         CLEAN(1L),
@@ -94,5 +97,15 @@ public interface Resource extends TransactionObject
             }
             return flagList.toArray(new RscFlags[flagList.size()]);
         }
+    }
+
+    public interface RscApi {
+        UUID getUuid();
+        String getName();
+        UUID getNodeUuid();
+        String getNodeName();
+        UUID getRscDfnUuid();
+        Map<String, String> getProps();
+        List<? extends Volume.VlmApi> getVlmList();
     }
 }

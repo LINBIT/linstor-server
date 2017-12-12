@@ -102,7 +102,7 @@ public class VlmApiData implements VlmApi
         return builder.build();
     }
 
-    public static List<Vlm> toVlmProtoList(final List<VlmApi> volumedefs)
+    public static List<Vlm> toVlmProtoList(final List<? extends VlmApi> volumedefs)
     {
         ArrayList<Vlm> protoVlm = new ArrayList<>();
         for(VlmApi vlmapi : volumedefs)

@@ -34,12 +34,14 @@ import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -48,21 +50,27 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
+import java.io.IOException;
+import java.util.ArrayList;
 
 class CtrlRscApiCallHandler
 {
     private final Controller controller;
     private final CtrlSerializer<Resource> serializer;
+    private final CtrlListSerializer<Resource.RscApi> rscListSerializer;
     private final AccessContext apiCtx;
 
     CtrlRscApiCallHandler(
         Controller controllerRef,
         CtrlSerializer<Resource> rscSerializer,
+        CtrlListSerializer<Resource.RscApi> rscListSerializer,
         AccessContext apiCtxRef
     )
     {
         controller = controllerRef;
         serializer = rscSerializer;
+        this.rscListSerializer = rscListSerializer;
         apiCtx = apiCtxRef;
     }
 
@@ -1278,6 +1286,45 @@ class CtrlRscApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    byte[] listResources(int msgId, AccessContext accCtx, Peer client)
+    {
+        ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
+        try {
+            controller.rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
+            for(ResourceDefinition rscDfn : controller.rscDfnMap.values())
+            {
+                try {
+                    Iterator<Resource> itResources = rscDfn.iterateResource(accCtx);
+                    while(itResources.hasNext())
+                    {
+                        Resource rsc = itResources.next();
+                        rscs.add(rsc.getApiData(accCtx));
+                    }
+                }
+                catch (AccessDeniedException accDeniedExc) { } // don't add storpooldfn without access
+            }
+        } catch (AccessDeniedException accDeniedExc) {
+            // for now return an empty list.
+        }
+
+        try
+        {
+            return rscListSerializer.getListMessage(msgId, rscs);
+        }
+        catch (IOException e)
+        {
+            controller.getErrorReporter().reportError(
+                e,
+                null,
+                client,
+                "Could not complete list message due to an IOException"
+            );
+        }
+
+        return null;
     }
 
     public void respondResource(

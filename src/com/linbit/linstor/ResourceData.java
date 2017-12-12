@@ -17,6 +17,7 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -30,6 +31,8 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Representation of a resource
@@ -490,6 +493,28 @@ public class ResourceData extends BaseTransactionObject implements Resource
         {
             throw new ImplementationError("Access to deleted node", null);
         }
+    }
+
+    @Override
+    public RscApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+        List<Volume.VlmApi> volumes = new ArrayList<>();
+        Iterator<Volume> itVolumes = iterateVolumes();
+        while(itVolumes.hasNext())
+        {
+            volumes.add(itVolumes.next().getApiData(accCtx));
+        }
+        return new RscPojo(
+                getDefinition().getName().getDisplayName(),
+                getAssignedNode().getName().getDisplayName(),
+                getAssignedNode().getUuid(),
+                getDefinition().getApiData(accCtx),
+                getUuid(),
+                getStateFlags().getFlagsBits(accCtx),
+                getNodeId().value,
+                getProps(accCtx).map(),
+                volumes,
+                null
+        );
     }
 
     @Override

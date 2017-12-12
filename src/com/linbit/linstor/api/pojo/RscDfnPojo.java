@@ -21,6 +21,7 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi {
     private final String name;
     private final int port;
     private final String secret;
+    private final long flags;
     private final Map<String, String> props;
     private final List<VolumeDefinition.VlmDfnApi> vlmdfns;
 
@@ -29,6 +30,7 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi {
             final String name,
             final int port,
             final String secret,
+            final long flags,
             final Map<String, String> props,
             final List<VolumeDefinition.VlmDfnApi> vlmdfns)
     {
@@ -36,6 +38,7 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi {
         this.name = name;
         this.port = port;
         this.secret = secret;
+        this.flags = flags;
         this.props = props;
         this.vlmdfns = vlmdfns;
     }
@@ -58,6 +61,11 @@ public class RscDfnPojo implements ResourceDefinition.RscDfnApi {
     @Override
     public String getSecret() {
         return secret;
+    }
+
+    @Override
+    public long getFlags() {
+        return flags;
     }
 
     @Override

@@ -392,6 +392,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             getName().getDisplayName(),
             getPort(accCtx).value,
             getSecret(accCtx),
+            getFlags().getFlagsBits(accCtx),
             getProps(accCtx).map(),
             vlmDfnList
         );

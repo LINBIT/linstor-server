@@ -50,6 +50,11 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
     }
 
     @Override
+    public long getFlags() {
+        return rscDfn.getRscFlags();
+    }
+
+    @Override
     public Map<String, String> getProps() {
         Map<String, String> ret = new HashMap<>();
         for (LinStorMapEntryOuterClass.LinStorMapEntry entry : rscDfn.getRscPropsList())

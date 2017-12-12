@@ -98,6 +98,7 @@ public interface ResourceDefinition extends TransactionObject
         String getResourceName();
         int getPort();
         String getSecret();
+        long getFlags();
         Map<String, String> getProps();
         List<VolumeDefinition.VlmDfnApi> getVlmDfnList();
     }

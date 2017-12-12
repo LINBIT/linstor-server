@@ -122,10 +122,10 @@ public class StltApiCallHandler
                     nodeSet.add(new NodeName(otherRsc.getNodeName()));
                 }
                 updatedRscMap.put(
-                    new ResourceName(rsc.getRscName()),
+                    new ResourceName(rsc.getName()),
                     nodeSet
                 );
-                satellite.getErrorReporter().logInfo("Resource '" + rsc.getRscName() + "' created.");
+                satellite.getErrorReporter().logInfo("Resource '" + rsc.getName() + "' created.");
             }
             satellite.getErrorReporter().logInfo("Full sync completed");
 

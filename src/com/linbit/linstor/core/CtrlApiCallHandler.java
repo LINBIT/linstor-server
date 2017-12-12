@@ -35,6 +35,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDefinitionListSerializerProto;
+import com.linbit.linstor.api.protobuf.controller.serializer.ResourceListSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolDefinitionListSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolListSerializerProto;
 
@@ -67,6 +68,7 @@ public class CtrlApiCallHandler
         final CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializer;
         final CtrlListSerializer<StorPoolDefinition.StorPoolDfnApi> storPoolDfnListSerializer;
         final CtrlListSerializer<StorPool.StorPoolApi> storPoolListSerializer;
+        final CtrlListSerializer<Resource.RscApi> resourceListSerializer;
 
         switch (type)
         {
@@ -85,6 +87,7 @@ public class CtrlApiCallHandler
                 rscDfnListSerializer = new ResourceDefinitionListSerializerProto();
                 storPoolDfnListSerializer = new StorPoolDefinitionListSerializerProto();
                 storPoolListSerializer = new StorPoolListSerializerProto();
+                resourceListSerializer = new ResourceListSerializerProto();
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
@@ -94,7 +97,7 @@ public class CtrlApiCallHandler
         nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, apiCtx, nodeSerializer, nodeListSerializer);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, rscDfnListSerializer, apiCtx);
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
-        rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, apiCtx);
+        rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, resourceListSerializer, apiCtx);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef, storPoolDfnListSerializer);
         storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef, storPoolSerializer, storPoolListSerializer, apiCtx);
         nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
@@ -533,6 +536,21 @@ public class CtrlApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    public byte[] listResource(int msgId, AccessContext accCtx, Peer client)
+    {
+        try
+        {
+            controller.rscDfnMapLock.readLock().lock();
+            controller.nodesMapLock.readLock().lock();
+            return rscApiCallHandler.listResources(msgId, accCtx, client);
+        }
+        finally
+        {
+            controller.rscDfnMapLock.readLock().unlock();
+            controller.nodesMapLock.readLock().unlock();
+        }
     }
 
     /**
