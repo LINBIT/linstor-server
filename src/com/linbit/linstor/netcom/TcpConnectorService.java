@@ -207,6 +207,10 @@ public class TcpConnectorService implements Runnable, TcpConnector
             if (connected)
             {
                 peer.connectionEstablished();
+                if (connObserver != null)
+                {
+                    connObserver.outboundConnectionEstablished(peer);
+                }
             }
             connKey.attach(peer);
             try
@@ -242,8 +246,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ImplementationError(
-                "TcpConnectorService's privileged access context has not enough rights to " +
-                    "set new peer to node upon reconnect.",
+                "TcpConnectorService not authorized to execute setPeer() on a Node object in reconnect()",
                 accDeniedExc
             );
         }
