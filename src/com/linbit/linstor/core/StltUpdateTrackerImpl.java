@@ -85,6 +85,16 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             sched.notify();
         }
     }
+    
+    @Override
+    public void checkMultipleResources(Map<ResourceName, UUID> rscMap)
+    {
+        synchronized (sched)
+        {
+            cachedUpdates.chkRscMap.putAll(rscMap);
+            sched.notify();
+        }
+    }
 
     void collectUpdateNotifications(UpdateBundle updates, AtomicBoolean shutdownFlag)
     {

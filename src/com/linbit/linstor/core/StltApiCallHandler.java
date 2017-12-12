@@ -1,10 +1,8 @@
 package com.linbit.linstor.core;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -12,6 +10,7 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
@@ -19,7 +18,6 @@ import com.linbit.linstor.api.interfaces.serializer.StltRequestSerializer;
 import com.linbit.linstor.api.interfaces.serializer.StltResourceRequestSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
-import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.satellite.serializer.GenericRequestSerializerProto;
 import com.linbit.linstor.api.protobuf.satellite.serializer.ResourceRequestSerializerProto;
@@ -29,6 +27,7 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import java.util.Iterator;
 
 public class StltApiCallHandler
 {
@@ -112,39 +111,43 @@ public class StltApiCallHandler
 
             transMgr.commit();
 
-            Set<NodeName> updatedNodeSet = new TreeSet<>();
-            Set<StorPoolName> updatedStorPools = new TreeSet<>();
-            Map<ResourceName, Set<NodeName>> updatedRscMap = new TreeMap<>();
             for (NodePojo node : nodes)
             {
-                updatedNodeSet.add(new NodeName(node.getName()));
-                satellite.getErrorReporter().logInfo("Node '" + node.getName() + "' created.");
+                satellite.getErrorReporter().logTrace("Node '" + node.getName() + "' received from Controller.");
             }
             for (StorPoolPojo storPool : storPools)
             {
-                updatedStorPools.add(new StorPoolName(storPool.getStorPoolName()));
-                satellite.getErrorReporter().logInfo("StorPool '" + storPool.getStorPoolName() + "' created.");
+                satellite.getErrorReporter().logTrace(
+                    "StorPool '" + storPool.getStorPoolName() + "' received from Controller."
+                );
             }
             for (RscPojo rsc : resources)
             {
-                Set<NodeName> nodeSet = new HashSet<>();
-                nodeSet.add(satellite.getLocalNode().getName());
-                for (OtherRscPojo otherRsc : rsc.getOtherRscList())
-                {
-                    nodeSet.add(new NodeName(otherRsc.getNodeName()));
-                }
-                updatedRscMap.put(
-                    new ResourceName(rsc.getName()),
-                    nodeSet
-                );
-                satellite.getErrorReporter().logInfo("Resource '" + rsc.getName() + "' created.");
+                satellite.getErrorReporter().logTrace("Resource '" + rsc.getName() + "' created.");
             }
-            satellite.getErrorReporter().logInfo("Full sync completed");
+            satellite.getErrorReporter().logTrace("Full sync with controller finished");
 
-            DeviceManager deviceManager = satellite.getDeviceManager();
-            deviceManager.nodeUpdateApplied(updatedNodeSet);
-            deviceManager.storPoolUpdateApplied(updatedStorPools);
-            deviceManager.rscUpdateApplied(updatedRscMap);
+            // Atomically notify the DeviceManager to check all resources
+            Node localNode = satellite.localNode;
+            if (localNode != null)
+            {
+                Map<ResourceName, UUID> updatedResources = new TreeMap();
+                Iterator<Resource> rscIter = localNode.iterateResources(apiCtx);
+                while (rscIter.hasNext())
+                {
+                    Resource curRsc = rscIter.next();
+                    updatedResources.put(curRsc.getDefinition().getName(), curRsc.getUuid());
+                }
+                DeviceManager deviceManager = satellite.getDeviceManager();
+                StltUpdateTracker updTracker = deviceManager.getUpdateTracker();
+                updTracker.checkMultipleResources(updatedResources);
+            }
+            else
+            {
+                satellite.getErrorReporter().logWarning(
+                    "No node object that represents this satellite was received from the controller"
+                );
+            }
         }
         catch (Exception | ImplementationError exc)
         {

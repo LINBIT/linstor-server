@@ -14,4 +14,5 @@ public interface StltUpdateTracker
     void updateResource(ResourceName rscName, Map<NodeName, UUID> updNodeSet);
     void updateStorPool(UUID storPoolUuid, StorPoolName storPoolName);
     void checkResource(UUID rscUuid, ResourceName name);
+    void checkMultipleResources(Map<ResourceName, UUID> rscMap);
 }
