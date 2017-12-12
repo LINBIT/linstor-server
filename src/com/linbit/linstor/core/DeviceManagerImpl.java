@@ -362,6 +362,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
                 // Remember the current phase number for this run of device handlers
                 int currentPhase = phaseLock.getPhase();
+                phaseLock.register();
                 for (ResourceName rscName : chgPendingBundle.updRscDfnMap.keySet())
                 {
                     // Dispatch resources that were affected by changes to worker threads
@@ -375,6 +376,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 }
                 // Wait until the phase advances from the current phase number after all
                 // device handlers have finished
+                phaseLock.arriveAndDeregister();
                 phaseLock.awaitAdvance(currentPhase);
             }
             while (!shutdownFlag.get());
