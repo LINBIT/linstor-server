@@ -48,40 +48,42 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinitionData;
-import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
+import com.linbit.linstor.VolumeDefinitionData;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import java.io.IOException;
-import java.util.ArrayList;
 
-class CtrlRscDfnApiCallHandler
+class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
     private static final AtomicInteger MINOR_GEN = new AtomicInteger(1000); // FIXME use poolAllocator instead
 
-    private Controller controller;
-    private AccessContext apiCtx;
-    private CtrlListSerializer rscDfnListSerializer;
+    private ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
 
-    CtrlRscDfnApiCallHandler(Controller controllerRef, CtrlListSerializer rscDfnListSerializer, AccessContext apiCtxRef)
+    private CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializer;
+
+    CtrlRscDfnApiCallHandler(
+        Controller controllerRef,
+        CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializerRef,
+        AccessContext apiCtxRef
+    )
     {
-        controller = controllerRef;
-        apiCtx = apiCtxRef;
-        this.rscDfnListSerializer = rscDfnListSerializer;
+        super(controllerRef, apiCtxRef, ApiConsts.MASK_RSC_DFN);
+        rscDfnListSerializer = rscDfnListSerializerRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -543,6 +545,79 @@ class CtrlRscDfnApiCallHandler
         return minorNr;
     }
 
+    public ApiCallRc modifyRscDfn(
+        AccessContext accCtx,
+        Peer client,
+        UUID rscDfnUuid,
+        String rscNameStr,
+        Integer portInt,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try (AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.MODIFY,
+                apiCallRc,
+                null, // create new
+                rscNameStr
+            )
+        )
+        {
+            ResourceName rscName = toRscName(rscNameStr);
+            ResourceDefinitionData rscDfn = loadRscDfn(rscName);
+            if (rscDfnUuid != null && !rscDfnUuid.equals(rscDfn.getUuid()))
+            {
+                addAnswer(
+                    "UUID-check failed",
+                    ApiConsts.FAIL_UUID_RSC_DFN
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+            if (portInt != null)
+            {
+                TcpPortNumber port = toTcpPort(portInt);
+                rscDfn.setPort(accCtx, port);
+            }
+            if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
+            {
+                Map<String, String> map = getProps(rscDfn).map();
+                map.putAll(overrideProps);
+                for (String delKey : deletePropKeys)
+                {
+                    map.remove(delKey);
+                }
+            }
+            success("Resource definition '" + rscNameStr + "' modified.");
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // failure was reported and added to returning apiCallRc
+            // this is only for flow-control.
+        }
+        catch (Exception exc)
+        {
+            report(
+                exc,
+                "An unknown exception was thrown while modifying the resource definition '" + rscNameStr + "'.",
+                ApiConsts.FAIL_UNKNOWN_ERROR
+            );
+        }
+        catch (ImplementationError implErr)
+        {
+            report(
+                implErr,
+                "An implementation error was thrown while modifying the resource definition '" + rscNameStr + "'.",
+                ApiConsts.FAIL_IMPL_ERROR
+            );
+        }
+
+        return apiCallRc;
+    }
+
     public ApiCallRc deleteResourceDefinition(AccessContext accCtx, Peer client, String rscNameStr)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -877,5 +952,167 @@ class CtrlRscDfnApiCallHandler
             }
         }
         return ret;
+    }
+
+    @Override
+    protected TransactionMgr createNewTransMgr() throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return new TransactionMgr(controller.dbConnPool);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw sqlExc(
+                sqlExc,
+                "create a transaction manager"
+            );
+        }
+    }
+
+    @Override
+    protected void rollbackIfDirty()
+    {
+        TransactionMgr transMgr = currentTransMgr.get();
+        if (transMgr != null)
+        {
+            if (transMgr.isDirty())
+            {
+                // not committed -> error occurred
+                try
+                {
+                    transMgr.rollback();
+                }
+                catch (SQLException sqlExc)
+                {
+                    report(
+                        sqlExc,
+                        "A database error occured while trying to rollback the " +
+                        getAction("creation", "deletion", "modification") +
+                        " of resource definition '" + currentRscNameStr.get() + "'.",
+                        ApiConsts.FAIL_SQL_ROLLBACK
+                    );
+                }
+            }
+            controller.dbConnPool.returnConnection(transMgr);
+        }
+    }
+
+    private AbsApiCallHandler setCurrent(
+        AccessContext accCtx,
+        Peer peer,
+        ApiCallType type,
+        ApiCallRcImpl apiCallRc,
+        TransactionMgr transMgr,
+        String rscNameStr
+    )
+    {
+        super.setCurrent(accCtx, peer, type, apiCallRc, transMgr);
+
+        currentRscNameStr.set(rscNameStr);
+
+        Map<String, String> objRefs = currentObjRefs.get();
+        objRefs.clear(); // just to be sure
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+
+        Map<String, String> vars = currentVariables.get();
+        vars.clear();
+        vars.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
+
+        return this;
+    }
+
+    @Override
+    public void close() throws Exception
+    {
+        super.close();
+        currentRscNameStr.set(null);
+    }
+
+
+    private ResourceName toRscName(String rscNameStr)
+    {
+        try
+        {
+            return new ResourceName(rscNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            report(
+                invalidNameExc,
+                "The given resource name ('" + rscNameStr + "') is invalid.",
+                ApiConsts.FAIL_INVLD_RSC_NAME
+            );
+            throw new ApiCallHandlerFailedException();
+        }
+    }
+
+    private ResourceDefinitionData loadRscDfn(ResourceName rscName)
+    {
+        try
+        {
+            return ResourceDefinitionData.getInstance(
+                currentAccCtx.get(),
+                rscName,
+                null,
+                null,
+                null,
+                currentTransMgr.get(),
+                false,
+                false
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw accDeniedExc(
+                accDeniedExc,
+                "load resource definition '" + rscName.displayValue + "'.",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ImplementationError(
+                "Loading resource definition caused DataAlreadyExistsExc.",
+                dataAlreadyExistsExc
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw sqlExc(sqlExc, "loading resource definition '" + rscName.displayValue + "'.");
+        }
+    }
+
+    private TcpPortNumber toTcpPort(int port)
+    {
+        try
+        {
+            return new TcpPortNumber(port);
+        }
+        catch (ValueOutOfRangeException e)
+        {
+            throw exc(
+                e,
+                "The given port number '" + port + "' is not valid.",
+                ApiConsts.FAIL_INVLD_RSC_PORT
+            );
+        }
+    }
+
+    private Props getProps(ResourceDefinition rscDfn)
+    {
+        try
+        {
+            return rscDfn.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw accDeniedExc(
+                accDeniedExc,
+                "access resource definition '" + rscDfn.getName().displayValue +
+                "'s properties",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
     }
 }

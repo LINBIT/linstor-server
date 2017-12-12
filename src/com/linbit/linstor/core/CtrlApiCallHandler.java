@@ -311,6 +311,51 @@ public class CtrlApiCallHandler
     }
 
     /**
+     * Modifies a given resource definition.
+     *
+     * @param accCtx
+     * @param client
+     * @param rscDfnUuid optional - if given, modification is only performed if it matches the found
+     *   rscDfn's UUID.
+     * @param rscName required
+     * @param port optional - if given, attempts to override the old port
+     * @param secret optional - if given, attempts to override the old secret
+     * @param overrideProps required (can be empty) - overrides the given property key-value pairs
+     * @param deletePropKeys required (can be empty) - deletes the given property keys
+     * @return
+     */
+    public ApiCallRc modifyRscDfn(
+        AccessContext accCtx,
+        Peer client,
+        UUID rscDfnUuid,
+        String rscName,
+        Integer port,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = rscDfnApiCallHandler.modifyRscDfn(
+                accCtx,
+                client,
+                rscDfnUuid,
+                rscName,
+                port,
+                overrideProps,
+                deletePropKeys
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
+    /**
      * Marks a {@link ResourceDefinition} for deletion.
      *
      * It will only be removed when all satellites confirm the deletion of the corresponding
