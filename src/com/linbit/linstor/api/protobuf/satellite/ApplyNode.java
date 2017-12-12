@@ -6,8 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
-import com.linbit.linstor.api.pojo.NodePojo.NetIfPojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -65,13 +66,13 @@ public class ApplyNode extends BaseProtoApiCall
         );
     }
 
-    static List<NetIfPojo> extractNetIfs(List<NetIf> nodeNetIfsList)
+    static List<NetInterface.NetInterfaceApi> extractNetIfs(List<NetIf> nodeNetIfsList)
     {
-        List<NetIfPojo> netIfs = new ArrayList<>();
+        List<NetInterface.NetInterfaceApi> netIfs = new ArrayList<>();
         for (NetIf netIf : nodeNetIfsList)
         {
             netIfs.add(
-                new NetIfPojo(
+                new NetInterfacePojo(
                     UuidUtils.asUuid(netIf.getNetIfUuid().toByteArray()),
                     netIf.getNetIfName(),
                     netIf.getNetIfAddr(),

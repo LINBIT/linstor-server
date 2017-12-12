@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.linbit.linstor.Node.NodeApi;
+import com.linbit.linstor.NetInterface;
 
 public class NodePojo implements NodeApi, Comparable<NodePojo>
 {
@@ -12,16 +13,22 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final String nodeName;
     private final String nodeType;
     private final long nodeFlags;
-    private final List<NetIfPojo> nodeNetInterfaces;
+    private final List<NetInterface.NetInterfaceApi> nodeNetInterfaces;
     private final List<NodeConnPojo> nodeConns;
     private final Map<String, String> nodeProps;
 
-    public NodePojo(String name, UUID uuid, String type, long nodeFlags, Map<String, String> nodeProps) {
+    public NodePojo(
+            final String name,
+            final UUID uuid,
+            final String type,
+            final long nodeFlags,
+            final List<NetInterface.NetInterfaceApi> nodeNetInterfaces,
+            final Map<String, String> nodeProps) {
         this.nodeName = name;
         this.nodeUuid = uuid;
         this.nodeType = type;
         this.nodeFlags = nodeFlags;
-        this.nodeNetInterfaces = null;
+        this.nodeNetInterfaces = nodeNetInterfaces;
         this.nodeConns = null;
         this.nodeProps = nodeProps;
     }
@@ -31,7 +38,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         String nodeName,
         String nodeType,
         long nodeFlags,
-        List<NetIfPojo> nodeNetInterfaces,
+        List<NetInterface.NetInterfaceApi> nodeNetInterfaces,
         List<NodeConnPojo> nodeConns,
         Map<String, String> nodeProps
     )
@@ -67,7 +74,8 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         return nodeFlags;
     }
 
-    public List<NetIfPojo> getNodeNetInterfaces()
+    @Override
+    public List<NetInterface.NetInterfaceApi> getNetInterfaces()
     {
         return nodeNetInterfaces;
     }
@@ -87,55 +95,6 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     public int compareTo(NodePojo otherNodePojo)
     {
         return nodeName.compareTo(otherNodePojo.nodeName);
-    }
-
-    public static class NetIfPojo
-    {
-        private final UUID netIfUuid;
-        private final String netIfName;
-        private final String netIfAddr;
-        private final String netIfType;
-        private final int netIfPort;
-
-        public NetIfPojo(
-            UUID netIfUuid,
-            String netIfName,
-            String netIfAddr,
-            String netIfType,
-            int netIfPort
-        )
-        {
-            this.netIfUuid = netIfUuid;
-            this.netIfName = netIfName;
-            this.netIfAddr = netIfAddr;
-            this.netIfType = netIfType;
-            this.netIfPort = netIfPort;
-        }
-
-        public UUID getNetIfUuid()
-        {
-            return netIfUuid;
-        }
-
-        public String getNetIfName()
-        {
-            return netIfName;
-        }
-
-        public String getNetIfAddr()
-        {
-            return netIfAddr;
-        }
-
-        public String getNetIfType()
-        {
-            return netIfType;
-        }
-
-        public int getNetIfPort()
-        {
-            return netIfPort;
-        }
     }
 
     public static class NodeConnPojo

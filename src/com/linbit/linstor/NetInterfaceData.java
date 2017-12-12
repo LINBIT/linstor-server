@@ -9,6 +9,7 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
+import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -272,6 +273,16 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         {
             throw new ImplementationError("Access to deleted NetInterface", null);
         }
+    }
+
+    public NetInterfaceApi getApiData(AccessContext accCtx) throws AccessDeniedException
+    {
+        return new NetInterfacePojo(
+                getUuid(),
+                getName().getDisplayName(),
+                getAddress(accCtx).getAddress(),
+                getNetInterfaceType(accCtx).toString(),
+                getNetInterfacePort(accCtx));
     }
 
     @Override

@@ -41,6 +41,8 @@ public interface NetInterface extends TransactionObject
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
+    public NetInterfaceApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+
     public static enum NetInterfaceType
     {
         IP, RDMA, RoCE;
@@ -77,5 +79,14 @@ public interface NetInterface extends TransactionObject
             }
             return ret;
         }
+    }
+
+    public interface NetInterfaceApi
+    {
+        UUID getUuid();
+        String getName();
+        String getAddress();
+        int getPort();
+        String getType();
     }
 }

@@ -191,5 +191,6 @@ public interface Node extends TransactionObject
         String getType();
         UUID getUuid();
         Map<String, String> getProps();
+        List<NetInterface.NetInterfaceApi> getNetInterfaces();
     }
 }

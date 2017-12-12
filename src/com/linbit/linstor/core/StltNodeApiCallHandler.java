@@ -23,7 +23,6 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.NetInterface.NetInterfaceType;
 import com.linbit.linstor.api.interfaces.serializer.StltRequestSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
-import com.linbit.linstor.api.pojo.NodePojo.NetIfPojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -112,21 +111,21 @@ class StltNodeApiCallHandler
             props.putAll(nodeConn.getNodeConnProps());
         }
 
-        for (NetIfPojo netIfPojo : nodePojo.getNodeNetInterfaces())
+        for (NetInterface.NetInterfaceApi netIfApi : nodePojo.getNetInterfaces())
         {
-            NetInterfaceName netIfName = new NetInterfaceName(netIfPojo.getNetIfName());
-            LsIpAddress ipAddress = new LsIpAddress(netIfPojo.getNetIfAddr());
-            NetInterfaceType netIfType = NetInterfaceType.byValue(netIfPojo.getNetIfType());
+            NetInterfaceName netIfName = new NetInterfaceName(netIfApi.getName());
+            LsIpAddress ipAddress = new LsIpAddress(netIfApi.getAddress());
+            NetInterfaceType netIfType = NetInterfaceType.byValue(netIfApi.getType());
             NetInterface netIf = node.getNetInterface(apiCtx, netIfName);
             if (netIf == null)
             {
                 NetInterfaceData.getInstanceSatellite(
                     apiCtx,
-                    netIfPojo.getNetIfUuid(),
+                    netIfApi.getUuid(),
                     node,
                     netIfName,
                     ipAddress,
-                    netIfPojo.getNetIfPort(),
+                    netIfApi.getPort(),
                     netIfType,
                     transMgr
                 );
@@ -134,7 +133,7 @@ class StltNodeApiCallHandler
             else
             {
                 netIf.setAddress(apiCtx, ipAddress);
-                netIf.setNetInterfacePort(apiCtx, netIfPojo.getNetIfPort());
+                netIf.setNetInterfacePort(apiCtx, netIfApi.getPort());
                 netIf.setNetInterfaceType(apiCtx, netIfType);
             }
         }

@@ -28,6 +28,8 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -522,11 +524,19 @@ public class NodeData extends BaseTransactionObject implements Node
 
     @Override
     public NodeApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+        List<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
+        Iterator<NetInterface> itNetInterfaces = iterateNetInterfaces(accCtx);
+        while(itNetInterfaces.hasNext())
+        {
+            NetInterface ni = itNetInterfaces.next();
+            netInterfaces.add(ni.getApiData(accCtx));
+        }
         return new NodePojo(
             getName().getDisplayName(),
             getUuid(),
             getNodeType(accCtx).name(),
             getFlags().getFlagsBits(accCtx),
+            netInterfaces,
             getProps(accCtx).map()
         );
     }
