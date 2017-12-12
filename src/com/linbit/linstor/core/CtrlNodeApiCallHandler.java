@@ -415,31 +415,13 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
             for(Node n : controller.nodesMap.values())
             {
-                nodes.add(n.getApiData(accCtx));
+                try {
+                    nodes.add(n.getApiData(accCtx));
+                }
+                catch (AccessDeniedException accDeniedExc) { } // don't add nodes we have not access
             }
         } catch (AccessDeniedException accDeniedExc) {
             // for now return an empty list.
-            /*
-            String errorMessage;
-            String causeMessage = null;
-            String detailsMessage = null;
-            Throwable exc;
-            errorMessage = "List nodes failed.";
-            causeMessage = String.format(
-                "Identity '%s' using role '%s' is not authorized to list nodes",
-                accCtx.subjectId.name.displayValue,
-                accCtx.subjectRole.name.displayValue
-            );
-            causeMessage += "\n";
-            causeMessage += accDeniedExc.getMessage();
-            exc = accDeniedExc;
-            controller.getErrorReporter().reportError(
-                exc,
-                accCtx,
-                client,
-                errorMessage
-            );
-            */
         }
 
         try
@@ -452,7 +434,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 e,
                 null,
                 client,
-                "Could not complete authentication due to an IOException"
+                "Could not complete list message due to an IOException"
             );
         }
 
