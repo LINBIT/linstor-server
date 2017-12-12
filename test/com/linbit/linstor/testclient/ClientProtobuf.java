@@ -389,7 +389,7 @@ public class ClientProtobuf implements Runnable
 
         decode(sb, retCode, 0xC000000000000000L, RET_CODES_TYPE);
         decode(sb, retCode, 0x3C00000000000000L, RET_CODES_OBJ);
-        sb.append(retCode & 0x00FFFFFFFFFFFFFFL);
+        sb.append(Long.toHexString(retCode));
         if ((retCode & 0x00FFFFFFFFFFFFFFL) == 0)
         {
             sb.append(" This looks wrong - please report to developer");
