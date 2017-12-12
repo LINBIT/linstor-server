@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -58,8 +59,7 @@ public class ModifyResourceDefinition extends BaseProtoApiCall
         }
         Map<String, String> overrideProps = asMap(modRscDfn.getOverrideRscDfnPropsList());
         Set<String> delProps = new HashSet<>(modRscDfn.getDeleteRscDfnPropKeysList());
-
-        controller.getApiCallHandler().modifyRscDfn(
+        ApiCallRc apiCallRc = controller.getApiCallHandler().modifyRscDfn(
             accCtx,
             client,
             rscDfnUUID,
@@ -68,6 +68,8 @@ public class ModifyResourceDefinition extends BaseProtoApiCall
             overrideProps,
             delProps
         );
+
+        answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }
 
 }
