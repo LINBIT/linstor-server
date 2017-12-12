@@ -533,7 +533,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 errorLogRef.logInfo("Core objects load from database completed");
 
                 // attempt to reconnect to known nodes
-                if (nodesMap.isEmpty())
+                if (!nodesMap.isEmpty())
                 {
                     errorLogRef.logInfo("Reconnecting to previously known nodes");
                     Collection<Node> nodes = nodesMap.values();
@@ -543,6 +543,10 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                         CtrlNodeApiCallHandler.startConnecting(node, initCtx, null, this);
                     }
                     errorLogRef.logInfo("Reconnect requests sent");
+                }
+                else
+                {
+                    errorLogRef.logInfo("No known nodes.");
                 }
             }
             catch (AccessDeniedException accessExc)
