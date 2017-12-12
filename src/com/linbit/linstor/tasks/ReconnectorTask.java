@@ -70,8 +70,8 @@ public class ReconnectorTask implements Task
                 {
                     synchronized (syncObj)
                     {
-                        peerList.remove(peer);
                         peerList.add(peer.getConnector().reconnect(peer));
+                        peerList.remove(peer);
                     }
                 }
                 catch (IOException ioExc)
