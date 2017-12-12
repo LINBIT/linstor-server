@@ -357,7 +357,17 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 {
                     SelectionKey currentKey = keysIter.next();
                     keysIter.remove();
-                    int ops = currentKey.readyOps();
+
+                    // Skip all operations if determining ready operations fails
+                    int ops = 0;
+                    try
+                    {
+                        ops = currentKey.readyOps();
+                    }
+                    catch (CancelledKeyException keyExc)
+                    {
+                        closeConnection(currentKey);
+                    }
 
                     if ((ops & OP_READ) != 0)
                     {
