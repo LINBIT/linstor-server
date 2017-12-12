@@ -95,7 +95,12 @@ public class CtrlApiCallHandler
         authApiCallHandler = new CtrlAuthenticationApiCallHandler(controllerRef, authSerializer);
         fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(controllerRef, apiCtx, fullSyncSerializer);
         nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, apiCtx, nodeSerializer, nodeListSerializer);
-        rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(controllerRef, rscDfnListSerializer, apiCtx);
+        rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(
+            controllerRef,
+            rscSerializer,
+            rscDfnListSerializer,
+            apiCtx
+        );
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
         rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, resourceListSerializer, apiCtx);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef, storPoolDfnListSerializer);

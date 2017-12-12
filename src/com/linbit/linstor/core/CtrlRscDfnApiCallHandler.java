@@ -62,6 +62,9 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
+import com.linbit.linstor.netcom.IllegalMessageStateException;
+import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -72,17 +75,20 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
     private static final AtomicInteger MINOR_GEN = new AtomicInteger(1000); // FIXME use poolAllocator instead
 
-    private ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
+    private final ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
 
-    private CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializer;
+    private final CtrlSerializer<Resource> rscSerializer;
+    private final CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializer;
 
     CtrlRscDfnApiCallHandler(
         Controller controllerRef,
+        CtrlSerializer<Resource> rscSerializerRef,
         CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializerRef,
         AccessContext apiCtxRef
     )
     {
         super(controllerRef, apiCtxRef, ApiConsts.MASK_RSC_DFN);
+        rscSerializer = rscSerializerRef;
         rscDfnListSerializer = rscDfnListSerializerRef;
     }
 
@@ -573,6 +579,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             {
                 addAnswer(
                     "UUID-check failed",
+                    null,
+                    "local UUID: " + rscDfn.getUuid().toString() + ", received UUID: " + rscDfnUuid.toString(),
+                    null,
                     ApiConsts.FAIL_UUID_RSC_DFN
                 );
                 throw new ApiCallHandlerFailedException();
@@ -591,6 +600,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     map.remove(delKey);
                 }
             }
+
+            notifySatellites(rscDfn);
             success("Resource definition '" + rscNameStr + "' modified.");
         }
         catch (ApiCallHandlerFailedException ignore)
@@ -898,6 +909,59 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
 
         return null;
+    }
+
+    private void notifySatellites(ResourceDefinitionData rscDfn)
+    {
+        try
+        {
+            // notify all peers that (at least one of) their resource has changed
+            Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
+            while (rscIterator.hasNext())
+            {
+                Resource currentRsc = rscIterator.next();
+                Peer peer = currentRsc.getAssignedNode().getPeer(apiCtx);
+
+                if (peer.isConnected())
+                {
+                    Message message = peer.createMessage();
+                    byte[] data = rscSerializer.getChangedMessage(currentRsc);
+                    message.setData(data);
+                    peer.sendMessage(message);
+                }
+                else
+                {
+                    String nodeName = currentRsc.getAssignedNode().getName().displayValue;
+                    addAnswer(
+                        "No active connection to satellite '" + nodeName + "'",
+                        null,
+                        "The satellite was added and the controller tries to (re-) establish connection to it." +
+                        "The controller stored the new Resource and as soon the satellite is connected, it will " +
+                        "receive this update.",
+                        null,
+                        ApiConsts.WARN_NOT_CONNECTED
+                    );
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Failed to contact all satellites about a resource change",
+                    accDeniedExc
+                )
+            );
+        }
+        catch (IllegalMessageStateException illegalMessageStateExc)
+        {
+            controller.getErrorReporter().reportError(
+                new ImplementationError(
+                    "Controller could not send send a message to target node",
+                    illegalMessageStateExc
+                )
+            );
+        }
     }
 
     private short getAsShort(Map<String, String> props, String key, short defaultValue)

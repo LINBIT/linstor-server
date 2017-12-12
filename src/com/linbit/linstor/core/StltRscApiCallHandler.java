@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -41,8 +42,6 @@ import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
-import com.linbit.linstor.api.pojo.VlmDfnPojo;
-import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -66,15 +65,49 @@ class StltRscApiCallHandler
 
             transMgr.commit();
 
-            satellite.getErrorReporter().logInfo(
-                "Resource '%s' successfully created",
-                rscRawData.getName()
-            );
-            satellite.getDeviceManager().rscUpdateApplied(updatedObjects.updatedRscMap);
+            Map<ResourceName, Set<NodeName>> devMgrNotifications = new TreeMap<>();
+
+            reportSuccess(updatedObjects.createdRscMap, "created");
+            reportSuccess(updatedObjects.updatedRscMap, "updated");
+
+            devMgrNotifications.putAll(updatedObjects.createdRscMap);
+            devMgrNotifications.putAll(updatedObjects.updatedRscMap);
+
+            satellite.getDeviceManager().rscUpdateApplied(devMgrNotifications);
         }
         catch (Exception | ImplementationError exc)
         {
             satellite.getErrorReporter().reportError(exc);
+        }
+    }
+
+    private void reportSuccess(Map<ResourceName, Set<NodeName>> map, String action)
+    {
+        for (Entry<ResourceName, Set<NodeName>> entry : map.entrySet())
+        {
+            Set<NodeName> nodeNames = entry.getValue();
+            StringBuilder msgBuilder = new StringBuilder();
+            msgBuilder
+                .append("Resource '")
+                .append(entry.getKey().displayValue)
+                .append("' ")
+                .append(action)
+                .append(" for node");
+            if (nodeNames.size() > 1)
+            {
+                msgBuilder.append("s");
+            }
+            msgBuilder.append(" '");
+            for (NodeName nodeName : nodeNames)
+            {
+                msgBuilder
+                    .append(nodeName.displayValue)
+                    .append("', '");
+            }
+            msgBuilder.setLength(msgBuilder.length() - 3); // 3 == ", '".length()
+            msgBuilder.append(".");
+
+            satellite.getErrorReporter().logInfo(msgBuilder.toString());
         }
     }
 
@@ -87,6 +120,7 @@ class StltRscApiCallHandler
         ResourceDefinitionData rscDfnToRegister = null;
         List<NodeData> nodesToRegister = new ArrayList<>();
 
+        Map<ResourceName, Set<NodeName>> createdRscMap = new TreeMap<>();
         Map<ResourceName, Set<NodeName>> updatedRscMap = new TreeMap<>();
 
         rscName = new ResourceName(rscRawData.getName());
@@ -95,10 +129,6 @@ class StltRscApiCallHandler
         RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscRawData.getRscDfnFlags());
 
         ResourceDefinitionData rscDfn = (ResourceDefinitionData) satellite.rscDfnMap.get(rscName);
-
-        Set<NodeName> updatedNodes = new TreeSet<>();
-        updatedRscMap.put(rscName, updatedNodes);
-        updatedNodes.add(satellite.localNode.getName());
 
         Resource localRsc = null;
         Set<Resource> otherRscs = new HashSet<>();
@@ -163,6 +193,8 @@ class StltRscApiCallHandler
                 false
             );
 
+            add(localRsc, createdRscMap);
+
             for (OtherRscPojo otherRscRaw : rscRawData.getOtherRscList())
             {
                 NodeData remoteNode = NodeData.getInstanceSatellite(
@@ -175,21 +207,20 @@ class StltRscApiCallHandler
                 );
                 checkUuid(remoteNode, otherRscRaw);
 
-                otherRscs.add(
-                    createRsc(
-                        otherRscRaw.getRscUuid(),
-                        remoteNode,
-                        rscDfn,
-                        new NodeId(otherRscRaw.getRscNodeId()),
-                        RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
-                        otherRscRaw.getRscProps(),
-                        otherRscRaw.getVlms(),
-                        transMgr,
-                        true
-                    )
+                ResourceData remoteRsc = createRsc(
+                    otherRscRaw.getRscUuid(),
+                    remoteNode,
+                    rscDfn,
+                    new NodeId(otherRscRaw.getRscNodeId()),
+                    RscFlags.restoreFlags(otherRscRaw.getRscFlags()),
+                    otherRscRaw.getRscProps(),
+                    otherRscRaw.getVlms(),
+                    transMgr,
+                    true
                 );
+                otherRscs.add(remoteRsc);
 
-                updatedNodes.add(remoteNode.getName());
+                add(remoteRsc, createdRscMap);
             }
         }
         else
@@ -229,6 +260,9 @@ class StltRscApiCallHandler
                     )
                 );
             }
+            // TODO: apply changes on localRsc
+            add(localRsc, updatedRscMap);
+
             for (OtherRscPojo otherRsc : rscRawData.getOtherRscList())
             {
                 Resource remoteRsc = null;
@@ -303,7 +337,8 @@ class StltRscApiCallHandler
 
                     // everything ok, mark the resource as new
                     newResources.add(remoteRsc);
-                    updatedNodes.add(nodeName);
+
+                    add(remoteRsc, createdRscMap);
                 }
                 else
                 {
@@ -330,7 +365,8 @@ class StltRscApiCallHandler
                     // everything ok, mark the resource to be kept
                     removedList.remove(remoteRsc);
                     modifiedResources.add(remoteRsc);
-                    updatedNodes.add(remoteNode.getName());
+
+                    add(remoteRsc, updatedRscMap);
                 }
                 otherRscs.add(remoteRsc);
             }
@@ -356,7 +392,18 @@ class StltRscApiCallHandler
             satellite.nodesMap.put(node.getName(), node);
         }
 
-        return new UpdatedObjects(updatedRscMap);
+        return new UpdatedObjects(createdRscMap, updatedRscMap);
+    }
+
+    private void add(Resource rsc, Map<ResourceName, Set<NodeName>> map)
+    {
+        Set<NodeName> set = map.get(rsc.getDefinition().getName());
+        if (set == null)
+        {
+            set = new TreeSet<>();
+            map.put(rsc.getDefinition().getName(), set);
+        }
+        set.add(rsc.getAssignedNode().getName());
     }
 
     private ResourceData createRsc(
@@ -548,11 +595,16 @@ class StltRscApiCallHandler
 
     private static class UpdatedObjects
     {
+        private final Map<ResourceName, Set<NodeName>> createdRscMap;
         private final Map<ResourceName, Set<NodeName>> updatedRscMap;
 
-        public UpdatedObjects(Map<ResourceName, Set<NodeName>> updatedRscMap)
+        public UpdatedObjects(
+            Map<ResourceName, Set<NodeName>> createdRscMapRef,
+            Map<ResourceName, Set<NodeName>> updatedRscMapRef
+        )
         {
-            this.updatedRscMap = updatedRscMap;
+            createdRscMap = createdRscMapRef;
+            updatedRscMap = updatedRscMapRef;
         }
     }
 }
