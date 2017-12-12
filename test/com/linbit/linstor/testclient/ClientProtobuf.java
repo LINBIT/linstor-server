@@ -19,8 +19,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
@@ -44,8 +46,10 @@ import com.linbit.linstor.proto.MsgDelStorPoolOuterClass.MsgDelStorPool;
 import com.linbit.linstor.proto.MsgDelVlmConnOuterClass.MsgDelVlmConn;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.MsgModNodeOuterClass.MsgModNode;
+import com.linbit.linstor.proto.MsgModRscDfnOuterClass.MsgModRscDfn;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
+import com.linbit.utils.UuidUtils;
 
 public class ClientProtobuf implements Runnable
 {
@@ -517,6 +521,41 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    public int sendModifyRscDfn(
+        UUID rscDfnUuid,
+        String rscName,
+        Integer port,
+        Map<String, String> overrideProps,
+        Set<String> delProps
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgModRscDfn.Builder msgBuilder = MsgModRscDfn.newBuilder()
+            .setRscName(rscName);
+        if (rscDfnUuid != null)
+        {
+            msgBuilder.setRscDfnUuid(ByteString.copyFrom(UuidUtils.asByteArray(rscDfnUuid)));
+        }
+        if (port != null) {
+            msgBuilder.setRscDfnPort(port);
+        }
+        if (overrideProps != null)
+        {
+            msgBuilder.addAllOverrideRscDfnProps(asLinStorMapEntryList(overrideProps));
+        }
+        if (delProps != null)
+        {
+            msgBuilder.addAllDeleteRscDfnPropKeys(delProps);
+        }
+        send(
+            msgId,
+            API_MOD_RSC_DFN,
+            msgBuilder.build()
+        );
+        return msgId;
+    }
+
     public int sendDeleteRscDfn(String resName) throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
@@ -928,7 +967,7 @@ public class ClientProtobuf implements Runnable
         client.shutdown();
     }
 
-    private static void creaeNodeRscVlmDelete(ClientProtobuf client)
+    private static void createNodeRscVlmDelete(ClientProtobuf client)
         throws UnknownHostException, IOException, InterruptedException
     {
         String nodePropsTestKey = "TestNodeKey";
