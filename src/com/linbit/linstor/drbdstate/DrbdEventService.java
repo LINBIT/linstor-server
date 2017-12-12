@@ -16,7 +16,7 @@ import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
 import com.linbit.linstor.core.DrbdStateChange;
 
-public class DrbdEventService implements SystemService, Runnable
+public class DrbdEventService implements SystemService, Runnable, DrbdStateTracker
 {
     public static final ServiceName SERVICE_NAME;
     public static final String INSTANCE_PREFIX = "DrbdEventService-";
@@ -29,7 +29,6 @@ public class DrbdEventService implements SystemService, Runnable
     private final BlockingDeque<Event> eventDeque;
     private Thread thread;
     private boolean running;
-    private boolean waitingForRestart;
 
     private final EventsTracker eventsTracker;
     private boolean needsReinitialize = false;
@@ -185,16 +184,31 @@ public class DrbdEventService implements SystemService, Runnable
         thread.join(timeout);
     }
 
+    @Override
     public void addDrbdStateChangeObserver(DrbdStateChange obs)
     {
         tracker.addDrbdStateChangeObserver(obs);
     }
 
+    @Override
     public boolean isDrbdStateAvailable()
     {
         return eventsTracker.isStateAvailable();
     }
 
+    @Override
+    public void addObserver(ResourceObserver obs, long eventMask)
+    {
+        tracker.addObserver(obs, eventMask);
+    }
+
+    @Override
+    public void removeObserver(ResourceObserver obs)
+    {
+        tracker.removeObserver(obs);
+    }
+
+    @Override
     public DrbdResource getDrbdResource(String name) throws NoInitialStateException
     {
         if (!isDrbdStateAvailable())
