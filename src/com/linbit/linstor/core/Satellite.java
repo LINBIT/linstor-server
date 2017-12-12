@@ -25,6 +25,7 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.drbdstate.DrbdEventService;
+import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.drbdstate.StateTracker;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -158,7 +159,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     private DeviceManagerImpl devMgr = null;
 
     // Drbd Event Tracker
-    private DrbdEventService drbdEvent;
+    private DrbdEventService drbdEventSvc;
 
     // Shutdown controls
     private boolean shutdownFinished;
@@ -326,9 +327,9 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                     drbdEventPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
 
                     StateTracker stateTracker = new StateTracker();
-                    drbdEvent = new DrbdEventService(stateTracker);
+                    drbdEventSvc = new DrbdEventService(stateTracker);
 
-                    systemServicesMap.put(drbdEvent.getInstanceName(), drbdEvent);
+                    systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
                 }
 
                 errorLogRef.logInfo("Initializing device manager");
@@ -337,7 +338,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                     PrivilegeSet devMgrPriv = devMgrCtx.getEffectivePrivs();
                     devMgrPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
                     devMgrPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
-                    devMgr = new DeviceManagerImpl(this, devMgrCtx, this, drbdEvent, workerThrPool);
+                    devMgr = new DeviceManagerImpl(this, devMgrCtx, this, drbdEventSvc, workerThrPool);
 
                     systemServicesMap.put(devMgr.getInstanceName(), devMgr);
                 }
@@ -719,6 +720,13 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         }
     }
 
+    @Override
+    public DrbdStateTracker getDrbdStateTracker()
+    {
+        return drbdEventSvc;
+    }
+
+    @Override
     public DeviceManager getDeviceManager()
     {
         return devMgr;
