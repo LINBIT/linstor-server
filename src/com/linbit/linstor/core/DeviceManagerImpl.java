@@ -113,6 +113,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     @Override
     public void start() throws SystemServiceStartException
     {
+        shutdownFlag.set(false);
         if (runningFlag.compareAndSet(false, true))
         {
             svcThr = new Thread(this);
