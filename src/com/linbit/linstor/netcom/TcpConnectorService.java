@@ -233,9 +233,17 @@ public class TcpConnectorService implements Runnable, TcpConnector
     public Peer reconnect(Peer peer) throws IOException
     {
         peer.closeConnection();
-        final String[] split = peer.getId().split(":");
-        final String host = split[0];
-        final int port = Integer.parseInt(split[1]);
+        final String id = peer.getId();
+        final int delimiter = id.lastIndexOf(":");
+        if (delimiter == -1)
+        {
+            throw new ImplementationError(
+                "peer has invalid id: " + id,
+                null
+            );
+        }
+        final String host = id.substring(0, delimiter);
+        final int port = Integer.parseInt(id.substring(delimiter + 1));
 
         final InetSocketAddress address = new InetSocketAddress(host, port);
         Peer newPeer = this.connect(address, peer.getNode());
