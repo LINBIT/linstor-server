@@ -13,6 +13,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteCoreServices;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.drbdstate.DrbdEventService;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
@@ -117,8 +118,23 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         if (runningFlag.compareAndSet(false, true))
         {
             svcThr = new Thread(this);
+            svcThr.setName(devMgrInstName.displayValue);
             svcThr.start();
         }
+        // BEGIN DEBUG - turn on trace logging
+        try
+        {
+            AccessContext privCtx = wrkCtx.clone();
+            privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+            coreSvcs.getErrorReporter().setTraceEnabled(privCtx, true);
+        }
+        catch (AccessDeniedException accExc)
+        {
+            coreSvcs.getErrorReporter().logWarning(
+                "Enabling TRACE logging failed (not authorized) -- worker context not authorized"
+            );
+        }
+        // END DEBUG
     }
 
     @Override
@@ -295,21 +311,35 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     @Override
     public void run()
     {
+        // BEGIN DEBUG
+        ErrorReporter errLog = coreSvcs.getErrorReporter();
+        errLog.logTrace("DeviceManager service started");
+        // END DEBUG
         Phaser phaseLock = new Phaser();
         StltUpdateTrackerImpl.UpdateBundle chgPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
         try
         {
+            // BEGIN DEBUG
+            errLog.logTrace("Enabling wrkCtx privileges");
+            // END DEBUG
             wrkCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_USE, Privilege.PRIV_MAC_OVRD);
 
             // TODO: Initial startup of all devices
 
             // TODO: Initial changes to reach the target state
 
+            long cycleNr = 0;
             do
             {
+                // BEGIN DEBUG
+                errLog.logTrace("Begin DeviceManager cycle %d", cycleNr);
+                // END DEBUG
                 // Wait until resource updates are pending
                 synchronized (sched)
                 {
+                    // BEGIN DEBUG
+                    errLog.logTrace("Collecting update notifications");
+                    // END DEBUG
                     updTracker.collectUpdateNotifications(chgPendingBundle, shutdownFlag);
                     if (shutdownFlag.get())
                     {
@@ -318,12 +348,18 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
                     chgPendingBundle.copyUpdateRequestsTo(rcvPendingBundle);
 
+                    // BEGIN DEBUG
+                    errLog.logTrace("Requesting object updates from the controller");
+                    // END DEBUG
                     // Request updates from the controller
                     requestNodeUpdates(chgPendingBundle.updNodeMap);
                     requestRscDfnUpdates(chgPendingBundle.updRscDfnMap);
                     requestRscUpdates(chgPendingBundle.updRscMap);
                     requestStorPoolUpdates(chgPendingBundle.updStorPoolMap);
 
+                    // BEGIN DEBUG
+                    errLog.logTrace("Waiting for object updates to arrive");
+                    // END DEBUG
                     // Wait for the notification that all requested updates
                     // have been received and applied
                     while (!shutdownFlag.get() && !rcvPendingBundle.isEmpty())
@@ -340,6 +376,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     {
                         break;
                     }
+                    // BEGIN DEBUG
+                    errLog.logTrace("All object updates were received");
+                    // END DEBUG
 
                     // Merge check requests into update requests and clear the check requests
                     chgPendingBundle.updRscDfnMap.putAll(chgPendingBundle.chkRscMap);
@@ -349,6 +388,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 // TODO: if !stateAvailable try to collect additional updates (without losing the current)
                 synchronized (sched)
                 {
+                    // BEGIN DEBUG
+                    errLog.logTrace("Waiting for a valid DrbdEventsService state");
+                    // END DEBUG
                     while (!shutdownFlag.get() && !stateAvailable)
                     {
                         try
@@ -362,6 +404,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 }
 
                 // Remember the current phase number for this run of device handlers
+                // BEGIN DEBUG
+                errLog.logTrace("Scheduling resource handlers");
+                // END DEBUG
                 int currentPhase = phaseLock.getPhase();
                 phaseLock.register();
                 for (ResourceName rscName : chgPendingBundle.updRscDfnMap.keySet())
@@ -375,12 +420,20 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         dispatchResource(wrkCtx, rsc, phaseLock);
                     }
                 }
+                // BEGIN DEBUG
+                errLog.logTrace("Waiting for resource handlers to finish");
+                // END DEBUG
                 // Wait until the phase advances from the current phase number after all
                 // device handlers have finished
                 phaseLock.arriveAndDeregister();
                 phaseLock.awaitAdvance(currentPhase);
+                // BEGIN DEBUG
+                errLog.logTrace("End DeviceManager cycle %d", cycleNr);
+                // END DEBUG
+                ++cycleNr;
             }
             while (!shutdownFlag.get());
+            errLog.logTrace("DeviceManager service stopped");
         }
         catch (AccessDeniedException accExc)
         {
