@@ -4,34 +4,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.Node.NodeApi;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
-import com.linbit.linstor.api.pojo.NodePojo.NetIfPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.apidata.NodeApiData;
 import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NetIf;
-import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.UuidUtils;
 
 @ProtobufApiCall
 public class FullSync extends BaseProtoApiCall
