@@ -12,7 +12,6 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionSimpleObject;
-import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;

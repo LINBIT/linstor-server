@@ -1,12 +1,42 @@
 package com.linbit.linstor.core;
 
-import static com.linbit.linstor.api.ApiConsts.*;
-
+import static com.linbit.linstor.api.ApiConsts.KEY_AL_SIZE;
+import static com.linbit.linstor.api.ApiConsts.KEY_AL_STRIPES;
+import static com.linbit.linstor.api.ApiConsts.KEY_ID;
+import static com.linbit.linstor.api.ApiConsts.KEY_MINOR_NR;
+import static com.linbit.linstor.api.ApiConsts.KEY_PEER_COUNT;
+import static com.linbit.linstor.api.ApiConsts.KEY_ROLE;
+import static com.linbit.linstor.api.ApiConsts.KEY_RSC_DFN;
+import static com.linbit.linstor.api.ApiConsts.KEY_RSC_NAME;
+import static com.linbit.linstor.api.ApiConsts.KEY_VLM_NR;
+import static com.linbit.linstor.api.ApiConsts.KEY_VLM_SIZE;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_ACC_DENIED_RSC_DFN;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_ACC_DENIED_VLM_DFN;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_EXISTS_RSC_DFN;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_EXISTS_VLM_DFN;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_MINOR_NR;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_RSC_NAME;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_RSC_PORT;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_VLM_NR;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_VLM_SIZE;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_SQL;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_SQL_ROLLBACK;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_UNKNOWN_ERROR;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_ACC_DENIED_RSC_DFN;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_IMPL_ERROR;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_INVLD_RSC_NAME;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_SQL;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_SQL_ROLLBACK;
+import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_UNKNOWN_ERROR;
+import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.linbit.ImplementationError;
@@ -30,6 +60,7 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -146,7 +177,7 @@ class CtrlRscDfnApiCallHandler
             for (VolumeDefinition.VlmDfnApi volCrtData : volDescrMap)
             {
                 ApiCallRcEntry volSuccessEntry = new ApiCallRcEntry();
-                volSuccessEntry.setReturnCode(RC_VLM_DFN_CREATED);
+                volSuccessEntry.setReturnCode(ApiConsts.RC_VLM_DFN_CREATED);
                 String successMessage = String.format(
                     "Volume definition with number '%d' successfully " +
                         " created in resource definition '%s'.",
@@ -171,7 +202,7 @@ class CtrlRscDfnApiCallHandler
                 "Resource definition '%s' successfully created.",
                 rscNameStr
             );
-            successEntry.setReturnCode(RC_RSC_DFN_CREATED);
+            successEntry.setReturnCode(ApiConsts.RC_RSC_DFN_CREATED);
             successEntry.setMessageFormat(successMsg);
             successEntry.putVariable(KEY_RSC_NAME, rscNameStr);
             successEntry.putVariable(KEY_PEER_COUNT, Short.toString(peerCount));
@@ -553,7 +584,7 @@ class CtrlRscDfnApiCallHandler
                 transMgr.commit(); // sqlExc5
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_RSC_DFN_DELETED);
+                entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_DELETED);
                 entry.setMessageFormat(
                     String.format(
                         "Resource definition '%s' successfully deleted",
@@ -575,7 +606,7 @@ class CtrlRscDfnApiCallHandler
             else
             {
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_RSC_DFN_DEL_NOT_FOUND);
+                entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_DEL_WARN_NOT_FOUND);
                 entry.setMessageFormat(
                     String.format(
                         "Resource definition '%s' was not deleted as it was not found",

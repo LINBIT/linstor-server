@@ -250,7 +250,7 @@ class CtrlStorPoolDfnApiCallHandler
             if (storPoolDefinitionData == null)
             {
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_NOT_FOUND);
+                entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_WARN_NOT_FOUND);
                 entry.setMessageFormat(
                     String.format(
                         "Storage pool definition '%s' was not deleted as it was not found",

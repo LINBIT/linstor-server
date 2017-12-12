@@ -1028,7 +1028,7 @@ class CtrlRscApiCallHandler
                     if (rscData == null)
                     {
                         ApiCallRcEntry rscNotFoundEntry = new ApiCallRcEntry();
-                        rscNotFoundEntry.setReturnCode(RC_RSC_DEL_NOT_FOUND);
+                        rscNotFoundEntry.setReturnCode(RC_RSC_DEL_WARN_NOT_FOUND);
                         rscNotFoundEntry.setCauseFormat(
                             String.format(
                                 "The specified resource '%s' on node '%s' could not be found in the database.",

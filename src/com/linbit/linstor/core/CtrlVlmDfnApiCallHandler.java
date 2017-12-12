@@ -51,7 +51,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         AccessContext apiCtx
     )
     {
-        super(controller, apiCtx);
+        super(controller, apiCtx, ApiConsts.MASK_VLM_DFN);
         this.rscSerializer = rscSerializer;
     }
 
@@ -159,7 +159,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         }
         catch (Exception exc)
         {
-            report(
+            exc(
                 exc,
                 "Volume definition could not be created due to an unknown exception.",
                 ApiConsts.RC_VLM_DFN_CRT_FAIL_UNKNOWN_ERROR
@@ -515,7 +515,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 currentRscNameStr
             );
         }
-        report(sqlExc, errorMessage, apiRcCode);
+        exc(sqlExc, errorMessage, apiRcCode);
     }
 
     private void handleImplError(Exception exc)
@@ -544,13 +544,13 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 );
             }
         }
-        report(exc, errorMessage, apiRc);
+        exc(exc, errorMessage, apiRc);
     }
 
     private void handleAccDeniedExc(AccessDeniedException accDeniedExc, String action, long apiRcCode)
     {
         AccessContext accCtx = currentAccCtx.get();
-        report(
+        accDeniedExc(
             accDeniedExc,
             String.format(
                 "The access context (user: '%s', role: '%s') has no permission to %s",
@@ -564,7 +564,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
     private void handleDataExists(LinStorDataAlreadyExistsException dataAlreadyExistsExc)
     {
-        report(
+        exc(
             dataAlreadyExistsExc,
             String.format(
                 "A volume definition with the numer %d already exists in resource definition '%s'.",
@@ -580,7 +580,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         long retCode
     )
     {
-        report(
+        exc(
             invalidNameExc,
             String.format(
                 "The given resource name '%s' is invalid.",
@@ -592,7 +592,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
     private void handleInvalidStorPoolNameExc(InvalidNameException invalidNameExc, long retCode)
     {
-        report(
+        exc(
             invalidNameExc,
             String.format(
                 "The given stor pool name '%s' is invalid",
@@ -604,7 +604,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
     private void handleMdExc(MdException mdExc)
     {
-        report(
+        exc(
             mdExc,
             String.format(
                 "The volume definition with number '%d' for resource definition '%s' has an invalid size of '%d'. " +
@@ -614,7 +614,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 MetaData.DRBD_MIN_NET_kiB,
                 MetaData.DRBD_MAX_kiB
             ),
-            ApiConsts.RC_VLM_DFN_CRT_FAIL_INVLD_SIZE
+            ApiConsts.RC_VLM_DFN_CRT_FAIL_INVLD_VLM_SIZE
         );
     }
 
@@ -656,7 +656,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 }
                 catch (SQLException sqlExc)
                 {
-                    report(sqlExc, String.format(
+                    exc(sqlExc, String.format(
                         "A database error occured while trying to rollback the creation of "
                             + "Volume definitions for Resource definition '%s'.",
                             // TODO: improve this error message - maybe mention the vlmNrs

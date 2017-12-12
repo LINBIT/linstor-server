@@ -678,7 +678,7 @@ class CtrlRscConnectionApiCallHandler
                     {
                         ApiCallRcEntry rscConnNotFoundEntry = new ApiCallRcEntry();
 
-                        rscConnNotFoundEntry.setReturnCode(RC_RSC_CONN_DEL_NOT_FOUND);
+                        rscConnNotFoundEntry.setReturnCode(RC_RSC_CONN_DEL_WARN_NOT_FOUND);
                         rscConnNotFoundEntry.setCauseFormat(
                             String.format(
                                 "The specified resource connection between nodes '%s' and '%s' on resource '%s' "+

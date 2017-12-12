@@ -982,7 +982,7 @@ class CtrlVlmConnectionApiCallHandler
                         if (vlmConn == null)
                         {
                             ApiCallRcEntry vlmConnNotFoundEntry = new ApiCallRcEntry();
-                            vlmConnNotFoundEntry.setReturnCode(RC_VLM_CONN_DEL_NOT_FOUND);
+                            vlmConnNotFoundEntry.setReturnCode(RC_VLM_CONN_DEL_WARN_NOT_FOUND);
                             vlmConnNotFoundEntry.setCauseFormat(
                                 String.format(
                                     "The specified volume collection with volume number %d on resource '%s' "+

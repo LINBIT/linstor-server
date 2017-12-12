@@ -64,9 +64,9 @@ public class CtrlApiCallHandler
         final CtrlSerializer<Resource> rscSerializer;
         final CtrlSerializer<StorPool> storPoolSerializer;
         final CtrlListSerializer<Node.NodeApi> nodeListSerializer;
-        final CtrlListSerializer rscDfnListSerializer;
-        final CtrlListSerializer storPoolDfnListSerializer;
-        final CtrlListSerializer storPoolListSerializer;
+        final CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializer;
+        final CtrlListSerializer<StorPoolDefinition.StorPoolDfnApi> storPoolDfnListSerializer;
+        final CtrlListSerializer<StorPool.StorPoolApi> storPoolListSerializer;
 
         switch (type)
         {
@@ -158,6 +158,50 @@ public class CtrlApiCallHandler
                 nodeNameStr,
                 nodeTypeStr,
                 props
+            );
+        }
+        finally
+        {
+            controller.nodesMapLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
+    /**
+     * Modifies a given node.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeUuid optional - if given, modification is only performed if it matches the found
+     *   node's UUID.
+     * @param nodeName required
+     * @param nodeType optional - if given, attempts to modify the type of the node
+     * @param overrideProps required (can be empty) - overrides the given property key-value pairs
+     * @param deletePropKeys required (can be empty) - deletes the given property keys
+     * @return
+     */
+    public ApiCallRc modifyNode(
+        AccessContext accCtx,
+        Peer client,
+        UUID nodeUuid,
+        String nodeName,
+        String nodeType,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            apiCallRc = nodeApiCallHandler.modifyNode(
+                accCtx,
+                client,
+                nodeUuid,
+                nodeName,
+                nodeType,
+                overrideProps,
+                deletePropKeys
             );
         }
         finally
@@ -879,50 +923,6 @@ public class CtrlApiCallHandler
         finally
         {
             controller.rscDfnMapLock.writeLock().unlock();
-            controller.nodesMapLock.writeLock().unlock();
-        }
-        return apiCallRc;
-    }
-
-    /**
-     * Modifies a given node.
-     *
-     * @param accCtx
-     * @param client
-     * @param nodeUuid optional - if given, modification is only performed if it matches the found
-     *   node's UUID.
-     * @param nodeName required
-     * @param nodeType optional - if given, attempts to modify the type of the node
-     * @param overrideProps required (can be empty) - overrides the given property key-value pairs
-     * @param deletePropKeys required (can be empty) - deletes the given property keys
-     * @return
-     */
-    public ApiCallRc modifyNode(
-        AccessContext accCtx,
-        Peer client,
-        UUID nodeUuid,
-        String nodeName,
-        String nodeType,
-        Map<String, String> overrideProps,
-        Set<String> deletePropKeys
-    )
-    {
-        ApiCallRc apiCallRc;
-        try
-        {
-            controller.nodesMapLock.writeLock().lock();
-            apiCallRc = nodeApiCallHandler.modifyNode(
-                accCtx,
-                client,
-                nodeUuid,
-                nodeName,
-                nodeType,
-                overrideProps,
-                deletePropKeys
-            );
-        }
-        finally
-        {
             controller.nodesMapLock.writeLock().unlock();
         }
         return apiCallRc;

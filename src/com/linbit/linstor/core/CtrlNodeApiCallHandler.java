@@ -31,7 +31,6 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlNodeSerializer;
@@ -58,7 +57,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         CtrlListSerializer<Node.NodeApi> nodeListSerializer
     )
     {
-        super(controllerRef, apiCtxRef);
+        super(controllerRef, apiCtxRef, ApiConsts.MASK_NODE);
         this.nodeSerializer = nodeSerializer;
         this.nodeListSerializer = nodeListSerializer;
     }
@@ -171,13 +170,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     commit();
                     controller.nodesMap.put(nodeName, node);
 
-                    String successMessage = String.format(
-                        "New node '%s' created.",
-                        nodeNameStr
+                    success(
+                        "New node '" + nodeNameStr + "' created.",
+                        "Node '" + nodeNameStr + "' UUID is " + node.getUuid()
                     );
-                    String detailsMessage = "Node '" + nodeNameStr + "' UUID is " + node.getUuid();
-                    addAnswer(successMessage, null, detailsMessage, null, ApiConsts.RC_NODE_CREATED);
-                    controller.getErrorReporter().logInfo(successMessage);
 
                     if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
                     {
@@ -192,10 +188,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (Exception exc)
         {
-            report(
+            exc(
                 exc,
                 "Creation of a node object failed due to an unhandled exception.",
-                ApiConsts.RC_NODE_CRT_FAIL_UNKNOWN_ERROR
+                ApiConsts.FAIL_UNKNOWN_ERROR
             );
         }
         catch (ImplementationError implErr)
@@ -237,7 +233,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             {
                 addAnswer(
                     "UUID-check failed",
-                    ApiConsts.RC_NODE_MOD_FAIL_UUID_NODE
+                    ApiConsts.FAIL_UUID_NODE
                 );
                 throw new ApiCallHandlerFailedException();
             }
@@ -254,12 +250,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            String successMsg = "Node '" + nodeNameStr + "' updated.";
-            addAnswer(
-                successMsg,
-                ApiConsts.RC_NODE_MODIFIED
-            );
-            controller.getErrorReporter().logInfo(successMsg);
+            success("Node '" + nodeNameStr + "' updated.", null);
         }
         catch (ApiCallHandlerFailedException ignore)
         {
@@ -268,10 +259,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (Exception exc)
         {
-            report(
+            exc(
                 exc,
                 "Creation of a node object failed due to an unhandled exception.",
-                ApiConsts.RC_NODE_MOD_FAIL_UNKNOWN_ERROR
+                ApiConsts.FAIL_UNKNOWN_ERROR
             );
         }
         catch (ImplementationError implErr)
@@ -308,7 +299,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     "Node '" + currentNodeName.get() + "' does not exist.",
                     null,
                     null,
-                    ApiConsts.RC_NODE_DEL_NOT_FOUND
+                    ApiConsts.WARN_NOT_FOUND
                 );
                 throw new ApiCallHandlerFailedException();
             }
@@ -346,7 +337,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                                     nodeNameStr,
                                     storPool.getName().displayValue
                                 ),
-                                ApiConsts.RC_NODE_DEL_FAIL_EXISTS_VLM
+                                ApiConsts.FAIL_EXISTS_VLM
                             );
                         }
                     }
@@ -379,8 +370,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                         controller.nodesMap.remove(nodeName);
                     }
 
-                    addAnswer(successMessage, ApiConsts.RC_NODE_CREATED);
-                    controller.getErrorReporter().logInfo(successMessage);
+                    success(successMessage);
 
                     // TODO: tell satellites to remove all the corresponding resources and storPools
                     // TODO: if satellites finished, cleanup the storPools and then remove the node from DB
@@ -395,13 +385,13 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         catch (Exception | ImplementationError exc)
         {
             // handle any other exception
-            report(
+            exc(
                 exc,
                 String.format(
                     "An unknown exception occured while deleting node '%s'.",
                     nodeNameStr
                 ),
-                ApiConsts.RC_NODE_DEL_FAIL_UNKNOWN_ERROR
+                ApiConsts.FAIL_UNKNOWN_ERROR
             );
         }
 
@@ -609,23 +599,11 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            if (currentApiCallType.get().equals(ApiCallType.CREATE))
-            {
-                handleAccDeniedExc(
-                    accDeniedExc,
-                    "create node entries",
-                    ApiConsts.RC_NODE_CRT_FAIL_ACC_DENIED_NODE
-                );
-            }
-            else
-            {
-                handleAccDeniedExc(
-                    accDeniedExc,
-                    "delete node entries",
-                    ApiConsts.RC_NODE_DEL_FAIL_ACC_DENIED_NODE
-                );
-            }
-            throw new ApiCallHandlerFailedException();
+            throw accDeniedExc(
+                accDeniedExc,
+                getAction("create", "modify", "delete") + " node entries",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
         }
     }
 
@@ -638,39 +616,8 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (SQLException sqlExc)
         {
-            String action = "creating a new transaction manager";
-
-            if (currentApiCallType.get().equals(ApiCallType.CREATE))
-            {
-                handleSqlExc(sqlExc, action, ApiConsts.RC_NODE_CRT_FAIL_SQL);
-            }
-            else
-            {
-                handleSqlExc(sqlExc, action, ApiConsts.RC_NODE_DEL_FAIL_SQL);
-            }
-            throw new ApiCallHandlerFailedException();
+            throw sqlExc(sqlExc, "creating a new transaction manager");
         }
-    }
-
-    private NodeName asNodeName(String nodeNameStr) throws ApiCallHandlerFailedException
-    {
-        long failRC = -1;
-        switch (currentApiCallType.get())
-        {
-            case CREATE:
-                failRC = ApiConsts.RC_NODE_CRT_FAIL_INVLD_NODE_NAME;
-                break;
-            case DELETE:
-                failRC = ApiConsts.RC_NODE_DEL_FAIL_INVLD_NODE_NAME;
-                break;
-            case MODIFY:
-                failRC = ApiConsts.RC_NODE_MOD_FAIL_INVLD_NODE_NAME;
-                break;
-            default:
-                handleUnknownApiCallType();
-        }
-        NodeName nodeName = asNodeName(nodeNameStr, failRC);
-        return nodeName;
     }
 
     private NodeType asNodeType(String nodeTypeStr) throws ApiCallHandlerFailedException
@@ -681,18 +628,18 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (IllegalArgumentException illegalArgExc)
         {
-            report(
+            throw exc(
                 illegalArgExc,
                 "The specified node type '" + nodeTypeStr + "' is invalid.",
-                null, null,
+                null, // cause
+                null, // details
                 "Valid node types are:\n" +
                 NodeType.CONTROLLER.name() + "\n" +
                 NodeType.SATELLITE.name() + "\n" +
                 NodeType.COMBINED.name() + "\n" +
-                NodeType.AUXILIARY.name() + "\n",
-                ApiConsts.RC_NODE_CRT_FAIL_INVLD_NODE_TYPE
+                NodeType.AUXILIARY.name() + "\n", // correction
+                ApiConsts.FAIL_INVLD_NODE_TYPE
             );
-            throw new ApiCallHandlerFailedException();
         }
     }
 
@@ -713,16 +660,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            handleAccDeniedExc(
+            throw accDeniedExc(
                 accDeniedExc,
                 "create the node '" + nodeName + "'.",
-                ApiConsts.RC_NODE_CRT_FAIL_ACC_DENIED_NODE
+                ApiConsts.FAIL_ACC_DENIED_NODE
             );
-            throw new ApiCallHandlerFailedException();
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            report(
+            throw exc(
                 dataAlreadyExistsExc,
                 "Creation of node '" + nodeName.displayValue + "' failed.",
                 "A node with the specified name '" + nodeName.displayValue + "' already exists.",
@@ -730,14 +676,12 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 "- Specify another name for the new node\n" +
                 "or\n" +
                 "- Delete the existing node before creating a new node with the same name",
-                ApiConsts.RC_NODE_CRT_FAIL_EXISTS_NODE
+                ApiConsts.FAIL_EXISTS_NODE
             );
-            throw new ApiCallHandlerFailedException();
         }
         catch (SQLException sqlExc)
         {
-            handleSqlExc(sqlExc);
-            throw new ApiCallHandlerFailedException();
+            throw handleSqlExc(sqlExc);
         }
     }
 
@@ -757,21 +701,20 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDenied)
         {
-            handleAccDeniedExc(
+            throw accDeniedExc(
                 accDenied,
                 "delete node '" + currentNodeName.get() + "'.",
-                ApiConsts.DEL_FAIL_ACC_DENIED_NODE
+                ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
         catch (LinStorDataAlreadyExistsException alreadyExists)
         {
-            reportImplError(alreadyExists);
+            throw reportImplError(alreadyExists);
         }
         catch (SQLException sqlExc)
         {
-            handleSqlExc(sqlExc);
+            throw handleSqlExc(sqlExc);
         }
-        throw new ApiCallHandlerFailedException();
     }
 
     private Props getProps(Node node)
@@ -782,27 +725,11 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            long retCode = -1;
-            switch (currentApiCallType.get())
-            {
-                case CREATE:
-                    retCode = ApiConsts.RC_NODE_CRT_FAIL_ACC_DENIED_NODE;
-                    break;
-                case DELETE:
-                    retCode = ApiConsts.RC_NODE_DEL_FAIL_ACC_DENIED_NODE;
-                    break;
-                case MODIFY:
-                    retCode = ApiConsts.RC_NODE_MOD_FAIL_ACC_DENIED_NODE;
-                    break;
-                default:
-                    handleUnknownApiCallType();
-            }
-            handleAccDeniedExc(
+            throw accDeniedExc(
                 accDeniedExc,
                 "access the properties of node '" + currentNodeName.get() + "'.",
-                retCode
+                ApiConsts.FAIL_ACC_DENIED_NODE
             );
-            throw new ApiCallHandlerFailedException();
         }
     }
 
@@ -815,12 +742,11 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (InvalidNameException invalidNameExc)
         {
-            report(
+            throw exc(
                 invalidNameExc,
                 "The specified net interface name '" + netIfNameStr + "' is invalid.",
-                ApiConsts.RC_NODE_CRT_FAIL_INVLD_NET_NAME
+                ApiConsts.FAIL_INVLD_NET_NAME
             );
-            throw new ApiCallHandlerFailedException();
         }
     }
 
@@ -829,15 +755,14 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         if (ipAddrStr == null)
         {
-            report(
+            throw exc(
                 null,
                 "Node creation failed.",
                 "No IP address for the new node was specified",
                 null,
                 "At least one network interface with a valid IP address must be defined for the new node.",
-                ApiConsts.RC_NODE_CRT_FAIL_INVLD_NET_ADDR
+                ApiConsts.FAIL_INVLD_NET_ADDR
             );
-            throw new ApiCallHandlerFailedException();
         }
         try
         {
@@ -845,22 +770,21 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (InvalidIpAddressException invalidIpExc)
         {
-            report(
+            throw exc(
                 invalidIpExc,
                 "Node creation failed.",
                 "The specified IP address is not valid",
                 "The specified input '" + ipAddrStr + "' is not a valid IP address.",
                 "Specify a valid IPv4 or IPv6 address.",
-                ApiConsts.RC_NODE_CRT_FAIL_INVLD_NET_ADDR
+                ApiConsts.FAIL_INVLD_NET_ADDR
             );
-            throw new ApiCallHandlerFailedException();
         }
     }
 
     private void reportMissingNetIfNamespace()
     {
         currentVariables.get().put(ApiConsts.KEY_MISSING_NAMESPC, ApiConsts.NAMESPC_NETIF);
-        report(
+        throw exc(
             null,
             String.format(
                 "Creation of the node '%s' failed.",
@@ -881,14 +805,13 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 "   for a linstor node connection (" + ApiConsts.KEY_NETCOM_ENABLED + " is optional and default " + ApiConsts.VAL_TRUE+ ") or \n" +
                 ApiConsts.NAMESPC_NETIF + "/netIfName0/" + ApiConsts.KEY_IP_ADDR + " = 10.0.0.103\n" +
                 "   for a drbd resource interface (no " + ApiConsts.KEY_PORT_NR + ", no " + ApiConsts.KEY_NETCOM_TYPE + ")",
-            ApiConsts.RC_NODE_CRT_FAIL_MISSING_PROPS
+            ApiConsts.FAIL_MISSING_PROPS
         );
-        throw new ApiCallHandlerFailedException();
     }
 
     private void reportMissingPort(String netIfNameStr) throws ApiCallHandlerFailedException
     {
-        report(
+        throw exc(
             null,
             "Creation of the node '" + currentNodeName.get() + " failed.",
             String.format(
@@ -898,14 +821,13 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             ),
             null,
             null,
-            ApiConsts.RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_PORT
+            ApiConsts.FAIL_MISSING_PROPS_NETCOM_PORT
         );
-        throw new ApiCallHandlerFailedException();
     }
 
     private void reportMissingNetComType(String netIfNameStr) throws ApiCallHandlerFailedException
     {
-        report(
+        throw exc(
             null,
             "Creation of the node '" + currentNodeName.get() + " failed.",
             String.format(
@@ -915,20 +837,19 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             ),
             null,
             "The mandatory property must be set when requesting node creation.",
-            ApiConsts.RC_NODE_CRT_FAIL_MISSING_PROP_NETCOM_TYPE
+            ApiConsts.FAIL_MISSING_PROPS_NETCOM_TYPE
         );
-        throw new ApiCallHandlerFailedException();
     }
 
     private void reportMissingEnabledNetCom() throws ApiCallHandlerFailedException
     {
-        report(
+        throw exc(
             null,
             "Creation of node '" + currentNodeName.get() + "' failed.",
             "No enabled network interface for controller-satellite communication was specified.",
             null,
             "At least one network interface of the node must be enabled for controller-satellite communication.",
-            ApiConsts.RC_NODE_CRT_FAIL_MISSING_NETCOM
+            ApiConsts.FAIL_MISSING_NETCOM
         );
     }
 
@@ -940,16 +861,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (NumberFormatException numberFormatExc)
         {
-            report(
+            throw exc(
                 numberFormatExc,
                 "Node creation failed.",
                 "The specified TCP/IP port number of the network interface '" + netIfNameStr +
                 "' is invalid",
                 "The input specified for the TCP/IP port number field was '" + portStr + "'.",
                 "A valid TCP/IP port number must be specified.",
-                ApiConsts.RC_NODE_CRT_FAIL_INVLD_NET_PORT
+                ApiConsts.FAIL_INVLD_NET_PORT
             );
-            throw new ApiCallHandlerFailedException();
         }
     }
 
@@ -968,18 +888,16 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (InvalidKeyException invalidKeyExc)
         {
-            reportImplError(invalidKeyExc);
-            throw new ApiCallHandlerFailedException();
+            throw reportImplError(invalidKeyExc);
         }
         catch (IllegalArgumentException illegalArgumentExc)
         {
-            report(
+            throw exc(
                 illegalArgumentExc,
                 "The specified network interface type '" + netIfTypeStr + "' for network interface '" +
                 netIfNameStr + "' is invalid.",
-                ApiConsts.RC_NODE_CRT_FAIL_INVLD_NET_TYPE
+                ApiConsts.FAIL_INVLD_NET_TYPE
             );
-            throw new ApiCallHandlerFailedException();
         }
     }
 
@@ -1016,7 +934,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                         ApiConsts.VAL_TRUE
                     ),
                     "This problem was automatically resolved.",
-                    ApiConsts.RC_NODE_CRT_WARN_INVLD_OPT_PROP_NETCOM_ENABLED
+                    ApiConsts.WARN_INVLD_OPT_PROP_NETCOM_ENABLED
                 );
                 // no throw
                 retVal = Boolean.parseBoolean(ApiConsts.VAL_TRUE);// hopefully ApiConsts.VAL_TRUE's value does not change, but still.
@@ -1025,8 +943,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (InvalidKeyException invalidKeyExc)
         {
-            reportImplError(invalidKeyExc);
-            throw new ApiCallHandlerFailedException();
+            throw reportImplError(invalidKeyExc);
         }
     }
 
@@ -1055,29 +972,26 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            handleAccDeniedExc(
+            throw accDeniedExc(
                 accDeniedExc,
                 "create the netinterface '" + netName + "' on node '" + node.getName() + "'.",
-                ApiConsts.RC_NODE_CRT_FAIL_ACC_DENIED_NODE
+                ApiConsts.FAIL_ACC_DENIED_NODE
             );
-            throw new ApiCallHandlerFailedException();
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            report(
+            throw exc(
                 dataAlreadyExistsExc,
                 "Creation of node '" + node.getName() + "' failed.",
                 "A duplicate network interface name was encountered during node creation.",
                 "The network interface name '" + netName + "' was specified for more than one network interface.",
                 "A name that is unique per node must be specified for each network interface.",
-                ApiConsts.RC_NODE_CRT_FAIL_EXISTS_NET_IF
+                ApiConsts.FAIL_EXISTS_NET_IF
             );
-            throw new ApiCallHandlerFailedException();
         }
         catch (SQLException sqlExc)
         {
-            handleSqlExc(sqlExc);
-            throw new ApiCallHandlerFailedException();
+            throw handleSqlExc(sqlExc);
         }
     }
 
@@ -1089,8 +1003,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            reportImplError(accDeniedExc);
-            throw new ApiCallHandlerFailedException();
+            throw reportImplError(accDeniedExc);
         }
     }
 
@@ -1103,18 +1016,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            reportImplError(accDeniedExc);
-            throw new ApiCallHandlerFailedException();
+            throw reportImplError(accDeniedExc);
         }
         catch (SQLException sqlExc)
         {
-            handleSqlExc(
+            throw sqlExc(
                 sqlExc,
                 "An SQLException occured while marking resource '" + rsc.getDefinition().getName().displayValue +
-                "' on node '" + currentNodeName.get() + "' as deleted ",
-                ApiConsts.DEL_FAIL_SQL
+                "' on node '" + currentNodeName.get() + "' as deleted "
             );
-            throw new ApiCallHandlerFailedException();
         }
     }
 
@@ -1126,8 +1036,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            reportImplError(accDeniedExc);
-            throw new ApiCallHandlerFailedException();
+            throw reportImplError(accDeniedExc);
         }
     }
 
@@ -1139,8 +1048,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            reportImplError(accDeniedExc);
-            throw new ApiCallHandlerFailedException();
+            throw reportImplError(accDeniedExc);
         }
     }
 
@@ -1153,13 +1061,11 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            reportImplError(accDeniedExc);
-            throw new ApiCallHandlerFailedException();
+            throw reportImplError(accDeniedExc);
         }
         catch (SQLException sqlExc)
         {
-            handleSqlExc(sqlExc);
-            throw new ApiCallHandlerFailedException();
+            throw handleSqlExc(sqlExc);
         }
     }
 
@@ -1171,17 +1077,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            handleAccDeniedExc(
+            throw accDeniedExc(
                 accDeniedExc,
                 "delete the node '" + currentNodeName.get() + "'.",
-                ApiConsts.DEL_FAIL_ACC_DENIED_NODE
+                ApiConsts.FAIL_ACC_DENIED_NODE
             );
-            throw new ApiCallHandlerFailedException();
         }
         catch (SQLException sqlExc)
         {
-            handleSqlExc(sqlExc);
-            throw new ApiCallHandlerFailedException();
+            throw handleSqlExc(sqlExc);
         }
     }
 
@@ -1193,17 +1097,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            handleAccDeniedExc(
+            throw accDeniedExc(
                 accDeniedExc,
                 "delete the node '" + currentNodeName.get() + "'.",
-                ApiConsts.DEL_FAIL_ACC_DENIED_NODE
+                ApiConsts.FAIL_ACC_DENIED_NODE
             );
-            throw new ApiCallHandlerFailedException();
         }
         catch (SQLException sqlExc)
         {
-            handleSqlExc(sqlExc);
-            throw new ApiCallHandlerFailedException();
+            throw handleSqlExc(sqlExc);
         }
     }
 
@@ -1216,16 +1118,15 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            handleAccDeniedExc(
+            throw accDeniedExc(
                 accDeniedExc,
                 "update the node type",
-                ApiConsts.RC_NODE_MOD_FAIL_ACC_DENIED_NODE
+                ApiConsts.FAIL_ACC_DENIED_NODE
             );
-            throw new ApiCallHandlerFailedException();
         }
         catch (SQLException sqlExc)
         {
-            handleSqlExc(sqlExc);
+            throw handleSqlExc(sqlExc);
         }
     }
 
@@ -1237,75 +1138,35 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (SQLException sqlExc)
         {
-            handleSqlExc(sqlExc);
-            throw new ApiCallHandlerFailedException();
+            throw handleSqlExc(sqlExc);
         }
     }
 
-    private void handleSqlExc(SQLException sqlExc)
+    private ApiCallHandlerFailedException handleSqlExc(SQLException sqlExc)
     {
-        switch(currentApiCallType.get())
-        {
-            case CREATE:
-                handleSqlExc(
-                    sqlExc,
-                    "creating node '" + currentNodeName.get() + "'",
-                    ApiConsts.RC_NODE_CRT_FAIL_SQL
-                );
-                break;
-            case DELETE:
-                handleSqlExc(
-                    sqlExc,
-                    "deleting node '" + currentNodeName.get() + "'",
-                    ApiConsts.RC_NODE_DEL_FAIL_SQL
-                );
-                break;
-            case MODIFY:
-                handleSqlExc(
-                    sqlExc,
-                    "modifying node '" + currentNodeName.get() + "'",
-                    ApiConsts.RC_NODE_MOD_FAIL_SQL
-                );
-                break;
-            default:
-                break;
-        }
-        throw new ApiCallHandlerFailedException();
+        throw sqlExc(
+            sqlExc,
+            getAction(
+                "creating node '" + currentNodeName.get() + "'",
+                "deleting node '" + currentNodeName.get() + "'",
+                "modifying node '" + currentNodeName.get() + "'"
+            )
+        );
     }
 
-    private void reportImplError(Throwable throwable)
+    private ApiCallHandlerFailedException reportImplError(Throwable throwable)
     {
         if (!(throwable instanceof ImplementationError))
         {
             throwable = new ImplementationError(throwable);
         }
 
-        switch (currentApiCallType.get())
-        {
-            case CREATE:
-                report(
-                    throwable,
-                    "The node could not be created due to an implementation error",
-                    ApiConsts.RC_NODE_CRT_FAIL_IMPL_ERROR
-                );
-                break;
-            case DELETE:
-                report(
-                    throwable,
-                    "The node could not be deleted due to an implementation error",
-                    ApiConsts.RC_NODE_DEL_FAIL_IMPL_ERROR
-                );
-                break;
-            case MODIFY:
-                report(
-                    throwable,
-                    "The node could not be modified due to an implementation error",
-                    ApiConsts.RC_NODE_MOD_FAIL_IMPL_ERROR
-                );
-                break;
-            default:
-                handleUnknownApiCallType();
-        }
+        throw exc(
+            throwable,
+            "The node could not be " + getAction("created", "deleted", "modified") +
+            " due to an implementation error",
+            ApiConsts.FAIL_IMPL_ERROR
+        );
     }
 
     private AbsApiCallHandler setCurrent(
@@ -1354,43 +1215,13 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     }
                     catch (SQLException sqlExc)
                     {
-                        String action = null;
-                        long retCode = -1;
-                        switch (currentApiCallType.get())
-                        {
-                            case CREATE:
-                                action = "creation";
-                                retCode = ApiConsts.RC_NODE_CRT_FAIL_SQL_ROLLBACK;
-                                break;
-                            case DELETE:
-                                action = "deletion";
-                                retCode = ApiConsts.RC_NODE_DEL_FAIL_SQL_ROLLBACK;
-                                break;
-                            case MODIFY:
-                                action = "modification";
-                                retCode = ApiConsts.RC_NODE_MOD_FAIL_SQL_ROLLBACK;
-                                break;
-                            default:
-                                handleUnknownApiCallType();
-                        }
-                        String errorMsg =
-                            "A database error occured while trying to rollback the " + action +
-                            " of node '" + currentNodeName.get() + "'.";
-
-                        controller.getErrorReporter().reportError(
+                        report(
                             sqlExc,
-                            currentAccCtx.get(),
-                            currentPeer.get(),
-                            errorMsg
+                            "A database error occured while trying to rollback the " +
+                            getAction("creation", "modification", "deletion") +
+                            " of node '" + currentNodeName.get() + "'.",
+                            ApiConsts.FAIL_SQL_ROLLBACK
                         );
-
-                        ApiCallRcEntry entry = new ApiCallRcEntry();
-                        entry.setReturnCodeBit(retCode);
-                        entry.setMessageFormat(errorMsg);
-                        entry.setCauseFormat(sqlExc.getMessage());
-                        entry.putObjRef(ApiConsts.KEY_NODE, currentNodeName.get());
-
-                        currentApiCallRc.get().addEntry(entry);
                     }
                 }
             }

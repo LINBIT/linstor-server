@@ -426,7 +426,7 @@ class CtrlNodeConnectionApiCallHandler
                 {
                     ApiCallRcEntry nodeConnNotFoundEntry = new ApiCallRcEntry();
 
-                    nodeConnNotFoundEntry.setReturnCode(RC_NODE_CONN_DEL_NOT_FOUND);
+                    nodeConnNotFoundEntry.setReturnCode(RC_NODE_CONN_DEL_WARN_NOT_FOUND);
                     nodeConnNotFoundEntry.setCauseFormat(
                         String.format(
                             "The specified node connection between nodes '%s' and '%s' could not "+
