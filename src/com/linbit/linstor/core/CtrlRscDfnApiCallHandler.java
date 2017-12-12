@@ -768,31 +768,13 @@ class CtrlRscDfnApiCallHandler
             controller.rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
             for(ResourceDefinition rscdfn : controller.rscDfnMap.values())
             {
-                rscdfns.add(rscdfn.getApiData(accCtx));
+                try {
+                    rscdfns.add(rscdfn.getApiData(accCtx));
+                }
+                catch (AccessDeniedException accDeniedExc) { } // don't add storpooldfn without access
             }
         } catch (AccessDeniedException accDeniedExc) {
             // for now return an empty list.
-            /*
-            String errorMessage;
-            String causeMessage = null;
-            String detailsMessage = null;
-            Throwable exc;
-            errorMessage = "List nodes failed.";
-            causeMessage = String.format(
-                "Identity '%s' using role '%s' is not authorized to list nodes",
-                accCtx.subjectId.name.displayValue,
-                accCtx.subjectRole.name.displayValue
-            );
-            causeMessage += "\n";
-            causeMessage += accDeniedExc.getMessage();
-            exc = accDeniedExc;
-            controller.getErrorReporter().reportError(
-                exc,
-                accCtx,
-                client,
-                errorMessage
-            );
-            */
         }
 
         try
@@ -805,7 +787,7 @@ class CtrlRscDfnApiCallHandler
                 e,
                 null,
                 client,
-                "Could not complete authentication due to an IOException"
+                "Could not complete list message due to an IOException"
             );
         }
 

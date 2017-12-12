@@ -14,7 +14,6 @@ import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Node;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinition;
@@ -843,36 +842,18 @@ class CtrlStorPoolApiCallHandler
             controller.storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
             for(StorPoolDefinition storPoolDfn : controller.storPoolDfnMap.values())
             {
-                Iterator<StorPool> storPoolIterator = storPoolDfn.iterateStorPools(accCtx);
-                while (storPoolIterator.hasNext())
-                {
-                    StorPool storPool = storPoolIterator.next();
-                    storPools.add(storPool.getApiData(accCtx));
+                try {
+                    Iterator<StorPool> storPoolIterator = storPoolDfn.iterateStorPools(accCtx);
+                    while (storPoolIterator.hasNext())
+                    {
+                        StorPool storPool = storPoolIterator.next();
+                        storPools.add(storPool.getApiData(accCtx));
+                    }
                 }
+                catch (AccessDeniedException accDeniedExc) { } // don't add storpooldfn without access
             }
         } catch (AccessDeniedException accDeniedExc) {
             // for now return an empty list.
-            /*
-            String errorMessage;
-            String causeMessage = null;
-            String detailsMessage = null;
-            Throwable exc;
-            errorMessage = "List nodes failed.";
-            causeMessage = String.format(
-                "Identity '%s' using role '%s' is not authorized to list nodes",
-                accCtx.subjectId.name.displayValue,
-                accCtx.subjectRole.name.displayValue
-            );
-            causeMessage += "\n";
-            causeMessage += accDeniedExc.getMessage();
-            exc = accDeniedExc;
-            controller.getErrorReporter().reportError(
-                exc,
-                accCtx,
-                client,
-                errorMessage
-            );
-            */
         }
 
         try
@@ -885,7 +866,7 @@ class CtrlStorPoolApiCallHandler
                 e,
                 null,
                 client,
-                "Could not complete authentication due to an IOException"
+                "Could not complete list message due to an IOException"
             );
         }
 
