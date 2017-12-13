@@ -87,7 +87,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
         svcThr = null;
         devMgrInstName = devMgrName;
-        drbdHnd = new DrbdDeviceHandler(coreSvcs);
+        drbdHnd = new DrbdDeviceHandler(wrkCtx, coreSvcs);
         workQ = workQRef;
 
         drbdEvent.addDrbdStateChangeObserver(this);
