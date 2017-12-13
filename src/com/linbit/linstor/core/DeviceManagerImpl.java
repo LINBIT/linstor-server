@@ -17,13 +17,14 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.locks.AtomicSyncPoint;
+import com.linbit.locks.SyncPoint;
 
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.event.Level;
 
@@ -96,7 +97,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     /**
      * Dispatch resource to a specific handler depending on type
      */
-    void dispatchResource(AccessContext wrkCtx, Resource rsc, Phaser phaseLockRef)
+    void dispatchResource(AccessContext wrkCtx, Resource rsc, SyncPoint phaseLockRef)
     {
         // Select the resource handler for the resource depeding on resource type
         // Currently, the DRBD resource handler is used for all resources
@@ -317,7 +318,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         // BEGIN DEBUG
         errLog.logTrace("DeviceManager service started");
         // END DEBUG
-        Phaser phaseLock = new Phaser();
+        SyncPoint phaseLock = new AtomicSyncPoint();
         StltUpdateTrackerImpl.UpdateBundle chgPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
         try
         {
@@ -418,8 +419,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 // BEGIN DEBUG
                 errLog.logTrace("Scheduling resource handlers");
                 // END DEBUG
-                int currentPhase = phaseLock.getPhase();
-                phaseLock.register();
                 for (ResourceName rscName : dispatchRscSet)
                 {
                     // Dispatch resources that were affected by changes to worker threads
@@ -454,8 +453,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 // END DEBUG
                 // Wait until the phase advances from the current phase number after all
                 // device handlers have finished
-                phaseLock.arriveAndDeregister();
-                phaseLock.awaitAdvance(currentPhase);
+                phaseLock.await();
                 // BEGIN DEBUG
                 errLog.logTrace("All resource handlers finished");
                 errLog.logTrace("End DeviceManager cycle %d", cycleNr);
@@ -569,9 +567,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     {
         private final DeviceHandler handler;
         private final Resource rsc;
-        private final Phaser phaseLock;
+        private final SyncPoint phaseLock;
 
-        DeviceHandlerInvocation(DeviceHandler handlerRef, Resource rscRef, Phaser phaseLockRef)
+        DeviceHandlerInvocation(DeviceHandler handlerRef, Resource rscRef, SyncPoint phaseLockRef)
         {
             handler = handlerRef;
             rsc = rscRef;
@@ -588,7 +586,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             }
             finally
             {
-                phaseLock.arriveAndDeregister();
+                phaseLock.arrive();
             }
         }
     }
