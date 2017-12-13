@@ -80,126 +80,7 @@ class DrbdDeviceHandler implements DeviceHandler
         // Evaluate resource & volumes state by checking the DRBD state
         try
         {
-            DrbdResource drbdRsc = drbdState.getDrbdResource(rsc.getDefinition().getName().displayValue);
-            if (drbdRsc != null)
-            {
-                if (drbdRsc.getRole() == DrbdResource.Role.UNKNOWN)
-                {
-                    rscState.requiresAdjust = true;
-                }
-
-                // Check connections to peer resources
-                // TODO: Check for missing connections
-                // TODO: Check for connections that should not be there
-                {
-                    Iterator<Resource> peerRscIter = rscDfn.iterateResource(wrkCtx);
-                    while (!rscState.requiresAdjust && peerRscIter.hasNext())
-                    {
-                        Resource peerRsc = peerRscIter.next();
-
-                        // Skip the local resource
-                        if (peerRsc != rsc)
-                        {
-                            Node peerNode = rsc.getAssignedNode();
-                            NodeName peerNodeName = peerNode.getName();
-                            DrbdConnection drbdConn = drbdRsc.getConnection(peerNodeName.displayValue);
-                            if (drbdConn != null)
-                            {
-                                DrbdConnection.State connState = drbdConn.getState();
-                                switch (connState)
-                                {
-                                    case STANDALONE:
-                                        // fall-through
-                                    case DISCONNECTING:
-                                        // fall-through
-                                    case UNCONNECTED:
-                                        // fall-through
-                                    case TIMEOUT:
-                                        // fall-through
-                                    case BROKEN_PIPE:
-                                        // fall-through
-                                    case NETWORK_FAILURE:
-                                        // fall-through
-                                    case PROTOCOL_ERROR:
-                                        // fall-through
-                                    case TEAR_DOWN:
-                                        // fall-through
-                                    case UNKNOWN:
-                                        // fall-through
-                                        rscState.requiresAdjust = true;
-                                        break;
-                                    case CONNECTING:
-                                        break;
-                                    case CONNECTED:
-                                        break;
-                                    default:
-                                        throw new ImplementationError(
-                                            "Missing switch case for enumeration value '" +
-                                            connState.name() + "'",
-                                            null
-                                        );
-                                }
-                            }
-                            else
-                            {
-                                // Missing connection
-                                rscState.requiresAdjust = true;
-                            }
-                        }
-                    }
-                }
-
-                for (VolumeState vlmState : vlmStateMap.values())
-                {
-                    DrbdVolume drbdVlm = drbdRsc.getVolume(vlmState.vlmNr);
-                    if (drbdVlm != null)
-                    {
-                        DrbdVolume.DiskState diskState = drbdVlm.getDiskState();
-                        switch (diskState)
-                        {
-                            case DISKLESS:
-                                // TODO: Volume may be a client volume
-                                // fall-through
-                            case DETACHING:
-                                // TODO: May be a transition from storage to client
-                                // fall-through
-                            case FAILED:
-                                vlmState.isFailed = true;
-                                // fall-through
-                            case NEGOTIATING:
-                                // fall-through
-                            case UNKNOWN:
-                                // The local disk state should not be unknown,
-                                // try adjusting anyways
-                                // fall-through
-                                rscState.requiresAdjust = true;
-                                break;
-                            case UP_TO_DATE:
-                                // fall-through
-                            case ATTACHING:
-                                // fall-through
-                            case CONSISTENT:
-                                // fall-through
-                            case INCONSISTENT:
-                                // fall-through
-                            case OUTDATED:
-                                // fall-through
-                                vlmState.hasDisk = true;
-                                break;
-                            default:
-                                throw new ImplementationError(
-                                    "Missing switch case for enumeration value '" +
-                                    diskState.name() + "'",
-                                    null
-                                );
-                        }
-                    }
-                }
-            }
-            else
-            {
-                rscState.requiresAdjust = true;
-            }
+            evaluateDrbdResource(rsc, rscDfn, rscState, vlmStateMap);
         }
         catch (NoInitialStateException drbdStateExc)
         {
@@ -228,12 +109,19 @@ class DrbdDeviceHandler implements DeviceHandler
         }
 
         // Evaluate volumes state by checking for the presence of backend-storage
-        for (VolumeState vlmState : vlmStateMap.values())
+        try
         {
-            if (!vlmState.hasDisk)
+            for (VolumeState vlmState : vlmStateMap.values())
             {
-                // TODO: Check for backend storage
+                if (!vlmState.hasDisk)
+                {
+                    // TODO: Check for backend storage
+                }
             }
+        }
+        catch (Exception exc)
+        {
+            // FIXME: Narrow to storage exceptions
         }
 
         // BEGIN DEBUG
@@ -267,6 +155,162 @@ class DrbdDeviceHandler implements DeviceHandler
     void evaluateResource(Resource rsc)
     {
 
+    }
+
+    private void evaluateDrbdResource(
+        Resource rsc,
+        ResourceDefinition rscDfn,
+        ResourceState rscState,
+        Map<VolumeNumber, VolumeState> vlmStateMap
+    )
+        throws NoInitialStateException, AccessDeniedException
+    {
+        // Evaluate resource & volumes state by checking the DRBD state
+        DrbdResource drbdRsc = drbdState.getDrbdResource(rsc.getDefinition().getName().displayValue);
+        if (drbdRsc != null)
+        {
+            evaluateDrbdRole(rscState, drbdRsc);
+            evaluateDrbdConnections(rsc, rscDfn, rscState, vlmStateMap, drbdRsc);
+            evaluateDrbdVolumes(rscState, vlmStateMap, drbdRsc);
+        }
+        else
+        {
+            rscState.requiresAdjust = true;
+        }
+    }
+
+    private void evaluateDrbdRole(
+        ResourceState rscState,
+        DrbdResource drbdRsc
+    )
+    {
+        if (drbdRsc.getRole() == DrbdResource.Role.UNKNOWN)
+        {
+            rscState.requiresAdjust = true;
+        }
+    }
+
+    private void evaluateDrbdConnections(
+        Resource rsc,
+        ResourceDefinition rscDfn,
+        ResourceState rscState,
+        Map<VolumeNumber, VolumeState> vlmStateMap,
+        DrbdResource drbdRsc
+    )
+        throws NoInitialStateException, AccessDeniedException
+    {
+        // Check connections to peer resources
+        // TODO: Check for missing connections
+        // TODO: Check for connections that should not be there
+        Iterator<Resource> peerRscIter = rscDfn.iterateResource(wrkCtx);
+        while (!rscState.requiresAdjust && peerRscIter.hasNext())
+        {
+            Resource peerRsc = peerRscIter.next();
+
+            // Skip the local resource
+            if (peerRsc != rsc)
+            {
+                Node peerNode = rsc.getAssignedNode();
+                NodeName peerNodeName = peerNode.getName();
+                DrbdConnection drbdConn = drbdRsc.getConnection(peerNodeName.displayValue);
+                if (drbdConn != null)
+                {
+                    DrbdConnection.State connState = drbdConn.getState();
+                    switch (connState)
+                    {
+                        case STANDALONE:
+                            // fall-through
+                        case DISCONNECTING:
+                            // fall-through
+                        case UNCONNECTED:
+                            // fall-through
+                        case TIMEOUT:
+                            // fall-through
+                        case BROKEN_PIPE:
+                            // fall-through
+                        case NETWORK_FAILURE:
+                            // fall-through
+                        case PROTOCOL_ERROR:
+                            // fall-through
+                        case TEAR_DOWN:
+                            // fall-through
+                        case UNKNOWN:
+                            // fall-through
+                            rscState.requiresAdjust = true;
+                            break;
+                        case CONNECTING:
+                            break;
+                        case CONNECTED:
+                            break;
+                        default:
+                            throw new ImplementationError(
+                                "Missing switch case for enumeration value '" +
+                                connState.name() + "'",
+                                null
+                            );
+                    }
+                }
+                else
+                {
+                    // Missing connection
+                    rscState.requiresAdjust = true;
+                }
+            }
+        }
+    }
+
+    private void evaluateDrbdVolumes(
+        ResourceState rscState,
+        Map<VolumeNumber, VolumeState> vlmStateMap,
+        DrbdResource drbdRsc
+    )
+    {
+        for (VolumeState vlmState : vlmStateMap.values())
+        {
+            DrbdVolume drbdVlm = drbdRsc.getVolume(vlmState.vlmNr);
+            if (drbdVlm != null)
+            {
+                DrbdVolume.DiskState diskState = drbdVlm.getDiskState();
+                switch (diskState)
+                {
+                    case DISKLESS:
+                        // TODO: Volume may be a client volume
+                        // fall-through
+                    case DETACHING:
+                        // TODO: May be a transition from storage to client
+                        // fall-through
+                    case FAILED:
+                        vlmState.isFailed = true;
+                        // fall-through
+                    case NEGOTIATING:
+                        // fall-through
+                    case UNKNOWN:
+                        // The local disk state should not be unknown,
+                        // try adjusting anyways
+                        // fall-through
+                        rscState.requiresAdjust = true;
+                        break;
+                    case UP_TO_DATE:
+                        // fall-through
+                    case ATTACHING:
+                        // fall-through
+                    case CONSISTENT:
+                        // fall-through
+                    case INCONSISTENT:
+                        // fall-through
+                    case OUTDATED:
+                        // fall-through
+                        vlmState.hasDisk = true;
+                        break;
+                    default:
+                        throw new ImplementationError(
+                            "Missing switch case for enumeration value '" +
+                            diskState.name() + "'",
+                            null
+                        );
+                }
+            }
+        }
     }
 
     /**
