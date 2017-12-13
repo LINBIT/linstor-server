@@ -75,6 +75,17 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             );
         )
         {
+            if (vlmDfnApiList.isEmpty())
+            {
+                addAnswer(
+                        "Volume definition list to create is empty.",
+                        null,
+                        "Volume definition list that should be added to the resource is empty.",
+                        null,
+                        ApiConsts.WARN_NOT_CONNECTED
+                    );
+                throw new CtrlVlmDfnApiCallHandlerFailedException();
+            }
 
             ensureRscMapProtAccess(accCtx);
 
