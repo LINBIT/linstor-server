@@ -128,6 +128,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
             Map<String, String> volProps = vol.getProps(serializerCtx).map();
             StorPool vlmStorPool = vol.getStorPool(serializerCtx);
             Vlm.Builder builder = Vlm.newBuilder()
+                .setVlmDfnUuid(asByteString(vol.getVolumeDefinition().getUuid()))
                 .setVlmUuid(asByteString(vol.getUuid()))
                 .setVlmNr(vol.getVolumeDefinition().getVolumeNumber().value)
                 .setVlmFlags(vol.getFlags().getFlagsBits(serializerCtx))
