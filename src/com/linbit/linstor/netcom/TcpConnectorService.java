@@ -179,52 +179,95 @@ public class TcpConnectorService implements Runnable, TcpConnector
     @Override
     public Peer connect(InetSocketAddress address, Node node) throws IOException
     {
-        SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.configureBlocking(false);
-        String peerId = address.getAddress().getHostAddress() + ":" + address.getPort();
-        SelectionKey connKey;
+        Selector srvSel = serverSelector;
         Peer peer;
-        synchronized (syncObj)
+        if (srvSel != null)
         {
-            serverSelector.wakeup();
-            boolean connected = socketChannel.connect(address);
-            if (connected)
-            {
-                // if connect is true, we will never receive an OP_CONNECT
-                // even if we register for it.
-                // as the controller does not know about this peer (we didnt return yet)
-                // we will register for no operation.
-                // As soon as the controller tries to send a message, that will trigger the OP_WRITE anyways
-                connKey = socketChannel.register(serverSelector, 0);
-            }
-            else
-            {
-                // if connect returns false we will receive OP_CONNECT
-                // and we will need to call the finishConnection()
-                connKey = socketChannel.register(serverSelector, OP_CONNECT);
-            }
-            peer = createTcpConnectorPeer(peerId, connKey, true, node);
-            if (connected)
-            {
-                peer.connectionEstablished();
-                if (connObserver != null)
-                {
-                    connObserver.outboundConnectionEstablished(peer);
-                }
-            }
-            connKey.attach(peer);
+            SocketChannel socketChannel = null;
             try
             {
-                node.setPeer(privilegedAccCtx, peer);
+                socketChannel = SocketChannel.open();
+                socketChannel.configureBlocking(false);
+                String peerId = address.getAddress().getHostAddress() + ":" + address.getPort();
+                SelectionKey connKey;
+                synchronized (syncObj)
+                {
+                    srvSel.wakeup();
+                    boolean connected = socketChannel.connect(address);
+                    if (connected)
+                    {
+                        // if connect is true, we will never receive an OP_CONNECT
+                        // even if we register for it.
+                        // as the controller does not know about this peer (we didnt return yet)
+                        // we will register for no operation.
+                        // As soon as the controller tries to send a message, that will trigger the OP_WRITE anyways
+                        connKey = socketChannel.register(srvSel, 0);
+                    }
+                    else
+                    {
+                        // if connect returns false we will receive OP_CONNECT
+                        // and we will need to call the finishConnection()
+                        connKey = socketChannel.register(srvSel, OP_CONNECT);
+                    }
+                    peer = createTcpConnectorPeer(peerId, connKey, true, node);
+                    connKey.attach(peer);
+                    if (connected)
+                    {
+                        if (connObserver != null)
+                        {
+                            connObserver.outboundConnectionEstablished(peer);
+                        }
+                        // May throw SSLException
+                        peer.connectionEstablished();
+                    }
+                    try
+                    {
+                        node.setPeer(privilegedAccCtx, peer);
+                    }
+                    catch (AccessDeniedException accDeniedExc)
+                    {
+                        throw new ImplementationError(
+                            "TcpConnectorService privileged access context not authorized for node.setPeer() " +
+                            "called from connect()",
+                            accDeniedExc
+                        );
+                    }
+                }
             }
-            catch (AccessDeniedException accDeniedExc)
+            catch (IOException ioExc)
             {
-                throw new ImplementationError(
-                    "TcpConnectorService's privileged access context has not enough rights to " +
-                        "set new peer to node upon reconnect.",
-                    accDeniedExc
+                try
+                {
+                    if (socketChannel != null)
+                    {
+                        socketChannel.close();
+                    }
+                }
+                catch (IOException ignored)
+                {
+                }
+                throw ioExc;
+            }
+            catch (IllegalBlockingModeException blkModeException)
+            {
+                throw new IOException(
+                    "Connect request failed - Non-blocking I/O mode requested, but not supported"
                 );
             }
+            catch (IllegalSelectorException | ClosedSelectorException |
+                   CancelledKeyException connExc)
+            {
+                throw new IOException(
+                    "Connect request failed - Connector service '" + serviceInstanceName + "' state changed " +
+                    "while the operation was in progress"
+                );
+            }
+        }
+        else
+        {
+            throw new IOException(
+                "Connect request failed - Connector service '" + serviceInstanceName + "' is stopped"
+            );
         }
         return peer;
     }
@@ -254,7 +297,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ImplementationError(
-                "TcpConnectorService not authorized to execute setPeer() on a Node object in reconnect()",
+                "TcpConnectorService privileged access context not authorized for node.setPeer() " +
+                "called from reconnect()",
                 accDeniedExc
             );
         }
@@ -302,9 +346,10 @@ public class TcpConnectorService implements Runnable, TcpConnector
     public synchronized void shutdown()
     {
         shutdownFlag.set(true);
-        if (serverSelector != null)
+        Selector srvSel = serverSelector;
+        if (srvSel != null)
         {
-            serverSelector.wakeup();
+            srvSel.wakeup();
         }
     }
 
