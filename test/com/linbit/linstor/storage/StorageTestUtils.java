@@ -30,6 +30,8 @@ import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
 import com.linbit.linstor.SatelliteCoreServices;
+import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 import com.linbit.timer.Action;
@@ -216,6 +218,18 @@ public class StorageTestUtils
 
         @Override
         public FileSystemWatch getFsWatch()
+        {
+            return null;
+        }
+
+        @Override
+        public DeviceManager getDeviceManager()
+        {
+            return null;
+        }
+
+        @Override
+        public DrbdStateTracker getDrbdStateTracker()
         {
             return null;
         }

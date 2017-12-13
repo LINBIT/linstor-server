@@ -17,6 +17,8 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.SatelliteCoreServices;
+import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.testutils.DefaultErrorStreamErrorReporter;
 import com.linbit.timer.Action;
@@ -907,6 +909,18 @@ public abstract class NoSimDriverTest
         public FileSystemWatch getFsWatch()
         {
             return fsEventSvc;
+        }
+
+        @Override
+        public DeviceManager getDeviceManager()
+        {
+            return null;
+        }
+
+        @Override
+        public DrbdStateTracker getDrbdStateTracker()
+        {
+            return null;
         }
     }
 
