@@ -21,6 +21,7 @@ import com.linbit.linstor.security.Privilege;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,6 +34,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private final Satellite stltInstance;
     private final AccessContext wrkCtx;
     private final SatelliteCoreServices coreSvcs;
+    private final ErrorReporter errLog;
 
     private StltUpdateTrackerImpl updTracker;
     private StltUpdateTrackerImpl.UpdateBundle rcvPendingBundle;
@@ -78,6 +80,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         stltInstance = stltRef;
         wrkCtx = wrkCtxRef;
         coreSvcs = coreSvcsRef;
+        errLog = coreSvcsRef.getErrorReporter();
         drbdEvent = drbdEventRef;
         updTracker = new StltUpdateTrackerImpl(sched);
         rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
@@ -126,11 +129,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             AccessContext privCtx = wrkCtx.clone();
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-            coreSvcs.getErrorReporter().setTraceEnabled(privCtx, true);
+            errLog.setTraceEnabled(privCtx, true);
         }
         catch (AccessDeniedException accExc)
         {
-            coreSvcs.getErrorReporter().logWarning(
+            errLog.logWarning(
                 "Enabling TRACE logging failed (not authorized) -- worker context not authorized"
             );
         }
@@ -312,7 +315,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     public void run()
     {
         // BEGIN DEBUG
-        ErrorReporter errLog = coreSvcs.getErrorReporter();
         errLog.logTrace("DeviceManager service started");
         // END DEBUG
         Phaser phaseLock = new Phaser();
@@ -328,6 +330,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
             // TODO: Initial changes to reach the target state
 
+            Set<ResourceName> dispatchRscSet = new TreeSet<>();
             long cycleNr = 0;
             do
             {
@@ -383,6 +386,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     // Merge check requests into update requests and clear the check requests
                     chgPendingBundle.updRscDfnMap.putAll(chgPendingBundle.chkRscMap);
                     chgPendingBundle.chkRscMap.clear();
+                    // BEGIN DEBUG
+                    errLog.logTrace("All object updates were received");
+                    // END DEBUG
                 }
 
                 // TODO: if !stateAvailable try to collect additional updates (without losing the current)
@@ -403,13 +409,18 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     }
                 }
 
+                // Collect the names of all resources that must be dispatched for checking / adjusting
+                dispatchRscSet.addAll(chgPendingBundle.chkRscMap.keySet());
+                dispatchRscSet.addAll(chgPendingBundle.updRscDfnMap.keySet());
+                dispatchRscSet.addAll(chgPendingBundle.updRscMap.keySet());
+
                 // Remember the current phase number for this run of device handlers
                 // BEGIN DEBUG
                 errLog.logTrace("Scheduling resource handlers");
                 // END DEBUG
                 int currentPhase = phaseLock.getPhase();
                 phaseLock.register();
-                for (ResourceName rscName : chgPendingBundle.updRscDfnMap.keySet())
+                for (ResourceName rscName : dispatchRscSet)
                 {
                     // Dispatch resources that were affected by changes to worker threads
                     // and to the resource's respective handler
@@ -417,9 +428,27 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     if (rscDfn != null)
                     {
                         Resource rsc = rscDfn.getResource(wrkCtx, stltInstance.localNode.getName());
-                        dispatchResource(wrkCtx, rsc, phaseLock);
+                        if (rsc != null)
+                        {
+                            dispatchResource(wrkCtx, rsc, phaseLock);
+                        }
+                        else
+                        {
+                            errLog.logWarning(
+                                "Dispatch request for resource definition '" + rscName.displayValue +
+                                "' which has no corresponding resource object on this satellite"
+                            );
+                        }
+                    }
+                    else
+                    {
+                        errLog.logWarning(
+                            "Dispatch request for resource definition '" + rscName.displayValue +
+                            "' which is unknown to this satellite"
+                        );
                     }
                 }
+                dispatchRscSet.clear();
                 // BEGIN DEBUG
                 errLog.logTrace("Waiting for resource handlers to finish");
                 // END DEBUG
@@ -428,6 +457,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 phaseLock.arriveAndDeregister();
                 phaseLock.awaitAdvance(currentPhase);
                 // BEGIN DEBUG
+                errLog.logTrace("All resource handlers finished");
                 errLog.logTrace("End DeviceManager cycle %d", cycleNr);
                 // END DEBUG
                 ++cycleNr;
@@ -438,7 +468,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         catch (AccessDeniedException accExc)
         {
             shutdownFlag.set(true);
-            coreSvcs.getErrorReporter().reportError(
+            errLog.reportError(
                 Level.ERROR,
                 new ImplementationError(
                     "The DeviceManager was started with an access context that does not have sufficient " +
@@ -458,6 +488,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
         for (Entry<NodeName, UUID> entry : nodesMap.entrySet())
         {
+            errLog.logTrace("Requesting update for node '" + entry.getKey().displayValue + "'");
             apiCallHandler.requestNodeUpdate(
                 entry.getValue(),
                 entry.getKey()
@@ -470,6 +501,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
         for (Entry<ResourceName, UUID> entry : rscDfnMap.entrySet())
         {
+            errLog.logTrace("Requesting update for resource definition '" + entry.getKey().displayValue + "'");
             apiCallHandler.requestRscDfnUpate(
                 entry.getValue(),
                 entry.getKey()
@@ -486,6 +518,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             Map<NodeName, UUID> nodes = entry.getValue();
             for (Entry<NodeName, UUID> nodeEntry : nodes.entrySet())
             {
+                errLog.logTrace("Requesting update for resource '" + entry.getKey().displayValue + "'");
                 apiCallHandler.requestRscUpdate(
                     nodeEntry.getValue(),
                     nodeEntry.getKey(),
@@ -500,6 +533,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         StltApiCallHandler apiCallHandler = stltInstance.getApiCallHandler();
         for (Entry<StorPoolName, UUID> entry : updStorPoolMap.entrySet())
         {
+            errLog.logTrace("Requesting update for storage pool '" + entry.getKey().displayValue + "'");
             apiCallHandler.requestStorPoolUpdate(
                 entry.getValue(),
                 entry.getKey()

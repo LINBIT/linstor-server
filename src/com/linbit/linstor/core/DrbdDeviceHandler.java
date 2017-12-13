@@ -3,14 +3,17 @@ package com.linbit.linstor.core;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.SatelliteCoreServices;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.logging.ErrorReporter;
 
 class DrbdDeviceHandler implements DeviceHandler
 {
     private SatelliteCoreServices coreSvcs;
+    private ErrorReporter errLog;
 
     DrbdDeviceHandler(SatelliteCoreServices coreSvcsRef)
     {
         coreSvcs = coreSvcsRef;
+        errLog = coreSvcsRef.getErrorReporter();
     }
 
     /**
@@ -22,7 +25,10 @@ class DrbdDeviceHandler implements DeviceHandler
     public void dispatchResource(Resource rsc)
     {
         // TODO: Implement
-        coreSvcs.getErrorReporter().logTrace("DrbdDeviceHandler: dispatchRsc - TODO");
+        errLog.logTrace(
+            "DrbdDeviceHandler: dispatchRsc() - Begin resource '" +
+            rsc.getDefinition().getName().displayValue + "' check simulation (5 seconds)"
+        );
 
         try
         {
@@ -30,9 +36,14 @@ class DrbdDeviceHandler implements DeviceHandler
             // this is only for testing / simulating work
             Thread.sleep(5000);
         }
-        catch (InterruptedException e)
+        catch (InterruptedException exc)
         {
         }
+
+        errLog.logTrace(
+            "DrbdDeviceHandler: dispatchRsc() - End resource '" +
+            rsc.getDefinition().getName().displayValue + "' check simulation"
+        );
     }
 
     /**
