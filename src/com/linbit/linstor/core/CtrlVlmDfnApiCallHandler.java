@@ -474,9 +474,26 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             for (Resource rsc : rscList)
             {
                 Peer peer = rsc.getAssignedNode().getPeer(apiCtx);
-                Message msg = peer.createMessage();
-                msg.setData(rscSerializer.getChangedMessage(rsc));
-                peer.sendMessage(msg);
+
+                if (peer.isConnected())
+                {
+                    Message msg = peer.createMessage();
+                    msg.setData(rscSerializer.getChangedMessage(rsc));
+                    peer.sendMessage(msg);
+                }
+                else
+                {
+                    String nodeName = rsc.getAssignedNode().getName().displayValue;
+                    addAnswer(
+                        "No active connection to satellite '" + nodeName + "'",
+                        null,
+                        "The satellite was added and the controller tries to (re-) establish connection to it." +
+                        "The controller stored the new volume definition and as soon the satellite is connected, it will " +
+                        "receive this update.",
+                        null,
+                        ApiConsts.WARN_NOT_CONNECTED
+                    );
+                }
             }
         }
         catch (IllegalMessageStateException illegalMsgStateExc)
