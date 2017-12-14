@@ -93,8 +93,10 @@ public class VlmApiData implements VlmApi
         builder.setStorPoolName(vlmApi.getStorPoolName());
         builder.setStorPoolUuid(vlmApi.getStorPoolUuid().toString());
         builder.setVlmNr(vlmApi.getVlmNr());
-        builder.setBlockDevice(vlmApi.getBlockDevice());
-        builder.setMetaDisk(vlmApi.getMetaDisk());
+        if (vlmApi.getBlockDevice() != null)
+            builder.setBlockDevice(vlmApi.getBlockDevice());
+        if (vlmApi.getMetaDisk() != null)
+            builder.setMetaDisk(vlmApi.getMetaDisk());
         builder.setVlmFlags(vlmApi.getFlags());
         builder.addAllVlmProps(BaseProtoApiCall.fromMap(vlmApi.getVlmProps()));
 
