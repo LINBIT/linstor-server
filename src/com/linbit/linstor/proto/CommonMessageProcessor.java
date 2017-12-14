@@ -16,6 +16,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.event.Level;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.WorkQueue;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
@@ -335,7 +336,7 @@ public class CommonMessageProcessor implements MessageProcessor
             {
                 apiCallObj.execute(accCtx, msg, msgId, msgDataIn, client);
             }
-            catch (Exception exc)
+            catch (Exception | ImplementationError exc)
             {
                 errLog.reportError(Level.ERROR, exc, accCtx, client, null);
             }

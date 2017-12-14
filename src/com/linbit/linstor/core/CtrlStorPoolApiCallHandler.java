@@ -5,6 +5,7 @@ import static com.linbit.linstor.api.ApiConsts.*;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.Iterator;
 
@@ -29,30 +30,41 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import java.io.IOException;
 import java.util.ArrayList;
 
-class CtrlStorPoolApiCallHandler
+class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 {
-    private final Controller controller;
     private final CtrlSerializer<StorPool> serializer;
-    private final AccessContext apiCtx;
     private final CtrlListSerializer<StorPool.StorPoolApi> listSerializer;
+
+    private final ThreadLocal<String> currentNodeNameStr = new ThreadLocal<>();
+    private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
 
     CtrlStorPoolApiCallHandler(
         Controller controllerRef,
         CtrlSerializer<StorPool> serializerRef,
-        CtrlListSerializer<StorPool.StorPoolApi> listSerializer,
+        CtrlListSerializer<StorPool.StorPoolApi> listSerializerRef,
         AccessContext apiCtxRef
     )
     {
-        controller = controllerRef;
+        super (
+            controllerRef,
+            apiCtxRef,
+            ApiConsts.MASK_STOR_POOL
+        );
+        super.setNullOnAutoClose(
+            currentNodeNameStr,
+            currentStorPoolNameStr
+        );
         serializer = serializerRef;
-        this.listSerializer = listSerializer;
-        apiCtx = apiCtxRef;
+        listSerializer = listSerializerRef;
+
+        super.setNullOnAutoClose(currentNodeNameStr, currentStorPoolNameStr);
     }
 
     public ApiCallRc createStorPool(
@@ -425,6 +437,68 @@ class CtrlStorPoolApiCallHandler
                 )
             );
         }
+    }
+
+    public ApiCallRc modifyStorPool(
+        AccessContext accCtx,
+        Peer client,
+        UUID storPoolUuid,
+        String nodeNameStr,
+        String storPoolNameStr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.MODIFY,
+                apiCallRc,
+                null, // new transMgr
+                nodeNameStr,
+                storPoolNameStr
+            );
+        )
+        {
+            StorPoolData storPool = loadStorPool(nodeNameStr, storPoolNameStr);
+
+            if (storPoolUuid != null && !storPoolUuid.equals(storPool.getUuid()))
+            {
+                addAnswer(
+                    "UUID-check failed",
+                    ApiConsts.FAIL_UUID_STOR_POOL
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+
+            Props props = getProps(storPool);
+            Map<String, String> propsMap = props.map();
+
+            propsMap.putAll(overrideProps);
+
+            for (String delKey : deletePropKeys)
+            {
+                propsMap.remove(delKey);
+            }
+
+            commit();
+
+            // TODO update satellites
+            reportSuccess("Storage pool '" + storPoolNameStr + "' on node '" + nodeNameStr + "' updated.");
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // failure was reported and added to returning apiCallRc
+            // this is only for flow-control.
+        }
+        catch (ImplementationError implErr)
+        {
+            asImplError(implErr);
+        }
+
+        return apiCallRc;
     }
 
     public ApiCallRc deleteStorPool(
@@ -879,4 +953,99 @@ class CtrlStorPoolApiCallHandler
         return null;
     }
 
+    private AbsApiCallHandler setCurrent(
+        AccessContext accCtx,
+        Peer peer,
+        ApiCallType type,
+        ApiCallRcImpl apiCallRc,
+        TransactionMgr transMgr,
+        String nodeNameStr,
+        String storPoolNameStr
+    )
+    {
+        super.setCurrent(accCtx, peer, type, apiCallRc, transMgr);
+        currentNodeNameStr.set(nodeNameStr);
+        currentStorPoolNameStr.set(storPoolNameStr);
+
+        Map<String, String> objRefs = currentObjRefs.get();
+        objRefs.clear();
+        objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
+        objRefs.put(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
+        Map<String, String> vars = currentVariables.get();
+        vars.clear();
+        vars.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+        vars.put(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
+
+        return this;
+    }
+
+    @Override
+    protected String getObjectDescription()
+    {
+        return "Node: " + currentNodeNameStr.get() + ", Storage pool name: " +currentStorPoolNameStr.get();
+    }
+
+    @Override
+    protected String getObjectDescriptionInline()
+    {
+        return "storage pool '" + currentStorPoolNameStr.get() + "' on node '" + currentNodeNameStr.get() + "'";
+    }
+
+    private StorPoolData loadStorPool(String nodeNameStr, String storPoolNameStr)
+    {
+        NodeData node = loadNode(nodeNameStr);
+        StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr);
+
+        try
+        {
+            return StorPoolData.getInstance(
+                currentAccCtx.get(),
+                node,
+                storPoolDfn,
+                null,
+                currentTransMgr.get(),
+                false,
+                false
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "loading storage pool '" + storPoolNameStr + "' on node '" + nodeNameStr + "'.",
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ImplementationError(
+                "Loading a storage pool caused a dataAlreadyExists exception",
+                dataAlreadyExistsExc
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "loading storage pool '" + storPoolNameStr + "' on node '" + nodeNameStr + "'."
+            );
+        }
+    }
+
+    private Props getProps(StorPoolData storPool) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return storPool.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access properties of storage pool '" + storPool.getName().displayValue +
+                "' on node '" + storPool.getNode().getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
+            );
+        }
+    }
 }

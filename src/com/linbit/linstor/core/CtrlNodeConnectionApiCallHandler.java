@@ -4,6 +4,8 @@ import static com.linbit.linstor.api.ApiConsts.*;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -17,16 +19,26 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-class CtrlNodeConnectionApiCallHandler
+class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 {
-    private Controller controller;
+    private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
+    private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
 
     CtrlNodeConnectionApiCallHandler(Controller controllerRef)
     {
-        controller = controllerRef;
+        super(
+            controllerRef,
+            null, // apiCtx
+            ApiConsts.MASK_NODE_CONN
+        );
+        super.setNullOnAutoClose(
+            currentNodeName1,
+            currentNodeName2
+        );
     }
 
     public ApiCallRc createNodeConnection(
@@ -341,6 +353,65 @@ class CtrlNodeConnectionApiCallHandler
             }
             controller.dbConnPool.returnConnection(transMgr);
         }
+        return apiCallRc;
+    }
+
+    public ApiCallRc modifyNodeConnection(
+        AccessContext accCtx,
+        Peer client,
+        UUID nodeConnUuid,
+        String nodeName1,
+        String nodeName2,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.MODIFY,
+                apiCallRc,
+                null, // new transMgr
+                nodeName1,
+                nodeName2
+            );
+        )
+        {
+            NodeConnectionData nodeConn = loadNodeConn(nodeName1, nodeName2);
+
+            if (nodeConnUuid != null && !nodeConnUuid.equals(nodeConn.getUuid()))
+            {
+                addAnswer(
+                    "UUID-check failed",
+                    ApiConsts.FAIL_UUID_NODE_CONN
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+
+            Props props = getProps(nodeConn);
+            Map<String, String> propsMap = props.map();
+
+            propsMap.putAll(overrideProps);
+
+            for (String delKey : deletePropKeys)
+            {
+                propsMap.remove(delKey);
+            }
+
+            commit();
+
+            // TODO update satellites
+            reportSuccess("Node connection '" + nodeName1 + "' <-> '" + nodeName2 + "' updated.");
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // failure was reported and added to returning apiCallRc
+            // this is only for flow-control.
+        }
+
         return apiCallRc;
     }
 
@@ -691,4 +762,96 @@ class CtrlNodeConnectionApiCallHandler
         return apiCallRc;
     }
 
+    private AbsApiCallHandler setCurrent(
+        AccessContext accCtx,
+        Peer peer,
+        ApiCallType type,
+        ApiCallRcImpl apiCallRc,
+        TransactionMgr transMgr,
+        String nodeName1,
+        String nodeName2
+    )
+    {
+        super.setCurrent(accCtx, peer, type, apiCallRc, transMgr);
+
+        currentNodeName1.set(nodeName1);
+        currentNodeName2.set(nodeName2);
+
+        Map<String, String> objRefs = currentObjRefs.get();
+        objRefs.clear();
+        objRefs.put(ApiConsts.KEY_1ST_NODE, nodeName1);
+        objRefs.put(ApiConsts.KEY_2ND_NODE, nodeName2);
+
+        Map<String, String> vars = currentVariables.get();
+        vars.clear();
+        vars.put(ApiConsts.KEY_1ST_NODE_NAME, nodeName1);
+        vars.put(ApiConsts.KEY_2ND_NODE_NAME, nodeName2);
+
+        return this;
+    }
+
+    @Override
+    protected String getObjectDescription()
+    {
+        return "Node connection between " + currentNodeName1.get() + " and " + currentNodeName2.get();
+    }
+
+    @Override
+    protected String getObjectDescriptionInline()
+    {
+        return "node connection between nodes '" + currentNodeName1.get() + "' and '" + currentNodeName2.get()+ "'";
+    }
+
+    private NodeConnectionData loadNodeConn(String nodeName1, String nodeName2)
+    {
+        NodeData node1 = loadNode(nodeName1);
+        NodeData node2 = loadNode(nodeName2);
+
+        try
+        {
+            return NodeConnectionData.getInstance(
+                currentAccCtx.get(),
+                node1,
+                node2,
+                currentTransMgr.get(),
+                false,
+                false
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "loading node connection between nodes '" + nodeName1 + "' and '" + nodeName2 + "'.",
+                ApiConsts.FAIL_ACC_DENIED_NODE_CONN
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw asImplError(dataAlreadyExistsExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "loading node connection between nodes '" + nodeName1 + "' and '" + nodeName2 + "'."
+            );
+        }
+    }
+
+    private Props getProps(NodeConnectionData nodeConn)
+    {
+        try
+        {
+            return nodeConn.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "accessing properties of node connection '" + currentNodeName1.get() + "' <-> '" + currentNodeName2.get() + "'.",
+                ApiConsts.FAIL_ACC_DENIED_NODE_CONN
+            );
+        }
+    }
 }

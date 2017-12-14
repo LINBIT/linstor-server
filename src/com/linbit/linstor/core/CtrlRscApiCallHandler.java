@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -54,24 +55,32 @@ import com.linbit.linstor.security.AccessType;
 import java.io.IOException;
 import java.util.ArrayList;
 
-class CtrlRscApiCallHandler
+class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
-    private final Controller controller;
     private final CtrlSerializer<Resource> serializer;
     private final CtrlListSerializer<Resource.RscApi> rscListSerializer;
-    private final AccessContext apiCtx;
+
+    private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
+    private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
 
     CtrlRscApiCallHandler(
         Controller controllerRef,
         CtrlSerializer<Resource> rscSerializer,
-        CtrlListSerializer<Resource.RscApi> rscListSerializer,
+        CtrlListSerializer<Resource.RscApi> rscListSerializerRef,
         AccessContext apiCtxRef
     )
     {
-        controller = controllerRef;
+        super (
+            controllerRef,
+            apiCtxRef,
+            ApiConsts.MASK_RSC
+        );
+        super.setNullOnAutoClose(
+            currentNodeName,
+            currentRscName
+        );
         serializer = rscSerializer;
-        this.rscListSerializer = rscListSerializer;
-        apiCtx = apiCtxRef;
+        rscListSerializer = rscListSerializerRef;
     }
 
     public ApiCallRc createResource(
@@ -945,6 +954,76 @@ class CtrlRscApiCallHandler
         }
     }
 
+    public ApiCallRc modifyResource(
+        AccessContext accCtx,
+        Peer client,
+        UUID rscUuid,
+        String nodeNameStr,
+        String rscNameStr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.MODIFY,
+                apiCallRc,
+                null,
+                nodeNameStr,
+                rscNameStr
+            );
+        )
+        {
+            ResourceData rsc = loadRsc(nodeNameStr, rscNameStr);
+
+            if (rscUuid != null && !rscUuid.equals(rsc.getUuid()))
+            {
+                addAnswer(
+                    "UUID-check failed",
+                    ApiConsts.FAIL_UUID_RSC
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+
+            Props props = getProps(rsc);
+            Map<String, String> propsMap = props.map();
+
+            propsMap.putAll(overrideProps);
+
+            for (String delKey : deletePropKeys)
+            {
+                propsMap.remove(delKey);
+            }
+
+            commit();
+
+            notifySatellites(accCtx, rsc, apiCallRc); // TODO: update this when reworking APIs
+            reportSuccess("Resource '" + rscNameStr + "' on node '" + nodeNameStr + "' modified.");
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // failure was reported and added to returning apiCallRc
+            // this is only for flow-control.
+        }
+        catch (Exception exc)
+        {
+            asExc(
+                exc,
+                "Modification of a node failed due to an unknown exception.",
+                ApiConsts.FAIL_UNKNOWN_ERROR
+            );
+        }
+        catch (ImplementationError implErr)
+        {
+            asImplError(implErr);
+        }
+
+        return apiCallRc;
+    }
+
     public ApiCallRc deleteResource(
         AccessContext accCtx,
         Peer client,
@@ -1447,6 +1526,103 @@ class CtrlRscApiCallHandler
                     "Read-only NodeData.getInstance threw a dataAlreadyExistsException",
                     dataAlreadyExistsExc
                 )
+            );
+        }
+    }
+
+    private AbsApiCallHandler setCurrent(
+        AccessContext accCtx,
+        Peer peer,
+        ApiCallType type,
+        ApiCallRcImpl apiCallRc,
+        TransactionMgr transMgr,
+        String nodeNameStr,
+        String rscNameStr
+    )
+    {
+        super.setCurrent(accCtx, peer, type, apiCallRc, transMgr);
+        currentNodeName.set(nodeNameStr);
+        currentRscName.set(rscNameStr);
+
+        Map<String, String> objRefs = currentObjRefs.get();
+        objRefs.clear();
+        objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+        Map<String, String> vars = currentVariables.get();
+        vars.clear();
+        vars.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+        vars.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
+
+        return this;
+    }
+
+    @Override
+    protected String getObjectDescription()
+    {
+        return "Node: " + currentNodeName.get() + ", Resource: " + currentRscName.get();
+    }
+
+    @Override
+    protected String getObjectDescriptionInline()
+    {
+        return "resource '" + currentRscName.get() + "' on node '" + currentNodeName.get() + "'";
+    }
+
+    private ResourceData loadRsc(String nodeName, String rscName) throws ApiCallHandlerFailedException
+    {
+        Node node = loadNode(nodeName);
+        ResourceDefinitionData rscDfn = loadRscDfn(rscName);
+
+        try
+        {
+            return ResourceData.getInstance(
+                currentAccCtx.get(),
+                rscDfn,
+                node,
+                null,
+                null,
+                currentTransMgr.get(),
+                false,
+                false
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "loading resource '" + rscName + "' on node '" + nodeName + "'.",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ImplementationError(
+                "Loading a resource caused DataAlreadyExistsException",
+                dataAlreadyExistsExc
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "loading resource '" + rscName + "' on node '" + nodeName + "'."
+            );
+        }
+    }
+
+    private Props getProps(ResourceData rsc)
+    {
+        try
+        {
+            return rsc.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "accessing props for resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
+                rsc.getAssignedNode().getName().displayValue + "'.",
+                ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
     }

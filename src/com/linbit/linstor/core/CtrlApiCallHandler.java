@@ -458,6 +458,64 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
+    /**
+     * Modifies an existing {@link VolumeDefinition}
+     *
+     * @param accCtx
+     * @param client
+     * @param vlmDfnUuid optional, if given checked against persisted UUID
+     * @param rscName required
+     * @param vlmNr required
+     * @param size optional
+     * @param minorNr optional
+     * @param overrideProps optional
+     * @param deletePropKeys optional
+     * @return
+     */
+    public ApiCallRc modifyVlmDfn(
+        AccessContext accCtx,
+        Peer client,
+        UUID vlmDfnUuid,
+        String rscName,
+        int vlmNr,
+        Long size,
+        Integer minorNr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRc apiCallRc;
+
+        if (overrideProps == null)
+        {
+            overrideProps = Collections.emptyMap();
+        }
+        if (deletePropKeys == null)
+        {
+            deletePropKeys = Collections.emptySet();
+        }
+        try
+        {
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = vlmDfnApiCallHandler.modifyVlmDfn(
+                accCtx,
+                client,
+                vlmDfnUuid,
+                rscName,
+                vlmNr,
+                size,
+                minorNr,
+                overrideProps,
+                deletePropKeys
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
     // TODO: deleteVlmDfns
 
     /**
@@ -509,6 +567,60 @@ public class CtrlApiCallHandler
             controller.nodesMapLock.writeLock().unlock();
         }
 
+        return apiCallRc;
+    }
+
+    /**
+     * Modifies an existing {@link Resource}
+     *
+     * @param accCtx
+     * @param client
+     * @param rscUuid optional, if given checked against persisted UUID
+     * @param nodeName required
+     * @param rscName required
+     * @param overrideProps optional
+     * @param deletePropKeys optional
+     * @return
+     */
+    public ApiCallRc modifyRsc(
+        AccessContext accCtx,
+        Peer client,
+        UUID rscUuid,
+        String nodeName,
+        String rscName,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRc apiCallRc;
+
+        if (overrideProps == null)
+        {
+            overrideProps = Collections.emptyMap();
+        }
+        if (deletePropKeys == null)
+        {
+            deletePropKeys = Collections.emptySet();
+        }
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = rscApiCallHandler.modifyResource(
+                accCtx,
+                client,
+                rscUuid,
+                nodeName,
+                rscName,
+                overrideProps,
+                deletePropKeys
+            );
+        }
+        finally
+        {
+            controller.nodesMapLock.writeLock().unlock();
+            controller.rscDfnMapLock.writeLock().unlock();
+        }
         return apiCallRc;
     }
 
@@ -597,6 +709,55 @@ public class CtrlApiCallHandler
                 client,
                 storPoolName,
                 storPoolDfnPropsMap
+            );
+        }
+        finally
+        {
+            controller.storPoolDfnMapLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
+    /**
+     * Modifies an existing {@link StorPoolDefinition}
+     *
+     * @param accCtx
+     * @param client
+     * @param storPoolDfnUuid optional, if given checked against persisted UUID
+     * @param storPoolName required
+     * @param overrideProps optional
+     * @param deletePropKeys optional
+     * @return
+     */
+    public ApiCallRc modifyStorPoolDfn(
+        AccessContext accCtx,
+        Peer client,
+        UUID storPoolDfnUuid,
+        String storPoolName,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRc apiCallRc;
+
+        if (overrideProps == null)
+        {
+            overrideProps = Collections.emptyMap();
+        }
+        if (deletePropKeys == null)
+        {
+            deletePropKeys = Collections.emptySet();
+        }
+        try
+        {
+            controller.storPoolDfnMapLock.writeLock().lock();
+            apiCallRc = storPoolDfnApiCallHandler.modifyStorPoolDfn(
+                accCtx,
+                client,
+                storPoolDfnUuid,
+                storPoolName,
+                overrideProps,
+                deletePropKeys
             );
         }
         finally
@@ -715,6 +876,55 @@ public class CtrlApiCallHandler
     }
 
     /**
+     * Modifies an existing {@link StorPool}
+     *
+     * @param accCtx
+     * @param client
+     * @param storPoolUuid optional, if given checked against persisted UUID
+     * @param nodeName required
+     * @param storPoolName required
+     * @param overrideProps optional
+     * @param deletePropKeys optional
+     * @return
+     */
+    public ApiCallRc modifyStorPool(
+        AccessContext accCtx, Peer client, UUID storPoolUuid, String nodeName, String storPoolName,
+        Map<String, String> overrideProps, Set<String> deletePropKeys
+    )
+    {
+        ApiCallRc apiCallRc;
+
+        if (overrideProps == null)
+        {
+            overrideProps = Collections.emptyMap();
+        }
+        if (deletePropKeys == null)
+        {
+            deletePropKeys = Collections.emptySet();
+        }
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.storPoolDfnMapLock.writeLock().lock();
+            apiCallRc = storPoolApiCallHandler.modifyStorPool(
+                accCtx,
+                client,
+                storPoolUuid,
+                nodeName,
+                storPoolName,
+                overrideProps,
+                deletePropKeys
+            );
+        }
+        finally
+        {
+            controller.nodesMapLock.writeLock().unlock();
+            controller.storPoolDfnMapLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
+    /**
      * Marks the {@link StorPool} for deletion.
      *
      * The {@link StorPool} is only deleted once the corresponding satellite
@@ -787,6 +997,57 @@ public class CtrlApiCallHandler
                 nodeName1,
                 nodeName2,
                 nodeConnPropsMap
+            );
+        }
+        finally
+        {
+            controller.nodesMapLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
+    /**
+     * Modifies an existing {@link NodeConnection}
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeConnUuid optional, if given checks against persisted uuid
+     * @param nodeName1 required
+     * @param nodeName2 required
+     * @param overrideProps optional, can be empty
+     * @param deletePropKeys optional, can be empty
+     * @return
+     */
+    public ApiCallRc modifyNodeConn(
+        AccessContext accCtx,
+        Peer client,
+        UUID nodeConnUuid,
+        String nodeName1,
+        String nodeName2,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        if (overrideProps == null)
+        {
+            overrideProps = Collections.emptyMap();
+        }
+        if (deletePropKeys == null)
+        {
+            deletePropKeys = Collections.emptySet();
+        }
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            apiCallRc = nodeConnApiCallHandler.modifyNodeConnection(
+                accCtx,
+                client,
+                nodeConnUuid,
+                nodeName1,
+                nodeName2,
+                overrideProps,
+                deletePropKeys
             );
         }
         finally
@@ -872,6 +1133,62 @@ public class CtrlApiCallHandler
         {
             controller.rscDfnMapLock.writeLock().unlock();
             controller.nodesMapLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
+    /**
+     * Modifies an existing {@link ResourceConnection}
+     * @param accCtx
+     * @param client
+     * @param rscConnUuid optional, if given checked against persisted UUID
+     * @param nodeName1 required
+     * @param nodeName2 required
+     * @param rscName required
+     * @param overrideProps optional
+     * @param deletePropKeys optional
+     * @return
+     */
+    public ApiCallRc modifyRscConn(
+        AccessContext accCtx,
+        Peer client,
+        UUID rscConnUuid,
+        String nodeName1,
+        String nodeName2,
+        String rscName,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRc apiCallRc;
+
+        if (overrideProps == null)
+        {
+            overrideProps = Collections.emptyMap();
+        }
+        if (deletePropKeys == null)
+        {
+            deletePropKeys = Collections.emptySet();
+        }
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = rscConnApiCallHandler.modifyRscConnection(
+                accCtx,
+                client,
+                rscConnUuid,
+                nodeName1,
+                nodeName2,
+                rscName,
+                overrideProps,
+                deletePropKeys
+            );
+        }
+        finally
+        {
+            controller.nodesMapLock.writeLock().unlock();
+            controller.rscDfnMapLock.writeLock().unlock();
         }
         return apiCallRc;
     }

@@ -89,6 +89,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     )
     {
         super(controllerRef, apiCtxRef, ApiConsts.MASK_RSC_DFN);
+        super.setNullOnAutoClose(currentRscNameStr);
         rscSerializer = rscSerializerRef;
         rscDfnListSerializer = rscDfnListSerializerRef;
     }
@@ -158,6 +159,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             rscDfn.setConnection(transMgr); // in case we will create vlmDfns
             rscDfn.getProps(accCtx).map().putAll(props);
 
+            List<VolumeDefinitionData> createdVlmDfns = new ArrayList<>();
+
             for (VolumeDefinition.VlmDfnApi vlmDfnApi : volDescrMap)
             {
                 currentVlmDfnApi = vlmDfnApi;
@@ -189,28 +192,30 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 );
                 vlmDfn.setConnection(transMgr);
                 vlmDfn.getProps(accCtx).map().putAll(vlmDfnApi.getProps());
+
+                createdVlmDfns.add(vlmDfn);
             }
 
             transMgr.commit(); // sqlExc4
 
             controller.rscDfnMap.put(rscDfn.getName(), rscDfn);
 
-            for (VolumeDefinition.VlmDfnApi volCrtData : volDescrMap)
+            for (VolumeDefinitionData vlmDfn : createdVlmDfns)
             {
                 ApiCallRcEntry volSuccessEntry = new ApiCallRcEntry();
                 volSuccessEntry.setReturnCode(ApiConsts.RC_VLM_DFN_CREATED);
                 String successMessage = String.format(
                     "Volume definition with number '%d' successfully " +
                         " created in resource definition '%s'.",
-                    volCrtData.getVolumeNr(),
+                    vlmDfn.getVolumeNumber().value,
                     rscNameStr
                 );
                 volSuccessEntry.setMessageFormat(successMessage);
                 volSuccessEntry.putVariable(KEY_RSC_DFN, rscNameStr);
-                volSuccessEntry.putVariable(KEY_VLM_NR, Integer.toString(volCrtData.getVolumeNr()));
-                volSuccessEntry.putVariable(KEY_MINOR_NR, Integer.toString(volCrtData.getMinorNr()));
+                volSuccessEntry.putVariable(KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+                volSuccessEntry.putVariable(KEY_MINOR_NR, Integer.toString(vlmDfn.getMinorNr(apiCtx).value));
                 volSuccessEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                volSuccessEntry.putObjRef(KEY_VLM_NR, Integer.toString(volCrtData.getVolumeNr()));
+                volSuccessEntry.putObjRef(KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
                 apiCallRc.addEntry(volSuccessEntry);
 
@@ -586,6 +591,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             )
         )
         {
+            requireRscDfnMapChangeAccess();
+
             ResourceName rscName = toRscName(rscNameStr);
             ResourceDefinitionData rscDfn = loadRscDfn(rscName);
             if (rscDfnUuid != null && !rscDfnUuid.equals(rscDfn.getUuid()))
@@ -614,8 +621,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 }
             }
 
+            commit();
+
             notifySatellites(rscDfn);
-            success("Resource definition '" + rscNameStr + "' modified.");
+            reportSuccess("Resource definition '" + rscNameStr + "' modified.");
         }
         catch (ApiCallHandlerFailedException ignore)
         {
@@ -640,6 +649,25 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    private void requireRscDfnMapChangeAccess()
+    {
+        try
+        {
+            controller.rscDfnMapProt.requireAccess(
+                currentAccCtx.get(),
+                AccessType.CHANGE
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "change any resource definitions.",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
     }
 
     public ApiCallRc deleteResourceDefinition(AccessContext accCtx, Peer client, String rscNameStr)
@@ -1039,50 +1067,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         return ret;
     }
 
-    @Override
-    protected TransactionMgr createNewTransMgr() throws ApiCallHandlerFailedException
-    {
-        try
-        {
-            return new TransactionMgr(controller.dbConnPool);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw sqlExc(
-                sqlExc,
-                "create a transaction manager"
-            );
-        }
-    }
-
-    @Override
-    protected void rollbackIfDirty()
-    {
-        TransactionMgr transMgr = currentTransMgr.get();
-        if (transMgr != null)
-        {
-            if (transMgr.isDirty())
-            {
-                // not committed -> error occurred
-                try
-                {
-                    transMgr.rollback();
-                }
-                catch (SQLException sqlExc)
-                {
-                    report(
-                        sqlExc,
-                        "A database error occured while trying to rollback the " +
-                        getAction("creation", "deletion", "modification") +
-                        " of resource definition '" + currentRscNameStr.get() + "'.",
-                        ApiConsts.FAIL_SQL_ROLLBACK
-                    );
-                }
-            }
-            controller.dbConnPool.returnConnection(transMgr);
-        }
-    }
-
     private AbsApiCallHandler setCurrent(
         AccessContext accCtx,
         Peer peer,
@@ -1107,14 +1091,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         return this;
     }
 
-    @Override
-    public void close() throws Exception
-    {
-        super.close();
-        currentRscNameStr.set(null);
-    }
-
-
     private ResourceName toRscName(String rscNameStr)
     {
         try
@@ -1132,43 +1108,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private ResourceDefinitionData loadRscDfn(ResourceName rscName)
-    {
-        try
-        {
-            return ResourceDefinitionData.getInstance(
-                currentAccCtx.get(),
-                rscName,
-                null, // port only needed if we want to persist this entry
-                null, // rscFlags only needed if we want to persist this entry
-                null, // secret only needed if we want to persist this object
-                null, // transportType only needed if we want to persist this object
-                currentTransMgr.get(),
-                false,
-                false
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw accDeniedExc(
-                accDeniedExc,
-                "load resource definition '" + rscName.displayValue + "'.",
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(
-                "Loading resource definition caused DataAlreadyExistsExc.",
-                dataAlreadyExistsExc
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw sqlExc(sqlExc, "loading resource definition '" + rscName.displayValue + "'.");
-        }
-    }
-
     private TcpPortNumber toTcpPort(int port)
     {
         try
@@ -1177,7 +1116,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
         catch (ValueOutOfRangeException e)
         {
-            throw exc(
+            throw asExc(
                 e,
                 "The given port number '" + port + "' is not valid.",
                 ApiConsts.FAIL_INVLD_RSC_PORT
@@ -1193,12 +1132,22 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw accDeniedExc(
+            throw asAccDeniedExc(
                 accDeniedExc,
                 "access resource definition '" + rscDfn.getName().displayValue +
                 "'s properties",
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
+    }
+
+    @Override
+    protected String getObjectDescription() {
+        return "Resource definition: " + currentRscNameStr.get();
+    }
+
+    @Override
+    protected String getObjectDescriptionInline() {
+        return "resource definition: '" + currentRscNameStr.get() + "'";
     }
 }

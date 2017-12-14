@@ -1,9 +1,10 @@
 package com.linbit.linstor.core;
 
-import static com.linbit.linstor.api.ApiConsts.*;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -18,20 +19,29 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import java.io.IOException;
 import java.util.ArrayList;
 
-class CtrlStorPoolDfnApiCallHandler
+class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 {
-    private Controller controller;
-    final private CtrlListSerializer listSerializer;
+    private final CtrlListSerializer<StorPoolDefinitionData.StorPoolDfnApi> listSerializer;
+    private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
 
-    CtrlStorPoolDfnApiCallHandler(Controller controllerRef, CtrlListSerializer storPoolDfnSerializer)
+    CtrlStorPoolDfnApiCallHandler(
+        Controller controllerRef,
+        CtrlListSerializer<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfnSerializer
+    )
     {
-        controller = controllerRef;
+        super(
+            controllerRef,
+            null, // apiCtx
+            ApiConsts.MASK_STOR_POOL_DFN
+        );
+        super.setNullOnAutoClose(currentStorPoolNameStr);
         listSerializer = storPoolDfnSerializer;
     }
 
@@ -71,7 +81,7 @@ class CtrlStorPoolDfnApiCallHandler
                 storPoolNameStr
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_CREATED);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_CREATED);
             entry.setMessageFormat(successMessage);
             entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
             entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
@@ -94,10 +104,10 @@ class CtrlStorPoolDfnApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_CRT_FAIL_SQL);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_CRT_FAIL_SQL);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(sqlExc.getMessage());
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+            entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -117,11 +127,11 @@ class CtrlStorPoolDfnApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_CRT_FAIL_ACC_DENIED_STOR_POOL_DFN);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_CRT_FAIL_ACC_DENIED_STOR_POOL_DFN);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(accDeniedExc.getMessage());
-            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+            entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -138,11 +148,11 @@ class CtrlStorPoolDfnApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_CRT_FAIL_INVLD_STOR_POOL_NAME);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_CRT_FAIL_INVLD_STOR_POOL_NAME);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(invalidNameExc.getMessage());
-            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+            entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -159,11 +169,11 @@ class CtrlStorPoolDfnApiCallHandler
                 errorMsg
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_CRT_FAIL_EXISTS_STOR_POOL_DFN);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_CRT_FAIL_EXISTS_STOR_POOL_DFN);
             entry.setMessageFormat(errorMsg);
             entry.setCauseFormat(alreadyExistsExc.getMessage());
-            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+            entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
             apiCallRc.addEntry(entry);
         }
         catch (Exception | ImplementationError exc)
@@ -180,11 +190,11 @@ class CtrlStorPoolDfnApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_CRT_FAIL_UNKNOWN_ERROR);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_CRT_FAIL_UNKNOWN_ERROR);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(exc.getMessage());
-            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+            entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -212,7 +222,7 @@ class CtrlStorPoolDfnApiCallHandler
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(RC_STOR_POOL_DFN_CRT_FAIL_SQL_ROLLBACK);
+                    entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_CRT_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
                     entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
@@ -224,6 +234,95 @@ class CtrlStorPoolDfnApiCallHandler
             controller.dbConnPool.returnConnection(transMgr);
         }
         return apiCallRc;
+    }
+
+    public ApiCallRc modifyStorPoolDfn(
+        AccessContext accCtx,
+        Peer client,
+        UUID storPoolDfnUuid,
+        String storPoolNameStr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.MODIFY,
+                apiCallRc,
+                null,
+                storPoolNameStr
+            );
+        )
+        {
+            requireStorPoolDfnChangeAccess();
+            StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr);
+
+            if (storPoolDfnUuid != null && !storPoolDfnUuid.equals(storPoolDfn.getUuid()))
+            {
+                addAnswer(
+                    "UUID-check failed",
+                    ApiConsts.FAIL_UUID_STOR_POOL_DFN
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+
+            Props props = getProps(storPoolDfn);
+            Map<String, String> propsMap = props.map();
+
+            propsMap.putAll(overrideProps);
+
+            for (String delKey : deletePropKeys)
+            {
+                propsMap.remove(delKey);
+            }
+
+            commit();
+
+            // TODO update satellites
+            reportSuccess("Storage pool definition '" + storPoolNameStr + "' updated.");
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // failure was reported and added to returning apiCallRc
+            // this is only for flow-control.
+        }
+        catch (Exception exc)
+        {
+            asExc(
+                exc,
+                "Modifying storage pool definition '" + storPoolNameStr + "' failed due to an unknown exception.",
+                ApiConsts.FAIL_UNKNOWN_ERROR
+            );
+        }
+        catch (ImplementationError implErr)
+        {
+            asImplError(implErr);
+        }
+
+        return apiCallRc;
+    }
+
+    private void requireStorPoolDfnChangeAccess()
+    {
+        try
+        {
+            controller.storPoolDfnMapProt.requireAccess(
+                currentAccCtx.get(),
+                AccessType.CHANGE
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "change any storage definitions pools.",
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
+            );
+        }
     }
 
     public ApiCallRc deleteStorPoolDfn(AccessContext accCtx, Peer client, String storPoolNameStr)
@@ -250,15 +349,15 @@ class CtrlStorPoolDfnApiCallHandler
             if (storPoolDefinitionData == null)
             {
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_WARN_NOT_FOUND);
+                entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_DEL_WARN_NOT_FOUND);
                 entry.setMessageFormat(
                     String.format(
                         "Storage pool definition '%s' was not deleted as it was not found",
                         storPoolNameStr
                     )
                 );
-                entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
-                entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
+                entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
+                entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
                 apiCallRc.addEntry(entry);
             }
             else
@@ -274,7 +373,7 @@ class CtrlStorPoolDfnApiCallHandler
                     storPoolNameStr
                 );
                 ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_STOR_POOL_DFN_DELETED);
+                entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_DELETED);
                 entry.setMessageFormat(successMessage);
                 entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
                 entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
@@ -297,10 +396,10 @@ class CtrlStorPoolDfnApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_FAIL_SQL);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_DEL_FAIL_SQL);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(sqlExc.getMessage());
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+            entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -320,11 +419,11 @@ class CtrlStorPoolDfnApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_FAIL_ACC_DENIED_STOR_POOL_DFN);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_DEL_FAIL_ACC_DENIED_STOR_POOL_DFN);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(accDeniedExc.getMessage());
-            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+            entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -341,11 +440,11 @@ class CtrlStorPoolDfnApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_FAIL_INVLD_STOR_POOL_NAME);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_DEL_FAIL_INVLD_STOR_POOL_NAME);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(invalidNameExc.getMessage());
-            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+            entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -363,7 +462,7 @@ class CtrlStorPoolDfnApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_FAIL_IMPL_ERROR);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_DEL_FAIL_IMPL_ERROR);
             entry.setMessageFormat(
                 String.format(
                     "Failed to delete the storage pool definition '%s' due to an implementation error.",
@@ -371,8 +470,8 @@ class CtrlStorPoolDfnApiCallHandler
                 )
             );
             entry.setCauseFormat(dataAlreadyExistsExc.getMessage());
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
-            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
+            entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -390,11 +489,11 @@ class CtrlStorPoolDfnApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_FAIL_UNKNOWN_ERROR);
+            entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_DEL_FAIL_UNKNOWN_ERROR);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(exc.getMessage());
-            entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-            entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+            entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
+            entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -423,11 +522,11 @@ class CtrlStorPoolDfnApiCallHandler
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(RC_STOR_POOL_DFN_DEL_FAIL_SQL_ROLLBACK);
+                    entry.setReturnCodeBit(ApiConsts.RC_STOR_POOL_DFN_DEL_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
-                    entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-                    entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
+                    entry.putVariable(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
+                    entry.putObjRef(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
 
                     apiCallRc.addEntry(entry);
                 }
@@ -475,5 +574,56 @@ class CtrlStorPoolDfnApiCallHandler
         }
 
         return null;
+    }
+
+    protected AbsApiCallHandler setCurrent(
+        AccessContext accCtx,
+        Peer peer,
+        ApiCallType type,
+        ApiCallRcImpl apiCallRc,
+        TransactionMgr transMgr,
+        String storPoolNameStr
+    )
+    {
+        super.setCurrent(accCtx, peer, type, apiCallRc, transMgr);
+
+        currentStorPoolNameStr.set(storPoolNameStr);
+
+        Map<String, String> objRefs = currentObjRefs.get();
+        objRefs.clear();
+        objRefs.put(ApiConsts.KEY_STOR_POOL_DFN, storPoolNameStr);
+        Map<String, String> vars = currentVariables.get();
+        vars.clear();
+        vars.put(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr);
+
+        return this;
+    }
+
+    @Override
+    protected String getObjectDescription()
+    {
+        return "Storage pool definition: " + currentStorPoolNameStr.get();
+    }
+
+    @Override
+    protected String getObjectDescriptionInline()
+    {
+        return "storage pool definition '" + currentStorPoolNameStr.get() + "'";
+    }
+
+    private Props getProps(StorPoolDefinitionData storPoolDfn)
+    {
+        try
+        {
+            return storPoolDfn.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "accessing properties of storage pool definition '" + storPoolDfn.getName().displayValue + "'.",
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
+            );
+        }
     }
 }

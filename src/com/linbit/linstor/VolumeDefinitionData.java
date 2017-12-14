@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -180,7 +181,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         ResourceDefinition resDfn,
         VolumeNumber volNr,
         MinorNumber minor,
-        long volSize,
+        Long volSize,
         VlmDfnFlags[] initFlags,
         TransactionMgr transMgr,
         boolean createIfNotExists,
@@ -347,6 +348,13 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         volumes.remove(getResourceId(volumeData.getResource()));
+    }
+
+    @Override
+    public Iterator<Volume> iterateVolumes(AccessContext accCtx) throws AccessDeniedException
+    {
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return volumes.values().iterator();
     }
 
     private String getResourceId(Resource rsc)

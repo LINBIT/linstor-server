@@ -9,6 +9,7 @@ import com.linbit.linstor.stateflags.StateFlags;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -41,6 +42,9 @@ public interface VolumeDefinition extends TransactionObject
         throws AccessDeniedException;
 
     public StateFlags<VlmDfnFlags> getFlags();
+
+    public Iterator<Volume> iterateVolumes(AccessContext accCtx)
+        throws AccessDeniedException;
 
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;

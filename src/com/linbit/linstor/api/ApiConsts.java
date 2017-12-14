@@ -2670,10 +2670,16 @@ public class ApiConsts
      * Modify object APIs
      */
     public static final String API_MOD_NODE = "ModNode";
+    public static final String API_MOD_NODE_CONN = "ModNodeConn";
     public static final String API_MOD_RSC = "ModRsc";
+    public static final String API_MOD_RSC_CONN = "ModRscConn";
     public static final String API_MOD_RSC_DFN = "ModRscDfn";
     public static final String API_MOD_NET_IF = "ModNetIf";
+    public static final String API_MOD_STOR_POOL = "ModStorPool";
+    public static final String API_MOD_STOR_POOL_DFN = "ModStorPoolDfn";
     public static final String API_MOD_VLM_DFN = "ModVlmDfn";
+    public static final String API_MOD_VLM = "ModVlm";
+    public static final String API_MOD_VLM_CONN = "ModVlmConn";
     public static final String API_MOD_SNPSHT = "ModSnpsht";
 
     /*

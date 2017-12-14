@@ -29,7 +29,7 @@ public class ConnectionPropsTest extends DerbyBase
     private NodeId nodeId2;
     private VolumeNumber volNr;
     private MinorNumber minor;
-    private int volSize;
+    private long volSize;
     private String blockDev1;
     private String metaDisk1;
     private String blockDev2;

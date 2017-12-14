@@ -4,6 +4,8 @@ import static com.linbit.linstor.api.ApiConsts.*;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -11,6 +13,7 @@ import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnectionData;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionData;
@@ -20,16 +23,28 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-class CtrlRscConnectionApiCallHandler
+class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 {
-    private Controller controller;
+    private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
+    private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
+    private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
 
     CtrlRscConnectionApiCallHandler(Controller controllerRef)
     {
-        controller = controllerRef;
+        super (
+            controllerRef,
+            null, // apiCtx,
+            ApiConsts.MASK_RSC_CONN
+        );
+        super.setNullOnAutoClose(
+            currentNodeName1,
+            currentNodeName2,
+            currentRscName
+        );
     }
 
     public ApiCallRc createResourceConnection(
@@ -506,6 +521,67 @@ class CtrlRscConnectionApiCallHandler
             }
             controller.dbConnPool.returnConnection(transMgr);
         }
+        return apiCallRc;
+    }
+
+    public ApiCallRc modifyRscConnection(
+        AccessContext accCtx,
+        Peer client,
+        UUID rscConnUuid,
+        String nodeName1,
+        String nodeName2,
+        String rscNameStr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.MODIFY,
+                apiCallRc,
+                null, // new transMgr
+                nodeName1,
+                nodeName2,
+                rscNameStr
+            );
+        )
+        {
+            ResourceConnectionData rscConn = loadRscConn(nodeName1, nodeName2, rscNameStr);
+
+            if (rscConnUuid != null && !rscConnUuid.equals(rscConn.getUuid()))
+            {
+                addAnswer(
+                    "UUID-check failed",
+                    ApiConsts.FAIL_UUID_RSC_CONN
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+
+            Props props = getProps(rscConn);
+            Map<String, String> propsMap = props.map();
+
+            propsMap.putAll(overrideProps);
+
+            for (String delKey : deletePropKeys)
+            {
+                propsMap.remove(delKey);
+            }
+
+            commit();
+
+            // TODO update satellites
+            reportSuccess(getObjectDescription() + " updated.");
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // failure was reported and added to returning apiCallRc
+            // this is only for flow-control.
+        }
+
         return apiCallRc;
     }
 
@@ -1012,4 +1088,129 @@ class CtrlRscConnectionApiCallHandler
         return apiCallRc;
     }
 
+    private AbsApiCallHandler setCurrent(
+        AccessContext accCtx,
+        Peer peer,
+        ApiCallType type,
+        ApiCallRcImpl apiCallRc,
+        TransactionMgr transMgr,
+        String nodeName1,
+        String nodeName2,
+        String rscNameStr
+    )
+    {
+        super.setCurrent(accCtx, peer, type, apiCallRc, transMgr);
+
+        currentNodeName1.set(nodeName1);
+        currentNodeName2.set(nodeName2);
+        currentRscName.set(rscNameStr);
+
+        Map<String, String> objRefs = currentObjRefs.get();
+        objRefs.clear();
+        objRefs.put(ApiConsts.KEY_1ST_NODE, nodeName1);
+        objRefs.put(ApiConsts.KEY_2ND_NODE, nodeName2);
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+        Map<String, String> vars = currentVariables.get();
+        vars.clear();
+        vars.put(ApiConsts.KEY_1ST_NODE_NAME, nodeName1);
+        vars.put(ApiConsts.KEY_2ND_NODE_NAME, nodeName2);
+        vars.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
+
+        return this;
+    }
+
+    @Override
+    protected String getObjectDescription()
+    {
+        return "Resource connection between nodes " + currentNodeName1.get() + " and " +
+            currentNodeName2.get() + " for resource " + currentRscName.get();
+    }
+
+    @Override
+    protected String getObjectDescriptionInline()
+    {
+        return "resource connection between nodes '" + currentNodeName1.get() + "' and '" +
+            currentNodeName2.get() + "' for resource '" + currentRscName.get() + "'";
+    }
+
+    private ResourceConnectionData loadRscConn(
+        String nodeName1,
+        String nodeName2,
+        String rscNameStr
+    )
+        throws ApiCallHandlerFailedException
+    {
+        NodeData node1 = loadNode(nodeName1);
+        NodeData node2 = loadNode(nodeName2);
+        ResourceName rscName = asRscName(rscNameStr);
+
+        Resource rsc1 = loadRsc(node1, rscName);
+        Resource rsc2 = loadRsc(node2, rscName);
+
+        try
+        {
+            return ResourceConnectionData.getInstance(
+                currentAccCtx.get(),
+                rsc1,
+                rsc2,
+                currentTransMgr.get(),
+                false,
+                false
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "loading " + getObjectDescription() + ".",
+                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw asImplError(dataAlreadyExistsExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "loading " + getObjectDescription()
+            );
+        }
+    }
+
+    private Resource loadRsc(NodeData node, ResourceName rscName) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return node.getResource(
+                currentAccCtx.get(),
+                rscName
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "loading resource '" + rscName.displayValue + "' from node '" + node.getName().displayValue + "'.",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+    }
+
+    private Props getProps(ResourceConnectionData rscConn) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return rscConn.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "accessing properties of " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
+            );
+        }
+    }
 }

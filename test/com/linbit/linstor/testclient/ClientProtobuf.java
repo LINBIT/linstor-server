@@ -50,8 +50,14 @@ import com.linbit.linstor.proto.MsgDelStorPoolDfnOuterClass.MsgDelStorPoolDfn;
 import com.linbit.linstor.proto.MsgDelStorPoolOuterClass.MsgDelStorPool;
 import com.linbit.linstor.proto.MsgDelVlmConnOuterClass.MsgDelVlmConn;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
+import com.linbit.linstor.proto.MsgModNodeConnOuterClass.MsgModNodeConn;
 import com.linbit.linstor.proto.MsgModNodeOuterClass.MsgModNode;
+import com.linbit.linstor.proto.MsgModRscConnOuterClass.MsgModRscConn;
 import com.linbit.linstor.proto.MsgModRscDfnOuterClass.MsgModRscDfn;
+import com.linbit.linstor.proto.MsgModRscOuterClass.MsgModRsc;
+import com.linbit.linstor.proto.MsgModStorPoolDfnOuterClass.MsgModStorPoolDfn;
+import com.linbit.linstor.proto.MsgModStorPoolOuterClass.MsgModStorPool;
+import com.linbit.linstor.proto.MsgModVlmDfnOuterClass.MsgModVlmDfn;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.SatelliteConnectionOuterClass;
@@ -247,57 +253,57 @@ public class ClientProtobuf implements Runnable
                     callback(protoHeader.getMsgId(), retCode, message, cause, correction,
                         details, objRefsMap, variablesMap);
 
-                    sb.append("Response ")
+                    sb.append("   Response ")
                         .append(responseIdx++)
-                        .append(": \n   RetCode   : ");
+                        .append(": \n      RetCode   : ");
                     decodeRetValue(sb, retCode);
                     if (message != null && !"".equals(message))
                     {
-                        sb.append("\n   Message   : ").append(format(message));
+                        sb.append("\n      Message   : ").append(format(message));
                     }
                     if (details != null && !"".equals(details))
                     {
-                        sb.append("\n   Details   : ").append(format(details));
+                        sb.append("\n      Details   : ").append(format(details));
                     }
                     if (cause != null && !"".equals(cause))
                     {
-                        sb.append("\n   Cause     : ").append(format(cause));
+                        sb.append("\n      Cause     : ").append(format(cause));
                     }
                     if (correction != null && !"".equals(correction))
                     {
-                        sb.append("\n   Correction: ").append(format(correction));
+                        sb.append("\n      Correction: ").append(format(correction));
                     }
                     if (objRefsMap != null && !objRefsMap.isEmpty())
                     {
-                        sb.append("\n   ObjRefs: ");
+                        sb.append("\n      ObjRefs: ");
                         for (Entry<String, String> entry : objRefsMap.entrySet())
                         {
-                            sb.append("\n      ").append(entry.getKey()).append("=").append(entry.getValue());
+                            sb.append("\n         ").append(entry.getKey()).append("=").append(entry.getValue());
                         }
                     }
                     else
                     {
                         if (retCode == ApiConsts.UNKNOWN_API_CALL)
                         {
-                            sb.append("\n   No ObjRefs");
+                            sb.append("\n      No ObjRefs");
                         }
                         else
                         {
-                            sb.append("\n   No ObjRefs defined! Report this to the dev - this should not happen!");
+                            sb.append("\n      No ObjRefs defined! Report this to the dev - this should not happen!");
                         }
 
                     }
                     if (variablesMap != null && !variablesMap.isEmpty())
                     {
-                        sb.append("\n   Variables: ");
+                        sb.append("\n      Variables: ");
                         for (Entry<String, String> entry : variablesMap.entrySet())
                         {
-                            sb.append("\n      ").append(entry.getKey()).append("=").append(entry.getValue());
+                            sb.append("\n         ").append(entry.getKey()).append("=").append(entry.getValue());
                         }
                     }
                     else
                     {
-                        sb.append("\n   No Variables");
+                        sb.append("\n      No Variables");
                     }
                     sb.append("\n");
                 }
@@ -433,6 +439,10 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    /*
+     * Node messages
+     */
+
     public int sendCreateNode(
         String nodeName,
         String nodeType,
@@ -484,6 +494,7 @@ public class ClientProtobuf implements Runnable
     }
 
     public int sendModifyNode(
+        UUID uuid,
         String nodeName,
         String typeName,
         Map<String, String> overrideProps,
@@ -494,6 +505,10 @@ public class ClientProtobuf implements Runnable
         int msgId = this.msgId.incrementAndGet();
         MsgModNode.Builder msgBuilder = MsgModNode.newBuilder()
             .setNodeName(nodeName);
+        if (uuid != null)
+        {
+            msgBuilder.setNodeUuid(uuid.toString());
+        }
         if (typeName != null)
         {
             msgBuilder.setNodeType(typeName);
@@ -527,6 +542,12 @@ public class ClientProtobuf implements Runnable
         );
         return msgId;
     }
+
+
+    /*
+     * Resource definition messages
+     */
+
 
     public int sendCreateRscDfn(
         String resName,
@@ -607,6 +628,10 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    /*
+     * StorPoolDefinition messages
+     */
+
     public int sendCreateStorPoolDfn(String storPoolName) throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
@@ -616,6 +641,37 @@ public class ClientProtobuf implements Runnable
             MsgCrtStorPoolDfn.newBuilder().
                 setStorPoolName(storPoolName).
                 build()
+        );
+        return msgId;
+    }
+
+    public int sendModifyStorPoolDfn(
+        UUID storPoolUuid,
+        String storPoolName,
+        Map<String, String> overrideProps,
+        Set<String> delPropKeys
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgModStorPoolDfn.Builder builder = MsgModStorPoolDfn.newBuilder()
+            .setStorPoolName(storPoolName);
+        if (storPoolUuid != null)
+        {
+            builder.setStorPoolDfnUuid(storPoolUuid.toString());
+        }
+        if (overrideProps != null)
+        {
+            builder.addAllOverrideProps(asLinStorMapEntryList(overrideProps));
+        }
+        if (delPropKeys != null)
+        {
+            builder.addAllDeletePropKeys(delPropKeys);
+        }
+        send(
+            msgId,
+            API_MOD_STOR_POOL_DFN,
+            builder.build()
         );
         return msgId;
     }
@@ -633,6 +689,10 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    /*
+     * StorPool messages
+     */
+
     public int sendCreateStorPool(String nodeName, String storPoolName, String driver) throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
@@ -648,6 +708,43 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    public int sendModifyStorPool(
+        UUID uuid,
+        String nodeName,
+        String storPoolName,
+        Map<String, String> overrideProps,
+        Set<String> delPropKeys
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+
+        MsgModStorPool.Builder builder = MsgModStorPool.newBuilder()
+            .setNodeName(nodeName)
+            .setStorPoolName(storPoolName);
+
+        if (uuid != null)
+        {
+            builder.setStorPoolUuid(uuid.toString());
+        }
+        if (overrideProps != null)
+        {
+            builder.addAllOverrideProps(asLinStorMapEntryList(overrideProps));
+        }
+        if (delPropKeys != null)
+        {
+            builder.addAllDeletePropKeys(delPropKeys);
+        }
+
+        send(
+            msgId,
+            API_MOD_STOR_POOL,
+            builder.build()
+        );
+        return msgId;
+    }
+
+
     public int sendDeleteStorPool(String nodeName, String storPoolName) throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
@@ -661,6 +758,10 @@ public class ClientProtobuf implements Runnable
         );
         return msgId;
     }
+
+    /*
+     * Resource messages
+     */
 
     public int sendCreateRsc(
         String nodeName,
@@ -690,6 +791,41 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    public int sendModifyRsc(
+        UUID uuid,
+        String nodeName,
+        String rscName,
+        Map<String, String> overrideProps,
+        Set<String> delPropKeys
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgModRsc.Builder builder = MsgModRsc.newBuilder()
+            .setNodeName(nodeName)
+            .setRscName(rscName);
+
+        if (uuid != null)
+        {
+            builder.setRscUuid(uuid.toString());
+        }
+        if (overrideProps != null)
+        {
+            builder.addAllOverrideProps(asLinStorMapEntryList(overrideProps));
+        }
+        if (delPropKeys != null)
+        {
+            builder.addAllDeletePropKeys(delPropKeys);
+        }
+        send
+        (
+            msgId,
+            API_MOD_RSC,
+            builder.build()
+        );
+        return msgId;
+    }
+
     public int sendDeleteRsc(String nodeName, String resName) throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
@@ -703,6 +839,10 @@ public class ClientProtobuf implements Runnable
         );
         return msgId;
     }
+
+    /*
+     * Volume definition messages
+     */
 
     public int sendCreateVlmDfn(String rscName, List<? extends VlmDfn> vlmDfns) throws IOException
     {
@@ -718,6 +858,54 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    public int sendModifyVlmDfn(
+        UUID uuid,
+        String rscName,
+        int vlmNr,
+        Integer minorNr,
+        Long size,
+        Map<String, String> overrideProps,
+        Set<String> delPropKeys
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgModVlmDfn.Builder builder = MsgModVlmDfn.newBuilder()
+            .setRscName(rscName)
+            .setVlmNr(vlmNr);
+
+        if (uuid != null)
+        {
+            builder.setVlmDfnUuid(uuid.toString());
+        }
+        if (minorNr != null)
+        {
+            builder.setVlmMinor(minorNr);
+        }
+        if (size != null)
+        {
+            builder.setVlmSize(size);
+        }
+        if (overrideProps != null)
+        {
+            builder.addAllOverrideProps(asLinStorMapEntryList(overrideProps));
+        }
+        if (delPropKeys != null)
+        {
+            builder.addAllDeletePropKeys(delPropKeys);
+        }
+        send
+        (
+            msgId,
+            API_MOD_VLM_DFN,
+            builder.build()
+        );
+        return msgId;
+    }
+
+    /*
+     * Node connection messages
+     */
 
     public int sendCreateNodeConn(String nodeName1, String nodeName2, Map<String, String> props)
         throws IOException
@@ -738,6 +926,41 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    public int sendModifyNodeConn(
+        UUID uuid,
+        String nodeName1,
+        String nodeName2,
+        Map<String, String> overrideProps,
+        Set<String> delPropKeys
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgModNodeConn.Builder builder = MsgModNodeConn.newBuilder()
+            .setNode1Name(nodeName1)
+            .setNode2Name(nodeName2);
+
+        if (uuid != null)
+        {
+            builder.setNodeConnUuid(uuid.toString());
+        }
+        if (overrideProps != null)
+        {
+            builder.addAllOverrideProps(asLinStorMapEntryList(overrideProps));
+        }
+        if (delPropKeys != null)
+        {
+            builder.addAllDeletePropKeys(delPropKeys);
+        }
+        send
+        (
+            msgId,
+            API_MOD_NODE_CONN,
+            builder.build()
+        );
+        return msgId;
+    }
+
     public int sendDeleteNodeConn(String nodeName1, String nodeName2)
         throws IOException
     {
@@ -752,6 +975,10 @@ public class ClientProtobuf implements Runnable
         );
         return msgId;
     }
+
+    /*
+     * Resuorce connection messages
+     */
 
     public int sendCreateRscConn(String nodeName1, String NodeName2, String rscName, Map<String, String> props)
         throws IOException
@@ -773,6 +1000,43 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
+    public int sendModifyRscConn(
+        UUID uuid,
+        String nodeName1,
+        String nodeName2,
+        String rscName,
+        Map<String, String> overrideProps,
+        Set<String> delPropKeys
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgModRscConn.Builder builder = MsgModRscConn.newBuilder()
+            .setNode1Name(nodeName1)
+            .setNode2Name(nodeName2)
+            .setRscName(rscName);
+
+        if (uuid != null)
+        {
+            builder.setRscConnUuid(uuid.toString());
+        }
+        if (overrideProps != null)
+        {
+            builder.addAllOverrideProps(asLinStorMapEntryList(overrideProps));
+        }
+        if (delPropKeys != null)
+        {
+            builder.addAllDeletePropKeys(delPropKeys);
+        }
+        send
+        (
+            msgId,
+            API_MOD_RSC_CONN,
+            builder.build()
+        );
+        return msgId;
+    }
+
     public int sendDeleteRscConn(String nodeName1, String NodeName2, String rscName)
         throws IOException
     {
@@ -788,6 +1052,10 @@ public class ClientProtobuf implements Runnable
         );
         return msgId;
     }
+
+    /*
+     * Volume connection message
+     */
 
     public int sendCreateVlmConn(
         String nodeName1,

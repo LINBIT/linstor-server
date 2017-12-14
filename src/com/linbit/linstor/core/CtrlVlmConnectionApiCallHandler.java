@@ -175,7 +175,7 @@ class CtrlVlmConnectionApiCallHandler
                     rscDfn,
                     vlmNr,
                     null,  // minorNumber only needed if we want to persist this entry
-                    0,     // size only needed if we want to persist this entry
+                    null,  // size only needed if we want to persist this entry
                     null,  // vlmFlags only needed if we want to persist this entry
                     transMgr,
                     false, // do not persist this entry
@@ -854,7 +854,7 @@ class CtrlVlmConnectionApiCallHandler
                     rscDfn,
                     vlmNr,
                     null,  // minorNumber only needed if we want to persist this entry
-                    0,     // size only needed if we want to persist this entry
+                    null,  // size only needed if we want to persist this entry
                     null,  // vlmFlags only needed if we want to persist this entry
                     transMgr,
                     false, // do not persist this entry
