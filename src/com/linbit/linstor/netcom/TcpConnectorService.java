@@ -400,220 +400,239 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
                 while (keysIter.hasNext())
                 {
-                    SelectionKey currentKey = keysIter.next();
-                    keysIter.remove();
-
-                    // Skip all operations if determining ready operations fails
-                    int ops = 0;
+                    SelectionKey currentKey = null;
                     try
                     {
+                        currentKey = keysIter.next();
+                        keysIter.remove();
+
+                        // Skip all operations if determining ready operations fails
+                        int ops = 0;
                         ops = currentKey.readyOps();
+
+                        if ((ops & OP_READ) != 0)
+                        {
+                            TcpConnectorPeer connPeer = null;
+                            try
+                            {
+                                connPeer = (TcpConnectorPeer) currentKey.attachment();
+                                ReadState state = connPeer.msgIn.read((SocketChannel) currentKey.channel());
+                                switch (state)
+                                {
+                                    case UNFINISHED:
+                                        break;
+                                    case FINISHED:
+                                        msgProcessor.processMessage(connPeer.msgIn, this, connPeer);
+                                        connPeer.nextInMessage();
+                                        break;
+                                    case END_OF_STREAM:
+                                        closeConnection(currentKey);
+                                        break;
+                                    default:
+                                        throw new ImplementationError(
+                                            String.format(
+                                                "Missing case label for enum member '%s'",
+                                                state.name()
+                                            ),
+                                            null
+                                        );
+                                }
+                            }
+                            catch (NotYetConnectedException connExc)
+                            {
+                                // This might possibly happen if an outbound connection is
+                                // marked as READ interested before establishing the connection
+                                // is finished; if the Selector would even report it as ready
+                                // in this case.
+                                // Anyway, the reason would be an implementation flaw of some
+                                // kind, therefore, log this error and then treat the connection's
+                                // state as a protocol error and close the connection.
+                                coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
+                                closeConnection(currentKey);
+                            }
+                            catch (IllegalMessageStateException msgStateExc)
+                            {
+                                coreSvcs.getErrorReporter().reportError(
+                                    new ImplementationError(
+                                        "A message object with an illegal state was registered " +
+                                        "as the target of an I/O read operation",
+                                        msgStateExc
+                                    )
+                                );
+                                closeConnection(currentKey);
+                            }
+                            catch (IOException ioExc)
+                            {
+                                // Protocol error - I/O error while reading a message
+                                // Close the connection
+                                AccessContext peerAccCtx = null;
+                                if (connPeer != null)
+                                {
+                                    peerAccCtx = connPeer.getAccessContext();
+                                }
+                                coreSvcs.getErrorReporter().reportError(
+                                    Level.TRACE, ioExc, peerAccCtx, connPeer,
+                                    "I/O exception while attempting to receive data from the peer"
+                                );
+                                closeConnection(currentKey);
+                            }
+                        }
+                        else
+                        if ((ops & OP_ACCEPT) != 0)
+                        {
+                            try
+                            {
+                                acceptConnection(currentKey);
+                            }
+                            catch (ClosedChannelException closeExc)
+                            {
+                                // May be thrown by accept() if the server socket is closed
+                                // Attempt to reinitialize to recover
+                                reinitialize();
+                                // Break out of iterating over keys, because those are all
+                                // invalid after reinitialization, and the set of keys may have
+                                // been modified too
+                                break;
+                            }
+                            catch (NotYetBoundException unboundExc)
+                            {
+                                // Generated if accept() is invoked on an unbound server socket
+                                // This should not happen, unless there is an
+                                // implementation error somewhere.
+                                // Attempt to reinitialize to recover
+                                reinitialize();
+                                // Break out of iterating over keys, because those are all
+                                // invalid after reinitialization, and the set of keys may have
+                                // been modified too
+                                break;
+                            }
+                            catch (ClosedSelectorException closeExc)
+                            {
+                                // Throw by accept() if the selector is closed
+                                // Attempt to reinitialize to recover
+                                reinitialize();
+                                // Break out of iterating over keys, because those are all
+                                // invalid after reinitialization, and the set of keys may have
+                                // been modified too
+                                break;
+                            }
+                            catch (IOException ioExc)
+                            {
+                                coreSvcs.getErrorReporter().reportError(
+                                    Level.TRACE, ioExc, null, null,
+                                    "I/O exception while attempting to accept a peer connection"
+                                );
+                            }
+                        }
+                        else
+                        if ((ops & OP_WRITE) != 0)
+                        {
+                            TcpConnectorPeer connPeer = null;
+                            try
+                            {
+                                connPeer = (TcpConnectorPeer) currentKey.attachment();
+                                WriteState state = connPeer.msgOut.write((SocketChannel) currentKey.channel());
+                                switch (state)
+                                {
+                                    case UNFINISHED:
+                                        break;
+                                    case FINISHED:
+                                        connPeer.nextOutMessage();
+                                        break;
+                                    default:
+                                        throw new ImplementationError(
+                                            String.format(
+                                                "Missing case label for enum member '%s'",
+                                                state.name()
+                                            ),
+                                            null
+                                        );
+                                }
+                            }
+                            catch (NotYetConnectedException connExc)
+                            {
+                                // This might possibly happen if an outbound connection is
+                                // marked as WRITE interested before establishing the connection
+                                // is finished; if the Selector would even report it as ready
+                                // in this case.
+                                // Anyway, the reason would be an implementation flaw of some
+                                // kind, therefore, log this error and then treat the connection's
+                                // state as a protocol error and close the connection.
+                                coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
+                                closeConnection(currentKey);
+                            }
+                            catch (IllegalMessageStateException msgStateExc)
+                            {
+                                coreSvcs.getErrorReporter().reportError(
+                                    new ImplementationError(
+                                        "A message object with an illegal state was registered " +
+                                        "as the target of an I/O write operation",
+                                        msgStateExc
+                                    )
+                                );
+                                closeConnection(currentKey);
+                            }
+                            catch (IOException ioExc)
+                            {
+                                // Protocol error - I/O error while writing a message
+                                // Close channel / disconnect peer, invalidate SelectionKey
+                                // Close the connection
+                                AccessContext peerAccCtx = null;
+                                if (connPeer != null)
+                                {
+                                    peerAccCtx = connPeer.getAccessContext();
+                                }
+                                coreSvcs.getErrorReporter().reportError(
+                                    Level.TRACE, ioExc, peerAccCtx, connPeer,
+                                    "I/O exception while attempting to send data to the peer"
+                                );
+                                closeConnection(currentKey);
+                            }
+                        }
+                        else
+                        if ((ops & OP_CONNECT) != 0)
+                        {
+                            TcpConnectorPeer connPeer = null;
+                            try
+                            {
+                                connPeer = (TcpConnectorPeer) currentKey.attachment();
+                                establishConnection(currentKey);
+                            }
+                            catch (IOException ioExc)
+                            {
+                                AccessContext peerAccCtx = null;
+                                if (connPeer != null)
+                                {
+                                    peerAccCtx = connPeer.getAccessContext();
+                                }
+                                coreSvcs.getErrorReporter().reportError(
+                                    Level.TRACE, ioExc, peerAccCtx, connPeer,
+                                    "I/O exception while attempting to connect to the peer"
+                                );
+                            }
+                        }
                     }
                     catch (CancelledKeyException keyExc)
                     {
-                        closeConnection(currentKey);
-                    }
-
-                    if ((ops & OP_READ) != 0)
-                    {
-                        TcpConnectorPeer connPeer = null;
-                        try
+                        if (currentKey != null)
                         {
-                            connPeer = (TcpConnectorPeer) currentKey.attachment();
-                            ReadState state = connPeer.msgIn.read((SocketChannel) currentKey.channel());
-                            switch (state)
-                            {
-                                case UNFINISHED:
-                                    break;
-                                case FINISHED:
-                                    msgProcessor.processMessage(connPeer.msgIn, this, connPeer);
-                                    connPeer.nextInMessage();
-                                    break;
-                                case END_OF_STREAM:
-                                    closeConnection(currentKey);
-                                    break;
-                                default:
-                                    throw new ImplementationError(
-                                        String.format(
-                                            "Missing case label for enum member '%s'",
-                                            state.name()
-                                        ),
-                                        null
-                                    );
-                            }
-                        }
-                        catch (NotYetConnectedException connExc)
-                        {
-                            // This might possibly happen if an outbound connection is
-                            // marked as READ interested before establishing the connection
-                            // is finished; if the Selector would even report it as ready
-                            // in this case.
-                            // Anyway, the reason would be an implementation flaw of some
-                            // kind, therefore, log this error and then treat the connection's
-                            // state as a protocol error and close the connection.
-                            coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
                             closeConnection(currentKey);
                         }
-                        catch (IllegalMessageStateException msgStateExc)
+                    }
+                    catch (IllegalStateException illState)
+                    {
+                        if (currentKey != null)
                         {
                             coreSvcs.getErrorReporter().reportError(
                                 new ImplementationError(
-                                    "A message object with an illegal state was registered " +
-                                    "as the target of an I/O read operation",
-                                    msgStateExc
-                                )
+                                    "Unhandled IllegalStateException",
+                                    illState
+                                ),
+                                null,
+                                (Peer) currentKey.attachment(),
+                                null
                             );
                             closeConnection(currentKey);
-                        }
-                        catch (IOException ioExc)
-                        {
-                            // Protocol error - I/O error while reading a message
-                            // Close the connection
-                            AccessContext peerAccCtx = null;
-                            if (connPeer != null)
-                            {
-                                peerAccCtx = connPeer.getAccessContext();
-                            }
-                            coreSvcs.getErrorReporter().reportError(
-                                Level.TRACE, ioExc, peerAccCtx, connPeer,
-                                "I/O exception while attempting to receive data from the peer"
-                            );
-                            closeConnection(currentKey);
-                        }
-                    }
-                    else
-                    if ((ops & OP_ACCEPT) != 0)
-                    {
-                        try
-                        {
-                            acceptConnection(currentKey);
-                        }
-                        catch (ClosedChannelException closeExc)
-                        {
-                            // May be thrown by accept() if the server socket is closed
-                            // Attempt to reinitialize to recover
-                            reinitialize();
-                            // Break out of iterating over keys, because those are all
-                            // invalid after reinitialization, and the set of keys may have
-                            // been modified too
-                            break;
-                        }
-                        catch (NotYetBoundException unboundExc)
-                        {
-                            // Generated if accept() is invoked on an unbound server socket
-                            // This should not happen, unless there is an
-                            // implementation error somewhere.
-                            // Attempt to reinitialize to recover
-                            reinitialize();
-                            // Break out of iterating over keys, because those are all
-                            // invalid after reinitialization, and the set of keys may have
-                            // been modified too
-                            break;
-                        }
-                        catch (ClosedSelectorException closeExc)
-                        {
-                            // Throw by accept() if the selector is closed
-                            // Attempt to reinitialize to recover
-                            reinitialize();
-                            // Break out of iterating over keys, because those are all
-                            // invalid after reinitialization, and the set of keys may have
-                            // been modified too
-                            break;
-                        }
-                        catch (IOException ioExc)
-                        {
-                            coreSvcs.getErrorReporter().reportError(
-                                Level.TRACE, ioExc, null, null,
-                                "I/O exception while attempting to accept a peer connection"
-                            );
-                        }
-                    }
-                    else
-                    if ((ops & OP_WRITE) != 0)
-                    {
-                        TcpConnectorPeer connPeer = null;
-                        try
-                        {
-                            connPeer = (TcpConnectorPeer) currentKey.attachment();
-                            WriteState state = connPeer.msgOut.write((SocketChannel) currentKey.channel());
-                            switch (state)
-                            {
-                                case UNFINISHED:
-                                    break;
-                                case FINISHED:
-                                    connPeer.nextOutMessage();
-                                    break;
-                                default:
-                                    throw new ImplementationError(
-                                        String.format(
-                                            "Missing case label for enum member '%s'",
-                                            state.name()
-                                        ),
-                                        null
-                                    );
-                            }
-                        }
-                        catch (NotYetConnectedException connExc)
-                        {
-                            // This might possibly happen if an outbound connection is
-                            // marked as WRITE interested before establishing the connection
-                            // is finished; if the Selector would even report it as ready
-                            // in this case.
-                            // Anyway, the reason would be an implementation flaw of some
-                            // kind, therefore, log this error and then treat the connection's
-                            // state as a protocol error and close the connection.
-                            coreSvcs.getErrorReporter().reportError(new ImplementationError(connExc));
-                            closeConnection(currentKey);
-                        }
-                        catch (IllegalMessageStateException msgStateExc)
-                        {
-                            coreSvcs.getErrorReporter().reportError(
-                                new ImplementationError(
-                                    "A message object with an illegal state was registered " +
-                                    "as the target of an I/O write operation",
-                                    msgStateExc
-                                )
-                            );
-                            closeConnection(currentKey);
-                        }
-                        catch (IOException ioExc)
-                        {
-                            // Protocol error - I/O error while writing a message
-                            // Close channel / disconnect peer, invalidate SelectionKey
-                            // Close the connection
-                            AccessContext peerAccCtx = null;
-                            if (connPeer != null)
-                            {
-                                peerAccCtx = connPeer.getAccessContext();
-                            }
-                            coreSvcs.getErrorReporter().reportError(
-                                Level.TRACE, ioExc, peerAccCtx, connPeer,
-                                "I/O exception while attempting to send data to the peer"
-                            );
-                            closeConnection(currentKey);
-                            closeConnection(currentKey);
-                        }
-                    }
-                    else
-                    if ((ops & OP_CONNECT) != 0)
-                    {
-                        TcpConnectorPeer connPeer = null;
-                        try
-                        {
-                            connPeer = (TcpConnectorPeer) currentKey.attachment();
-                            establishConnection(currentKey);
-                        }
-                        catch (IOException ioExc)
-                        {
-                            AccessContext peerAccCtx = null;
-                            if (connPeer != null)
-                            {
-                                peerAccCtx = connPeer.getAccessContext();
-                            }
-                            coreSvcs.getErrorReporter().reportError(
-                                Level.TRACE, ioExc, peerAccCtx, connPeer,
-                                "I/O exception while attempting to connect to the peer"
-                            );
                         }
                     }
                 }
