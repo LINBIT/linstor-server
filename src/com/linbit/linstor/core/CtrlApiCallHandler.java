@@ -1282,6 +1282,65 @@ public class CtrlApiCallHandler
     }
 
     /**
+     * Modifies an existing {@link VolumeConnection}
+     * @param accCtx
+     * @param client
+     * @param vlmConnUuid optional, if given checked against persisted UUID
+     * @param nodeName1 required
+     * @param nodeName2 required
+     * @param rscName required
+     * @param vlmNr required
+     * @param overrideProps optional
+     * @param deletePropKeys optional
+     * @return
+     */
+    public ApiCallRc modifyVlmConn(
+        AccessContext accCtx,
+        Peer client,
+        UUID vlmConnUuid,
+        String nodeName1,
+        String nodeName2,
+        String rscName,
+        int vlmNr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRc apiCallRc;
+
+        if (overrideProps == null)
+        {
+            overrideProps = Collections.emptyMap();
+        }
+        if (deletePropKeys == null)
+        {
+            deletePropKeys = Collections.emptySet();
+        }
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = vlmConnApiCallHandler.modifyVolumeConnection(
+                accCtx,
+                client,
+                vlmConnUuid,
+                nodeName1,
+                nodeName2,
+                rscName,
+                vlmNr,
+                overrideProps,
+                deletePropKeys
+            );
+        }
+        finally
+        {
+            controller.nodesMapLock.writeLock().unlock();
+            controller.rscDfnMapLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
+    /**
      * Deletes a {@link VolumeConnection}.
      *
      * @param accCtx

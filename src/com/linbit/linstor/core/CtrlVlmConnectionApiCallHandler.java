@@ -4,6 +4,8 @@ import static com.linbit.linstor.api.ApiConsts.*;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -13,27 +15,38 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeConnectionData;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-class CtrlVlmConnectionApiCallHandler
+class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 {
-    private Controller controller;
+	private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
+	private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
+	private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
+	private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
 
     CtrlVlmConnectionApiCallHandler(Controller controllerRef)
     {
-        controller = controllerRef;
+        super(
+            controllerRef,
+            null, // apiCtx
+            ApiConsts.MASK_VLM_CONN
+        );
     }
 
     public ApiCallRc createVolumeConnection(
@@ -217,6 +230,7 @@ class CtrlVlmConnectionApiCallHandler
                 {
                     ApiCallRcEntry vlmDfnNotFoundEntry = new ApiCallRcEntry();
                     vlmDfnNotFoundEntry.setReturnCode(RC_VLM_CONN_CRT_FAIL_NOT_FOUND_VLM_DFN);
+                    vlmDfnNotFoundEntry.setMessageFormat("Volume Connection failed - Volume definition not found");
                     vlmDfnNotFoundEntry.setCauseFormat(
                         String.format(
                             "The specified volume definition %d in resource definition '%s' could not be found in the database",
@@ -712,6 +726,69 @@ class CtrlVlmConnectionApiCallHandler
             }
             controller.dbConnPool.returnConnection(transMgr);
         }
+        return apiCallRc;
+    }
+
+    public ApiCallRc modifyVolumeConnection(
+        AccessContext accCtx,
+        Peer client,
+        UUID rscConnUuid,
+        String nodeName1,
+        String nodeName2,
+        String rscNameStr,
+        int vlmNr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.MODIFY,
+                apiCallRc,
+                null, // new transMgr
+                nodeName1,
+                nodeName2,
+                rscNameStr,
+                vlmNr
+            );
+        )
+        {
+            VolumeConnectionData vlmConn = loadVlmConn(nodeName1, nodeName2, rscNameStr, vlmNr);
+
+            if (rscConnUuid != null && !rscConnUuid.equals(vlmConn.getUuid()))
+            {
+                addAnswer(
+                    "UUID-check failed",
+                    ApiConsts.FAIL_UUID_VLM_CONN
+                );
+                throw new ApiCallHandlerFailedException();
+            }
+
+            Props props = getProps(vlmConn);
+            Map<String, String> propsMap = props.map();
+
+            propsMap.putAll(overrideProps);
+
+            for (String delKey : deletePropKeys)
+            {
+                propsMap.remove(delKey);
+            }
+
+            commit();
+
+            // TODO update satellites
+            reportSuccess(getObjectDescription() + " updated.");
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // failure was reported and added to returning apiCallRc
+            // this is only for flow-control.
+        }
+
         return apiCallRc;
     }
 
@@ -1413,6 +1490,150 @@ class CtrlVlmConnectionApiCallHandler
             controller.dbConnPool.returnConnection(transMgr);
         }
         return apiCallRc;
+    }
+
+    private AbsApiCallHandler setCurrent(
+        AccessContext accCtx,
+        Peer client,
+        ApiCallType type,
+        ApiCallRcImpl apiCallRc,
+        TransactionMgr transMgr,
+        String nodeName1,
+        String nodeName2,
+        String rscNameStr,
+        Integer vlmNr
+    )
+    {
+        super.setCurrent(accCtx, client, type, apiCallRc, transMgr);
+
+        currentNodeName1.set(nodeName1);
+        currentNodeName2.set(nodeName2);
+        currentRscName.set(rscNameStr);
+        currentVlmNr.set(vlmNr);
+
+        Map<String, String> objRefs = currentObjRefs.get();
+        objRefs.clear();
+        objRefs.put(ApiConsts.KEY_1ST_NODE, nodeName1);
+        objRefs.put(ApiConsts.KEY_2ND_NODE, nodeName2);
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+        if (vlmNr != null)
+        {
+            objRefs.put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr));
+        }
+
+        Map<String, String> vars = currentVariables.get();
+        vars.clear();
+        vars.put(ApiConsts.KEY_1ST_NODE_NAME, nodeName1);
+        vars.put(ApiConsts.KEY_2ND_NODE_NAME, nodeName2);
+        vars.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
+        if (vlmNr != null)
+        {
+            vars.put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr));
+        }
+
+        return this;
+    }
+
+    @Override
+    protected String getObjectDescription()
+    {
+        return "Volume connection between nodes " + currentNodeName1.get() + " and " +
+            currentNodeName2.get() + " on resource " + currentRscName.get() + " on volume number " +
+            currentVlmNr.get();
+    }
+
+    @Override
+    protected String getObjectDescriptionInline()
+    {
+        return "volume connection between nodes '" + currentNodeName1.get() + "' and '" +
+            currentNodeName2.get() + "' on resource '" + currentRscName.get() + "' on volume number '" +
+            currentVlmNr.get() + "'";
+    }
+
+    private VolumeConnectionData loadVlmConn(
+        String nodeName1,
+        String nodeName2,
+        String rscNameStr,
+        int vlmNr
+    )
+        throws ApiCallHandlerFailedException
+    {
+        NodeData node1 = loadNode(nodeName1);
+        NodeData node2 = loadNode(nodeName2);
+
+        Resource rsc1 = getRsc(node1, rscNameStr);
+        Resource rsc2 = getRsc(node2, rscNameStr);
+
+        Volume vlm1 = getVlm(rsc1, vlmNr);
+        Volume vlm2 = getVlm(rsc2, vlmNr);
+
+        try
+        {
+            return VolumeConnectionData.getInstance(
+                currentAccCtx.get(),
+                vlm1,
+                vlm2,
+                currentTransMgr.get(),
+                false,
+                false
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_VLM_CONN
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw asImplError(dataAlreadyExistsExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "loading " + getObjectDescriptionInline()
+            );
+        }
+    }
+
+    private Resource getRsc(NodeData node, String rscNameStr) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return node.getResource(currentAccCtx.get(), asRscName(rscNameStr));
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access resource '" + rscNameStr + "' from node '" + node.getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+    }
+
+    private Volume getVlm(Resource rsc, int vlmNr)
+    {
+        return rsc.getVolume(asVlmNr(vlmNr));
+    }
+
+    private Props getProps(VolumeConnectionData vlmConn)
+    {
+        try
+        {
+            return vlmConn.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "accessing properties of " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_VLM_CONN
+            );
+        }
     }
 
 }

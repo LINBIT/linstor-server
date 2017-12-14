@@ -57,6 +57,7 @@ import com.linbit.linstor.proto.MsgModRscDfnOuterClass.MsgModRscDfn;
 import com.linbit.linstor.proto.MsgModRscOuterClass.MsgModRsc;
 import com.linbit.linstor.proto.MsgModStorPoolDfnOuterClass.MsgModStorPoolDfn;
 import com.linbit.linstor.proto.MsgModStorPoolOuterClass.MsgModStorPool;
+import com.linbit.linstor.proto.MsgModVlmConnOuterClass.MsgModVlmConn;
 import com.linbit.linstor.proto.MsgModVlmDfnOuterClass.MsgModVlmDfn;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
@@ -1080,6 +1081,45 @@ public class ClientProtobuf implements Runnable
             msgId,
             API_CRT_VLM_CONN,
             msgBuilder.build()
+        );
+        return msgId;
+    }
+
+    public int sendModifyVlmConn(
+        UUID uuid,
+        String nodeName1,
+        String nodeName2,
+        String rscName,
+        int vlmNr,
+        Map<String, String> overrideProps,
+        Set<String> delPropKeys
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgModVlmConn.Builder builder = MsgModVlmConn.newBuilder()
+            .setNode1Name(nodeName1)
+            .setNode2Name(nodeName2)
+            .setRscName(rscName)
+            .setVlmNr(vlmNr);
+
+        if (uuid != null)
+        {
+            builder.setVlmConnUuid(uuid.toString());
+        }
+        if (overrideProps != null)
+        {
+            builder.addAllOverrideProps(asLinStorMapEntryList(overrideProps));
+        }
+        if (delPropKeys != null)
+        {
+            builder.addAllDeletePropKeys(delPropKeys);
+        }
+        send
+        (
+            msgId,
+            API_MOD_VLM_CONN,
+            builder.build()
         );
         return msgId;
     }
