@@ -517,7 +517,6 @@ public class SatelliteDbDriver implements DatabaseDriver
         @Override
         public SatelliteConnectionData load(
             Node node,
-            NetInterface netIf,
             boolean logWarnIfNotExists,
             TransactionMgr transMgr
         )

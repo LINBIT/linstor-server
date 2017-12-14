@@ -6,7 +6,6 @@ import java.sql.SQLException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.BaseTransactionObject;
-import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.SatelliteConnectionData;
@@ -20,8 +19,6 @@ public interface SatelliteConnectionDataDatabaseDriver
      *
      * @param node
      *  The primary key specifying the database entry
-     * @param netInterface
-     *  Needed for possible instantiation of a {@link SatelliteConnectionData}
      * @param logWarnIfNotExists
      *  If true a warning is logged if the requested entry does not exist
      * @param transMgr
@@ -34,7 +31,6 @@ public interface SatelliteConnectionDataDatabaseDriver
      */
     public SatelliteConnectionData load(
         Node node,
-        NetInterface netInterface,
         boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )

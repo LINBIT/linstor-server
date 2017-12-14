@@ -127,7 +127,14 @@ public class DerbyDriver implements DatabaseDriver
         );
 
         // propsDriver.initialize();
-        nodeDriver.initialize(netInterfaceDriver, resourceDriver, storPoolDriver, nodeConnectionDriver);
+        nodeDriver.initialize(
+            netInterfaceDriver,
+            satelliteConnectionDriver,
+            resourceDriver,
+            storPoolDriver,
+            nodeConnectionDriver
+        );
+        satelliteConnectionDriver.initialize(netInterfaceDriver);
         resesourceDefinitionDriver.initialize(resourceDriver, volumeDefinitionDriver);
         resourceDriver.initialize(resourceConnectionDriver, volumeDriver);
         // volumeDefinitionDriver.initialize();

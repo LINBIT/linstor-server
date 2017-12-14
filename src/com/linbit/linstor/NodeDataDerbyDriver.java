@@ -72,6 +72,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     private final SingleColumnDatabaseDriver<NodeData, NodeType> typeDriver;
 
     private NetInterfaceDataDerbyDriver netInterfaceDriver;
+    private SatelliteConnectionDataDerbyDriver satelliteConnectionDriver;
     private ResourceDataDerbyDriver resourceDataDriver;
     private StorPoolDataDerbyDriver storPoolDriver;
     private NodeConnectionDataDerbyDriver nodeConnectionDriver;
@@ -95,12 +96,14 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
 
     public void initialize(
         NetInterfaceDataDerbyDriver netInterfaceDriverRef,
+        SatelliteConnectionDataDerbyDriver satelliteConnectionDriverRef,
         ResourceDataDerbyDriver resourceDriverRef,
         StorPoolDataDerbyDriver storPoolDriverRef,
         NodeConnectionDataDerbyDriver nodeConnectionDriverRef
     )
     {
         netInterfaceDriver = netInterfaceDriverRef;
+        satelliteConnectionDriver = satelliteConnectionDriverRef;
         resourceDataDriver = resourceDriverRef;
         storPoolDriver = storPoolDriverRef;
         nodeConnectionDriver = nodeConnectionDriverRef;
@@ -237,6 +240,13 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     "Node's NetInterfaces restored %s Count: %d",
                     getTraceId(node),
                     netIfaces.size()
+                );
+
+                SatelliteConnectionData satelliteConnection = satelliteConnectionDriver.load(node, true, transMgr);
+                node.setSatelliteConnection(dbCtx, satelliteConnection);
+                errorReporter.logTrace(
+                    "Node's SatelliteConnection restored %s",
+                    getTraceId(node)
                 );
 
                 List<ResourceData> resList = resourceDataDriver.loadResourceData(dbCtx, node, transMgr);

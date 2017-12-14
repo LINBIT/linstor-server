@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
+import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
@@ -57,10 +58,17 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
     private final AccessContext privCtx;
     private final ErrorReporter errorReporter;
 
+    private NetInterfaceDataDerbyDriver netInterfaceDriver;
+
     public SatelliteConnectionDataDerbyDriver(AccessContext privCtxRef, ErrorReporter errorReporterRef)
     {
         privCtx = privCtxRef;
         errorReporter = errorReporterRef;
+    }
+
+    public void initialize(NetInterfaceDataDerbyDriver netInterfaceDataDerbyDriverRef)
+    {
+        netInterfaceDriver = netInterfaceDataDerbyDriverRef;
     }
 
     @Override
@@ -83,7 +91,6 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
     @Override
     public SatelliteConnectionData load(
         Node node,
-        NetInterface netIf,
         boolean logWarnIfNotExists,
         TransactionMgr transMgr
     )
@@ -110,7 +117,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                             {
                                 port = new TcpPortNumber(resultSet.getInt(SC_PORT));
                             }
-                            catch (ValueOutOfRangeException e)
+                            catch (ValueOutOfRangeException valOutOfRangeExc)
                             {
                                 throw new LinStorSqlRuntimeException(
                                     String.format(
@@ -121,11 +128,31 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                                         resultSet.getString(SC_NODE_NET_NAME),
                                         resultSet.getInt(SC_PORT)
                                     ),
-                                    e
+                                    valOutOfRangeExc
+                                );
+                            }
+                            NetInterfaceName netIfName;
+                            try
+                            {
+                                netIfName = new NetInterfaceName(resultSet.getString(SC_NODE_NET_NAME));
+                            }
+                            catch (InvalidNameException invalidNameExc)
+                            {
+                                throw new LinStorSqlRuntimeException(
+                                    String.format(
+                                        "A Network interface name of a stored SatelliteConnection in table %s " +
+                                        " could not be restore. (NodeName=%s, invalid NetInterfaceName=%s) ",
+                                        TBL_SC,
+                                        resultSet.getString(SC_NODE_NAME),
+                                        resultSet.getString(SC_NODE_NET_NAME)
+                                    ),
+                                    invalidNameExc
                                 );
                             }
 
                             EncryptionType encryptionType = EncryptionType.valueOf(resultSet.getString(SC_TYPE));
+
+                            NetInterface netIf = node.getNetInterface(privCtx, netIfName);
 
                             stltConn = new SatelliteConnectionData(
                                 uuid,

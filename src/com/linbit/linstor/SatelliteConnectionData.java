@@ -91,7 +91,7 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
         node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         SatelliteConnectionDataDatabaseDriver driver = LinStor.getSatelliteConnectionDataDatabaseDriver();
-        SatelliteConnectionData stltConn = driver.load(node, netIf, false, transMgr);
+        SatelliteConnectionData stltConn = driver.load(node, false, transMgr);
 
         if (failIfExists && stltConn != null)
         {
@@ -128,7 +128,7 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
         SatelliteConnectionData stltConn;
         try
         {
-            stltConn = driver.load(node, netIf, false, transMgr);
+            stltConn = driver.load(node, false, transMgr);
             if (stltConn == null)
             {
                 stltConn = new SatelliteConnectionData(uuid, node, netIf, port, encryptionType);
