@@ -452,7 +452,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     if (vlmState.driver != null)
                     {
-                        String storVlmName = rscDfn.getName().value + "_" + vlmDfn.getVolumeNumber().toString();
+                        String storVlmName = rscDfn.getName().value + "_" +
+                            String.format("%05d", vlmDfn.getVolumeNumber().value);
                         long netSize = vlmDfn.getVolumeSize(wrkCtx);
                         long expectedSize = drbdMd.getGrossSize(
                             netSize, FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
