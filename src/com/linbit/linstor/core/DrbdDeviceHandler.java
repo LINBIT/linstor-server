@@ -154,34 +154,6 @@ class DrbdDeviceHandler implements DeviceHandler
             System.out.println(rscActions.toString());
             // END DEBUG
 
-            // BEGIN DEBUG - set block device paths
-            // This is temporary code to enable creation of valid configuration files
-            for (VolumeState vlmState : vlmStateMap.values())
-            {
-                Volume vlm = rsc.getVolume(vlmState.vlmNr);
-                if (vlmState.hasDisk)
-                {
-                    vlm.setBlockDevicePath(wrkCtx, "/dev/drbdpool/" + vlmState.storVlmName);
-                    vlm.setMetaDiskPath(wrkCtx, "internal");
-                }
-                else
-                {
-                    vlm.setBlockDevicePath(wrkCtx, "none");
-                    vlm.setMetaDiskPath(wrkCtx, null);
-                }
-            }
-            // END DEBUG
-
-            // Create DRBD resource configuration file
-            try
-            {
-                createResourceConfiguration(rsc, rscDfn);
-            }
-            catch (IOException ioExc)
-            {
-                errLog.reportError(Level.ERROR, ioExc);
-            }
-
             // Create volume backend storage
             for (VolumeState vlmState : vlmStateMap.values())
             {
@@ -190,7 +162,8 @@ class DrbdDeviceHandler implements DeviceHandler
                     try
                     {
                         createStorageVolume(rscDfn, vlmState);
-                        createVolumeMetaData(rscDfn, vlmState);
+                        vlmState.hasDisk = true;
+                        vlmState.hasMetaData = false;
                     }
                     catch (StorageException storExc)
                     {
@@ -223,10 +196,63 @@ class DrbdDeviceHandler implements DeviceHandler
                 }
             }
 
+            // BEGIN DEBUG - set block device paths
+            // This is temporary code to enable creation of valid configuration files
+            for (VolumeState vlmState : vlmStateMap.values())
+            {
+                Volume vlm = rsc.getVolume(vlmState.vlmNr);
+                if (vlmState.hasDisk)
+                {
+                    vlm.setBlockDevicePath(wrkCtx, "/dev/drbdpool/" + vlmState.storVlmName);
+                    vlm.setMetaDiskPath(wrkCtx, "internal");
+                }
+                else
+                {
+                    vlm.setBlockDevicePath(wrkCtx, "none");
+                    vlm.setMetaDiskPath(wrkCtx, null);
+                }
+                errLog.logTrace(
+                    "Resource '" + rscName + "' volume " + vlmState.vlmNr.toString() +
+                    " block device = %s, meta disk = %s",
+                    vlm.getBlockDevicePath(wrkCtx),
+                    vlm.getMetaDiskPath(wrkCtx)
+                );
+            }
+            // END DEBUG
+
+            // Create DRBD resource configuration file
+            try
+            {
+                createResourceConfiguration(rsc, rscDfn);
+            }
+            catch (IOException ioExc)
+            {
+                errLog.reportError(Level.ERROR, ioExc);
+            }
+
+            // Create volume meta data
+            for (VolumeState vlmState : vlmStateMap.values())
+            {
+                if (!vlmState.hasMetaData)
+                {
+                    try
+                    {
+                        createVolumeMetaData(rscDfn, vlmState);
+                    }
+                    catch (Exception exc)
+                    {
+                        errLog.reportError(exc);
+                    }
+                }
+            }
+
             // Create DRBD resource
             try
             {
-                createResource(rsc, rscDfn, localNodeName, rscState, vlmStateMap);
+                if (rscState.requiresAdjust)
+                {
+                    adjustResource(rsc, rscDfn, localNodeName, rscState, vlmStateMap);
+                }
             }
             catch (IOException | ExtCmdFailedException ioExc)
             {
@@ -406,15 +432,16 @@ class DrbdDeviceHandler implements DeviceHandler
                         break;
                     case UP_TO_DATE:
                         // fall-through
-                    case ATTACHING:
-                        // fall-through
                     case CONSISTENT:
                         // fall-through
                     case INCONSISTENT:
                         // fall-through
                     case OUTDATED:
+                        vlmState.hasMetaData = true;
                         // fall-through
+                    case ATTACHING:
                         vlmState.hasDisk = true;
+                        // fall-through
                         break;
                     default:
                         throw new ImplementationError(
@@ -588,7 +615,7 @@ class DrbdDeviceHandler implements DeviceHandler
     /**
      * Creates a new resource with empty volumes or with volumes restored from snapshots
      */
-    private void createResource(
+    private void adjustResource(
         Resource rsc,
         ResourceDefinition rscDfn,
         NodeName localNodeName,

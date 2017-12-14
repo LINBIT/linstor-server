@@ -64,13 +64,14 @@ public class DrbdAdm
         {
             command.add("--skip-disk");
         }
-        String resName = resourceName.value;
-        command.addAll(asConfigParameter(resName));
-        if (volNum != null)
-        {
-            resName += "/" + volNum.value;
-        }
-        command.add(resName);
+        // String resName = resourceName.value;
+        // command.addAll(asConfigParameter(resName));
+        // if (volNum != null)
+        // {
+        //     resName += "/" + volNum.value;
+        // }
+        // command.add(resName);
+        command.add(resourceName.displayValue);
         execute(command);
     }
 
@@ -345,9 +346,9 @@ public class DrbdAdm
         List<String> command = new ArrayList<>();
         command.add(DRBDADM_UTIL);
         command.add("-vvv");
-        command.addAll(asConfigParameter(resourceName.value));
+        // command.addAll(asConfigParameter(resourceName.value));
         command.addAll(Arrays.asList(subCommands));
-        String resName = resourceName.value;
+        String resName = resourceName.displayValue;
         if (volNum != null)
         {
             resName += "/" + volNum.value;
