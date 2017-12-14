@@ -23,7 +23,7 @@ public final class MsgCrtRscConnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes rsc_conn_uuid = 1;</code>
+     * <code>optional string rsc_conn_uuid = 1;</code>
      */
     boolean hasRscConnUuid();
     /**
@@ -31,9 +31,18 @@ public final class MsgCrtRscConnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes rsc_conn_uuid = 1;</code>
+     * <code>optional string rsc_conn_uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getRscConnUuid();
+    java.lang.String getRscConnUuid();
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional string rsc_conn_uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getRscConnUuidBytes();
 
     /**
      * <pre>
@@ -118,7 +127,7 @@ public final class MsgCrtRscConnOuterClass {
      * Resource 1 uuid
      * </pre>
      *
-     * <code>optional bytes rsc_1_uuid = 5;</code>
+     * <code>optional string rsc_1_uuid = 5;</code>
      */
     boolean hasRsc1Uuid();
     /**
@@ -126,16 +135,25 @@ public final class MsgCrtRscConnOuterClass {
      * Resource 1 uuid
      * </pre>
      *
-     * <code>optional bytes rsc_1_uuid = 5;</code>
+     * <code>optional string rsc_1_uuid = 5;</code>
      */
-    com.google.protobuf.ByteString getRsc1Uuid();
+    java.lang.String getRsc1Uuid();
+    /**
+     * <pre>
+     * Resource 1 uuid
+     * </pre>
+     *
+     * <code>optional string rsc_1_uuid = 5;</code>
+     */
+    com.google.protobuf.ByteString
+        getRsc1UuidBytes();
 
     /**
      * <pre>
      * Resource 2 uuid
      * </pre>
      *
-     * <code>optional bytes rsc_2_uuid = 6;</code>
+     * <code>optional string rsc_2_uuid = 6;</code>
      */
     boolean hasRsc2Uuid();
     /**
@@ -143,9 +161,18 @@ public final class MsgCrtRscConnOuterClass {
      * Resource 2 uuid
      * </pre>
      *
-     * <code>optional bytes rsc_2_uuid = 6;</code>
+     * <code>optional string rsc_2_uuid = 6;</code>
      */
-    com.google.protobuf.ByteString getRsc2Uuid();
+    java.lang.String getRsc2Uuid();
+    /**
+     * <pre>
+     * Resource 2 uuid
+     * </pre>
+     *
+     * <code>optional string rsc_2_uuid = 6;</code>
+     */
+    com.google.protobuf.ByteString
+        getRsc2UuidBytes();
 
     /**
      * <pre>
@@ -207,12 +234,12 @@ public final class MsgCrtRscConnOuterClass {
       super(builder);
     }
     private MsgCrtRscConn() {
-      rscConnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      rscConnUuid_ = "";
       nodeName1_ = "";
       nodeName2_ = "";
       rscName_ = "";
-      rsc1Uuid_ = com.google.protobuf.ByteString.EMPTY;
-      rsc2Uuid_ = com.google.protobuf.ByteString.EMPTY;
+      rsc1Uuid_ = "";
+      rsc2Uuid_ = "";
       rscConnProps_ = java.util.Collections.emptyList();
     }
 
@@ -245,8 +272,9 @@ public final class MsgCrtRscConnOuterClass {
               break;
             }
             case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              rscConnUuid_ = input.readBytes();
+              rscConnUuid_ = bs;
               break;
             }
             case 18: {
@@ -268,13 +296,15 @@ public final class MsgCrtRscConnOuterClass {
               break;
             }
             case 42: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000010;
-              rsc1Uuid_ = input.readBytes();
+              rsc1Uuid_ = bs;
               break;
             }
             case 50: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000020;
-              rsc2Uuid_ = input.readBytes();
+              rsc2Uuid_ = bs;
               break;
             }
             case 58: {
@@ -315,13 +345,13 @@ public final class MsgCrtRscConnOuterClass {
 
     private int bitField0_;
     public static final int RSC_CONN_UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString rscConnUuid_;
+    private volatile java.lang.Object rscConnUuid_;
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes rsc_conn_uuid = 1;</code>
+     * <code>optional string rsc_conn_uuid = 1;</code>
      */
     public boolean hasRscConnUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -331,10 +361,41 @@ public final class MsgCrtRscConnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes rsc_conn_uuid = 1;</code>
+     * <code>optional string rsc_conn_uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getRscConnUuid() {
-      return rscConnUuid_;
+    public java.lang.String getRscConnUuid() {
+      java.lang.Object ref = rscConnUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          rscConnUuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional string rsc_conn_uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getRscConnUuidBytes() {
+      java.lang.Object ref = rscConnUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        rscConnUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int NODE_NAME_1_FIELD_NUMBER = 2;
@@ -500,13 +561,13 @@ public final class MsgCrtRscConnOuterClass {
     }
 
     public static final int RSC_1_UUID_FIELD_NUMBER = 5;
-    private com.google.protobuf.ByteString rsc1Uuid_;
+    private volatile java.lang.Object rsc1Uuid_;
     /**
      * <pre>
      * Resource 1 uuid
      * </pre>
      *
-     * <code>optional bytes rsc_1_uuid = 5;</code>
+     * <code>optional string rsc_1_uuid = 5;</code>
      */
     public boolean hasRsc1Uuid() {
       return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -516,20 +577,51 @@ public final class MsgCrtRscConnOuterClass {
      * Resource 1 uuid
      * </pre>
      *
-     * <code>optional bytes rsc_1_uuid = 5;</code>
+     * <code>optional string rsc_1_uuid = 5;</code>
      */
-    public com.google.protobuf.ByteString getRsc1Uuid() {
-      return rsc1Uuid_;
+    public java.lang.String getRsc1Uuid() {
+      java.lang.Object ref = rsc1Uuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          rsc1Uuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Resource 1 uuid
+     * </pre>
+     *
+     * <code>optional string rsc_1_uuid = 5;</code>
+     */
+    public com.google.protobuf.ByteString
+        getRsc1UuidBytes() {
+      java.lang.Object ref = rsc1Uuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        rsc1Uuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int RSC_2_UUID_FIELD_NUMBER = 6;
-    private com.google.protobuf.ByteString rsc2Uuid_;
+    private volatile java.lang.Object rsc2Uuid_;
     /**
      * <pre>
      * Resource 2 uuid
      * </pre>
      *
-     * <code>optional bytes rsc_2_uuid = 6;</code>
+     * <code>optional string rsc_2_uuid = 6;</code>
      */
     public boolean hasRsc2Uuid() {
       return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -539,10 +631,41 @@ public final class MsgCrtRscConnOuterClass {
      * Resource 2 uuid
      * </pre>
      *
-     * <code>optional bytes rsc_2_uuid = 6;</code>
+     * <code>optional string rsc_2_uuid = 6;</code>
      */
-    public com.google.protobuf.ByteString getRsc2Uuid() {
-      return rsc2Uuid_;
+    public java.lang.String getRsc2Uuid() {
+      java.lang.Object ref = rsc2Uuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          rsc2Uuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Resource 2 uuid
+     * </pre>
+     *
+     * <code>optional string rsc_2_uuid = 6;</code>
+     */
+    public com.google.protobuf.ByteString
+        getRsc2UuidBytes() {
+      java.lang.Object ref = rsc2Uuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        rsc2Uuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int RSC_CONN_PROPS_FIELD_NUMBER = 7;
@@ -631,7 +754,7 @@ public final class MsgCrtRscConnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, rscConnUuid_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, rscConnUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName1_);
@@ -643,10 +766,10 @@ public final class MsgCrtRscConnOuterClass {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 4, rscName_);
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeBytes(5, rsc1Uuid_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, rsc1Uuid_);
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        output.writeBytes(6, rsc2Uuid_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 6, rsc2Uuid_);
       }
       for (int i = 0; i < rscConnProps_.size(); i++) {
         output.writeMessage(7, rscConnProps_.get(i));
@@ -660,8 +783,7 @@ public final class MsgCrtRscConnOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, rscConnUuid_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, rscConnUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName1_);
@@ -673,12 +795,10 @@ public final class MsgCrtRscConnOuterClass {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, rscName_);
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(5, rsc1Uuid_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, rsc1Uuid_);
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(6, rsc2Uuid_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, rsc2Uuid_);
       }
       for (int i = 0; i < rscConnProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
@@ -895,7 +1015,7 @@ public final class MsgCrtRscConnOuterClass {
       }
       public Builder clear() {
         super.clear();
-        rscConnUuid_ = com.google.protobuf.ByteString.EMPTY;
+        rscConnUuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
         nodeName1_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -903,9 +1023,9 @@ public final class MsgCrtRscConnOuterClass {
         bitField0_ = (bitField0_ & ~0x00000004);
         rscName_ = "";
         bitField0_ = (bitField0_ & ~0x00000008);
-        rsc1Uuid_ = com.google.protobuf.ByteString.EMPTY;
+        rsc1Uuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000010);
-        rsc2Uuid_ = com.google.protobuf.ByteString.EMPTY;
+        rsc2Uuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000020);
         if (rscConnPropsBuilder_ == null) {
           rscConnProps_ = java.util.Collections.emptyList();
@@ -1013,7 +1133,9 @@ public final class MsgCrtRscConnOuterClass {
       public Builder mergeFrom(com.linbit.linstor.proto.MsgCrtRscConnOuterClass.MsgCrtRscConn other) {
         if (other == com.linbit.linstor.proto.MsgCrtRscConnOuterClass.MsgCrtRscConn.getDefaultInstance()) return this;
         if (other.hasRscConnUuid()) {
-          setRscConnUuid(other.getRscConnUuid());
+          bitField0_ |= 0x00000001;
+          rscConnUuid_ = other.rscConnUuid_;
+          onChanged();
         }
         if (other.hasNodeName1()) {
           bitField0_ |= 0x00000002;
@@ -1031,10 +1153,14 @@ public final class MsgCrtRscConnOuterClass {
           onChanged();
         }
         if (other.hasRsc1Uuid()) {
-          setRsc1Uuid(other.getRsc1Uuid());
+          bitField0_ |= 0x00000010;
+          rsc1Uuid_ = other.rsc1Uuid_;
+          onChanged();
         }
         if (other.hasRsc2Uuid()) {
-          setRsc2Uuid(other.getRsc2Uuid());
+          bitField0_ |= 0x00000020;
+          rsc2Uuid_ = other.rsc2Uuid_;
+          onChanged();
         }
         if (rscConnPropsBuilder_ == null) {
           if (!other.rscConnProps_.isEmpty()) {
@@ -1104,13 +1230,13 @@ public final class MsgCrtRscConnOuterClass {
       }
       private int bitField0_;
 
-      private com.google.protobuf.ByteString rscConnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object rscConnUuid_ = "";
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes rsc_conn_uuid = 1;</code>
+       * <code>optional string rsc_conn_uuid = 1;</code>
        */
       public boolean hasRscConnUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -1120,19 +1246,51 @@ public final class MsgCrtRscConnOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes rsc_conn_uuid = 1;</code>
+       * <code>optional string rsc_conn_uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getRscConnUuid() {
-        return rscConnUuid_;
+      public java.lang.String getRscConnUuid() {
+        java.lang.Object ref = rscConnUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            rscConnUuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes rsc_conn_uuid = 1;</code>
+       * <code>optional string rsc_conn_uuid = 1;</code>
        */
-      public Builder setRscConnUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getRscConnUuidBytes() {
+        java.lang.Object ref = rscConnUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          rscConnUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional string rsc_conn_uuid = 1;</code>
+       */
+      public Builder setRscConnUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1146,11 +1304,28 @@ public final class MsgCrtRscConnOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes rsc_conn_uuid = 1;</code>
+       * <code>optional string rsc_conn_uuid = 1;</code>
        */
       public Builder clearRscConnUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
         rscConnUuid_ = getDefaultInstance().getRscConnUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional string rsc_conn_uuid = 1;</code>
+       */
+      public Builder setRscConnUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        rscConnUuid_ = value;
         onChanged();
         return this;
       }
@@ -1455,13 +1630,13 @@ public final class MsgCrtRscConnOuterClass {
         return this;
       }
 
-      private com.google.protobuf.ByteString rsc1Uuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object rsc1Uuid_ = "";
       /**
        * <pre>
        * Resource 1 uuid
        * </pre>
        *
-       * <code>optional bytes rsc_1_uuid = 5;</code>
+       * <code>optional string rsc_1_uuid = 5;</code>
        */
       public boolean hasRsc1Uuid() {
         return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -1471,19 +1646,51 @@ public final class MsgCrtRscConnOuterClass {
        * Resource 1 uuid
        * </pre>
        *
-       * <code>optional bytes rsc_1_uuid = 5;</code>
+       * <code>optional string rsc_1_uuid = 5;</code>
        */
-      public com.google.protobuf.ByteString getRsc1Uuid() {
-        return rsc1Uuid_;
+      public java.lang.String getRsc1Uuid() {
+        java.lang.Object ref = rsc1Uuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            rsc1Uuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * Resource 1 uuid
        * </pre>
        *
-       * <code>optional bytes rsc_1_uuid = 5;</code>
+       * <code>optional string rsc_1_uuid = 5;</code>
        */
-      public Builder setRsc1Uuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getRsc1UuidBytes() {
+        java.lang.Object ref = rsc1Uuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          rsc1Uuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Resource 1 uuid
+       * </pre>
+       *
+       * <code>optional string rsc_1_uuid = 5;</code>
+       */
+      public Builder setRsc1Uuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1497,7 +1704,7 @@ public final class MsgCrtRscConnOuterClass {
        * Resource 1 uuid
        * </pre>
        *
-       * <code>optional bytes rsc_1_uuid = 5;</code>
+       * <code>optional string rsc_1_uuid = 5;</code>
        */
       public Builder clearRsc1Uuid() {
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -1505,14 +1712,31 @@ public final class MsgCrtRscConnOuterClass {
         onChanged();
         return this;
       }
+      /**
+       * <pre>
+       * Resource 1 uuid
+       * </pre>
+       *
+       * <code>optional string rsc_1_uuid = 5;</code>
+       */
+      public Builder setRsc1UuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        rsc1Uuid_ = value;
+        onChanged();
+        return this;
+      }
 
-      private com.google.protobuf.ByteString rsc2Uuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object rsc2Uuid_ = "";
       /**
        * <pre>
        * Resource 2 uuid
        * </pre>
        *
-       * <code>optional bytes rsc_2_uuid = 6;</code>
+       * <code>optional string rsc_2_uuid = 6;</code>
        */
       public boolean hasRsc2Uuid() {
         return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -1522,19 +1746,51 @@ public final class MsgCrtRscConnOuterClass {
        * Resource 2 uuid
        * </pre>
        *
-       * <code>optional bytes rsc_2_uuid = 6;</code>
+       * <code>optional string rsc_2_uuid = 6;</code>
        */
-      public com.google.protobuf.ByteString getRsc2Uuid() {
-        return rsc2Uuid_;
+      public java.lang.String getRsc2Uuid() {
+        java.lang.Object ref = rsc2Uuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            rsc2Uuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * Resource 2 uuid
        * </pre>
        *
-       * <code>optional bytes rsc_2_uuid = 6;</code>
+       * <code>optional string rsc_2_uuid = 6;</code>
        */
-      public Builder setRsc2Uuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getRsc2UuidBytes() {
+        java.lang.Object ref = rsc2Uuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          rsc2Uuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Resource 2 uuid
+       * </pre>
+       *
+       * <code>optional string rsc_2_uuid = 6;</code>
+       */
+      public Builder setRsc2Uuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1548,11 +1804,28 @@ public final class MsgCrtRscConnOuterClass {
        * Resource 2 uuid
        * </pre>
        *
-       * <code>optional bytes rsc_2_uuid = 6;</code>
+       * <code>optional string rsc_2_uuid = 6;</code>
        */
       public Builder clearRsc2Uuid() {
         bitField0_ = (bitField0_ & ~0x00000020);
         rsc2Uuid_ = getDefaultInstance().getRsc2Uuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource 2 uuid
+       * </pre>
+       *
+       * <code>optional string rsc_2_uuid = 6;</code>
+       */
+      public Builder setRsc2UuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        rsc2Uuid_ = value;
         onChanged();
         return this;
       }
@@ -1934,9 +2207,9 @@ public final class MsgCrtRscConnOuterClass {
       "\n\031proto/MsgCrtRscConn.proto\022\030com.linbit." +
       "linstor.proto\032\033proto/LinStorMapEntry.pro" +
       "to\"\315\001\n\rMsgCrtRscConn\022\025\n\rrsc_conn_uuid\030\001 " +
-      "\001(\014\022\023\n\013node_name_1\030\002 \002(\t\022\023\n\013node_name_2\030" +
+      "\001(\t\022\023\n\013node_name_1\030\002 \002(\t\022\023\n\013node_name_2\030" +
       "\003 \002(\t\022\020\n\010rsc_name\030\004 \002(\t\022\022\n\nrsc_1_uuid\030\005 " +
-      "\001(\014\022\022\n\nrsc_2_uuid\030\006 \001(\014\022A\n\016rsc_conn_prop" +
+      "\001(\t\022\022\n\nrsc_2_uuid\030\006 \001(\t\022A\n\016rsc_conn_prop" +
       "s\030\007 \003(\0132).com.linbit.linstor.proto.LinSt" +
       "orMapEntryP\000"
     };

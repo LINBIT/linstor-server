@@ -16,7 +16,6 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgModRscDfnOuterClass.MsgModRscDfn;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.UuidUtils;
 
 @ProtobufApiCall
 public class ModifyResourceDefinition extends BaseProtoApiCall
@@ -49,7 +48,7 @@ public class ModifyResourceDefinition extends BaseProtoApiCall
         UUID rscDfnUUID = null;
         if (modRscDfn.hasRscDfnUuid())
         {
-            rscDfnUUID = UuidUtils.asUuid(modRscDfn.getRscDfnUuid().toByteArray());
+            rscDfnUUID = UUID.fromString(modRscDfn.getRscDfnUuid());
         }
         String rscNameStr = modRscDfn.getRscName();
         Integer port = null;

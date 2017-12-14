@@ -1,11 +1,8 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.google.protobuf.ByteString;
-import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
-import com.linbit.linstor.proto.RscDfnOuterClass;
 import com.linbit.linstor.proto.StorPoolDfnOuterClass;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +25,7 @@ public class StorPoolDfnApiData implements StorPoolDefinition.StorPoolDfnApi {
         UUID uuid = null;
         if(storPoolDfn.hasUuid())
         {
-            uuid = UUID.nameUUIDFromBytes(storPoolDfn.getUuid().toByteArray());
+            uuid = UUID.fromString(storPoolDfn.getUuid());
         }
         return uuid;
     }
@@ -52,7 +49,7 @@ public class StorPoolDfnApiData implements StorPoolDefinition.StorPoolDfnApi {
     {
         StorPoolDfnOuterClass.StorPoolDfn.Builder storPoolDfnBld = StorPoolDfnOuterClass.StorPoolDfn.newBuilder();
         storPoolDfnBld.setStorPoolName(apiStorPoolDfn.getName());
-        storPoolDfnBld.setUuid(ByteString.copyFrom(apiStorPoolDfn.getUuid().toString().getBytes()));
+        storPoolDfnBld.setUuid(apiStorPoolDfn.getUuid().toString());
         storPoolDfnBld.addAllProps(BaseProtoApiCall.fromMap(apiStorPoolDfn.getProps()));
 
         return storPoolDfnBld.build();

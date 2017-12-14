@@ -50,7 +50,7 @@ public class IntRequestResource extends BaseProtoApiCall
         String nodeName = nodeId.getName();
 
         MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-        UUID rscUuid = asUuid(rscId.getUuid());
+        UUID rscUuid = UUID.fromString(rscId.getUuid());
         String rscName = rscId.getName();
 
         controller.getApiCallHandler().handleResourceRequest(satellitePeer, msgId, nodeName, rscUuid, rscName);

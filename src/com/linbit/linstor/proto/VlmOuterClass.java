@@ -23,7 +23,7 @@ public final class VlmOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes vlm_uuid = 1;</code>
+     * <code>optional string vlm_uuid = 1;</code>
      */
     boolean hasVlmUuid();
     /**
@@ -31,16 +31,25 @@ public final class VlmOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes vlm_uuid = 1;</code>
+     * <code>optional string vlm_uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getVlmUuid();
+    java.lang.String getVlmUuid();
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional string vlm_uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getVlmUuidBytes();
 
     /**
      * <pre>
      * Volume definition uuid
      * </pre>
      *
-     * <code>optional bytes vlm_dfn_uuid = 2;</code>
+     * <code>optional string vlm_dfn_uuid = 2;</code>
      */
     boolean hasVlmDfnUuid();
     /**
@@ -48,9 +57,18 @@ public final class VlmOuterClass {
      * Volume definition uuid
      * </pre>
      *
-     * <code>optional bytes vlm_dfn_uuid = 2;</code>
+     * <code>optional string vlm_dfn_uuid = 2;</code>
      */
-    com.google.protobuf.ByteString getVlmDfnUuid();
+    java.lang.String getVlmDfnUuid();
+    /**
+     * <pre>
+     * Volume definition uuid
+     * </pre>
+     *
+     * <code>optional string vlm_dfn_uuid = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getVlmDfnUuidBytes();
 
     /**
      * <pre>
@@ -126,7 +144,7 @@ public final class VlmOuterClass {
      * Storage pool uuid
      * </pre>
      *
-     * <code>optional bytes stor_pool_uuid = 6;</code>
+     * <code>optional string stor_pool_uuid = 6;</code>
      */
     boolean hasStorPoolUuid();
     /**
@@ -134,9 +152,18 @@ public final class VlmOuterClass {
      * Storage pool uuid
      * </pre>
      *
-     * <code>optional bytes stor_pool_uuid = 6;</code>
+     * <code>optional string stor_pool_uuid = 6;</code>
      */
-    com.google.protobuf.ByteString getStorPoolUuid();
+    java.lang.String getStorPoolUuid();
+    /**
+     * <pre>
+     * Storage pool uuid
+     * </pre>
+     *
+     * <code>optional string stor_pool_uuid = 6;</code>
+     */
+    com.google.protobuf.ByteString
+        getStorPoolUuidBytes();
 
     /**
      * <pre>
@@ -244,12 +271,12 @@ public final class VlmOuterClass {
       super(builder);
     }
     private Vlm() {
-      vlmUuid_ = com.google.protobuf.ByteString.EMPTY;
-      vlmDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      vlmUuid_ = "";
+      vlmDfnUuid_ = "";
       vlmNr_ = 0;
       blockDevice_ = "";
       metaDisk_ = "";
-      storPoolUuid_ = com.google.protobuf.ByteString.EMPTY;
+      storPoolUuid_ = "";
       storPoolName_ = "";
       vlmFlags_ = 0L;
       vlmProps_ = java.util.Collections.emptyList();
@@ -284,13 +311,15 @@ public final class VlmOuterClass {
               break;
             }
             case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              vlmUuid_ = input.readBytes();
+              vlmUuid_ = bs;
               break;
             }
             case 18: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000002;
-              vlmDfnUuid_ = input.readBytes();
+              vlmDfnUuid_ = bs;
               break;
             }
             case 24: {
@@ -311,8 +340,9 @@ public final class VlmOuterClass {
               break;
             }
             case 50: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000020;
-              storPoolUuid_ = input.readBytes();
+              storPoolUuid_ = bs;
               break;
             }
             case 58: {
@@ -364,13 +394,13 @@ public final class VlmOuterClass {
 
     private int bitField0_;
     public static final int VLM_UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString vlmUuid_;
+    private volatile java.lang.Object vlmUuid_;
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes vlm_uuid = 1;</code>
+     * <code>optional string vlm_uuid = 1;</code>
      */
     public boolean hasVlmUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -380,20 +410,51 @@ public final class VlmOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes vlm_uuid = 1;</code>
+     * <code>optional string vlm_uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getVlmUuid() {
-      return vlmUuid_;
+    public java.lang.String getVlmUuid() {
+      java.lang.Object ref = vlmUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          vlmUuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional string vlm_uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getVlmUuidBytes() {
+      java.lang.Object ref = vlmUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        vlmUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int VLM_DFN_UUID_FIELD_NUMBER = 2;
-    private com.google.protobuf.ByteString vlmDfnUuid_;
+    private volatile java.lang.Object vlmDfnUuid_;
     /**
      * <pre>
      * Volume definition uuid
      * </pre>
      *
-     * <code>optional bytes vlm_dfn_uuid = 2;</code>
+     * <code>optional string vlm_dfn_uuid = 2;</code>
      */
     public boolean hasVlmDfnUuid() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -403,10 +464,41 @@ public final class VlmOuterClass {
      * Volume definition uuid
      * </pre>
      *
-     * <code>optional bytes vlm_dfn_uuid = 2;</code>
+     * <code>optional string vlm_dfn_uuid = 2;</code>
      */
-    public com.google.protobuf.ByteString getVlmDfnUuid() {
-      return vlmDfnUuid_;
+    public java.lang.String getVlmDfnUuid() {
+      java.lang.Object ref = vlmDfnUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          vlmDfnUuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Volume definition uuid
+     * </pre>
+     *
+     * <code>optional string vlm_dfn_uuid = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getVlmDfnUuidBytes() {
+      java.lang.Object ref = vlmDfnUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        vlmDfnUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int VLM_NR_FIELD_NUMBER = 3;
@@ -541,13 +633,13 @@ public final class VlmOuterClass {
     }
 
     public static final int STOR_POOL_UUID_FIELD_NUMBER = 6;
-    private com.google.protobuf.ByteString storPoolUuid_;
+    private volatile java.lang.Object storPoolUuid_;
     /**
      * <pre>
      * Storage pool uuid
      * </pre>
      *
-     * <code>optional bytes stor_pool_uuid = 6;</code>
+     * <code>optional string stor_pool_uuid = 6;</code>
      */
     public boolean hasStorPoolUuid() {
       return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -557,10 +649,41 @@ public final class VlmOuterClass {
      * Storage pool uuid
      * </pre>
      *
-     * <code>optional bytes stor_pool_uuid = 6;</code>
+     * <code>optional string stor_pool_uuid = 6;</code>
      */
-    public com.google.protobuf.ByteString getStorPoolUuid() {
-      return storPoolUuid_;
+    public java.lang.String getStorPoolUuid() {
+      java.lang.Object ref = storPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          storPoolUuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Storage pool uuid
+     * </pre>
+     *
+     * <code>optional string stor_pool_uuid = 6;</code>
+     */
+    public com.google.protobuf.ByteString
+        getStorPoolUuidBytes() {
+      java.lang.Object ref = storPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        storPoolUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int STOR_POOL_NAME_FIELD_NUMBER = 7;
@@ -721,10 +844,10 @@ public final class VlmOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, vlmUuid_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, vlmUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, vlmDfnUuid_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, vlmDfnUuid_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeSInt32(3, vlmNr_);
@@ -736,7 +859,7 @@ public final class VlmOuterClass {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 5, metaDisk_);
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        output.writeBytes(6, storPoolUuid_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 6, storPoolUuid_);
       }
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 7, storPoolName_);
@@ -756,12 +879,10 @@ public final class VlmOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, vlmUuid_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, vlmUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, vlmDfnUuid_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, vlmDfnUuid_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
@@ -774,8 +895,7 @@ public final class VlmOuterClass {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, metaDisk_);
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(6, storPoolUuid_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, storPoolUuid_);
       }
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, storPoolName_);
@@ -1018,9 +1138,9 @@ public final class VlmOuterClass {
       }
       public Builder clear() {
         super.clear();
-        vlmUuid_ = com.google.protobuf.ByteString.EMPTY;
+        vlmUuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
-        vlmDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+        vlmDfnUuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
         vlmNr_ = 0;
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -1028,7 +1148,7 @@ public final class VlmOuterClass {
         bitField0_ = (bitField0_ & ~0x00000008);
         metaDisk_ = "";
         bitField0_ = (bitField0_ & ~0x00000010);
-        storPoolUuid_ = com.google.protobuf.ByteString.EMPTY;
+        storPoolUuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000020);
         storPoolName_ = "";
         bitField0_ = (bitField0_ & ~0x00000040);
@@ -1148,10 +1268,14 @@ public final class VlmOuterClass {
       public Builder mergeFrom(com.linbit.linstor.proto.VlmOuterClass.Vlm other) {
         if (other == com.linbit.linstor.proto.VlmOuterClass.Vlm.getDefaultInstance()) return this;
         if (other.hasVlmUuid()) {
-          setVlmUuid(other.getVlmUuid());
+          bitField0_ |= 0x00000001;
+          vlmUuid_ = other.vlmUuid_;
+          onChanged();
         }
         if (other.hasVlmDfnUuid()) {
-          setVlmDfnUuid(other.getVlmDfnUuid());
+          bitField0_ |= 0x00000002;
+          vlmDfnUuid_ = other.vlmDfnUuid_;
+          onChanged();
         }
         if (other.hasVlmNr()) {
           setVlmNr(other.getVlmNr());
@@ -1167,7 +1291,9 @@ public final class VlmOuterClass {
           onChanged();
         }
         if (other.hasStorPoolUuid()) {
-          setStorPoolUuid(other.getStorPoolUuid());
+          bitField0_ |= 0x00000020;
+          storPoolUuid_ = other.storPoolUuid_;
+          onChanged();
         }
         if (other.hasStorPoolName()) {
           bitField0_ |= 0x00000040;
@@ -1239,13 +1365,13 @@ public final class VlmOuterClass {
       }
       private int bitField0_;
 
-      private com.google.protobuf.ByteString vlmUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object vlmUuid_ = "";
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes vlm_uuid = 1;</code>
+       * <code>optional string vlm_uuid = 1;</code>
        */
       public boolean hasVlmUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -1255,19 +1381,51 @@ public final class VlmOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes vlm_uuid = 1;</code>
+       * <code>optional string vlm_uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getVlmUuid() {
-        return vlmUuid_;
+      public java.lang.String getVlmUuid() {
+        java.lang.Object ref = vlmUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            vlmUuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes vlm_uuid = 1;</code>
+       * <code>optional string vlm_uuid = 1;</code>
        */
-      public Builder setVlmUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getVlmUuidBytes() {
+        java.lang.Object ref = vlmUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          vlmUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional string vlm_uuid = 1;</code>
+       */
+      public Builder setVlmUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1281,7 +1439,7 @@ public final class VlmOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes vlm_uuid = 1;</code>
+       * <code>optional string vlm_uuid = 1;</code>
        */
       public Builder clearVlmUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -1289,14 +1447,31 @@ public final class VlmOuterClass {
         onChanged();
         return this;
       }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional string vlm_uuid = 1;</code>
+       */
+      public Builder setVlmUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        vlmUuid_ = value;
+        onChanged();
+        return this;
+      }
 
-      private com.google.protobuf.ByteString vlmDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object vlmDfnUuid_ = "";
       /**
        * <pre>
        * Volume definition uuid
        * </pre>
        *
-       * <code>optional bytes vlm_dfn_uuid = 2;</code>
+       * <code>optional string vlm_dfn_uuid = 2;</code>
        */
       public boolean hasVlmDfnUuid() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -1306,19 +1481,51 @@ public final class VlmOuterClass {
        * Volume definition uuid
        * </pre>
        *
-       * <code>optional bytes vlm_dfn_uuid = 2;</code>
+       * <code>optional string vlm_dfn_uuid = 2;</code>
        */
-      public com.google.protobuf.ByteString getVlmDfnUuid() {
-        return vlmDfnUuid_;
+      public java.lang.String getVlmDfnUuid() {
+        java.lang.Object ref = vlmDfnUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            vlmDfnUuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * Volume definition uuid
        * </pre>
        *
-       * <code>optional bytes vlm_dfn_uuid = 2;</code>
+       * <code>optional string vlm_dfn_uuid = 2;</code>
        */
-      public Builder setVlmDfnUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getVlmDfnUuidBytes() {
+        java.lang.Object ref = vlmDfnUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          vlmDfnUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Volume definition uuid
+       * </pre>
+       *
+       * <code>optional string vlm_dfn_uuid = 2;</code>
+       */
+      public Builder setVlmDfnUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1332,11 +1539,28 @@ public final class VlmOuterClass {
        * Volume definition uuid
        * </pre>
        *
-       * <code>optional bytes vlm_dfn_uuid = 2;</code>
+       * <code>optional string vlm_dfn_uuid = 2;</code>
        */
       public Builder clearVlmDfnUuid() {
         bitField0_ = (bitField0_ & ~0x00000002);
         vlmDfnUuid_ = getDefaultInstance().getVlmDfnUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Volume definition uuid
+       * </pre>
+       *
+       * <code>optional string vlm_dfn_uuid = 2;</code>
+       */
+      public Builder setVlmDfnUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        vlmDfnUuid_ = value;
         onChanged();
         return this;
       }
@@ -1589,13 +1813,13 @@ public final class VlmOuterClass {
         return this;
       }
 
-      private com.google.protobuf.ByteString storPoolUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object storPoolUuid_ = "";
       /**
        * <pre>
        * Storage pool uuid
        * </pre>
        *
-       * <code>optional bytes stor_pool_uuid = 6;</code>
+       * <code>optional string stor_pool_uuid = 6;</code>
        */
       public boolean hasStorPoolUuid() {
         return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -1605,19 +1829,51 @@ public final class VlmOuterClass {
        * Storage pool uuid
        * </pre>
        *
-       * <code>optional bytes stor_pool_uuid = 6;</code>
+       * <code>optional string stor_pool_uuid = 6;</code>
        */
-      public com.google.protobuf.ByteString getStorPoolUuid() {
-        return storPoolUuid_;
+      public java.lang.String getStorPoolUuid() {
+        java.lang.Object ref = storPoolUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            storPoolUuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * Storage pool uuid
        * </pre>
        *
-       * <code>optional bytes stor_pool_uuid = 6;</code>
+       * <code>optional string stor_pool_uuid = 6;</code>
        */
-      public Builder setStorPoolUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getStorPoolUuidBytes() {
+        java.lang.Object ref = storPoolUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          storPoolUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool uuid
+       * </pre>
+       *
+       * <code>optional string stor_pool_uuid = 6;</code>
+       */
+      public Builder setStorPoolUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1631,11 +1887,28 @@ public final class VlmOuterClass {
        * Storage pool uuid
        * </pre>
        *
-       * <code>optional bytes stor_pool_uuid = 6;</code>
+       * <code>optional string stor_pool_uuid = 6;</code>
        */
       public Builder clearStorPoolUuid() {
         bitField0_ = (bitField0_ & ~0x00000020);
         storPoolUuid_ = getDefaultInstance().getStorPoolUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool uuid
+       * </pre>
+       *
+       * <code>optional string stor_pool_uuid = 6;</code>
+       */
+      public Builder setStorPoolUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        storPoolUuid_ = value;
         onChanged();
         return this;
       }
@@ -2170,10 +2443,10 @@ public final class VlmOuterClass {
     java.lang.String[] descriptorData = {
       "\n\017proto/Vlm.proto\022\030com.linbit.linstor.pr" +
       "oto\032\033proto/LinStorMapEntry.proto\"\347\001\n\003Vlm" +
-      "\022\020\n\010vlm_uuid\030\001 \001(\014\022\024\n\014vlm_dfn_uuid\030\002 \001(\014" +
+      "\022\020\n\010vlm_uuid\030\001 \001(\t\022\024\n\014vlm_dfn_uuid\030\002 \001(\t" +
       "\022\016\n\006vlm_nr\030\003 \002(\021\022\024\n\014block_device\030\004 \001(\t\022\021" +
       "\n\tmeta_disk\030\005 \001(\t\022\026\n\016stor_pool_uuid\030\006 \001(" +
-      "\014\022\026\n\016stor_pool_name\030\007 \001(\t\022\021\n\tvlm_flags\030\010" +
+      "\t\022\026\n\016stor_pool_name\030\007 \001(\t\022\021\n\tvlm_flags\030\010" +
       " \001(\022\022<\n\tvlm_props\030\t \003(\0132).com.linbit.lin" +
       "stor.proto.LinStorMapEntryP\000"
     };

@@ -1,12 +1,10 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.google.protobuf.ByteString;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,7 +35,7 @@ public class NodeApiData implements Node.NodeApi {
         UUID uuid = null;
         if(node.hasUuid())
         {
-            uuid = UUID.nameUUIDFromBytes(node.getUuid().toByteArray());
+            uuid = UUID.fromString(node.getUuid());
         }
         return uuid;
     }
@@ -75,7 +73,7 @@ public class NodeApiData implements Node.NodeApi {
 
         bld.setName(nodeApi.getName());
         bld.setType(nodeApi.getType());
-        bld.setUuid(ByteString.copyFrom(nodeApi.getUuid().toString().getBytes()));
+        bld.setUuid(nodeApi.getUuid().toString());
         bld.addAllProps(BaseProtoApiCall.fromMap(nodeApi.getProps()));
         bld.addAllNetInterfaces(NetInterfaceApiData.toNetInterfaceProtoList(nodeApi.getNetInterfaces()));
 

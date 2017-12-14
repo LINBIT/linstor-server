@@ -23,9 +23,18 @@ public final class MsgIntAuthOuterClass {
      * Satellite's node uuid
      * </pre>
      *
-     * <code>bytes node_uuid = 1;</code>
+     * <code>string node_uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getNodeUuid();
+    java.lang.String getNodeUuid();
+    /**
+     * <pre>
+     * Satellite's node uuid
+     * </pre>
+     *
+     * <code>string node_uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getNodeUuidBytes();
 
     /**
      * <pre>
@@ -70,7 +79,7 @@ public final class MsgIntAuthOuterClass {
       super(builder);
     }
     private MsgIntAuth() {
-      nodeUuid_ = com.google.protobuf.ByteString.EMPTY;
+      nodeUuid_ = "";
       nodeName_ = "";
       sharedSecret_ = com.google.protobuf.ByteString.EMPTY;
     }
@@ -101,8 +110,9 @@ public final class MsgIntAuthOuterClass {
               break;
             }
             case 10: {
+              java.lang.String s = input.readStringRequireUtf8();
 
-              nodeUuid_ = input.readBytes();
+              nodeUuid_ = s;
               break;
             }
             case 18: {
@@ -140,16 +150,45 @@ public final class MsgIntAuthOuterClass {
     }
 
     public static final int NODE_UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString nodeUuid_;
+    private volatile java.lang.Object nodeUuid_;
     /**
      * <pre>
      * Satellite's node uuid
      * </pre>
      *
-     * <code>bytes node_uuid = 1;</code>
+     * <code>string node_uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getNodeUuid() {
-      return nodeUuid_;
+    public java.lang.String getNodeUuid() {
+      java.lang.Object ref = nodeUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        nodeUuid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Satellite's node uuid
+     * </pre>
+     *
+     * <code>string node_uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNodeUuidBytes() {
+      java.lang.Object ref = nodeUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        nodeUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int NODE_NAME_FIELD_NUMBER = 2;
@@ -219,8 +258,8 @@ public final class MsgIntAuthOuterClass {
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!nodeUuid_.isEmpty()) {
-        output.writeBytes(1, nodeUuid_);
+      if (!getNodeUuidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeUuid_);
       }
       if (!getNodeNameBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName_);
@@ -235,9 +274,8 @@ public final class MsgIntAuthOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (!nodeUuid_.isEmpty()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, nodeUuid_);
+      if (!getNodeUuidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeUuid_);
       }
       if (!getNodeNameBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName_);
@@ -406,7 +444,7 @@ public final class MsgIntAuthOuterClass {
       }
       public Builder clear() {
         super.clear();
-        nodeUuid_ = com.google.protobuf.ByteString.EMPTY;
+        nodeUuid_ = "";
 
         nodeName_ = "";
 
@@ -478,8 +516,9 @@ public final class MsgIntAuthOuterClass {
 
       public Builder mergeFrom(com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth other) {
         if (other == com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth.getDefaultInstance()) return this;
-        if (other.getNodeUuid() != com.google.protobuf.ByteString.EMPTY) {
-          setNodeUuid(other.getNodeUuid());
+        if (!other.getNodeUuid().isEmpty()) {
+          nodeUuid_ = other.nodeUuid_;
+          onChanged();
         }
         if (!other.getNodeName().isEmpty()) {
           nodeName_ = other.nodeName_;
@@ -514,25 +553,55 @@ public final class MsgIntAuthOuterClass {
         return this;
       }
 
-      private com.google.protobuf.ByteString nodeUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object nodeUuid_ = "";
       /**
        * <pre>
        * Satellite's node uuid
        * </pre>
        *
-       * <code>bytes node_uuid = 1;</code>
+       * <code>string node_uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getNodeUuid() {
-        return nodeUuid_;
+      public java.lang.String getNodeUuid() {
+        java.lang.Object ref = nodeUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          nodeUuid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * Satellite's node uuid
        * </pre>
        *
-       * <code>bytes node_uuid = 1;</code>
+       * <code>string node_uuid = 1;</code>
        */
-      public Builder setNodeUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getNodeUuidBytes() {
+        java.lang.Object ref = nodeUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          nodeUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Satellite's node uuid
+       * </pre>
+       *
+       * <code>string node_uuid = 1;</code>
+       */
+      public Builder setNodeUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -546,11 +615,29 @@ public final class MsgIntAuthOuterClass {
        * Satellite's node uuid
        * </pre>
        *
-       * <code>bytes node_uuid = 1;</code>
+       * <code>string node_uuid = 1;</code>
        */
       public Builder clearNodeUuid() {
         
         nodeUuid_ = getDefaultInstance().getNodeUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Satellite's node uuid
+       * </pre>
+       *
+       * <code>string node_uuid = 1;</code>
+       */
+      public Builder setNodeUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        nodeUuid_ = value;
         onChanged();
         return this;
       }
@@ -749,7 +836,7 @@ public final class MsgIntAuthOuterClass {
     java.lang.String[] descriptorData = {
       "\n#proto/javainternal/MsgIntAuth.proto\022%c" +
       "om.linbit.linstor.proto.javainternal\"I\n\n" +
-      "MsgIntAuth\022\021\n\tnode_uuid\030\001 \001(\014\022\021\n\tnode_na" +
+      "MsgIntAuth\022\021\n\tnode_uuid\030\001 \001(\t\022\021\n\tnode_na" +
       "me\030\002 \001(\t\022\025\n\rshared_secret\030\003 \001(\014b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =

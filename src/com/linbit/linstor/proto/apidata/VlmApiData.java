@@ -1,6 +1,5 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.google.protobuf.ByteString;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +24,7 @@ public class VlmApiData implements VlmApi
     public UUID getVlmUuid()
     {
         if (vlm.hasVlmUuid())
-            return UUID.nameUUIDFromBytes(vlm.getVlmUuid().toByteArray());
+            return UUID.fromString(vlm.getVlmUuid());
         return null;
     }
 
@@ -33,7 +32,7 @@ public class VlmApiData implements VlmApi
     public UUID getVlmDfnUuid()
     {
         if (vlm.hasVlmDfnUuid())
-            return UUID.nameUUIDFromBytes(vlm.getVlmDfnUuid().toByteArray());
+            return UUID.fromString(vlm.getVlmDfnUuid());
         return null;
     }
 
@@ -47,7 +46,7 @@ public class VlmApiData implements VlmApi
     public UUID getStorPoolUuid()
     {
         if (vlm.hasStorPoolUuid())
-            return UUID.nameUUIDFromBytes(vlm.getStorPoolUuid().toByteArray());
+            return UUID.fromString(vlm.getStorPoolUuid());
         return null;
     }
 
@@ -89,10 +88,10 @@ public class VlmApiData implements VlmApi
     public static Vlm toVlmProto(final VlmApi vlmApi)
     {
         Vlm.Builder builder = Vlm.newBuilder();
-        builder.setVlmUuid(ByteString.copyFrom(vlmApi.getVlmUuid().toString().getBytes()));
-        builder.setVlmDfnUuid(ByteString.copyFrom(vlmApi.getVlmDfnUuid().toString().getBytes()));
+        builder.setVlmUuid(vlmApi.getVlmUuid().toString());
+        builder.setVlmDfnUuid(vlmApi.getVlmDfnUuid().toString());
         builder.setStorPoolName(vlmApi.getStorPoolName());
-        builder.setStorPoolUuid(ByteString.copyFrom(vlmApi.getStorPoolUuid().toString().getBytes()));
+        builder.setStorPoolUuid(vlmApi.getStorPoolUuid().toString());
         builder.setVlmNr(vlmApi.getVlmNr());
         builder.setBlockDevice(vlmApi.getBlockDevice());
         builder.setMetaDisk(vlmApi.getMetaDisk());

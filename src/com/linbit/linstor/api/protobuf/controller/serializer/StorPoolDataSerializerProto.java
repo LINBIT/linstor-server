@@ -39,9 +39,9 @@ public class StorPoolDataSerializerProto extends AbsSerializerProto<StorPool>
     {
         StorPoolDefinition storPoolDfn = storPool.getDefinition(serializerCtx);
         return MsgIntStorPoolData.newBuilder()
-            .setStorPoolUuid(asByteString(storPool.getUuid()))
-            .setNodeUuid(asByteString(storPool.getNode().getUuid()))
-            .setStorPoolDfnUuid(asByteString(storPoolDfn.getUuid()))
+            .setStorPoolUuid(storPool.getUuid().toString())
+            .setNodeUuid(storPool.getNode().getUuid().toString())
+            .setStorPoolDfnUuid(storPoolDfn.getUuid().toString())
             .setStorPoolName(storPool.getName().displayValue)
             .setDriver(storPool.getDriverName())
             .addAllStorPoolProps(asLinStorList(storPool.getProps(serializerCtx)))

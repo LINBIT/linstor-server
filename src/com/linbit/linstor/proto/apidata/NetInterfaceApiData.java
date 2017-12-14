@@ -5,7 +5,6 @@
  */
 package com.linbit.linstor.proto.apidata;
 
-import com.google.protobuf.ByteString;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import java.util.ArrayList;
@@ -27,7 +26,7 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi {
     @Override
     public UUID getUuid() {
         if(netInterface.hasUuid())
-            return UUID.nameUUIDFromBytes(netInterface.getUuid().toByteArray());
+            return UUID.fromString(netInterface.getUuid());
         return null;
     }
 
@@ -66,7 +65,7 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi {
             final NetInterface.NetInterfaceApi netInterApi)
     {
         NetInterfaceOuterClass.NetInterface.Builder bld = NetInterfaceOuterClass.NetInterface.newBuilder();
-        bld.setUuid(ByteString.copyFrom(netInterApi.getUuid().toString().getBytes()));
+        bld.setUuid(netInterApi.getUuid().toString());
         bld.setName(netInterApi.getName());
         bld.setAddress(netInterApi.getAddress());
         bld.setType(netInterApi.getType());

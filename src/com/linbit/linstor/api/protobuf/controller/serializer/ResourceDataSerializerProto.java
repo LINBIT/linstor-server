@@ -68,12 +68,12 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
 
         return MsgIntRscData.newBuilder()
             .setRscName(rscName)
-            .setRscDfnUuid(asByteString(rscDfn.getUuid()))
+            .setRscDfnUuid(rscDfn.getUuid().toString())
             .setRscDfnPort(rscDfn.getPort(serializerCtx).value)
             .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))
             .setRscDfnSecret(rscDfn.getSecret(serializerCtx))
             .addAllRscDfnProps(BaseProtoApiCall.fromMap(rscDfnProps))
-            .setLocalRscUuid(asByteString(localResource.getUuid()))
+            .setLocalRscUuid(localResource.getUuid().toString())
             .setLocalRscFlags(localResource.getStateFlags().getFlagsBits(serializerCtx))
             .setLocalRscNodeId(localResource.getNodeId().value)
             .addAllLocalRscProps(BaseProtoApiCall.fromMap(rscProps))
@@ -103,7 +103,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
             Map<String, String> vlmDfnProps = vlmDfn.getProps(serializerCtx).map();
             list.add(
                 VlmDfn.newBuilder()
-                    .setVlmDfnUuid(asByteString(vlmDfn.getUuid()))
+                    .setVlmDfnUuid(vlmDfn.getUuid().toString())
                     .setVlmNr(vlmDfn.getVolumeNumber().value)
                     .setVlmSize(vlmDfn.getVolumeSize(serializerCtx))
                     .setVlmMinor(vlmDfn.getMinorNr(serializerCtx).value)
@@ -128,11 +128,11 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
             Map<String, String> volProps = vol.getProps(serializerCtx).map();
             StorPool vlmStorPool = vol.getStorPool(serializerCtx);
             Vlm.Builder builder = Vlm.newBuilder()
-                .setVlmDfnUuid(asByteString(vol.getVolumeDefinition().getUuid()))
-                .setVlmUuid(asByteString(vol.getUuid()))
+                .setVlmDfnUuid(vol.getVolumeDefinition().getUuid().toString())
+                .setVlmUuid(vol.getUuid().toString())
                 .setVlmNr(vol.getVolumeDefinition().getVolumeNumber().value)
                 .setVlmFlags(vol.getFlags().getFlagsBits(serializerCtx))
-                .setStorPoolUuid(asByteString(vlmStorPool.getUuid()))
+                .setStorPoolUuid(vlmStorPool.getUuid().toString())
                 .setStorPoolName(vlmStorPool.getName().displayValue)
                 .addAllVlmProps(BaseProtoApiCall.fromMap(volProps));
             String blockDev = vol.getBlockDevicePath(serializerCtx);
@@ -163,11 +163,11 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
             list.add(
                 MsgIntOtherRscData.newBuilder()
                     .setNodeName(node.getName().displayValue)
-                    .setNodeUuid(asByteString(node.getUuid()))
+                    .setNodeUuid(node.getUuid().toString())
                     .setNodeType(node.getNodeType(serializerCtx).getFlagValue())
                     .setNodeFlags(node.getFlags().getFlagsBits(serializerCtx))
                     .addAllNodeProps(BaseProtoApiCall.fromMap(nodeProps))
-                    .setRscUuid(asByteString(rsc.getUuid()))
+                    .setRscUuid(rsc.getUuid().toString())
                     .setRscNodeId(rsc.getNodeId().value)
                     .setRscFlags(rsc.getStateFlags().getFlagsBits(serializerCtx))
                     .addAllRscProps(BaseProtoApiCall.fromMap(rscProps))

@@ -57,7 +57,7 @@ public class ChangedStorPool extends BaseProtoApiCall
         {
             MsgIntObjectId storPoolId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
             String storPoolName = storPoolId.getName();
-            UUID storPoolUuid = BaseProtoApiCall.asUuid(storPoolId.getUuid());
+            UUID storPoolUuid = UUID.fromString(storPoolId.getUuid());
 
             Map<NodeName, UUID> nodesUpd = new TreeMap<>();
             nodesUpd.put(satellite.getLocalNode().getName(), storPoolUuid);

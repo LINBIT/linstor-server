@@ -23,7 +23,7 @@ public final class VlmDfnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes vlm_dfn_uuid = 1;</code>
+     * <code>optional string vlm_dfn_uuid = 1;</code>
      */
     boolean hasVlmDfnUuid();
     /**
@@ -31,9 +31,18 @@ public final class VlmDfnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes vlm_dfn_uuid = 1;</code>
+     * <code>optional string vlm_dfn_uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getVlmDfnUuid();
+    java.lang.String getVlmDfnUuid();
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional string vlm_dfn_uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getVlmDfnUuidBytes();
 
     /**
      * <pre>
@@ -167,7 +176,7 @@ public final class VlmDfnOuterClass {
       super(builder);
     }
     private VlmDfn() {
-      vlmDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      vlmDfnUuid_ = "";
       vlmNr_ = 0;
       vlmSize_ = 0L;
       vlmMinor_ = 0;
@@ -204,8 +213,9 @@ public final class VlmDfnOuterClass {
               break;
             }
             case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              vlmDfnUuid_ = input.readBytes();
+              vlmDfnUuid_ = bs;
               break;
             }
             case 16: {
@@ -266,13 +276,13 @@ public final class VlmDfnOuterClass {
 
     private int bitField0_;
     public static final int VLM_DFN_UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString vlmDfnUuid_;
+    private volatile java.lang.Object vlmDfnUuid_;
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes vlm_dfn_uuid = 1;</code>
+     * <code>optional string vlm_dfn_uuid = 1;</code>
      */
     public boolean hasVlmDfnUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -282,10 +292,41 @@ public final class VlmDfnOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes vlm_dfn_uuid = 1;</code>
+     * <code>optional string vlm_dfn_uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getVlmDfnUuid() {
-      return vlmDfnUuid_;
+    public java.lang.String getVlmDfnUuid() {
+      java.lang.Object ref = vlmDfnUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          vlmDfnUuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional string vlm_dfn_uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getVlmDfnUuidBytes() {
+      java.lang.Object ref = vlmDfnUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        vlmDfnUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int VLM_NR_FIELD_NUMBER = 2;
@@ -462,7 +503,7 @@ public final class VlmDfnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, vlmDfnUuid_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, vlmDfnUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         output.writeSInt32(2, vlmNr_);
@@ -488,8 +529,7 @@ public final class VlmDfnOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, vlmDfnUuid_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, vlmDfnUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
@@ -715,7 +755,7 @@ public final class VlmDfnOuterClass {
       }
       public Builder clear() {
         super.clear();
-        vlmDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+        vlmDfnUuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
         vlmNr_ = 0;
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -827,7 +867,9 @@ public final class VlmDfnOuterClass {
       public Builder mergeFrom(com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn other) {
         if (other == com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn.getDefaultInstance()) return this;
         if (other.hasVlmDfnUuid()) {
-          setVlmDfnUuid(other.getVlmDfnUuid());
+          bitField0_ |= 0x00000001;
+          vlmDfnUuid_ = other.vlmDfnUuid_;
+          onChanged();
         }
         if (other.hasVlmNr()) {
           setVlmNr(other.getVlmNr());
@@ -903,13 +945,13 @@ public final class VlmDfnOuterClass {
       }
       private int bitField0_;
 
-      private com.google.protobuf.ByteString vlmDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object vlmDfnUuid_ = "";
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes vlm_dfn_uuid = 1;</code>
+       * <code>optional string vlm_dfn_uuid = 1;</code>
        */
       public boolean hasVlmDfnUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -919,19 +961,51 @@ public final class VlmDfnOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes vlm_dfn_uuid = 1;</code>
+       * <code>optional string vlm_dfn_uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getVlmDfnUuid() {
-        return vlmDfnUuid_;
+      public java.lang.String getVlmDfnUuid() {
+        java.lang.Object ref = vlmDfnUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            vlmDfnUuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes vlm_dfn_uuid = 1;</code>
+       * <code>optional string vlm_dfn_uuid = 1;</code>
        */
-      public Builder setVlmDfnUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getVlmDfnUuidBytes() {
+        java.lang.Object ref = vlmDfnUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          vlmDfnUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional string vlm_dfn_uuid = 1;</code>
+       */
+      public Builder setVlmDfnUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -945,11 +1019,28 @@ public final class VlmDfnOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes vlm_dfn_uuid = 1;</code>
+       * <code>optional string vlm_dfn_uuid = 1;</code>
        */
       public Builder clearVlmDfnUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
         vlmDfnUuid_ = getDefaultInstance().getVlmDfnUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional string vlm_dfn_uuid = 1;</code>
+       */
+      public Builder setVlmDfnUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        vlmDfnUuid_ = value;
         onChanged();
         return this;
       }
@@ -1530,7 +1621,7 @@ public final class VlmDfnOuterClass {
     java.lang.String[] descriptorData = {
       "\n\022proto/VlmDfn.proto\022\030com.linbit.linstor" +
       ".proto\032\033proto/LinStorMapEntry.proto\"\244\001\n\006" +
-      "VlmDfn\022\024\n\014vlm_dfn_uuid\030\001 \001(\014\022\016\n\006vlm_nr\030\002" +
+      "VlmDfn\022\024\n\014vlm_dfn_uuid\030\001 \001(\t\022\016\n\006vlm_nr\030\002" +
       " \001(\021\022\020\n\010vlm_size\030\003 \002(\003\022\021\n\tvlm_minor\030\004 \001(" +
       "\021\022\021\n\tvlm_flags\030\005 \001(\022\022<\n\tvlm_props\030\006 \003(\0132" +
       ").com.linbit.linstor.proto.LinStorMapEnt" +

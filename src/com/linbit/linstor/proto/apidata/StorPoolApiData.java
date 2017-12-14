@@ -5,7 +5,6 @@
  */
 package com.linbit.linstor.proto.apidata;
 
-import com.google.protobuf.ByteString;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
@@ -33,7 +32,7 @@ public class StorPoolApiData implements StorPool.StorPoolApi {
         UUID uuid = null;
         if (storPool.hasStorPoolUuid())
         {
-            uuid = UUID.nameUUIDFromBytes(storPool.getStorPoolUuid().toByteArray());
+            uuid = UUID.fromString(storPool.getStorPoolUuid());
         }
         return uuid;
     }
@@ -52,7 +51,7 @@ public class StorPoolApiData implements StorPool.StorPoolApi {
     public UUID getNodeUuid() {
         UUID uuid = null;
         if (storPool.hasNodeUuid())
-            uuid = UUID.nameUUIDFromBytes(storPool.getNodeUuid().toByteArray());
+            uuid = UUID.fromString(storPool.getNodeUuid());
         return uuid;
     }
 
@@ -60,7 +59,7 @@ public class StorPoolApiData implements StorPool.StorPoolApi {
     public UUID getStorPoolDfnUuid() {
         UUID uuid = null;
         if (storPool.hasStorPoolDfnUuid())
-            uuid = UUID.nameUUIDFromBytes(storPool.getStorPoolDfnUuid().toByteArray());
+            uuid = UUID.fromString(storPool.getStorPoolDfnUuid());
         return uuid;
     }
 
@@ -88,11 +87,10 @@ public class StorPoolApiData implements StorPool.StorPoolApi {
     {
         StorPoolOuterClass.StorPool.Builder storPoolBld = StorPoolOuterClass.StorPool.newBuilder();
         storPoolBld.setStorPoolName(apiStorPool.getStorPoolName());
-        storPoolBld.setStorPoolUuid(ByteString.copyFrom(apiStorPool.getStorPoolUuid().toString().getBytes()));
+        storPoolBld.setStorPoolUuid(apiStorPool.getStorPoolUuid().toString());
         storPoolBld.setNodeName(apiStorPool.getNodeName());
-        storPoolBld.setNodeUuid(ByteString.copyFrom(apiStorPool.getNodeUuid().toString().getBytes()));
-        storPoolBld.setStorPoolDfnUuid(ByteString.copyFrom(
-                apiStorPool.getStorPoolDfnUuid().toString().getBytes()));
+        storPoolBld.setNodeUuid(apiStorPool.getNodeUuid().toString());
+        storPoolBld.setStorPoolDfnUuid(apiStorPool.getStorPoolDfnUuid().toString());
         storPoolBld.setDriver(apiStorPool.getDriver());
         storPoolBld.addAllProps(BaseProtoApiCall.fromMap(apiStorPool.getStorPoolProps()));
         storPoolBld.addAllVlms(VlmApiData.toVlmProtoList(apiStorPool.getVlmList()));

@@ -10,7 +10,6 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.UuidUtils;
 
 abstract class RequestObject extends BaseProtoApiCall
 {
@@ -52,7 +51,7 @@ abstract class RequestObject extends BaseProtoApiCall
         throws IOException
     {
         MsgIntObjectId objId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-        UUID objUuid = UuidUtils.asUuid(objId.getUuid().toByteArray());
+        UUID objUuid = UUID.fromString(objId.getUuid());
         String name = objId.getName();
 
         handleRequest(name, objUuid, msgId, satellitePeer);

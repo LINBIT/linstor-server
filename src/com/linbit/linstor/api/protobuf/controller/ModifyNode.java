@@ -16,7 +16,6 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgModNodeOuterClass.MsgModNode;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.UuidUtils;
 
 @ProtobufApiCall
 public class ModifyNode extends BaseProtoApiCall
@@ -55,7 +54,7 @@ public class ModifyNode extends BaseProtoApiCall
         UUID nodeUuid = null;
         if (msgModNode.hasNodeUuid())
         {
-            nodeUuid = UuidUtils.asUuid(msgModNode.getNodeUuid().toByteArray());
+            nodeUuid = UUID.fromString(msgModNode.getNodeUuid());
         }
         String nodeName = msgModNode.getNodeName();
         String nodeType = null;

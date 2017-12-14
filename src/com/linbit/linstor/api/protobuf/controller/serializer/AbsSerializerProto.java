@@ -61,7 +61,7 @@ abstract class AbsSerializerProto<TYPE> implements CtrlSerializer<TYPE>
 
             MsgIntObjectId.newBuilder()
                 .setName(getName(data))
-                .setUuid(asByteString(getUuid(data)))
+                .setUuid(getUuid(data).toString())
                 .build()
                 .writeDelimitedTo(baos);
 

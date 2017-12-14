@@ -16,7 +16,6 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.UuidUtils;
 
 @ProtobufApiCall
 public class CtrlAuth extends BaseProtoApiCall
@@ -54,7 +53,7 @@ public class CtrlAuth extends BaseProtoApiCall
         // TODO: implement authentication
         MsgIntAuth auth = MsgIntAuth.parseDelimitedFrom(msgDataIn);
         String nodeName = auth.getNodeName();
-        UUID nodeUuid = UuidUtils.asUuid(auth.getNodeUuid().toByteArray());
+        UUID nodeUuid = UUID.fromString(auth.getNodeUuid());
 
         satellite.getErrorReporter().logInfo("Controller connected and authenticated");
         satellite.setControllerPeer(controllerPeer, nodeUuid, nodeName);

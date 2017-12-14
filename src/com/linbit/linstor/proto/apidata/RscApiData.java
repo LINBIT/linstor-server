@@ -5,7 +5,6 @@
  */
 package com.linbit.linstor.proto.apidata;
 
-import com.google.protobuf.ByteString;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
@@ -31,7 +30,7 @@ public class RscApiData implements Resource.RscApi {
     @Override
     public UUID getUuid() {
         if (resource.hasUuid())
-            return UUID.nameUUIDFromBytes(resource.getUuid().toByteArray());
+            return UUID.fromString(resource.getUuid());
         return null;
     }
 
@@ -43,7 +42,7 @@ public class RscApiData implements Resource.RscApi {
     @Override
     public UUID getNodeUuid() {
         if (resource.hasNodeUuid())
-            return UUID.nameUUIDFromBytes(resource.getNodeUuid().toByteArray());
+            return UUID.fromString(resource.getNodeUuid());
         return null;
     }
 
@@ -55,7 +54,7 @@ public class RscApiData implements Resource.RscApi {
     @Override
     public UUID getRscDfnUuid() {
         if (resource.hasRscDfnUuid())
-            return UUID.nameUUIDFromBytes(resource.getRscDfnUuid().toByteArray());
+            return UUID.fromString(resource.getRscDfnUuid());
         return null;
     }
 
@@ -79,10 +78,10 @@ public class RscApiData implements Resource.RscApi {
         RscOuterClass.Rsc.Builder rscBld = RscOuterClass.Rsc.newBuilder();
 
         rscBld.setName(apiResource.getName());
-        rscBld.setUuid(ByteString.copyFrom(apiResource.getUuid().toString().getBytes()));
+        rscBld.setUuid(apiResource.getUuid().toString());
         rscBld.setNodeName(apiResource.getNodeName());
-        rscBld.setNodeUuid(ByteString.copyFrom(apiResource.getNodeUuid().toString().getBytes()));
-        rscBld.setRscDfnUuid(ByteString.copyFrom(apiResource.getRscDfnUuid().toString().getBytes()));
+        rscBld.setNodeUuid(apiResource.getNodeUuid().toString());
+        rscBld.setRscDfnUuid(apiResource.getRscDfnUuid().toString());
         rscBld.addAllProps(BaseProtoApiCall.fromMap(apiResource.getProps()));
         rscBld.addAllVlms(VlmApiData.toVlmProtoList(apiResource.getVlmList()));
 

@@ -59,7 +59,7 @@ public class ChangedRsc extends BaseProtoApiCall
         {
             MsgIntObjectId rscId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
             rscName = rscId.getName();
-            UUID rscUuid = asUuid(rscId.getUuid());
+            UUID rscUuid = UUID.fromString(rscId.getUuid());
 
             Map<NodeName, UUID> changedNodes = new TreeMap<>();
             // controller could notify us (in future) about changes in other nodes

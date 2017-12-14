@@ -22,7 +22,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
@@ -49,7 +48,6 @@ import com.linbit.linstor.proto.MsgModNodeOuterClass.MsgModNode;
 import com.linbit.linstor.proto.MsgModRscDfnOuterClass.MsgModRscDfn;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
-import com.linbit.utils.UuidUtils;
 
 public class ClientProtobuf implements Runnable
 {
@@ -535,7 +533,7 @@ public class ClientProtobuf implements Runnable
             .setRscName(rscName);
         if (rscDfnUuid != null)
         {
-            msgBuilder.setRscDfnUuid(ByteString.copyFrom(UuidUtils.asByteArray(rscDfnUuid)));
+            msgBuilder.setRscDfnUuid(rscDfnUuid.toString());
         }
         if (port != null) {
             msgBuilder.setRscDfnPort(port);

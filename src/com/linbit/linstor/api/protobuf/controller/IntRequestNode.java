@@ -12,7 +12,6 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.UuidUtils;
 
 @ProtobufApiCall
 public class IntRequestNode extends BaseProtoApiCall
@@ -42,7 +41,7 @@ public class IntRequestNode extends BaseProtoApiCall
         throws IOException
     {
         MsgIntObjectId objId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-        UUID nodeUuid = UuidUtils.asUuid(objId.getUuid().toByteArray());
+        UUID nodeUuid = UUID.fromString(objId.getUuid());
         String nodeName = objId.getName();
 
         controller.getApiCallHandler().handleNodeRequest(client, msgId, nodeUuid, nodeName);

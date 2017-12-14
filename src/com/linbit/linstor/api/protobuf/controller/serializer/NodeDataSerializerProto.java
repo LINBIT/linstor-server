@@ -52,7 +52,7 @@ public class NodeDataSerializerProto implements CtrlNodeSerializer
 
             MsgIntObjectId.newBuilder()
                 .setName(satelliteNode.getName().displayValue)
-                .setUuid(asByteString(satelliteNode.getUuid()))
+                .setUuid(satelliteNode.getUuid().toString())
                 .build()
                 .writeDelimitedTo(baos);
 
@@ -109,7 +109,7 @@ public class NodeDataSerializerProto implements CtrlNodeSerializer
         throws AccessDeniedException
     {
         return MsgIntNodeData.newBuilder()
-            .setNodeUuid(asByteString(node.getUuid()))
+            .setNodeUuid(node.getUuid().toString())
             .setNodeName(node.getName().displayValue)
             .setNodeFlags(node.getFlags().getFlagsBits(serializerCtx))
             .setNodeType(node.getNodeType(serializerCtx).name())
@@ -128,7 +128,7 @@ public class NodeDataSerializerProto implements CtrlNodeSerializer
             NetInterface netIf = iterateNetInterfaces.next();
             netIfs.add(
                 NetIf.newBuilder()
-                    .setNetIfUuid(asByteString(netIf.getUuid()))
+                    .setNetIfUuid(netIf.getUuid().toString())
                     .setNetIfName(netIf.getName().displayValue)
                     .setNetIfAddr(netIf.getAddress(serializerCtx).getAddress())
                     .setNetIfType(netIf.getNetInterfaceType(serializerCtx).name())
@@ -161,11 +161,11 @@ public class NodeDataSerializerProto implements CtrlNodeSerializer
 
                nodeConns.add(
                    NodeConn.newBuilder()
-                       .setOtherNodeUuid(ByteString.copyFrom(UuidUtils.asByteArray(otherNode.getUuid())))
+                       .setOtherNodeUuid(otherNode.getUuid().toString())
                        .setOtherNodeName(otherName)
                        .setOtherNodeType(otherNode.getNodeType(serializerCtx).name())
                        .setOtherNodeFlags(otherNode.getFlags().getFlagsBits(serializerCtx))
-                       .setNodeConnUuid(ByteString.copyFrom(UuidUtils.asByteArray(nodeConnection.getUuid())))
+                       .setNodeConnUuid(nodeConnection.getUuid().toString())
                        .addAllNodeConnProps(
                            BaseProtoApiCall.fromMap(
                                nodeConnection.getProps(serializerCtx).map()

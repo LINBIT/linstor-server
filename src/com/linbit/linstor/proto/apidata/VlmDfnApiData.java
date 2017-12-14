@@ -1,6 +1,5 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.google.protobuf.ByteString;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -62,7 +61,7 @@ public class VlmDfnApiData implements VlmDfnApi
 
     @Override
     public UUID getUuid() {
-        return UUID.nameUUIDFromBytes(vlmDfn.getVlmDfnUuid().toByteArray());
+        return UUID.fromString(vlmDfn.getVlmDfnUuid());
     }
 
     @Override
@@ -73,7 +72,7 @@ public class VlmDfnApiData implements VlmDfnApi
     public static VlmDfn fromVlmDfnApi(final VlmDfnApi vlmDfnApi)
     {
         VlmDfn.Builder bld = VlmDfn.newBuilder();
-        bld.setVlmDfnUuid(ByteString.copyFrom(vlmDfnApi.getUuid().toString().getBytes()));
+        bld.setVlmDfnUuid(vlmDfnApi.getUuid().toString());
         if(vlmDfnApi.getVolumeNr() != null)
             bld.setVlmNr(vlmDfnApi.getVolumeNr());
         if(vlmDfnApi.getMinorNr() != null)

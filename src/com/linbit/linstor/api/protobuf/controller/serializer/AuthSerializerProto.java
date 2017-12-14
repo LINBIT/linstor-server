@@ -8,7 +8,6 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.api.interfaces.serializer.CtrlAuthSerializer;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth;
-import com.linbit.utils.UuidUtils;
 
 public class AuthSerializerProto implements CtrlAuthSerializer
 {
@@ -23,7 +22,7 @@ public class AuthSerializerProto implements CtrlAuthSerializer
             .build()
             .writeDelimitedTo(baos);
         MsgIntAuth.newBuilder()
-            .setNodeUuid(ByteString.copyFrom(UuidUtils.asByteArray(satelliteNode.getUuid())))
+            .setNodeUuid(satelliteNode.getUuid().toString())
             .setNodeName(satelliteNode.getName().displayValue)
             .setSharedSecret(ByteString.copyFrom(sharedSecret))
             .build()

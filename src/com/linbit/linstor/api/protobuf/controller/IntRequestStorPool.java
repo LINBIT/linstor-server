@@ -12,7 +12,6 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.UuidUtils;
 
 @ProtobufApiCall
 public class IntRequestStorPool extends BaseProtoApiCall
@@ -48,7 +47,7 @@ public class IntRequestStorPool extends BaseProtoApiCall
         throws IOException
     {
         MsgIntObjectId storPoolId = MsgIntObjectId.parseDelimitedFrom(msgDataIn);
-        UUID storPoolUuid = UuidUtils.asUuid(storPoolId.getUuid().toByteArray());
+        UUID storPoolUuid = UUID.fromString(storPoolId.getUuid());
         String storPoolName = storPoolId.getName();
 
         controller.getApiCallHandler().handleStorPoolRequest(satellitePeer, msgId, storPoolUuid, storPoolName);

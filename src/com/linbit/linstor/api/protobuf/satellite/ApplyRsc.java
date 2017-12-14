@@ -20,11 +20,10 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
-import com.linbit.linstor.proto.apidata.VlmApiData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.UuidUtils;
+import java.util.UUID;
 
 @ProtobufApiCall
 public class ApplyRsc extends BaseProtoApiCall
@@ -65,7 +64,7 @@ public class ApplyRsc extends BaseProtoApiCall
         List<Volume.VlmApi> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
         List<OtherRscPojo> otherRscList = extractRawOtherRsc(rscData.getOtherResourcesList());
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
-                UuidUtils.asUuid(rscData.getRscDfnUuid().toByteArray()),
+                UUID.fromString(rscData.getRscDfnUuid()),
                 rscData.getRscName(),
                 rscData.getRscDfnPort(),
                 rscData.getRscDfnSecret(),
@@ -77,7 +76,7 @@ public class ApplyRsc extends BaseProtoApiCall
             null,
             null,
             rscDfnPojo,
-            UuidUtils.asUuid(rscData.getLocalRscUuid().toByteArray()),
+            UUID.fromString(rscData.getLocalRscUuid()),
             rscData.getLocalRscFlags(),
             rscData.getLocalRscNodeId(),
             asMap(rscData.getLocalRscPropsList()),
@@ -94,7 +93,7 @@ public class ApplyRsc extends BaseProtoApiCall
         {
             list.add(
                 new VlmDfnPojo(
-                    UuidUtils.asUuid(vlmDfn.getVlmDfnUuid().toByteArray()),
+                    UUID.fromString(vlmDfn.getVlmDfnUuid()),
                     vlmDfn.getVlmNr(),
                     vlmDfn.getVlmMinor(),
                     vlmDfn.getVlmSize(),
@@ -114,9 +113,9 @@ public class ApplyRsc extends BaseProtoApiCall
             list.add(
                 new VlmPojo(
                     vol.getStorPoolName(),
-                    UuidUtils.asUuid(vol.getStorPoolUuid().toByteArray()),
-                    UuidUtils.asUuid(vol.getVlmDfnUuid().toByteArray()),
-                    UuidUtils.asUuid(vol.getVlmUuid().toByteArray()),
+                    UUID.fromString(vol.getStorPoolUuid()),
+                    UUID.fromString(vol.getVlmDfnUuid()),
+                    UUID.fromString(vol.getVlmUuid()),
                     vol.getBlockDevice(),
                     vol.getMetaDisk(),
                     vol.getVlmNr(),
@@ -136,11 +135,11 @@ public class ApplyRsc extends BaseProtoApiCall
             list.add(
                 new OtherRscPojo(
                     otherRsc.getNodeName(),
-                    UuidUtils.asUuid(otherRsc.getNodeUuid().toByteArray()),
+                    UUID.fromString(otherRsc.getNodeUuid()),
                     otherRsc.getNodeType(),
                     otherRsc.getNodeFlags(),
                     asMap(otherRsc.getNodePropsList()),
-                    UuidUtils.asUuid(otherRsc.getRscUuid().toByteArray()),
+                    UUID.fromString(otherRsc.getRscUuid()),
                     otherRsc.getRscNodeId(),
                     otherRsc.getRscFlags(),
                     asMap(otherRsc.getRscPropsList()),

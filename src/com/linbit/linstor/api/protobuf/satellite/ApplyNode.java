@@ -19,7 +19,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNode
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NetIf;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.utils.UuidUtils;
+import java.util.UUID;
 
 @ProtobufApiCall
 public class ApplyNode extends BaseProtoApiCall
@@ -56,7 +56,7 @@ public class ApplyNode extends BaseProtoApiCall
     static NodePojo asNodePojo(MsgIntNodeData nodeData)
     {
         return new NodePojo(
-            UuidUtils.asUuid(nodeData.getNodeUuid().toByteArray()),
+            UUID.fromString(nodeData.getNodeUuid()),
             nodeData.getNodeName(),
             nodeData.getNodeType(),
             nodeData.getNodeFlags(),
@@ -73,7 +73,7 @@ public class ApplyNode extends BaseProtoApiCall
         {
             netIfs.add(
                 new NetInterfacePojo(
-                    UuidUtils.asUuid(netIf.getNetIfUuid().toByteArray()),
+                    UUID.fromString(netIf.getNetIfUuid()),
                     netIf.getNetIfName(),
                     netIf.getNetIfAddr(),
                     netIf.getNetIfType(),
@@ -91,8 +91,8 @@ public class ApplyNode extends BaseProtoApiCall
         {
             nodeConns.add(
                 new NodeConnPojo(
-                    UuidUtils.asUuid(nodeConn.getNodeConnUuid().toByteArray()),
-                    UuidUtils.asUuid(nodeConn.getOtherNodeUuid().toByteArray()),
+                    UUID.fromString(nodeConn.getNodeConnUuid()),
+                    UUID.fromString(nodeConn.getOtherNodeUuid()),
                     nodeConn.getOtherNodeName(),
                     nodeConn.getOtherNodeType(),
                     nodeConn.getOtherNodeFlags(),

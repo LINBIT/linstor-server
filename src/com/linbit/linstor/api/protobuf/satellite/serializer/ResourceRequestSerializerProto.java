@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.google.protobuf.ByteString;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
@@ -12,7 +11,6 @@ import com.linbit.linstor.api.interfaces.serializer.StltResourceRequestSerialize
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass.MsgIntObjectId;
-import com.linbit.utils.UuidUtils;
 
 public class ResourceRequestSerializerProto implements StltResourceRequestSerializer
 {
@@ -41,7 +39,7 @@ public class ResourceRequestSerializerProto implements StltResourceRequestSerial
                 .build()
                 .writeDelimitedTo(baos);
             MsgIntObjectId.newBuilder()
-                .setUuid(ByteString.copyFrom(UuidUtils.asByteArray(uuid)))
+                .setUuid(uuid.toString())
                 .setName(rscName.displayValue)
                 .build()
                 .writeDelimitedTo(baos);

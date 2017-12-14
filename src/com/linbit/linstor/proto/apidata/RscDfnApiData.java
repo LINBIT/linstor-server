@@ -1,6 +1,5 @@
 package com.linbit.linstor.proto.apidata;
 
-import com.google.protobuf.ByteString;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
@@ -29,7 +28,7 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
         UUID uuid = null;
         if(rscDfn.hasUuid())
         {
-            uuid = UUID.nameUUIDFromBytes(rscDfn.getUuid().toByteArray());
+            uuid = UUID.fromString(rscDfn.getUuid());
         }
         return uuid;
     }
@@ -75,7 +74,7 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
         rscDfnBuilder.setRscName(apiRscDfn.getResourceName());
         rscDfnBuilder.setRscPort(apiRscDfn.getPort());
         rscDfnBuilder.setRscSecret(apiRscDfn.getSecret());
-        rscDfnBuilder.setUuid(ByteString.copyFrom(apiRscDfn.getUuid().toString().getBytes()));
+        rscDfnBuilder.setUuid(apiRscDfn.getUuid().toString());
         rscDfnBuilder.addAllVlmDfns(VlmDfnApiData.fromApiList(apiRscDfn.getVlmDfnList()));
         rscDfnBuilder.addAllRscProps(BaseProtoApiCall.fromMap(apiRscDfn.getProps()));
 

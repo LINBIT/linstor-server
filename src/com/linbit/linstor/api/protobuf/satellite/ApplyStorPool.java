@@ -12,6 +12,7 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.security.AccessContext;
+import java.util.UUID;
 
 @ProtobufApiCall
 public class ApplyStorPool extends BaseProtoApiCall
@@ -49,10 +50,10 @@ public class ApplyStorPool extends BaseProtoApiCall
     static StorPoolPojo asStorPoolPojo(MsgIntStorPoolData storPoolData)
     {
         StorPoolPojo storPoolRaw = new StorPoolPojo(
-            asUuid(storPoolData.getStorPoolUuid()),
-            asUuid(storPoolData.getNodeUuid()),
+            UUID.fromString(storPoolData.getStorPoolUuid()),
+            UUID.fromString(storPoolData.getNodeUuid()),
             storPoolData.getStorPoolName(),
-            asUuid(storPoolData.getStorPoolDfnUuid()),
+            UUID.fromString(storPoolData.getStorPoolDfnUuid()),
             storPoolData.getDriver(),
             asMap(storPoolData.getStorPoolPropsList()),
             asMap(storPoolData.getStorPoolDfnPropsList())

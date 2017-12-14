@@ -23,7 +23,7 @@ public final class MsgModNodeOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes node_uuid = 1;</code>
+     * <code>optional string node_uuid = 1;</code>
      */
     boolean hasNodeUuid();
     /**
@@ -31,9 +31,18 @@ public final class MsgModNodeOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes node_uuid = 1;</code>
+     * <code>optional string node_uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getNodeUuid();
+    java.lang.String getNodeUuid();
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional string node_uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getNodeUuidBytes();
 
     /**
      * <pre>
@@ -182,7 +191,7 @@ public final class MsgModNodeOuterClass {
       super(builder);
     }
     private MsgModNode() {
-      nodeUuid_ = com.google.protobuf.ByteString.EMPTY;
+      nodeUuid_ = "";
       nodeName_ = "";
       nodeType_ = "";
       overrideNodeProps_ = java.util.Collections.emptyList();
@@ -218,8 +227,9 @@ public final class MsgModNodeOuterClass {
               break;
             }
             case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              nodeUuid_ = input.readBytes();
+              nodeUuid_ = bs;
               break;
             }
             case 18: {
@@ -284,13 +294,13 @@ public final class MsgModNodeOuterClass {
 
     private int bitField0_;
     public static final int NODE_UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString nodeUuid_;
+    private volatile java.lang.Object nodeUuid_;
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes node_uuid = 1;</code>
+     * <code>optional string node_uuid = 1;</code>
      */
     public boolean hasNodeUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -300,10 +310,41 @@ public final class MsgModNodeOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes node_uuid = 1;</code>
+     * <code>optional string node_uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getNodeUuid() {
-      return nodeUuid_;
+    public java.lang.String getNodeUuid() {
+      java.lang.Object ref = nodeUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          nodeUuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional string node_uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNodeUuidBytes() {
+      java.lang.Object ref = nodeUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        nodeUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int NODE_NAME_FIELD_NUMBER = 2;
@@ -537,7 +578,7 @@ public final class MsgModNodeOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, nodeUuid_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName_);
@@ -560,8 +601,7 @@ public final class MsgModNodeOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, nodeUuid_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName_);
@@ -771,7 +811,7 @@ public final class MsgModNodeOuterClass {
       }
       public Builder clear() {
         super.clear();
-        nodeUuid_ = com.google.protobuf.ByteString.EMPTY;
+        nodeUuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
         nodeName_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -878,7 +918,9 @@ public final class MsgModNodeOuterClass {
       public Builder mergeFrom(com.linbit.linstor.proto.MsgModNodeOuterClass.MsgModNode other) {
         if (other == com.linbit.linstor.proto.MsgModNodeOuterClass.MsgModNode.getDefaultInstance()) return this;
         if (other.hasNodeUuid()) {
-          setNodeUuid(other.getNodeUuid());
+          bitField0_ |= 0x00000001;
+          nodeUuid_ = other.nodeUuid_;
+          onChanged();
         }
         if (other.hasNodeName()) {
           bitField0_ |= 0x00000002;
@@ -962,13 +1004,13 @@ public final class MsgModNodeOuterClass {
       }
       private int bitField0_;
 
-      private com.google.protobuf.ByteString nodeUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object nodeUuid_ = "";
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes node_uuid = 1;</code>
+       * <code>optional string node_uuid = 1;</code>
        */
       public boolean hasNodeUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -978,19 +1020,51 @@ public final class MsgModNodeOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes node_uuid = 1;</code>
+       * <code>optional string node_uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getNodeUuid() {
-        return nodeUuid_;
+      public java.lang.String getNodeUuid() {
+        java.lang.Object ref = nodeUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            nodeUuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes node_uuid = 1;</code>
+       * <code>optional string node_uuid = 1;</code>
        */
-      public Builder setNodeUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getNodeUuidBytes() {
+        java.lang.Object ref = nodeUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          nodeUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional string node_uuid = 1;</code>
+       */
+      public Builder setNodeUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1004,11 +1078,28 @@ public final class MsgModNodeOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes node_uuid = 1;</code>
+       * <code>optional string node_uuid = 1;</code>
        */
       public Builder clearNodeUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
         nodeUuid_ = getDefaultInstance().getNodeUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional string node_uuid = 1;</code>
+       */
+      public Builder setNodeUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        nodeUuid_ = value;
         onChanged();
         return this;
       }
@@ -1718,7 +1809,7 @@ public final class MsgModNodeOuterClass {
     java.lang.String[] descriptorData = {
       "\n\026proto/MsgModNode.proto\022\030com.linbit.lin" +
       "stor.proto\032\033proto/LinStorMapEntry.proto\"" +
-      "\247\001\n\nMsgModNode\022\021\n\tnode_uuid\030\001 \001(\014\022\021\n\tnod" +
+      "\247\001\n\nMsgModNode\022\021\n\tnode_uuid\030\001 \001(\t\022\021\n\tnod" +
       "e_name\030\002 \002(\t\022\021\n\tnode_type\030\003 \001(\t\022F\n\023overr" +
       "ide_node_props\030\004 \003(\0132).com.linbit.linsto" +
       "r.proto.LinStorMapEntry\022\030\n\020delete_prop_k" +

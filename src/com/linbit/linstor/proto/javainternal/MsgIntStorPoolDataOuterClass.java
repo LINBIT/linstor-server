@@ -23,27 +23,54 @@ public final class MsgIntStorPoolDataOuterClass {
      * Stor pool uuid
      * </pre>
      *
-     * <code>bytes stor_pool_uuid = 1;</code>
+     * <code>string stor_pool_uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getStorPoolUuid();
+    java.lang.String getStorPoolUuid();
+    /**
+     * <pre>
+     * Stor pool uuid
+     * </pre>
+     *
+     * <code>string stor_pool_uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getStorPoolUuidBytes();
 
     /**
      * <pre>
      * Node uuid - this has to be the satellite's local node, just for double-checking
      * </pre>
      *
-     * <code>bytes node_uuid = 2;</code>
+     * <code>string node_uuid = 2;</code>
      */
-    com.google.protobuf.ByteString getNodeUuid();
+    java.lang.String getNodeUuid();
+    /**
+     * <pre>
+     * Node uuid - this has to be the satellite's local node, just for double-checking
+     * </pre>
+     *
+     * <code>string node_uuid = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getNodeUuidBytes();
 
     /**
      * <pre>
      * Stor pool definition uuid
      * </pre>
      *
-     * <code>bytes stor_pool_dfn_uuid = 4;</code>
+     * <code>string stor_pool_dfn_uuid = 4;</code>
      */
-    com.google.protobuf.ByteString getStorPoolDfnUuid();
+    java.lang.String getStorPoolDfnUuid();
+    /**
+     * <pre>
+     * Stor pool definition uuid
+     * </pre>
+     *
+     * <code>string stor_pool_dfn_uuid = 4;</code>
+     */
+    com.google.protobuf.ByteString
+        getStorPoolDfnUuidBytes();
 
     /**
      * <pre>
@@ -185,9 +212,9 @@ public final class MsgIntStorPoolDataOuterClass {
       super(builder);
     }
     private MsgIntStorPoolData() {
-      storPoolUuid_ = com.google.protobuf.ByteString.EMPTY;
-      nodeUuid_ = com.google.protobuf.ByteString.EMPTY;
-      storPoolDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      storPoolUuid_ = "";
+      nodeUuid_ = "";
+      storPoolDfnUuid_ = "";
       storPoolName_ = "";
       driver_ = "";
       storPoolProps_ = java.util.Collections.emptyList();
@@ -220,18 +247,21 @@ public final class MsgIntStorPoolDataOuterClass {
               break;
             }
             case 10: {
+              java.lang.String s = input.readStringRequireUtf8();
 
-              storPoolUuid_ = input.readBytes();
+              storPoolUuid_ = s;
               break;
             }
             case 18: {
+              java.lang.String s = input.readStringRequireUtf8();
 
-              nodeUuid_ = input.readBytes();
+              nodeUuid_ = s;
               break;
             }
             case 34: {
+              java.lang.String s = input.readStringRequireUtf8();
 
-              storPoolDfnUuid_ = input.readBytes();
+              storPoolDfnUuid_ = s;
               break;
             }
             case 42: {
@@ -295,42 +325,129 @@ public final class MsgIntStorPoolDataOuterClass {
 
     private int bitField0_;
     public static final int STOR_POOL_UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString storPoolUuid_;
+    private volatile java.lang.Object storPoolUuid_;
     /**
      * <pre>
      * Stor pool uuid
      * </pre>
      *
-     * <code>bytes stor_pool_uuid = 1;</code>
+     * <code>string stor_pool_uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getStorPoolUuid() {
-      return storPoolUuid_;
+    public java.lang.String getStorPoolUuid() {
+      java.lang.Object ref = storPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        storPoolUuid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Stor pool uuid
+     * </pre>
+     *
+     * <code>string stor_pool_uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getStorPoolUuidBytes() {
+      java.lang.Object ref = storPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        storPoolUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int NODE_UUID_FIELD_NUMBER = 2;
-    private com.google.protobuf.ByteString nodeUuid_;
+    private volatile java.lang.Object nodeUuid_;
     /**
      * <pre>
      * Node uuid - this has to be the satellite's local node, just for double-checking
      * </pre>
      *
-     * <code>bytes node_uuid = 2;</code>
+     * <code>string node_uuid = 2;</code>
      */
-    public com.google.protobuf.ByteString getNodeUuid() {
-      return nodeUuid_;
+    public java.lang.String getNodeUuid() {
+      java.lang.Object ref = nodeUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        nodeUuid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Node uuid - this has to be the satellite's local node, just for double-checking
+     * </pre>
+     *
+     * <code>string node_uuid = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNodeUuidBytes() {
+      java.lang.Object ref = nodeUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        nodeUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int STOR_POOL_DFN_UUID_FIELD_NUMBER = 4;
-    private com.google.protobuf.ByteString storPoolDfnUuid_;
+    private volatile java.lang.Object storPoolDfnUuid_;
     /**
      * <pre>
      * Stor pool definition uuid
      * </pre>
      *
-     * <code>bytes stor_pool_dfn_uuid = 4;</code>
+     * <code>string stor_pool_dfn_uuid = 4;</code>
      */
-    public com.google.protobuf.ByteString getStorPoolDfnUuid() {
-      return storPoolDfnUuid_;
+    public java.lang.String getStorPoolDfnUuid() {
+      java.lang.Object ref = storPoolDfnUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        storPoolDfnUuid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Stor pool definition uuid
+     * </pre>
+     *
+     * <code>string stor_pool_dfn_uuid = 4;</code>
+     */
+    public com.google.protobuf.ByteString
+        getStorPoolDfnUuidBytes() {
+      java.lang.Object ref = storPoolDfnUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        storPoolDfnUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int STOR_POOL_NAME_FIELD_NUMBER = 5;
@@ -551,14 +668,14 @@ public final class MsgIntStorPoolDataOuterClass {
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!storPoolUuid_.isEmpty()) {
-        output.writeBytes(1, storPoolUuid_);
+      if (!getStorPoolUuidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, storPoolUuid_);
       }
-      if (!nodeUuid_.isEmpty()) {
-        output.writeBytes(2, nodeUuid_);
+      if (!getNodeUuidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeUuid_);
       }
-      if (!storPoolDfnUuid_.isEmpty()) {
-        output.writeBytes(4, storPoolDfnUuid_);
+      if (!getStorPoolDfnUuidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, storPoolDfnUuid_);
       }
       if (!getStorPoolNameBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 5, storPoolName_);
@@ -579,17 +696,14 @@ public final class MsgIntStorPoolDataOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (!storPoolUuid_.isEmpty()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, storPoolUuid_);
+      if (!getStorPoolUuidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, storPoolUuid_);
       }
-      if (!nodeUuid_.isEmpty()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, nodeUuid_);
+      if (!getNodeUuidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeUuid_);
       }
-      if (!storPoolDfnUuid_.isEmpty()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(4, storPoolDfnUuid_);
+      if (!getStorPoolDfnUuidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, storPoolDfnUuid_);
       }
       if (!getStorPoolNameBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, storPoolName_);
@@ -787,11 +901,11 @@ public final class MsgIntStorPoolDataOuterClass {
       }
       public Builder clear() {
         super.clear();
-        storPoolUuid_ = com.google.protobuf.ByteString.EMPTY;
+        storPoolUuid_ = "";
 
-        nodeUuid_ = com.google.protobuf.ByteString.EMPTY;
+        nodeUuid_ = "";
 
-        storPoolDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+        storPoolDfnUuid_ = "";
 
         storPoolName_ = "";
 
@@ -898,14 +1012,17 @@ public final class MsgIntStorPoolDataOuterClass {
 
       public Builder mergeFrom(com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData other) {
         if (other == com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData.getDefaultInstance()) return this;
-        if (other.getStorPoolUuid() != com.google.protobuf.ByteString.EMPTY) {
-          setStorPoolUuid(other.getStorPoolUuid());
+        if (!other.getStorPoolUuid().isEmpty()) {
+          storPoolUuid_ = other.storPoolUuid_;
+          onChanged();
         }
-        if (other.getNodeUuid() != com.google.protobuf.ByteString.EMPTY) {
-          setNodeUuid(other.getNodeUuid());
+        if (!other.getNodeUuid().isEmpty()) {
+          nodeUuid_ = other.nodeUuid_;
+          onChanged();
         }
-        if (other.getStorPoolDfnUuid() != com.google.protobuf.ByteString.EMPTY) {
-          setStorPoolDfnUuid(other.getStorPoolDfnUuid());
+        if (!other.getStorPoolDfnUuid().isEmpty()) {
+          storPoolDfnUuid_ = other.storPoolDfnUuid_;
+          onChanged();
         }
         if (!other.getStorPoolName().isEmpty()) {
           storPoolName_ = other.storPoolName_;
@@ -1004,25 +1121,55 @@ public final class MsgIntStorPoolDataOuterClass {
       }
       private int bitField0_;
 
-      private com.google.protobuf.ByteString storPoolUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object storPoolUuid_ = "";
       /**
        * <pre>
        * Stor pool uuid
        * </pre>
        *
-       * <code>bytes stor_pool_uuid = 1;</code>
+       * <code>string stor_pool_uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getStorPoolUuid() {
-        return storPoolUuid_;
+      public java.lang.String getStorPoolUuid() {
+        java.lang.Object ref = storPoolUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          storPoolUuid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * Stor pool uuid
        * </pre>
        *
-       * <code>bytes stor_pool_uuid = 1;</code>
+       * <code>string stor_pool_uuid = 1;</code>
        */
-      public Builder setStorPoolUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getStorPoolUuidBytes() {
+        java.lang.Object ref = storPoolUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          storPoolUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Stor pool uuid
+       * </pre>
+       *
+       * <code>string stor_pool_uuid = 1;</code>
+       */
+      public Builder setStorPoolUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1036,7 +1183,7 @@ public final class MsgIntStorPoolDataOuterClass {
        * Stor pool uuid
        * </pre>
        *
-       * <code>bytes stor_pool_uuid = 1;</code>
+       * <code>string stor_pool_uuid = 1;</code>
        */
       public Builder clearStorPoolUuid() {
         
@@ -1044,26 +1191,74 @@ public final class MsgIntStorPoolDataOuterClass {
         onChanged();
         return this;
       }
+      /**
+       * <pre>
+       * Stor pool uuid
+       * </pre>
+       *
+       * <code>string stor_pool_uuid = 1;</code>
+       */
+      public Builder setStorPoolUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        storPoolUuid_ = value;
+        onChanged();
+        return this;
+      }
 
-      private com.google.protobuf.ByteString nodeUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object nodeUuid_ = "";
       /**
        * <pre>
        * Node uuid - this has to be the satellite's local node, just for double-checking
        * </pre>
        *
-       * <code>bytes node_uuid = 2;</code>
+       * <code>string node_uuid = 2;</code>
        */
-      public com.google.protobuf.ByteString getNodeUuid() {
-        return nodeUuid_;
+      public java.lang.String getNodeUuid() {
+        java.lang.Object ref = nodeUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          nodeUuid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * Node uuid - this has to be the satellite's local node, just for double-checking
        * </pre>
        *
-       * <code>bytes node_uuid = 2;</code>
+       * <code>string node_uuid = 2;</code>
        */
-      public Builder setNodeUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getNodeUuidBytes() {
+        java.lang.Object ref = nodeUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          nodeUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Node uuid - this has to be the satellite's local node, just for double-checking
+       * </pre>
+       *
+       * <code>string node_uuid = 2;</code>
+       */
+      public Builder setNodeUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1077,7 +1272,7 @@ public final class MsgIntStorPoolDataOuterClass {
        * Node uuid - this has to be the satellite's local node, just for double-checking
        * </pre>
        *
-       * <code>bytes node_uuid = 2;</code>
+       * <code>string node_uuid = 2;</code>
        */
       public Builder clearNodeUuid() {
         
@@ -1085,26 +1280,74 @@ public final class MsgIntStorPoolDataOuterClass {
         onChanged();
         return this;
       }
+      /**
+       * <pre>
+       * Node uuid - this has to be the satellite's local node, just for double-checking
+       * </pre>
+       *
+       * <code>string node_uuid = 2;</code>
+       */
+      public Builder setNodeUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        nodeUuid_ = value;
+        onChanged();
+        return this;
+      }
 
-      private com.google.protobuf.ByteString storPoolDfnUuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object storPoolDfnUuid_ = "";
       /**
        * <pre>
        * Stor pool definition uuid
        * </pre>
        *
-       * <code>bytes stor_pool_dfn_uuid = 4;</code>
+       * <code>string stor_pool_dfn_uuid = 4;</code>
        */
-      public com.google.protobuf.ByteString getStorPoolDfnUuid() {
-        return storPoolDfnUuid_;
+      public java.lang.String getStorPoolDfnUuid() {
+        java.lang.Object ref = storPoolDfnUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          storPoolDfnUuid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * Stor pool definition uuid
        * </pre>
        *
-       * <code>bytes stor_pool_dfn_uuid = 4;</code>
+       * <code>string stor_pool_dfn_uuid = 4;</code>
        */
-      public Builder setStorPoolDfnUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getStorPoolDfnUuidBytes() {
+        java.lang.Object ref = storPoolDfnUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          storPoolDfnUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Stor pool definition uuid
+       * </pre>
+       *
+       * <code>string stor_pool_dfn_uuid = 4;</code>
+       */
+      public Builder setStorPoolDfnUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1118,11 +1361,29 @@ public final class MsgIntStorPoolDataOuterClass {
        * Stor pool definition uuid
        * </pre>
        *
-       * <code>bytes stor_pool_dfn_uuid = 4;</code>
+       * <code>string stor_pool_dfn_uuid = 4;</code>
        */
       public Builder clearStorPoolDfnUuid() {
         
         storPoolDfnUuid_ = getDefaultInstance().getStorPoolDfnUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Stor pool definition uuid
+       * </pre>
+       *
+       * <code>string stor_pool_dfn_uuid = 4;</code>
+       */
+      public Builder setStorPoolDfnUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        storPoolDfnUuid_ = value;
         onChanged();
         return this;
       }
@@ -1994,9 +2255,9 @@ public final class MsgIntStorPoolDataOuterClass {
       "\n+proto/javainternal/MsgIntStorPoolData." +
       "proto\022%com.linbit.linstor.proto.javainte" +
       "rnal\032\033proto/LinStorMapEntry.proto\"\217\002\n\022Ms" +
-      "gIntStorPoolData\022\026\n\016stor_pool_uuid\030\001 \001(\014" +
-      "\022\021\n\tnode_uuid\030\002 \001(\014\022\032\n\022stor_pool_dfn_uui" +
-      "d\030\004 \001(\014\022\026\n\016stor_pool_name\030\005 \001(\t\022\016\n\006drive" +
+      "gIntStorPoolData\022\026\n\016stor_pool_uuid\030\001 \001(\t" +
+      "\022\021\n\tnode_uuid\030\002 \001(\t\022\032\n\022stor_pool_dfn_uui" +
+      "d\030\004 \001(\t\022\026\n\016stor_pool_name\030\005 \001(\t\022\016\n\006drive" +
       "r\030\006 \001(\t\022B\n\017stor_pool_props\030\007 \003(\0132).com.l" +
       "inbit.linstor.proto.LinStorMapEntry\022F\n\023s" +
       "tor_pool_dfn_props\030\010 \003(\0132).com.linbit.li" +

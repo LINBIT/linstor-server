@@ -23,7 +23,7 @@ public final class MsgDelNodeOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional string uuid = 1;</code>
      */
     boolean hasUuid();
     /**
@@ -31,9 +31,18 @@ public final class MsgDelNodeOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional string uuid = 1;</code>
      */
-    com.google.protobuf.ByteString getUuid();
+    java.lang.String getUuid();
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional string uuid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getUuidBytes();
 
     /**
      * <pre>
@@ -77,7 +86,7 @@ public final class MsgDelNodeOuterClass {
       super(builder);
     }
     private MsgDelNode() {
-      uuid_ = com.google.protobuf.ByteString.EMPTY;
+      uuid_ = "";
       nodeName_ = "";
     }
 
@@ -110,8 +119,9 @@ public final class MsgDelNodeOuterClass {
               break;
             }
             case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              uuid_ = input.readBytes();
+              uuid_ = bs;
               break;
             }
             case 18: {
@@ -146,13 +156,13 @@ public final class MsgDelNodeOuterClass {
 
     private int bitField0_;
     public static final int UUID_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString uuid_;
+    private volatile java.lang.Object uuid_;
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional string uuid = 1;</code>
      */
     public boolean hasUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -162,10 +172,41 @@ public final class MsgDelNodeOuterClass {
      * UUID
      * </pre>
      *
-     * <code>optional bytes uuid = 1;</code>
+     * <code>optional string uuid = 1;</code>
      */
-    public com.google.protobuf.ByteString getUuid() {
-      return uuid_;
+    public java.lang.String getUuid() {
+      java.lang.Object ref = uuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          uuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>optional string uuid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getUuidBytes() {
+      java.lang.Object ref = uuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        uuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int NODE_NAME_FIELD_NUMBER = 2;
@@ -239,7 +280,7 @@ public final class MsgDelNodeOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, uuid_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, uuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName_);
@@ -253,8 +294,7 @@ public final class MsgDelNodeOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, uuid_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, uuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName_);
@@ -427,7 +467,7 @@ public final class MsgDelNodeOuterClass {
       }
       public Builder clear() {
         super.clear();
-        uuid_ = com.google.protobuf.ByteString.EMPTY;
+        uuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
         nodeName_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -506,7 +546,9 @@ public final class MsgDelNodeOuterClass {
       public Builder mergeFrom(com.linbit.linstor.proto.MsgDelNodeOuterClass.MsgDelNode other) {
         if (other == com.linbit.linstor.proto.MsgDelNodeOuterClass.MsgDelNode.getDefaultInstance()) return this;
         if (other.hasUuid()) {
-          setUuid(other.getUuid());
+          bitField0_ |= 0x00000001;
+          uuid_ = other.uuid_;
+          onChanged();
         }
         if (other.hasNodeName()) {
           bitField0_ |= 0x00000002;
@@ -544,13 +586,13 @@ public final class MsgDelNodeOuterClass {
       }
       private int bitField0_;
 
-      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object uuid_ = "";
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional string uuid = 1;</code>
        */
       public boolean hasUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -560,19 +602,51 @@ public final class MsgDelNodeOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional string uuid = 1;</code>
        */
-      public com.google.protobuf.ByteString getUuid() {
-        return uuid_;
+      public java.lang.String getUuid() {
+        java.lang.Object ref = uuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            uuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional string uuid = 1;</code>
        */
-      public Builder setUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getUuidBytes() {
+        java.lang.Object ref = uuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          uuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional string uuid = 1;</code>
+       */
+      public Builder setUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -586,11 +660,28 @@ public final class MsgDelNodeOuterClass {
        * UUID
        * </pre>
        *
-       * <code>optional bytes uuid = 1;</code>
+       * <code>optional string uuid = 1;</code>
        */
       public Builder clearUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
         uuid_ = getDefaultInstance().getUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>optional string uuid = 1;</code>
+       */
+      public Builder setUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        uuid_ = value;
         onChanged();
         return this;
       }
@@ -758,7 +849,7 @@ public final class MsgDelNodeOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\026proto/MsgDelNode.proto\022\030com.linbit.lin" +
-      "stor.proto\"-\n\nMsgDelNode\022\014\n\004uuid\030\001 \001(\014\022\021" +
+      "stor.proto\"-\n\nMsgDelNode\022\014\n\004uuid\030\001 \001(\t\022\021" +
       "\n\tnode_name\030\002 \002(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =

@@ -41,9 +41,18 @@ public final class MsgIntObjectIdOuterClass {
      * UUID
      * </pre>
      *
-     * <code>bytes uuid = 2;</code>
+     * <code>string uuid = 2;</code>
      */
-    com.google.protobuf.ByteString getUuid();
+    java.lang.String getUuid();
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>string uuid = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getUuidBytes();
   }
   /**
    * <pre>
@@ -62,7 +71,7 @@ public final class MsgIntObjectIdOuterClass {
     }
     private MsgIntObjectId() {
       name_ = "";
-      uuid_ = com.google.protobuf.ByteString.EMPTY;
+      uuid_ = "";
     }
 
     @java.lang.Override
@@ -97,8 +106,9 @@ public final class MsgIntObjectIdOuterClass {
               break;
             }
             case 18: {
+              java.lang.String s = input.readStringRequireUtf8();
 
-              uuid_ = input.readBytes();
+              uuid_ = s;
               break;
             }
           }
@@ -167,16 +177,45 @@ public final class MsgIntObjectIdOuterClass {
     }
 
     public static final int UUID_FIELD_NUMBER = 2;
-    private com.google.protobuf.ByteString uuid_;
+    private volatile java.lang.Object uuid_;
     /**
      * <pre>
      * UUID
      * </pre>
      *
-     * <code>bytes uuid = 2;</code>
+     * <code>string uuid = 2;</code>
      */
-    public com.google.protobuf.ByteString getUuid() {
-      return uuid_;
+    public java.lang.String getUuid() {
+      java.lang.Object ref = uuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        uuid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * UUID
+     * </pre>
+     *
+     * <code>string uuid = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getUuidBytes() {
+      java.lang.Object ref = uuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        uuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     private byte memoizedIsInitialized = -1;
@@ -194,8 +233,8 @@ public final class MsgIntObjectIdOuterClass {
       if (!getNameBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
       }
-      if (!uuid_.isEmpty()) {
-        output.writeBytes(2, uuid_);
+      if (!getUuidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, uuid_);
       }
     }
 
@@ -207,9 +246,8 @@ public final class MsgIntObjectIdOuterClass {
       if (!getNameBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
       }
-      if (!uuid_.isEmpty()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, uuid_);
+      if (!getUuidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, uuid_);
       }
       memoizedSize = size;
       return size;
@@ -369,7 +407,7 @@ public final class MsgIntObjectIdOuterClass {
         super.clear();
         name_ = "";
 
-        uuid_ = com.google.protobuf.ByteString.EMPTY;
+        uuid_ = "";
 
         return this;
       }
@@ -440,8 +478,9 @@ public final class MsgIntObjectIdOuterClass {
           name_ = other.name_;
           onChanged();
         }
-        if (other.getUuid() != com.google.protobuf.ByteString.EMPTY) {
-          setUuid(other.getUuid());
+        if (!other.getUuid().isEmpty()) {
+          uuid_ = other.uuid_;
+          onChanged();
         }
         onChanged();
         return this;
@@ -558,25 +597,55 @@ public final class MsgIntObjectIdOuterClass {
         return this;
       }
 
-      private com.google.protobuf.ByteString uuid_ = com.google.protobuf.ByteString.EMPTY;
+      private java.lang.Object uuid_ = "";
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>bytes uuid = 2;</code>
+       * <code>string uuid = 2;</code>
        */
-      public com.google.protobuf.ByteString getUuid() {
-        return uuid_;
+      public java.lang.String getUuid() {
+        java.lang.Object ref = uuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          uuid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * UUID
        * </pre>
        *
-       * <code>bytes uuid = 2;</code>
+       * <code>string uuid = 2;</code>
        */
-      public Builder setUuid(com.google.protobuf.ByteString value) {
+      public com.google.protobuf.ByteString
+          getUuidBytes() {
+        java.lang.Object ref = uuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          uuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>string uuid = 2;</code>
+       */
+      public Builder setUuid(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -590,11 +659,29 @@ public final class MsgIntObjectIdOuterClass {
        * UUID
        * </pre>
        *
-       * <code>bytes uuid = 2;</code>
+       * <code>string uuid = 2;</code>
        */
       public Builder clearUuid() {
         
         uuid_ = getDefaultInstance().getUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * UUID
+       * </pre>
+       *
+       * <code>string uuid = 2;</code>
+       */
+      public Builder setUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        uuid_ = value;
         onChanged();
         return this;
       }
@@ -664,7 +751,7 @@ public final class MsgIntObjectIdOuterClass {
       "\n\'proto/javainternal/MsgIntObjectId.prot" +
       "o\022%com.linbit.linstor.proto.javainternal" +
       "\",\n\016MsgIntObjectId\022\014\n\004name\030\001 \001(\t\022\014\n\004uuid" +
-      "\030\002 \001(\014b\006proto3"
+      "\030\002 \001(\tb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
