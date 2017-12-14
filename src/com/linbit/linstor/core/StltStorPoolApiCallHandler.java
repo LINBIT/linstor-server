@@ -103,7 +103,8 @@ class StltStorPoolApiCallHandler
                 satellite.localNode,
                 storPoolDfn,
                 storPoolRaw.getDriver(),
-                transMgr
+                transMgr,
+                satellite
             );
         }
         return storPoolDfnToRegister;

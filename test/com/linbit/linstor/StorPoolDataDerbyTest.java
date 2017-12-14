@@ -14,9 +14,16 @@ import org.junit.Test;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.drbdstate.DrbdStateTracker;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.storage.LvmDriver;
+import com.linbit.timer.Action;
+import com.linbit.timer.GenericTimer;
+import com.linbit.timer.Timer;
 import com.linbit.utils.UuidUtils;
 
 public class StorPoolDataDerbyTest extends DerbyBase
@@ -267,7 +274,40 @@ public class StorPoolDataDerbyTest extends DerbyBase
             node,
             spdd2,
             LvmDriver.class.getSimpleName(),
-            null
+            null,
+            new SatelliteCoreServices()
+            {
+
+                @Override
+                public Timer<String, Action<String>> getTimer()
+                {
+                    return new GenericTimer<>();
+                }
+
+                @Override
+                public ErrorReporter getErrorReporter()
+                {
+                    return null;
+                }
+
+                @Override
+                public FileSystemWatch getFsWatch()
+                {
+                    return null;
+                }
+
+                @Override
+                public DrbdStateTracker getDrbdStateTracker()
+                {
+                    return null;
+                }
+
+                @Override
+                public DeviceManager getDeviceManager()
+                {
+                    return null;
+                }
+            }
         );
 
         assertNotNull(storPoolData);

@@ -1,9 +1,11 @@
 package com.linbit.linstor.storage;
 
+import com.linbit.linstor.SatelliteCoreServices;
+
 public class StorageDriverUtils
 {
-    public static StorageDriver createInstance(String simpleName)
-        throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    public static StorageDriver createInstance(String simpleName, SatelliteCoreServices coreSvc)
+        throws ClassNotFoundException, InstantiationException, IllegalAccessException, StorageException
     {
         StorageDriver driver = null;
 
@@ -16,6 +18,7 @@ public class StorageDriverUtils
                 throw new ClassCastException("Class does not implement the StorageDriver interface: " + simpleName);
             }
             driver = (StorageDriver) driverClass.newInstance();
+            driver.initialize(coreSvc);
         }
 
         return driver;
