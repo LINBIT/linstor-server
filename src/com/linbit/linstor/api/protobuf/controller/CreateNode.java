@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
@@ -18,7 +19,9 @@ import com.linbit.linstor.proto.MsgCrtNodeOuterClass.MsgCrtNode;
 import com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
+import com.linbit.linstor.proto.SatelliteConnectionOuterClass;
 import com.linbit.linstor.proto.apidata.NetInterfaceApiData;
+import com.linbit.linstor.proto.apidata.SatelliteConnectionApiData;
 import com.linbit.linstor.security.AccessContext;
 
 @ProtobufApiCall
@@ -63,6 +66,7 @@ public class CreateNode extends BaseProtoApiCall
             protoNode.getName(),
             protoNode.getType(),
             extractNetIfs(protoNode.getNetInterfacesList()),
+            extractSatelliteConnections(msgCreateNode.getSatelliteConnectionsList()),
             asMap(protoNode.getPropsList())
         );
         answerApiCallRc(accCtx, client, msgId, apiCallRc);
@@ -76,5 +80,17 @@ public class CreateNode extends BaseProtoApiCall
             netIfs.add(new NetInterfaceApiData(protoNetIf));
         }
         return netIfs;
+    }
+
+    private List<SatelliteConnectionApi> extractSatelliteConnections(
+        List<SatelliteConnectionOuterClass.SatelliteConnection> satelliteConnectionsList
+    )
+    {
+        List<SatelliteConnectionApi> stltConnList = new ArrayList<>();
+        for (SatelliteConnectionOuterClass.SatelliteConnection stltConn : satelliteConnectionsList)
+        {
+            stltConnList.add(new SatelliteConnectionApiData(stltConn));
+        }
+        return stltConnList;
     }
 }

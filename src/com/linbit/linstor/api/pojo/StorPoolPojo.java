@@ -68,6 +68,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         return storPoolUuid;
     }
 
+    @Override
     public UUID getNodeUuid()
     {
         return nodeUuid;
@@ -85,6 +86,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         return storPoolName;
     }
 
+    @Override
     public UUID getStorPoolDfnUuid()
     {
         return storPoolDfnUuid;

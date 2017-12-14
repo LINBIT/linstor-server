@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 
@@ -32,6 +33,7 @@ import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.SatelliteConnection;
 import com.linbit.linstor.SatelliteConnection.EncryptionType;
+import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.SatelliteConnectionData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.TcpPortNumber;
@@ -74,6 +76,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         String nodeNameStr,
         String nodeTypeStr,
         List<NetInterfaceApi> netIfs,
+        List<SatelliteConnectionApi> satelliteConnectionApis,
         Map<String, String> propsMap
     )
     {
@@ -111,55 +114,37 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             Props nodeProps = getProps(node);
             nodeProps.map().putAll(propsMap);
 
-            Props netComProps = nodeProps.getNamespace(ApiConsts.NAMESPC_NETCOM);
-            if (netComProps == null)
-            {
-                // TODO for auxiliary nodes maybe the netIf-namespace is not required?
-                reportMissingNetComNamespace();
-            }
-            else
             if (netIfs.isEmpty())
             {
-                // TODO for auxiliary nodes maybe no netif is required?
-                // TODO report missing net interfaces
+                // TODO for auxiliary nodes maybe no netif required?
                 reportMissingNetInterfaces();
             }
             else
+            if (satelliteConnectionApis.isEmpty())
             {
+                // TODO for auxiliary nodes maybe no stltConn required?
+                reportMissingSatelliteConnection();
+            }
+            else
+            {
+                Map<String, NetInterface> netIfMap = new TreeMap<>();
+
                 for (NetInterfaceApi netIfApi : netIfs)
                 {
-                    createNetInterface(
+                    NetInterfaceData netIf = createNetInterface(
                         node,
                         asNetInterfaceName(netIfApi.getName()),
                         asLsIpAddress(netIfApi.getAddress())
                     );
+                    netIfMap.put(netIfApi.getName(), netIf);
                 }
 
-                String stltNetIfNameStr = netComProps.getProp(ApiConsts.KEY_NET_IF_NAME, ApiConsts.NAMESPC_STLT);
-                String stltNetIfPortStr = netComProps.getProp(ApiConsts.KEY_PORT_NR, ApiConsts.NAMESPC_STLT);
-                String stltNetIfEncTypeStr = netComProps.getProp(ApiConsts.KEY_NETCOM_TYPE, ApiConsts.NAMESPC_STLT);
+                SatelliteConnectionApi stltConnApi = satelliteConnectionApis.iterator().next();
 
-                if (stltNetIfNameStr == null || stltNetIfNameStr.equals(""))
-                {
-                    throw reportMissingNetIf();
-                }
-                if (stltNetIfPortStr == null || stltNetIfPortStr.equals(""))
-                {
-                    throw reportMissingPort();
-                }
-                if (stltNetIfEncTypeStr == null || stltNetIfEncTypeStr.equals(""))
-                {
-                    throw reportMissingNetComType();
-                }
-
-
-                NetInterfaceName stltNetIfName = asNetInterfaceName(stltNetIfNameStr);
-                TcpPortNumber stltNetIfPort = asTcpPortNumber(stltNetIfPortStr);
-                EncryptionType stltNetIfEncryptionType = asEncryptionType(stltNetIfEncTypeStr);
-
-                NetInterface netIf = node.getNetInterface(accCtx, stltNetIfName);
-
-                createSatelliteConnection(node, netIf, stltNetIfPort, stltNetIfEncryptionType);
+                createSatelliteConnection(
+                    node,
+                    stltConnApi
+                );
 
                 commit();
                 controller.nodesMap.put(nodeName, node);
@@ -759,6 +744,22 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
     }
 
+    private TcpPortNumber asTcpPortNumber(int port)
+    {
+        try
+        {
+            return new TcpPortNumber(port);
+        }
+        catch (Exception exc)
+        {
+            throw exc(
+                exc,
+                "The given portNumber '" + port + "' is invalid.",
+                ApiConsts.FAIL_INVLD_NET_PORT
+            );
+        }
+    }
+
     private TcpPortNumber asTcpPortNumber(String portStr)
     {
         try
@@ -867,9 +868,22 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             "Creation of node '" + currentNodeName.get() + "' failed.",
             "No network interfaces were given.",
             null,
-            "At least one network interface has to be given and be marked (via properties) to be used for " +
+            "At least one network interface has to be given and be marked to be used for " +
             "controller-satellite communitaction.",
             ApiConsts.FAIL_MISSING_NETCOM
+        );
+    }
+
+    private void reportMissingSatelliteConnection()
+    {
+        throw exc(
+            null,
+            "Creation of node '" + currentNodeName.get() + "' failed.",
+            "No network interfaces was specified as satellite connection.",
+            null,
+            "At least one network interface has to be given and be marked to be used for " +
+            "controller-satellite communitaction.",
+            ApiConsts.FAIL_MISSING_STLT_CONN
         );
     }
 
@@ -965,19 +979,24 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
     private void createSatelliteConnection(
         Node node,
-        NetInterface netIf,
-        TcpPortNumber port,
-        EncryptionType encryptionType
+        SatelliteConnectionApi stltConnApi
     )
     {
+        NetInterfaceName stltNetIfName = asNetInterfaceName(stltConnApi.getNetInterfaceName());
+        TcpPortNumber stltNetIfPort = asTcpPortNumber(stltConnApi.getPort());
+        EncryptionType stltNetIfEncryptionType = asEncryptionType(stltConnApi.getEncryptionType());
+
+        NetInterface netIf = getNetInterface(node, stltNetIfName);
+
         try
         {
+
             SatelliteConnectionData.getInstance(
                 currentAccCtx.get(),
                 node,
                 netIf,
-                port,
-                encryptionType,
+                stltNetIfPort,
+                stltNetIfEncryptionType,
                 currentTransMgr.get(),
                 true,
                 true
@@ -1004,6 +1023,22 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
     }
 
+
+    private NetInterface getNetInterface(Node node, NetInterfaceName niName)
+    {
+        try
+        {
+            return node.getNetInterface(currentAccCtx.get(), niName);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw accDeniedExc(
+                accDeniedExc,
+                "creating a satellite connection",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+    }
 
     private Iterator<Resource> getRscIterator(NodeData nodeData) throws ApiCallHandlerFailedException
     {

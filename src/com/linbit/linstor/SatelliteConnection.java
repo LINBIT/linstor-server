@@ -34,4 +34,11 @@ public interface SatelliteConnection
 
     public void setEncryptionType(AccessContext accCtx, EncryptionType newEncryptionType)
         throws AccessDeniedException, SQLException;
+
+    public interface SatelliteConnectionApi
+    {
+        public String getNetInterfaceName();
+        public int getPort();
+        public String getEncryptionType();
+    }
 }

@@ -13,6 +13,7 @@ import com.linbit.linstor.NodeConnection;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceConnection;
 import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.Volume;
@@ -142,8 +143,9 @@ public class CtrlApiCallHandler
      * @param client
      * @param nodeNameStr required
      * @param nodeTypeStr required
-     * @param list
-     * @param props not null, might be empty
+     * @param netIfs required, at least one needed
+     * @param satelliteConnectionApis required, currently all but first ignored. At least one required
+     * @param props optional
      * @return
      */
     public ApiCallRc createNode(
@@ -152,6 +154,7 @@ public class CtrlApiCallHandler
         String nodeNameStr,
         String nodeTypeStr,
         List<NetInterfaceApi> netIfs,
+        List<SatelliteConnectionApi> satelliteConnectionApis,
         Map<String, String> props
     )
     {
@@ -169,6 +172,7 @@ public class CtrlApiCallHandler
                 nodeNameStr,
                 nodeTypeStr,
                 netIfs,
+                satelliteConnectionApis,
                 props
             );
         }

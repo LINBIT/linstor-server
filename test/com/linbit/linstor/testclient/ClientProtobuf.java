@@ -26,8 +26,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.google.protobuf.Message;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
+import com.linbit.linstor.api.pojo.SatelliteConnectionPojo;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn;
@@ -52,6 +54,7 @@ import com.linbit.linstor.proto.MsgModNodeOuterClass.MsgModNode;
 import com.linbit.linstor.proto.MsgModRscDfnOuterClass.MsgModRscDfn;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
+import com.linbit.linstor.proto.SatelliteConnectionOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 
@@ -434,7 +437,8 @@ public class ClientProtobuf implements Runnable
         String nodeName,
         String nodeType,
         Map<String, String> props,
-        List<? extends NetInterface.NetInterfaceApi> netIfs
+        List<? extends NetInterface.NetInterfaceApi> netIfs,
+        List<? extends SatelliteConnectionApi> stltConns
     )
         throws IOException
     {
@@ -457,14 +461,24 @@ public class ClientProtobuf implements Runnable
             );
         }
 
+        MsgCrtNode.Builder msgCrtNodeBuilder = MsgCrtNode.newBuilder();
+        msgCrtNodeBuilder.setNode(nodeBuilder.build());
+
+        for (SatelliteConnectionApi stltConnApi : stltConns)
+        {
+            msgCrtNodeBuilder.addSatelliteConnections(
+                SatelliteConnectionOuterClass.SatelliteConnection.newBuilder()
+                    .setNetInterfaceName(stltConnApi.getNetInterfaceName())
+                    .setPort(stltConnApi.getPort())
+                    .setEncryptionType(stltConnApi.getEncryptionType())
+                    .build()
+            );
+        }
+
         send(
             msgId,
             API_CRT_NODE,
-            MsgCrtNode.newBuilder()
-                .setNode(
-                    nodeBuilder.build()
-                )
-                .build()
+            msgCrtNodeBuilder.build()
         );
         return msgId;
     }
@@ -908,6 +922,13 @@ public class ClientProtobuf implements Runnable
         msgId = client.sendCreateNode(nodeName1, "satellite", null,
             Arrays.asList(
                 new NetInterfacePojo(null, "tcp0", "10.0.0.1")
+            ),
+            Arrays.asList(
+                new SatelliteConnectionPojo(
+                    "tcp0",
+                    ApiConsts.DFLT_STLT_PORT_PLAIN,
+                    ApiConsts.VAL_NETCOM_TYPE_PLAIN
+                )
             )
         );
         client.println(msgId + " create first node");
@@ -916,6 +937,13 @@ public class ClientProtobuf implements Runnable
         msgId = client.sendCreateNode(nodeName2, "satellite", null,
             Arrays.asList(
                 new NetInterfacePojo(null, "tcp0", "10.0.0.2")
+            ),
+            Arrays.asList(
+                new SatelliteConnectionPojo(
+                    "tcp0",
+                    ApiConsts.DFLT_STLT_PORT_PLAIN,
+                    ApiConsts.VAL_NETCOM_TYPE_PLAIN
+                )
             )
         );
         client.println(msgId + " create second node");
@@ -1020,6 +1048,13 @@ public class ClientProtobuf implements Runnable
         msgId = client.sendCreateNode(nodeName, "satellite", nodeProps,
             Arrays.asList(
                 new NetInterfacePojo(null, "tcp0", "10.0.0.1")
+            ),
+            Arrays.asList(
+                new SatelliteConnectionPojo(
+                    "tcp0",
+                    ApiConsts.DFLT_STLT_PORT_PLAIN,
+                    ApiConsts.VAL_NETCOM_TYPE_PLAIN
+                )
             )
         );
         client.println(msgId + " create node");
