@@ -169,7 +169,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     try
                     {
-                        createStorageVolume(rsc, rscDfn, localNodeName, vlmState);
+                        createStorageVolume(rscDfn, vlmState);
                         createVolumeMetaData(rscDfn, vlmState);
                     }
                     catch (StorageException storExc)
@@ -426,6 +426,11 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 Volume vlm = rsc.getVolume(vlmState.vlmNr);
                 VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.vlmNr);
+                errLog.logTrace(
+                    "Evaluating storage volume for resource '" + rscDfn.getName().displayValue + "' " +
+                    "volume " + vlmState.vlmNr.toString()
+                );
+
                 Props vlmProps = vlm.getProps(wrkCtx);
                 Props vlmDfnProps = vlmDfn.getProps(wrkCtx);
 
@@ -461,6 +466,11 @@ class DrbdDeviceHandler implements DeviceHandler
                         try
                         {
                             driver.checkVolume(storVlmName, expectedSize);
+                            vlmState.hasDisk = true;
+                            errLog.logTrace(
+                                "Existing storage volume found for resource '" +
+                                rscDfn.getName().displayValue + "' " + "volume " + vlmState.vlmNr.toString()
+                            );
                         }
                         catch (StorageException storExc)
                         {
@@ -485,9 +495,7 @@ class DrbdDeviceHandler implements DeviceHandler
     }
 
     private void createStorageVolume(
-        Resource rsc,
         ResourceDefinition rscDfn,
-        NodeName localNodeName,
         VolumeState vlmState
     )
         throws StorageException, MdException
