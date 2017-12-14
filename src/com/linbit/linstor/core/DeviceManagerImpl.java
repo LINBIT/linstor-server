@@ -415,6 +415,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 dispatchRscSet.addAll(chgPendingBundle.updRscDfnMap.keySet());
                 dispatchRscSet.addAll(chgPendingBundle.updRscMap.keySet());
 
+                ((DrbdDeviceHandler) drbdHnd).debugListSatelliteObjects();
+
                 // Remember the current phase number for this run of device handlers
                 // BEGIN DEBUG
                 errLog.logTrace("Scheduling resource handlers");
