@@ -54,9 +54,9 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final TransactionMap<Volume, VolumeConnection> volumeConnections;
 
-    private final String blockDevicePath;
+    private String blockDevicePath;
 
-    private final String metaDiskPath;
+    private String metaDiskPath;
 
     private final VolumeDataDatabaseDriver dbDriver;
 
@@ -365,6 +365,20 @@ public class VolumeData extends BaseTransactionObject implements Volume
         checkDeleted();
         resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return metaDiskPath;
+    }
+
+    public void setBlockDevicePath(AccessContext accCtx, String path) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        blockDevicePath = path;
+    }
+
+    public void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        metaDiskPath = path;
     }
 
     @Override

@@ -48,6 +48,10 @@ public interface Volume extends TransactionObject, DbgInstanceUuid
     public String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException;
 
     public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
+    
+    public void setBlockDevicePath(AccessContext accCtx, String path) throws AccessDeniedException;
+
+    public void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException;
 
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 

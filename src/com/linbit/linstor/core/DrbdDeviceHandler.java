@@ -99,6 +99,8 @@ class DrbdDeviceHandler implements DeviceHandler
                     VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
 
                     VolumeState vlmState = new VolumeState(vlmNr, vlmDfn.getVolumeSize(wrkCtx));
+                    vlmState.storVlmName = rscDfn.getName().displayValue + "_" +
+                        String.format("%05d", vlmNr.value);
                     vlmStateMap.put(vlmNr, vlmState);
                 }
             }
@@ -150,6 +152,24 @@ class DrbdDeviceHandler implements DeviceHandler
                 rscActions.append("        hasMetaData = ").append(vlmState.hasMetaData).append("\n");
             }
             System.out.println(rscActions.toString());
+            // END DEBUG
+
+            // BEGIN DEBUG - set block device paths
+            // This is temporary code to enable creation of valid configuration files
+            for (VolumeState vlmState : vlmStateMap.values())
+            {
+                Volume vlm = rsc.getVolume(vlmState.vlmNr);
+                if (vlmState.hasDisk)
+                {
+                    vlm.setBlockDevicePath(wrkCtx, "/dev/drbdpool/" + vlmState.storVlmName);
+                    vlm.setMetaDiskPath(wrkCtx, "internal");
+                }
+                else
+                {
+                    vlm.setBlockDevicePath(wrkCtx, "none");
+                    vlm.setMetaDiskPath(wrkCtx, null);
+                }
+            }
             // END DEBUG
 
             // Create DRBD resource configuration file
@@ -457,15 +477,13 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     if (vlmState.driver != null)
                     {
-                        String storVlmName = rscDfn.getName().value + "_" +
-                            String.format("%05d", vlmDfn.getVolumeNumber().value);
                         long netSize = vlmDfn.getVolumeSize(wrkCtx);
                         long expectedSize = drbdMd.getGrossSize(
                             netSize, FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
                         );
                         try
                         {
-                            driver.checkVolume(storVlmName, expectedSize);
+                            driver.checkVolume(vlmState.storVlmName, expectedSize);
                             vlmState.hasDisk = true;
                             errLog.logTrace(
                                 "Existing storage volume found for resource '" +
@@ -505,10 +523,7 @@ class DrbdDeviceHandler implements DeviceHandler
             vlmState.grossSize = drbdMd.getGrossSize(
                 vlmState.netSize, FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
             );
-            vlmState.driver.createVolume(
-                rscDfn.getName().displayValue + "_" + String.format("%05d", vlmState.vlmNr.value),
-                vlmState.grossSize
-            );
+            vlmState.driver.createVolume(vlmState.storVlmName, vlmState.grossSize);
         }
         else
         {
@@ -759,6 +774,7 @@ class DrbdDeviceHandler implements DeviceHandler
         boolean isFailed = false;
         StorageDriver driver = null;
         StorPoolName storPoolName = null;
+        String storVlmName = null;
         long netSize;
         long grossSize;
 
