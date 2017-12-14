@@ -220,6 +220,13 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         storPools.remove(storPoolData.getNode().getName());
     }
 
+    public StorPool getStorPool(AccessContext accCtx, NodeName nodeName) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return storPools.get(nodeName);
+    }
+
     @Override
     public Props getProps(AccessContext accCtx) throws AccessDeniedException
     {

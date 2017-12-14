@@ -123,10 +123,10 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     static final String PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC = "defaultPlainConSvc";
     static final String PROPSCON_KEY_DEFAULT_SSL_CON_SVC = "defaultSslConSvc";
 
-    private static final short DEFAULT_PEER_COUNT = 31;
-    private static final long DEFAULT_AL_SIZE = 32;
-    private static final int DEFAULT_AL_STRIPES = 1;
-    private static final String DEFAULT_STOR_POOL_NAME = "DfltStorPool";
+    public static final short DEFAULT_PEER_COUNT = 31;
+    public static final long DEFAULT_AL_SIZE = 32;
+    public static final int DEFAULT_AL_STRIPES = 1;
+    public static final String DEFAULT_STOR_POOL_NAME = "DfltStorPool";
 
     // System security context
     private AccessContext sysCtx;

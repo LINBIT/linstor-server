@@ -18,22 +18,25 @@ import java.util.UUID;
  */
 public interface StorPoolDefinition extends TransactionObject, DbgInstanceUuid
 {
-    public UUID getUuid();
+    UUID getUuid();
 
-    public ObjectProtection getObjProt();
+    ObjectProtection getObjProt();
 
-    public StorPoolName getName();
+    StorPoolName getName();
 
-    public Iterator<StorPool> iterateStorPools(AccessContext accCtx)
+    StorPool getStorPool(AccessContext accCtx, NodeName nodeName)
         throws AccessDeniedException;
 
-    public Props getProps(AccessContext accCtx)
+    Iterator<StorPool> iterateStorPools(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public void delete(AccessContext accCtx)
+    Props getProps(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public StorPoolDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    StorPoolDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
     public interface StorPoolDfnApi
     {

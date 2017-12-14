@@ -4,25 +4,32 @@ import com.linbit.ImplementationError;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
-import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteCoreServices;
+import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.drbdstate.NoInitialStateException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageDriver;
+import com.linbit.linstor.storage.StorageException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -30,14 +37,20 @@ import org.slf4j.event.Level;
 
 class DrbdDeviceHandler implements DeviceHandler
 {
+    private Satellite stlt;
     private AccessContext wrkCtx;
     private SatelliteCoreServices coreSvcs;
     private DrbdStateTracker drbdState;
     private ErrorReporter errLog;
     private MetaDataApi drbdMd;
 
-    DrbdDeviceHandler(AccessContext wrkCtxRef, SatelliteCoreServices coreSvcsRef)
+    private final short FIXME_PEERS = 7;
+    private final int FIXME_STRIPES = 1;
+    private final long FIXME_STRIPE_SIZE = 32;
+
+    DrbdDeviceHandler(Satellite stltRef, AccessContext wrkCtxRef, SatelliteCoreServices coreSvcsRef)
     {
+        stlt = stltRef;
         wrkCtx = wrkCtxRef;
         coreSvcs = coreSvcsRef;
         errLog = coreSvcsRef.getErrorReporter();
@@ -61,6 +74,8 @@ class DrbdDeviceHandler implements DeviceHandler
 
         ResourceDefinition rscDfn = rsc.getDefinition();
         ResourceName rscName = rscDfn.getName();
+        Node localNode = rsc.getAssignedNode();
+        NodeName localNodeName = localNode.getName();
 
         // Volatile state information of the resource and its volumes
         ResourceState rscState = new ResourceState();
@@ -111,30 +126,76 @@ class DrbdDeviceHandler implements DeviceHandler
         // Evaluate volumes state by checking for the presence of backend-storage
         try
         {
+            Props nodeProps = rsc.getAssignedNode().getProps(wrkCtx);
+            Props rscProps = rsc.getProps(wrkCtx);
+            Props rscDfnProps = rscDfn.getProps(wrkCtx);
+
             for (VolumeState vlmState : vlmStateMap.values())
             {
                 if (!vlmState.hasDisk)
                 {
-                    // TODO: Check for backend storage
+                    Volume vlm = rsc.getVolume(vlmState.vlmNr);
+                    VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.vlmNr);
+                    Props vlmProps = vlm.getProps(wrkCtx);
+                    Props vlmDfnProps = vlmDfn.getProps(wrkCtx);
+
+                    PriorityProps vlmPrioProps = new PriorityProps(
+                        vlmProps, rscProps, vlmDfnProps, rscDfnProps, nodeProps
+                    );
+
+                    String spNameStr = vlmPrioProps.getProp(ApiConsts.KEY_STOR_POOL_NAME);
+                    if (spNameStr == null)
+                    {
+                        spNameStr = Controller.DEFAULT_STOR_POOL_NAME;
+                    }
+
+                    StorPoolName spName = new StorPoolName(spNameStr);
+                    StorPoolDefinition storPoolDfn = stlt.storPoolDfnMap.get(spName);
+                    if (storPoolDfn != null)
+                    {
+                        StorPool storagePool = storPoolDfn.getStorPool(wrkCtx, localNodeName);
+
+                        StorageDriver driver = storagePool.getDriver(wrkCtx);
+
+                        String storVlmName = rscDfn.getName().value + "_" + vlmDfn.getVolumeNumber().toString();
+                        long netSize = vlmDfn.getVolumeSize(wrkCtx);
+                        long expectedSize = drbdMd.getGrossSize(
+                            netSize, FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
+                        );
+                        try
+                        {
+                            driver.checkVolume(storVlmName, expectedSize);
+                        }
+                        catch (StorageException storExc)
+                        {
+                            errLog.reportProblem(Level.TRACE, storExc, null, null, null);
+                        }
+                    }
+                    else
+                    {
+                        errLog.logTrace(
+                            "Cannot find storage pool '" + spName.displayValue + "' " +
+                            "on the local node '" + localNodeName + "'"
+                        );
+                    }
                 }
             }
         }
         catch (Exception exc)
         {
             // FIXME: Narrow to storage exceptions
+            errLog.reportError(exc);
         }
 
         // BEGIN DEBUG
         StringBuilder rscActions = new StringBuilder();
-        rscActions.append("Resource '");
-        rscActions.append(rscName.displayValue);
-        rscActions.append("'\n");
-        rscActions.append("    requiresAdjust = ");
-        rscActions.append(rscState.requiresAdjust);
-        rscActions.append("\n");
+        rscActions.append("Resource '").append(rscName.displayValue).append("'\n");
+        rscActions.append("    isPresent = ").append(rscState.isPresent).append("\n");
+        rscActions.append("    requiresAdjust = ").append(rscState.requiresAdjust).append("\n");
         for (VolumeState vlmState : vlmStateMap.values())
         {
             rscActions.append("    Volume ").append(vlmState.vlmNr.value).append("\n");
+            rscActions.append("        isPresent = ").append(vlmState.isPresent).append("\n");
             rscActions.append("        hasDisk     = ").append(vlmState.hasDisk).append("\n");
             rscActions.append("        isFailed    = ").append(vlmState.isFailed).append("\n");
             rscActions.append("        hasMetaData = ").append(vlmState.hasMetaData).append("\n");
@@ -169,6 +230,7 @@ class DrbdDeviceHandler implements DeviceHandler
         DrbdResource drbdRsc = drbdState.getDrbdResource(rsc.getDefinition().getName().displayValue);
         if (drbdRsc != null)
         {
+            rscState.isPresent = true;
             evaluateDrbdRole(rscState, drbdRsc);
             evaluateDrbdConnections(rsc, rscDfn, rscState, vlmStateMap, drbdRsc);
             evaluateDrbdVolumes(rscState, vlmStateMap, drbdRsc);
@@ -270,6 +332,7 @@ class DrbdDeviceHandler implements DeviceHandler
             DrbdVolume drbdVlm = drbdRsc.getVolume(vlmState.vlmNr);
             if (drbdVlm != null)
             {
+                vlmState.isPresent = true;
                 DrbdVolume.DiskState diskState = drbdVlm.getDiskState();
                 switch (diskState)
                 {
@@ -394,12 +457,14 @@ class DrbdDeviceHandler implements DeviceHandler
 
     static class ResourceState
     {
+        boolean isPresent = false;
         boolean requiresAdjust = false;
     }
 
     static class VolumeState
     {
         VolumeNumber vlmNr;
+        boolean isPresent = false;
         boolean hasDisk = false;
         boolean hasMetaData = false;
         boolean isFailed = false;
