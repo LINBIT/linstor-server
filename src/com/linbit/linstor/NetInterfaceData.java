@@ -28,8 +28,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     private final NetInterfaceName niName;
 
     private final TransactionSimpleObject<NetInterfaceData, LsIpAddress> niAddress;
-    private final TransactionSimpleObject<NetInterfaceData, Integer> niPort;
-    private final TransactionSimpleObject<NetInterfaceData, NetInterfaceType> niType;
 
     private final NetInterfaceDataDatabaseDriver dbDriver;
 
@@ -41,8 +39,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         Node node,
         NetInterfaceName name,
         LsIpAddress addr,
-        int port,
-        NetInterfaceType netType,
         TransactionMgr transMgr
     )
         throws AccessDeniedException
@@ -52,9 +48,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             accCtx,
             name,
             node,
-            addr,
-            port,
-            netType
+            addr
         );
 
         setConnection(transMgr);
@@ -66,9 +60,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         AccessContext accCtx,
         NetInterfaceName netName,
         Node node,
-        LsIpAddress addr,
-        int port,
-        NetInterfaceType netType
+        LsIpAddress addr
     )
         throws AccessDeniedException
     {
@@ -83,21 +75,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             addr,
             dbDriver.getNetInterfaceAddressDriver()
         );
-        niPort = new TransactionSimpleObject<NetInterfaceData, Integer>(
-            this,
-            port,
-            dbDriver.getNetInterfacePortDriver()
-        );
-        niType = new TransactionSimpleObject<>(
-            this,
-            netType,
-            dbDriver.getNetInterfaceTypeDriver()
-        );
 
-        transObjs = Arrays.<TransactionObject> asList(
-            niAddress,
-            niType
-        );
+        transObjs = Arrays.<TransactionObject> asList(niAddress);
         ((NodeData) node).addNetInterface(accCtx, this);
     }
 
@@ -106,8 +85,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         Node node,
         NetInterfaceName name,
         LsIpAddress addr,
-        int port,
-        NetInterfaceType netType,
         TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
@@ -128,7 +105,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         if (netData == null && createIfNotExists)
         {
-            netData = new NetInterfaceData(accCtx, node, name, addr, port, netType, transMgr);
+            netData = new NetInterfaceData(accCtx, node, name, addr, transMgr);
             driver.create(netData, transMgr);
         }
         if (netData != null)
@@ -145,8 +122,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         Node node,
         NetInterfaceName netName,
         LsIpAddress addr,
-        int port,
-        NetInterfaceType netType,
         SatelliteTransactionMgr transMgr
     )
         throws ImplementationError
@@ -164,9 +139,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
                     accCtx,
                     netName,
                     node,
-                    addr,
-                    port,
-                    netType
+                    addr
                 );
             }
             netData.initialized();
@@ -221,42 +194,6 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     }
 
     @Override
-    public NetInterfaceType getNetInterfaceType(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        niNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return niType.get();
-    }
-
-    @Override
-    public void setNetInterfaceType(AccessContext accCtx, NetInterfaceType type)
-        throws AccessDeniedException, SQLException
-    {
-        checkDeleted();
-        niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        niType.set(type);
-    }
-
-    @Override
-    public int getNetInterfacePort(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        niNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return niPort.get();
-    }
-
-    @Override
-    public void setNetInterfacePort(AccessContext accCtx, int port)
-        throws AccessDeniedException, SQLException
-    {
-        checkDeleted();
-        niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        niPort.set(port);
-    }
-
-    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
         checkDeleted();
@@ -275,14 +212,14 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         }
     }
 
+    @Override
     public NetInterfaceApi getApiData(AccessContext accCtx) throws AccessDeniedException
     {
         return new NetInterfacePojo(
                 getUuid(),
                 getName().getDisplayName(),
-                getAddress(accCtx).getAddress(),
-                getNetInterfaceType(accCtx).toString(),
-                getNetInterfacePort(accCtx));
+                getAddress(accCtx).getAddress()
+        );
     }
 
     @Override

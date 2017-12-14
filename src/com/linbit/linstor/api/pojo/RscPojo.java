@@ -91,6 +91,11 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         return rscDefinition.getSecret();
     }
 
+    public String getRscDfnTransportType()
+    {
+        return rscDefinition.getTransportType();
+    }
+
     public Map<String, String> getRscDfnProps()
     {
         return rscDefinition.getProps();

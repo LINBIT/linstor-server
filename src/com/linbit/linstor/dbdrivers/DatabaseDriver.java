@@ -11,6 +11,7 @@ import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SatelliteConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
@@ -97,6 +98,12 @@ public interface DatabaseDriver
      * {@link com.linbit.linstor.NetInterfaceData}-IO
      */
     NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver();
+
+    /**
+     * Returns the database driver specific implementation for
+     * {@link com.linbit.linstor.SatelliteConnectionData}-IO
+     */
+    SatelliteConnectionDataDatabaseDriver getSatelliteConnectionDataDatabaseDriver();
 
     /**
      * Returns the database driver specific implementation for

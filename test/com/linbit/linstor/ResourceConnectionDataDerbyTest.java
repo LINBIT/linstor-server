@@ -15,6 +15,7 @@ import org.junit.Test;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.DerbyBase;
@@ -67,7 +68,9 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
 
         uuid = randomUUID();
 
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, "secret", transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(
+            sysCtx, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
+        );
         resDfnMap.put(resDfn.getName(), resDfn);
         nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
         nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);

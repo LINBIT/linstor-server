@@ -16,7 +16,6 @@ import org.junit.Test;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.NetInterface.NetInterfaceType;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.utils.UuidUtils;
 
@@ -24,7 +23,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
 {
     private static final String SELECT_ALL_NODE_NET_INTERFACES =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + NODE_NET_NAME + ", " + NODE_NET_DSP_NAME + ", " +
-                     INET_ADDRESS + ", " + INET_TRANSPORT_TYPE +
+                     INET_ADDRESS +
         " FROM " + TBL_NODE_NET_INTERFACES;
 
     private final NetInterfaceName niName;
@@ -32,8 +31,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
 
     private final String niAddrStr = "127.0.0.1";
     private final LsIpAddress niAddr;
-    private final int port = 9001;
-    private final NetInterfaceType niInterfaceType = NetInterfaceType.IP;
 
     private TransactionMgr transMgr;
 
@@ -44,7 +41,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     private java.util.UUID niUuid;
     private NetInterfaceData niData;
     private SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> niAddrDriver;
-    private SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> niTypeDriver;
 
     public NetInterfaceDataDerbyTest() throws Exception
     {
@@ -57,7 +53,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals("NODE_NET_INTERFACES table's column count has changed. Update tests accordingly!", 7, TBL_COL_COUNT_NODE_NET_INTERFACES);
+        assertEquals(TBL_NODE_NET_INTERFACES + " table's column count has changed. Update tests accordingly!", 5, TBL_COL_COUNT_NODE_NET_INTERFACES);
 
         transMgr = new TransactionMgr(getConnection());
 
@@ -72,11 +68,10 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         );
 
         niUuid = java.util.UUID.randomUUID();
-        niData = new NetInterfaceData(niUuid, sysCtx, niName, node, niAddr, port, niInterfaceType); // does not persist
+        niData = new NetInterfaceData(niUuid, sysCtx, niName, node, niAddr); // does not persist
 
         dbDriver = new NetInterfaceDataDerbyDriver(sysCtx, errorReporter);
         niAddrDriver = dbDriver.getNetInterfaceAddressDriver();
-        niTypeDriver = dbDriver.getNetInterfaceTypeDriver();
     }
 
     @Test
@@ -93,7 +88,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.value, resultSet.getString(NODE_NET_NAME));
         assertEquals(niName.displayValue, resultSet.getString(NODE_NET_DSP_NAME));
         assertEquals(niAddrStr, resultSet.getString(INET_ADDRESS));
-        assertEquals(niInterfaceType.name(), resultSet.getString(INET_TRANSPORT_TYPE));
         assertFalse(resultSet.next());
 
         resultSet.close();
@@ -125,8 +119,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             node,
             netInterfaceName,
             niAddr,
-            port,
-            NetInterfaceType.IP,
             transMgr,
             true,
             false
@@ -141,8 +133,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(netInterfaceName.value, resultSet.getString(NODE_NET_NAME));
         assertEquals(netInterfaceName.displayValue, resultSet.getString(NODE_NET_DSP_NAME));
         assertEquals(niAddr.getAddress(), resultSet.getString(INET_ADDRESS));
-        assertEquals("IP", resultSet.getString(INET_TRANSPORT_TYPE));
-        // transport: IP, RDMA, RoCE
         assertFalse("Database persisted too many netInterfaces", resultSet.next());
         resultSet.close();
         stmt.close();
@@ -162,7 +152,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
         assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress());
-        assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
     }
 
     @Test
@@ -179,7 +168,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
         assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress());
-        assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
     }
 
     @Test
@@ -193,8 +181,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             node,
             niName,
             niAddr,
-            port,
-            niInterfaceType,
             transMgr,
             false,
             false
@@ -206,15 +192,12 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.value, netData1.getName().value);
         assertEquals(niName.displayValue, netData1.getName().displayValue);
         assertEquals(niAddrStr, netData1.getAddress(sysCtx).getAddress());
-        assertEquals(niInterfaceType, netData1.getNetInterfaceType(sysCtx));
 
         NetInterfaceData netData2 = NetInterfaceData.getInstance(
             sysCtx,
             node,
             niName,
             niAddr,
-            port,
-            niInterfaceType,
             transMgr,
             false,
             false
@@ -238,7 +221,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
         assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress());
-        assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
     }
 
     @Test
@@ -249,8 +231,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             node,
             niName,
             niAddr,
-            port,
-            niInterfaceType,
             transMgr,
             true,
             false
@@ -340,43 +320,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     }
 
     @Test
-    public void testTypeUpdate() throws Exception
-    {
-        niData.initialized();
-        dbDriver.create(niData, transMgr);
-
-        niData.setConnection(transMgr);
-        niData.setNetInterfaceType(sysCtx, NetInterfaceType.RDMA);
-        transMgr.commit();
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
-        ResultSet resultSet = stmt.executeQuery();
-        assertTrue(resultSet.next());
-        assertEquals(NetInterfaceType.RDMA.name(), resultSet.getString(INET_TRANSPORT_TYPE));
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testTypeUpdateDriver() throws Exception
-    {
-        niData.initialized();
-        dbDriver.create(niData, transMgr);
-        niTypeDriver.update(niData, NetInterfaceType.RDMA, transMgr);
-
-        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
-        ResultSet resultSet = stmt.executeQuery();
-        assertTrue(resultSet.next());
-        assertEquals(NetInterfaceType.RDMA.name(), resultSet.getString(INET_TRANSPORT_TYPE));
-        assertFalse(resultSet.next());
-
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
     public void testGetInstanceSatelliteCreate() throws Exception
     {
         satelliteMode();
@@ -386,8 +329,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             node,
             niName,
             niAddr,
-            port,
-            niInterfaceType,
             null,
             true,
             false
@@ -396,7 +337,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertNotNull(netData);
         assertEquals(niAddr, netData.getAddress(sysCtx));
         assertEquals(niName, netData.getName());
-        assertEquals(niInterfaceType, netData.getNetInterfaceType(sysCtx));
         assertEquals(node, netData.getNode());
         assertNotNull(netData.getUuid());
 
@@ -429,8 +369,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             node2,
             niName,
             niAddr,
-            port,
-            niInterfaceType,
             null,
             false,
             false
@@ -470,8 +408,6 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
             node,
             niName,
             niAddr,
-            port,
-            niInterfaceType,
             transMgr,
             false,
             true

@@ -69,6 +69,7 @@ public class ApplyRsc extends BaseProtoApiCall
                 rscData.getRscDfnPort(),
                 rscData.getRscDfnSecret(),
                 rscData.getRscDfnFlags(),
+                rscData.getRscDfnTransportType(),
                 asMap(rscData.getRscDfnPropsList()),
                 vlmDfns);
         RscPojo rscRawData = new RscPojo(

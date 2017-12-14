@@ -9,11 +9,11 @@ import java.util.List;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.NetInterface.NetInterfaceType;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.core.LinStor;
@@ -36,7 +36,7 @@ public class NodeDataDerbyTest extends DerbyBase
         "     " + TBL_RESOURCES + "." + RESOURCE_NAME + " = RES_DEF." + RESOURCE_NAME +
         " WHERE " + NODE_NAME + " = ?";
     private static final String SELECT_ALL_NET_INTERFACES_FOR_NODE =
-        " SELECT " + NODE_NET_NAME + ", " + NODE_NET_DSP_NAME + ", " + INET_ADDRESS + ", " + INET_TRANSPORT_TYPE +
+        " SELECT " + NODE_NET_NAME + ", " + NODE_NET_DSP_NAME + ", " + INET_ADDRESS +
         " FROM " + TBL_NODE_NET_INTERFACES +
         " WHERE " + NODE_NAME + " = ?";
     private static final String SELECT_ALL_STOR_POOLS_FOR_NODE =
@@ -242,8 +242,6 @@ public class NodeDataDerbyTest extends DerbyBase
         java.util.UUID netIfUuid;
         NetInterfaceName netName = new NetInterfaceName("TestNetName");
         String netHost = "127.0.0.1";
-        String netType = "IP";
-        int netPort = 9001;
 
         // node2
         NodeName nodeName2 = new NodeName("TestTargetNodeName");
@@ -254,6 +252,7 @@ public class NodeDataDerbyTest extends DerbyBase
         TcpPortNumber resPort = new TcpPortNumber(9001);
         String resDfnTestKey = "resDfnTestKey";
         String resDfnTestValue = "resDfnTestValue";
+        TransportType transportType = TransportType.IP;
 
         // node1 res
         java.util.UUID res1Uuid;
@@ -340,8 +339,6 @@ public class NodeDataDerbyTest extends DerbyBase
                 node1,
                 netName,
                 new LsIpAddress(netHost),
-                netPort,
-                NetInterfaceType.IP,
                 transMgr,
                 true,
                 true
@@ -368,6 +365,7 @@ public class NodeDataDerbyTest extends DerbyBase
                 resPort,
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
                 "secret",
+                transportType,
                 transMgr,
                 true,
                 true
@@ -542,10 +540,8 @@ public class NodeDataDerbyTest extends DerbyBase
                 LsIpAddress address = netIf.getAddress(sysCtx);
                 assertNotNull(address);
                 assertEquals(netHost, address.getAddress());
-                assertEquals(netPort, netIf.getNetInterfacePort(sysCtx));
             }
             assertEquals(netName, netIf.getName());
-            assertEquals(NetInterfaceType.byValue(netType), netIf.getNetInterfaceType(sysCtx));
             assertEquals(loadedNode, netIf.getNode());
             assertEquals(netIfUuid, netIf.getUuid());
         }
@@ -707,7 +703,7 @@ public class NodeDataDerbyTest extends DerbyBase
     public void testCache() throws Exception
     {
         dbDriver.create(node, transMgr);
-        super.nodesMap.put(nodeName, node);
+        nodesMap.put(nodeName, node);
         // no clearCaches
 
         assertEquals(node, dbDriver.load(nodeName, true, transMgr));

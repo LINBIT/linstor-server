@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnection;
 import com.linbit.linstor.Resource;
@@ -141,6 +142,7 @@ public class CtrlApiCallHandler
      * @param client
      * @param nodeNameStr required
      * @param nodeTypeStr required
+     * @param list
      * @param props not null, might be empty
      * @return
      */
@@ -149,6 +151,7 @@ public class CtrlApiCallHandler
         Peer client,
         String nodeNameStr,
         String nodeTypeStr,
+        List<NetInterfaceApi> netIfs,
         Map<String, String> props
     )
     {
@@ -165,6 +168,7 @@ public class CtrlApiCallHandler
                 client,
                 nodeNameStr,
                 nodeTypeStr,
+                netIfs,
                 props
             );
         }
@@ -277,6 +281,7 @@ public class CtrlApiCallHandler
         String resourceName,
         Integer port,
         String secret,
+        String transportType,
         Map<String, String> props,
         List<VolumeDefinition.VlmDfnApi> volDescrMap
     )
@@ -307,6 +312,7 @@ public class CtrlApiCallHandler
                 resourceName,
                 port,
                 secret,
+                transportType,
                 props,
                 volDescrMap
             );

@@ -47,18 +47,6 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi
         return netInterface.getAddress();
     }
 
-    @Override
-    public int getPort()
-    {
-        return netInterface.getPort();
-    }
-
-    @Override
-    public String getType()
-    {
-        return netInterface.getType();
-    }
-
     public static List<NetInterfaceOuterClass.NetInterface> toNetInterfaceProtoList(
         List<NetInterface.NetInterfaceApi> netInterfaceApiList)
     {
@@ -77,8 +65,6 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi
         bld.setUuid(netInterApi.getUuid().toString());
         bld.setName(netInterApi.getName());
         bld.setAddress(netInterApi.getAddress());
-        bld.setType(netInterApi.getType());
-        bld.setPort(netInterApi.getPort());
         return bld.build();
     }
 }

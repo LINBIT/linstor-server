@@ -13,6 +13,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -34,22 +35,24 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private static final String RD_DSP_NAME = DerbyConstants.RESOURCE_DSP_NAME;
     private static final String RD_PORT = DerbyConstants.TCP_PORT;
     private static final String RD_SECRET = DerbyConstants.SECRET;
+    private static final String RD_TRANS_TYPE = DerbyConstants.TRANSPORT_TYPE;
     private static final String RD_FLAGS = DerbyConstants.RESOURCE_FLAGS;
 
     private static final String RD_SELECT =
         " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-                     RD_SECRET + ", " + RD_FLAGS + ", " + RD_PORT +
+                     RD_SECRET + ", " + RD_FLAGS + ", " + RD_PORT + ", " + RD_TRANS_TYPE +
         " FROM " + TBL_RES_DEF +
         " WHERE " + RD_NAME + " = ?";
     private static final String RD_SELECT_ALL =
         " SELECT " + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-                     RD_SECRET + ", " + RD_FLAGS + ", " + RD_PORT +
+                     RD_SECRET + ", " + RD_FLAGS + ", " + RD_PORT + ", " + RD_TRANS_TYPE +
         " FROM " + TBL_RES_DEF;
     private static final String RD_INSERT =
         " INSERT INTO " + TBL_RES_DEF +
         " (" + RD_UUID + ", " + RD_NAME + ", " + RD_DSP_NAME + ", " +
-               RD_SECRET + ", " + RD_FLAGS + ", " + RD_PORT + ")" +
-        " VALUES (?, ?, ?, ?, ?, ?)";
+               RD_PORT + ", " + RD_FLAGS + ", " + RD_SECRET + ", " + RD_TRANS_TYPE +
+        " )" +
+        " VALUES (?, ?, ?, ?, ?, ?, ?)";
     private static final String RD_UPDATE_FLAGS =
         " UPDATE " + TBL_RES_DEF +
         " SET " + RD_FLAGS + " = ? " +
@@ -57,6 +60,10 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     private static final String RD_UPDATE_PORT =
         " UPDATE " + TBL_RES_DEF +
         " SET " + RD_PORT + " = ? " +
+        " WHERE " + RD_NAME + " = ?";
+    private static final String RD_UPDATE_TRANS_TYPE =
+        " UPDATE " + TBL_RES_DEF +
+        " SET " + RD_TRANS_TYPE + " = ? " +
         " WHERE " + RD_NAME + " = ?";
     private static final String RD_DELETE =
         " DELETE FROM " + TBL_RES_DEF +
@@ -71,6 +78,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
 
     private final StateFlagsPersistence<ResourceDefinitionData> resDfnFlagPersistence;
     private final SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> portDriver;
+    private final SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> transTypeDriver;
 
     private ResourceDataDerbyDriver resourceDriver;
     private VolumeDefinitionDataDerbyDriver volumeDefinitionDriver;
@@ -85,6 +93,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         errorReporter = errorReporterRef;
         resDfnFlagPersistence = new ResDfnFlagsPersistence();
         portDriver = new PortDriver();
+        transTypeDriver = new TransportTypeDriver();
         resDfnMap = resDfnMapRef;
         rscDfnCache = new HashMap<>();
     }
@@ -108,9 +117,10 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
             stmt.setBytes(1, UuidUtils.asByteArray(resourceDefinition.getUuid()));
             stmt.setString(2, resourceDefinition.getName().value);
             stmt.setString(3, resourceDefinition.getName().displayValue);
-            stmt.setString(4, resourceDefinition.getSecret(dbCtx));
+            stmt.setInt(4, resourceDefinition.getPort(dbCtx).value);
             stmt.setLong(5, resourceDefinition.getFlags().getFlagsBits(dbCtx));
-            stmt.setInt(6, resourceDefinition.getPort(dbCtx).value);
+            stmt.setString(6, resourceDefinition.getSecret(dbCtx));
+            stmt.setString(7, resourceDefinition.getTransportType(dbCtx).name());
             stmt.executeUpdate();
 
             errorReporter.logTrace("ResourceDefinition created %s", getDebugId(resourceDefinition));
@@ -241,6 +251,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     port,
                     resultSet.getLong(RD_FLAGS),
                     resultSet.getString(RD_SECRET),
+                    TransportType.byValue(resultSet.getString(RD_TRANS_TYPE)),
                     transMgr
                 );
                 // cache the resDfn BEFORE we load the conDfns
@@ -342,6 +353,12 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         return portDriver;
     }
 
+    @Override
+    public SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> getTransportTypeDriver()
+    {
+        return transTypeDriver;
+    }
+
     private String getTraceId(ResourceDefinitionData resourceDefinition)
     {
         return getId(resourceDefinition.getName().value);
@@ -432,5 +449,45 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 DerbyDriver.handleAccessDeniedException(accDeniedExc);
             }
         }
+    }
+
+    private class TransportTypeDriver implements SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType>
+    {
+
+        @Override
+        public void update(
+            ResourceDefinitionData resourceDefinition,
+            TransportType transType,
+            TransactionMgr transMgr
+        )
+            throws SQLException
+        {
+            try
+            {
+                errorReporter.logTrace(
+                    "Updating ResourceDefinition's transport type from [%s] to [%s] %s",
+                    resourceDefinition.getTransportType(dbCtx).name(),
+                    transType.name(),
+                    getTraceId(resourceDefinition)
+                );
+                try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_UPDATE_TRANS_TYPE))
+                {
+                    stmt.setString(1, transType.name());
+                    stmt.setString(2, resourceDefinition.getName().value);
+                    stmt.executeUpdate();
+                }
+                errorReporter.logTrace(
+                    "ResourceDefinition's transport type updated from [%s] to [%s] %s",
+                    resourceDefinition.getTransportType(dbCtx).name(),
+                    transType.name(),
+                    getDebugId(resourceDefinition)
+                );
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                DerbyDriver.handleAccessDeniedException(accDeniedExc);
+            }
+        }
+
     }
 }

@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -17,9 +18,10 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.LsIpAddress;
-import com.linbit.linstor.NetInterface.NetInterfaceType;
+import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
@@ -28,7 +30,11 @@ import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.SatelliteConnection;
+import com.linbit.linstor.SatelliteConnection.EncryptionType;
+import com.linbit.linstor.SatelliteConnectionData;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -67,6 +73,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         Peer client,
         String nodeNameStr,
         String nodeTypeStr,
+        List<NetInterfaceApi> netIfs,
         Map<String, String> propsMap
     )
     {
@@ -104,81 +111,67 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             Props nodeProps = getProps(node);
             nodeProps.map().putAll(propsMap);
 
-            Props netIfProps = nodeProps.getNamespace(ApiConsts.NAMESPC_NETIF);
-            if (netIfProps == null)
+            Props netComProps = nodeProps.getNamespace(ApiConsts.NAMESPC_NETCOM);
+            if (netComProps == null)
             {
                 // TODO for auxiliary nodes maybe the netIf-namespace is not required?
-                reportMissingNetIfNamespace();
+                reportMissingNetComNamespace();
+            }
+            else
+            if (netIfs.isEmpty())
+            {
+                // TODO for auxiliary nodes maybe no netif is required?
+                // TODO report missing net interfaces
+                reportMissingNetInterfaces();
             }
             else
             {
-                Iterator<String> netIfNamesIterator = netIfProps.iterateNamespaces();
-                boolean atLeastOneEnabled = false;
-                while (netIfNamesIterator.hasNext())
+                for (NetInterfaceApi netIfApi : netIfs)
                 {
-                    String currentNetIfNameStr = netIfNamesIterator.next();
-                    String portStr = null;
-                    Integer port = null;
-                    String netComTypeStr = null;
-                    NetInterfaceType netType = null;
-                    boolean enabled = true;
-
-                    NetInterfaceName netName = asNetInterfaceName(currentNetIfNameStr);
-                    LsIpAddress addr = asDmIpAddress(netIfProps.getProp(ApiConsts.KEY_IP_ADDR, currentNetIfNameStr));
-
-                    portStr = netIfProps.getProp(ApiConsts.KEY_PORT_NR, currentNetIfNameStr);
-                    netComTypeStr = netIfProps.getProp(ApiConsts.KEY_NETCOM_TYPE, currentNetIfNameStr);
-                    if (portStr == null || netComTypeStr == null)
-                    {
-                        if (portStr == null && netComTypeStr != null)
-                        {
-                            reportMissingPort(currentNetIfNameStr);
-                        }
-                        else
-                        if (portStr != null && netComTypeStr == null)
-                        {
-                            reportMissingNetComType(currentNetIfNameStr);
-                        }
-                        // TODO if both are null, it is still valid (not as a LinStor connection, but as a drbd connection)
-                    }
-                    else
-                    {
-                        port = asPort(portStr, currentNetIfNameStr);
-                        netType = getNetIfType(netIfProps, currentNetIfNameStr, NetInterfaceType.IP);
-                        enabled = isEnabled(netIfProps, currentNetIfNameStr, true);
-
-                        if (enabled)
-                        {
-                            atLeastOneEnabled = true;
-                            createNetInterface(
-                                node,
-                                netName,
-                                addr,
-                                port,
-                                netType
-                            );
-                        }
-                    }
-                }
-
-                if (atLeastOneEnabled == false)
-                {
-                    reportMissingEnabledNetCom();
-                }
-                else
-                {
-                    commit();
-                    controller.nodesMap.put(nodeName, node);
-
-                    success(
-                        "New node '" + nodeNameStr + "' created.",
-                        "Node '" + nodeNameStr + "' UUID is " + node.getUuid()
+                    createNetInterface(
+                        node,
+                        asNetInterfaceName(netIfApi.getName()),
+                        asLsIpAddress(netIfApi.getAddress())
                     );
+                }
 
-                    if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
-                    {
-                        startConnecting(node, accCtx, client, controller);
-                    }
+                String stltNetIfNameStr = netComProps.getProp(ApiConsts.KEY_NET_IF_NAME, ApiConsts.NAMESPC_STLT);
+                String stltNetIfPortStr = netComProps.getProp(ApiConsts.KEY_PORT_NR, ApiConsts.NAMESPC_STLT);
+                String stltNetIfEncTypeStr = netComProps.getProp(ApiConsts.KEY_NETCOM_TYPE, ApiConsts.NAMESPC_STLT);
+
+                if (stltNetIfNameStr == null || stltNetIfNameStr.equals(""))
+                {
+                    throw reportMissingNetIf();
+                }
+                if (stltNetIfPortStr == null || stltNetIfPortStr.equals(""))
+                {
+                    throw reportMissingPort();
+                }
+                if (stltNetIfEncTypeStr == null || stltNetIfEncTypeStr.equals(""))
+                {
+                    throw reportMissingNetComType();
+                }
+
+
+                NetInterfaceName stltNetIfName = asNetInterfaceName(stltNetIfNameStr);
+                TcpPortNumber stltNetIfPort = asTcpPortNumber(stltNetIfPortStr);
+                EncryptionType stltNetIfEncryptionType = asEncryptionType(stltNetIfEncTypeStr);
+
+                NetInterface netIf = node.getNetInterface(accCtx, stltNetIfName);
+
+                createSatelliteConnection(node, netIf, stltNetIfPort, stltNetIfEncryptionType);
+
+                commit();
+                controller.nodesMap.put(nodeName, node);
+
+                success(
+                    "New node '" + nodeNameStr + "' created.",
+                    "Node '" + nodeNameStr + "' UUID is " + node.getUuid()
+                );
+
+                if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
+                {
+                    startConnecting(node, accCtx, client, controller);
                 }
             }
         }
@@ -201,7 +194,6 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
         return apiCallRc;
     }
-
 
     ApiCallRc modifyNode(
         AccessContext accCtx,
@@ -511,85 +503,65 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         Props netIfProps;
         try
         {
-            netIfProps = node.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_NETIF);
-            Iterator<String> iterator = netIfProps.iterateNamespaces();
-            TcpConnector tcpConnector = null;
-            InetSocketAddress satelliteAddress = null;
-            while (iterator.hasNext() && tcpConnector == null)
-            {
-                String netIf = iterator.next();
+            SatelliteConnection satelliteConnection = node.getSatelliteConnection(accCtx);
+            if (satelliteConnection != null ) {
+                EncryptionType type = satelliteConnection.getEncryptionType();
+                String serviceType;
+                switch (type)
+                {
+                    case PLAIN:
+                        serviceType = Controller.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC;
+                        break;
+                    case SSL:
+                        serviceType = Controller.PROPSCON_KEY_DEFAULT_SSL_CON_SVC;
+                        break;
+                    default:
+                        throw new ImplementationError(
+                            "Unhandeld default case for EncryptionType",
+                            null
+                        );
+                }
+                ServiceName dfltConSvcName;
                 try
                 {
-                    if (!ApiConsts.VAL_FALSE.equalsIgnoreCase(netIfProps.getProp(ApiConsts.KEY_NETCOM_ENABLED, netIf)))
-                    {
-                        String addr = netIfProps.getProp(ApiConsts.KEY_IP_ADDR, netIf);
-                        String port = netIfProps.getProp(ApiConsts.KEY_PORT_NR, netIf);
-                        String type = netIfProps.getProp(ApiConsts.KEY_NETCOM_TYPE, netIf);
-
-                        satelliteAddress = new InetSocketAddress(addr, Integer.parseInt(port));
-                        String serviceType;
-                        if (type.equals(ApiConsts.VAL_NETCOM_TYPE_PLAIN))
-                        {
-                            serviceType = Controller.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC;
-                        }
-                        else
-                        {
-                            serviceType = Controller.PROPSCON_KEY_DEFAULT_SSL_CON_SVC;
-                        }
-                        String dfltConSvc = controller.ctrlConf.getProp(serviceType);
-                        if (dfltConSvc == null)
-                        {
-                            // TODO: Add correction instructions for adding a default TCP connector
-                            controller.getErrorReporter().reportError(
-                                new LinStorException(
-                                    "The controller has no default " + type.toLowerCase() + " tcp connector "
-                                ),
-                                accCtx,
-                                client,
-                                "The controller cannot connect to satellite nodes because no " +
-                                "default TCP connector is defined"
-                            );
-                        }
-                        ServiceName dfltConSvcName = new ServiceName(dfltConSvc);
-                        tcpConnector = controller.netComConnectors.get(dfltConSvcName);
-                    }
-                }
-                catch (NumberFormatException numberFormatExc)
-                {
-                    // ignore and try the next one
+                    dfltConSvcName = new ServiceName(
+                        controller.ctrlConf.getProp(serviceType)
+                    );
                 }
                 catch (InvalidNameException invalidNameExc)
                 {
-                    controller.getErrorReporter().reportError(
-                        new LinStorException(
-                            "The ServiceName of the default TCP connector is not valid",
-                            invalidNameExc
-                        )
+                    throw new LinStorRuntimeException(
+                        "The ServiceName of the default TCP connector is not valid",
+                        invalidNameExc
                     );
                 }
-                catch (InvalidKeyException invalidKeyExc)
-                {
-                    controller.getErrorReporter().reportError(
-                        new ImplementationError(
-                            "A constant for a PropsContainer key generated an InvalidKeyException",
-                            invalidKeyExc
-                        )
-                    );
-                }
-            }
+                TcpConnector tcpConnector = controller.netComConnectors.get(dfltConSvcName);
 
-            if (satelliteAddress != null && tcpConnector != null)
-            {
-                controller.connectSatellite(satelliteAddress, tcpConnector, node);
+                if (tcpConnector != null)
+                {
+                    controller.connectSatellite(
+                        new InetSocketAddress(
+                            satelliteConnection.getNetInterface().getAddress(accCtx).getAddress(),
+                            satelliteConnection.getPort().value
+                        ),
+                        tcpConnector,
+                        node
+                    );
+                }
+                else
+                {
+                    throw new LinStorRuntimeException(
+                        "Attempt to establish a " + type + " connection without a proper connector defined"
+                    );
+                }
             }
         }
         catch (AccessDeniedException | InvalidKeyException exc)
         {
-            controller.getErrorReporter().reportError(
-                new LinStorException(
-                    "Access to an object protected by access controls was revoked while a " +
-                    "controller<->satellite connect operation was in progress.", exc
-                )
+            throw new LinStorRuntimeException(
+                "Access to an object protected by access controls was revoked while a " +
+                "controller<->satellite connect operation was in progress.",
+                exc
             );
         }
     }
@@ -756,7 +728,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private LsIpAddress asDmIpAddress(String ipAddrStr)
+    private LsIpAddress asLsIpAddress(String ipAddrStr)
         throws ApiCallHandlerFailedException
     {
         if (ipAddrStr == null)
@@ -787,7 +759,39 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private void reportMissingNetIfNamespace()
+    private TcpPortNumber asTcpPortNumber(String portStr)
+    {
+        try
+        {
+            return new TcpPortNumber(Integer.parseInt(portStr));
+        }
+        catch (Exception exc)
+        {
+            throw exc(
+                exc,
+                "The given portNumber '" + portStr + "' is invalid.",
+                ApiConsts.FAIL_INVLD_NET_PORT
+            );
+        }
+    }
+
+    private EncryptionType asEncryptionType(String encryptionTypeStr)
+    {
+        try
+        {
+            return EncryptionType.valueOfIgnoreCase(encryptionTypeStr);
+        }
+        catch (Exception exc)
+        {
+            throw exc(
+                exc,
+                "The given encryption type '" + encryptionTypeStr + "' is invalid.",
+                ApiConsts.FAIL_INVLD_NET_TYPE
+            );
+        }
+    }
+
+    private void reportMissingNetComNamespace()
     {
         currentVariables.get().put(ApiConsts.KEY_MISSING_NAMESPC, ApiConsts.NAMESPC_NETIF);
         throw exc(
@@ -799,31 +803,26 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             String.format(
                 "The path '%s' is not present in the properties specified for the node.\n" +
                 "The path contains mandatory parameters required for node creation.",
-                ApiConsts.NAMESPC_NETIF
+                ApiConsts.NAMESPC_NETCOM + "/" + ApiConsts.NAMESPC_STLT
             ),
             null,
             "Specify the mandatory parameters.\n" +
             "Example for creating a netinterface named 'netIfName0':\n" +
-                ApiConsts.NAMESPC_NETIF + "/netIfName0/" + ApiConsts.KEY_IP_ADDR + " = 0.0.0.0\n" +
-                ApiConsts.NAMESPC_NETIF + "/netIfName0/" + ApiConsts.KEY_PORT_NR + " = " + ApiConsts.DFLT_STLT_PORT_PLAIN + "\n" +
-                ApiConsts.NAMESPC_NETIF + "/netIfName0/" + ApiConsts.KEY_NETCOM_TYPE + " = " + ApiConsts.VAL_NETCOM_TYPE_PLAIN + "\n" +
-                ApiConsts.NAMESPC_NETIF + "/netIfName0/" + ApiConsts.KEY_NETCOM_ENABLED + " = " + ApiConsts.VAL_TRUE + "\n" +
-                "   for a linstor node connection (" + ApiConsts.KEY_NETCOM_ENABLED + " is optional and default " + ApiConsts.VAL_TRUE+ ") or \n" +
-                ApiConsts.NAMESPC_NETIF + "/netIfName0/" + ApiConsts.KEY_IP_ADDR + " = 10.0.0.103\n" +
-                "   for a drbd resource interface (no " + ApiConsts.KEY_PORT_NR + ", no " + ApiConsts.KEY_NETCOM_TYPE + ")",
-            ApiConsts.FAIL_MISSING_PROPS
+            ApiConsts.NAMESPC_NETCOM + "/" + ApiConsts.NAMESPC_STLT + "/" + ApiConsts.KEY_NETIF_NAME + " = LinStorInterface\n" +
+            ApiConsts.NAMESPC_NETCOM + "/" + ApiConsts.NAMESPC_STLT + "/" + ApiConsts.KEY_PORT_NR + " = 9000\n" +
+            ApiConsts.NAMESPC_NETCOM + "/" + ApiConsts.NAMESPC_STLT + "/" + ApiConsts.KEY_NETCOM_TYPE + " = " + ApiConsts.VAL_NETCOM_TYPE_PLAIN,
+            ApiConsts.FAIL_MISSING_NETCOM
         );
     }
 
-    private void reportMissingPort(String netIfNameStr) throws ApiCallHandlerFailedException
+    private ApiCallHandlerFailedException reportMissingPort()
     {
-        throw exc(
+        return exc(
             null,
             "Creation of the node '" + currentNodeName.get() + " failed.",
             String.format(
-                "The mandatory property '%s' for network interface '%s' is unset.",
-                ApiConsts.KEY_PORT_NR,
-                netIfNameStr
+                "The mandatory property '%s' is unset.",
+                ApiConsts.NAMESPC_NETCOM + "/" + ApiConsts.NAMESPC_STLT + "/" + ApiConsts.KEY_PORT_NR
             ),
             null,
             null,
@@ -831,15 +830,14 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         );
     }
 
-    private void reportMissingNetComType(String netIfNameStr) throws ApiCallHandlerFailedException
+    private ApiCallHandlerFailedException reportMissingNetComType()
     {
-        throw exc(
+        return exc(
             null,
             "Creation of the node '" + currentNodeName.get() + " failed.",
             String.format(
-                "The mandatory property '%s' for the network interface '%s' is unset.",
-                ApiConsts.KEY_NETCOM_TYPE,
-                netIfNameStr
+                "The mandatory property '%s' is unset.",
+                ApiConsts.NAMESPC_NETCOM + "/" + ApiConsts.NAMESPC_STLT + "/" + ApiConsts.KEY_NETCOM_TYPE
             ),
             null,
             "The mandatory property must be set when requesting node creation.",
@@ -847,64 +845,32 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         );
     }
 
-    private void reportMissingEnabledNetCom() throws ApiCallHandlerFailedException
+    private ApiCallHandlerFailedException reportMissingNetIf()
+    {
+        return exc(
+            null,
+            "Creation of the node '" + currentNodeName.get() + " failed.",
+            String.format(
+                "The mandatory property '%s' is unset.",
+                ApiConsts.NAMESPC_NETCOM + "/" + ApiConsts.NAMESPC_STLT + "/" + ApiConsts.KEY_NETIF_NAME
+                ),
+            null,
+            "The mandatory property must be set when requesting node creation.",
+            ApiConsts.FAIL_MISSING_PROPS_NETIF_NAME
+        );
+    }
+
+    private void reportMissingNetInterfaces()
     {
         throw exc(
             null,
             "Creation of node '" + currentNodeName.get() + "' failed.",
-            "No enabled network interface for controller-satellite communication was specified.",
+            "No network interfaces were given.",
             null,
-            "At least one network interface of the node must be enabled for controller-satellite communication.",
+            "At least one network interface has to be given and be marked (via properties) to be used for " +
+            "controller-satellite communitaction.",
             ApiConsts.FAIL_MISSING_NETCOM
         );
-    }
-
-    private int asPort(String portStr, String netIfNameStr) throws ApiCallHandlerFailedException
-    {
-        try
-        {
-            return Integer.parseInt(portStr);
-        }
-        catch (NumberFormatException numberFormatExc)
-        {
-            throw exc(
-                numberFormatExc,
-                "Node creation failed.",
-                "The specified TCP/IP port number of the network interface '" + netIfNameStr +
-                "' is invalid",
-                "The input specified for the TCP/IP port number field was '" + portStr + "'.",
-                "A valid TCP/IP port number must be specified.",
-                ApiConsts.FAIL_INVLD_NET_PORT
-            );
-        }
-    }
-
-    private NetInterfaceType getNetIfType(
-        Props props,
-        String netIfNameStr,
-        NetInterfaceType defaultType
-    )
-        throws ApiCallHandlerFailedException
-    {
-        String netIfTypeStr = null;
-        try
-        {
-            netIfTypeStr = props.getProp(ApiConsts.KEY_NETIF_TYPE, netIfNameStr);
-            return NetInterfaceType.valueOfIgnoreCase(netIfTypeStr, defaultType);
-        }
-        catch (InvalidKeyException invalidKeyExc)
-        {
-            throw reportImplError(invalidKeyExc);
-        }
-        catch (IllegalArgumentException illegalArgumentExc)
-        {
-            throw exc(
-                illegalArgumentExc,
-                "The specified network interface type '" + netIfTypeStr + "' for network interface '" +
-                netIfNameStr + "' is invalid.",
-                ApiConsts.FAIL_INVLD_NET_TYPE
-            );
-        }
     }
 
     private boolean isEnabled(
@@ -956,9 +922,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private NetInterfaceData createNetInterface(
         Node node,
         NetInterfaceName netName,
-        LsIpAddress addr,
-        int port,
-        NetInterfaceType netType
+        LsIpAddress addr
     )
         throws ApiCallHandlerFailedException
     {
@@ -969,8 +933,6 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 node,
                 netName,
                 addr,
-                port,
-                netType,
                 currentTransMgr.get(),
                 true,   // persist node
                 true    // throw LinStorDataAlreadyExistsException if needed
@@ -1000,6 +962,48 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             throw handleSqlExc(sqlExc);
         }
     }
+
+    private void createSatelliteConnection(
+        Node node,
+        NetInterface netIf,
+        TcpPortNumber port,
+        EncryptionType encryptionType
+    )
+    {
+        try
+        {
+            SatelliteConnectionData.getInstance(
+                currentAccCtx.get(),
+                node,
+                netIf,
+                port,
+                encryptionType,
+                currentTransMgr.get(),
+                true,
+                true
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw accDeniedExc(
+                accDeniedExc,
+                "creating a satellite connection",
+                ApiConsts.FAIL_ACC_DENIED_STLT_CONN
+            );
+        }
+        catch (LinStorDataAlreadyExistsException alreadyExistsExc)
+        {
+            throw new ImplementationError(
+                "New node already had an satellite connection",
+                alreadyExistsExc
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw sqlExc(sqlExc, "creating a satellite connection");
+        }
+    }
+
 
     private Iterator<Resource> getRscIterator(NodeData nodeData) throws ApiCallHandlerFailedException
     {

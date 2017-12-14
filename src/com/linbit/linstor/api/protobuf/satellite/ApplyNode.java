@@ -75,9 +75,7 @@ public class ApplyNode extends BaseProtoApiCall
                 new NetInterfacePojo(
                     UUID.fromString(netIf.getNetIfUuid()),
                     netIf.getNetIfName(),
-                    netIf.getNetIfAddr(),
-                    netIf.getNetIfType(),
-                    netIf.getNetIfPort()
+                    netIf.getNetIfAddr()
                 )
             );
         }

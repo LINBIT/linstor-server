@@ -28,8 +28,10 @@ import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SatelliteConnection.EncryptionType;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
@@ -125,6 +127,7 @@ class StltRscApiCallHandler
 
         rscName = new ResourceName(rscRawData.getName());
         String rscDfnSecret = rscRawData.getRscDfnSecret();
+        TransportType rscDfnTransportType = TransportType.byValue(rscRawData.getRscDfnTransportType());
         TcpPortNumber port = new TcpPortNumber(rscRawData.getRscDfnPort());
         RscDfnFlags[] rscDfnFlags = RscDfnFlags.restoreFlags(rscRawData.getRscDfnFlags());
 
@@ -141,6 +144,7 @@ class StltRscApiCallHandler
                 port,
                 rscDfnFlags,
                 rscDfnSecret,
+                rscDfnTransportType,
                 transMgr
             );
 

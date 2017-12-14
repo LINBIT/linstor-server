@@ -51,6 +51,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // State flags
     private final StateFlags<RscDfnFlags> flags;
 
+    private final TransactionSimpleObject<ResourceDefinitionData, TransportType> transportType;
+
     // Object access controls
     private final ObjectProtection objProt;
 
@@ -73,6 +75,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         TcpPortNumber port,
         long initialFlags,
         String secret,
+        TransportType transType,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -89,6 +92,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             port,
             initialFlags,
             secret,
+            transType,
             transMgr
         );
     }
@@ -103,6 +107,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         TcpPortNumber portRef,
         long initialFlags,
         String secretRef,
+        TransportType transTypeRef,
         TransactionMgr transMgr
     )
         throws SQLException
@@ -126,13 +131,16 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         );
         flags = new RscDfnFlagsImpl(objProt, this, dbDriver.getStateFlagsPersistence(), initialFlags);
 
+        transportType = new TransactionSimpleObject<>(this, transTypeRef, dbDriver.getTransportTypeDriver());
+
         transObjs = Arrays.asList(
             flags,
             objProt,
             volumeMap,
             resourceMap,
             rscDfnProps,
-            port
+            port,
+            transportType
         );
     }
 
@@ -142,6 +150,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         TcpPortNumber port,
         RscDfnFlags[] flags,
         String secret,
+        TransportType transType,
         TransactionMgr transMgr,
         boolean createIfNotExists,
         boolean failIfExists
@@ -166,6 +175,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                 port,
                 StateFlagsBits.getMask(flags),
                 secret,
+                transType,
                 transMgr
             );
             driver.create(resDfn, transMgr);
@@ -185,6 +195,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         TcpPortNumber portRef,
         RscDfnFlags[] initFlags,
         String secret,
+        TransportType transType,
         SatelliteTransactionMgr transMgr
     )
         throws ImplementationError
@@ -203,6 +214,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
                     portRef,
                     StateFlagsBits.getMask(initFlags),
                     secret,
+                    transType,
                     transMgr
                 );
             }
@@ -352,6 +364,23 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public TransportType getTransportType(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return transportType.get();
+    }
+
+    @Override
+    public void setTransportType(AccessContext accCtx, TransportType type)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        transportType.set(type);
+    }
+
+    @Override
     public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
         getFlags().enableFlags(accCtx, RscDfnFlags.DELETE);
@@ -393,6 +422,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             getPort(accCtx).value,
             getSecret(accCtx),
             getFlags().getFlagsBits(accCtx),
+            getTransportType(accCtx).name(),
             getProps(accCtx).map(),
             vlmDfnList
         );

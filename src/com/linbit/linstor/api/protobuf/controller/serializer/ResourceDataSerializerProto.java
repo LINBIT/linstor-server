@@ -86,6 +86,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
             .addAllOtherResources(
                 buildOtherResources(otherResources)
             )
+            .setRscDfnTransportType(rscDfn.getTransportType(serializerCtx).name())
             .build();
     }
 

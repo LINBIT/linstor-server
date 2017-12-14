@@ -131,8 +131,6 @@ public class NodeDataSerializerProto implements CtrlNodeSerializer
                     .setNetIfUuid(netIf.getUuid().toString())
                     .setNetIfName(netIf.getName().displayValue)
                     .setNetIfAddr(netIf.getAddress(serializerCtx).getAddress())
-                    .setNetIfType(netIf.getNetInterfaceType(serializerCtx).name())
-                    .setNetIfPort(netIf.getNetInterfacePort(serializerCtx))
                     .build()
             );
         }

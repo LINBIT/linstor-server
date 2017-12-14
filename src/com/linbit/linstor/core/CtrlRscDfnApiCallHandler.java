@@ -49,6 +49,7 @@ import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.TcpPortNumber;
@@ -98,6 +99,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         String rscNameStr,
         int portInt,
         String secret,
+        String transportTypeStr,
         Map<String, String> props,
         List<VlmDfnApi> volDescrMap
     )
@@ -132,12 +134,23 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
             RscDfnFlags[] rscDfnInitFlags = null;
 
+            TransportType transportType;
+            if (transportTypeStr == null || transportTypeStr.trim().equals(""))
+            {
+                transportType = TransportType.IP;
+            }
+            else
+            {
+                transportType = TransportType.byValue(transportTypeStr); // TODO needs exception handling
+            }
+
             rscDfn = ResourceDefinitionData.getInstance( // sqlExc2, accDeniedExc1 (same as last line), alreadyExistsExc1
                 accCtx,
                 new ResourceName(rscNameStr), // invalidNameExc1
                 new TcpPortNumber(portInt), // valOORangeExc1
                 rscDfnInitFlags,
                 secret,
+                transportType,
                 transMgr,
                 true, // persist this entry
                 true // throw exception if the entry exists
@@ -649,6 +662,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 null, // port only needed if we want to persist this entry
                 null, // rscFlags only needed if we want to persist this entry
                 null, // secret only needed if we want to persist this object
+                null, // transportType only needed if we want to persist this object
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists
@@ -1125,9 +1139,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             return ResourceDefinitionData.getInstance(
                 currentAccCtx.get(),
                 rscName,
-                null,
-                null,
-                null,
+                null, // port only needed if we want to persist this entry
+                null, // rscFlags only needed if we want to persist this entry
+                null, // secret only needed if we want to persist this object
+                null, // transportType only needed if we want to persist this object
                 currentTransMgr.get(),
                 false,
                 false

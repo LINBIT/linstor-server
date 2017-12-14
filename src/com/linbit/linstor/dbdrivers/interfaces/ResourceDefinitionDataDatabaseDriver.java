@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.BaseTransactionObject;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.TcpPortNumber;
@@ -72,6 +73,11 @@ public interface ResourceDefinitionDataDatabaseDriver
      * A special sub-driver to update the port
      */
     public SingleColumnDatabaseDriver<ResourceDefinitionData, TcpPortNumber> getPortDriver();
+
+    /**
+     * A special sub-driver to update the transport type
+     */
+    public SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> getTransportTypeDriver();
 
     /**
      * Checks if the stored primary key already exists in the database.

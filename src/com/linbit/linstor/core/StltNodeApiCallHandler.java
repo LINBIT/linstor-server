@@ -20,7 +20,6 @@ import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.NetInterface.NetInterfaceType;
 import com.linbit.linstor.api.interfaces.serializer.StltRequestSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
@@ -115,7 +114,6 @@ class StltNodeApiCallHandler
         {
             NetInterfaceName netIfName = new NetInterfaceName(netIfApi.getName());
             LsIpAddress ipAddress = new LsIpAddress(netIfApi.getAddress());
-            NetInterfaceType netIfType = NetInterfaceType.byValue(netIfApi.getType());
             NetInterface netIf = node.getNetInterface(apiCtx, netIfName);
             if (netIf == null)
             {
@@ -125,16 +123,12 @@ class StltNodeApiCallHandler
                     node,
                     netIfName,
                     ipAddress,
-                    netIfApi.getPort(),
-                    netIfType,
                     transMgr
                 );
             }
             else
             {
                 netIf.setAddress(apiCtx, ipAddress);
-                netIf.setNetInterfacePort(apiCtx, netIfApi.getPort());
-                netIf.setNetInterfaceType(apiCtx, netIfType);
             }
         }
         return node;

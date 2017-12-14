@@ -21,6 +21,7 @@ public interface DerbyConstants
     public static final String TBL_SEC_ACL_MAP           = "SEC_ACL_MAP";
     public static final String TBL_NODES                 = "NODES";
     public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
+    public static final String TBL_SATELLITE_CONNECTIONS = "SATELLITE_CONNECTIONS";
     public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
     public static final String TBL_RESOURCES             = "RESOURCES";
     public static final String TBL_STOR_POOL_DEFINITIONS = "STOR_POOL_DEFINITIONS";
@@ -78,18 +79,20 @@ public interface DerbyConstants
     public static final String NODE_TYPE     = "NODE_TYPE";
 
     // NODE_NET_INTERFACES column names
-    public static final String NODE_NET_NAME       = "NODE_NET_NAME";
-    public static final String NODE_NET_DSP_NAME   = "NODE_NET_DSP_NAME";
-    public static final String INET_ADDRESS        = "INET_ADDRESS";
-    public static final String INET_PORT           = "INET_PORT";
-    public static final String INET_TRANSPORT_TYPE = "INET_TRANSPORT_TYPE";
+    public static final String NODE_NET_NAME     = "NODE_NET_NAME";
+    public static final String NODE_NET_DSP_NAME = "NODE_NET_DSP_NAME";
+    public static final String INET_ADDRESS      = "INET_ADDRESS";
+
+    // SATELLITE_CONNECTIONS column names
+    public static final String TCP_PORT      = "TCP_PORT";
+    public static final String INET_TYPE     = "INET_TYPE";
 
     // RESOURCE_DEFINITIONS column names
     public static final String RESOURCE_NAME     = "RESOURCE_NAME";
     public static final String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
-    public static final String TCP_PORT          = "TCP_PORT";
     public static final String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
     public static final String SECRET            = "SECRET";
+    public static final String TRANSPORT_TYPE    = "TRANSPORT_TYPE";
 
     // RESOURCES column names
     public static final String NODE_ID        = "NODE_ID";
@@ -133,8 +136,9 @@ public interface DerbyConstants
     public static final int TBL_COL_COUNT_SEC_OBJECT_PROTECTION = 4;
     public static final int TBL_COL_COUNT_SEC_ACL_MAP           = 3;
     public static final int TBL_COL_COUNT_NODES                 = 5;
-    public static final int TBL_COL_COUNT_NODE_NET_INTERFACES   = 7;
-    public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 6;
+    public static final int TBL_COL_COUNT_NODE_NET_INTERFACES   = 5;
+    public static final int TBL_COL_COUNT_SATELLITE_CONNECTIONS = 5;
+    public static final int TBL_COL_COUNT_RESOURCE_DEFINITIONS  = 7;
     public static final int TBL_COL_COUNT_RESOURCES             = 5;
     public static final int TBL_COL_COUNT_STOR_POOL_DEFINITIONS = 3;
     public static final int TBL_COL_COUNT_NODE_STOR_POOL        = 4;
@@ -264,23 +268,39 @@ public interface DerbyConstants
         "    NODE_NET_NAME VARCHAR(255) NOT NULL, \n" +
         "    NODE_NET_DSP_NAME VARCHAR(255) NOT NULL, \n" +
         "    INET_ADDRESS VARCHAR(45) NOT NULL, \n" +
-        "    INET_PORT SMALLINT NOT NULL, \n" +
-        "    INET_TRANSPORT_TYPE VARCHAR(40) NOT NULL, \n" +
         "    PRIMARY KEY (NODE_NAME, NODE_NET_NAME), \n" +
         "    FOREIGN KEY (NODE_NAME) REFERENCES NODES(NODE_NAME) ON DELETE CASCADE \n" +
+        ")";
+    public static final String CREATE_TABLE_SATELLITE_CONNECTIONS =
+        "CREATE TABLE SATELLITE_CONNECTIONS \n" +
+        "( \n" +
+        "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
+        "    NODE_NAME VARCHAR(255) NOT NULL, \n" +
+        "    NODE_NET_NAME VARCHAR(255) NOT NULL, \n" +
+        "    TCP_PORT SMALLINT NOT NULL, \n" +
+        "    INET_TYPE VARCHAR(5) NOT NULL, \n" +
+        "    PRIMARY KEY (NODE_NAME), \n" +
+        "    FOREIGN KEY (NODE_NAME, NODE_NET_NAME) REFERENCES NODE_NET_INTERFACES(NODE_NAME, NODE_NET_NAME) \n" +
+        "        ON DELETE CASCADE, \n" +
+        "    CONSTRAINT STLT_CHK_PORT_RANGE CHECK (TCP_PORT > 0 AND TCP_PORT < 65536), \n" +
+        "    CONSTRAINT STLT_CHK_TYPE CHECK (INET_TYPE = 'PLAIN' OR INET_TYPE = 'SSL') \n" +
         ")";
     public static final String CREATE_TABLE_RESOURCE_DEFINITIONS =
         "CREATE TABLE RESOURCE_DEFINITIONS \n" +
         "( \n" +
         "    UUID CHAR(16) FOR BIT DATA NOT NULL, \n" +
-        "    RESOURCE_NAME VARCHAR(48) NOT NULL PRIMARY KEY \n" +
-        "        CONSTRAINT RSC_DFN_CHKNAME CHECK (UPPER(RESOURCE_NAME) = RESOURCE_NAME AND LENGTH(RESOURCE_NAME) >= 3), \n" +
+        "    RESOURCE_NAME VARCHAR(48) NOT NULL, \n" +
         "    RESOURCE_DSP_NAME VARCHAR(48) NOT NULL, \n" +
         "    TCP_PORT INTEGER NOT NULL, \n" +
         "    RESOURCE_FLAGS BIGINT NOT NULL, \n" +
         "    SECRET VARCHAR(20) NOT NULL, \n" +
+        "    TRANSPORT_TYPE VARCHAR(40) NOT NULL, \n" +
+        "    PRIMARY KEY (RESOURCE_NAME), \n" +
+        "    CONSTRAINT RSC_DFN_CHKNAME CHECK (UPPER(RESOURCE_NAME) = RESOURCE_NAME AND LENGTH(RESOURCE_NAME) >= 3), \n" +
         "    CONSTRAINT RSC_DFN_CHKDSPNAME CHECK (UPPER(RESOURCE_DSP_NAME) = RESOURCE_NAME), \n" +
-        "    CONSTRAINT RSC_DFN_PORT CHECK (TCP_PORT > 0 AND TCP_PORT < 65536) \n" +
+        "    CONSTRAINT RSC_DFN_CHK_PORT_RANGE CHECK (TCP_PORT > 0 AND TCP_PORT < 65536), \n" +
+        "    CONSTRAINT RSC_DFN_CHK_TRANSPORT_TYPE CHECK (TRANSPORT_TYPE = 'IP' OR TRANSPORT_TYPE = 'RDMA' \n" +
+        "        OR TRANSPORT_TYPE = 'RoCE') \n" +
         ")";
     public static final String CREATE_TABLE_RESOURCES =
         "CREATE TABLE RESOURCES \n" +
@@ -422,6 +442,7 @@ public interface DerbyConstants
     public static final String DROP_TBL_STOR_POOL_DEFINITIONS = "DROP TABLE " + TBL_STOR_POOL_DEFINITIONS;
     public static final String DROP_TBL_RESOURCES             = "DROP TABLE " + TBL_RESOURCES;
     public static final String DROP_TBL_RESOURCE_DEFINITIONS  = "DROP TABLE " + TBL_RESOURCE_DEFINITIONS;
+    public static final String DROP_TBL_SATELLITE_CONNECTIONS = "DROP TABLE " + TBL_SATELLITE_CONNECTIONS;
     public static final String DROP_TBL_NODE_NET_INTERFACES   = "DROP TABLE " + TBL_NODE_NET_INTERFACES;
     public static final String DROP_TBL_NODES                 = "DROP TABLE " + TBL_NODES;
     public static final String DROP_TBL_SEC_ACL_MAP           = "DROP TABLE " + TBL_SEC_ACL_MAP;
@@ -446,6 +467,7 @@ public interface DerbyConstants
     public static final String TRUNCATE_STOR_POOL_DEFINITIONS = "DELETE FROM " + TBL_STOR_POOL_DEFINITIONS;
     public static final String TRUNCATE_RESOURCES             = "DELETE FROM " + TBL_RESOURCES;
     public static final String TRUNCATE_RESOURCE_DEFINITIONS  = "DELETE FROM " + TBL_RESOURCE_DEFINITIONS;
+    public static final String TRUNCATE_SATELLITE_CONNECTIONS = "DELETE FROM " + TBL_SATELLITE_CONNECTIONS;
     public static final String TRUNCATE_NODE_NET_INTERFACES   = "DELETE FROM " + TBL_NODE_NET_INTERFACES;
     public static final String TRUNCATE_NODES                 = "DELETE FROM " + TBL_NODES;
     public static final String TRUNCATE_SEC_ACL_MAP           = "DELETE FROM " + TBL_SEC_ACL_MAP;
@@ -474,6 +496,7 @@ public interface DerbyConstants
         CREATE_TABLE_SEC_ACL_MAP,
         CREATE_TABLE_NODES,
         CREATE_TABLE_NODE_NET_INTERFACES,
+        CREATE_TABLE_SATELLITE_CONNECTIONS,
         CREATE_TABLE_RESOURCE_DEFINITIONS,
         CREATE_TABLE_RESOURCES,
         CREATE_TABLE_STOR_POOL_DEFINITIONS,
@@ -530,7 +553,7 @@ public interface DerbyConstants
         "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
         "    VALUES ('PUBLIC', 'SYSTEM', 3)",
         "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
-        "    VALUES ('PUBLIC', 'PUBLIC', 7)",
+        "    VALUES ('PUBLIC', 'PUBLIC', 15)",
         "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
         "    VALUES ('PUBLIC', 'SHARED', 7)",
         "INSERT INTO SEC_TYPE_RULES (DOMAIN_NAME, TYPE_NAME, ACCESS_TYPE) \n" +
@@ -664,10 +687,13 @@ public interface DerbyConstants
         " VALUES (?, ?, ?, ?, ?)";
     public static final String INSERT_NODE_NET_INTERFACES =
         " INSERT INTO " + TBL_NODE_NET_INTERFACES +
-        " VALUES (?, ?, ?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?)";
+    public static final String INSERT_SATELLITE_CONNECTIONS =
+        " INSERT INTO " + TBL_SATELLITE_CONNECTIONS +
+        " VALUES (?, ?, ?, ?, ?)";
     public static final String INSERT_RESOURCE_DEFINITIONS =
         " INSERT INTO " + TBL_RESOURCE_DEFINITIONS +
-        " VALUES (?, ?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?, ?, ?)";
     public static final String INSERT_RESOURCES =
         " INSERT INTO " + TBL_RESOURCES +
         " VALUES (?, ?, ?, ?, ?)";
@@ -713,6 +739,7 @@ public interface DerbyConstants
         DROP_TBL_STOR_POOL_DEFINITIONS,
         DROP_TBL_RESOURCES,
         DROP_TBL_RESOURCE_DEFINITIONS,
+        DROP_TBL_SATELLITE_CONNECTIONS,
         DROP_TBL_NODE_NET_INTERFACES,
         DROP_TBL_NODES,
         DROP_TBL_SEC_ACL_MAP,
@@ -740,6 +767,7 @@ public interface DerbyConstants
         TRUNCATE_STOR_POOL_DEFINITIONS,
         TRUNCATE_RESOURCES,
         TRUNCATE_RESOURCE_DEFINITIONS,
+        TRUNCATE_SATELLITE_CONNECTIONS,
         TRUNCATE_NODE_NET_INTERFACES,
         TRUNCATE_NODES,
         TRUNCATE_SEC_ACL_MAP,

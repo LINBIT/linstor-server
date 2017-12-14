@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,10 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.protobuf.Message;
+import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.NetInterface.NetInterfaceApi;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn;
@@ -46,6 +50,8 @@ import com.linbit.linstor.proto.MsgDelVlmConnOuterClass.MsgDelVlmConn;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.MsgModNodeOuterClass.MsgModNode;
 import com.linbit.linstor.proto.MsgModRscDfnOuterClass.MsgModRscDfn;
+import com.linbit.linstor.proto.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 
@@ -424,21 +430,41 @@ public class ClientProtobuf implements Runnable
         return msgId;
     }
 
-    public int sendCreateNode(String nodeName, String nodeType, Map<String, String> props)
+    public int sendCreateNode(
+        String nodeName,
+        String nodeType,
+        Map<String, String> props,
+        List<? extends NetInterface.NetInterfaceApi> netIfs
+    )
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        MsgCrtNode.Builder msgBuilder = MsgCrtNode.newBuilder().
-            setNodeName(nodeName).
-            setNodeType(nodeType);
+        NodeOuterClass.Node.Builder nodeBuilder = NodeOuterClass.Node.newBuilder()
+            .setName(nodeName)
+            .setType(nodeType);
         if (props != null)
         {
-            msgBuilder.addAllNodeProps(asLinStorMapEntryList(props));
+            nodeBuilder.addAllProps(asLinStorMapEntryList(props));
         }
+
+        for (NetInterfaceApi netIf : netIfs)
+        {
+            nodeBuilder.addNetInterfaces(
+                NetInterfaceOuterClass.NetInterface.newBuilder()
+                    .setName(netIf.getName())
+                    .setAddress(netIf.getAddress())
+                    .build()
+            );
+        }
+
         send(
             msgId,
             API_CRT_NODE,
-            msgBuilder.build()
+            MsgCrtNode.newBuilder()
+                .setNode(
+                    nodeBuilder.build()
+                )
+                .build()
         );
         return msgId;
     }
@@ -879,11 +905,19 @@ public class ClientProtobuf implements Runnable
 
         int msgId = 0;
 
-        msgId = client.sendCreateNode(nodeName1, "satellite", null);
+        msgId = client.sendCreateNode(nodeName1, "satellite", null,
+            Arrays.asList(
+                new NetInterfacePojo(null, "tcp0", "10.0.0.1")
+            )
+        );
         client.println(msgId + " create first node");
         Thread.sleep(500);
 
-        msgId = client.sendCreateNode(nodeName2, "satellite", null);
+        msgId = client.sendCreateNode(nodeName2, "satellite", null,
+            Arrays.asList(
+                new NetInterfacePojo(null, "tcp0", "10.0.0.2")
+            )
+        );
         client.println(msgId + " create second node");
         Thread.sleep(500);
 
@@ -983,7 +1017,11 @@ public class ClientProtobuf implements Runnable
 
         int msgId = 0;
 
-        msgId = client.sendCreateNode(nodeName, "satellite", nodeProps);
+        msgId = client.sendCreateNode(nodeName, "satellite", nodeProps,
+            Arrays.asList(
+                new NetInterfacePojo(null, "tcp0", "10.0.0.1")
+            )
+        );
         client.println(msgId + " create node");
         Thread.sleep(500);
 

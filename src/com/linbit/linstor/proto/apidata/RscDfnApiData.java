@@ -26,9 +26,9 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
     @Override
     public UUID getUuid() {
         UUID uuid = null;
-        if (rscDfn.hasUuid())
+        if(rscDfn.hasRscDfnUuid())
         {
-            uuid = UUID.fromString(rscDfn.getUuid());
+            uuid = UUID.fromString(rscDfn.getRscDfnUuid());
         }
         return uuid;
     }
@@ -40,23 +40,30 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
 
     @Override
     public int getPort() {
-        return rscDfn.getRscPort();
+        return rscDfn.getRscDfnPort();
     }
 
     @Override
     public String getSecret() {
-        return rscDfn.getRscSecret();
+        return rscDfn.getRscDfnSecret();
+    }
+
+    @Override
+    public String getTransportType()
+    {
+        return rscDfn.getRscDfnTransportType();
     }
 
     @Override
     public long getFlags() {
-        return rscDfn.getRscFlags();
+        return rscDfn.getRscDfnFlags()
+            ;
     }
 
     @Override
     public Map<String, String> getProps() {
         Map<String, String> ret = new HashMap<>();
-        for (LinStorMapEntryOuterClass.LinStorMapEntry entry : rscDfn.getRscPropsList())
+        for (LinStorMapEntryOuterClass.LinStorMapEntry entry : rscDfn.getRscDfnPropsList())
         {
             ret.put(entry.getKey(), entry.getValue());
         }
@@ -72,11 +79,11 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
     {
         RscDfnOuterClass.RscDfn.Builder rscDfnBuilder = RscDfnOuterClass.RscDfn.newBuilder();
         rscDfnBuilder.setRscName(apiRscDfn.getResourceName());
-        rscDfnBuilder.setRscPort(apiRscDfn.getPort());
-        rscDfnBuilder.setRscSecret(apiRscDfn.getSecret());
-        rscDfnBuilder.setUuid(apiRscDfn.getUuid().toString());
+        rscDfnBuilder.setRscDfnPort(apiRscDfn.getPort());
+        rscDfnBuilder.setRscDfnSecret(apiRscDfn.getSecret());
+        rscDfnBuilder.setRscDfnUuid(apiRscDfn.getUuid().toString());
         rscDfnBuilder.addAllVlmDfns(VlmDfnApiData.fromApiList(apiRscDfn.getVlmDfnList()));
-        rscDfnBuilder.addAllRscProps(BaseProtoApiCall.fromMap(apiRscDfn.getProps()));
+        rscDfnBuilder.addAllRscDfnProps(BaseProtoApiCall.fromMap(apiRscDfn.getProps()));
 
         return rscDfnBuilder.build();
     }

@@ -17,6 +17,7 @@ import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SatelliteConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
@@ -843,6 +844,11 @@ public abstract class LinStor
     public static NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver()
     {
         return persistenceDbDriver.getNetInterfaceDataDatabaseDriver();
+    }
+
+    public static SatelliteConnectionDataDatabaseDriver getSatelliteConnectionDataDatabaseDriver()
+    {
+        return persistenceDbDriver.getSatelliteConnectionDataDatabaseDriver();
     }
 
     public static NodeConnectionDataDatabaseDriver getNodeConnectionDatabaseDriver()

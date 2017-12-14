@@ -21,6 +21,7 @@ public class DerbyConstants
     public static final String TBL_SEC_ACL_MAP           = "SEC_ACL_MAP";
     public static final String TBL_NODES                 = "NODES";
     public static final String TBL_NODE_NET_INTERFACES   = "NODE_NET_INTERFACES";
+    public static final String TBL_SATELLITE_CONNECTIONS = "SATELLITE_CONNECTIONS";
     public static final String TBL_RESOURCE_DEFINITIONS  = "RESOURCE_DEFINITIONS";
     public static final String TBL_RESOURCES             = "RESOURCES";
     public static final String TBL_STOR_POOL_DEFINITIONS = "STOR_POOL_DEFINITIONS";
@@ -78,18 +79,20 @@ public class DerbyConstants
     public static final String NODE_TYPE     = "NODE_TYPE";
 
     // NODE_NET_INTERFACES column names
-    public static final String NODE_NET_NAME       = "NODE_NET_NAME";
-    public static final String NODE_NET_DSP_NAME   = "NODE_NET_DSP_NAME";
-    public static final String INET_ADDRESS        = "INET_ADDRESS";
-    public static final String INET_PORT           = "INET_PORT";
-    public static final String INET_TRANSPORT_TYPE = "INET_TRANSPORT_TYPE";
+    public static final String NODE_NET_NAME     = "NODE_NET_NAME";
+    public static final String NODE_NET_DSP_NAME = "NODE_NET_DSP_NAME";
+    public static final String INET_ADDRESS      = "INET_ADDRESS";
+
+    // SATELLITE_CONNECTIONS column names
+    public static final String TCP_PORT      = "TCP_PORT";
+    public static final String INET_TYPE     = "INET_TYPE";
 
     // RESOURCE_DEFINITIONS column names
     public static final String RESOURCE_NAME     = "RESOURCE_NAME";
     public static final String RESOURCE_DSP_NAME = "RESOURCE_DSP_NAME";
-    public static final String TCP_PORT          = "TCP_PORT";
     public static final String RESOURCE_FLAGS    = "RESOURCE_FLAGS";
     public static final String SECRET            = "SECRET";
+    public static final String TRANSPORT_TYPE    = "TRANSPORT_TYPE";
 
     // RESOURCES column names
     public static final String NODE_ID        = "NODE_ID";

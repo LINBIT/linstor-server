@@ -9,7 +9,6 @@ import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterfaceData;
 import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.NetInterface.NetInterfaceType;
 
 /**
  * Database driver for {@link NetInterfaceData}.
@@ -70,14 +69,4 @@ public interface NetInterfaceDataDatabaseDriver
      * A special sub-driver to update the persisted ipAddress.
      */
     public SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver();
-
-    /**
-     * A special sub-driver to update the persisted transportType.
-     */
-    public SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> getNetInterfaceTypeDriver();
-
-    /**
-     * A special sub-driver to update the persisted port.
-     */
-    public SingleColumnDatabaseDriver<NetInterfaceData, Integer> getNetInterfacePortDriver();
 }

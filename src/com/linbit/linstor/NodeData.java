@@ -71,6 +71,8 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private transient Peer peer;
 
+    private transient SatelliteConnection satelliteConnection;
+
     private boolean deleted = false;
 
     /*
@@ -477,6 +479,13 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
+    public Peer getPeer(AccessContext accCtx) throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return peer;
+    }
+
+    @Override
     public void setPeer(AccessContext accCtx, Peer peerRef) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.CHANGE);
@@ -484,10 +493,18 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
-    public Peer getPeer(AccessContext accCtx) throws AccessDeniedException
+    public SatelliteConnection getSatelliteConnection(AccessContext accCtx) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return peer;
+        return satelliteConnection;
+    }
+
+    @Override
+    public void setSatelliteConnection(AccessContext accCtx, SatelliteConnection satelliteConnectionRef)
+        throws AccessDeniedException
+    {
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        satelliteConnection = satelliteConnectionRef;
     }
 
     @Override

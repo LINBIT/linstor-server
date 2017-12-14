@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -10,8 +11,9 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.NetInterface.NetInterfaceType;
 import com.linbit.linstor.Node.NodeType;
+import com.linbit.linstor.ResourceDefinition.TransportType;
+import com.linbit.linstor.SatelliteConnection.EncryptionType;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
@@ -20,6 +22,7 @@ import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDataDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SatelliteConnectionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
@@ -57,6 +60,7 @@ public class SatelliteDbDriver implements DatabaseDriver
     private final StorPoolDefinitionDataDatabaseDriver storPoolDriver = new SatelliteSpDriver();
     private final StorPoolDataDatabaseDriver storPoolDefinitionDriver = new SatelliteSpdDriver();
     private final NetInterfaceDataDatabaseDriver netInterfaceDriver = new SatelliteNiDriver();
+    private final SatelliteConnectionDataDatabaseDriver satelliteConnectionDriver = new SatelliteConnectionDriver();
     private final NodeConnectionDataDatabaseDriver nodeConnectionDriver = new SatelliteNodeConDfnDriver();
     private final ResourceConnectionDataDatabaseDriver resourceConnectionDriver = new SatelliteResConDfnDriver();
     private final VolumeConnectionDataDatabaseDriver volumeConnectionDriver = new SatelliteVolConDfnDriver();
@@ -154,6 +158,12 @@ public class SatelliteDbDriver implements DatabaseDriver
     public NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver()
     {
         return netInterfaceDriver;
+    }
+
+    @Override
+    public SatelliteConnectionDataDatabaseDriver getSatelliteConnectionDataDatabaseDriver()
+    {
+        return satelliteConnectionDriver;
     }
 
     @Override
@@ -335,6 +345,13 @@ public class SatelliteDbDriver implements DatabaseDriver
         {
             // no-op
         }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType> getTransportTypeDriver()
+        {
+            return (SingleColumnDatabaseDriver<ResourceDefinitionData, TransportType>) singleColDriver;
+        }
     }
 
     private class SatelliteVolDriver implements VolumeDataDatabaseDriver
@@ -495,6 +512,57 @@ public class SatelliteDbDriver implements DatabaseDriver
         }
     }
 
+    private class SatelliteConnectionDriver implements SatelliteConnectionDataDatabaseDriver
+    {
+        @Override
+        public SatelliteConnectionData load(
+            Node node,
+            NetInterface netIf,
+            boolean logWarnIfNotExists,
+            TransactionMgr transMgr
+        )
+            throws SQLException
+        {
+            SatelliteConnectionData stltConn = null;
+            try
+            {
+                stltConn = (SatelliteConnectionData) node.getSatelliteConnection(dbCtx);
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                handleAccessDeniedException(accDeniedExc);
+            }
+            return stltConn;
+        }
+
+        @Override
+        public void create(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr) throws SQLException
+        {
+            // no-op
+        }
+
+        @Override
+        public void delete(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr) throws SQLException
+        {
+            // no-op
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public SingleColumnDatabaseDriver<SatelliteConnectionData, TcpPortNumber> getSatelliteConnectionPortDriver()
+        {
+            return (SingleColumnDatabaseDriver<SatelliteConnectionData, TcpPortNumber>) singleColDriver;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public SingleColumnDatabaseDriver<SatelliteConnectionData, EncryptionType> getSatelliteConnectionTypeDriver()
+        {
+            return (SingleColumnDatabaseDriver<SatelliteConnectionData, EncryptionType>) singleColDriver;
+        }
+
+    }
+
     private class SatelliteNiDriver implements NetInterfaceDataDatabaseDriver
     {
         @SuppressWarnings("unchecked")
@@ -502,20 +570,6 @@ public class SatelliteDbDriver implements DatabaseDriver
         public SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> getNetInterfaceAddressDriver()
         {
             return (SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress>) singleColDriver;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> getNetInterfaceTypeDriver()
-        {
-            return (SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType>) singleColDriver;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public SingleColumnDatabaseDriver<NetInterfaceData, Integer> getNetInterfacePortDriver()
-        {
-            return (SingleColumnDatabaseDriver<NetInterfaceData, Integer>) singleColDriver;
         }
 
         @Override

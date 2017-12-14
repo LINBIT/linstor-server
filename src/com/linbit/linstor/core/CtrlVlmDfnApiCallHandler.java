@@ -221,6 +221,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 null, // tcpPortNumber only needed when we want to persist this object
                 null, // flags         only needed when we want to persist this object
                 null, // secret        only needed when we want to persist this object
+                null, // transportType only needed if we want to persist this object
                 currentTransMgr.get(),
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists

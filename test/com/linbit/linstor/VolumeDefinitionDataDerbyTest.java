@@ -15,6 +15,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -56,7 +57,9 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
 
         resName = new ResourceName("TestResource");
         resPort = new TcpPortNumber(9001);
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, "secret", transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(
+            sysCtx, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
+        );
 
         uuid = randomUUID();
         volNr = new VolumeNumber(13);
@@ -117,6 +120,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                 resPort,
                 null,
                 "secret",
+                TransportType.IP,
                 transMgr,
                 true,
                 false);
@@ -420,6 +424,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                 resPort,
                 null,
                 "secret",
+                TransportType.IP,
                 transMgr,
                 true,
                 false);

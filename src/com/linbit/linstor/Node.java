@@ -74,6 +74,12 @@ public interface Node extends TransactionObject
 
     public Peer getPeer(AccessContext accCtx) throws AccessDeniedException;
 
+    public SatelliteConnection getSatelliteConnection(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    public void setSatelliteConnection(AccessContext accCtx, SatelliteConnection stltConn)
+        throws AccessDeniedException;
+
     public void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 

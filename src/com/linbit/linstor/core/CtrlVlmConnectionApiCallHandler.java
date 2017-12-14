@@ -95,6 +95,7 @@ class CtrlVlmConnectionApiCallHandler
                 null, // port only needed if we want to persist this entry
                 null, // rscFalgs only needed if we want to persist this object
                 null, // secret only needed if we want to persist this object
+                null, // transportType only needed if we want to persist this object
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists
@@ -773,6 +774,7 @@ class CtrlVlmConnectionApiCallHandler
                 null, // port only needed if we want to persist this entry
                 null, // rscFalgs only needed if we want to persist this object
                 null, // secret only needed if we want to persist this object
+                null, // transportType only needed if we want to persist this object
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists

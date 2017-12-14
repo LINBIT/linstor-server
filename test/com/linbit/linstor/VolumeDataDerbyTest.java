@@ -13,6 +13,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.propscon.Props;
@@ -90,6 +91,7 @@ public class VolumeDataDerbyTest extends DerbyBase
             resPort,
             null,
             "secret",
+            TransportType.IP,
             transMgr,
             true,
             false

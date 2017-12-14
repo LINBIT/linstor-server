@@ -20,6 +20,7 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceDefinitionDataDerbyDriver;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.SatelliteConnectionDataDerbyDriver;
 import com.linbit.linstor.StorPoolDataDerbyDriver;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
@@ -78,6 +79,7 @@ public class DerbyDriver implements DatabaseDriver
     private final StorPoolDefinitionDataDerbyDriver storPoolDefinitionDriver;
     private final StorPoolDataDerbyDriver storPoolDriver;
     private final NetInterfaceDataDerbyDriver netInterfaceDriver;
+    private final SatelliteConnectionDataDerbyDriver satelliteConnectionDriver;
     private final NodeConnectionDataDerbyDriver nodeConnectionDriver;
     private final ResourceConnectionDataDerbyDriver resourceConnectionDriver;
     private final VolumeConnectionDataDerbyDriver volumeConnectionDriver;
@@ -110,6 +112,7 @@ public class DerbyDriver implements DatabaseDriver
         storPoolDefinitionDriver = new StorPoolDefinitionDataDerbyDriver(errorReporterRef, storPoolDfnMap);
         storPoolDriver = new StorPoolDataDerbyDriver(privCtx, errorReporterRef);
         netInterfaceDriver = new NetInterfaceDataDerbyDriver(privCtx, errorReporterRef);
+        satelliteConnectionDriver = new SatelliteConnectionDataDerbyDriver(privCtx, errorReporterRef);
         nodeConnectionDriver = new NodeConnectionDataDerbyDriver(
             privCtx,
             errorReporterRef
@@ -234,6 +237,12 @@ public class DerbyDriver implements DatabaseDriver
     public NetInterfaceDataDatabaseDriver getNetInterfaceDataDatabaseDriver()
     {
         return netInterfaceDriver;
+    }
+
+    @Override
+    public SatelliteConnectionDataDerbyDriver getSatelliteConnectionDataDatabaseDriver()
+    {
+        return satelliteConnectionDriver;
     }
 
     @Override

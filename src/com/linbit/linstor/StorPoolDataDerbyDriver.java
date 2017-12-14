@@ -35,7 +35,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         " SElECT " + SP_UUID + ", " + SP_NODE + ", " + SP_POOL + ", " + SP_DRIVER +
         " FROM " + TBL_NSP +
         " WHERE " + SP_NODE + " = ?";
-    private static final String SP_SELECT = SP_SELECT_BY_NODE +
+    private static final String SP_SELECT_BY_NODE_AND_SP = SP_SELECT_BY_NODE +
         " AND "  + SP_POOL + " = ?";
     private static final String SP_INSERT =
         " INSERT INTO " + TBL_NSP +
@@ -94,7 +94,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         StorPoolData sp = cacheGet(node, storPoolDfn);
         if (sp == null)
         {
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT))
+            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT_BY_NODE_AND_SP))
             {
                 stmt.setString(1, node.getName().value);
                 stmt.setString(2, storPoolDfn.getName().value);
@@ -311,7 +311,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         errorReporter.logTrace("Ensuring StorPool exists %s", getTraceId(storPoolData));
         Node node = storPoolData.getNode();
         StorPoolDefinition storPoolDfn;
-        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT);)
+        try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT_BY_NODE_AND_SP);)
         {
             storPoolDfn = storPoolData.getDefinition(dbCtx);
 

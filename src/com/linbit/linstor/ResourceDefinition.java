@@ -48,6 +48,12 @@ public interface ResourceDefinition extends TransactionObject
     public String getSecret(AccessContext accCtx)
         throws AccessDeniedException;
 
+    public TransportType getTransportType(AccessContext accCtx)
+        throws AccessDeniedException;
+
+    public void setTransportType(AccessContext accCtx, TransportType type)
+        throws AccessDeniedException, SQLException;
+
     public Props getProps(AccessContext accCtx)
         throws AccessDeniedException;
 
@@ -92,6 +98,48 @@ public interface ResourceDefinition extends TransactionObject
         }
     }
 
+    public static enum TransportType
+    {
+        IP, RDMA, RoCE;
+
+        public static TransportType byValue(String str)
+        {
+            TransportType type = null;
+            switch (str.toUpperCase())
+            {
+                case "IP":
+                    type = IP;
+                    break;
+                case "RDMA":
+                    type = RDMA;
+                    break;
+                case "ROCE":
+                    type = RoCE;
+                    break;
+                default:
+                    throw new LinStorRuntimeException(
+                        "Unknown TransportType: '" + str + "'"
+                    );
+            }
+            return type;
+        }
+
+        public static TransportType valueOfIgnoreCase(String string, TransportType defaultValue)
+            throws IllegalArgumentException
+        {
+            TransportType ret = defaultValue;
+            if (string != null)
+            {
+                TransportType val = valueOf(string.toUpperCase());
+                if (val != null)
+                {
+                    ret = val;
+                }
+            }
+            return ret;
+        }
+    }
+
     public interface RscDfnApi
     {
         UUID getUuid();
@@ -101,5 +149,6 @@ public interface ResourceDefinition extends TransactionObject
         long getFlags();
         Map<String, String> getProps();
         List<VolumeDefinition.VlmDfnApi> getVlmDfnList();
+        String getTransportType();
     }
 }

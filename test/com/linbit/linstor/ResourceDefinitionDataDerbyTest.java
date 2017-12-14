@@ -20,6 +20,7 @@ import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
@@ -32,13 +33,14 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 {
     private static final String SELECT_ALL_RESOURCE_DEFINITIONS =
         " SELECT " + UUID + ", " + RESOURCE_NAME + ", " + RESOURCE_DSP_NAME + ", " +
-                     TCP_PORT + ", " + SECRET + ", " + RESOURCE_FLAGS +
+                     TCP_PORT + ", " + SECRET + ", " + RESOURCE_FLAGS + ", " + TRANSPORT_TYPE +
         " FROM " + TBL_RESOURCE_DEFINITIONS;
 
     private final ResourceName resName;
     private final TcpPortNumber port;
     private final NodeName nodeName;
     private final String secret;
+    private final TransportType transportType;
 
     private TransactionMgr transMgr;
     private java.util.UUID resDfnUuid;
@@ -56,13 +58,14 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         port = new TcpPortNumber(4242);
         nodeName = new NodeName("TestNodeName1");
         secret = "secret";
+        transportType = TransportType.IP;
     }
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        assertEquals(TBL_RESOURCE_DEFINITIONS + " table's column count has changed. Update tests accordingly!", 6, TBL_COL_COUNT_RESOURCE_DEFINITIONS);
+        assertEquals(TBL_RESOURCE_DEFINITIONS + " table's column count has changed. Update tests accordingly!", 7, TBL_COL_COUNT_RESOURCE_DEFINITIONS);
 
         transMgr = new TransactionMgr(getConnection());
 
@@ -93,6 +96,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             RscDfnFlags.DELETE.flagValue,
             secret,
+            transportType,
             transMgr
         );
 
@@ -115,6 +119,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(port.value, resultSet.getInt(TCP_PORT));
         assertEquals(secret, resultSet.getString(SECRET));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
+        assertEquals(ResourceDefinition.TransportType.IP.name(), resultSet.getString(TRANSPORT_TYPE));
         assertFalse("Database persisted too many resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -130,6 +135,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
             secret,
+            transportType,
             transMgr,
             true,
             false
@@ -147,6 +153,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(port.value, resultSet.getInt(TCP_PORT));
         assertEquals(RscDfnFlags.DELETE.flagValue, resultSet.getLong(RESOURCE_FLAGS));
         assertEquals(secret, resultSet.getString(SECRET));
+        assertEquals(transportType.name(), resultSet.getString(TRANSPORT_TYPE));
         assertFalse("Database persisted too many resources / resourceDefinitions", resultSet.next());
 
         resultSet.close();
@@ -176,6 +183,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resName, loadedResDfn.getName());
         assertEquals(port, loadedResDfn.getPort(sysCtx));
         assertEquals(secret, loadedResDfn.getSecret(sysCtx));
+        assertEquals(transportType, loadedResDfn.getTransportType(sysCtx));
         assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
     }
 
@@ -188,6 +196,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
             secret,
+            transportType,
             transMgr,
             false,
             false
@@ -215,7 +224,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             resName,
             null,
             null,
-            "secret",
+            null,
+            null,
             transMgr,
             false,
             false
@@ -226,6 +236,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertEquals(resName, loadedResDfn.getName());
         assertEquals(port, loadedResDfn.getPort(sysCtx));
         assertEquals(secret, loadedResDfn.getSecret(sysCtx));
+        assertEquals(transportType, loadedResDfn.getTransportType(sysCtx));
         assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
     }
 
@@ -238,11 +249,12 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             null,
             secret,
+            transportType,
             transMgr,
             true,
             false
         );
-        super.resDfnMap.put(resName, storedInstance);
+        resDfnMap.put(resName, storedInstance);
         // no clearCaches
 
         assertEquals(storedInstance, driver.load(resName, true, transMgr));
@@ -396,6 +408,27 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     }
 
     @Test
+    public void testUpdateTransportType() throws Exception
+    {
+        driver.create(resDfn, transMgr);
+        resDfn.initialized();
+        resDfn.setConnection(transMgr);
+
+        TransportType newTransportType = TransportType.RDMA;
+        resDfn.setTransportType(sysCtx, newTransportType);
+        transMgr.commit();
+
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
+        ResultSet resultSet = stmt.executeQuery();
+
+        assertTrue(resultSet.next());
+        assertEquals(newTransportType.name(), resultSet.getString(TRANSPORT_TYPE));
+
+        resultSet.close();
+        stmt.close();
+    }
+
+    @Test
     public void testExists() throws Exception
     {
         assertFalse(driver.exists(resName, transMgr));
@@ -413,6 +446,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
             "secret",
+            transportType,
             null,
             true,
             false
@@ -440,6 +474,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
             "secret",
+            transportType,
             null,
             false,
             false
@@ -497,6 +532,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             null,
             "secret",
+            transportType,
             transMgr,
             true,
             false
@@ -525,6 +561,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             null,
             "notTellingYou",
+            transportType,
             transMgr
         );
         rscDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
@@ -558,6 +595,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             null,
             "notTellingYou",
+            transportType,
             transMgr
         );
         SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
@@ -580,6 +618,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             null,
             "notTellingYou",
+            transportType,
             transMgr
         );
         transMgr.commit();
@@ -609,6 +648,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             port,
             null,
             "notTellingYou",
+            transportType,
             transMgr
         );
         transMgr.commit();
@@ -624,6 +664,8 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(resDfn, transMgr);
 
-        ResourceDefinitionData.getInstance(sysCtx, resName, port, null, "secret", transMgr, false, true);
+        ResourceDefinitionData.getInstance(
+            sysCtx, resName, port, null, "secret", transportType, transMgr, false, true
+        );
     }
 }

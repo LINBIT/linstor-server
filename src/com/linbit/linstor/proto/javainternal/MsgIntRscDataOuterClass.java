@@ -345,6 +345,24 @@ public final class MsgIntRscDataOuterClass {
      */
     com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscDataOrBuilder getOtherResourcesOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * Resource definition transport type (IP, RDMA, RoCE)
+     * </pre>
+     *
+     * <code>string rsc_dfn_transport_type = 14;</code>
+     */
+    java.lang.String getRscDfnTransportType();
+    /**
+     * <pre>
+     * Resource definition transport type (IP, RDMA, RoCE)
+     * </pre>
+     *
+     * <code>string rsc_dfn_transport_type = 14;</code>
+     */
+    com.google.protobuf.ByteString
+        getRscDfnTransportTypeBytes();
   }
   /**
    * <pre>
@@ -375,6 +393,7 @@ public final class MsgIntRscDataOuterClass {
       vlmDfns_ = java.util.Collections.emptyList();
       localVolumes_ = java.util.Collections.emptyList();
       otherResources_ = java.util.Collections.emptyList();
+      rscDfnTransportType_ = "";
     }
 
     @java.lang.Override
@@ -489,6 +508,12 @@ public final class MsgIntRscDataOuterClass {
               }
               otherResources_.add(
                   input.readMessage(com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData.parser(), extensionRegistry));
+              break;
+            }
+            case 114: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              rscDfnTransportType_ = s;
               break;
             }
           }
@@ -1025,6 +1050,48 @@ public final class MsgIntRscDataOuterClass {
       return otherResources_.get(index);
     }
 
+    public static final int RSC_DFN_TRANSPORT_TYPE_FIELD_NUMBER = 14;
+    private volatile java.lang.Object rscDfnTransportType_;
+    /**
+     * <pre>
+     * Resource definition transport type (IP, RDMA, RoCE)
+     * </pre>
+     *
+     * <code>string rsc_dfn_transport_type = 14;</code>
+     */
+    public java.lang.String getRscDfnTransportType() {
+      java.lang.Object ref = rscDfnTransportType_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        rscDfnTransportType_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Resource definition transport type (IP, RDMA, RoCE)
+     * </pre>
+     *
+     * <code>string rsc_dfn_transport_type = 14;</code>
+     */
+    public com.google.protobuf.ByteString
+        getRscDfnTransportTypeBytes() {
+      java.lang.Object ref = rscDfnTransportType_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        rscDfnTransportType_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -1106,6 +1173,9 @@ public final class MsgIntRscDataOuterClass {
       for (int i = 0; i < otherResources_.size(); i++) {
         output.writeMessage(13, otherResources_.get(i));
       }
+      if (!getRscDfnTransportTypeBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 14, rscDfnTransportType_);
+      }
     }
 
     public int getSerializedSize() {
@@ -1161,6 +1231,9 @@ public final class MsgIntRscDataOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(13, otherResources_.get(i));
       }
+      if (!getRscDfnTransportTypeBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(14, rscDfnTransportType_);
+      }
       memoizedSize = size;
       return size;
     }
@@ -1203,6 +1276,8 @@ public final class MsgIntRscDataOuterClass {
           .equals(other.getLocalVolumesList());
       result = result && getOtherResourcesList()
           .equals(other.getOtherResourcesList());
+      result = result && getRscDfnTransportType()
+          .equals(other.getRscDfnTransportType());
       return result;
     }
 
@@ -1251,6 +1326,8 @@ public final class MsgIntRscDataOuterClass {
         hash = (37 * hash) + OTHER_RESOURCES_FIELD_NUMBER;
         hash = (53 * hash) + getOtherResourcesList().hashCode();
       }
+      hash = (37 * hash) + RSC_DFN_TRANSPORT_TYPE_FIELD_NUMBER;
+      hash = (53 * hash) + getRscDfnTransportType().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -1424,6 +1501,8 @@ public final class MsgIntRscDataOuterClass {
         } else {
           otherResourcesBuilder_.clear();
         }
+        rscDfnTransportType_ = "";
+
         return this;
       }
 
@@ -1501,6 +1580,7 @@ public final class MsgIntRscDataOuterClass {
         } else {
           result.otherResources_ = otherResourcesBuilder_.build();
         }
+        result.rscDfnTransportType_ = rscDfnTransportType_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1700,6 +1780,10 @@ public final class MsgIntRscDataOuterClass {
               otherResourcesBuilder_.addAllMessages(other.otherResources_);
             }
           }
+        }
+        if (!other.getRscDfnTransportType().isEmpty()) {
+          rscDfnTransportType_ = other.rscDfnTransportType_;
+          onChanged();
         }
         onChanged();
         return this;
@@ -3819,6 +3903,95 @@ public final class MsgIntRscDataOuterClass {
           otherResources_ = null;
         }
         return otherResourcesBuilder_;
+      }
+
+      private java.lang.Object rscDfnTransportType_ = "";
+      /**
+       * <pre>
+       * Resource definition transport type (IP, RDMA, RoCE)
+       * </pre>
+       *
+       * <code>string rsc_dfn_transport_type = 14;</code>
+       */
+      public java.lang.String getRscDfnTransportType() {
+        java.lang.Object ref = rscDfnTransportType_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          rscDfnTransportType_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Resource definition transport type (IP, RDMA, RoCE)
+       * </pre>
+       *
+       * <code>string rsc_dfn_transport_type = 14;</code>
+       */
+      public com.google.protobuf.ByteString
+          getRscDfnTransportTypeBytes() {
+        java.lang.Object ref = rscDfnTransportType_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          rscDfnTransportType_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Resource definition transport type (IP, RDMA, RoCE)
+       * </pre>
+       *
+       * <code>string rsc_dfn_transport_type = 14;</code>
+       */
+      public Builder setRscDfnTransportType(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        rscDfnTransportType_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource definition transport type (IP, RDMA, RoCE)
+       * </pre>
+       *
+       * <code>string rsc_dfn_transport_type = 14;</code>
+       */
+      public Builder clearRscDfnTransportType() {
+        
+        rscDfnTransportType_ = getDefaultInstance().getRscDfnTransportType();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource definition transport type (IP, RDMA, RoCE)
+       * </pre>
+       *
+       * <code>string rsc_dfn_transport_type = 14;</code>
+       */
+      public Builder setRscDfnTransportTypeBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        rscDfnTransportType_ = value;
+        onChanged();
+        return this;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -6586,7 +6759,7 @@ public final class MsgIntRscDataOuterClass {
       "\n&proto/javainternal/MsgIntRscData.proto" +
       "\022%com.linbit.linstor.proto.javainternal\032" +
       "\033proto/LinStorMapEntry.proto\032\022proto/VlmD" +
-      "fn.proto\032\017proto/Vlm.proto\"\214\004\n\rMsgIntRscD" +
+      "fn.proto\032\017proto/Vlm.proto\"\254\004\n\rMsgIntRscD" +
       "ata\022\020\n\010rsc_name\030\001 \001(\t\022\024\n\014rsc_dfn_uuid\030\002 " +
       "\001(\t\022\024\n\014rsc_dfn_port\030\003 \001(\021\022\025\n\rrsc_dfn_fla" +
       "gs\030\004 \001(\022\022\026\n\016rsc_dfn_secret\030\005 \001(\t\022@\n\rrsc_" +
@@ -6599,16 +6772,17 @@ public final class MsgIntRscDataOuterClass {
       "r.proto.VlmDfn\0224\n\rlocal_volumes\030\014 \003(\0132\035." +
       "com.linbit.linstor.proto.Vlm\022R\n\017other_re" +
       "sources\030\r \003(\01329.com.linbit.linstor.proto" +
-      ".javainternal.MsgIntOtherRscData\"\313\002\n\022Msg" +
-      "IntOtherRscData\022\021\n\tnode_name\030\001 \001(\t\022\021\n\tno" +
-      "de_uuid\030\002 \001(\t\022\021\n\tnode_type\030\003 \001(\022\022\022\n\nnode" +
-      "_flags\030\004 \001(\022\022=\n\nnode_props\030\005 \003(\0132).com.l",
-      "inbit.linstor.proto.LinStorMapEntry\022\020\n\010r" +
-      "sc_uuid\030\006 \001(\t\022\023\n\013rsc_node_id\030\007 \001(\021\022\021\n\trs" +
-      "c_flags\030\010 \001(\022\022<\n\trsc_props\030\t \003(\0132).com.l" +
-      "inbit.linstor.proto.LinStorMapEntry\0221\n\nl" +
-      "ocal_vlms\030\n \003(\0132\035.com.linbit.linstor.pro" +
-      "to.Vlmb\006proto3"
+      ".javainternal.MsgIntOtherRscData\022\036\n\026rsc_" +
+      "dfn_transport_type\030\016 \001(\t\"\313\002\n\022MsgIntOther" +
+      "RscData\022\021\n\tnode_name\030\001 \001(\t\022\021\n\tnode_uuid\030" +
+      "\002 \001(\t\022\021\n\tnode_type\030\003 \001(\022\022\022\n\nnode_flags\030\004",
+      " \001(\022\022=\n\nnode_props\030\005 \003(\0132).com.linbit.li" +
+      "nstor.proto.LinStorMapEntry\022\020\n\010rsc_uuid\030" +
+      "\006 \001(\t\022\023\n\013rsc_node_id\030\007 \001(\021\022\021\n\trsc_flags\030" +
+      "\010 \001(\022\022<\n\trsc_props\030\t \003(\0132).com.linbit.li" +
+      "nstor.proto.LinStorMapEntry\0221\n\nlocal_vlm" +
+      "s\030\n \003(\0132\035.com.linbit.linstor.proto.Vlmb\006" +
+      "proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -6630,7 +6804,7 @@ public final class MsgIntRscDataOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntRscData_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntRscData_descriptor,
-        new java.lang.String[] { "RscName", "RscDfnUuid", "RscDfnPort", "RscDfnFlags", "RscDfnSecret", "RscDfnProps", "LocalRscUuid", "LocalRscFlags", "LocalRscNodeId", "LocalRscProps", "VlmDfns", "LocalVolumes", "OtherResources", });
+        new java.lang.String[] { "RscName", "RscDfnUuid", "RscDfnPort", "RscDfnFlags", "RscDfnSecret", "RscDfnProps", "LocalRscUuid", "LocalRscFlags", "LocalRscNodeId", "LocalRscProps", "VlmDfns", "LocalVolumes", "OtherResources", "RscDfnTransportType", });
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntOtherRscData_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntOtherRscData_fieldAccessorTable = new

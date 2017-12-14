@@ -95,49 +95,6 @@ public final class NetInterfaceOuterClass {
      */
     com.google.protobuf.ByteString
         getAddressBytes();
-
-    /**
-     * <pre>
-     * Port number
-     * </pre>
-     *
-     * <code>required uint32 port = 4;</code>
-     */
-    boolean hasPort();
-    /**
-     * <pre>
-     * Port number
-     * </pre>
-     *
-     * <code>required uint32 port = 4;</code>
-     */
-    int getPort();
-
-    /**
-     * <pre>
-     * type
-     * </pre>
-     *
-     * <code>required string type = 5;</code>
-     */
-    boolean hasType();
-    /**
-     * <pre>
-     * type
-     * </pre>
-     *
-     * <code>required string type = 5;</code>
-     */
-    java.lang.String getType();
-    /**
-     * <pre>
-     * type
-     * </pre>
-     *
-     * <code>required string type = 5;</code>
-     */
-    com.google.protobuf.ByteString
-        getTypeBytes();
   }
   /**
    * <pre>
@@ -158,8 +115,6 @@ public final class NetInterfaceOuterClass {
       uuid_ = "";
       name_ = "";
       address_ = "";
-      port_ = 0;
-      type_ = "";
     }
 
     @java.lang.Override
@@ -206,17 +161,6 @@ public final class NetInterfaceOuterClass {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
               address_ = bs;
-              break;
-            }
-            case 32: {
-              bitField0_ |= 0x00000008;
-              port_ = input.readUInt32();
-              break;
-            }
-            case 42: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000010;
-              type_ = bs;
               break;
             }
           }
@@ -406,83 +350,6 @@ public final class NetInterfaceOuterClass {
       }
     }
 
-    public static final int PORT_FIELD_NUMBER = 4;
-    private int port_;
-    /**
-     * <pre>
-     * Port number
-     * </pre>
-     *
-     * <code>required uint32 port = 4;</code>
-     */
-    public boolean hasPort() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
-    }
-    /**
-     * <pre>
-     * Port number
-     * </pre>
-     *
-     * <code>required uint32 port = 4;</code>
-     */
-    public int getPort() {
-      return port_;
-    }
-
-    public static final int TYPE_FIELD_NUMBER = 5;
-    private volatile java.lang.Object type_;
-    /**
-     * <pre>
-     * type
-     * </pre>
-     *
-     * <code>required string type = 5;</code>
-     */
-    public boolean hasType() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
-    }
-    /**
-     * <pre>
-     * type
-     * </pre>
-     *
-     * <code>required string type = 5;</code>
-     */
-    public java.lang.String getType() {
-      java.lang.Object ref = type_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          type_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * type
-     * </pre>
-     *
-     * <code>required string type = 5;</code>
-     */
-    public com.google.protobuf.ByteString
-        getTypeBytes() {
-      java.lang.Object ref = type_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        type_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -494,14 +361,6 @@ public final class NetInterfaceOuterClass {
         return false;
       }
       if (!hasAddress()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasPort()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasType()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -520,12 +379,6 @@ public final class NetInterfaceOuterClass {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, address_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        output.writeUInt32(4, port_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, type_);
-      }
       unknownFields.writeTo(output);
     }
 
@@ -542,13 +395,6 @@ public final class NetInterfaceOuterClass {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, address_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(4, port_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, type_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -582,16 +428,6 @@ public final class NetInterfaceOuterClass {
         result = result && getAddress()
             .equals(other.getAddress());
       }
-      result = result && (hasPort() == other.hasPort());
-      if (hasPort()) {
-        result = result && (getPort()
-            == other.getPort());
-      }
-      result = result && (hasType() == other.hasType());
-      if (hasType()) {
-        result = result && getType()
-            .equals(other.getType());
-      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -614,14 +450,6 @@ public final class NetInterfaceOuterClass {
       if (hasAddress()) {
         hash = (37 * hash) + ADDRESS_FIELD_NUMBER;
         hash = (53 * hash) + getAddress().hashCode();
-      }
-      if (hasPort()) {
-        hash = (37 * hash) + PORT_FIELD_NUMBER;
-        hash = (53 * hash) + getPort();
-      }
-      if (hasType()) {
-        hash = (37 * hash) + TYPE_FIELD_NUMBER;
-        hash = (53 * hash) + getType().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -751,10 +579,6 @@ public final class NetInterfaceOuterClass {
         bitField0_ = (bitField0_ & ~0x00000002);
         address_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
-        port_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000008);
-        type_ = "";
-        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -791,14 +615,6 @@ public final class NetInterfaceOuterClass {
           to_bitField0_ |= 0x00000004;
         }
         result.address_ = address_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.port_ = port_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
-        }
-        result.type_ = type_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -856,14 +672,6 @@ public final class NetInterfaceOuterClass {
           address_ = other.address_;
           onChanged();
         }
-        if (other.hasPort()) {
-          setPort(other.getPort());
-        }
-        if (other.hasType()) {
-          bitField0_ |= 0x00000010;
-          type_ = other.type_;
-          onChanged();
-        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
@@ -874,12 +682,6 @@ public final class NetInterfaceOuterClass {
           return false;
         }
         if (!hasAddress()) {
-          return false;
-        }
-        if (!hasPort()) {
-          return false;
-        }
-        if (!hasType()) {
           return false;
         }
         return true;
@@ -1203,154 +1005,6 @@ public final class NetInterfaceOuterClass {
         onChanged();
         return this;
       }
-
-      private int port_ ;
-      /**
-       * <pre>
-       * Port number
-       * </pre>
-       *
-       * <code>required uint32 port = 4;</code>
-       */
-      public boolean hasPort() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
-      }
-      /**
-       * <pre>
-       * Port number
-       * </pre>
-       *
-       * <code>required uint32 port = 4;</code>
-       */
-      public int getPort() {
-        return port_;
-      }
-      /**
-       * <pre>
-       * Port number
-       * </pre>
-       *
-       * <code>required uint32 port = 4;</code>
-       */
-      public Builder setPort(int value) {
-        bitField0_ |= 0x00000008;
-        port_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Port number
-       * </pre>
-       *
-       * <code>required uint32 port = 4;</code>
-       */
-      public Builder clearPort() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        port_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object type_ = "";
-      /**
-       * <pre>
-       * type
-       * </pre>
-       *
-       * <code>required string type = 5;</code>
-       */
-      public boolean hasType() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
-      }
-      /**
-       * <pre>
-       * type
-       * </pre>
-       *
-       * <code>required string type = 5;</code>
-       */
-      public java.lang.String getType() {
-        java.lang.Object ref = type_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            type_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * type
-       * </pre>
-       *
-       * <code>required string type = 5;</code>
-       */
-      public com.google.protobuf.ByteString
-          getTypeBytes() {
-        java.lang.Object ref = type_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          type_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * type
-       * </pre>
-       *
-       * <code>required string type = 5;</code>
-       */
-      public Builder setType(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000010;
-        type_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * type
-       * </pre>
-       *
-       * <code>required string type = 5;</code>
-       */
-      public Builder clearType() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        type_ = getDefaultInstance().getType();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * type
-       * </pre>
-       *
-       * <code>required string type = 5;</code>
-       */
-      public Builder setTypeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000010;
-        type_ = value;
-        onChanged();
-        return this;
-      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -1415,9 +1069,8 @@ public final class NetInterfaceOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\030proto/NetInterface.proto\022\030com.linbit.l" +
-      "instor.proto\"W\n\014NetInterface\022\014\n\004uuid\030\001 \001" +
-      "(\t\022\014\n\004name\030\002 \002(\t\022\017\n\007address\030\003 \002(\t\022\014\n\004por" +
-      "t\030\004 \002(\r\022\014\n\004type\030\005 \002(\t"
+      "instor.proto\";\n\014NetInterface\022\014\n\004uuid\030\001 \001" +
+      "(\t\022\014\n\004name\030\002 \002(\t\022\017\n\007address\030\003 \002(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1436,7 +1089,7 @@ public final class NetInterfaceOuterClass {
     internal_static_com_linbit_linstor_proto_NetInterface_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_NetInterface_descriptor,
-        new java.lang.String[] { "Uuid", "Name", "Address", "Port", "Type", });
+        new java.lang.String[] { "Uuid", "Name", "Address", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

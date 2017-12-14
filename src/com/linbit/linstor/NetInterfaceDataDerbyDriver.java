@@ -11,7 +11,6 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
-import com.linbit.linstor.NetInterface.NetInterfaceType;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDataDatabaseDriver;
@@ -30,17 +29,15 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     private static final String NET_NAME = DerbyConstants.NODE_NET_NAME;
     private static final String NET_DSP_NAME = DerbyConstants.NODE_NET_DSP_NAME;
     private static final String INET_ADDRESS = DerbyConstants.INET_ADDRESS;
-    private static final String INET_PORT = DerbyConstants.INET_PORT;
-    private static final String INET_TYPE = DerbyConstants.INET_TRANSPORT_TYPE;
 
     private static final String NNI_SELECT_BY_NODE =
         " SELECT "  + NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
-                      INET_ADDRESS + ", " + INET_TYPE + ", " + INET_PORT +
+                      INET_ADDRESS +
         " FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ?";
     private static final String NNI_SELECT_BY_NODE_AND_NET =
         " SELECT "  + NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
-                      INET_ADDRESS + ", " + INET_TYPE + ", " + INET_PORT +
+                      INET_ADDRESS +
         " FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ? AND " +
                     NET_NAME  + " = ?";
@@ -49,8 +46,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         " INSERT INTO " + TBL_NODE_NET +
         " (" +
             NET_UUID + ", " + NODE_NAME + ", " + NET_NAME + ", " + NET_DSP_NAME + ", " +
-            INET_ADDRESS + ", " + INET_PORT + ", " + INET_TYPE +
-        ") VALUES (?, ?, ?, ?, ?, ?, ?)";
+            INET_ADDRESS +
+        ") VALUES (?, ?, ?, ?, ?)";
     private static final String NNI_DELETE =
         " DELETE FROM " + TBL_NODE_NET +
         " WHERE " + NODE_NAME + " = ? AND " +
@@ -60,21 +57,8 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         " SET "   + INET_ADDRESS  + " = ? " +
         " WHERE " + NODE_NAME     + " = ? AND " +
         "       " + NET_NAME      + " = ?";
-    private static final String NNI_UPDATE_TYPE =
-        " UPDATE " + TBL_NODE_NET +
-        " SET "   + INET_TYPE + " = ? " +
-        " WHERE " + NODE_NAME + " = ? AND " +
-        "       " + NET_NAME  + " = ?";
-    private static final String NNI_UPDATE_PORT =
-        " UPDATE " + TBL_NODE_NET +
-        " SET "   + INET_PORT + " = ? " +
-        " WHERE " + NODE_NAME + " = ? AND " +
-        "       " + NET_NAME  + " = ?";
-
 
     private final SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress> netIfAddressDriver;
-    private final SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> netIfTypeDriver;
-    private final SingleColumnDatabaseDriver<NetInterfaceData, Integer> netIfPortDriver;
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -85,8 +69,6 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         errorReporter = errorReporterRef;
 
         netIfAddressDriver = new NodeNetInterfaceAddressDriver();
-        netIfTypeDriver = new NodeNetInterfaceTypeDriver();
-        netIfPortDriver = new NodeNetInterfacePortDriver();
     }
 
     @Override
@@ -144,15 +126,12 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_INSERT))
         {
             LsIpAddress inetAddress = getAddress(netInterfaceData);
-            NetInterfaceType type = getNetInterfaceType(netInterfaceData);
 
             stmt.setBytes(1, UuidUtils.asByteArray(netInterfaceData.getUuid()));
             stmt.setString(2, netInterfaceData.getNode().getName().value);
             stmt.setString(3, netInterfaceData.getName().value);
             stmt.setString(4, netInterfaceData.getName().displayValue);
             stmt.setString(5, inetAddress.getAddress());
-            stmt.setInt(6, getNetInterfacePort(netInterfaceData));
-            stmt.setString(7, type.name());
 
             stmt.executeUpdate();
         }
@@ -196,19 +175,6 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     {
         return netIfAddressDriver;
     }
-
-    @Override
-    public SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType> getNetInterfaceTypeDriver()
-    {
-        return netIfTypeDriver;
-    }
-
-    @Override
-    public SingleColumnDatabaseDriver<NetInterfaceData, Integer> getNetInterfacePortDriver()
-    {
-        return netIfPortDriver;
-    }
-
 
     public List<NetInterfaceData> loadNetInterfaceData(Node node, TransactionMgr transMgr)
         throws SQLException
@@ -266,20 +232,6 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return ip;
     }
 
-    private NetInterfaceType getNetInterfaceType(NetInterface value)
-    {
-        NetInterfaceType type = null;
-        try
-        {
-            type = value.getNetInterfaceType(dbCtx);
-        }
-        catch (AccessDeniedException accessDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accessDeniedExc);
-        }
-        return type;
-    }
-
     private NetInterfaceData restoreInstance(
         Node node,
         NetInterfaceName netName,
@@ -292,8 +244,6 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         {
             UUID uuid = UuidUtils.asUuid(resultSet.getBytes(NET_UUID));
             LsIpAddress addr;
-            String type = resultSet.getString(INET_TYPE);
-            int port = resultSet.getInt(INET_PORT);
 
             try
             {
@@ -319,9 +269,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                     dbCtx,
                     netName,
                     node,
-                    addr,
-                    port,
-                    NetInterfaceType.byValue(type)
+                    addr
                 );
             }
             catch (AccessDeniedException accDeniedExc)
@@ -399,21 +347,6 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return "(NodeName=" + nodeName + ")";
     }
 
-    public int getNetInterfacePort(NetInterfaceData parent)
-    {
-        int port = 0;
-        try
-        {
-            port = parent.getNetInterfacePort(dbCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return port;
-    }
-
-
     private class NodeNetInterfaceAddressDriver implements SingleColumnDatabaseDriver<NetInterfaceData, LsIpAddress>
     {
         @Override
@@ -437,64 +370,6 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                 "NetInterface's address updated from [%s] to [%s] %s",
                 getAddress(parent).getAddress(),
                 inetAddress.getAddress(),
-                getDebugId(parent)
-            );
-        }
-    }
-
-    private class NodeNetInterfaceTypeDriver implements SingleColumnDatabaseDriver<NetInterfaceData, NetInterfaceType>
-    {
-        @Override
-        public void update(NetInterfaceData parent, NetInterfaceType type, TransactionMgr transMgr)
-            throws SQLException
-        {
-            errorReporter.logTrace(
-                "Updating NetInterface's Type from [%s] to [%s] %s",
-                getNetInterfaceType(parent).name(),
-                type.name(),
-                getTraceId(parent)
-            );
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_UPDATE_TYPE))
-            {
-                stmt.setString(1, type.name());
-                stmt.setString(2, parent.getNode().getName().value);
-                stmt.setString(3, parent.getName().value);
-
-                stmt.executeUpdate();
-            }
-            errorReporter.logTrace(
-                "NetInterface's Type updated from [%s] to [%s] %s",
-                getNetInterfaceType(parent).name(),
-                type.name(),
-                getDebugId(parent)
-            );
-        }
-    }
-
-    private class NodeNetInterfacePortDriver implements SingleColumnDatabaseDriver<NetInterfaceData, Integer>
-    {
-        @Override
-        public void update(NetInterfaceData parent, Integer port, TransactionMgr transMgr)
-            throws SQLException
-        {
-            errorReporter.logTrace(
-                "Updating NetInterface's Port from [%d] to [%d] %s",
-                getNetInterfacePort(parent),
-                port,
-                getTraceId(parent)
-            );
-            try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_UPDATE_PORT))
-            {
-                stmt.setInt(1, port);
-                stmt.setString(2, parent.getNode().getName().value);
-                stmt.setString(3, parent.getName().value);
-
-                stmt.executeUpdate();
-            }
-            errorReporter.logDebug(
-                "NetInterface's Type updated from [%d] to [%d] %s",
-                getNetInterfacePort(parent),
-                port,
                 getDebugId(parent)
             );
         }

@@ -106,18 +106,15 @@ public class ConfFile implements Comparator<Resource>
                 NetInterface fromNetIf = fromNode.iterateNetInterfaces(accCtx).next();
                 String fromHost = fromNode.getName().displayValue;
                 String fromAddr = fromNetIf.getAddress(accCtx).getAddress();
-                int fromPort = fromNetIf.getNetInterfacePort(accCtx);
 
                 Node toNode = peerRsc.getAssignedNode();
                 NetInterface toNetIf = toNode.iterateNetInterfaces(accCtx).next();
                 String toHost = toNode.getName().displayValue;
                 String toAddr = toNetIf.getAddress(accCtx).getAddress();
-                int toPort = toNetIf.getNetInterfacePort(accCtx);
 
                 int hostNameLen = Math.max(fromHost.length(), toHost.length());
                 int addrLen = Math.max(fromAddr.length(), toAddr.length());
-                int portLen = (int) Math.ceil(Math.max(Math.log10(fromPort), Math.log10(toPort)));
-
+                int portLen = (int) Math.log10(port);
 
                 conf.append("    connection\n");
                 conf.append("    {\n");
@@ -126,13 +123,13 @@ public class ConfFile implements Comparator<Resource>
                     format,
                     fromHost,
                     fromAddr,
-                    fromPort
+                    port
                 );
                 conf.append(
                     format,
                     toHost,
                     toAddr,
-                    toPort
+                    port
                 );
                 conf.append("    }\n");
             }

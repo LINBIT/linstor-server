@@ -132,6 +132,7 @@ class CtrlRscApiCallHandler
                 null, // nodeType only needed if we want to persist this entry
                 null, // nodeFlags only needed if we want to persist this entry
                 null, // secret only needed if we want to persist this entry
+                null, // transportType only needed if we want to persist this entry
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists
@@ -984,6 +985,7 @@ class CtrlRscApiCallHandler
                     null, // port only needed if we want to persist this entry
                     null, // rscFlags only needed if we want to persist this entry
                     null, // secret only needed if we want to persist this entry
+                    null, // transportType only needed if we want to persist this entry
                     transMgr,
                     false, // do not persist this entry
                     false // do not throw exception if the entry exists

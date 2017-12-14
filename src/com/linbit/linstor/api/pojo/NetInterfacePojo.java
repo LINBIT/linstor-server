@@ -16,21 +16,16 @@ public class NetInterfacePojo implements NetInterface.NetInterfaceApi {
     private final UUID uuid;
     private final String name;
     private final String address;
-    private final int port;
-    private final String type;
 
     public NetInterfacePojo(
         final UUID uuid,
         final String name,
-        final String address,
-        final String type,
-        final int port)
+        final String address
+    )
     {
         this.uuid = uuid;
         this.name = name;
         this.address = address;
-        this.port = port;
-        this.type = type;
     }
 
     @Override
@@ -47,16 +42,4 @@ public class NetInterfacePojo implements NetInterface.NetInterfaceApi {
     public String getAddress() {
         return address;
     }
-
-    @Override
-    public int getPort() {
-        return port;
-    }
-
-    @Override
-    public String getType() {
-        return type;
-    }
-
-
 }

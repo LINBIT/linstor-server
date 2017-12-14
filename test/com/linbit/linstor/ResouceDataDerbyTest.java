@@ -16,6 +16,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
@@ -61,7 +62,9 @@ public class ResouceDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(getConnection());
 
         node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true, false);
-        resDfn = ResourceDefinitionData.getInstance(sysCtx, resName, resPort, null, "secret", transMgr, true, false);
+        resDfn = ResourceDefinitionData.getInstance(
+            sysCtx, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
+        );
 
         resUuid = randomUUID();
         objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPath(nodeName, resName), true, transMgr);
