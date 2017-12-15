@@ -60,12 +60,14 @@ public class VlmDfnApiData implements VlmDfnApi
     }
 
     @Override
-    public UUID getUuid() {
+    public UUID getUuid()
+    {
         return UUID.fromString(vlmDfn.getVlmDfnUuid());
     }
 
     @Override
-    public long getFlags() {
+    public long getFlags()
+    {
         return vlmDfn.getVlmFlags();
     }
 
@@ -73,10 +75,14 @@ public class VlmDfnApiData implements VlmDfnApi
     {
         VlmDfn.Builder bld = VlmDfn.newBuilder();
         bld.setVlmDfnUuid(vlmDfnApi.getUuid().toString());
-        if(vlmDfnApi.getVolumeNr() != null)
+        if (vlmDfnApi.getVolumeNr() != null)
+        {
             bld.setVlmNr(vlmDfnApi.getVolumeNr());
-        if(vlmDfnApi.getMinorNr() != null)
+        }
+        if (vlmDfnApi.getMinorNr() != null)
+        {
             bld.setVlmMinor(vlmDfnApi.getMinorNr());
+        }
         bld.setVlmSize(vlmDfnApi.getSize());
         bld.setVlmFlags(vlmDfnApi.getFlags());
         bld.addAllVlmProps(BaseProtoApiCall.fromMap(vlmDfnApi.getProps()));
@@ -86,7 +92,7 @@ public class VlmDfnApiData implements VlmDfnApi
     public static List<VlmDfn> fromApiList(List<VlmDfnApi> volumedefs)
     {
         ArrayList<VlmDfn> protoVlmDfs = new ArrayList<>();
-        for(VlmDfnApi vlmdfnapi : volumedefs)
+        for (VlmDfnApi vlmdfnapi : volumedefs)
         {
             protoVlmDfs.add(VlmDfnApiData.fromVlmDfnApi(vlmdfnapi));
         }
@@ -96,7 +102,7 @@ public class VlmDfnApiData implements VlmDfnApi
     public static List<VlmDfnApi> toApiList(List<VlmDfn> volumedefs)
     {
         ArrayList<VlmDfnApi> apiVlmDfns = new ArrayList<>();
-        for(VlmDfn vlmdfn : volumedefs)
+        for (VlmDfn vlmdfn : volumedefs)
         {
             apiVlmDfns.add(new VlmDfnApiData(vlmdfn));
         }

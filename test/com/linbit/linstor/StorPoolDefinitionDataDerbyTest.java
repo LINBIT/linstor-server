@@ -211,12 +211,16 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
             List<StorPoolDefinitionData> listStorPoolDefs,
             StorPoolName spName)
     {
+        StorPoolDefinitionData data = null;
         for (StorPoolDefinitionData spdd : listStorPoolDefs)
         {
             if (spdd.getName().equals(spName))
-                return spdd;
+            {
+                data = spdd;
+                break;
+            }
         }
-        return null;
+        return data;
     }
 
     @Test

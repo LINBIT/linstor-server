@@ -33,7 +33,7 @@ public class NodeApiData implements Node.NodeApi {
     @Override
     public UUID getUuid() {
         UUID uuid = null;
-        if(node.hasUuid())
+        if (node.hasUuid())
         {
             uuid = UUID.fromString(node.getUuid());
         }
@@ -59,7 +59,7 @@ public class NodeApiData implements Node.NodeApi {
     @Override
     public List<NetInterface.NetInterfaceApi> getNetInterfaces() {
         ArrayList<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
-        for(NetInterfaceOuterClass.NetInterface netinter : node.getNetInterfacesList())
+        for (NetInterfaceOuterClass.NetInterface netinter : node.getNetInterfacesList())
         {
             netInterfaces.add(new NetInterfaceApiData(netinter));
         }

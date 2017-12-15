@@ -277,7 +277,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     {
         peer.closeConnection();
         final String id = peer.getId();
-        final int delimiter = id.lastIndexOf(":");
+        final int delimiter = id.lastIndexOf(':');
         if (delimiter == -1)
         {
             throw new ImplementationError(

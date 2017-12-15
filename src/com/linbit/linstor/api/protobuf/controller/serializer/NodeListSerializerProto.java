@@ -32,7 +32,7 @@ public class NodeListSerializerProto implements CtrlListSerializer<Node.NodeApi>
             .build()
             .writeDelimitedTo(baos);
 
-        for(Node.NodeApi apiNode: nodes)
+        for (Node.NodeApi apiNode: nodes)
         {
             msgListNodeBuilder.addNodes(NodeApiData.toNodeProto(apiNode));
         }

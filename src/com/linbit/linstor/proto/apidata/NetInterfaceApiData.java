@@ -15,7 +15,8 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class NetInterfaceApiData implements NetInterface.NetInterfaceApi {
+public class NetInterfaceApiData implements NetInterface.NetInterfaceApi
+{
     private final NetInterfaceOuterClass.NetInterface netInterface;
 
     public NetInterfaceApiData(final NetInterfaceOuterClass.NetInterface refNetInterface)
@@ -24,29 +25,37 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi {
     }
 
     @Override
-    public UUID getUuid() {
-        if(netInterface.hasUuid())
-            return UUID.fromString(netInterface.getUuid());
-        return null;
+    public UUID getUuid()
+    {
+        UUID ifUuid = null;
+        if (netInterface.hasUuid())
+        {
+            ifUuid = UUID.fromString(netInterface.getUuid());
+        }
+        return ifUuid;
     }
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return netInterface.getName();
     }
 
     @Override
-    public String getAddress() {
+    public String getAddress()
+    {
         return netInterface.getAddress();
     }
 
     @Override
-    public int getPort() {
+    public int getPort()
+    {
         return netInterface.getPort();
     }
 
     @Override
-    public String getType() {
+    public String getType()
+    {
         return netInterface.getType();
     }
 
@@ -54,7 +63,7 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi {
         List<NetInterface.NetInterfaceApi> netInterfaceApiList)
     {
         ArrayList<NetInterfaceOuterClass.NetInterface> resultList = new ArrayList<>();
-        for(NetInterface.NetInterfaceApi netInterApi : netInterfaceApiList)
+        for (NetInterface.NetInterfaceApi netInterApi : netInterfaceApiList)
         {
             resultList.add(toNetInterfaceProto(netInterApi));
         }
@@ -72,5 +81,4 @@ public class NetInterfaceApiData implements NetInterface.NetInterfaceApi {
         bld.setPort(netInterApi.getPort());
         return bld.build();
     }
-
 }

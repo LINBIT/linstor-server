@@ -23,7 +23,7 @@ public class StorPoolDfnApiData implements StorPoolDefinition.StorPoolDfnApi {
     @Override
     public UUID getUuid() {
         UUID uuid = null;
-        if(storPoolDfn.hasUuid())
+        if (storPoolDfn.hasUuid())
         {
             uuid = UUID.fromString(storPoolDfn.getUuid());
         }

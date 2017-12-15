@@ -27,7 +27,7 @@ public class ResourceDefinitionListSerializerProto implements CtrlListSerializer
             .build()
             .writeDelimitedTo(baos);
 
-        for(ResourceDefinition.RscDfnApi apiRscDfn: elements)
+        for (ResourceDefinition.RscDfnApi apiRscDfn: elements)
         {
             msgListRscDfnsBuilder.addRscDfns(RscDfnApiData.fromRscDfnApi(apiRscDfn));
         }

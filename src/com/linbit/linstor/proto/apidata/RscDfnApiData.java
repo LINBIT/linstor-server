@@ -26,7 +26,7 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
     @Override
     public UUID getUuid() {
         UUID uuid = null;
-        if(rscDfn.hasUuid())
+        if (rscDfn.hasUuid())
         {
             uuid = UUID.fromString(rscDfn.getUuid());
         }
@@ -84,7 +84,7 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
     public static List<RscDfnOuterClass.RscDfn> fromApiList(final List<ResourceDefinition.RscDfnApi> rscDfns)
     {
         ArrayList<RscDfnOuterClass.RscDfn> protoRscDfs = new ArrayList<>();
-        for(ResourceDefinition.RscDfnApi rscDfnApi : rscDfns)
+        for (ResourceDefinition.RscDfnApi rscDfnApi : rscDfns)
         {
             protoRscDfs.add(RscDfnApiData.fromRscDfnApi(rscDfnApi));
         }

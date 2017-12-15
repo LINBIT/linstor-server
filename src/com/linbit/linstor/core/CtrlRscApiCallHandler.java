@@ -1291,22 +1291,29 @@ class CtrlRscApiCallHandler
     byte[] listResources(int msgId, AccessContext accCtx, Peer client)
     {
         ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
-        try {
+        try
+        {
             controller.rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
             controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
-            for(ResourceDefinition rscDfn : controller.rscDfnMap.values())
+            for (ResourceDefinition rscDfn : controller.rscDfnMap.values())
             {
-                try {
+                try
+                {
                     Iterator<Resource> itResources = rscDfn.iterateResource(accCtx);
-                    while(itResources.hasNext())
+                    while (itResources.hasNext())
                     {
                         Resource rsc = itResources.next();
                         rscs.add(rsc.getApiData(accCtx));
                     }
                 }
-                catch (AccessDeniedException accDeniedExc) { } // don't add storpooldfn without access
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    // don't add storpooldfn without access
+                }
             }
-        } catch (AccessDeniedException accDeniedExc) {
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
             // for now return an empty list.
         }
 

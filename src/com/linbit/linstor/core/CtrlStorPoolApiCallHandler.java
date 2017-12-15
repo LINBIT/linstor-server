@@ -840,9 +840,10 @@ class CtrlStorPoolApiCallHandler
         try {
             controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
             controller.storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
-            for(StorPoolDefinition storPoolDfn : controller.storPoolDfnMap.values())
+            for (StorPoolDefinition storPoolDfn : controller.storPoolDfnMap.values())
             {
-                try {
+                try
+                {
                     Iterator<StorPool> storPoolIterator = storPoolDfn.iterateStorPools(accCtx);
                     while (storPoolIterator.hasNext())
                     {
@@ -850,9 +851,14 @@ class CtrlStorPoolApiCallHandler
                         storPools.add(storPool.getApiData(accCtx));
                     }
                 }
-                catch (AccessDeniedException accDeniedExc) { } // don't add storpooldfn without access
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    // don't add storpooldfn without access
+                }
             }
-        } catch (AccessDeniedException accDeniedExc) {
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
             // for now return an empty list.
         }
 

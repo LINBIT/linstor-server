@@ -474,12 +474,16 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             List<ResourceDefinitionData> listResourceDefData,
             ResourceName spName)
     {
+        ResourceDefinitionData rscDfnData = null;
         for (ResourceDefinitionData rdd : listResourceDefData)
         {
             if (rdd.getName().equals(spName))
-                return rdd;
+            {
+                rscDfnData = rdd;
+                break;
+            }
         }
-        return null;
+        return rscDfnData;
     }
 
     @Test

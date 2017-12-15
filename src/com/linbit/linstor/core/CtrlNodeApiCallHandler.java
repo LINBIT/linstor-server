@@ -401,16 +401,22 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     byte[] listNodes(int msgId, AccessContext accCtx, Peer client)
     {
         ArrayList<Node.NodeApi> nodes = new ArrayList<Node.NodeApi>();
-        try {
+        try
+        {
             controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
-            for(Node n : controller.nodesMap.values())
+            for (Node n : controller.nodesMap.values())
             {
                 try {
                     nodes.add(n.getApiData(accCtx));
                 }
-                catch (AccessDeniedException accDeniedExc) { } // don't add nodes we have not access
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    // don't add nodes we have not access
+                }
             }
-        } catch (AccessDeniedException accDeniedExc) {
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
             // for now return an empty list.
         }
 

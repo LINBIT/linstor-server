@@ -881,16 +881,23 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     byte[] listResourceDefinitions(int msgId, AccessContext accCtx, Peer client)
     {
         ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
-        try {
+        try
+        {
             controller.rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
-            for(ResourceDefinition rscdfn : controller.rscDfnMap.values())
+            for (ResourceDefinition rscdfn : controller.rscDfnMap.values())
             {
-                try {
+                try
+                {
                     rscdfns.add(rscdfn.getApiData(accCtx));
                 }
-                catch (AccessDeniedException accDeniedExc) { } // don't add storpooldfn without access
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    // don't add storpooldfn without access
+                }
             }
-        } catch (AccessDeniedException accDeniedExc) {
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
             // for now return an empty list.
         }
 

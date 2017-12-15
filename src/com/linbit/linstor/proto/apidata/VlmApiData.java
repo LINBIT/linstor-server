@@ -23,16 +23,22 @@ public class VlmApiData implements VlmApi
     @Override
     public UUID getVlmUuid()
     {
+        UUID vlmUuid = null;
         if (vlm.hasVlmUuid())
-            return UUID.fromString(vlm.getVlmUuid());
+        {
+            vlmUuid = UUID.fromString(vlm.getVlmUuid());
+        }
         return null;
     }
 
     @Override
     public UUID getVlmDfnUuid()
     {
+        UUID vlmDfnUuid = null;
         if (vlm.hasVlmDfnUuid())
-            return UUID.fromString(vlm.getVlmDfnUuid());
+        {
+            vlmDfnUuid = UUID.fromString(vlm.getVlmDfnUuid());
+        }
         return null;
     }
 
@@ -45,8 +51,11 @@ public class VlmApiData implements VlmApi
     @Override
     public UUID getStorPoolUuid()
     {
+        UUID vlmUuid = null;
         if (vlm.hasStorPoolUuid())
-            return UUID.fromString(vlm.getStorPoolUuid());
+        {
+            vlmUuid = UUID.fromString(vlm.getStorPoolUuid());
+        }
         return null;
     }
 
@@ -94,9 +103,13 @@ public class VlmApiData implements VlmApi
         builder.setStorPoolUuid(vlmApi.getStorPoolUuid().toString());
         builder.setVlmNr(vlmApi.getVlmNr());
         if (vlmApi.getBlockDevice() != null)
+        {
             builder.setBlockDevice(vlmApi.getBlockDevice());
+        }
         if (vlmApi.getMetaDisk() != null)
+        {
             builder.setMetaDisk(vlmApi.getMetaDisk());
+        }
         builder.setVlmFlags(vlmApi.getFlags());
         builder.addAllVlmProps(BaseProtoApiCall.fromMap(vlmApi.getVlmProps()));
 
@@ -106,7 +119,7 @@ public class VlmApiData implements VlmApi
     public static List<Vlm> toVlmProtoList(final List<? extends VlmApi> volumedefs)
     {
         ArrayList<Vlm> protoVlm = new ArrayList<>();
-        for(VlmApi vlmapi : volumedefs)
+        for (VlmApi vlmapi : volumedefs)
         {
             protoVlm.add(VlmApiData.toVlmProto(vlmapi));
         }
@@ -116,7 +129,7 @@ public class VlmApiData implements VlmApi
     public static List<VlmApi> toApiList(final List<Vlm> volumedefs)
     {
         ArrayList<VlmApi> apiVlms = new ArrayList<>();
-        for(Vlm vlm : volumedefs)
+        for (Vlm vlm : volumedefs)
         {
             apiVlms.add(new VlmApiData(vlm));
         }

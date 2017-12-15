@@ -27,7 +27,7 @@ public class ResourceListSerializerProto implements CtrlListSerializer<Resource.
             .build()
             .writeDelimitedTo(baos);
 
-        for(Resource.RscApi apiRsc: elements)
+        for (Resource.RscApi apiRsc: elements)
         {
             msgListRscsBuilder.addResources(RscApiData.toRscProto(apiRsc));
         }

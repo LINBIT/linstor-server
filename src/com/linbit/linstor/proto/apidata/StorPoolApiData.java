@@ -19,7 +19,8 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class StorPoolApiData implements StorPool.StorPoolApi {
+public class StorPoolApiData implements StorPool.StorPoolApi
+{
     private StorPoolOuterClass.StorPool storPool;
 
     public StorPoolApiData(StorPoolOuterClass.StorPool refStorPool)
@@ -28,7 +29,8 @@ public class StorPoolApiData implements StorPool.StorPoolApi {
     }
 
     @Override
-    public UUID getStorPoolUuid() {
+    public UUID getStorPoolUuid()
+    {
         UUID uuid = null;
         if (storPool.hasStorPoolUuid())
         {
@@ -38,38 +40,48 @@ public class StorPoolApiData implements StorPool.StorPoolApi {
     }
 
     @Override
-    public String getStorPoolName() {
+    public String getStorPoolName()
+    {
         return storPool.getStorPoolName();
     }
 
     @Override
-    public String getNodeName() {
+    public String getNodeName()
+    {
         return storPool.getNodeName();
     }
 
     @Override
-    public UUID getNodeUuid() {
+    public UUID getNodeUuid()
+    {
         UUID uuid = null;
         if (storPool.hasNodeUuid())
+        {
             uuid = UUID.fromString(storPool.getNodeUuid());
+        }
         return uuid;
     }
 
     @Override
-    public UUID getStorPoolDfnUuid() {
+    public UUID getStorPoolDfnUuid()
+    {
         UUID uuid = null;
         if (storPool.hasStorPoolDfnUuid())
+        {
             uuid = UUID.fromString(storPool.getStorPoolDfnUuid());
+        }
         return uuid;
     }
 
     @Override
-    public String getDriver() {
+    public String getDriver()
+    {
         return storPool.getDriver();
     }
 
     @Override
-    public Map<String, String> getStorPoolProps() {
+    public Map<String, String> getStorPoolProps()
+    {
         Map<String, String> ret = new HashMap<>();
         for (LinStorMapEntryOuterClass.LinStorMapEntry entry : storPool.getPropsList())
         {
@@ -79,7 +91,8 @@ public class StorPoolApiData implements StorPool.StorPoolApi {
     }
 
     @Override
-    public List<Volume.VlmApi> getVlmList() {
+    public List<Volume.VlmApi> getVlmList()
+    {
         return VlmApiData.toApiList(storPool.getVlmsList());
     }
 
@@ -97,5 +110,4 @@ public class StorPoolApiData implements StorPool.StorPoolApi {
 
         return storPoolBld.build();
     }
-
 }

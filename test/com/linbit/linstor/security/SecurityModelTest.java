@@ -581,7 +581,8 @@ public class SecurityModelTest extends DerbyBase
             otherDomainCtx = sysCtx.impersonate(
                 banditId, buddyRole, publicCtx.getDomain()
             );
-        } catch (AccessDeniedException deniedExc)
+        }
+        catch (AccessDeniedException deniedExc)
         {
             fail("AccessDeniedException while preparing the test");
         }

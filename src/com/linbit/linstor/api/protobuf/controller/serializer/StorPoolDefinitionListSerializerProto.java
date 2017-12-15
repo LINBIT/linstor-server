@@ -33,7 +33,7 @@ public class StorPoolDefinitionListSerializerProto implements CtrlListSerializer
             .build()
             .writeDelimitedTo(baos);
 
-        for(StorPoolDefinition.StorPoolDfnApi apiDfn: elements)
+        for (StorPoolDefinition.StorPoolDfnApi apiDfn: elements)
         {
             msgListStorPoolDfnsBuilder.addStorPoolDfns(StorPoolDfnApiData.fromStorPoolDfnApi(apiDfn));
         }

@@ -19,7 +19,8 @@ import java.util.UUID;
  *
  * @author rpeinthor
  */
-public class RscApiData implements Resource.RscApi {
+public class RscApiData implements Resource.RscApi
+{
     RscOuterClass.Rsc resource;
 
     public RscApiData(RscOuterClass.Rsc refResource)
@@ -28,38 +29,53 @@ public class RscApiData implements Resource.RscApi {
     }
 
     @Override
-    public UUID getUuid() {
+    public UUID getUuid()
+    {
+        UUID rscUuid = null;
         if (resource.hasUuid())
-            return UUID.fromString(resource.getUuid());
-        return null;
+        {
+            rscUuid = UUID.fromString(resource.getUuid());
+        }
+        return rscUuid;
     }
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return resource.getName();
     }
 
     @Override
-    public UUID getNodeUuid() {
+    public UUID getNodeUuid()
+    {
+        UUID nodeUuid = null;
         if (resource.hasNodeUuid())
-            return UUID.fromString(resource.getNodeUuid());
-        return null;
+        {
+            nodeUuid = UUID.fromString(resource.getNodeUuid());
+        }
+        return nodeUuid;
     }
 
     @Override
-    public String getNodeName() {
+    public String getNodeName()
+    {
         return resource.getNodeName();
     }
 
     @Override
-    public UUID getRscDfnUuid() {
+    public UUID getRscDfnUuid()
+    {
+        UUID rscDfnUuid = null;
         if (resource.hasRscDfnUuid())
-            return UUID.fromString(resource.getRscDfnUuid());
-        return null;
+        {
+            rscDfnUuid = UUID.fromString(resource.getRscDfnUuid());
+        }
+        return rscDfnUuid;
     }
 
     @Override
-    public Map<String, String> getProps() {
+    public Map<String, String> getProps()
+    {
         Map<String, String> ret = new HashMap<>();
         for (LinStorMapEntryOuterClass.LinStorMapEntry entry : resource.getPropsList())
         {
@@ -69,7 +85,8 @@ public class RscApiData implements Resource.RscApi {
     }
 
     @Override
-    public List<? extends Volume.VlmApi> getVlmList() {
+    public List<? extends Volume.VlmApi> getVlmList()
+    {
         return VlmApiData.toApiList(resource.getVlmsList());
     }
 
@@ -87,5 +104,4 @@ public class RscApiData implements Resource.RscApi {
 
         return rscBld.build();
     }
-
 }

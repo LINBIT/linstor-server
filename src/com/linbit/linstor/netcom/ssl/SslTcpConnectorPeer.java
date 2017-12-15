@@ -393,7 +393,8 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                     default:
                         break;
                 }
-            } while (retry);
+            }
+            while (retry);
         }
         return !needsHandshake;
     }

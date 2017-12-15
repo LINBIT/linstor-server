@@ -526,7 +526,7 @@ public class NodeData extends BaseTransactionObject implements Node
     public NodeApi getApiData(AccessContext accCtx) throws AccessDeniedException {
         List<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
         Iterator<NetInterface> itNetInterfaces = iterateNetInterfaces(accCtx);
-        while(itNetInterfaces.hasNext())
+        while (itNetInterfaces.hasNext())
         {
             NetInterface ni = itNetInterfaces.next();
             netInterfaces.add(ni.getApiData(accCtx));

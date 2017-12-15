@@ -499,7 +499,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     public RscApi getApiData(AccessContext accCtx) throws AccessDeniedException {
         List<Volume.VlmApi> volumes = new ArrayList<>();
         Iterator<Volume> itVolumes = iterateVolumes();
-        while(itVolumes.hasNext())
+        while (itVolumes.hasNext())
         {
             volumes.add(itVolumes.next().getApiData(accCtx));
         }

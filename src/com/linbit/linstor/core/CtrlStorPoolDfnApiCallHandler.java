@@ -440,16 +440,23 @@ class CtrlStorPoolDfnApiCallHandler
     byte[] listStorPoolDefinitions(int msgId, AccessContext accCtx, Peer client)
     {
         ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
-        try {
+        try
+        {
             controller.storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
-            for(StorPoolDefinition storPoolDfn : controller.storPoolDfnMap.values())
+            for (StorPoolDefinition storPoolDfn : controller.storPoolDfnMap.values())
             {
-                try {
+                try
+                {
                     storPoolDfns.add(storPoolDfn.getApiData(accCtx));
                 }
-                catch (AccessDeniedException accDeniedExc) { } // don't add storpooldfn without access
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    // don't add storpooldfn without access
+                }
             }
-        } catch (AccessDeniedException accDeniedExc) {
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
             // for now return an empty list.
         }
 
