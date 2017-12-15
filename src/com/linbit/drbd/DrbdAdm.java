@@ -51,6 +51,8 @@ public class DrbdAdm
     {
         List<String> command = new ArrayList<>();
         command.addAll(Arrays.asList(DRBDADM_UTIL, "-vvv", "adjust"));
+        command.add("-c");
+        command.add("/etc/drbd.d/" + resourceName.displayValue + ".res");
 
         if (discard)
         {
@@ -346,6 +348,8 @@ public class DrbdAdm
         List<String> command = new ArrayList<>();
         command.add(DRBDADM_UTIL);
         command.add("-vvv");
+        command.add("-c");
+        command.add("/etc/drbd.d/" + resourceName.displayValue + ".res");
         // command.addAll(asConfigParameter(resourceName.value));
         command.addAll(Arrays.asList(subCommands));
         String resName = resourceName.displayValue;
