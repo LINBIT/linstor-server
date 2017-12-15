@@ -82,7 +82,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                         null,
                         "Volume definition list that should be added to the resource is empty.",
                         null,
-                        ApiConsts.WARN_NOT_CONNECTED
+                        ApiConsts.WARN_NOT_FOUND
                     );
                 throw new CtrlVlmDfnApiCallHandlerFailedException();
             }
@@ -90,6 +90,19 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             ensureRscMapProtAccess(accCtx);
 
             ResourceDefinition rscDfn = getRscDfn(accCtx, rscNameStr);
+
+            if (rscDfn == null)
+            {
+                addAnswer(
+                        String.format("Resource definition '%s' not found.", rscNameStr),
+                        null,
+                        "Volume definition couldn't be created because the " +
+                        "specified resource definition was not found.",
+                        "Create or use an already existing resource definition.",
+                        ApiConsts.FAIL_NOT_FOUND_RSC_DFN
+                    );
+                throw new CtrlVlmDfnApiCallHandlerFailedException();
+            }
 
             Iterator<Resource> iterateResource = getRscIterator(rscDfn);
             List<Resource> rscList = new ArrayList<>();
