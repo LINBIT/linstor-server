@@ -51,7 +51,7 @@ public class ExtCmdFailedException extends LinStorException
             String.format("The external command '%s' exited with error code %d\n", command[0], outputData.exitCode),
             String.format(EXCEPTION_DESCR_FORMAT, command[0]),
             String.format("The external command exited with error code %d.", outputData.exitCode),
-            "- Check whether the external program is operating properly.\n +" +
+            "- Check whether the external program is operating properly.\n" +
             "- Check whether the command line is correct.\n" +
             "  Contact a system administrator or a developer if the command line is no longer valid\n" +
             "  for the installed version of the external program.",
