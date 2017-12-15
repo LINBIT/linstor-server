@@ -26,17 +26,12 @@ public class DrbdAdm
     public static final String DRBDCTRL_RES_NAME = ".drbdctrl";
 
     private Path configPath;
-    private ExtCmd extCmd;
+    private CoreServices coreSvcs;
 
-    public DrbdAdm(Path configPath, CoreServices coreServices)
+    public DrbdAdm(Path configPathRef, CoreServices coreSvcsRef)
     {
-        this(configPath, new ExtCmd(coreServices.getTimer()));
-    }
-
-    DrbdAdm(Path configPath, ExtCmd extCmd)
-    {
-        this.configPath = configPath;
-        this.extCmd = extCmd;
+        configPath = configPathRef;
+        coreSvcs = coreSvcsRef;
     }
 
     /**
@@ -335,6 +330,7 @@ public class DrbdAdm
         String[] command = commandList.toArray(new String[commandList.size()]);
         try
         {
+            ExtCmd extCmd = new ExtCmd(coreSvcs.getTimer());
             OutputData outputData = extCmd.exec(command);
             if (outputData.exitCode != 0)
             {
