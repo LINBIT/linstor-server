@@ -14,6 +14,7 @@ public class TcpPortNumberTest
     public static final int[] CTOR_FAIL_TESTS =
     {
         -1,
+        0,
         Integer.MIN_VALUE,
         (1 << 16),
         Integer.MAX_VALUE
@@ -21,7 +22,6 @@ public class TcpPortNumberTest
 
     public static final int[] TO_STRING_TESTS =
     {
-        0,
         1,
         750,
         65130

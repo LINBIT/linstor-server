@@ -19,7 +19,7 @@ public class TcpPortNumberAllocTest
         // Test free number at index 0
         new PortTest(new int[] { 7002, 7003, 7004, 7005, 7007, 7008, 7012, 7013, 7015 }, 7000, 7015, 7000),
         new PortTest(new int[] { 7001, 7002, 7003, 7004, 7006, 7008, 7012, 7013, 7015 }, 7000, 7015, 7000),
-        new PortTest(new int[] { 1, 2, 3, 5, 7, 8, 12, 613, 614, 615, 721, 731, 7015 }, 0, 65535, 0),
+        new PortTest(new int[] { 2, 3, 5, 7, 8, 12, 613, 614, 615, 721, 731, 7015 }, 1, 65535, 1),
 
         // Test free number in the middle
         new PortTest(new int[] { 7000, 7001, 7002, 7003, 7006, 7007, 7008, 7010, 7011 }, 7000, 7015, 7004),
