@@ -417,50 +417,57 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
                 ((DrbdDeviceHandler) drbdHnd).debugListSatelliteObjects();
 
-                // Remember the current phase number for this run of device handlers
-                // BEGIN DEBUG
-                errLog.logTrace("Scheduling resource handlers");
-                // END DEBUG
-                for (ResourceName rscName : dispatchRscSet)
+                stltInstance.reconfigurationLock.readLock().lock();
+                try
                 {
-                    // Dispatch resources that were affected by changes to worker threads
-                    // and to the resource's respective handler
-                    ResourceDefinition rscDfn = stltInstance.rscDfnMap.get(rscName);
-                    if (rscDfn != null)
+                    // BEGIN DEBUG
+                    errLog.logTrace("Scheduling resource handlers");
+                    // END DEBUG
+                    for (ResourceName rscName : dispatchRscSet)
                     {
-                        Resource rsc = rscDfn.getResource(wrkCtx, stltInstance.localNode.getName());
-                        if (rsc != null)
+                        // Dispatch resources that were affected by changes to worker threads
+                        // and to the resource's respective handler
+                        ResourceDefinition rscDfn = stltInstance.rscDfnMap.get(rscName);
+                        if (rscDfn != null)
                         {
-                            dispatchResource(wrkCtx, rsc, phaseLock);
+                            Resource rsc = rscDfn.getResource(wrkCtx, stltInstance.localNode.getName());
+                            if (rsc != null)
+                            {
+                                dispatchResource(wrkCtx, rsc, phaseLock);
+                            }
+                            else
+                            {
+                                errLog.logWarning(
+                                    "Dispatch request for resource definition '" + rscName.displayValue +
+                                    "' which has no corresponding resource object on this satellite"
+                                );
+                            }
                         }
                         else
                         {
                             errLog.logWarning(
                                 "Dispatch request for resource definition '" + rscName.displayValue +
-                                "' which has no corresponding resource object on this satellite"
+                                "' which is unknown to this satellite"
                             );
                         }
                     }
-                    else
-                    {
-                        errLog.logWarning(
-                            "Dispatch request for resource definition '" + rscName.displayValue +
-                            "' which is unknown to this satellite"
-                        );
-                    }
+                    dispatchRscSet.clear();
+                    // BEGIN DEBUG
+                    errLog.logTrace("Waiting for resource handlers to finish");
+                    // END DEBUG
+                    // Wait until the phase advances from the current phase number after all
+                    // device handlers have finished
+                    phaseLock.await();
+                    // BEGIN DEBUG
+                    errLog.logTrace("All resource handlers finished");
+                    errLog.logTrace("End DeviceManager cycle %d", cycleNr);
+                    // END DEBUG
                 }
-                dispatchRscSet.clear();
-                // BEGIN DEBUG
-                errLog.logTrace("Waiting for resource handlers to finish");
-                // END DEBUG
-                // Wait until the phase advances from the current phase number after all
-                // device handlers have finished
-                phaseLock.await();
-                // BEGIN DEBUG
-                errLog.logTrace("All resource handlers finished");
-                errLog.logTrace("End DeviceManager cycle %d", cycleNr);
-                // END DEBUG
-                ++cycleNr;
+                finally
+                {
+                    stltInstance.reconfigurationLock.readLock().unlock();
+                    ++cycleNr;
+                }
             }
             while (!shutdownFlag.get());
             errLog.logTrace("DeviceManager service stopped");
