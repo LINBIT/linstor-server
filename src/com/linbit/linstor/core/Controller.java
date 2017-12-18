@@ -266,6 +266,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                     Privilege.PRIV_OBJ_VIEW,
                     Privilege.PRIV_OBJ_USE,
                     Privilege.PRIV_OBJ_CHANGE,
+                    Privilege.PRIV_OBJ_CONTROL,
                     Privilege.PRIV_MAC_OVRD
                 );
                 apiCallHandler = new CtrlApiCallHandler(this, apiType, apiCtx);
