@@ -213,6 +213,9 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     private ReconnectorTask reconnectorTask;
     private PingTask pingTask;
 
+    // Control objects used and set by tests
+    private static DbConnectionPool testDbPool = null;
+
     public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
     {
         // Initialize synchronization
@@ -237,7 +240,14 @@ public final class Controller extends LinStor implements Runnable, CoreServices
             CoreTimer timer = super.getTimer();
             systemServicesMap.put(timer.getInstanceName(), timer);
         }
-        dbConnPool = new DbConnectionPool();
+        if (testDbPool != null)
+        {
+            dbConnPool = testDbPool;
+        }
+        else
+        {
+            dbConnPool = new DbConnectionPool();
+        }
         systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
 
         // Initialize network communications connectors map
@@ -338,34 +348,37 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 {
                     errorLogRef.reportError(ioExc);
                 }
-                try
+                if (testDbPool == null)
                 {
-                    // TODO: determine which DBDriver to use
-                    AccessContext privCtx = sysCtx.clone();
-                    privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                    securityDbDriver = new DbDerbyPersistence(privCtx, errorLogRef);
-                    persistenceDbDriver = new DerbyDriver(
-                        privCtx,
-                        errorLogRef,
-                        nodesMap,
-                        rscDfnMap,
-                        storPoolDfnMap
-                    );
+                    try
+                    {
+                        // TODO: determine which DBDriver to use
+                        AccessContext privCtx = sysCtx.clone();
+                        privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+                        securityDbDriver = new DbDerbyPersistence(privCtx, errorLogRef);
+                        persistenceDbDriver = new DerbyDriver(
+                            privCtx,
+                            errorLogRef,
+                            nodesMap,
+                            rscDfnMap,
+                            storPoolDfnMap
+                        );
 
-                    String connectionUrl = dbProps.getProperty(
-                        DB_CONN_URL,
-                        persistenceDbDriver.getDefaultConnectionUrl()
-                    );
+                        String connectionUrl = dbProps.getProperty(
+                            DB_CONN_URL,
+                            persistenceDbDriver.getDefaultConnectionUrl()
+                        );
 
-                    // Connect the database connection pool to the database
-                    dbConnPool.initializeDataSource(
-                        connectionUrl,
-                        dbProps
-                    );
-                }
-                catch (SQLException sqlExc)
-                {
-                    errorLogRef.reportError(sqlExc);
+                        // Connect the database connection pool to the database
+                        dbConnPool.initializeDataSource(
+                            connectionUrl,
+                            dbProps
+                        );
+                    }
+                    catch (SQLException sqlExc)
+                    {
+                        errorLogRef.reportError(sqlExc);
+                    }
                 }
 
                 errorLogRef.logInfo("Initializing authentication subsystem");
