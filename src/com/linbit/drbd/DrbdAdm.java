@@ -15,6 +15,7 @@ import com.linbit.linstor.NodeId;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.extproc.ExtCmdFailedException;
+import java.io.File;
 
 public class DrbdAdm
 {
@@ -330,8 +331,10 @@ public class DrbdAdm
         String[] command = commandList.toArray(new String[commandList.size()]);
         try
         {
+            // FIXME: Works only on Unix
+            File nullDevice = new File("/dev/null");
             ExtCmd extCmd = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
-            OutputData outputData = extCmd.exec(command);
+            OutputData outputData = extCmd.pipeExec(ProcessBuilder.Redirect.from(nullDevice), command);
             if (outputData.exitCode != 0)
             {
                 throw new ExtCmdFailedException(command, outputData);
