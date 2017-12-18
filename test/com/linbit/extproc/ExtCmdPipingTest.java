@@ -1,6 +1,8 @@
 package com.linbit.extproc;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.StderrErrorReporter;
 import com.linbit.timer.GenericTimer;
 import com.linbit.timer.Action;
 import org.junit.After;
@@ -16,12 +18,14 @@ import static org.junit.Assert.*;
 public class ExtCmdPipingTest
 {
     GenericTimer<String, Action<String>> intrTimer;
+    ErrorReporter errLog;
 
     @Before
     public void setUp()
     {
         intrTimer = new GenericTimer<>();
         intrTimer.start();
+        errLog = new StderrErrorReporter("LINSTOR-UNITTESTS");
     }
 
     @After
@@ -36,7 +40,7 @@ public class ExtCmdPipingTest
     @Test
     public void execTest() throws Exception
     {
-        ExtCmd ec = new ExtCmd(intrTimer);
+        ExtCmd ec = new ExtCmd(intrTimer, errLog);
         ExtCmd.OutputData output = ec.exec("test-support/TestOutput", "42", "12345", "stdout", "exit");
 
         if (output.stdoutData.length != 12345)
@@ -55,7 +59,7 @@ public class ExtCmdPipingTest
     @Test
     public void execStderrTest() throws Exception
     {
-        ExtCmd ec = new ExtCmd(intrTimer);
+        ExtCmd ec = new ExtCmd(intrTimer, errLog);
         ExtCmd.OutputData output = ec.exec("test-support/TestOutput", "21", "76543", "stderr", "exit");
 
         if (output.stderrData.length != 76543)
@@ -74,7 +78,7 @@ public class ExtCmdPipingTest
     @Test
     public void asyncExecTest() throws Exception
     {
-        ExtCmd ec = new ExtCmd(intrTimer);
+        ExtCmd ec = new ExtCmd(intrTimer, errLog);
         ec.asyncExec("test-support/TestOutput", "23", "3456", "stdout", "exit");
 
         // TODO: run something else while the external process is working
@@ -96,7 +100,7 @@ public class ExtCmdPipingTest
     @Test(expected=java.io.IOException.class)
     public void execTooMuchDataTest() throws Exception
     {
-        ExtCmd ec = new ExtCmd(intrTimer);
+        ExtCmd ec = new ExtCmd(intrTimer, errLog);
         ExtCmd.OutputData output = ec.exec("test-support/TestOutput", "42", "6350750", "stdout", "exit");
 
         if (output.stdoutData.length > OutputReceiver.MAX_DATA_SIZE)
@@ -116,7 +120,7 @@ public class ExtCmdPipingTest
     @Test(expected=java.io.IOException.class)
     public void asyncExecTooMuchDataTest() throws Exception
     {
-        ExtCmd ec = new ExtCmd(intrTimer);
+        ExtCmd ec = new ExtCmd(intrTimer, errLog);
         ec.asyncExec("test-support/TestOutput", "42", "6350750", "stdout", "exit");
         ExtCmd.OutputData output = ec.syncProcess();
 
@@ -137,7 +141,7 @@ public class ExtCmdPipingTest
     @Test(expected=ChildProcessTimeoutException.class)
     public void execHangingProcessTest() throws Exception
     {
-        ExtCmd ec = new ExtCmd(intrTimer);
+        ExtCmd ec = new ExtCmd(intrTimer, errLog);
         ec.setTimeout(ChildProcessHandler.TimeoutType.WAIT, 3000);
         ec.setTimeout(ChildProcessHandler.TimeoutType.TERM, 1000);
         ExtCmd.OutputData output = ec.exec("test-support/TestOutput", "42", "640046", "stdout", "hang");
@@ -149,7 +153,7 @@ public class ExtCmdPipingTest
     @Test(expected=ChildProcessTimeoutException.class)
     public void asyncExecHangingProcessTest() throws Exception
     {
-        ExtCmd ec = new ExtCmd(intrTimer);
+        ExtCmd ec = new ExtCmd(intrTimer, errLog);
         ec.setTimeout(ChildProcessHandler.TimeoutType.WAIT, 3000);
         ec.setTimeout(ChildProcessHandler.TimeoutType.TERM, 1000);
         ec.asyncExec("test-support/TestOutput", "42", "640046", "stdout", "hang");

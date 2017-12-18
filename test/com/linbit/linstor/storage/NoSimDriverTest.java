@@ -62,14 +62,9 @@ public abstract class NoSimDriverTest
     public NoSimDriverTest(StorageDriver driver) throws IOException, StorageException
     {
         this.driver = driver;
-        SatelliteCoreServices coreSvc = new TestCoreServices();
-        extCommand = new DebugExtCmd(coreSvc.getTimer());
-        driver.initialize(coreSvc);
-
-        if (driver instanceof AbsStorageDriver)
-        {
-            ((AbsStorageDriver) driver).extCommand = extCommand;
-        }
+        SatelliteCoreServices coreSvcs = new TestCoreServices();
+        extCommand = new DebugExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+        driver.initialize(coreSvcs);
     }
 
     protected void runTest() throws StorageException, MaxSizeException, MinSizeException, ChildProcessTimeoutException, IOException, InterruptedException
@@ -951,9 +946,9 @@ public abstract class NoSimDriverTest
 
     protected class DebugExtCmd extends ExtCmd
     {
-        DebugExtCmd(Timer<String, Action<String>> timer)
+        DebugExtCmd(Timer<String, Action<String>> timer, ErrorReporter errLogRef)
         {
-            super(timer);
+            super(timer, errLogRef);
         }
 
         @Override

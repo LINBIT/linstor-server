@@ -41,9 +41,9 @@ public class ZfsDriverTest extends StorageTestUtils
         super(new StorageTestUtils.DriverFactory()
         {
             @Override
-            public StorageDriver createDriver(ExtCmd ec) throws StorageException
+            public StorageDriver createDriver() throws StorageException
             {
-                return new ZfsDriver(ec);
+                return new ZfsDriver();
             }
         });
     }

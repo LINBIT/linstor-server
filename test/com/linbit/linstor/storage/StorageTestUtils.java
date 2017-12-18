@@ -19,7 +19,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
-import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.utils.TestExtCmd;
 import com.linbit.extproc.utils.TestExtCmd.Command;
 import com.linbit.fsevent.EntryGroupObserver;
@@ -42,7 +41,7 @@ public class StorageTestUtils
 {
     protected static interface DriverFactory
     {
-        StorageDriver createDriver(ExtCmd ec) throws StorageException;
+        StorageDriver createDriver() throws StorageException;
     }
 
     protected final FileObserver emptyFileObserver;
@@ -71,12 +70,8 @@ public class StorageTestUtils
     public void setUp() throws Exception
     {
         ec = new TestExtCmd();
-        driver = driverFactory.createDriver(ec);
+        driver = driverFactory.createDriver();
         driver.initialize(new DummySatelliteCoreServices());
-        if (driver instanceof AbsStorageDriver)
-        {
-            ((AbsStorageDriver) driver).extCommand = ec;
-        }
     }
 
     @After

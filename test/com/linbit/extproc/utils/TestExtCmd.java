@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
+import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.GenericTimer;
 
@@ -21,7 +22,7 @@ public class TestExtCmd extends ExtCmd
 
     public TestExtCmd()
     {
-        super(new GenericTimer<String, Action<String>>());
+        super(new GenericTimer<String, Action<String>>(), new StdErrorReporter("LINSTOR-UNITTESTS"));
     }
 
     public void clearBehaviors()

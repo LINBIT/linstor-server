@@ -23,7 +23,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.linbit.drbd.md.MetaData;
-import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
@@ -42,9 +41,9 @@ public class LvmDriverTest extends StorageTestUtils
         super(new StorageTestUtils.DriverFactory()
         {
             @Override
-            public StorageDriver createDriver(ExtCmd ec) throws StorageException
+            public StorageDriver createDriver() throws StorageException
             {
-                return new LvmDriver(ec);
+                return new LvmDriver();
             }
         });
     }

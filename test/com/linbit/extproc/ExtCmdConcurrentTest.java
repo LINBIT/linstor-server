@@ -2,6 +2,8 @@ package com.linbit.extproc;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.StderrErrorReporter;
 import com.linbit.timer.GenericTimer;
 import com.linbit.timer.Action;
 import java.io.IOException;
@@ -17,11 +19,13 @@ public class ExtCmdConcurrentTest implements Runnable
     public static final int TESTOUTPUT_DELAY = 1500;
 
     GenericTimer<String, Action<String>> intrTimer;
+    ErrorReporter errLog;
 
     public ExtCmdConcurrentTest()
     {
         intrTimer = new GenericTimer<>();
         intrTimer.start();
+        errLog = new StderrErrorReporter("LINSTOR-UNITTESTS");
     }
 
     @Test
@@ -53,7 +57,7 @@ public class ExtCmdConcurrentTest implements Runnable
         {
             fail("WTF?");
         }
-        ExtCmd ec = new ExtCmd(intrTimer);
+        ExtCmd ec = new ExtCmd(intrTimer, errLog);
         OutputData output;
         try
         {

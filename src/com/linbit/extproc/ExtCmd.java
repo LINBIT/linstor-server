@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
 
@@ -15,14 +16,16 @@ import com.linbit.timer.Timer;
  */
 public class ExtCmd extends ChildProcessHandler
 {
-    private OutputReceiver outReceiver;
-    private OutputReceiver errReceiver;
+    private OutputReceiver  outReceiver;
+    private OutputReceiver  errReceiver;
+    private ErrorReporter   errLog;
 
-    public ExtCmd(Timer<String, Action<String>> timer)
+    public ExtCmd(Timer<String, Action<String>> timer, ErrorReporter errLogRef)
     {
         super(timer);
         outReceiver = null;
         errReceiver = null;
+        errLog = errLogRef;
     }
 
     public void asyncExec(String... command)
@@ -61,8 +64,8 @@ public class ExtCmd extends ChildProcessHandler
         pBuilder.redirectInput(stdinRedirect);
         Process child = pBuilder.start();
         setChild(child);
-        outReceiver = new OutputReceiver(child.getInputStream());
-        errReceiver = new OutputReceiver(child.getErrorStream());
+        outReceiver = new OutputReceiver(child.getInputStream(), errLog);
+        errReceiver = new OutputReceiver(child.getErrorStream(), errLog);
         new Thread(outReceiver).start();
         new Thread(errReceiver).start();
     }

@@ -330,7 +330,7 @@ public class DrbdAdm
         String[] command = commandList.toArray(new String[commandList.size()]);
         try
         {
-            ExtCmd extCmd = new ExtCmd(coreSvcs.getTimer());
+            ExtCmd extCmd = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
             OutputData outputData = extCmd.exec(command);
             if (outputData.exitCode != 0)
             {

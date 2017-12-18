@@ -26,11 +26,6 @@ public class ZfsDriver extends AbsStorageDriver
     {
     }
 
-    ZfsDriver(ExtCmd ec)
-    {
-        extCommand = ec;
-    }
-
     @Override
     public Map<String, String> getTraits() throws StorageException
     {
@@ -66,6 +61,7 @@ public class ZfsDriver extends AbsStorageDriver
     @Override
     protected VolumeInfo getVolumeInfo(String identifier) throws StorageException
     {
+        final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
         try
         {
             return ZfsVolumeInfo.getInfo(extCommand, zfsCommand, pool, identifier);
@@ -109,6 +105,7 @@ public class ZfsDriver extends AbsStorageDriver
 
         try
         {
+            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
             OutputData outputData = extCommand.exec(command);
 
             checkExitCode(outputData, command);
@@ -260,7 +257,7 @@ public class ZfsDriver extends AbsStorageDriver
                 };
             try
             {
-
+                final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
                 final OutputData output = extCommand.exec(poolCheckCommand);
                 if (output.exitCode != 0)
                 {

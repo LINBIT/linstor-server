@@ -34,19 +34,19 @@ public abstract class AbsStorageDriver implements StorageDriver
     public static final byte[] VALID_CHARS = { '_' };
     public static final byte[] VALID_INNER_CHARS = { '-' };
 
-    protected ExtCmd extCommand;
     protected FileSystemWatch fileSystemWatch;
     protected ErrorReporter errorReporter;
+    protected SatelliteCoreServices coreSvcs;
     protected long fileEventTimeout = FILE_EVENT_TIMEOUT_DEFAULT;
 
     protected int sizeAlignmentToleranceFactor = EXTENT_SIZE_ALIGN_TOLERANCE_DEFAULT;
 
     @Override
-    public void initialize(final SatelliteCoreServices coreSvc) throws StorageException
+    public void initialize(final SatelliteCoreServices coreSvcsRef) throws StorageException
     {
-        extCommand = new ExtCmd(coreSvc.getTimer());
-        fileSystemWatch = coreSvc.getFsWatch();
-        errorReporter = coreSvc.getErrorReporter();
+        coreSvcs = coreSvcsRef;
+        fileSystemWatch = coreSvcs.getFsWatch();
+        errorReporter = coreSvcs.getErrorReporter();
     }
 
     @Override
@@ -90,6 +90,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         String[] command = getCreateCommand(identifier, size);
         try
         {
+            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
             final OutputData output;
             try
             {
@@ -183,6 +184,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     @Override
     public void deleteVolume(final String identifier) throws StorageException
     {
+        final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
         final String[] command = getDeleteCommand(identifier);
         try
         {
@@ -378,6 +380,7 @@ public abstract class AbsStorageDriver implements StorageDriver
             throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }
 
+        final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
         final String[] command = getCreateSnapshotCommand(identifier, snapshotName);
         try
         {
@@ -411,6 +414,7 @@ public abstract class AbsStorageDriver implements StorageDriver
 
         try
         {
+            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
             final OutputData outputData = extCommand.exec(command);
             checkExitCode(
                 outputData,
@@ -452,6 +456,7 @@ public abstract class AbsStorageDriver implements StorageDriver
         final String[] command = getDeleteSnapshotCommand(identifier, snapshotName);
         try
         {
+            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
             final OutputData outputData = extCommand.exec(command);
             checkExitCode(outputData, command, "Failed to delete snapshot [%s] of volume [%s]. ", snapshotName, identifier);
         }

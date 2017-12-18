@@ -36,11 +36,6 @@ public class LvmThinDriver extends LvmDriver
     {
     }
 
-    LvmThinDriver(final ExtCmd ec)
-    {
-        this.extCommand = ec;
-    }
-
     @Override
     public void startVolume(final String identifier) throws StorageException
     {
@@ -56,6 +51,7 @@ public class LvmThinDriver extends LvmDriver
         };
         try
         {
+            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
             final OutputData outputData = extCommand.exec(command);
             checkExitCode(outputData, command, "Failed to start volume [%s]. ", qualifiedIdentifier);
         }
@@ -86,6 +82,7 @@ public class LvmThinDriver extends LvmDriver
         };
         try
         {
+            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
             final OutputData outputData = extCommand.exec(command);
             checkExitCode(outputData, command, "Failed to stop volume [%s]. ", qualifiedIdentifier);
         }
@@ -253,7 +250,7 @@ public class LvmThinDriver extends LvmDriver
                 };
             try
             {
-
+                final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
                 final OutputData output = extCommand.exec(thinPoolCheckCommand);
                 final String stdOut = new String(output.stdoutData);
                 final String[] lines = stdOut.split("\n");

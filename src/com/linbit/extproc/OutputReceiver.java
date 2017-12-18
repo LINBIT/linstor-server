@@ -1,9 +1,8 @@
 package com.linbit.extproc;
 
+import com.linbit.linstor.logging.ErrorReporter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Logs and saves the output of external commands
@@ -34,15 +33,17 @@ public class OutputReceiver implements Runnable
     private boolean overflow;
 
     private IOException savedIoExc;
+    private ErrorReporter errLog;
 
     /**
      * Creates a new instance that reads from the specified InputStream
      *
      * @param in InputStream to read data from
      */
-    public OutputReceiver(InputStream in)
+    public OutputReceiver(InputStream in, ErrorReporter errLogRef)
     {
         dataIn = in;
+        errLog = errLogRef;
         data = new byte[INIT_DATA_SIZE];
         dataSize = 0;
         finished = false;
@@ -244,7 +245,7 @@ public class OutputReceiver implements Runnable
             if (data[idx] == '\n')
             {
                 String logString = new String(data, lineOffset, (idx + 1) - lineOffset);
-                Logger.getGlobal().log(Level.FINE, logString);
+                errLog.logDebug("%s\n", logString);
                 lineOffset = idx + 1;
             }
         }

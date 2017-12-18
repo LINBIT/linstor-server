@@ -11,7 +11,6 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.utils.TestExtCmd.Command;
 import com.linbit.extproc.utils.TestExtCmd.TestOutputData;
@@ -23,9 +22,9 @@ public class LvmThinDriverTest extends LvmDriverTest
         super(new StorageTestUtils.DriverFactory()
         {
             @Override
-            public StorageDriver createDriver(ExtCmd ec) throws StorageException
+            public StorageDriver createDriver() throws StorageException
             {
-                return new LvmThinDriver(ec);
+                return new LvmThinDriver();
             }
         });
     }

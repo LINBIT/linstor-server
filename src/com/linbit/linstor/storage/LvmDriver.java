@@ -15,7 +15,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 
 public class LvmDriver extends AbsStorageDriver
 {
-    public static final String LVM_VOLUME_GROUP_DEFAULT = "linstorpool";
+    public static final String LVM_VOLUME_GROUP_DEFAULT = "drbdpool";
 
     public static final String LVM_CREATE_DEFAULT = "lvcreate";
     public static final String LVM_REMOVE_DEFAULT = "lvremove";
@@ -33,11 +33,6 @@ public class LvmDriver extends AbsStorageDriver
 
     public LvmDriver()
     {
-    }
-
-    LvmDriver(final ExtCmd ec)
-    {
-        this.extCommand = ec;
     }
 
     @Override
@@ -126,6 +121,7 @@ public class LvmDriver extends AbsStorageDriver
         HashMap<String, LvsInfo> infoMap;
         try
         {
+            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
             infoMap = LvsInfo.getAllInfo(extCommand, lvmLvsCommand, volumeGroup);
             info = infoMap.get(identifier);
 
@@ -188,6 +184,7 @@ public class LvmDriver extends AbsStorageDriver
             };
         try
         {
+            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
             final OutputData output = extCommand.exec(command);
 
             checkExitCode(output, command);
@@ -329,7 +326,7 @@ public class LvmDriver extends AbsStorageDriver
                 };
             try
             {
-
+                final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
                 final OutputData output = extCommand.exec(volumeGroupCheckCommand);
                 final String stdOut = new String(output.stdoutData);
                 final String[] lines = stdOut.split("\n");
