@@ -56,7 +56,7 @@ public interface Resource extends TransactionObject
         TransactionMgr transMgr,
         String defaultStorPoolName
     )
-        throws InvalidNameException;
+        throws InvalidNameException, LinStorException;
 
     public void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, SQLException;

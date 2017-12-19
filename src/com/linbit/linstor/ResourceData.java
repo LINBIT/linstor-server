@@ -356,7 +356,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         TransactionMgr transMgr,
         String defaultStorPoolName
     )
-        throws InvalidNameException
+        throws InvalidNameException, LinStorException
     {
         Iterator<VolumeDefinition> vlmDfns;
         try
@@ -389,6 +389,13 @@ public class ResourceData extends BaseTransactionObject implements Resource
                         apiCtx,
                         new StorPoolName(storPoolNameStr)
                     );
+
+                    if (storPool == null)
+                    {
+                        throw new LinStorException(
+                            "The configured storage pool '" + storPoolNameStr + "' could not be found."
+                        );
+                    }
 
                     VolumeData.getInstance(
                         apiCtx,

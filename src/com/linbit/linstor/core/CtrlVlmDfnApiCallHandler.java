@@ -15,6 +15,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -435,7 +436,16 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         catch (InvalidNameException invalidNameExc)
         {
             handleInvalidStorPoolNameExc(invalidNameExc, ApiConsts.RC_VLM_DFN_CRT_FAIL_INVLD_STOR_POOL_NAME);
-            throw new CtrlVlmDfnApiCallHandlerFailedException();
+            throw new ApiCallHandlerFailedException();
+        }
+        catch (LinStorException e)
+        {
+            throw exc(
+                e,
+                "An exception occured while adjusting resources.",
+                ApiConsts.FAIL_UNKNOWN_ERROR // TODO somehow find out if the exception is caused
+                // by a missing storpool (not deployed yet?), and return a more meaningful RC
+            );
         }
     }
 
