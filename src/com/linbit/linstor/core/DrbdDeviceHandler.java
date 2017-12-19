@@ -8,6 +8,7 @@ import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.ConfFile;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.PriorityProps;
@@ -37,9 +38,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import org.slf4j.event.Level;
 
 class DrbdDeviceHandler implements DeviceHandler
@@ -99,8 +98,9 @@ class DrbdDeviceHandler implements DeviceHandler
                     VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
 
                     VolumeState vlmState = new VolumeState(vlmNr, vlmDfn.getVolumeSize(wrkCtx));
-                    vlmState.storVlmName = rscDfn.getName().displayValue + "_" +
+                    vlmState.storVlmPath = rscDfn.getName().displayValue + "_" +
                         String.format("%05d", vlmNr.value);
+                    vlmState.minorNr = vlmDfn.getMinorNr(wrkCtx);
                     vlmStateMap.put(vlmNr, vlmState);
                 }
             }
@@ -136,6 +136,31 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 // FIXME: Narrow exception handling
                 errLog.reportError(exc);
+            }
+
+            for (VolumeState vlmState : vlmStateMap.values())
+            {
+                if (!vlmState.hasDisk)
+                {
+                    // If there is no disk, then there cannot be any meta data
+                    vlmState.checkMetaData = false;
+                    vlmState.hasMetaData = false;
+                }
+                else
+                if (vlmState.checkMetaData)
+                {
+                    // Check for the existence of meta data
+                    try
+                    {
+                        vlmState.hasMetaData = drbdUtils.hasMetaData(
+                            vlmState.storVlmPath, vlmState.minorNr.value, "internal"
+                        );
+                    }
+                    catch (ExtCmdFailedException cmdExc)
+                    {
+                        errLog.reportError(Level.ERROR, cmdExc);
+                    }
+                }
             }
 
             // BEGIN DEBUG
@@ -203,7 +228,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 Volume vlm = rsc.getVolume(vlmState.vlmNr);
                 if (vlmState.hasDisk)
                 {
-                    vlm.setBlockDevicePath(wrkCtx, "/dev/drbdpool/" + vlmState.storVlmName);
+                    vlm.setBlockDevicePath(wrkCtx, "/dev/drbdpool/" + vlmState.storVlmPath);
                     vlm.setMetaDiskPath(wrkCtx, "internal");
                 }
                 else
@@ -438,6 +463,8 @@ class DrbdDeviceHandler implements DeviceHandler
                         // fall-through
                     case OUTDATED:
                         vlmState.hasMetaData = true;
+                        // No additional check for existing meta data is required
+                        vlmState.checkMetaData = false;
                         // fall-through
                     case ATTACHING:
                         vlmState.hasDisk = true;
@@ -510,7 +537,7 @@ class DrbdDeviceHandler implements DeviceHandler
                         );
                         try
                         {
-                            driver.checkVolume(vlmState.storVlmName, expectedSize);
+                            driver.checkVolume(vlmState.storVlmPath, expectedSize);
                             vlmState.hasDisk = true;
                             errLog.logTrace(
                                 "Existing storage volume found for resource '" +
@@ -550,7 +577,7 @@ class DrbdDeviceHandler implements DeviceHandler
             vlmState.grossSize = drbdMd.getGrossSize(
                 vlmState.netSize, FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
             );
-            vlmState.driver.createVolume(vlmState.storVlmName, vlmState.grossSize);
+            vlmState.driver.createVolume(vlmState.storVlmPath, vlmState.grossSize);
         }
         else
         {
@@ -795,13 +822,18 @@ class DrbdDeviceHandler implements DeviceHandler
     static class VolumeState
     {
         VolumeNumber vlmNr;
+        MinorNumber minorNr;
         boolean isPresent = false;
         boolean hasDisk = false;
-        boolean hasMetaData = false;
+        // Assume there is existing meta data and then prove that there is not,
+        // to avoid overwriting existing meta data upon failure to check
+        boolean hasMetaData = true;
+        // Indicates whether a check for meta data should be performed
+        boolean checkMetaData = true;
         boolean isFailed = false;
         StorageDriver driver = null;
         StorPoolName storPoolName = null;
-        String storVlmName = null;
+        String storVlmPath = null;
         long netSize;
         long grossSize;
 
