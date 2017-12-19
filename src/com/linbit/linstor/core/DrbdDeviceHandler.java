@@ -588,7 +588,7 @@ class DrbdDeviceHandler implements DeviceHandler
         throws AccessDeniedException, IOException
     {
         ResourceName rscName = rscDfn.getName();
-        Set<Resource> peerResources = new TreeSet<>();
+        Map<ResourceName, Resource> peerResources = new TreeMap<>();
         {
             Iterator<Resource> peerRscIter = rscDfn.iterateResource(wrkCtx);
             while (peerRscIter.hasNext())
@@ -596,7 +596,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 Resource peerRsc = peerRscIter.next();
                 if (peerRsc != rsc)
                 {
-                    peerResources.add(peerRsc);
+                    peerResources.put(peerRsc.getDefinition().getName(), peerRsc);
                 }
             }
         }
@@ -607,7 +607,7 @@ class DrbdDeviceHandler implements DeviceHandler
             )
         )
         {
-            String content = ConfFile.asConfigFile(wrkCtx, rsc, peerResources);
+            String content = ConfFile.asConfigFile(wrkCtx, rsc, peerResources.values());
             resFileOut.write(content.getBytes());
         }
     }
