@@ -26,6 +26,8 @@ public class DrbdAdm
     public static final String ALL_KEYWORD = "all";
     public static final String DRBDCTRL_RES_NAME = ".drbdctrl";
 
+    public static final int DRBDMETA_NO_VALID_MD_RC = 255;
+
     private Path configPath;
     private CoreServices coreSvcs;
 
@@ -190,6 +192,47 @@ public class DrbdAdm
     public void createMd(ResourceName resourceName, VolumeNumber volNum, int peers) throws ExtCmdFailedException
     {
         simpleAdmCommand(resourceName, volNum, "--max-peers", Integer.toString(peers), "--", "--force", "create-md");
+    }
+
+    /**
+     * Calls drbdmeta to determine whether DRBD meta data exists on a volume
+     */
+    public boolean hasMetaData(String blockDevPath, int minorNr, String mdTypeParam) throws ExtCmdFailedException
+    {
+        // It is probably safer to fail because missing meta data was not detected than
+        // to overwrite existing meta data because it was not detected, therefore default
+        // to true, indicating that meta data exists
+        boolean mdFlag = true;
+        List<String> command = new ArrayList<>();
+        command.add(DRBDMETA_UTIL);
+        command.add(Integer.toString(minorNr));
+        command.add("v09");
+        command.add(blockDevPath);
+        command.add(mdTypeParam);
+        command.add("get-gi");
+        command.add("--node-id");
+        command.add("0");
+
+        String[] params = command.toArray(new String[command.size()]);
+        ExtCmd utilsCmd = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+        File nullDevice = new File("/dev/null");
+        try
+        {
+            OutputData outputData = utilsCmd.pipeExec(ProcessBuilder.Redirect.from(nullDevice), params);
+            if (outputData.exitCode == DRBDMETA_NO_VALID_MD_RC)
+            {
+                mdFlag = false;
+            }
+        }
+        catch (ChildProcessTimeoutException timeoutExc)
+        {
+            throw new ExtCmdFailedException(params, timeoutExc);
+        }
+        catch (IOException ioExc)
+        {
+            throw new ExtCmdFailedException(params, ioExc);
+        }
+        return mdFlag;
     }
 
     /**
