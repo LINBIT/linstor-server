@@ -23,6 +23,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.linbit.drbd.md.MetaData;
+import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
@@ -30,13 +31,16 @@ import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(LvmDriver.class)
+@PrepareForTest({
+    LvmDriver.class,
+    ExtCmd.class
+})
 public class LvmDriverTest extends StorageTestUtils
 {
     protected static final String EXT_COMMAND_SEPARATOR = ";";
     protected static final long DEFAULT_EXTENT_SIZE = 4_096;
 
-    public LvmDriverTest()
+    public LvmDriverTest() throws Exception
     {
         super(new StorageTestUtils.DriverFactory()
         {
@@ -48,7 +52,7 @@ public class LvmDriverTest extends StorageTestUtils
         });
     }
 
-    public LvmDriverTest(DriverFactory driverFactory)
+    public LvmDriverTest(DriverFactory driverFactory) throws Exception
     {
         super(driverFactory);
     }

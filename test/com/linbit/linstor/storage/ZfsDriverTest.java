@@ -33,10 +33,13 @@ import com.linbit.fsevent.FileSystemWatch.FileEntryGroup;
 import com.linbit.fsevent.FileSystemWatch.FileEntryGroupBuilder;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(ZfsDriver.class)
+@PrepareForTest({
+    ZfsDriver.class,
+    ExtCmd.class
+})
 public class ZfsDriverTest extends StorageTestUtils
 {
-    public ZfsDriverTest()
+    public ZfsDriverTest() throws Exception
     {
         super(new StorageTestUtils.DriverFactory()
         {
@@ -48,7 +51,7 @@ public class ZfsDriverTest extends StorageTestUtils
         });
     }
 
-    public ZfsDriverTest(DriverFactory factory)
+    public ZfsDriverTest(DriverFactory factory) throws Exception
     {
         super(factory);
     }

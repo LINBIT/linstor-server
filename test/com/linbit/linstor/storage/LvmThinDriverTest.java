@@ -10,14 +10,23 @@ import java.util.HashSet;
 import java.util.Map;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.utils.TestExtCmd.Command;
 import com.linbit.extproc.utils.TestExtCmd.TestOutputData;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({
+    LvmThinDriver.class,
+    ExtCmd.class
+})
 public class LvmThinDriverTest extends LvmDriverTest
 {
-    public LvmThinDriverTest()
+    public LvmThinDriverTest() throws Exception
     {
         super(new StorageTestUtils.DriverFactory()
         {
@@ -29,7 +38,7 @@ public class LvmThinDriverTest extends LvmDriverTest
         });
     }
 
-    public LvmThinDriverTest(DriverFactory driverFactory)
+    public LvmThinDriverTest(DriverFactory driverFactory) throws Exception
     {
         super(driverFactory);
     }

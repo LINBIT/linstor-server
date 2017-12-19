@@ -18,7 +18,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-
+import org.powermock.api.mockito.PowerMockito;
+import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.utils.TestExtCmd;
 import com.linbit.extproc.utils.TestExtCmd.Command;
 import com.linbit.fsevent.EntryGroupObserver;
@@ -54,7 +55,7 @@ public class StorageTestUtils
 
     private DriverFactory driverFactory;
 
-    public StorageTestUtils(DriverFactory factory)
+    public StorageTestUtils(DriverFactory factory) throws Exception
     {
         this.driverFactory = factory;
         emptyFileObserver = new FileObserver()
@@ -64,12 +65,17 @@ public class StorageTestUtils
             {
             }
         };
+        ec = new TestExtCmd();
+        PowerMockito
+            .whenNew(ExtCmd.class)
+            .withAnyArguments()
+            .thenReturn(ec);
     }
 
     @Before
     public void setUp() throws Exception
     {
-        ec = new TestExtCmd();
+        ec.clearBehaviors();
         driver = driverFactory.createDriver();
         driver.initialize(new DummySatelliteCoreServices());
     }
