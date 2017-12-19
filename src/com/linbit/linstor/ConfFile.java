@@ -77,24 +77,28 @@ public class ConfFile implements Comparator<Resource>
 
         for (final Resource peerRsc : peerRscSet)
         {
-            NetInterface peerNetIf = peerRsc.getAssignedNode().iterateNetInterfaces(accCtx).next();
-            String peerAddr = peerNetIf.getAddress(accCtx).getAddress();
-            conf.append("\n");
-            conf.append("    on %s\n", peerRsc.getAssignedNode().getName().displayValue);
-            conf.append("    {\n");
-            Iterator<Volume> peerVlms = peerRsc.iterateVolumes();
-            while (peerVlms.hasNext())
+            Iterator<NetInterface> netIfIter = peerRsc.getAssignedNode().iterateNetInterfaces(accCtx);
+            if (netIfIter.hasNext())
             {
-                final Volume peerVlm = peerVlms.next();
-                appendVlm(peerVlm, peerRsc, accCtx, conf);
+                NetInterface peerNetIf = netIfIter.next();
+                String peerAddr = peerNetIf.getAddress(accCtx).getAddress();
+                conf.append("\n");
+                conf.append("    on %s\n", peerRsc.getAssignedNode().getName().displayValue);
+                conf.append("    {\n");
+                Iterator<Volume> peerVlms = peerRsc.iterateVolumes();
+                while (peerVlms.hasNext())
+                {
+                    final Volume peerVlm = peerVlms.next();
+                    appendVlm(peerVlm, peerRsc, accCtx, conf);
+                }
+
+                conf.append("        address     %s:%d;\n", peerAddr, port);
+                conf.append("        node-id     %s;\n", peerRsc.getNodeId().value);
+
+                // TODO: implement "multi-connection / path magic" (nodeMeshes + singleConnections vars)
+                // sb.append(peerResource.co)
+                conf.append("    }\n");
             }
-
-            conf.append("        address     %s:%d;\n", peerAddr, port);
-            conf.append("        node-id     %s;\n", peerRsc.getNodeId().value);
-
-            // TODO: implement "multi-connection / path magic" (nodeMeshes + singleConnections vars)
-            // sb.append(peerResource.co)
-            conf.append("    }\n");
         }
 
         {
@@ -103,35 +107,41 @@ public class ConfFile implements Comparator<Resource>
             for (final Resource peerRsc : peerRscSet)
             {
                 Node fromNode = localRsc.getAssignedNode();
-                NetInterface fromNetIf = fromNode.iterateNetInterfaces(accCtx).next();
-                String fromHost = fromNode.getName().displayValue;
-                String fromAddr = fromNetIf.getAddress(accCtx).getAddress();
-
                 Node toNode = peerRsc.getAssignedNode();
-                NetInterface toNetIf = toNode.iterateNetInterfaces(accCtx).next();
-                String toHost = toNode.getName().displayValue;
-                String toAddr = toNetIf.getAddress(accCtx).getAddress();
 
-                int hostNameLen = Math.max(fromHost.length(), toHost.length());
-                int addrLen = Math.max(fromAddr.length(), toAddr.length());
-                int portLen = (int) Math.log10(port);
+                Iterator<NetInterface> fromIfIter = fromNode.iterateNetInterfaces(accCtx);
+                Iterator<NetInterface> toIfIter = toNode.iterateNetInterfaces(accCtx);
 
-                conf.append("    connection\n");
-                conf.append("    {\n");
-                String format = "        host %" + hostNameLen + "s address %" + addrLen + "s port %" + portLen + "d;\n";
-                conf.append(
-                    format,
-                    fromHost,
-                    fromAddr,
-                    port
-                );
-                conf.append(
-                    format,
-                    toHost,
-                    toAddr,
-                    port
-                );
-                conf.append("    }\n");
+                if (fromIfIter.hasNext() && toIfIter.hasNext())
+                {
+                    NetInterface fromNetIf = fromNode.iterateNetInterfaces(accCtx).next();
+                    String fromHost = fromNode.getName().displayValue;
+                    String fromAddr = fromNetIf.getAddress(accCtx).getAddress();
+
+                    NetInterface toNetIf = toNode.iterateNetInterfaces(accCtx).next();
+                    String toHost = toNode.getName().displayValue;
+                    String toAddr = toNetIf.getAddress(accCtx).getAddress();
+
+                    int hostNameLen = Math.max(fromHost.length(), toHost.length());
+                    int addrLen = Math.max(fromAddr.length(), toAddr.length());
+                    int portLen = (int) Math.log10(port);
+                    conf.append("    connection\n");
+                    conf.append("    {\n");
+                    String format = "        host %" + hostNameLen + "s address %" + addrLen + "s port %" + portLen + "d;\n";
+                    conf.append(
+                        format,
+                        fromHost,
+                        fromAddr,
+                        port
+                    );
+                    conf.append(
+                        format,
+                        toHost,
+                        toAddr,
+                        port
+                    );
+                    conf.append("    }\n");
+                }
             }
         }
 
