@@ -10,6 +10,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
@@ -25,6 +26,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 {
@@ -282,7 +284,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            // TODO update satellites
+            updateSatellites(storPoolDfn);
             reportSuccess("Storage pool definition '" + storPoolNameStr + "' updated.");
         }
         catch (ApiCallHandlerFailedException ignore)
@@ -624,6 +626,23 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
                 "accessing properties of storage pool definition '" + storPoolDfn.getName().displayValue + "'.",
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
             );
+        }
+    }
+
+    private void updateSatellites(StorPoolDefinitionData storPoolDfn)
+    {
+        try
+        {
+            Iterator<StorPool> iterateStorPools = storPoolDfn.iterateStorPools(apiCtx);
+            while (iterateStorPools.hasNext())
+            {
+                StorPool storPool = iterateStorPools.next();
+                updateSatellite(storPool);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
         }
     }
 }

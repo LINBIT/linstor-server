@@ -70,6 +70,12 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         this.nodeListSerializer = nodeListSerializer;
     }
 
+    @Override
+    protected CtrlNodeSerializer getNodeSerializer()
+    {
+        return nodeSerializer;
+    }
+
     ApiCallRc createNode(
         AccessContext accCtx,
         Peer client,
@@ -227,7 +233,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            // TODO update satellite
+            updateSatellites(node);
             reportSuccess("Node '" + nodeNameStr + "' updated.");
         }
         catch (ApiCallHandlerFailedException ignore)
@@ -350,6 +356,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
                     reportSuccess(successMessage);
 
+                    updateSatellites(nodeData);
                     // TODO: tell satellites to remove all the corresponding resources and storPools
                     // TODO: if satellites finished, cleanup the storPools and then remove the node from DB
                 }

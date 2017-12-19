@@ -18,6 +18,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.interfaces.serializer.CtrlNodeSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -27,8 +28,12 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
+    private final CtrlNodeSerializer nodeSerializer;
 
-    CtrlNodeConnectionApiCallHandler(Controller controllerRef)
+    CtrlNodeConnectionApiCallHandler(
+        Controller controllerRef,
+        CtrlNodeSerializer nodeSerializerRef
+    )
     {
         super(
             controllerRef,
@@ -39,6 +44,13 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             currentNodeName1,
             currentNodeName2
         );
+        nodeSerializer = nodeSerializerRef;
+    }
+
+    @Override
+    protected CtrlNodeSerializer getNodeSerializer()
+    {
+        return nodeSerializer;
     }
 
     public ApiCallRc createNodeConnection(
@@ -138,6 +150,9 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 
                 apiCallRc.addEntry(entry);
                 controller.getErrorReporter().logInfo(successMessage);
+
+                updateSatellites(node1);
+                updateSatellites(node2);
             }
         }
         catch (SQLException sqlExc)
@@ -403,7 +418,7 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            // TODO update satellites
+            updateSatellites(nodeConn);
             reportSuccess("Node connection '" + nodeName1 + "' <-> '" + nodeName2 + "' updated.");
         }
         catch (ApiCallHandlerFailedException ignore)
@@ -534,6 +549,8 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 
                     apiCallRc.addEntry(entry);
                     controller.getErrorReporter().logInfo(successMessage);
+
+                    updateSatellites(nodeConn);
                 }
             }
         }
@@ -854,4 +871,18 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             );
         }
     }
+
+    private void updateSatellites(NodeConnectionData nodeConn)
+    {
+        try
+        {
+            updateSatellites(nodeConn.getSourceNode(apiCtx));
+            updateSatellites(nodeConn.getTargetNode(apiCtx));
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+    }
+
 }

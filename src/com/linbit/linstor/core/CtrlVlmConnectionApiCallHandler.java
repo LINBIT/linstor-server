@@ -27,6 +27,7 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -39,14 +40,22 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 	private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
 	private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
 	private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
+    private final CtrlSerializer<Resource> rscSerializer;
 
-    CtrlVlmConnectionApiCallHandler(Controller controllerRef)
+    CtrlVlmConnectionApiCallHandler(Controller controllerRef, CtrlSerializer<Resource> rscSerializerRef)
     {
         super(
             controllerRef,
             null, // apiCtx
             ApiConsts.MASK_VLM_CONN
         );
+        rscSerializer = rscSerializerRef;
+    }
+
+    @Override
+    protected CtrlSerializer<Resource> getResourceSerializer()
+    {
+        return rscSerializer;
     }
 
     public ApiCallRc createVolumeConnection(
@@ -341,6 +350,8 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 
                         apiCallRc.addEntry(successEntry);
                         controller.getErrorReporter().logInfo(successMessage);
+
+                        // TODO: update satellites
                     }
                 }
             }
@@ -780,7 +791,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            // TODO update satellites
+            updateSatellites(vlmConn);
             reportSuccess(getObjectDescription() + " updated.");
         }
         catch (ApiCallHandlerFailedException ignore)
@@ -1112,6 +1123,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 
                             apiCallRc.addEntry(successEntry);
                             controller.getErrorReporter().logInfo(successMessage);
+                            // TODO: update satellites
                         }
                     }
                 }
@@ -1636,4 +1648,15 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         }
     }
 
+    private void updateSatellites(VolumeConnectionData vlmConn)
+    {
+        try
+        {
+            updateSatellites(vlmConn.getSourceVolume(apiCtx).getResourceDefinition());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+    }
 }

@@ -57,7 +57,7 @@ import java.util.ArrayList;
 
 class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
-    private final CtrlSerializer<Resource> serializer;
+    private final CtrlSerializer<Resource> rscSerializer;
     private final CtrlListSerializer<Resource.RscApi> rscListSerializer;
 
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
@@ -65,7 +65,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
     CtrlRscApiCallHandler(
         Controller controllerRef,
-        CtrlSerializer<Resource> rscSerializer,
+        CtrlSerializer<Resource> rscSerializerRef,
         CtrlListSerializer<Resource.RscApi> rscListSerializerRef,
         AccessContext apiCtxRef
     )
@@ -79,8 +79,14 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             currentNodeName,
             currentRscName
         );
-        serializer = rscSerializer;
+        rscSerializer = rscSerializerRef;
         rscListSerializer = rscListSerializerRef;
+    }
+
+    @Override
+    protected CtrlSerializer<Resource> getResourceSerializer()
+    {
+        return rscSerializer;
     }
 
     public ApiCallRc createResource(
@@ -898,6 +904,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
     private void notifySatellites(AccessContext accCtx, ResourceData rsc, ApiCallRcImpl apiCallRc)
     {
+        // TODO: replace this method with super.updateSatellites(Resource) when reworking this API
         try
         {
             // notify all peers that (at least one of) their resource has changed
@@ -910,7 +917,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 if (peer.isConnected())
                 {
                     Message message = peer.createMessage();
-                    byte[] data = serializer.getChangedMessage(currentRsc);
+                    byte[] data = rscSerializer.getChangedMessage(currentRsc);
                     message.setData(data);
                     peer.sendMessage(message);
                 }
@@ -1097,66 +1104,66 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 apiCallRc.addEntry(nodeNotFoundEntry);
             }
             else
-                if (rscDfn == null)
-                {
-                    ApiCallRcEntry rscDfnNotFoundEntry = new ApiCallRcEntry();
-                    rscDfnNotFoundEntry.setReturnCode(RC_RSC_DEL_FAIL_NOT_FOUND_RSC_DFN);
-                    rscDfnNotFoundEntry.setCauseFormat(
-                        String.format(
-                            "The specified resource definition '%s' could not be found in the database.",
-                            rscNameStr
-                            )
-                        );
-                        rscDfnNotFoundEntry.putVariable(KEY_RSC_NAME, rscNameStr);
-                    rscDfnNotFoundEntry.putObjRef(KEY_NODE, nodeNameStr);
-                    rscDfnNotFoundEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
+            if (rscDfn == null)
+            {
+                ApiCallRcEntry rscDfnNotFoundEntry = new ApiCallRcEntry();
+                rscDfnNotFoundEntry.setReturnCode(RC_RSC_DEL_FAIL_NOT_FOUND_RSC_DFN);
+                rscDfnNotFoundEntry.setCauseFormat(
+                    String.format(
+                        "The specified resource definition '%s' could not be found in the database.",
+                        rscNameStr
+                        )
+                    );
+                    rscDfnNotFoundEntry.putVariable(KEY_RSC_NAME, rscNameStr);
+                rscDfnNotFoundEntry.putObjRef(KEY_NODE, nodeNameStr);
+                rscDfnNotFoundEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
 
-                    apiCallRc.addEntry(rscDfnNotFoundEntry);
-                }
-                else
-                    if (rscData == null)
-                    {
-                        ApiCallRcEntry rscNotFoundEntry = new ApiCallRcEntry();
-                        rscNotFoundEntry.setReturnCode(RC_RSC_DEL_WARN_NOT_FOUND);
-                        rscNotFoundEntry.setCauseFormat(
-                            String.format(
-                                "The specified resource '%s' on node '%s' could not be found in the database.",
-                                rscNameStr,
-                                nodeNameStr
-                                )
-                            );
-                            rscNotFoundEntry.putVariable(KEY_RSC_NAME, rscNameStr);
-                        rscNotFoundEntry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                        rscNotFoundEntry.putObjRef(KEY_NODE, nodeNameStr);
-                        rscNotFoundEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                apiCallRc.addEntry(rscDfnNotFoundEntry);
+            }
+            else
+            if (rscData == null)
+            {
+                ApiCallRcEntry rscNotFoundEntry = new ApiCallRcEntry();
+                rscNotFoundEntry.setReturnCode(RC_RSC_DEL_WARN_NOT_FOUND);
+                rscNotFoundEntry.setCauseFormat(
+                    String.format(
+                        "The specified resource '%s' on node '%s' could not be found in the database.",
+                        rscNameStr,
+                        nodeNameStr
+                        )
+                    );
+                    rscNotFoundEntry.putVariable(KEY_RSC_NAME, rscNameStr);
+                rscNotFoundEntry.putVariable(KEY_NODE_NAME, nodeNameStr);
+                rscNotFoundEntry.putObjRef(KEY_NODE, nodeNameStr);
+                rscNotFoundEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
 
-                        apiCallRc.addEntry(rscNotFoundEntry);
-                    }
-                    else
-                    {
-                        rscData.setConnection(transMgr);
-                        rscData.markDeleted(accCtx);
-                        transMgr.commit();
+                apiCallRc.addEntry(rscNotFoundEntry);
+            }
+            else
+            {
+                rscData.setConnection(transMgr);
+                rscData.markDeleted(accCtx);
+                transMgr.commit();
 
-                        ApiCallRcEntry entry = new ApiCallRcEntry();
-                        entry.setReturnCodeBit(RC_RSC_DELETED);
-                        String successMessage = String.format(
-                            "Resource '%s' marked to be deleted from node '%s'.",
-                            rscNameStr,
-                            nodeNameStr
-                        );
-                        entry.setMessageFormat(successMessage);
-                        entry.putObjRef(KEY_NODE, nodeNameStr);
-                        entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                        entry.putObjRef(KEY_NODE_NAME, nodeNameStr);
-                        entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                        apiCallRc.addEntry(entry);
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(RC_RSC_DELETED);
+                String successMessage = String.format(
+                    "Resource '%s' marked to be deleted from node '%s'.",
+                    rscNameStr,
+                    nodeNameStr
+                );
+                entry.setMessageFormat(successMessage);
+                entry.putObjRef(KEY_NODE, nodeNameStr);
+                entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                entry.putObjRef(KEY_NODE_NAME, nodeNameStr);
+                entry.putVariable(KEY_RSC_NAME, rscNameStr);
+                apiCallRc.addEntry(entry);
 
-                        // TODO: tell satellites to remove all the corresponding resources
-                        // TODO: if satellites are finished (or no satellite had such a resource deployed)
-                        // remove the rscDfn from the DB
-                        controller.getErrorReporter().logInfo(successMessage);
-                    }
+                // TODO: tell satellites to remove all the corresponding resources
+                // TODO: if satellites are finished (or no satellite had such a resource deployed)
+                // remove the rscDfn from the DB
+                controller.getErrorReporter().logInfo(successMessage);
+            }
         }
         catch (SQLException sqlExc)
         {
@@ -1444,7 +1451,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 // TODO: check if the localResource has the same uuid as rscUuid
                 if (rsc != null)
                 {
-                    byte[] data = serializer.getDataMessage(msgId, rsc);
+                    byte[] data = rscSerializer.getDataMessage(msgId, rsc);
 
                     Message response = satellitePeer.createMessage();
                     response.setData(data);

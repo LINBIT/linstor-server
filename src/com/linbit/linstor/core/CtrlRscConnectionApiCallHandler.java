@@ -22,6 +22,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -32,8 +33,9 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
+    private final CtrlSerializer<Resource> rscSerializer;
 
-    CtrlRscConnectionApiCallHandler(Controller controllerRef)
+    CtrlRscConnectionApiCallHandler(Controller controllerRef, CtrlSerializer<Resource> rscSerializerRef)
     {
         super (
             controllerRef,
@@ -45,6 +47,13 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
             currentNodeName2,
             currentRscName
         );
+        rscSerializer = rscSerializerRef;
+    }
+
+    @Override
+    protected CtrlSerializer<Resource> getResourceSerializer()
+    {
+        return rscSerializer;
     }
 
     public ApiCallRc createResourceConnection(
@@ -235,6 +244,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
                     apiCallRc.addEntry(successEntry);
                     controller.getErrorReporter().logInfo(successMessage);
+                    // TODO update satellites
                 }
             }
         }
@@ -573,7 +583,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            // TODO update satellites
+            updateSatellites(rscConn);
             reportSuccess(getObjectDescription() + " updated.");
         }
         catch (ApiCallHandlerFailedException ignore)
@@ -800,6 +810,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
                         apiCallRc.addEntry(successEntry);
                         controller.getErrorReporter().logInfo(successMessage);
+                        // TODO: update satellites
                     }
                 }
             }
@@ -1211,6 +1222,19 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
                 "accessing properties of " + getObjectDescriptionInline(),
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
+        }
+    }
+
+    private void updateSatellites(ResourceConnectionData rscConn)
+    {
+        try
+        {
+            updateSatellites(rscConn.getSourceResource(apiCtx));
+            updateSatellites(rscConn.getTargetResource(apiCtx));
+        }
+        catch (AccessDeniedException implErr)
+        {
+            throw asImplError(implErr);
         }
     }
 }

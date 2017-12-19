@@ -39,7 +39,7 @@ import java.util.ArrayList;
 
 class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 {
-    private final CtrlSerializer<StorPool> serializer;
+    private final CtrlSerializer<StorPool> storPoolSerializer;
     private final CtrlListSerializer<StorPool.StorPoolApi> listSerializer;
 
     private final ThreadLocal<String> currentNodeNameStr = new ThreadLocal<>();
@@ -47,7 +47,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
     CtrlStorPoolApiCallHandler(
         Controller controllerRef,
-        CtrlSerializer<StorPool> serializerRef,
+        CtrlSerializer<StorPool> storPoolSerializerRef,
         CtrlListSerializer<StorPool.StorPoolApi> listSerializerRef,
         AccessContext apiCtxRef
     )
@@ -61,10 +61,16 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             currentNodeNameStr,
             currentStorPoolNameStr
         );
-        serializer = serializerRef;
+        storPoolSerializer = storPoolSerializerRef;
         listSerializer = listSerializerRef;
 
         super.setNullOnAutoClose(currentNodeNameStr, currentStorPoolNameStr);
+    }
+
+    @Override
+    protected CtrlSerializer<StorPool> getStorPoolSerializer()
+    {
+        return storPoolSerializer;
     }
 
     public ApiCallRc createStorPool(
@@ -399,7 +405,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             if (satellitePeer.isConnected())
             {
                 Message msg = satellitePeer.createMessage();
-                byte[] data = serializer.getChangedMessage(storPool);
+                byte[] data = storPoolSerializer.getChangedMessage(storPool);
                 msg.setData(data);
                 satellitePeer.sendMessage(msg);
             }
@@ -485,7 +491,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            // TODO update satellites
+            updateSatellite(storPool);
             reportSuccess("Storage pool '" + storPoolNameStr + "' on node '" + nodeNameStr + "' updated.");
         }
         catch (ApiCallHandlerFailedException ignore)
@@ -858,7 +864,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             // TODO: check if the storPool has the same uuid as storPoolUuid
             if (storPool != null)
             {
-                byte[] data = serializer.getDataMessage(msgId, storPool);
+                byte[] data = storPoolSerializer.getDataMessage(msgId, storPool);
 
                 Message response = satellitePeer.createMessage();
                 response.setData(data);

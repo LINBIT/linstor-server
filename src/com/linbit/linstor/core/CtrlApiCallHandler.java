@@ -107,9 +107,9 @@ public class CtrlApiCallHandler
         rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, resourceListSerializer, apiCtx);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef, storPoolDfnListSerializer);
         storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef, storPoolSerializer, storPoolListSerializer, apiCtx);
-        nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef);
-        rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef);
-        vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef);
+        nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef, nodeSerializer);
+        rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef, rscSerializer);
+        vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef, rscSerializer);
     }
 
     public void completeSatelliteAuthentication(Peer peer)

@@ -31,8 +31,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -49,7 +47,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
     CtrlVlmDfnApiCallHandler(
         Controller controller,
-        CtrlSerializer<Resource> rscSerializer,
+        CtrlSerializer<Resource> rscSerializerRef,
         AccessContext apiCtx
     )
     {
@@ -59,7 +57,13 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             currentVlmDfnApi,
             currentVlmNr
         );
-        this.rscSerializer = rscSerializer;
+        rscSerializer = rscSerializerRef;
+    }
+
+    @Override
+    protected CtrlSerializer<Resource> getResourceSerializer()
+    {
+        return rscSerializer;
     }
 
     ApiCallRc createVolumeDefinitions(
@@ -179,7 +183,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             {
                 apiCallRc.addEntry(createVlmDfnCrtSuccessEntry(vlmDfn, rscNameStr));
             }
-            notifySatellites(rscDfn);
+            updateSatellites(rscDfn);
         }
         catch (ApiCallHandlerFailedException e)
         {
@@ -296,7 +300,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
             reportSuccess("Volume definition '" + vlmNr + "' on resource definition '" + rscName + "' modified.");
 
-            notifySatellites(vlmDfn.getResourceDefinition());
+            updateSatellites(vlmDfn.getResourceDefinition());
         }
         catch (ApiCallHandlerFailedException ignore)
         {
@@ -730,59 +734,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private void notifySatellites(ResourceDefinition rscDfn)
-    {
-        try
-        {
-            Iterator<Resource> iterateResource = rscDfn.iterateResource(apiCtx);
-            while (iterateResource.hasNext())
-            {
-                Resource rsc = iterateResource.next();
-                Peer peer = rsc.getAssignedNode().getPeer(apiCtx);
-
-                if (peer.isConnected())
-                {
-                    Message msg = peer.createMessage();
-                    msg.setData(rscSerializer.getChangedMessage(rsc));
-                    peer.sendMessage(msg);
-                }
-                else
-                {
-                    String nodeName = rsc.getAssignedNode().getName().displayValue;
-                    addAnswer(
-                        "No active connection to satellite '" + nodeName + "'",
-                        null,
-                        "The satellite was added and the controller tries to (re-) establish connection to it." +
-                        "The controller stored the new volume definition and as soon the satellite is connected, it will " +
-                        "receive this update.",
-                        null,
-                        ApiConsts.WARN_NOT_CONNECTED
-                    );
-                }
-            }
-        }
-        catch (IllegalMessageStateException illegalMsgStateExc)
-        {
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    "VlmDfnApi could not send a message properly to a satellite",
-                    illegalMsgStateExc
-                )
-            );
-            throw new ApiCallHandlerFailedException();
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    "ApiCtx does not have enough privileges",
-                    accDeniedExc
-                )
-            );
-            throw new ApiCallHandlerFailedException();
-        }
-    }
-
     /*
      * exception handlers
      */
@@ -865,21 +816,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 currentRscNameStr.get()
             ),
             ApiConsts.RC_VLM_DFN_CRT_FAIL_EXISTS_VLM_DFN
-        );
-    }
-
-    private void handleInvalidRscNameExc(
-        InvalidNameException invalidNameExc,
-        long retCode
-    )
-    {
-        asExc(
-            invalidNameExc,
-            String.format(
-                "The given resource name '%s' is invalid.",
-                invalidNameExc.invalidName
-            ),
-            retCode
         );
     }
 

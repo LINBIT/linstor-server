@@ -1,33 +1,5 @@
 package com.linbit.linstor.core;
 
-import static com.linbit.linstor.api.ApiConsts.KEY_AL_SIZE;
-import static com.linbit.linstor.api.ApiConsts.KEY_AL_STRIPES;
-import static com.linbit.linstor.api.ApiConsts.KEY_ID;
-import static com.linbit.linstor.api.ApiConsts.KEY_MINOR_NR;
-import static com.linbit.linstor.api.ApiConsts.KEY_PEER_COUNT;
-import static com.linbit.linstor.api.ApiConsts.KEY_ROLE;
-import static com.linbit.linstor.api.ApiConsts.KEY_RSC_DFN;
-import static com.linbit.linstor.api.ApiConsts.KEY_RSC_NAME;
-import static com.linbit.linstor.api.ApiConsts.KEY_VLM_NR;
-import static com.linbit.linstor.api.ApiConsts.KEY_VLM_SIZE;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_ACC_DENIED_RSC_DFN;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_ACC_DENIED_VLM_DFN;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_EXISTS_RSC_DFN;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_EXISTS_VLM_DFN;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_MINOR_NR;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_RSC_NAME;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_RSC_PORT;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_VLM_NR;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_VLM_SIZE;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_SQL;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_SQL_ROLLBACK;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_CRT_FAIL_UNKNOWN_ERROR;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_ACC_DENIED_RSC_DFN;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_IMPL_ERROR;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_INVLD_RSC_NAME;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_SQL;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_SQL_ROLLBACK;
-import static com.linbit.linstor.api.ApiConsts.RC_RSC_DFN_DEL_FAIL_UNKNOWN_ERROR;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -64,8 +36,6 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -81,6 +51,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private final CtrlSerializer<Resource> rscSerializer;
     private final CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializer;
 
+
     CtrlRscDfnApiCallHandler(
         Controller controllerRef,
         CtrlSerializer<Resource> rscSerializerRef,
@@ -92,6 +63,12 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         super.setNullOnAutoClose(currentRscNameStr);
         rscSerializer = rscSerializerRef;
         rscDfnListSerializer = rscDfnListSerializerRef;
+    }
+
+    @Override
+    protected CtrlSerializer<Resource> getResourceSerializer()
+    {
+        return rscSerializer;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -123,9 +100,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         MinorNumber minorNr = null;
         VolumeDefinition.VlmDfnApi currentVlmDfnApi = null;
 
-        short peerCount = getAsShort(props, KEY_PEER_COUNT, controller.getDefaultPeerCount());
-        int alStripes = getAsInt(props, KEY_AL_STRIPES, controller.getDefaultAlStripes());
-        long alStripeSize = getAsLong(props, KEY_AL_SIZE, controller.getDefaultAlSize());
+        short peerCount = getAsShort(props, ApiConsts.KEY_PEER_COUNT, controller.getDefaultPeerCount());
+        int alStripes = getAsInt(props, ApiConsts.KEY_AL_STRIPES, controller.getDefaultAlStripes());
+        long alStripeSize = getAsLong(props, ApiConsts.KEY_AL_SIZE, controller.getDefaultAlSize());
 
         try
         {
@@ -211,11 +188,11 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     rscNameStr
                 );
                 volSuccessEntry.setMessageFormat(successMessage);
-                volSuccessEntry.putVariable(KEY_RSC_DFN, rscNameStr);
-                volSuccessEntry.putVariable(KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
-                volSuccessEntry.putVariable(KEY_MINOR_NR, Integer.toString(vlmDfn.getMinorNr(apiCtx).value));
-                volSuccessEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                volSuccessEntry.putObjRef(KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+                volSuccessEntry.putVariable(ApiConsts.KEY_RSC_DFN, rscNameStr);
+                volSuccessEntry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+                volSuccessEntry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(vlmDfn.getMinorNr(apiCtx).value));
+                volSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+                volSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
                 apiCallRc.addEntry(volSuccessEntry);
 
@@ -230,11 +207,11 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
             successEntry.setReturnCode(ApiConsts.RC_RSC_DFN_CREATED);
             successEntry.setMessageFormat(successMsg);
-            successEntry.putVariable(KEY_RSC_NAME, rscNameStr);
-            successEntry.putVariable(KEY_PEER_COUNT, Short.toString(peerCount));
-            successEntry.putVariable(KEY_AL_STRIPES, Integer.toString(alStripes));
-            successEntry.putVariable(KEY_AL_SIZE, Long.toString(alStripeSize));
-            successEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
+            successEntry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
+            successEntry.putVariable(ApiConsts.KEY_PEER_COUNT, Short.toString(peerCount));
+            successEntry.putVariable(ApiConsts.KEY_AL_STRIPES, Integer.toString(alStripes));
+            successEntry.putVariable(ApiConsts.KEY_AL_SIZE, Long.toString(alStripeSize));
+            successEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
             apiCallRc.addEntry(successEntry);
             controller.getErrorReporter().logInfo(successMsg);
@@ -253,10 +230,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_SQL);
+            entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_SQL);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(sqlExc.getMessage());
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -268,7 +245,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             { // handle accDeniedExc1
 
                 action = "create a new resource definition.";
-                entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_ACC_DENIED_RSC_DFN);
+                entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_ACC_DENIED_RSC_DFN);
             }
             else
             { // handle accDeniedExc2
@@ -276,10 +253,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     "create a new volume definition on resource definition '%s'.",
                     rscNameStr
                 );
-                entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_ACC_DENIED_VLM_DFN);
-                entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
-                entry.putVariable(KEY_MINOR_NR, Integer.toString(currentVlmDfnApi.getMinorNr()));
-                entry.putObjRef(KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
+                entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_ACC_DENIED_VLM_DFN);
+                entry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
+                entry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(currentVlmDfnApi.getMinorNr()));
+                entry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
             }
             String errorMessage = String.format(
                 "The access context (user: '%s', role: '%s') has no permission to %s",
@@ -295,9 +272,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(accExc.getMessage());
-            entry.putVariable(KEY_ID, accCtx.subjectId.name.displayValue);
-            entry.putVariable(KEY_ROLE, accCtx.subjectRole.name.displayValue);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+            entry.putVariable(ApiConsts.KEY_ID, accCtx.subjectId.name.displayValue);
+            entry.putVariable(ApiConsts.KEY_ROLE, accCtx.subjectRole.name.displayValue);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -316,11 +293,11 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_INVLD_RSC_NAME);
+            entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_RSC_NAME);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(nameExc.getMessage());
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -334,7 +311,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     "The specified tcp port %d is invalid.",
                     portInt
                 );
-                entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_INVLD_RSC_PORT);
+                entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_RSC_PORT);
             }
             else
             if (volNr == null)
@@ -343,7 +320,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     "The specified volume number %d is invalid.",
                     currentVlmDfnApi.getVolumeNr()
                 );
-                entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_INVLD_VLM_NR);
+                entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_VLM_NR);
             }
             else
             { // handle valOORangeExc2
@@ -351,8 +328,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     "The specified minor number %d is invalid.",
                     currentVlmDfnApi.getMinorNr()
                 );
-                entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_INVLD_MINOR_NR);
-                entry.putVariable(KEY_MINOR_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
+                entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_MINOR_NR);
+                entry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
             }
             controller.getErrorReporter().reportError(
                 valOORangeExc,
@@ -361,10 +338,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 errorMessage
             );
             entry.setMessageFormat(errorMessage);
-            entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
-            entry.putVariable(KEY_RSC_DFN, rscNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-            entry.putObjRef(KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
+            entry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
+            entry.putVariable(ApiConsts.KEY_RSC_DFN, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
 
             apiCallRc.addEntry(entry);
         }
@@ -382,14 +359,14 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_INVLD_VLM_SIZE);
+            entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_INVLD_VLM_SIZE);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(metaDataExc.getMessage());
-            entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
-            entry.putVariable(KEY_RSC_DFN, rscNameStr);
-            entry.putVariable(KEY_VLM_SIZE, Long.toString(currentVlmDfnApi.getSize()));
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-            entry.putObjRef(KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
+            entry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
+            entry.putVariable(ApiConsts.KEY_RSC_DFN, rscNameStr);
+            entry.putVariable(ApiConsts.KEY_VLM_SIZE, Long.toString(currentVlmDfnApi.getSize()));
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
 
             apiCallRc.addEntry(entry);
         }
@@ -404,7 +381,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     "A resource definition with the name '%s' already exists.",
                     rscNameStr
                 );
-                entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_EXISTS_RSC_DFN);
+                entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_EXISTS_RSC_DFN);
             }
             else
             {
@@ -414,10 +391,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     currentVlmDfnApi.getVolumeNr(),
                     rscNameStr
                 );
-                entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_EXISTS_VLM_DFN);
-                entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
-                entry.putVariable(KEY_MINOR_NR, Integer.toString(currentVlmDfnApi.getMinorNr()));
-                entry.putObjRef(KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
+                entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_EXISTS_VLM_DFN);
+                entry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
+                entry.putVariable(ApiConsts.KEY_MINOR_NR, Integer.toString(currentVlmDfnApi.getMinorNr()));
+                entry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(currentVlmDfnApi.getVolumeNr()));
             }
             controller.getErrorReporter().reportError(
                 alreadyExistsExc,
@@ -427,8 +404,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
             entry.setMessageFormat(errorMsg);
             entry.setCauseFormat(alreadyExistsExc.getMessage());
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
             apiCallRc.addEntry(entry);
         }
         catch (Exception | ImplementationError exc)
@@ -445,11 +422,11 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_UNKNOWN_ERROR);
+            entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_UNKNOWN_ERROR);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(exc.getMessage());
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -478,10 +455,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(RC_RSC_DFN_CRT_FAIL_SQL_ROLLBACK);
+                    entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_CRT_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
-                    entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                    entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
                     apiCallRc.addEntry(entry);
                 }
@@ -623,7 +600,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            notifySatellites(rscDfn);
+            updateSatellites(rscDfn);
             reportSuccess("Resource definition '" + rscNameStr + "' modified.");
         }
         catch (ApiCallHandlerFailedException ignore)
@@ -719,8 +696,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                         rscNameStr
                     )
                 );
-                entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+                entry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
                 apiCallRc.addEntry(entry);
 
                 // TODO: tell satellites to remove all the corresponding resources
@@ -741,8 +718,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                         rscNameStr
                     )
                 );
-                entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
+                entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+                entry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
                 apiCallRc.addEntry(entry);
             }
         }
@@ -781,11 +758,11 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DFN_DEL_FAIL_ACC_DENIED_RSC_DFN);
+            entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_DEL_FAIL_ACC_DENIED_RSC_DFN);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(accDeniedExc.getMessage());
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -803,11 +780,11 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DFN_DEL_FAIL_SQL);
+            entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_DEL_FAIL_SQL);
             entry.setMessageFormat(errorMessge);
             entry.setCauseFormat(sqlExc.getMessage());
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-            entry.putVariable(KEY_RSC_DFN, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -825,12 +802,12 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DFN_DEL_FAIL_INVLD_RSC_NAME);
+            entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_DEL_FAIL_INVLD_RSC_NAME);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(invalidNameExc.getMessage());
 
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -848,7 +825,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             );
 
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DFN_DEL_FAIL_IMPL_ERROR);
+            entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_DEL_FAIL_IMPL_ERROR);
             entry.setMessageFormat(
                 String.format(
                     "Failed to delete the resource definition '%s' due to an implementation error.",
@@ -856,8 +833,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 )
             );
             entry.setCauseFormat(dataAlreadyExistsExc.getMessage());
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -875,11 +852,11 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 errorMessage
             );
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DFN_DEL_FAIL_UNKNOWN_ERROR);
+            entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_DEL_FAIL_UNKNOWN_ERROR);
             entry.setMessageFormat(errorMessage);
             entry.setCauseFormat(exc.getMessage());
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+            entry.putVariable(ApiConsts.KEY_RSC_NAME, rscNameStr);
+            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
             apiCallRc.addEntry(entry);
         }
@@ -907,10 +884,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     );
 
                     ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(RC_RSC_DFN_DEL_FAIL_SQL_ROLLBACK);
+                    entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_DEL_FAIL_SQL_ROLLBACK);
                     entry.setMessageFormat(errorMessage);
                     entry.setCauseFormat(sqlExc.getMessage());
-                    entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                    entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
                     apiCallRc.addEntry(entry);
                 }
@@ -958,59 +935,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
 
         return null;
-    }
-
-    private void notifySatellites(ResourceDefinitionData rscDfn)
-    {
-        try
-        {
-            // notify all peers that (at least one of) their resource has changed
-            Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
-            while (rscIterator.hasNext())
-            {
-                Resource currentRsc = rscIterator.next();
-                Peer peer = currentRsc.getAssignedNode().getPeer(apiCtx);
-
-                if (peer.isConnected())
-                {
-                    Message message = peer.createMessage();
-                    byte[] data = rscSerializer.getChangedMessage(currentRsc);
-                    message.setData(data);
-                    peer.sendMessage(message);
-                }
-                else
-                {
-                    String nodeName = currentRsc.getAssignedNode().getName().displayValue;
-                    addAnswer(
-                        "No active connection to satellite '" + nodeName + "'",
-                        null,
-                        "The satellite was added and the controller tries to (re-) establish connection to it." +
-                        "The controller stored the new Resource and as soon the satellite is connected, it will " +
-                        "receive this update.",
-                        null,
-                        ApiConsts.WARN_NOT_CONNECTED
-                    );
-                }
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Failed to contact all satellites about a resource change",
-                    accDeniedExc
-                )
-            );
-        }
-        catch (IllegalMessageStateException illegalMessageStateExc)
-        {
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Controller could not send send a message to target node",
-                    illegalMessageStateExc
-                )
-            );
-        }
     }
 
     private short getAsShort(Map<String, String> props, String key, short defaultValue)

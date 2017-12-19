@@ -1,9 +1,11 @@
 package com.linbit.linstor.core;
 
 import java.sql.SQLException;
-
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -11,18 +13,26 @@ import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.interfaces.serializer.CtrlNodeSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.IllegalMessageStateException;
+import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -880,6 +890,192 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 controller.dbConnPool.returnConnection(transMgr);
             }
         }
+    }
+
+    /**
+     * If a subclass calls this method, {@link #getNodeSerializer()} has to return
+     * a valid {@link CtrlNodeSerializer}. Otherwise an {@link ImplementationError} is thrown.
+     * @return
+     */
+    protected final void updateSatellites(Node node)
+    {
+        CtrlNodeSerializer nodeSerializer = getNodeSerializer();
+        if (nodeSerializer == null)
+        {
+            throw new ImplementationError(
+                "UpdateSatellites(Node) was called without providing a valid node serializer",
+                null
+            );
+        }
+
+        try
+        {
+            Iterator<Resource> iterateRscs = node.iterateResources(apiCtx);
+            Set<Node> nodesToContact = new TreeSet<>();
+            while (iterateRscs.hasNext())
+            {
+                Resource rsc = iterateRscs.next();
+                ResourceDefinition rscDfn = rsc.getDefinition();
+                Iterator<Resource> allRscsIterator = rscDfn.iterateResource(apiCtx);
+                while (allRscsIterator.hasNext())
+                {
+                    Resource allRsc = allRscsIterator.next();
+                    nodesToContact.add(allRsc.getAssignedNode());
+                }
+            }
+
+            byte[] changedMessage = nodeSerializer.getChangedMessage(node);
+            for (Node nodeToContact : nodesToContact)
+            {
+                Peer peer = nodeToContact.getPeer(apiCtx);
+                if (peer.isConnected())
+                {
+                    Message msg = peer.createMessage();
+                    msg.setData(changedMessage);
+                    peer.sendMessage(msg);
+                }
+            }
+        }
+        catch (AccessDeniedException | IllegalMessageStateException implError)
+        {
+            throw asImplError(implError);
+        }
+    }
+
+    /**
+     * If a subclass calls this method, {@link #getResourceSerializer()} has to return
+     * a valid {@link CtrlSerializer<Resource>}. Otherwise an {@link ImplementationError} is thrown.
+     * @return
+     */
+    protected final void updateSatellites(Resource rsc)
+    {
+        updateSatellites(rsc.getDefinition());
+    }
+
+    /**
+     * If a subclass calls this method, {@link #getResourceSerializer()} has to return
+     * a valid {@link CtrlSerializer<Resource>}. Otherwise an {@link ImplementationError} is thrown.
+     * @return
+     */
+    protected final void updateSatellites(ResourceDefinition rscDfn)
+    {
+        CtrlSerializer<Resource> rscSerializer = getResourceSerializer();
+        if (rscSerializer == null)
+        {
+            throw new ImplementationError(
+                "UpdateSatellites(ResourceDefinition) was called without providing a valid resource serializer",
+                null
+            );
+        }
+        try
+        {
+            // notify all peers that (at least one of) their resource has changed
+            Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
+            while (rscIterator.hasNext())
+            {
+                Resource currentRsc = rscIterator.next();
+                Peer peer = currentRsc.getAssignedNode().getPeer(apiCtx);
+
+                if (peer.isConnected())
+                {
+                    Message message = peer.createMessage();
+                    byte[] data = rscSerializer.getChangedMessage(currentRsc);
+                    message.setData(data);
+                    peer.sendMessage(message);
+                }
+                else
+                {
+                    String nodeName = currentRsc.getAssignedNode().getName().displayValue;
+                    addAnswer(
+                        "No active connection to satellite '" + nodeName + "'",
+                        null, // cause
+                        "The satellite was added and the controller tries to (re-) establish connection to it." +
+                        "The controller stored the new Resource and as soon the satellite is connected, it will " +
+                        "receive this update.",
+                        null, // correction
+                        ApiConsts.WARN_NOT_CONNECTED
+                    );
+                }
+            }
+        }
+        catch (AccessDeniedException | IllegalMessageStateException implError)
+        {
+            throw asImplError(implError);
+        }
+    }
+
+    /**
+     * If a subclass calls this method, {@link #getStorPoolSerializer()} has to return
+     * a valid {@link CtrlSerializer<StorPool>}. Otherwise an {@link ImplementationError} is thrown.
+     * @return
+     */
+    protected final void updateSatellite(StorPool storPool)
+    {
+        CtrlSerializer<StorPool> storPoolSerializer = getStorPoolSerializer();
+        if (storPoolSerializer == null)
+        {
+            throw new ImplementationError(
+                "UpdateSatellites(StorPool) was called without providing a valid StorPool serializer",
+                null
+            );
+        }
+        try
+        {
+            Peer satellitePeer = storPool.getNode().getPeer(apiCtx);
+            if (satellitePeer.isConnected())
+            {
+                Message msg = satellitePeer.createMessage();
+                byte[] data = storPoolSerializer.getChangedMessage(storPool);
+                msg.setData(data);
+                satellitePeer.sendMessage(msg);
+            }
+            else
+            {
+                addAnswer(
+                    "No active connection to satellite '" + storPool.getNode().getName().displayValue + "'",
+                    null, // cause
+                    "The satellite was added and the controller tries to (re-) establish connection to it." +
+                    "The controller stored the new StorPool and as soon the satellite is connected, it will " +
+                    "receive this update.",
+                    null, // correction
+                    ApiConsts.WARN_NOT_CONNECTED
+                );
+            }
+        }
+        catch (AccessDeniedException | IllegalMessageStateException implError)
+        {
+            throw asImplError(implError);
+        }
+    }
+
+    /**
+     * If a subclass wants to call {@link #updateSatellites(Node)}, this method has to return
+     * a valid {@link CtrlNodeSerializer}. Otherwise an {@link ImplementationError} is thrown.
+     * @return
+     */
+    protected CtrlNodeSerializer getNodeSerializer()
+    {
+        return null;
+    }
+
+    /**
+     * If a subclass wants to call {@link #updateSatellites(Resource)} or {@link #updateSatellites(ResourceDefinition)}
+     * this method has to return a valid {@link CtrlSerializer<Resource>}. Otherwise an {@link ImplementationError} is thrown.
+     * @return
+     */
+    protected CtrlSerializer<Resource> getResourceSerializer()
+    {
+        return null;
+    }
+
+    /**
+     * If a subclass wants to call {@link #updateSatellites(StorPool)}
+     * this method has to return a valid {@link CtrlSerializer<StorPool>}. Otherwise an {@link ImplementationError} is thrown.
+     * @return
+     */
+    protected CtrlSerializer<StorPool> getStorPoolSerializer()
+    {
+        return null;
     }
 
     protected abstract String getObjectDescription();
