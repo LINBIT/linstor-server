@@ -11,9 +11,9 @@ public class ExtCmdFailedException extends LinStorException
     private static final long serialVersionUID = 5779506237459279868L;
 
     private static final String EXCEPTION_DESCR_FORMAT = "Execution of the external command '%s' failed.";
-    private static final String EXCEPTION_DETAILS_FORMAT = "The full command line executed was:\n%s\n";
-    private static final String EXCEPTION_STDOUT_DATA = "The external command sent the following output data:\n";
-    private static final String EXCEPTION_STDERR_DATA = "The external command sent the follwing error information:\n";
+    private static final String EXCEPTION_DETAILS_FORMAT = "The full command line executed was:\n%s";
+    private static final String EXCEPTION_STDOUT_DATA = "The external command sent the following output data:";
+    private static final String EXCEPTION_STDERR_DATA = "The external command sent the follwing error information:";
 
     public ExtCmdFailedException(String[] command, ChildProcessTimeoutException cause)
     {
@@ -57,11 +57,11 @@ public class ExtCmdFailedException extends LinStorException
             "  for the installed version of the external program.",
             String.format(
                 EXCEPTION_DETAILS_FORMAT +
-                "\n\n" +
-                EXCEPTION_STDOUT_DATA + "\n\n" +
-                EXCEPTION_STDERR_DATA + "\n",
-                glue(command), outputData.stdoutData, outputData.stderrData
-            )
+                "\n\n",
+                glue(command)
+            ) +
+            EXCEPTION_STDOUT_DATA + "\n" + new String(outputData.stdoutData) + "\n\n" +
+            EXCEPTION_STDERR_DATA + "\n" + new String(outputData.stderrData) + "\n"
         );
     }
 
