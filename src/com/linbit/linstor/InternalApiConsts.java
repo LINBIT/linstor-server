@@ -5,6 +5,7 @@ public class InternalApiConsts
 
     public static final String API_AUTH              = "Auth";
     public static final String API_AUTH_ACCEPT       = "AuthAccept";
+    public static final String API_AUTH_ERROR        = "AuthError";
 
     public static final String API_FULL_SYNC_DATA    = "FullSyncData";
 
