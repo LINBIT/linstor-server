@@ -244,8 +244,8 @@ public class OutputReceiver implements Runnable
         {
             if (data[idx] == '\n')
             {
-                String logString = new String(data, lineOffset, (idx + 1) - lineOffset);
-                errLog.logDebug("%s\n", logString);
+                String logString = new String(data, lineOffset, idx - lineOffset);
+                errLog.logDebug("%s", logString);
                 lineOffset = idx + 1;
             }
         }
