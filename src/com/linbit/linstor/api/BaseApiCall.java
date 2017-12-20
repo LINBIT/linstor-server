@@ -114,9 +114,19 @@ public abstract class BaseApiCall implements ApiCall
         Peer peer
     );
 
+    /**
+     * Prepare a message header for the given msgId and the apicalltype.
+     *
+     * @param accCtx AccessContext used for error reporting.
+     * @param MsgsBytes Msgs that should be added after the header.
+     * @param peer Peer to send the message too, for error reporting.
+     * @param msgId Message id to use.
+     * @param apicalltype Api call type.
+     * @return A new byte array with the correct header and appended MsgsBytes.
+     */
     protected abstract byte[] prepareMessage(
         AccessContext accCtx,
-        byte[] protoMsgsBytes,
+        byte[] MsgsBytes,
         Peer peer,
         int msgId,
         String apicalltype

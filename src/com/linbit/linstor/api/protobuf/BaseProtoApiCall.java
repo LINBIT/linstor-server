@@ -14,7 +14,6 @@ import com.google.protobuf.GeneratedMessageV3;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -172,14 +171,18 @@ public abstract class BaseProtoApiCall extends BaseApiCall
                 ioExc,
                 accCtx,
                 peer,
-                "IOException occured while generating ApiCallResponse header"
+                "IOException occured while generating protobuf api header"
             );
         }
 
         byte[] protoHeaderBytes = baos.toByteArray();
         byte[] apiCallData = new byte[protoHeaderBytes.length + protoMsgsBytes.length];
-        System.arraycopy(protoHeaderBytes, 0, apiCallData, 0, protoHeaderBytes.length);
-        System.arraycopy(protoMsgsBytes, 0, apiCallData, protoHeaderBytes.length, protoMsgsBytes.length);
+
+        if(protoMsgsBytes.length > 0)
+        {
+            System.arraycopy(protoHeaderBytes, 0, apiCallData, 0, protoHeaderBytes.length);
+            System.arraycopy(protoMsgsBytes, 0, apiCallData, protoHeaderBytes.length, protoMsgsBytes.length);
+        }
 
         return apiCallData;
     }
