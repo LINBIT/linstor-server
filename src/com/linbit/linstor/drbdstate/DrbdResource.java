@@ -2,6 +2,8 @@ package com.linbit.linstor.drbdstate;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.VolumeNumber;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -157,6 +159,26 @@ public class DrbdResource
             vol = volList.get(volNr);
         }
         return vol;
+    }
+
+    public Map<VolumeNumber, DrbdVolume> getVolumesMap()
+    {
+        Map<VolumeNumber, DrbdVolume> volListCopy = new TreeMap<>();
+        synchronized (volList)
+        {
+            volListCopy.putAll(volList);
+        }
+        return volListCopy;
+    }
+
+    public Iterator<DrbdVolume> iterateVolumes()
+    {
+        LinkedList<DrbdVolume> volListCopy = new LinkedList<>();
+        synchronized (volList)
+        {
+            volListCopy.addAll(volList.values());
+        }
+        return volListCopy.iterator();
     }
 
     void putVolume(DrbdVolume volume)
