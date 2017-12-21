@@ -1,6 +1,8 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.LsIpAddress;
+import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.security.AccessContext;
@@ -271,8 +273,10 @@ public class CmdDisplayNodes extends BaseDebugCmd
         {
             ObjectProtection objProt = nodeRef.getObjProt();
             objProt.requireAccess(accCtx, AccessType.VIEW);
+            Iterator<NetInterface> netIfIter = nodeRef.iterateNetInterfaces(accCtx);
+            boolean hasNetIf = netIfIter.hasNext();
             output.printf(
-                "%-40s %-36s\n" +
+                "\u001b[1;37m%-40s\u001b[0m %-36s\n" +
                 "%s  Flags: %016x\n" +
                 "%s  Creator: %-24s Owner: %-24s\n" +
                 "%s  Security type: %-24s\n",
@@ -281,8 +285,40 @@ public class CmdDisplayNodes extends BaseDebugCmd
                 PFX_SUB, nodeRef.getFlags().getFlagsBits(accCtx),
                 PFX_SUB, objProt.getCreator().name.displayValue,
                 objProt.getOwner().name.displayValue,
-                PFX_SUB_LAST, objProt.getSecurityType().name.displayValue
+                hasNetIf ? PFX_SUB : PFX_SUB_LAST, objProt.getSecurityType().name.displayValue
             );
+            if (hasNetIf)
+            {
+                output.println(PFX_SUB_LAST + "  Network interfaces:");
+            }
+            while (netIfIter.hasNext())
+            {
+                NetInterface netIf = netIfIter.next();
+                String address = "<No authorized>";
+                try
+                {
+                    LsIpAddress lsIp = netIf.getAddress(accCtx);
+                    if (lsIp != null)
+                    {
+                        String addrStr = lsIp.getAddress();
+                        if (addrStr != null)
+                        {
+                            address = addrStr;
+                        }
+                    }
+                }
+                catch (AccessDeniedException ignored)
+                {
+                }
+                boolean moreNetIfs = netIfIter.hasNext();
+                output.printf(
+                    "    %s  \u001b[1;37m%-24s\u001b[0m %s\n" +
+                    "    %s  %s  Address: %s\n",
+                    moreNetIfs ? PFX_SUB : PFX_SUB_LAST,
+                    netIf.getName().displayValue, netIf.getUuid().toString().toUpperCase(),
+                    moreNetIfs ? PFX_VLINE : "  ", PFX_SUB_LAST, address
+                );
+            }
         }
         catch (AccessDeniedException accExc)
         {
