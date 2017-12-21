@@ -11,6 +11,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
@@ -21,19 +22,24 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
+import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlNodeSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -194,7 +200,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @return
      * @throws ApiCallHandlerFailedException
      */
-    protected final VolumeNumber asVlmNr(int vlmNr)
+    protected final VolumeNumber asVlmNr(int vlmNr) throws ApiCallHandlerFailedException
     {
         try
         {
@@ -221,7 +227,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @return
      * @throws ApiCallHandlerFailedException
      */
-    protected final StorPoolName asStorPoolName(String storPoolNameStr)
+    protected final StorPoolName asStorPoolName(String storPoolNameStr) throws ApiCallHandlerFailedException
     {
         try
         {
@@ -265,16 +271,16 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
     }
 
-    protected final NodeData loadNode(String nodeNameStr) throws ApiCallHandlerFailedException
+    protected final NodeData loadNode(String nodeNameStr, boolean failIfNull) throws ApiCallHandlerFailedException
     {
-        return loadNode(asNodeName(nodeNameStr));
+        return loadNode(asNodeName(nodeNameStr), failIfNull);
     }
 
-    protected final NodeData loadNode(NodeName nodeName) throws ApiCallHandlerFailedException
+    protected final NodeData loadNode(NodeName nodeName, boolean failIfNull) throws ApiCallHandlerFailedException
     {
         try
         {
-            return NodeData.getInstance(
+            NodeData node = NodeData.getInstance(
                 currentAccCtx.get(),
                 nodeName,
                 null,
@@ -283,6 +289,19 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 false,
                 false
             );
+
+            if (failIfNull && node == null)
+            {
+                throw asExc(
+                    null,
+                    "Node '" + nodeName.displayValue + "' not found.",
+                    "The specified node '" + nodeName.displayValue + "' could not be found in the database",
+                    null, // details
+                    "Create a node with the name '" + nodeName.displayValue + "' first.",
+                    ApiConsts.FAIL_NOT_FOUND_NODE
+                );
+            }
+            return node;
         }
         catch (AccessDeniedException accDenied)
         {
@@ -305,16 +324,24 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
     }
 
-    protected final ResourceDefinitionData loadRscDfn(String rscNameStr) throws ApiCallHandlerFailedException
+    protected final ResourceDefinitionData loadRscDfn(
+        String rscNameStr,
+        boolean failIfNull
+    )
+        throws ApiCallHandlerFailedException
     {
-        return loadRscDfn(asRscName(rscNameStr));
+        return loadRscDfn(asRscName(rscNameStr), failIfNull);
     }
 
-    protected final ResourceDefinitionData loadRscDfn(ResourceName rscName) throws ApiCallHandlerFailedException
+    protected final ResourceDefinitionData loadRscDfn(
+        ResourceName rscName,
+        boolean failIfNull
+    )
+        throws ApiCallHandlerFailedException
     {
         try
         {
-            return ResourceDefinitionData.getInstance(
+            ResourceDefinitionData rscDfn = ResourceDefinitionData.getInstance(
                 currentAccCtx.get(),
                 rscName,
                 null, // port
@@ -325,6 +352,20 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 false,
                 false
             );
+
+            if (failIfNull && rscDfn == null)
+            {
+                throw asExc(
+                    null,
+                    "Resource definition '" + rscName.displayValue + "' not found.",
+                    "The specified resource definition '" + rscName.displayValue + "' could not be found in the database",
+                    null, // details
+                    "Create a resource definition with the name '" + rscName.displayValue + "' first.",
+                    ApiConsts.FAIL_NOT_FOUND_RSC_DFN
+                );
+            }
+
+            return rscDfn;
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -347,23 +388,106 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
     }
 
-
-    protected final StorPoolDefinitionData loadStorPoolDfn(String storPoolNameStr) throws ApiCallHandlerFailedException
+    protected final VolumeDefinitionData loadVlmDfn(
+        ResourceDefinitionData rscDfn,
+        int vlmNr,
+        boolean failIfNull
+    )
+        throws ApiCallHandlerFailedException
     {
-        return loadStorPoolDfn(asStorPoolName(storPoolNameStr));
+        return loadVlmDfn(rscDfn, asVlmNr(vlmNr), failIfNull);
     }
 
-    protected final StorPoolDefinitionData loadStorPoolDfn(StorPoolName storPoolName)
+    protected final VolumeDefinitionData loadVlmDfn(
+        ResourceDefinitionData rscDfn,
+        VolumeNumber vlmNr,
+        boolean failIfNull
+    )
+        throws ApiCallHandlerFailedException
     {
         try
         {
-            return StorPoolDefinitionData.getInstance(
+            VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstance(
+                currentAccCtx.get(),
+                rscDfn,
+                vlmNr,
+                null, // minor
+                null, // volsize
+                null, // flags
+                currentTransMgr.get(),
+                false, // do not create
+                false // do not fail if exists
+            );
+
+            if (failIfNull && vlmDfn == null)
+            {
+                throw asExc(
+                    null,
+                    "Volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' not found.",
+                    "The specified volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' could not be found in the database",
+                    null, // details
+                    "Create a volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' first.",
+                    ApiConsts.FAIL_NOT_FOUND_VLM_DFN
+                );
+            }
+
+            return vlmDfn;
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "load " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        catch (LinStorDataAlreadyExistsException | MdException implErr)
+        {
+            throw asImplError(implErr);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "loading " + getObjectDescriptionInline()
+            );
+        }
+    }
+
+    protected final StorPoolDefinitionData loadStorPoolDfn(String storPoolNameStr, boolean failIfNull) throws ApiCallHandlerFailedException
+    {
+        return loadStorPoolDfn(asStorPoolName(storPoolNameStr), failIfNull);
+    }
+
+    protected final StorPoolDefinitionData loadStorPoolDfn(
+        StorPoolName storPoolName,
+        boolean failIfNull
+    )
+        throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            StorPoolDefinitionData storPoolDfn = StorPoolDefinitionData.getInstance(
                 currentAccCtx.get(),
                 storPoolName,
                 currentTransMgr.get(),
                 false,
                 false
             );
+
+            if (failIfNull && storPoolDfn == null)
+            {
+                throw asExc(
+                    null,
+                    "Storage pool definition '" + storPoolName.displayValue + "' not found.",
+                    "The specified storage pool definition '" + storPoolName.displayValue + "' could not be found in the database",
+                    null, // details
+                    "Create a storage pool definition '" + storPoolName.displayValue + "' first.",
+                    ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN
+                );
+            }
+
+            return storPoolDfn;
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -385,6 +509,164 @@ abstract class AbsApiCallHandler implements AutoCloseable
             throw asSqlExc(
                 sqlExc,
                 "loading storage pool definition '" + storPoolName.displayValue + "'"
+            );
+        }
+    }
+
+    protected final StorPoolData loadStorPool(
+        StorPoolDefinitionData storPoolDfn,
+        NodeData node,
+        boolean failIfNull
+    )
+        throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            StorPoolData storPool = StorPoolData.getInstance(
+                currentAccCtx.get(),
+                node,
+                storPoolDfn,
+                null, // storDriverSimpleClassName
+                currentTransMgr.get(),
+                false,
+                false
+            );
+
+            if (failIfNull && storPool == null)
+            {
+                throw asExc(
+                    null,
+                    "Storage pool '" + storPoolDfn.getName().displayValue + "' on node '" + node.getName().displayValue + "' not found.",
+                    "The specified storage pool '" + storPoolDfn.getName().displayValue + "' on node '" + node.getName().displayValue + "' could not be found in the database",
+                    null, // details
+                    "Create a storage pool '" + storPoolDfn.getName().displayValue + "' on node '" + node.getName().displayValue + "' first.",
+                    ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN
+                    );
+            }
+
+            return storPool;
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "loading " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ImplementationError(
+                "Loading storage pool caused dataAlreadyExists exception",
+                dataAlreadyExistsExc
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "loading " + getObjectDescriptionInline()
+            );
+        }
+    }
+
+    protected final Props getProps(Node node) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return node.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access props for node '" + node.getName().displayValue + "'.",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+    }
+
+    protected final Props getProps(ResourceDefinitionData rscDfn) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return rscDfn.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access props for resource definition '" + rscDfn.getName().displayValue + "'.",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+    }
+
+    protected final Props getProps(Resource rsc) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return rsc.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access properties for resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
+                rsc.getAssignedNode().getName().displayValue + "'.",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+    }
+
+    protected final Props getProps(VolumeDefinition vlmDfn) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return vlmDfn.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access properties for volume definition with number '" + vlmDfn.getVolumeNumber().value + "' " +
+                "on resource definition '" + vlmDfn.getResourceDefinition().getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+    }
+
+    protected final Props getProps(Volume vlm) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return vlm.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access properties for volume with number '" + vlm.getVolumeDefinition().getVolumeNumber().value + "' " +
+                "on resource '" + vlm.getResourceDefinition().getName().displayValue + "' " +
+                "on node '" + vlm.getResource().getAssignedNode().getName().displayValue + "'.",
+                ApiConsts.FAIL_ACC_DENIED_VLM
+            );
+        }
+    }
+
+    protected final Props getProps(StorPoolData storPool) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return storPool.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access properties of storage pool '" + storPool.getName().displayValue +
+                "' on node '" + storPool.getNode().getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
     }
@@ -441,7 +723,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * }
      * catch (Exception exc)
      * {
-     *     throw exc(exc, "errorMessage", 42);
+     *     throw asExc(exc, "errorMessage", 42);
      * }
      * </pre>
      * Without throwing an exception in the catch-clause the compiler would detect an execution-path
@@ -832,6 +1114,12 @@ abstract class AbsApiCallHandler implements AutoCloseable
         );
     }
 
+    protected final ApiCallHandlerFailedException missingNode(String nodeNameStr)
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     protected TransactionMgr createNewTransMgr() throws ApiCallHandlerFailedException
     {
         try
@@ -953,9 +1241,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
     }
 
     /**
-     * If a subclass calls this method, {@link #getResourceSerializer()} has to return
-     * a valid {@link CtrlSerializer<Resource>}. Otherwise an {@link ImplementationError} is thrown.
-     * @return
+     * If a subclass calls this method, {@link #getResourceSerializer()} has to return a valid
+     * {@link CtrlSerializer<Resource>}. Otherwise an {@link ImplementationError} is thrown.
      */
     protected final void updateSatellites(ResourceDefinition rscDfn)
     {
@@ -978,10 +1265,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
                 if (peer.isConnected())
                 {
-                    Message message = peer.createMessage();
+                    Message rscChangedMsg = peer.createMessage();
                     byte[] data = rscSerializer.getChangedMessage(currentRsc);
-                    message.setData(data);
-                    peer.sendMessage(message);
+                    rscChangedMsg.setData(data);
+                    peer.sendMessage(rscChangedMsg);
                 }
                 else
                 {

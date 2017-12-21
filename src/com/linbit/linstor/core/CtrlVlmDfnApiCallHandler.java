@@ -99,7 +99,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 throw new ApiCallHandlerFailedException();
             }
 
-            ResourceDefinition rscDfn = loadRscDfn(rscNameStr);
+            ResourceDefinition rscDfn = loadRscDfn(rscNameStr, true);
 
             if (rscDfn == null)
             {
@@ -387,7 +387,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
     private VolumeDefinitionData loadVlmDfn(String rscName, int vlmNr)
     {
-        ResourceDefinitionData rscDfn = loadRscDfn(rscName);
+        ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
         try
         {
             return VolumeDefinitionData.getInstance(

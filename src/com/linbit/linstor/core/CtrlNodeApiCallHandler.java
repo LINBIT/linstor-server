@@ -211,7 +211,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             requireNodesMapChangeAccess();
             NodeName nodeName = asNodeName(nodeNameStr);
-            NodeData node = loadNode(nodeName);
+            NodeData node = loadNode(nodeName, true);
             if (nodeUuid != null && !nodeUuid.equals(node.getUuid()))
             {
                 addAnswer(
@@ -275,7 +275,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             requireNodesMapChangeAccess();
             NodeName nodeName = asNodeName(nodeNameStr);
-            NodeData nodeData = loadNode(nodeName);
+            NodeData nodeData = loadNode(nodeName, true);
             if (nodeData == null)
             {
                 addAnswer(
@@ -639,22 +639,6 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         catch (SQLException sqlExc)
         {
             throw handleSqlExc(sqlExc);
-        }
-    }
-
-    private Props getProps(Node node)
-    {
-        try
-        {
-            return node.getProps(currentAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "access the properties of node '" + currentNodeName.get() + "'.",
-                ApiConsts.FAIL_ACC_DENIED_NODE
-            );
         }
     }
 

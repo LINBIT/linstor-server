@@ -1151,8 +1151,8 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     )
         throws ApiCallHandlerFailedException
     {
-        NodeData node1 = loadNode(nodeName1);
-        NodeData node2 = loadNode(nodeName2);
+        NodeData node1 = loadNode(nodeName1, true);
+        NodeData node2 = loadNode(nodeName2, true);
         ResourceName rscName = asRscName(rscNameStr);
 
         Resource rsc1 = loadRsc(node1, rscName);

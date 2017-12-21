@@ -821,8 +821,8 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
 
     private NodeConnectionData loadNodeConn(String nodeName1, String nodeName2)
     {
-        NodeData node1 = loadNode(nodeName1);
-        NodeData node2 = loadNode(nodeName2);
+        NodeData node1 = loadNode(nodeName1, true);
+        NodeData node2 = loadNode(nodeName2, true);
 
         try
         {

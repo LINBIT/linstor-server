@@ -571,7 +571,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             requireRscDfnMapChangeAccess();
 
             ResourceName rscName = toRscName(rscNameStr);
-            ResourceDefinitionData rscDfn = loadRscDfn(rscName);
+            ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
             if (rscDfnUuid != null && !rscDfnUuid.equals(rscDfn.getUuid()))
             {
                 addAnswer(

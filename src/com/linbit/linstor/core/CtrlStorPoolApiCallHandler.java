@@ -999,59 +999,10 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 
     private StorPoolData loadStorPool(String nodeNameStr, String storPoolNameStr)
     {
-        NodeData node = loadNode(nodeNameStr);
-        StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr);
-
-        try
-        {
-            return StorPoolData.getInstance(
-                currentAccCtx.get(),
-                node,
-                storPoolDfn,
-                null,
-                currentTransMgr.get(),
-                false,
-                false
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "loading storage pool '" + storPoolNameStr + "' on node '" + nodeNameStr + "'.",
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(
-                "Loading a storage pool caused a dataAlreadyExists exception",
-                dataAlreadyExistsExc
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(
-                sqlExc,
-                "loading storage pool '" + storPoolNameStr + "' on node '" + nodeNameStr + "'."
-            );
-        }
-    }
-
-    private Props getProps(StorPoolData storPool) throws ApiCallHandlerFailedException
-    {
-        try
-        {
-            return storPool.getProps(currentAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "access properties of storage pool '" + storPool.getName().displayValue +
-                "' on node '" + storPool.getNode().getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
-            );
-        }
+        return loadStorPool(
+            loadStorPoolDfn(storPoolNameStr, true),
+            loadNode(nodeNameStr, true),
+            true
+        );
     }
 }

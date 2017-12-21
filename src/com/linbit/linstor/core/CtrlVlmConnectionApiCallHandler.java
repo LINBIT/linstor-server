@@ -1570,8 +1570,8 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     )
         throws ApiCallHandlerFailedException
     {
-        NodeData node1 = loadNode(nodeName1);
-        NodeData node2 = loadNode(nodeName2);
+        NodeData node1 = loadNode(nodeName1, true);
+        NodeData node2 = loadNode(nodeName2, true);
 
         Resource rsc1 = getRsc(node1, rscNameStr);
         Resource rsc2 = getRsc(node2, rscNameStr);

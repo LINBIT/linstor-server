@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -27,17 +28,13 @@ import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
-import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
-import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.Resource.RscFlags;
+import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Volume.VlmApi;
-import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -47,7 +44,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -100,750 +96,202 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        TransactionMgr transMgr = null;
 
-        NodeName nodeName = null;
-        ResourceName rscName = null;
-
-        NodeData node = null;
-        ResourceDefinitionData rscDfn = null;
-
-        NodeId nodeId = null;
-
-        ResourceData rsc = null;
-        VlmApi currentVlmApi = null;
-        VolumeNumber volNr = null;
-        VolumeDefinition vlmDfn = null;
-        String storPoolNameStr = null;
-        Props vlmDfnProps = null;
-        Props rscProps = null;
-        Props rscDfnProps = null;
-        Props nodeProps = null;
-        StorPoolName storPoolName = null;
-        StorPoolDefinition storPoolDfn = null;
-        StorPool storPool = null;
-
-        try
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.CREATE,
+                apiCallRc,
+                null,
+                nodeNameStr,
+                rscNameStr
+            );
+        )
         {
-            transMgr = new TransactionMgr(controller.dbConnPool);
+            NodeData node = loadNode(nodeNameStr, true);
+            ResourceDefinitionData rscDfn = loadRscDfn(rscNameStr, true);
 
-            nodeName = new NodeName(nodeNameStr); // invalidNameExc1
-            rscName = new ResourceName(rscNameStr); // invalidNameExc2
+            NodeId nodeId = getNextFreeNodeId(rscDfn);
 
-            node = NodeData.getInstance(
-                // accDeniedExc1, dataAlreadyExistsExc0
-                accCtx,
-                nodeName,
-                null, // nodeType only needed if we want to persist this entry
-                null, // nodeFlags only needed if we want to persist this entry
-                transMgr,
-                false, // do not persist this entry
-                false // do not throw exception if the entry exists
-            );
-            rscDfn = ResourceDefinitionData.getInstance(
-                // accDeniedExc2, dataAlreadyExistsExc0
-                accCtx,
-                rscName,
-                null, // nodeType only needed if we want to persist this entry
-                null, // nodeFlags only needed if we want to persist this entry
-                null, // secret only needed if we want to persist this entry
-                null, // transportType only needed if we want to persist this entry
-                transMgr,
-                false, // do not persist this entry
-                false // do not throw exception if the entry exists
-            );
+            ResourceData rsc = createResource(rscDfn, node, nodeId);
+            Props rscProps = getProps(rsc);
+            rscProps.map().putAll(rscPropsMap);
 
-            if (node == null)
+            Props rscDfnProps = getProps(rscDfn);
+            Props nodeProps = getProps(node);
+
+            Map<Integer, Volume> vlmMap = new TreeMap<>();
+            for (VlmApi vlmApi : vlmApiList)
             {
-                ApiCallRcEntry nodeNotFoundEntry = new ApiCallRcEntry();
-                nodeNotFoundEntry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_NODE);
-                nodeNotFoundEntry.setMessageFormat("Node '" + nodeNameStr + "' not found.");
-                nodeNotFoundEntry.setCauseFormat(
-                    String.format(
-                        "The specified node '%s' could not be found in the database",
-                        nodeNameStr
-                    )
-                );
-                nodeNotFoundEntry.setCorrectionFormat(
-                    String.format(
-                        "Create a node with the name '%s' first.",
-                        nodeNameStr
-                    )
-                );
-                nodeNotFoundEntry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                nodeNotFoundEntry.putObjRef(KEY_NODE, nodeNameStr);
-                nodeNotFoundEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
 
-                apiCallRc.addEntry(nodeNotFoundEntry);
-            }
-            else
-            if (rscDfn == null)
-            {
-                ApiCallRcEntry rscDfnNotFoundEntry = new ApiCallRcEntry();
-                rscDfnNotFoundEntry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_RSC_DFN);
-                rscDfnNotFoundEntry.setMessageFormat("Resource definition '" + rscNameStr + "' not found.");
-                rscDfnNotFoundEntry.setCauseFormat(
-                    String.format(
-                        "The specified resource definition '%s' could not be found in the database",
-                        rscNameStr
-                    )
-                );
-                rscDfnNotFoundEntry.setCorrectionFormat(
-                    String.format(
-                        "Create a resource definition with the name '%s' first.",
-                        rscNameStr
-                    )
-                );
-                rscDfnNotFoundEntry.putVariable(KEY_RSC_NAME, rscNameStr);
-                rscDfnNotFoundEntry.putObjRef(KEY_NODE, nodeNameStr);
-                rscDfnNotFoundEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-                apiCallRc.addEntry(rscDfnNotFoundEntry);
-            }
-            else
-            {
-                nodeId = getNextNodeId(rscDfn.iterateResource(accCtx)); // accDenied should have happened on
-                                                                        // accDenied2
-                // TODO: maybe use the poolAllocator for nodeId
-
-                RscFlags[] initFlags = null;
-
-                ApiCallRcImpl successApiCallRc = new ApiCallRcImpl();
-                boolean success = true;
-
-                rsc = ResourceData.getInstance(
-                    // accDeniedExc3, dataAlreadyExistsExc1
-                    accCtx,
-                    rscDfn,
-                    node,
-                    nodeId,
-                    initFlags,
-                    transMgr,
-                    true, // persist this entry
-                    true // throw exception if the entry exists
-                );
-                rsc.setConnection(transMgr); // maybe volumes will be created
-                rsc.getProps(accCtx).map().putAll(rscPropsMap); // accDeniedExc4
-
-                ApiCallRcEntry rscSuccess = new ApiCallRcEntry();
-                String rscSuccessMsg = String.format(
-                    "Resource '%s' successfully created on node '%s'.",
-                    rscNameStr,
-                    nodeNameStr
-                );
-
-                rscSuccess.setMessageFormat(rscSuccessMsg);
-                rscSuccess.setReturnCode(RC_RSC_CREATED);
-                rscSuccess.putObjRef(KEY_NODE, nodeNameStr);
-                rscSuccess.putObjRef(KEY_RSC_DFN, rscNameStr);
-                rscSuccess.putVariable(KEY_NODE_NAME, nodeNameStr);
-                rscSuccess.putVariable(KEY_RSC_NAME, rscNameStr);
-
-                successApiCallRc.addEntry(rscSuccess);
-
-                // TODO rework accDeniedExceptions
-                rscProps = rsc.getProps(accCtx); // accDeniedExc7
-                rscDfnProps = rscDfn.getProps(accCtx); // accDeniedExc7.5
-                nodeProps = node.getProps(accCtx); // accDeniedExc8
-
-                Map<Integer, Volume> vlmMap = new TreeMap<>();
-                for (VlmApi vlmApi : vlmApiList)
+                String storPoolNameStr = vlmApi.getStorPoolName();
+                if (storPoolNameStr == null || "".equals(storPoolNameStr))
                 {
-                    currentVlmApi = vlmApi;
+                    PriorityProps prioProps = new PriorityProps(
+                        rscProps,
+                        getProps(vlmDfn),
+                        rscDfnProps,
+                        nodeProps
+                    );
+                    storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
+                }
+                if (storPoolNameStr == null || "".equals(storPoolNameStr))
+                {
+                    storPoolNameStr = controller.getDefaultStorPoolName();
+                }
 
-                    volNr = null;
-                    vlmDfn = null;
-                    storPoolName = null;
-                    storPoolDfn = null;
-                    storPool = null;
-                    vlmDfnProps = null;
+                StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
+                StorPoolData storPool = loadStorPool(storPoolDfn, node, true);
 
-                    volNr = new VolumeNumber(vlmApi.getVlmNr()); // valueOutOfRangeExc1
-                    vlmDfn = rscDfn.getVolumeDfn(accCtx, volNr); // accDeniedExc5
+                VolumeData vlmData = createVolume(rsc, vlmDfn, storPool, vlmApi);
 
-                    if (vlmDfn == null)
-                    {
-                        success = false;
-                        ApiCallRcEntry entry = new ApiCallRcEntry();
-                        String errorMessage = String.format(
-                            "Volume definition with volume number %d could not be found.",
-                            volNr.value
-                        );
-                        entry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_VLM_DFN);
-                        controller.getErrorReporter().reportError(
-                            new LinStorException("Dependency not found"),
-                            accCtx,
-                            client,
-                            errorMessage
-                        );
-                        entry.setMessageFormat(errorMessage);
-                        entry.putObjRef(KEY_NODE, nodeNameStr);
-                        entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                        entry.putObjRef(KEY_VLM_NR, Integer.toString(volNr.value));
-                        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                        entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                        entry.putVariable(KEY_VLM_NR, Integer.toString(volNr.value));
-                        apiCallRc.addEntry(entry);
-                        break;
-                    }
+                Props vlmProps = getProps(vlmData);
+                vlmProps.map().putAll(vlmApi.getVlmProps());
 
-                    storPoolNameStr = vlmApi.getStorPoolName();
-                    if (storPoolNameStr == null || "".equals(storPoolNameStr))
-                    {
-                        vlmDfnProps = vlmDfn.getProps(accCtx); // accDeniedExc6
-                        PriorityProps prioProps = new PriorityProps(
-                            rscProps,
-                            vlmDfnProps,
-                            rscDfnProps,
-                            nodeProps
-                        );
-                        storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
-                    }
+                vlmMap.put(vlmDfn.getVolumeNumber().value, vlmData);
+            }
+
+            Iterator<VolumeDefinition> iterateVolumeDfn = getVlmDfnIterator(rscDfn);
+            while (iterateVolumeDfn.hasNext())
+            {
+                VolumeDefinition vlmDfn = iterateVolumeDfn.next();
+
+                currentObjRefs.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+                currentVariables.get().put(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
+
+                // first check if we probably just deployed a vlm for this vlmDfn
+                if (rsc.getVolume(vlmDfn.getVolumeNumber()) == null)
+                {
+                    // not deployed yet.
+
+                    PriorityProps prioProps = new PriorityProps(
+                        getProps(vlmDfn),
+                        rscProps,
+                        nodeProps
+                    );
+                    String storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
                     if (storPoolNameStr == null || "".equals(storPoolNameStr))
                     {
                         storPoolNameStr = controller.getDefaultStorPoolName();
                     }
 
-                    storPoolName = new StorPoolName(storPoolNameStr); // invalidNameExc3
-
-                    storPoolDfn = StorPoolDefinitionData.getInstance(
-                        // accDeniedExc9, dataAlreadyExistsExc0
-                        accCtx,
-                        storPoolName,
-                        transMgr,
-                        false, // do not persist this entry
-                        false // do not throw exception if the entry exists
+                    StorPool dfltStorPool = rsc.getAssignedNode().getStorPool(
+                        apiCtx,
+                        asStorPoolName(storPoolNameStr)
                     );
-                    if (storPoolDfn != null)
-                    {
-                        storPool = StorPoolData.getInstance(
-                            // accDeniedExc10, dataAlreadyExistsExc0
-                            accCtx,
-                            node,
-                            storPoolDfn,
-                            null, // controller must not have a storage driver defined
-                            transMgr,
-                            false, // do not persist this entry
-                            false // do not throw exception if the entry exists
-                        );
-                    }
-                    if (storPoolDfn == null || storPool == null)
-                    {
-                        success = false;
 
-                        ApiCallRcEntry entry = new ApiCallRcEntry();
-                        String errorMessage;
-                        if (storPoolDfn == null)
-                        {
-                            errorMessage = String.format(
-                                "Storage pool definition '%s' could not be found.",
-                                storPoolNameStr
-                            );
-                            entry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL_DFN);
-                        }
-                        else
-                        {
-                            errorMessage = String.format(
-                                "Storage pool '%s' on node '%s' could not be found.",
-                                storPoolNameStr,
-                                nodeNameStr
-                            );
-                            entry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_STOR_POOL);
-                        }
-                        controller.getErrorReporter().reportError(
+                    if (dfltStorPool == null)
+                    {
+                        throw asExc(
                             new LinStorException("Dependency not found"),
-                            accCtx,
-                            client,
-                            errorMessage
+                            "The default storage pool '" + storPoolNameStr + "' " +
+                            "for resource '" + rsc.getDefinition().getName().displayValue + "' " +
+                            "for volume number " +  vlmDfn.getVolumeNumber().value + "' " +
+                            "is not deployed on node '" + rsc.getAssignedNode().getName().displayValue + "'.",
+                            null, // cause
+                            "The resource which should be deployed had at least one volume definition " +
+                            "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LinStor " +
+                            "tried to automatically create. " +
+                            "The default storage pool's name for this new volume was looked for in " +
+                            "its volume definition's properties, its resource's properties, its node's " +
+                            "properties and finally in a system wide default storage pool name defined by " +
+                            "the LinStor controller.",
+                            null, // correction
+                            FAIL_NOT_FOUND_DFLT_STOR_POOL
                         );
-                        entry.setMessageFormat(errorMessage);
-                        entry.putObjRef(KEY_NODE, nodeNameStr);
-                        entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                        entry.putObjRef(KEY_VLM_NR, Integer.toString(volNr.value));
-                        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                        entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                        entry.putVariable(KEY_VLM_NR, Integer.toString(volNr.value));
-                        apiCallRc.addEntry(entry);
-                        break;
                     }
                     else
                     {
-                        VlmFlags[] vlmFlags = null;
-
-                        VolumeData vlmData = VolumeData.getInstance(
-                            // accDeniedExc11, dataAlreadyExistsExc2
-                            accCtx,
-                            rsc,
-                            vlmDfn,
-                            storPool,
-                            vlmApi.getBlockDevice(),
-                            vlmApi.getMetaDisk(),
-                            vlmFlags,
-                            transMgr,
-                            true, // persist this entry
-                            true // throw exception if the entry exists
-                        );
-                        vlmData.setConnection(transMgr);
-                        vlmData.getProps(accCtx).map().putAll(vlmApi.getVlmProps());
-
-                        ApiCallRcEntry vlmSuccess = new ApiCallRcEntry();
-                        vlmSuccess.setMessageFormat(
-                            String.format(
-                                "Volume with number %d created successfully on node '%s' on resource '%s'.",
-                                vlmApi.getVlmNr(),
-                                nodeNameStr,
-                                rscNameStr
-                            )
-                        );
-                        vlmSuccess.setReturnCode(RC_VLM_CREATED);
-                        vlmSuccess.putVariable(KEY_NODE_NAME, nodeNameStr);
-                        vlmSuccess.putVariable(KEY_RSC_NAME, rscNameStr);
-                        vlmSuccess.putVariable(KEY_VLM_NR, Integer.toString(vlmApi.getVlmNr()));
-                        vlmSuccess.putObjRef(KEY_NODE, nodeNameStr);
-                        vlmSuccess.putObjRef(KEY_RSC_DFN, rscNameStr);
-                        vlmSuccess.putObjRef(KEY_VLM_NR, Integer.toString(vlmApi.getVlmNr()));
-
-                        successApiCallRc.addEntry(vlmSuccess);
-                        vlmMap.put(vlmDfn.getVolumeNumber().value, vlmData);
+                        // create missing vlm with default values
+                        VolumeData vlm = createVolume(rsc, vlmDfn, dfltStorPool, null);
+                        vlmMap.put(vlmDfn.getVolumeNumber().value, vlm);
                     }
                 }
-
-                if (success)
-                {
-                    Iterator<VolumeDefinition> iterateVolumeDfn = rscDfn.iterateVolumeDfn(apiCtx);
-                    //TODO excHandling
-
-                    while (iterateVolumeDfn.hasNext())
-                    {
-                        VolumeDefinition missingVlmDfn = iterateVolumeDfn.next();
-
-                        PriorityProps prioProps = new PriorityProps(
-                            missingVlmDfn.getProps(accCtx), // TODO excHandling
-                            rsc.getProps(accCtx), // TODO excHandling
-                            node.getProps(accCtx) // TODO excHandling
-                        );
-                        storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
-                        if (storPoolNameStr == null || "".equals(storPoolNameStr))
-                        {
-                            storPoolNameStr = controller.getDefaultStorPoolName();
-                        }
-
-                        StorPool dfltStorPool = rsc.getAssignedNode().getStorPool(
-                            apiCtx,
-                            new StorPoolName(storPoolNameStr)
-                        );
-
-                        if (dfltStorPool == null)
-                        {
-                            success = false;
-                            ApiCallRcEntry entry = new ApiCallRcEntry();
-                            String errorMessage = String.format(
-                                "The default storage pool '%s' for resource '%s' for volume number '%d' is not deployed on node '%s'.",
-                                storPoolNameStr,
-                                rsc.getDefinition().getName().displayValue,
-                                missingVlmDfn.getVolumeNumber().value,
-                                rsc.getAssignedNode().getName().displayValue
-                            );
-                            entry.setReturnCode(RC_RSC_CRT_FAIL_NOT_FOUND_DFLT_STOR_POOL);
-                            controller.getErrorReporter().reportError(
-                                new LinStorException("Dependency not found"),
-                                accCtx,
-                                client,
-                                errorMessage
-                            );
-                            entry.setMessageFormat(errorMessage);
-                            entry.setDetailsFormat(
-                                String.format(
-                                    "The resource which should be deployed had at least one volume definition " +
-                                        "(volume number '%d') which LinStor tried to automatically create. " +
-                                        "The default storage pool's name for this new volume was looked for in " +
-                                        "its volume definition's properties, its resource's properties, its node's " +
-                                        "properties and finally in a system wide default storage pool name defined by " +
-                                        "the LinStor controller."
-                                    ,
-                                    missingVlmDfn.getVolumeNumber().value
-                                )
-                            );
-                            entry.putObjRef(KEY_NODE, nodeNameStr);
-                            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                            entry.putObjRef(KEY_VLM_NR, Integer.toString(missingVlmDfn.getVolumeNumber().value));
-                            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                            entry.putVariable(KEY_VLM_NR, Integer.toString(missingVlmDfn.getVolumeNumber().value));
-                            apiCallRc.addEntry(entry);
-                            break;
-                        }
-                        else
-                        {
-                            if (!vlmMap.containsKey(missingVlmDfn.getVolumeNumber().value))
-                            {
-                                // create missing vlm with default values
-                                VolumeData.getInstance(
-                                    accCtx,
-                                    rsc,
-                                    missingVlmDfn,
-                                    dfltStorPool,
-                                    null, // block device
-                                    null, // metadisk
-                                    null, // flags
-                                    transMgr,
-                                    true,
-                                    true
-                                );
-                            }
-                        }
-                    }
-                }
-
-                if (success)
-                {
-                    transMgr.commit();
-
-                    // if everything worked fine, just replace the returned rcApiCall with the
-                    // already filled successApiCallRc. otherwise, this line does not get executed anyways
-                    apiCallRc = successApiCallRc;
-                    controller.getErrorReporter().logInfo(rscSuccessMsg);
-
-                    notifySatellites(accCtx, rsc, apiCallRc);
-                    // TODO: if a satellite confirms creation, also log it to controller.info
-                }
-            }
-        }
-        catch (SQLException sqlExc)
-        {
-            String errorMessage = String.format(
-                "A database error occured while trying to create the resource '%s' on node '%s'.",
-                nodeNameStr,
-                rscNameStr
-                );
-                controller.getErrorReporter().reportError(
-                    sqlExc,
-                    accCtx,
-                    client,
-                    errorMessage
-                    );
-
-                    ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_CRT_FAIL_SQL);
-            entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(sqlExc.getMessage());
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            String errorMessage;
-            if (nodeName == null)
-            { // invalidNameExc1
-                errorMessage = String.format("Given node name '%s' is invalid.", nodeNameStr);
-                entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_INVLD_NODE_NAME);
-            }
-            else
-                if (rscName == null)
-                { // invalidNameExc2
-                    errorMessage = String.format("Given resource name '%s' is invalid.", rscNameStr);
-                    entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                    entry.setReturnCodeBit(RC_RSC_CRT_FAIL_INVLD_RSC_NAME);
-                }
-                else
-                { // invalidNameExc3
-                    errorMessage = String.format("Given storage pool name '%s' is invalid.", storPoolNameStr);
-                    entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-                    entry.setReturnCodeBit(RC_RSC_CRT_FAIL_INVLD_STOR_POOL_NAME);
-
-                }
-            controller.getErrorReporter().reportError(
-                invalidNameExc,
-                accCtx,
-                client,
-                errorMessage
-                );
-                entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(invalidNameExc.getMessage());
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            String action = "Given user has no permission to ";
-            if (node == null)
-            { // accDeniedExc1
-                action += String.format(
-                    "access the node '%s'.",
-                    nodeNameStr
-                    );
-                    entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_ACC_DENIED_NODE);
-            }
-            else
-            if (rscDfn == null)
-            { // accDeniedExc2
-                action += String.format(
-                    "access the resource definition '%s'.",
-                    rscNameStr
-                    );
-                    entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_ACC_DENIED_RSC_DFN);
-            }
-            else
-            if (rsc == null || currentVlmApi == null)
-            { // accDeniedExc3 & accDeniedExc4
-                action += String.format(
-                    "access the resource '%s' on node '%s'.",
-                    rscNameStr,
-                    nodeNameStr
-                    );
-                    entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_ACC_DENIED_RSC);
-            }
-            else
-            if (vlmDfn == null)
-            { // accDeniedExc5
-                action += String.format(
-                    "access the volume definition with volume number %d on resource '%s' on node '%s'.",
-                    currentVlmApi.getVlmNr(),
-                    rscNameStr,
-                    nodeNameStr
-                    );
-                    entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmApi.getVlmNr()));
-                entry.putObjRef(KEY_VLM_NR, Integer.toString(currentVlmApi.getVlmNr()));
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_ACC_DENIED_VLM_DFN);
-            }
-            else
-            // accDeniedExc6, 7 or 8 cannot happen as those should have triggered
-            // accDeniedExc5, 4 or 1 respectively
-            if (storPoolDfn == null)
-            { // accDeniedExc9
-                action += String.format(
-                    "access the storage pool definition '%s'.",
-                    storPoolNameStr
-                    );
-                    entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-                entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL_DFN);
-            }
-            else
-            if (storPool == null)
-            { // accDeniedExc10
-                action += String.format(
-                    "access the storage pool '%s' on node '%s'.",
-                    storPoolNameStr,
-                    nodeNameStr
-                    );
-                    entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_STOR_POOL_NAME, storPoolNameStr);
-                entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_ACC_DENIED_STOR_POOL);
-            }
-            else
-            { // accDeniedExc11
-                action += String.format(
-                    "create a new volume with volume number %d on resource '%s' on node '%s'.",
-                    currentVlmApi.getVlmNr(),
-                    rscNameStr,
-                    nodeNameStr
-                    );
-                    entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmApi.getVlmNr()));
-                entry.putObjRef(KEY_VLM_NR, Integer.toString(currentVlmApi.getVlmNr()));
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_ACC_DENIED_VLM);
-            }
-            controller.getErrorReporter().reportError(
-                accDeniedExc,
-                accCtx,
-                client,
-                action
-                );
-                entry.setCauseFormat(accDeniedExc.getMessage());
-            entry.setMessageFormat(action);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            String errorMsgFormat;
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            // dataAlreadyExistsExc0 cannot happen
-            if (rsc == null)
-            { // dataAlreadyExistsExc1
-                errorMsgFormat = String.format(
-                    "Resource '%s' could not be created as it already exists on node '%s'.",
-                    rscNameStr,
-                    nodeNameStr
-                    );
-                    entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_EXISTS_RSC);
-            }
-            else
-            { // dataAlreadyExistsExc2
-                errorMsgFormat = String.format(
-                    "Volume with volume number %d could not be created as it already exists on " +
-                        "resource '%s' on node '%s'.",
-                    currentVlmApi.getVlmNr(),
-                    rscNameStr,
-                    nodeNameStr
-                        );
-                        entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmApi.getVlmNr()));
-                entry.putObjRef(KEY_VLM_NR, Integer.toString(currentVlmApi.getVlmNr()));
-                entry.setReturnCodeBit(RC_RSC_CRT_FAIL_EXISTS_NODE);
             }
 
-            controller.getErrorReporter().reportError(
-                dataAlreadyExistsExc,
-                accCtx,
-                client,
-                errorMsgFormat
-                );
-                entry.setCauseFormat(dataAlreadyExistsExc.getMessage());
-            entry.setMessageFormat(errorMsgFormat);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+            commit();
 
-            apiCallRc.addEntry(entry);
-        }
-        catch (ValueOutOfRangeException valueOutOfRangeExc)
-        {
-            String errorMsgFormat;
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-
-            // valueOutOfRangeExc1
-            errorMsgFormat = String.format(
-                "Volume number %d is out of its valid range (%d - %d)",
-                currentVlmApi.getVlmNr(),
-                VolumeNumber.VOLUME_NR_MIN,
-                VolumeNumber.VOLUME_NR_MAX
+            // TODO: AFTER REWORK report ALL stuff
+            reportSuccess(
+                "Resource '" + rscNameStr + "' successfully created on node '" + nodeNameStr + "'."
             );
-            entry.putVariable(KEY_VLM_NR, Integer.toString(currentVlmApi.getVlmNr()));
-            entry.setReturnCode(RC_RSC_CRT_FAIL_INVLD_VLM_NR);
-            controller.getErrorReporter().reportError(
-                valueOutOfRangeExc,
-                accCtx,
-                client,
-                errorMsgFormat
-                );
-                entry.setCauseFormat(valueOutOfRangeExc.getMessage());
-            entry.setMessageFormat(errorMsgFormat);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-        }
-        catch (InvalidKeyException implExc)
-        {
-            String errorMessage;
-            errorMessage = String.format(
-                "The property key '%s' has thrown an InvalidKeyException " +
-                    "(Node name: '%s', resource name: '%s')",
-                KEY_STOR_POOL_NAME,
-                nodeNameStr,
-                rscNameStr
-            );
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    errorMessage,
-                    implExc
-                )
-            );
-
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_CRT_FAIL_IMPL_ERROR);
-            entry.setMessageFormat(
-                String.format(
-                    "Failed to create the resource '%s' on node '%s' due to an implementation error.",
-                    rscNameStr,
-                    nodeNameStr
-                    )
-            );
-            entry.setCauseFormat(implExc.getMessage());
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            // handle any other exception
-            String errorMessage = String.format(
-                "An unknown exception occured while creating resource '%s' on node '%s'.",
-                rscNameStr,
-                nodeNameStr
-                );
-                controller.getErrorReporter().reportError(
-                    exc,
-                    accCtx,
-                    client,
-                    errorMessage
-                    );
-                    ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_CRT_FAIL_UNKNOWN_ERROR);
-            entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(exc.getMessage());
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-
-        if (transMgr != null)
-        {
-            if (transMgr.isDirty())
+            for (Entry<Integer, Volume> entry : vlmMap.entrySet())
             {
-                try
-                {
-                    transMgr.rollback();
-                }
-                catch (SQLException sqlExc)
-                {
-                    String errorMessage = String.format(
-                        "A database error occured while trying to rollback the creation of resource " +
-                            "'%s' on node '%s'.",
-                        rscNameStr,
-                        nodeNameStr
-                            );
-                            controller.getErrorReporter().reportError(
-                                sqlExc,
-                                accCtx,
-                                client,
-                                errorMessage
-                                );
-
-                                ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(RC_RSC_CRT_FAIL_SQL_ROLLBACK);
-                    entry.setMessageFormat(errorMessage);
-                    entry.setCauseFormat(sqlExc.getMessage());
-                    entry.putObjRef(KEY_NODE, nodeNameStr);
-                    entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-                    apiCallRc.addEntry(entry);
-                }
+                 reportSuccess(
+                     "Volume with number '" + entry.getKey() + "' on resource '" +
+                     entry.getValue().getResourceDefinition().getName().displayValue + "' on node '" +
+                     entry.getValue().getResource().getAssignedNode().getName().displayValue + "' successfully created",
+                     "Volume UUID is: " + entry.getValue().getUuid().toString()
+                 );
             }
-            controller.dbConnPool.returnConnection(transMgr);
+            updateSatellites(rsc);
+            // TODO: if a satellite confirms creation, also log it to controller.info
         }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // exception already reported and added to client's answer-set
+        }
+        catch (Exception exc)
+        {
+            reportStatic(
+                exc,
+                "An unknown exception occured during creation of resource '" + rscNameStr + "' on node '" +
+                nodeNameStr + "'.",
+                null, // cause
+                null, // details
+                null, // corerction
+                ApiConsts.RC_RSC_CRT_FAIL_UNKNOWN_ERROR,
+                getObjRefs(nodeNameStr, rscNameStr),
+                getVariables(nodeNameStr, rscNameStr),
+                apiCallRc,
+                controller,
+                accCtx,
+                client
+            );
+        }
+        catch (ImplementationError implError)
+        {
+            reportStatic(
+                implError,
+                "An implementation error occured during creation of resource '" + rscNameStr + "' on node '" +
+                nodeNameStr + "'.",
+                null, // cause
+                null, // details
+                null, // corerction
+                ApiConsts.RC_RSC_CRT_FAIL_IMPL_ERROR,
+                getObjRefs(nodeNameStr, rscNameStr),
+                getVariables(nodeNameStr, rscNameStr),
+                apiCallRc,
+                controller,
+                accCtx,
+                client
+            );
+        }
+
         return apiCallRc;
     }
 
-    private NodeId getNextNodeId(Iterator<Resource> rscIterator)
+    private NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
     {
+        // TODO: maybe use the poolAllocator for nodeId
+
+        Iterator<Resource>  rscIterator;
+
+        try
+        {
+            rscIterator = rscDfn.iterateResource(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+
         NodeId nodeId = null;
         Node[] idsInUse = new Node[NodeId.NODE_ID_MAX + 1];
         int id = -1;
@@ -1575,10 +1023,66 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         return "resource '" + currentRscName.get() + "' on node '" + currentNodeName.get() + "'";
     }
 
+    private Map<String, String> getObjRefs(String nodeNameStr, String rscNameStr)
+    {
+        Map<String, String> map = new TreeMap<>();
+        map.put(ApiConsts.KEY_NODE, nodeNameStr);
+        map.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
+        return map;
+    }
+
+    private Map<String, String> getVariables(String nodeNameStr, String rscNameStr)
+    {
+        Map<String, String> map = new TreeMap<>();
+        map.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+        map.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
+        return map;
+    }
+
+    private ResourceData createResource(ResourceDefinitionData rscDfn, NodeData node, NodeId nodeId)
+    {
+        try
+        {
+            return ResourceData.getInstance(
+                currentAccCtx.get(),
+                rscDfn,
+                node,
+                nodeId,
+                null, // flags
+                currentTransMgr.get(),
+                true, // persist this entry
+                true // throw exception if the entry exists
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "create the " + getObjectDescriptionInline() + ".",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "creating the " + getObjectDescriptionInline()
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw asExc(
+                dataAlreadyExistsExc,
+                "A " + getObjectDescriptionInline() + " already exists.",
+                ApiConsts.FAIL_EXISTS_RSC
+            );
+        }
+    }
+
     private ResourceData loadRsc(String nodeName, String rscName) throws ApiCallHandlerFailedException
     {
-        Node node = loadNode(nodeName);
-        ResourceDefinitionData rscDfn = loadRscDfn(rscName);
+        Node node = loadNode(nodeName, true);
+        ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
 
         try
         {
@@ -1617,20 +1121,66 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private Props getProps(ResourceData rsc)
+    private VolumeData createVolume(
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        StorPool storPool,
+        VlmApi vlmApi
+    )
     {
         try
         {
-            return rsc.getProps(currentAccCtx.get());
+            String blockDevice = vlmApi == null ? null : vlmApi.getBlockDevice();
+            String metaDisk = vlmApi == null ? null : vlmApi.getMetaDisk();
+
+            return VolumeData.getInstance(
+                currentAccCtx.get(),
+                rsc,
+                vlmDfn,
+                storPool,
+                blockDevice,
+                metaDisk,
+                null, // flags
+                currentTransMgr.get(),
+                true, // persist this entry
+                true // throw exception if the entry exists
+            );
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "accessing props for resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
-                rsc.getAssignedNode().getName().displayValue + "'.",
-                ApiConsts.FAIL_ACC_DENIED_RSC
+                "create " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_VLM
             );
         }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw asExc(
+                dataAlreadyExistsExc,
+                "The " + getObjectDescriptionInline() + " already exists",
+                ApiConsts.FAIL_EXISTS_VLM
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "creating " + getObjectDescriptionInline()
+            );
+        }
+    }
+
+    private Iterator<VolumeDefinition> getVlmDfnIterator(ResourceDefinitionData rscDfn)
+    {
+        try
+        {
+            return rscDfn.iterateVolumeDfn(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+
     }
 }

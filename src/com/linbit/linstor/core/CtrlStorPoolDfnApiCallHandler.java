@@ -261,7 +261,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         )
         {
             requireStorPoolDfnChangeAccess();
-            StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr);
+            StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
 
             if (storPoolDfnUuid != null && !storPoolDfnUuid.equals(storPoolDfn.getUuid()))
             {
