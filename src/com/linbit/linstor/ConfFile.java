@@ -123,11 +123,9 @@ public class ConfFile implements Comparator<Resource>
                     String toAddr = toNetIf.getAddress(accCtx).getAddress();
 
                     int hostNameLen = Math.max(fromHost.length(), toHost.length());
-                    int addrLen = Math.max(fromAddr.length(), toAddr.length());
-                    int portLen = (int) Math.log10(port);
                     conf.append("    connection\n");
                     conf.append("    {\n");
-                    String format = "        host %" + hostNameLen + "s address %" + addrLen + "s port %" + portLen + "d;\n";
+                    String format = "        host %-" + hostNameLen + "s address %s:%d;\n";
                     conf.append(
                         format,
                         fromHost,
