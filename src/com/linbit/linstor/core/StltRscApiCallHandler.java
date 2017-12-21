@@ -13,10 +13,14 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.MinorNumber;
+import com.linbit.linstor.NetInterfaceData;
+import com.linbit.linstor.NetInterfaceName;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
@@ -31,7 +35,6 @@ import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.SatelliteConnection.EncryptionType;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
@@ -43,6 +46,7 @@ import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -115,7 +119,7 @@ class StltRscApiCallHandler
 
     public UpdatedObjects applyChanges(RscPojo rscRawData, SatelliteTransactionMgr transMgr)
         throws DivergentDataException, InvalidNameException, ValueOutOfRangeException,
-        AccessDeniedException, SQLException
+        AccessDeniedException, SQLException, ImplementationError, InvalidIpAddressException
     {
         ResourceName rscName;
 
@@ -205,11 +209,25 @@ class StltRscApiCallHandler
                     apiCtx,
                     otherRscRaw.getNodeUuid(),
                     new NodeName(otherRscRaw.getNodeName()),
-                    NodeType.getByValue(otherRscRaw.getNodeType()),
+                    NodeType.valueOf(otherRscRaw.getNodeType()),
                     NodeFlag.restoreFlags(otherRscRaw.getNodeFlags()),
                     transMgr
                 );
                 checkUuid(remoteNode, otherRscRaw);
+
+                // set node's netinterfaces
+                for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRscRaw.getNetInterfacefPojos())
+                {
+                    NetInterfaceData.getInstanceSatellite(
+                        apiCtx,
+                        otherNodeNetIf.getUuid(),
+                        remoteNode,
+                        new NetInterfaceName(otherNodeNetIf.getName()),
+                        new LsIpAddress(otherNodeNetIf.getAddress()),
+                        transMgr
+                    );
+                }
+                nodesToRegister.add(remoteNode);
 
                 ResourceData remoteRsc = createRsc(
                     otherRscRaw.getRscUuid(),
@@ -312,10 +330,24 @@ class StltRscApiCallHandler
                             apiCtx,
                             otherRsc.getNodeUuid(),
                             nodeName,
-                            NodeType.getByValue(otherRsc.getNodeType()),
+                            NodeType.valueOf(otherRsc.getNodeType()),
                             NodeFlag.restoreFlags(otherRsc.getNodeFlags()),
                             transMgr
                         );
+
+                        // set node's netinterfaces
+                        for (OtherNodeNetInterfacePojo otherNodeNetIf : otherRsc.getNetInterfacefPojos())
+                        {
+                            NetInterfaceData.getInstanceSatellite(
+                                apiCtx,
+                                otherNodeNetIf.getUuid(),
+                                remoteNode,
+                                new NetInterfaceName(otherNodeNetIf.getName()),
+                                new LsIpAddress(otherNodeNetIf.getAddress()),
+                                transMgr
+                            );
+                        }
+
                         nodesToRegister.add(remoteNode);
                     }
                     else

@@ -156,7 +156,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     {
         private final String nodeName;
         private final UUID nodeUuid;
-        private final long nodeType;
+        private final String nodeType;
         private final long nodeFlags;
         private final Map<String, String> nodeProps;
         private final UUID rscUuid;
@@ -164,13 +164,15 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         private final long rscFlags;
         private final Map<String, String> rscProps;
         private final List<Volume.VlmApi> vlms;
+        private final List<OtherNodeNetInterfacePojo> netInterfacefPojos;
 
         public OtherRscPojo(
             String nodeName,
             UUID nodeUuid,
-            long nodeType,
+            String nodeType,
             long nodeFlags,
             Map<String, String> nodeProps,
+            List<OtherNodeNetInterfacePojo> netIfPojos,
             UUID rscUuid,
             int rscNodeId,
             long rscFlags,
@@ -183,6 +185,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
             this.nodeType = nodeType;
             this.nodeFlags = nodeFlags;
             this.nodeProps = nodeProps;
+            this.netInterfacefPojos = netIfPojos;
             this.rscUuid = rscUuid;
             this.rscNodeId = rscNodeId;
             this.rscFlags = rscFlags;
@@ -200,7 +203,7 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
             return nodeUuid;
         }
 
-        public long getNodeType()
+        public String getNodeType()
         {
             return nodeType;
         }
@@ -208,6 +211,11 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         public long getNodeFlags()
         {
             return nodeFlags;
+        }
+
+        public List<OtherNodeNetInterfacePojo> getNetInterfacefPojos()
+        {
+            return netInterfacefPojos;
         }
 
         public Map<String, String> getNodeProps()
@@ -238,6 +246,35 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         public List<Volume.VlmApi> getVlms()
         {
             return vlms;
+        }
+    }
+
+    public static class OtherNodeNetInterfacePojo
+    {
+        private final UUID uuid;
+        private final String name;
+        private final String address;
+
+        public OtherNodeNetInterfacePojo(final UUID uuidRef, final String nameRef, final String addressRef)
+        {
+            uuid = uuidRef;
+            name = nameRef;
+            address = addressRef;
+        }
+
+        public UUID getUuid()
+        {
+            return uuid;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public String getAddress()
+        {
+            return address;
         }
     }
 }

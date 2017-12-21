@@ -1,15 +1,17 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import java.io.IOException;
+
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
@@ -18,6 +20,8 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
@@ -133,13 +137,15 @@ public class ApplyRsc extends BaseProtoApiCall
         List<OtherRscPojo> list = new ArrayList<>();
         for (MsgIntOtherRscData otherRsc : otherResourcesList)
         {
+            NodeOuterClass.Node protoNode = otherRsc.getNode();
             list.add(
                 new OtherRscPojo(
-                    otherRsc.getNodeName(),
-                    UUID.fromString(otherRsc.getNodeUuid()),
-                    otherRsc.getNodeType(),
+                    protoNode.getName(),
+                    UUID.fromString(protoNode.getUuid()),
+                    protoNode.getType(),
                     otherRsc.getNodeFlags(),
-                    asMap(otherRsc.getNodePropsList()),
+                    asMap(protoNode.getPropsList()),
+                    extractNetIfs(protoNode),
                     UUID.fromString(otherRsc.getRscUuid()),
                     otherRsc.getRscNodeId(),
                     otherRsc.getRscFlags(),
@@ -151,5 +157,25 @@ public class ApplyRsc extends BaseProtoApiCall
             );
         }
         return list;
+    }
+
+    private static List<OtherNodeNetInterfacePojo> extractNetIfs(NodeOuterClass.Node protoNode)
+    {
+        List<OtherNodeNetInterfacePojo> list = new ArrayList<>();
+
+        List<NetInterfaceOuterClass.NetInterface> protoNetIfs = protoNode.getNetInterfacesList();
+
+        for (NetInterfaceOuterClass.NetInterface protoNetInterface : protoNetIfs)
+        {
+            list.add(
+                new OtherNodeNetInterfacePojo(
+                    UUID.fromString(protoNetInterface.getUuid()),
+                    protoNetInterface.getName(),
+                    protoNetInterface.getAddress()
+                )
+            );
+        }
+
+        return Collections.unmodifiableList(list);
     }
 }

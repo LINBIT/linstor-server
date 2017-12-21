@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -16,6 +17,8 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
@@ -159,15 +162,11 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
         for (Resource rsc : otherResources)
         {
             Node node = rsc.getAssignedNode();
-            Map<String, String> nodeProps = node.getProps(serializerCtx).map();
             Map<String, String> rscProps = rsc.getProps(serializerCtx).map();
             list.add(
                 MsgIntOtherRscData.newBuilder()
-                    .setNodeName(node.getName().displayValue)
-                    .setNodeUuid(node.getUuid().toString())
-                    .setNodeType(node.getNodeType(serializerCtx).getFlagValue())
+                    .setNode(buildOtherNode(node))
                     .setNodeFlags(node.getFlags().getFlagsBits(serializerCtx))
-                    .addAllNodeProps(BaseProtoApiCall.fromMap(nodeProps))
                     .setRscUuid(rsc.getUuid().toString())
                     .setRscNodeId(rsc.getNodeId().value)
                     .setRscFlags(rsc.getStateFlags().getFlagsBits(serializerCtx))
@@ -180,5 +179,39 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
         }
 
         return list;
+    }
+
+    private NodeOuterClass.Node buildOtherNode(Node node) throws AccessDeniedException
+    {
+        Map<String, String> nodeProps = node.getProps(serializerCtx).map();
+        return NodeOuterClass.Node.newBuilder()
+            .setUuid(node.getUuid().toString())
+            .setName(node.getName().displayValue)
+            .setType(node.getNodeType(serializerCtx).name())
+            .addAllProps(BaseProtoApiCall.fromMap(nodeProps))
+            .addAllNetInterfaces(buildNodeNetInterfaces(node))
+            .build();
+    }
+
+    private Iterable<? extends NetInterfaceOuterClass.NetInterface> buildNodeNetInterfaces(Node node)
+        throws AccessDeniedException
+    {
+        List<NetInterfaceOuterClass.NetInterface> protoNetIfs = new ArrayList<>();
+
+        Iterator<NetInterface> netIfs = node.iterateNetInterfaces(serializerCtx);
+        while (netIfs.hasNext())
+        {
+            NetInterface netIf = netIfs.next();
+
+            protoNetIfs.add(
+                NetInterfaceOuterClass.NetInterface.newBuilder()
+                    .setUuid(netIf.getUuid().toString())
+                    .setName(netIf.getName().displayValue)
+                    .setAddress(netIf.getAddress(serializerCtx).getAddress())
+                    .build()
+            );
+        }
+
+        return protoNetIfs;
     }
 }
