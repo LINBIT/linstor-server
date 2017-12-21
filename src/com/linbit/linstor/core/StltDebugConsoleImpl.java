@@ -42,6 +42,7 @@ class StltDebugConsoleImpl extends BaseDebugConsole
             "CmdDisplayApis",
             "CmdDisplayNodes",
             "CmdDisplayResourceDfn",
+            "CmdDisplayResource",
             "CmdDisplayLockStatus",
             "CmdDisplayConfValue",
             "CmdDisplayObjectStatistics",
