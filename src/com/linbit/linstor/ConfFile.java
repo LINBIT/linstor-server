@@ -69,7 +69,7 @@ public class ConfFile implements Comparator<Resource>
         while (vlmIterator.hasNext())
         {
             final Volume vlm = vlmIterator.next();
-            appendVlm(vlm, localRsc, accCtx, conf);
+            appendVlm(vlm, accCtx, conf);
         }
         conf.append("        address    %s:%d;\n", localAddr, port);
         conf.append("        nodeid     %d;\n", localRsc.getNodeId().value);
@@ -89,7 +89,7 @@ public class ConfFile implements Comparator<Resource>
                 while (peerVlms.hasNext())
                 {
                     final Volume peerVlm = peerVlms.next();
-                    appendVlm(peerVlm, peerRsc, accCtx, conf);
+                    appendVlm(peerVlm, accCtx, conf);
                 }
 
                 conf.append("        address     %s:%d;\n", peerAddr, port);
@@ -184,19 +184,27 @@ public class ConfFile implements Comparator<Resource>
         return conf.stringBuilder.toString();
     }
 
-    private static void appendVlm(Volume vlm, Resource rsc, AccessContext accCtx, ConfFile conf)
+    private static void appendVlm(Volume vlm, AccessContext accCtx, ConfFile conf)
         throws AccessDeniedException
     {
         final String disk;
         if (vlm.getBlockDevicePath(accCtx) == null ||
-            rsc.getStateFlags().isSet(accCtx, RscFlags.DISKLESS)
+            vlm.getResource().getStateFlags().isSet(accCtx, RscFlags.DISKLESS)
         )
         {
             disk = "none";
         }
         else
         {
-            disk = vlm.getBlockDevicePath(accCtx);
+            String tmpDisk = vlm.getBlockDevicePath(accCtx);
+            if (tmpDisk.trim().equals(""))
+            {
+                disk = "/dev/drbd/this/is/not/used";
+            }
+            else
+            {
+                disk = vlm.getBlockDevicePath(accCtx);
+            }
         }
         final String metaDisk;
         if (vlm.getMetaDiskPath(accCtx) == null)
@@ -205,7 +213,15 @@ public class ConfFile implements Comparator<Resource>
         }
         else
         {
-            metaDisk = vlm.getMetaDiskPath(accCtx);
+            String tmpMeta = vlm.getMetaDiskPath(accCtx);
+            if (tmpMeta.trim().equals(""))
+            {
+                metaDisk = "internal";
+            }
+            else
+            {
+                metaDisk = vlm.getMetaDiskPath(accCtx);
+            }
         }
         conf.append("        volume %s\n", vlm.getVolumeDefinition().getVolumeNumber().value);
         conf.append("        {\n");
