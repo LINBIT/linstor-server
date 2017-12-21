@@ -375,7 +375,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertObjProt(
+    public static void insertObjProt(
         TransactionMgr transMgr,
         String objPath,
         AccessContext accCtx
@@ -391,7 +391,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertNode(
+    public static void insertNode(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -416,7 +416,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertNetInterface(
+    public static void insertNetInterface(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -436,7 +436,8 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.executeUpdate();
         stmt.close();
     }
-    protected static void insertNodeCon(
+
+    public static void insertNodeCon(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName sourceNodeName,
@@ -452,7 +453,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertResCon(
+    public static void insertResCon(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName sourceNodeName,
@@ -470,7 +471,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertVolCon(
+    public static void insertVolCon(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName sourceNodeName,
@@ -490,7 +491,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertResDfn(
+    public static void insertResDfn(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         ResourceName resName,
@@ -507,7 +508,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertRes(
+    public static void insertRes(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -527,7 +528,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertVolDfn(
+    public static void insertVolDfn(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         ResourceName resName,
@@ -549,7 +550,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertVol(
+    public static void insertVol(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -575,7 +576,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertStorPoolDfn(
+    public static void insertStorPoolDfn(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         StorPoolName poolName
@@ -590,7 +591,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertStorPool(
+    public static void insertStorPool(
         TransactionMgr transMgr,
         java.util.UUID uuid,
         NodeName nodeName,
@@ -608,7 +609,7 @@ public abstract class DerbyBase implements DerbyConstants
         stmt.close();
     }
 
-    protected static void insertProp(
+    public static void insertProp(
         TransactionMgr transMgr,
         String instance,
         String key,

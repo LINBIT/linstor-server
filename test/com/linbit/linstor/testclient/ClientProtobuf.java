@@ -83,6 +83,7 @@ public class ClientProtobuf implements Runnable
 
     private static final Map<Long, String> RET_CODES_TYPE = new HashMap<>();
     private static final Map<Long, String> RET_CODES_OBJ = new HashMap<>();
+    private static final Map<Long, String> RET_CODES_ACTION = new HashMap<>();
 
     static
     {
@@ -102,6 +103,85 @@ public class ClientProtobuf implements Runnable
         RET_CODES_OBJ.put(MASK_RSC_CONN, "RscConn");
         RET_CODES_OBJ.put(MASK_VLM_CONN, "VlmConn");
         RET_CODES_OBJ.put(MASK_NET_IF, "NetIf");
+
+        RET_CODES_ACTION.put(CREATED, "created" );
+        RET_CODES_ACTION.put(DELETED, "deleted");
+        RET_CODES_ACTION.put(MODIFIED, "modified");
+
+        RET_CODES_ACTION.put(FAIL_SQL, "FAIL_SQL");
+        RET_CODES_ACTION.put(FAIL_SQL_ROLLBACK, "FAIL_SQL_ROLLBACK");
+        RET_CODES_ACTION.put(FAIL_INVLD_NODE_NAME, "FAIL_INVLD_NODE_NAME");
+        RET_CODES_ACTION.put(FAIL_INVLD_NODE_TYPE, "FAIL_INVLD_NODE_TYPE");
+        RET_CODES_ACTION.put(FAIL_INVLD_RSC_NAME, "FAIL_INVLD_RSC_NAME");
+        RET_CODES_ACTION.put(FAIL_INVLD_RSC_PORT, "FAIL_INVLD_RSC_PORT");
+        RET_CODES_ACTION.put(FAIL_INVLD_NODE_ID, "FAIL_INVLD_NODE_ID");
+        RET_CODES_ACTION.put(FAIL_INVLD_VLM_NR, "FAIL_INVLD_VLM_NR");
+        RET_CODES_ACTION.put(FAIL_INVLD_VLM_SIZE, "FAIL_INVLD_VLM_SIZE");
+        RET_CODES_ACTION.put(FAIL_INVLD_MINOR_NR, "FAIL_INVLD_MINOR_NR");
+        RET_CODES_ACTION.put(FAIL_INVLD_STOR_POOL_NAME, "FAIL_INVLD_STOR_POOL_NAME");
+        RET_CODES_ACTION.put(FAIL_INVLD_NET_NAME, "FAIL_INVLD_NET_NAME");
+        RET_CODES_ACTION.put(FAIL_INVLD_NET_ADDR, "FAIL_INVLD_NET_ADDR");
+        RET_CODES_ACTION.put(FAIL_INVLD_NET_PORT, "FAIL_INVLD_NET_PORT");
+        RET_CODES_ACTION.put(FAIL_INVLD_NET_TYPE, "FAIL_INVLD_NET_TYPE");
+        RET_CODES_ACTION.put(FAIL_INVLD_PROP, "FAIL_INVLD_PROP");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_NODE, "FAIL_NOT_FOUND_NODE");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_RSC_DFN, "FAIL_NOT_FOUND_RSC_DFN");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_RSC, "FAIL_NOT_FOUND_RSC");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_VLM_DFN, "FAIL_NOT_FOUND_VLM_DFN");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_VLM, "FAIL_NOT_FOUND_VLM");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_NET_IF, "FAIL_NOT_FOUND_NET_IF");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_NODE_CONN, "FAIL_NOT_FOUND_NODE_CONN");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_RSC_CONN, "FAIL_NOT_FOUND_RSC_CONN");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_VLM_CONN, "FAIL_NOT_FOUND_VLM_CONN");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_STOR_POOL_DFN, "FAIL_NOT_FOUND_STOR_POOL_DFN");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_STOR_POOL, "FAIL_NOT_FOUND_STOR_POOL");
+        RET_CODES_ACTION.put(FAIL_NOT_FOUND_DFLT_STOR_POOL, "FAIL_NOT_FOUND_DFLT_STOR_POOL");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_NODE, "FAIL_ACC_DENIED_NODE");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_RSC_DFN, "FAIL_ACC_DENIED_RSC_DFN");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_RSC, "FAIL_ACC_DENIED_RSC");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_VLM_DFN, "FAIL_ACC_DENIED_VLM_DFN");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_VLM, "FAIL_ACC_DENIED_VLM");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_STOR_POOL_DFN, "FAIL_ACC_DENIED_STOR_POOL_DFN");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_STOR_POOL, "FAIL_ACC_DENIED_STOR_POOL");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_NODE_CONN, "FAIL_ACC_DENIED_NODE_CONN");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_RSC_CONN, "FAIL_ACC_DENIED_RSC_CONN");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_VLM_CONN, "FAIL_ACC_DENIED_VLM_CONN");
+        RET_CODES_ACTION.put(FAIL_ACC_DENIED_STLT_CONN, "FAIL_ACC_DENIED_STLT_CONN");
+        RET_CODES_ACTION.put(FAIL_EXISTS_NODE, "FAIL_EXISTS_NODE");
+        RET_CODES_ACTION.put(FAIL_EXISTS_RSC_DFN, "FAIL_EXISTS_RSC_DFN");
+        RET_CODES_ACTION.put(FAIL_EXISTS_RSC, "FAIL_EXISTS_RSC");
+        RET_CODES_ACTION.put(FAIL_EXISTS_VLM_DFN, "FAIL_EXISTS_VLM_DFN");
+        RET_CODES_ACTION.put(FAIL_EXISTS_VLM, "FAIL_EXISTS_VLM");
+        RET_CODES_ACTION.put(FAIL_EXISTS_NET_IF, "FAIL_EXISTS_NET_IF");
+        RET_CODES_ACTION.put(FAIL_EXISTS_NODE_CONN, "FAIL_EXISTS_NODE_CONN");
+        RET_CODES_ACTION.put(FAIL_EXISTS_RSC_CONN, "FAIL_EXISTS_RSC_CONN");
+        RET_CODES_ACTION.put(FAIL_EXISTS_VLM_CONN, "FAIL_EXISTS_VLM_CONN");
+        RET_CODES_ACTION.put(FAIL_EXISTS_STOR_POOL_DFN, "FAIL_EXISTS_STOR_POOL_DFN");
+        RET_CODES_ACTION.put(FAIL_EXISTS_STOR_POOL, "FAIL_EXISTS_STOR_POOL");
+        RET_CODES_ACTION.put(FAIL_MISSING_PROPS, "FAIL_MISSING_PROPS");
+        RET_CODES_ACTION.put(FAIL_MISSING_PROPS_NETCOM_TYPE, "FAIL_MISSING_PROPS_NETCOM_TYPE");
+        RET_CODES_ACTION.put(FAIL_MISSING_PROPS_NETCOM_PORT, "FAIL_MISSING_PROPS_NETCOM_PORT");
+        RET_CODES_ACTION.put(FAIL_MISSING_NETCOM, "FAIL_MISSING_NETCOM");
+        RET_CODES_ACTION.put(FAIL_MISSING_PROPS_NETIF_NAME, "FAIL_MISSING_PROPS_NETIF_NAME");
+        RET_CODES_ACTION.put(FAIL_MISSING_STLT_CONN, "FAIL_MISSING_STLT_CONN");
+        RET_CODES_ACTION.put(FAIL_UUID_NODE, "FAIL_UUID_NODE");
+        RET_CODES_ACTION.put(FAIL_UUID_RSC_DFN, "FAIL_UUID_RSC_DFN");
+        RET_CODES_ACTION.put(FAIL_UUID_RSC, "FAIL_UUID_RSC");
+        RET_CODES_ACTION.put(FAIL_UUID_VLM_DFN, "FAIL_UUID_VLM_DFN");
+        RET_CODES_ACTION.put(FAIL_UUID_VLM, "FAIL_UUID_VLM");
+        RET_CODES_ACTION.put(FAIL_UUID_NET_IF, "FAIL_UUID_NET_IF");
+        RET_CODES_ACTION.put(FAIL_UUID_NODE_CONN, "FAIL_UUID_NODE_CONN");
+        RET_CODES_ACTION.put(FAIL_UUID_RSC_CONN, "FAIL_UUID_RSC_CONN");
+        RET_CODES_ACTION.put(FAIL_UUID_VLM_CONN, "FAIL_UUID_VLM_CONN");
+        RET_CODES_ACTION.put(FAIL_UUID_STOR_POOL_DFN, "FAIL_UUID_STOR_POOL_DFN");
+        RET_CODES_ACTION.put(FAIL_UUID_STOR_POOL, "FAIL_UUID_STOR_POOL");
+        RET_CODES_ACTION.put(FAIL_IN_USE, "FAIL_IN_USE");
+        RET_CODES_ACTION.put(FAIL_UNKNOWN_ERROR, "FAIL_UNKNOWN_ERROR");
+        RET_CODES_ACTION.put(FAIL_IMPL_ERROR, "FAIL_IMPL_ERROR");
+        RET_CODES_ACTION.put(WARN_INVLD_OPT_PROP_NETCOM_ENABLED, "WARN_INVLD_OPT_PROP_NETCOM_ENABLED");
+        RET_CODES_ACTION.put(WARN_NOT_CONNECTED, "WARN_NOT_CONNECTED");
+        RET_CODES_ACTION.put(WARN_NOT_FOUND, "WARN_NOT_FOUND");
+
     }
 
     private Socket sock;
@@ -142,6 +222,11 @@ public class ClientProtobuf implements Runnable
         shutdown = false;
         thread = new Thread(this, "ClientProtobuf");
         thread.start();
+    }
+
+    public void setPrintStream(PrintStream printStream)
+    {
+        outStream = printStream;
     }
 
     public void resetAllCounts()
@@ -231,14 +316,15 @@ public class ClientProtobuf implements Runnable
                 MsgHeader protoHeader = MsgHeader.parseDelimitedFrom(bais);
 
                 sb.setLength(0);
-                sb.append("MsgId: ")
-                    .append(protoHeader.getMsgId())
-                    .append("\n");
                 int responseIdx = 1;
                 if (bais.available() == 0)
                 {
                     // maybe a pong or a header-only answer
-                    sb.append(protoHeader.getApiCall()).append("\n");
+                    sb.append("MsgId: ")
+                        .append(protoHeader.getMsgId())
+                        .append("\n")
+                        .append(protoHeader.getApiCall())
+                        .append("\n");
                 }
                 while (bais.available() > 0)
                 {
@@ -254,58 +340,18 @@ public class ClientProtobuf implements Runnable
                     callback(protoHeader.getMsgId(), retCode, message, cause, correction,
                         details, objRefsMap, variablesMap);
 
-                    sb.append("   Response ")
-                        .append(responseIdx++)
-                        .append(": \n      RetCode   : ");
-                    decodeRetValue(sb, retCode);
-                    if (message != null && !"".equals(message))
-                    {
-                        sb.append("\n      Message   : ").append(format(message));
-                    }
-                    if (details != null && !"".equals(details))
-                    {
-                        sb.append("\n      Details   : ").append(format(details));
-                    }
-                    if (cause != null && !"".equals(cause))
-                    {
-                        sb.append("\n      Cause     : ").append(format(cause));
-                    }
-                    if (correction != null && !"".equals(correction))
-                    {
-                        sb.append("\n      Correction: ").append(format(correction));
-                    }
-                    if (objRefsMap != null && !objRefsMap.isEmpty())
-                    {
-                        sb.append("\n      ObjRefs: ");
-                        for (Entry<String, String> entry : objRefsMap.entrySet())
-                        {
-                            sb.append("\n         ").append(entry.getKey()).append("=").append(entry.getValue());
-                        }
-                    }
-                    else
-                    {
-                        if (retCode == ApiConsts.UNKNOWN_API_CALL)
-                        {
-                            sb.append("\n      No ObjRefs");
-                        }
-                        else
-                        {
-                            sb.append("\n      No ObjRefs defined! Report this to the dev - this should not happen!");
-                        }
-
-                    }
-                    if (variablesMap != null && !variablesMap.isEmpty())
-                    {
-                        sb.append("\n      Variables: ");
-                        for (Entry<String, String> entry : variablesMap.entrySet())
-                        {
-                            sb.append("\n         ").append(entry.getKey()).append("=").append(entry.getValue());
-                        }
-                    }
-                    else
-                    {
-                        sb.append("\n      No Variables");
-                    }
+                    formatMessage(
+                        sb,
+                        protoHeader.getMsgId(),
+                        responseIdx++,
+                        retCode,
+                        message,
+                        cause,
+                        correction,
+                        details,
+                        objRefsMap,
+                        variablesMap
+                    );
                     sb.append("\n");
                 }
                 println(sb.toString());
@@ -327,6 +373,80 @@ public class ClientProtobuf implements Runnable
         println("   info    : " + infoCount);
         println("   warn    : " + warnCount);
         println("   error   : " + errorCount);
+    }
+
+    public void formatMessage(
+        StringBuilder sb,
+        int msgId,
+        int responseIdx,
+        long retCode,
+        String message,
+        String cause,
+        String correction,
+        String details,
+        Map<String, String> objRefsMap,
+        Map<String, String> variablesMap
+    )
+    {
+        if (sb == null)
+        {
+            sb = new StringBuilder();
+        }
+        sb.append("MsgId: ")
+            .append(msgId)
+            .append("\n")
+            .append("   Response ")
+            .append(responseIdx)
+            .append(": \n      RetCode   : ");
+        decodeRetValue(sb, retCode);
+        if (message != null && !"".equals(message))
+        {
+            sb.append("\n      Message   : ").append(format(message));
+        }
+        if (details != null && !"".equals(details))
+        {
+            sb.append("\n      Details   : ").append(format(details));
+        }
+        if (cause != null && !"".equals(cause))
+        {
+            sb.append("\n      Cause     : ").append(format(cause));
+        }
+        if (correction != null && !"".equals(correction))
+        {
+            sb.append("\n      Correction: ").append(format(correction));
+        }
+        if (objRefsMap != null && !objRefsMap.isEmpty())
+        {
+            sb.append("\n      ObjRefs: ");
+            for (Entry<String, String> entry : objRefsMap.entrySet())
+            {
+                sb.append("\n         ").append(entry.getKey()).append("=").append(entry.getValue());
+            }
+        }
+        else
+        {
+            if (retCode == ApiConsts.UNKNOWN_API_CALL)
+            {
+                sb.append("\n      No ObjRefs");
+            }
+            else
+            {
+                sb.append("\n      No ObjRefs defined! Report this to the dev - this should not happen!");
+            }
+
+        }
+        if (variablesMap != null && !variablesMap.isEmpty())
+        {
+            sb.append("\n      Variables: ");
+            for (Entry<String, String> entry : variablesMap.entrySet())
+            {
+                sb.append("\n         ").append(entry.getKey()).append("=").append(entry.getValue());
+            }
+        }
+        else
+        {
+            sb.append("\n      No Variables");
+        }
     }
 
     public void registerCallback(MessageCallback callback)
@@ -406,7 +526,8 @@ public class ClientProtobuf implements Runnable
         }
 
         decode(sb, retCode, 0xC000000000000000L, RET_CODES_TYPE);
-        decode(sb, retCode, 0x3C00000000000000L, RET_CODES_OBJ);
+        decode(sb, retCode, 0x00000000003C0000L, RET_CODES_OBJ);
+        decode(sb, retCode, 0xC00000000000FFFFL, RET_CODES_ACTION);
         sb.append(Long.toHexString(retCode));
         if ((retCode & 0x00FFFFFFFFFFFFFFL) == 0)
         {

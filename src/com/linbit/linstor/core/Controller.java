@@ -336,8 +336,6 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 {
                     errorLogRef.reportError(ioExc);
                 }
-                if (testDbPool == null)
-                {
                     try
                     {
                         // TODO: determine which DBDriver to use
@@ -352,22 +350,24 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                             storPoolDfnMap
                         );
 
-                        String connectionUrl = dbProps.getProperty(
-                            DB_CONN_URL,
-                            persistenceDbDriver.getDefaultConnectionUrl()
-                        );
+                        if (testDbPool == null)
+                        {
+                            String connectionUrl = dbProps.getProperty(
+                                DB_CONN_URL,
+                                persistenceDbDriver.getDefaultConnectionUrl()
+                            );
 
-                        // Connect the database connection pool to the database
-                        dbConnPool.initializeDataSource(
-                            connectionUrl,
-                            dbProps
-                        );
+                            // Connect the database connection pool to the database
+                            dbConnPool.initializeDataSource(
+                                connectionUrl,
+                                dbProps
+                            );
+                        }
                     }
                     catch (SQLException sqlExc)
                     {
                         errorLogRef.reportError(sqlExc);
                     }
-                }
 
                 errorLogRef.logInfo("Initializing authentication subsystem");
                 try
@@ -550,6 +550,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 {
                     errorLogRef.logInfo("No known nodes.");
                 }
+
+                errorLogRef.logInfo("Controller initialized");
             }
             catch (AccessDeniedException accessExc)
             {
