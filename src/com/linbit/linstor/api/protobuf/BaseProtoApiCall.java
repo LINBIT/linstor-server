@@ -178,9 +178,12 @@ public abstract class BaseProtoApiCall extends BaseApiCall
         byte[] protoHeaderBytes = baos.toByteArray();
         byte[] apiCallData = new byte[protoHeaderBytes.length + protoMsgsBytes.length];
 
+        // copy header data into apicalldata
+        System.arraycopy(protoHeaderBytes, 0, apiCallData, 0, protoHeaderBytes.length);
+
+        // copy proto message data into apicalldata if there is any
         if(protoMsgsBytes.length > 0)
         {
-            System.arraycopy(protoHeaderBytes, 0, apiCallData, 0, protoHeaderBytes.length);
             System.arraycopy(protoMsgsBytes, 0, apiCallData, protoHeaderBytes.length, protoMsgsBytes.length);
         }
 
