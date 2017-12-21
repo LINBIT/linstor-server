@@ -166,14 +166,12 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     private ObjectProtection shutdownProt;
 
     // Lock for major global changes
-    public final ReadWriteLock reconfigurationLock;
     public final ReadWriteLock stltConfLock;
 
     public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
         throws IOException
     {
         // Initialize synchronization
-        reconfigurationLock = new ReentrantReadWriteLock(true);
         stltConfLock        = new ReentrantReadWriteLock(true);
 
         // Initialize security contexts

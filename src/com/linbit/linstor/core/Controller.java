@@ -175,16 +175,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     private boolean shutdownFinished;
     private ObjectProtection shutdownProt;
 
-    // Synchronization lock for major global changes
-    public final ReadWriteLock reconfigurationLock;
-
     // Synchronization lock for the configuration
     public final ReadWriteLock ctrlConfLock;
-
-    // Synchronization locks for linstor object maps
-    public final ReadWriteLock nodesMapLock;
-    public final ReadWriteLock rscDfnMapLock;
-    public final ReadWriteLock storPoolDfnMapLock;
 
     // Controller configuration properties
     Props ctrlConf;
@@ -219,11 +211,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
     {
         // Initialize synchronization
-        reconfigurationLock = new ReentrantReadWriteLock(true);
         ctrlConfLock        = new ReentrantReadWriteLock(true);
-        nodesMapLock        = new ReentrantReadWriteLock(true);
-        rscDfnMapLock       = new ReentrantReadWriteLock(true);
-        storPoolDfnMapLock  = new ReentrantReadWriteLock(true);
 
         // Initialize security contexts
         sysCtx = sysCtxRef;

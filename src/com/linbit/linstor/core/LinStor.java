@@ -54,6 +54,8 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import org.slf4j.event.Level;
@@ -69,7 +71,7 @@ public abstract class LinStor
     // Product and version information
     //
     public static final String PROGRAM = "LINSTOR";
-    public static final String VERSION = "0.1.0-experimental [2017-12-05_001]";
+    public static final String VERSION = "0.1.0-experimental [2017-12-21_001]";
 
     // ============================================================
     // Worker thread pool defaults
@@ -101,9 +103,22 @@ public abstract class LinStor
     // Error & exception logging facility
     private ErrorReporter errorLog;
 
+    // Synchronization lock for major global changes
+    public final ReadWriteLock reconfigurationLock;
+
+    // Synchronization locks for linstor object maps
+    public final ReadWriteLock nodesMapLock;
+    public final ReadWriteLock rscDfnMapLock;
+    public final ReadWriteLock storPoolDfnMapLock;
+
+
     LinStor()
     {
-        // Initialize maps
+        // Initialize synchronization
+        reconfigurationLock = new ReentrantReadWriteLock(true);
+        nodesMapLock        = new ReentrantReadWriteLock(true);
+        rscDfnMapLock       = new ReentrantReadWriteLock(true);
+        storPoolDfnMapLock  = new ReentrantReadWriteLock(true);
 
         // Initialize system services
         timerEventSvc = new CoreTimerImpl();

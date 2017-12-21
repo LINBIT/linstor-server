@@ -165,22 +165,19 @@ class StltDebugControlImpl implements StltDebugControl
     @Override
     public ReadWriteLock getNodesMapLock()
     {
-        // FIXME: return the nodes map lock
-        throw new UnsupportedOperationException("Satellite: getNodesMapLock() not implemented yet.");
+        return satellite.nodesMapLock;
     }
 
     @Override
     public ReadWriteLock getRscDfnMapLock()
     {
-        // FIXME: return the resource definition map lock
-        throw new UnsupportedOperationException("Satellite: getRscDfnMapLock() not implemented yet.");
+        return satellite.rscDfnMapLock;
     }
 
     @Override
     public ReadWriteLock getStorPoolDfnMapLock()
     {
-        // FIXME: return the storage pool definition map lock
-        throw new UnsupportedOperationException("Satellite: getStorPoolDfnMapLock() not implemented yet.");
+        return satellite.storPoolDfnMapLock;
     }
 
     @Override
