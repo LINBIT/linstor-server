@@ -303,7 +303,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 try
                 {
                     int cpuCount = getCpuCount();
-                    int thrCount = cpuCount <= MAX_CPU_COUNT ? cpuCount : MAX_CPU_COUNT;
+                    int thrCount = com.linbit.utils.MathUtils.bounds(MIN_WORKER_COUNT, cpuCount, MAX_CPU_COUNT);
                     int qSize = thrCount * getWorkerQueueFactor();
                     qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
                     setWorkerThreadCount(initCtx, thrCount);

@@ -71,12 +71,13 @@ public abstract class LinStor
     // Product and version information
     //
     public static final String PROGRAM = "LINSTOR";
-    public static final String VERSION = "0.1.0-experimental [2017-12-21_001]";
+    public static final String VERSION = "0.1.0-experimental [2017-12-21_011]";
 
     // ============================================================
     // Worker thread pool defaults
     //
     public static final int MIN_WORKER_QUEUE_SIZE = 32;
+    public static final int MIN_WORKER_COUNT      = 4;
     public static final int MAX_CPU_COUNT = 1024;
 
     // At shutdown, wait at most SHUTDOWN_THR_JOIN_WAIT milliseconds for
