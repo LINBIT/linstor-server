@@ -25,6 +25,8 @@ public class InternalApiConsts
     public static final String API_REQUEST_STOR_POOL = "RequestStorPool";
     public static final String API_APPLY_STOR_POOL   = "ApplyStorPool";
 
+    public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
+
     private InternalApiConsts()
     {
     }

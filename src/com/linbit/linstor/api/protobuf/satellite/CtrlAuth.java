@@ -72,7 +72,7 @@ public class CtrlAuth extends BaseProtoApiCall
         if (!hostname.toLowerCase().equals(nodeName))
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
-            entry.setReturnCode(1);
+            entry.setReturnCode(InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH);
             entry.setMessageFormat("Satellite node name doesn't match hostname.");
             String cause = String.format(
                     "Satellite node name '%s' doesn't match nodes hostname '%s'.",
