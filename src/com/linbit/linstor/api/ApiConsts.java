@@ -2780,6 +2780,13 @@ public class ApiConsts
     public static final String NAMESPC_STLT = "Satellite";
 
     /*
+     * Storage pool property keys
+     */
+    public static final String KEY_STOR_POOL_VOLUME_GROUP = "LvmVg";
+    public static final String KEY_STOR_POOL_THIN_POOL = "ThinPool";
+    public static final String KEY_STOR_POOL_ZPOOL = "ZPool";
+
+    /*
      * Property keys
      */
     public static final String KEY_PORT_NR = "PortNr";
