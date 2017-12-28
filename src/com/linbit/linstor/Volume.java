@@ -50,7 +50,8 @@ public interface Volume extends TransactionObject
 
     public enum VlmFlags implements Flags
     {
-        CLEAN(1L);
+        CLEAN(1L),
+        DELETE(2L);
 
         public final long flagValue;
 
