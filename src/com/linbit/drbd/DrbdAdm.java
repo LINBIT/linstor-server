@@ -104,7 +104,7 @@ public class DrbdAdm
      */
     public void down(ResourceName resourceName) throws ExtCmdFailedException
     {
-        simpleAdmCommand(resourceName, "down");
+        simpleSetupCommand(resourceName, "down");
     }
 
     /**
@@ -306,6 +306,28 @@ public class DrbdAdm
         );
 
         execute(DRBDADM_UTIL, "-c", tmpResPathStr, "-d", "up", resourceName.value);
+    }
+
+    private void simpleSetupCommand(ResourceName rscName, String subcommand) throws ExtCmdFailedException
+    {
+        simpleSetupCommand(rscName, null, subcommand);
+    }
+
+    private void simpleSetupCommand(ResourceName rscName, VolumeNumber vlmNr, String... subCommands)
+        throws ExtCmdFailedException
+    {
+        List<String> command = new ArrayList<>();
+        command.add(DRBDSETUP_UTIL);
+        command.addAll(Arrays.asList(subCommands));
+
+        String drbdObj = rscName.displayValue;
+        if (vlmNr != null)
+        {
+            drbdObj += "/" + vlmNr.value;
+        }
+        command.add(drbdObj);
+
+        execute(command);
     }
 
     private void simpleAdmCommand(ResourceName resourceName, String subcommand) throws ExtCmdFailedException
