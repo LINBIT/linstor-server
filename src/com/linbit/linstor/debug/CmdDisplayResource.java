@@ -91,13 +91,13 @@ public class CmdDisplayResource extends BaseDebugCmd
                             }
                         }
 
-                        ResourceDefinition rscDfnRef = rscDfnMap.get(prmResName);
-                        if (rscDfnRef != null)
+                        ResourceDefinition rscDfn = rscDfnMap.get(prmResName);
+                        if (rscDfn != null)
                         {
-                            if (rscDfnRef.getResourceCount() >= 1)
+                            if (rscDfn.getResourceCount() >= 1)
                             {
                                 printSectionSeparator(debugOut);
-                                displayRsc(debugOut, rscDfnRef, accCtx);
+                                displayRsc(debugOut, rscDfn, accCtx);
                                 printSectionSeparator(debugOut);
                             }
                         }
@@ -177,8 +177,8 @@ public class CmdDisplayResource extends BaseDebugCmd
                     {
                         while (rscDfnIter.hasNext())
                         {
-                            ResourceDefinition rscDfnRef = rscDfnIter.next();
-                            ResourceName name = rscDfnRef.getName();
+                            ResourceDefinition rscDfn = rscDfnIter.next();
+                            ResourceName name = rscDfn.getName();
                             nameMatcher.reset(name.value);
                             if (nameMatcher.find())
                             {
@@ -186,7 +186,6 @@ public class CmdDisplayResource extends BaseDebugCmd
                                 {
                                     printSectionSeparator(debugOut);
                                 }
-                                ResourceDefinition rscDfn = rscDfnIter.next();
                                 if (rscDfn.getResourceCount() >= 1)
                                 {
                                     count += displayRsc(debugOut, rscDfn, accCtx);
