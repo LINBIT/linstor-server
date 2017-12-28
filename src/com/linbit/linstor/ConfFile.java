@@ -69,7 +69,10 @@ public class ConfFile implements Comparator<Resource>
         while (vlmIterator.hasNext())
         {
             final Volume vlm = vlmIterator.next();
-            appendVlm(vlm, accCtx, conf);
+            if (vlm.getFlags().isUnset(accCtx, Volume.VlmFlags.DELETE))
+            {
+                appendVlm(vlm, accCtx, conf);
+            }
         }
         conf.append("        address    %s:%d;\n", localAddr, port);
         conf.append("        nodeid     %d;\n", localRsc.getNodeId().value);
