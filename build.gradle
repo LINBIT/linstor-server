@@ -54,15 +54,23 @@ jar {
   }
 }
 
-task moreStartScripts(type: CreateStartScripts) {
+task SatelliteStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.Satellite'
     applicationName = "Satellite"
-     outputDir = new File(project.buildDir, 'scripts')
+    outputDir = new File(project.buildDir, 'scripts')
+    classpath = jar.outputs.files + project.configurations.runtime
+}
+
+task RecreateDbStartup(type: CreateStartScripts) {
+    mainClassName = 'com.linbit.linstor.core.RecreateDb'
+    applicationName = "RecreateDb"
+    outputDir = new File(project.buildDir, 'scripts')
     classpath = jar.outputs.files + project.configurations.runtime
 }
 
 applicationDistribution.into("bin") {
-            from(moreStartScripts)
+            from(SatelliteStartup)
+            from(RecreateDbStartup)
             fileMode = 0755
 }
 
