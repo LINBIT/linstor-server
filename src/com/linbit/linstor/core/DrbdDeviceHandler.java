@@ -1114,28 +1114,56 @@ class DrbdDeviceHandler implements DeviceHandler
 
     static class ResourceState
     {
-        boolean isPresent = false;
-        boolean requiresAdjust = false;
-        boolean isPrimary = false;
+        // Indicates whether the resource is currently active (in use by DRBD)
+        boolean isPresent       = false;
+
+        // Indicates whether the resource needs to be adjusted (typically using 'drbdadm adjust')
+        boolean requiresAdjust  = false;
+
+        // Indicates whether the resource is currently in the DRBD Primary role
+        boolean isPrimary       = false;
     }
 
     static class VolumeState
     {
         VolumeNumber vlmNr;
-        MinorNumber minorNr;
-        boolean skip = false;
-        boolean isPresent = false;
-        boolean hasDisk = false;
-        // Assume there is existing meta data and then prove that there is not,
-        // to avoid overwriting existing meta data upon failure to check
-        boolean hasMetaData = true;
+        MinorNumber  minorNr;
+
+        // Whether to skip/ignore the volume in following steps
+        boolean skip            = false;
+
+        // Indicates whether the volume is currently active (in use by DRBD)
+        boolean isPresent       = false;
+
+        // Indicates whether a storage backend volume is present
+        boolean hasDisk         = false;
+
+        // Indicates whether DRBD meta data is present on the storage backend volume
+        //
+        // To avoid overwriting existing meta data if the check for meta data fails,
+        // the initial assumption is that there is existing meta data, and the check
+        // attempts to prove that there is no meta data
+        boolean hasMetaData     = true;
+
         // Indicates whether a check for meta data should be performed
-        boolean checkMetaData = true;
-        boolean diskFailed = false;
-        StorageDriver driver = null;
+        boolean checkMetaData   = true;
+
+        // Indicates whether DRBD thinks the volume's backend storage volume has failed
+        boolean diskFailed      = false;
+
+        // Reference to the storage driver for the storage backend volume
+        StorageDriver driver    = null;
+
+        // Name of the storage pool that is selected for the storage backend volume
         StorPoolName storPoolName = null;
-        String storVlmName = null;
+
+        // Name of the storage backend volume as known to the storage driver
+        String storVlmName      = null;
+
+        // Net size (without DRBD meta data) of the volume in kiB
         long netSize = 0L;
+
+        // Gross size (with internal DRBD meta data) of the volume in kiB
         long grossSize = 0L;
 
         VolumeState(VolumeNumber volNrRef, long netSizeSpec)
