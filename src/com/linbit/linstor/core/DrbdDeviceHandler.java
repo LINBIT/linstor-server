@@ -117,7 +117,10 @@ class DrbdDeviceHandler implements DeviceHandler
                     VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
                     VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
 
+
                     VolumeState vlmState = new VolumeState(vlmNr, vlmDfn.getVolumeSize(wrkCtx));
+                    vlmState.markedForDelete = vlm.getFlags().isSet(wrkCtx, Volume.VlmFlags.DELETE) ||
+                        vlmDfn.getFlags().isSet(wrkCtx, VolumeDefinition.VlmDfnFlags.DELETE);
                     vlmState.storVlmName = rscDfn.getName().displayValue + "_" +
                         String.format("%05d", vlmNr.value);
                     vlmState.minorNr = vlmDfn.getMinorNr(wrkCtx);
@@ -638,72 +641,75 @@ class DrbdDeviceHandler implements DeviceHandler
                     nodeProps, rscProps, rscDfnProps
                 );
 
-                // Check DRBD meta data
-                if (!vlmState.hasDisk)
+                if (!vlmState.markedForDelete)
                 {
-                    System.out.println(
-                        "Resource " + rscName.displayValue + " Volume " + vlmState.vlmNr.value +
-                        " has no backend storage => hasMetaData = false, checkMetaData = false"
-                    );
-                    // If there is no disk, then there cannot be any meta data
-                    vlmState.checkMetaData = false;
-                    vlmState.hasMetaData = false;
-                }
-                else
-                if (vlmState.checkMetaData)
-                {
-                    // Check for the existence of meta data
-                    try
+                    // Check DRBD meta data
+                    if (!vlmState.hasDisk)
                     {
-                        System.out.println(
-                            "Checking resource " + rscName.displayValue + " Volume " + vlmState.vlmNr.value +
-                            " meta data"
-                        );
-                        // FIXME: Get the storage volume path and name from the storage driver
-                        vlmState.hasMetaData = drbdUtils.hasMetaData(
-                            "/dev/drbdpool/" + vlmState.storVlmName, vlmState.minorNr.value, "internal"
-                        );
                         System.out.println(
                             "Resource " + rscName.displayValue + " Volume " + vlmState.vlmNr.value +
-                            " hasMetaData = " + vlmState.hasMetaData
+                            " has no backend storage => hasMetaData = false, checkMetaData = false"
                         );
+                        // If there is no disk, then there cannot be any meta data
+                        vlmState.checkMetaData = false;
+                        vlmState.hasMetaData = false;
                     }
-                    catch (ExtCmdFailedException cmdExc)
+                    else
+                    if (vlmState.checkMetaData)
                     {
-                        errLog.reportError(Level.ERROR, cmdExc);
+                        // Check for the existence of meta data
+                        try
+                        {
+                            System.out.println(
+                                "Checking resource " + rscName.displayValue + " Volume " + vlmState.vlmNr.value +
+                                " meta data"
+                            );
+                            // FIXME: Get the storage volume path and name from the storage driver
+                            vlmState.hasMetaData = drbdUtils.hasMetaData(
+                                "/dev/drbdpool/" + vlmState.storVlmName, vlmState.minorNr.value, "internal"
+                            );
+                            System.out.println(
+                                "Resource " + rscName.displayValue + " Volume " + vlmState.vlmNr.value +
+                                " hasMetaData = " + vlmState.hasMetaData
+                            );
+                        }
+                        catch (ExtCmdFailedException cmdExc)
+                        {
+                            errLog.reportError(Level.ERROR, cmdExc);
+                        }
                     }
-                }
 
-                // Create backend storage if required
-                if (!vlmState.hasDisk)
-                {
-                    createStorageVolume(rscDfn, vlmState);
-                    vlmState.hasDisk = true;
-                    vlmState.hasMetaData = false;
-                }
+                    // Create backend storage if required
+                    if (!vlmState.hasDisk)
+                    {
+                        createStorageVolume(rscDfn, vlmState);
+                        vlmState.hasDisk = true;
+                        vlmState.hasMetaData = false;
+                    }
 
-                // TODO: Wait for the backend storage block device files to appear in the /dev directory
-                //       if the volume is supposed to have backend storage
+                    // TODO: Wait for the backend storage block device files to appear in the /dev directory
+                    //       if the volume is supposed to have backend storage
 
-                // Set block device paths
-                Volume vlm = rsc.getVolume(vlmState.vlmNr);
-                if (vlmState.hasDisk)
-                {
-                    // FIXME: Get the storage volume path and name from the storage driver
-                    vlm.setBlockDevicePath(wrkCtx, "/dev/drbdpool/" + vlmState.storVlmName);
-                    vlm.setMetaDiskPath(wrkCtx, "internal");
+                    // Set block device paths
+                    Volume vlm = rsc.getVolume(vlmState.vlmNr);
+                    if (vlmState.hasDisk)
+                    {
+                        // FIXME: Get the storage volume path and name from the storage driver
+                        vlm.setBlockDevicePath(wrkCtx, "/dev/drbdpool/" + vlmState.storVlmName);
+                        vlm.setMetaDiskPath(wrkCtx, "internal");
+                    }
+                    else
+                    {
+                        vlm.setBlockDevicePath(wrkCtx, "none");
+                        vlm.setMetaDiskPath(wrkCtx, null);
+                    }
+                    errLog.logTrace(
+                        "Resource '" + rscName + "' volume " + vlmState.vlmNr.toString() +
+                        " block device = %s, meta disk = %s",
+                        vlm.getBlockDevicePath(wrkCtx),
+                        vlm.getMetaDiskPath(wrkCtx)
+                    );
                 }
-                else
-                {
-                    vlm.setBlockDevicePath(wrkCtx, "none");
-                    vlm.setMetaDiskPath(wrkCtx, null);
-                }
-                errLog.logTrace(
-                    "Resource '" + rscName + "' volume " + vlmState.vlmNr.toString() +
-                    " block device = %s, meta disk = %s",
-                    vlm.getBlockDevicePath(wrkCtx),
-                    vlm.getMetaDiskPath(wrkCtx)
-                );
             }
             catch (MdException mdExc)
             {
@@ -728,7 +734,7 @@ class DrbdDeviceHandler implements DeviceHandler
         {
             try
             {
-                if (!vlmState.skip)
+                if (!(vlmState.skip || vlmState.markedForDelete))
                 {
                     try
                     {
@@ -790,7 +796,24 @@ class DrbdDeviceHandler implements DeviceHandler
             }
         }
 
-        // TODO: Wait for the DRBD resource to become available / attached / and possibly also connected
+        // Delete volumes
+        for (VolumeState vlmState : vlmStateMap.values())
+        {
+            try
+            {
+                if (vlmState.markedForDelete && !vlmState.skip)
+                {
+                    deleteStorageVolume(rscDfn, vlmState);
+                }
+            }
+            catch (VolumeException vlmExc)
+            {
+                errLog.reportProblem(Level.ERROR, vlmExc, null, null, null);
+            }
+        }
+        // TODO: Notify the controller of successful deletion of volumes
+
+        // TODO: Wait for the DRBD resource to reach the target state
     }
 
     private void createResourceConfiguration(
@@ -918,6 +941,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 null
             );
         }
+
+        // TODO: Notify the controller of successful deletion of volumes or the resource
     }
 
     /**
@@ -1128,6 +1153,9 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         VolumeNumber vlmNr;
         MinorNumber  minorNr;
+
+        // Indicates whether the resource should be deleted
+        boolean markedForDelete = false;
 
         // Whether to skip/ignore the volume in following steps
         boolean skip            = false;
