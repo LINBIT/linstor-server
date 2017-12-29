@@ -1199,7 +1199,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         try
         {
             Iterator<Resource> iterateRscs = node.iterateResources(apiCtx);
-            Set<Node> nodesToContact = new TreeSet<>();
+            Map<NodeName, Node> nodesToContact = new TreeMap<>();
             while (iterateRscs.hasNext())
             {
                 Resource rsc = iterateRscs.next();
@@ -1208,12 +1208,12 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 while (allRscsIterator.hasNext())
                 {
                     Resource allRsc = allRscsIterator.next();
-                    nodesToContact.add(allRsc.getAssignedNode());
+                    nodesToContact.put(allRsc.getAssignedNode().getName(), allRsc.getAssignedNode());
                 }
             }
 
             byte[] changedMessage = nodeSerializer.getChangedMessage(node);
-            for (Node nodeToContact : nodesToContact)
+            for (Node nodeToContact : nodesToContact.values())
             {
                 Peer peer = nodeToContact.getPeer(apiCtx);
                 if (peer.isConnected())
