@@ -364,11 +364,20 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
     @Override
+    public void markDeleted(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
+        getFlags().enableFlags(accCtx, VolumeDefinition.VlmDfnFlags.DELETE);
+    }
+
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
-        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
         ((ResourceDefinitionData) resourceDfn).removeVolumeDefinition(accCtx, this);
         dbDriver.delete(this, transMgr);
@@ -379,7 +388,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     {
         if (deleted)
         {
-            throw new ImplementationError("Access to deleted node", null);
+            throw new ImplementationError("Access to deleted volume definition", null);
         }
     }
 

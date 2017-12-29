@@ -516,7 +516,39 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    // TODO: deleteVlmDfns
+    /**
+     * Deletes a {@link VolumeDefinition} for a given {@link ResourceDefinition} and volume nr.
+     *
+     * @param accCtx
+     * @param client
+     * @param rscName required
+     * @param volumeNr required
+     * @return ApiCallResponse with status of the operation
+     */
+    public ApiCallRc deleteVolumeDefinition(
+        AccessContext accCtx,
+        Peer client,
+        String rscName,
+        int volumeNr
+    )
+    {
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.rscDfnMapLock.writeLock().lock();
+            apiCallRc = vlmDfnApiCallHandler.deleteVolumeDefinition(
+                accCtx,
+                client,
+                rscName,
+                volumeNr
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+        }
+        return apiCallRc;
+    }
 
     /**
      * Creates a new {@link Resource}

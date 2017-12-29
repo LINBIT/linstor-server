@@ -46,6 +46,8 @@ public interface VolumeDefinition extends TransactionObject
     public Iterator<Volume> iterateVolumes(AccessContext accCtx)
         throws AccessDeniedException;
 
+    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
+
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 

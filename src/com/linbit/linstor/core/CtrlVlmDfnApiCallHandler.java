@@ -21,6 +21,7 @@ import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
@@ -349,6 +350,69 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             );
         }
 
+
+        return apiCallRc;
+    }
+
+    ApiCallRc deleteVolumeDefinition(
+        AccessContext accCtx,
+        Peer client,
+        String rscName,
+        int volumeNr
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.DELETE,
+                apiCallRc,
+                null, // create new transMgr
+                rscName,
+                volumeNr
+            );
+        )
+        {
+            VolumeDefinitionData vlmDfn = loadVlmDfn(rscName, volumeNr);
+
+            // mark volumes to delete
+            Iterator<Volume> itVolumes = vlmDfn.iterateVolumes(accCtx);
+            while(itVolumes.hasNext())
+            {
+                Volume v = itVolumes.next();
+                v.markDeleted(accCtx);
+            }
+
+            vlmDfn.markDeleted(accCtx);
+
+            commit();
+
+            reportSuccess("Volume definition '" + volumeNr + "' on resource definition '"
+                    + rscName + "' is marked for deletion.");
+
+        }
+        catch (Exception exc)
+        {
+            Map<String, String> objRefs = new TreeMap<>();
+            Map<String, String> variables = new TreeMap<>();
+            fillMaps(objRefs, variables, rscName, volumeNr);
+            reportStatic(
+                exc,
+                "Volume definition could not be deleted due to an unknown exception.",
+                null, // causeMsg
+                null, // detailsMsg
+                null, // correctionMsg
+                ApiConsts.RC_VLM_DFN_DEL_FAIL_UNKNOWN_ERROR,
+                objRefs,
+                variables,
+                apiCallRc,
+                controller,
+                accCtx,
+                client
+            );
+        }
 
         return apiCallRc;
     }
