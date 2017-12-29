@@ -358,6 +358,16 @@ public class VolumeData extends BaseTransactionObject implements Volume
     }
 
     @Override
+    public void markDeleted(AccessContext accCtx)
+        throws AccessDeniedException, SQLException
+    {
+        checkDeleted();
+        resource.getObjProt().requireAccess(accCtx, AccessType.USE);
+        getFlags().enableFlags(accCtx, Volume.VlmFlags.DELETE);
+    }
+
+
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {

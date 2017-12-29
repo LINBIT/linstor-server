@@ -46,6 +46,8 @@ public interface Volume extends TransactionObject
 
     public String getMetaDiskPath(AccessContext accCtx) throws AccessDeniedException;
 
+    public void markDeleted(AccessContext accCtx) throws AccessDeniedException, SQLException;
+
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException;
 
     public enum VlmFlags implements Flags
