@@ -315,7 +315,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             fillMaps(objRefs, variables, rscName, vlmNr);
             reportStatic(
                 exc,
-                "Volume definition could not be created due to an unknown exception.",
+                "Volume definition could not be modified due to an unknown exception.",
                 null, // causeMsg
                 null, // detailsMsg
                 null, // correctionMsg
@@ -335,7 +335,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             fillMaps(objRefs, variables, rscName, vlmNr);
             reportStatic(
                 implErr,
-                "Volume definition could not be created due to an implementation error.",
+                "Volume definition could not be modified due to an implementation error.",
                 null, // causeMsg
                 null, // detailsMsg
                 null, // correctionMsg
