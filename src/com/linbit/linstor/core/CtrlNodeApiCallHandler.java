@@ -353,10 +353,13 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     {
                         controller.nodesMap.remove(nodeName);
                     }
+                    else
+                    {
+                        updateSatellites(nodeData);
+                    }
 
                     reportSuccess(successMessage);
 
-                    updateSatellites(nodeData);
                     // TODO: tell satellites to remove all the corresponding resources and storPools
                     // TODO: if satellites finished, cleanup the storPools and then remove the node from DB
                 }
