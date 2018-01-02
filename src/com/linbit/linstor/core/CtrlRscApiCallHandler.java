@@ -339,7 +339,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                     )
                 );
             }
-            nodeId = new NodeId(id + 1);
+            nodeId = new NodeId(id);
         }
         catch (ValueOutOfRangeException valueOutOfRangeExc)
         {
