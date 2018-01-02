@@ -1,8 +1,11 @@
 package com.linbit.linstor.core;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -23,9 +26,9 @@ public class RecreateDb
 {
     public static void main(String[] args) throws Exception
     {
-        if(args.length < 2)
+        if(args.length < 1)
         {
-            System.err.println("Usage: database.cfg init.sql");
+            System.err.println("Usage: database.cfg <init.sql>");
             return;
         }
         if(!args[0].toLowerCase().endsWith(".cfg"))
@@ -49,10 +52,22 @@ public class RecreateDb
         }
 
         try (PoolingDataSource<PoolableConnection> dataSource = initConnectionProvider(args[0]);
-                Connection con = dataSource.getConnection()) {
-            for (int i = 1; i < args.length; i++)
+            Connection con = dataSource.getConnection()) {
+            if (args.length > 1)
             {
-                runSql(con, args[i]);
+                for (int i = 1; i < args.length; i++)
+                {
+                    BufferedReader br = new BufferedReader(new FileReader(args[i]));
+                    runSql(con, args[i], br);
+                }
+            }
+            else
+            {
+                try (BufferedReader br =
+                        new BufferedReader(new InputStreamReader(
+                                RecreateDb.class.getResourceAsStream("/resource/drbd-init-derby.sql")))) {
+                    runSql(con, "jar:///resource/drbd-init-derby.sql", br);
+                }
             }
         }
     }
@@ -81,18 +96,12 @@ public class RecreateDb
         return new PoolingDataSource<>(connPool);
     }
 
-    private static void runSql(Connection con, String sqlFilePath) throws IOException, SQLException
+    private static void runSql(Connection con, String sqlFilePath, BufferedReader br) throws IOException, SQLException
     {
         PreparedStatement stmt;
-        String sql = new String(
-            Files.readAllBytes(
-                Paths.get(sqlFilePath)
-            )
-        );
         System.out.println("running sql file: " + sqlFilePath);
-        String[] lines = sql.split("\n");
         StringBuilder cmdBuilder = new StringBuilder();
-        for (String line : lines)
+        for (String line; (line = br.readLine()) != null;)
         {
             line = line.trim();
             if (!line.startsWith("--"))

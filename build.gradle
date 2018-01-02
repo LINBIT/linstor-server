@@ -45,6 +45,10 @@ dependencies
     testCompile group: 'org.powermock', name: 'powermock-mockito-release-full', version: '1.6.4'
 }
 
+processResources {
+    from('sql-src/drbd-init-derby.sql') { into '/resource' }
+}
+
 mainClassName = 'com.linbit.linstor.core.Controller'
 jar {
   manifest {
