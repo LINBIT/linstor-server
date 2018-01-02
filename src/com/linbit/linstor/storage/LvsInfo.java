@@ -53,7 +53,13 @@ public class LvsInfo extends VolumeInfo
         final String[] lines = stdOut.split("\n");
         for (final String line : lines)
         {
+            if (line.isEmpty())
+                continue;
+
             final String[] data = line.trim().split(DELIMITER);
+
+            if (data.length < 3)
+                continue; // broken output?
 
             final String identifier = data[0];
             final String path = data[1];
