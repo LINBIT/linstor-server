@@ -79,6 +79,8 @@ import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.Base64;
 import com.linbit.utils.MathUtils;
+import java.sql.Connection;
+import java.util.logging.Logger;
 
 /**
  * linstor controller prototype
@@ -1432,6 +1434,154 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         new SecureRandom().nextBytes(randomBytes);
         String secret = Base64.encode(randomBytes);
         return secret;
+    }
+
+    public void cleanup()
+    {
+        final Lock rcfgRdLock = reconfigurationLock.readLock();
+        final Lock nodesWrLock = nodesMapLock.writeLock();
+        final Lock rscDfnWrLock = rscDfnMapLock.writeLock();
+
+        try
+        {
+            AccessContext privCtx = sysCtx.clone();
+            privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+            try
+            {
+                Connection conn = dbConnPool.getConnection();
+                try
+                {
+                    nodesWrLock.lock();
+                    for (Node curNode : nodesMap.values())
+                    {
+                        if (curNode.getFlags().isSet(privCtx, Node.NodeFlag.DELETE) &&
+                            curNode.getResourceCount() == 0)
+                        {
+                            // TODO: Create transaction manager, delete node object
+                            TransactionMgr transMgr = new TransactionMgr(conn);
+                            NodeName curNodeName = curNode.getName();
+                            try
+                            {
+                                curNode.setConnection(transMgr);
+                                curNode.delete(privCtx);
+                                transMgr.commit();
+                                nodesMap.remove(curNodeName);
+                            }
+                            catch (SQLException sqlExc)
+                            {
+                                transMgr.rollback();
+                                this.getErrorReporter().reportProblem(
+                                    Level.ERROR,
+                                    // TOOD: May want to add correction hints
+                                    new LinStorException(
+                                        "The database transaction for deleting abandoned node '" +
+                                        curNodeName.displayValue + "' failed",
+                                        "Deletion of the node '" + curNodeName.displayValue + "', which is " +
+                                        "marked for deletion and pending for cleanup, failed",
+                                        "The database transaction for deleting the node entry failed",
+                                        null,
+                                        null,
+                                        sqlExc
+                                    ),
+                                    sysCtx,
+                                    null,
+                                    null
+                                );
+                            }
+                            finally
+                            {
+                                transMgr.clearTransactionObjects();
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    nodesWrLock.unlock();
+                }
+
+                try
+                {
+                    rscDfnWrLock.lock();
+                    for (ResourceDefinition curRscDfn : rscDfnMap.values())
+                    {
+                        if (curRscDfn.getFlags().isSet(privCtx, ResourceDefinition.RscDfnFlags.DELETE) &&
+                            curRscDfn.getResourceCount() == 0)
+                        {
+                            ResourceName curRscDfnName = curRscDfn.getName();
+                            TransactionMgr transMgr = new TransactionMgr(conn);
+                            try
+                            {
+                                curRscDfn.setConnection(transMgr);
+                                curRscDfn.delete(privCtx);
+                                transMgr.commit();
+                                rscDfnMap.remove(curRscDfnName);
+                            }
+                            catch (SQLException sqlExc)
+                            {
+                                transMgr.rollback();
+                                this.getErrorReporter().reportProblem(
+                                    Level.ERROR,
+                                    // TODO: May want to add correction hints
+                                    new LinStorException(
+                                        "The database transaction for deleting abandoned node '" +
+                                        curRscDfnName.displayValue + "' failed",
+                                        "Deletion of the node '" + curRscDfnName.displayValue + "', which is " +
+                                        "marked for deletion and pending for cleanup, failed",
+                                        "The database transaction for deleting the node entry failed",
+                                        null,
+                                        null,
+                                        sqlExc
+                                    ),
+                                    sysCtx,
+                                    null,
+                                    null
+                                );
+                            }
+                            finally
+                            {
+                                transMgr.clearTransactionObjects();
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    rscDfnWrLock.unlock();
+                }
+            }
+            catch (SQLException sqlExc)
+            {
+                getErrorReporter().reportProblem(
+                    Level.ERROR,
+                        new LinStorException(
+                        "Cleanup of objects that are marked for deletion failed because the database " +
+                        "connection is unavailable",
+                        "Cleanup of objects that are marked for deletion failed",
+                        "The database connection pool could not provide a database connection for the operation",
+                        null,
+                        null,
+                        sqlExc
+                    ),
+                    sysCtx,
+                    null,
+                    null
+                );
+            }
+            finally
+            {
+                rcfgRdLock.lock();
+            }
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ImplementationError(
+                "An operation using a privileged system context generated an " +
+                AccessDeniedException.class.getSimpleName(),
+                accExc
+            );
+        }
     }
 
     public MetaDataApi getMetaDataApi()
