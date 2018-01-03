@@ -16,38 +16,40 @@ inner-most (taken last) lock, is:
    therefore a task holding one of those locks must not queue tasks
    in the WorkerPool.
 
-2. Controller: ctrlConfLock (ReadWriteLock)
+2. reconfigurationLock (ReadWriteLock)
+
+3. Controller: ctrlConfLock (ReadWriteLock)
    Satellite:  stltConfLock (ReadWriteLock)
 
-3. CommonMessageProcessor.apiLock (ReadWriteLock)
+4. CommonMessageProcessor.apiLock (ReadWriteLock)
 
-4. nodesMapLock (ReadWriteLock)
+5. nodesMapLock (ReadWriteLock)
    Must be held in reader mode while performing lookups in nodesMap,
    or while iterating over nodesMap items.
    Must be held in writer mode while modifying the nodesMap.
 
-5. rscDfnMapLock (ReadWriteLock)
+6. rscDfnMapLock (ReadWriteLock)
    Must be held in reader mode while performing lookups in rscDfnMap,
    or while iterating over rscDfnMap items.
    Must be held in writer mode while modifying the rscDfnMap.
 
-6. storPoolDfnMapLock (ReadWriteLock)
+7. storPoolDfnMapLock (ReadWriteLock)
    Must be held in reader mode while performing lookups in storPoolDfnMap,
    or while iterating over storPoolDfnMap items.
    Must be held in writer mode while modifying the storPoolDfnMap.
 
-7. Node (class Object internal mutex)
+8. Node (class Object internal mutex)
 
-8. ResourceDefinition (class Object internal mutex)
+9. ResourceDefinition (class Object internal mutex)
 
-9. ResourceDefinition.volList (class Object internal mutex)
+10. ResourceDefinition.volList (class Object internal mutex)
 
-10. ResourceDefinition.connList (class Object internal mutex)
+11. ResourceDefinition.connList (class Object internal mutex)
 
-11. VolumeDefinition (class Object internal mutex)
+12. VolumeDefinition (class Object internal mutex)
 
-12. Resource (class Object internal mutex)
+13. Resource (class Object internal mutex)
 
-13. Volume (class Object internal mutex)
+14. Volume (class Object internal mutex)
 
-14. CoreTimer (class Object internal mutex)
+15. CoreTimer (class Object internal mutex)
