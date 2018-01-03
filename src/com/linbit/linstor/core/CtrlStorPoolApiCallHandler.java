@@ -114,7 +114,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 accCtx,
                 storPoolName,
                 transMgr,
-                false, // do not persist
+                true,  // create and persist if not exists
                 false  // do not throw exception if exists
             );
 
@@ -195,6 +195,9 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 entry.putObjRef(KEY_STOR_POOL_DFN, storPoolNameStr);
 
                 apiCallRc.addEntry(entry);
+                // CHECK as the storage pool definition is implicitly created if it doesn't exist
+                //       we always will update the storPoolDfnMap even if not necessary
+                controller.storPoolDfnMap.put(storPoolName, storPoolDfn);
                 controller.getErrorReporter().logInfo(successMessage);
 
                 notifySatellite(storPool, apiCallRc);
