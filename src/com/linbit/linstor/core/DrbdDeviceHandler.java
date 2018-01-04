@@ -138,7 +138,7 @@ class DrbdDeviceHandler implements DeviceHandler
                 if (rsc.getStateFlags().isSet(wrkCtx, Resource.RscFlags.DELETE) ||
                     rscDfn.getFlags().isSet(wrkCtx, ResourceDefinition.RscDfnFlags.DELETE))
                 {
-                    deleteResource(rsc, rscDfn, rscState, vlmStateMap);
+                    deleteResource(rsc, rscDfn, localNode, rscState, vlmStateMap);
                 }
                 else
                 {
@@ -398,27 +398,18 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
-    private void evaluateStorageVolume(
+    private void getVolumeStorageDriver(
         ResourceName rscName,
-        Resource rsc,
-        ResourceDefinition rscDfn,
         Node localNode,
-        NodeName localNodeName,
+        Volume vlm,
+        VolumeDefinition vlmDfn,
         VolumeState vlmState,
         Props nodeProps,
         Props rscProps,
         Props rscDfnProps
     )
-        throws AccessDeniedException, VolumeException, MdException
+        throws AccessDeniedException, VolumeException
     {
-        // Evaluate volumes state by checking for the presence of backend-storage
-        Volume vlm = rsc.getVolume(vlmState.vlmNr);
-        VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.vlmNr);
-        errLog.logTrace(
-            "Evaluating storage volume for resource '" + rscDfn.getName().displayValue + "' " +
-            "volume " + vlmState.vlmNr.toString()
-        );
-
         Props vlmProps = vlm.getProps(wrkCtx);
         Props vlmDfnProps = vlmDfn.getProps(wrkCtx);
 
@@ -442,41 +433,11 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 driver = storagePool.getDriver(wrkCtx);
                 vlmState.driver = driver;
-            }
-
-            if (!vlmState.hasDisk)
-            {
-                if (vlmState.driver != null)
-                {
-                    long netSize = vlmDfn.getVolumeSize(wrkCtx);
-                    long expectedSize = drbdMd.getGrossSize(
-                        netSize, FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
-                    );
-                    try
-                    {
-                        driver.checkVolume(vlmState.storVlmName, expectedSize);
-                        vlmState.hasDisk = true;
-                        errLog.logTrace(
-                            "Existing storage volume found for resource '" +
-                            rscDfn.getName().displayValue + "' " + "volume " + vlmState.vlmNr.toString()
-                        );
-                    }
-                    catch (StorageException ignored)
-                    {
-                        // FIXME: The driver should return a boolean indicating whether the volume exists
-                        //        and throw an exception only if the check failed, but not to indicate
-                        //        that the volume does not exist
-                        errLog.logTrace(
-                            "Storage volume for resource '" + rscDfn.getName().displayValue + "' " +
-                            "volume " + vlmState.vlmNr.toString() + " does not exist"
-                        );
-                    }
-                }
-                else
+                if (driver == null)
                 {
                     errLog.logTrace(
                         "Cannot find storage pool '" + spName.displayValue + "' for volume " +
-                        vlmState.vlmNr.toString() + " on the local node '" + localNodeName + "'"
+                        vlmState.vlmNr.toString() + " on the local node '" + localNode.getName() + "'"
                     );
                 }
             }
@@ -499,11 +460,10 @@ class DrbdDeviceHandler implements DeviceHandler
                 detailsMsg = "The faulty storage pool name is '" + spNameStr + "'";
             }
             throw new VolumeException(
-                "An invalid storage pool name is specified for resource '" + rscName.displayValue + "' volume " +
-                vlmState.vlmNr.value,
+                "An invalid storage pool name is specified for volume " + vlmState.vlmNr.value + " of resource '"
+                + rscName.displayValue,
                 getAbortMsg(rscName, vlmState.vlmNr),
-                "The state of the volume's backend storage cannot be determined, because an invalid " +
-                "storage pool name was specified for the volume",
+                "An invalid storage pool name was specified for the volume",
                 "Correct the property that selects the storage pool for this volume.\n" +
                 "Note that the property may be set on the volume or may be inherited from other objects " +
                 "such as the corresponding resource definition or the node to which the resource is " +
@@ -511,6 +471,62 @@ class DrbdDeviceHandler implements DeviceHandler
                 detailsMsg,
                 nameExc
             );
+        }
+    }
+
+    private void evaluateStorageVolume(
+        ResourceName rscName,
+        Resource rsc,
+        ResourceDefinition rscDfn,
+        Node localNode,
+        NodeName localNodeName,
+        VolumeState vlmState,
+        Props nodeProps,
+        Props rscProps,
+        Props rscDfnProps
+    )
+        throws AccessDeniedException, VolumeException, MdException
+    {
+        // Evaluate volumes state by checking for the presence of backend-storage
+        Volume vlm = rsc.getVolume(vlmState.vlmNr);
+        VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(wrkCtx, vlmState.vlmNr);
+        errLog.logTrace(
+            "Evaluating storage volume for resource '" + rscDfn.getName().displayValue + "' " +
+            "volume " + vlmState.vlmNr.toString()
+        );
+
+        if (!vlmState.hasDisk)
+        {
+            if (!vlmState.driverKnown)
+            {
+                getVolumeStorageDriver(rscName, localNode, vlm, vlmDfn, vlmState, nodeProps, rscProps, rscDfnProps);
+            }
+            if (vlmState.driver != null)
+            {
+                long netSize = vlmDfn.getVolumeSize(wrkCtx);
+                long expectedSize = drbdMd.getGrossSize(
+                    netSize, FIXME_PEERS, FIXME_STRIPES, FIXME_STRIPE_SIZE
+                );
+                try
+                {
+                    vlmState.driver.checkVolume(vlmState.storVlmName, expectedSize);
+                    vlmState.hasDisk = true;
+                    errLog.logTrace(
+                        "Existing storage volume found for resource '" +
+                        rscDfn.getName().displayValue + "' " + "volume " + vlmState.vlmNr.toString()
+                    );
+                }
+                catch (StorageException ignored)
+                {
+                    // FIXME: The driver should return a boolean indicating whether the volume exists
+                    //        and throw an exception only if the check failed, but not to indicate
+                    //        that the volume does not exist
+                    errLog.logTrace(
+                        "Storage volume for resource '" + rscDfn.getName().displayValue + "' " +
+                        "volume " + vlmState.vlmNr.toString() + " does not exist"
+                    );
+                }
+            }
         }
     }
 
@@ -874,6 +890,7 @@ class DrbdDeviceHandler implements DeviceHandler
     private void deleteResource(
         Resource rsc,
         ResourceDefinition rscDfn,
+        Node localNode,
         ResourceState rscState,
         Map<VolumeNumber, VolumeState> vlmStateMap
     )
@@ -916,17 +933,38 @@ class DrbdDeviceHandler implements DeviceHandler
         // Delete backend storage volumes
         for (VolumeState vlmState : vlmStateMap.values())
         {
-            if (vlmState.hasDisk)
+            Props nodeProps = rsc.getAssignedNode().getProps(wrkCtx);
+            Props rscProps = rsc.getProps(wrkCtx);
+            Props rscDfnProps = rscDfn.getProps(wrkCtx);
+
+            try
             {
-                try
+                Volume vlm = rsc.getVolume(vlmState.vlmNr);
+                VolumeDefinition vlmDfn = vlm != null ? vlm.getVolumeDefinition() : null;
+                // If this is a volume state that describes a volume seen by DRBD but not known
+                // to LINSTOR (e.g., manually configured in DRBD), then no volume object and
+                // volume definition object will be present.
+                // The backing storage for such volumes is ignored, as they are not managed
+                // by LINSTOR.
+                if (vlm != null && vlmDfn != null)
                 {
-                    deleteStorageVolume(rscDfn, vlmState);
+                    if (!vlmState.driverKnown)
+                    {
+                        getVolumeStorageDriver(
+                            rscName, localNode, vlm, vlmDfn, vlmState,
+                            nodeProps, rscProps, rscDfnProps
+                        );
+                    }
+                    if (vlmState.driver != null)
+                    {
+                        deleteStorageVolume(rscDfn, vlmState);
+                    }
                 }
-                catch (VolumeException vlmExc)
-                {
-                    vlmDelFailed = true;
-                    errLog.reportProblem(Level.ERROR, vlmExc, null, null, null);
-                }
+            }
+            catch (VolumeException vlmExc)
+            {
+                vlmDelFailed = true;
+                errLog.reportProblem(Level.ERROR, vlmExc, null, null, null);
             }
         }
         if (vlmDelFailed)
@@ -1178,6 +1216,10 @@ class DrbdDeviceHandler implements DeviceHandler
 
         // Indicates whether DRBD thinks the volume's backend storage volume has failed
         boolean diskFailed      = false;
+
+        // Indicates whether a lookup for the volume's StorageDriver has already been performed
+        // Note that this does not imply that the driver reference is non-null
+        boolean driverKnown     = false;
 
         // Reference to the storage driver for the storage backend volume
         StorageDriver driver    = null;
