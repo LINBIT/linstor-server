@@ -1,6 +1,11 @@
+plugins {
+    id "nebula.ospackage" version "4.5.1"
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
+apply plugin: 'nebula.ospackage-base'
 
 sourceCompatibility = 1.7
 version = '1.0'
@@ -116,4 +121,16 @@ compileTestJava {
 
 clean {
   dependsOn cleanTestCommands
+}
+
+ospackage {
+    release '1'
+    os = LINUX
+}
+
+// we might even split these to generate separate controller/satellite packages
+task buildRPM(type: Rpm) {
+}
+
+task buildDEB(type: Deb) {
 }
