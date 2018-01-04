@@ -432,8 +432,12 @@ class DrbdDeviceHandler implements DeviceHandler
             if (storagePool != null)
             {
                 driver = storagePool.getDriver(wrkCtx);
-                vlmState.driver = driver;
-                if (driver == null)
+                if (driver != null)
+                {
+                    vlmState.driver = driver;
+                    vlmState.storPoolName = spName;
+                }
+                else
                 {
                     errLog.logTrace(
                         "Cannot find storage pool '" + spName.displayValue + "' for volume " +
@@ -819,7 +823,27 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 if (vlmState.markedForDelete && !vlmState.skip)
                 {
-                    deleteStorageVolume(rscDfn, vlmState);
+                    Volume vlm = rsc.getVolume(vlmState.vlmNr);
+                    VolumeDefinition vlmDfn = vlm != null ? vlm.getVolumeDefinition() : null;
+                    // If this is a volume state that describes a volume seen by DRBD but not known
+                    // to LINSTOR (e.g., manually configured in DRBD), then no volume object and
+                    // volume definition object will be present.
+                    // The backing storage for such volumes is ignored, as they are not managed
+                    // by LINSTOR.
+                    if (vlm != null && vlmDfn != null)
+                    {
+                        if (!vlmState.driverKnown)
+                        {
+                            getVolumeStorageDriver(
+                                rscName, localNode, vlm, vlmDfn, vlmState,
+                                nodeProps, rscProps, rscDfnProps
+                            );
+                        }
+                        if (vlmState.driver != null)
+                        {
+                            deleteStorageVolume(rscDfn, vlmState);
+                        }
+                    }
                 }
             }
             catch (VolumeException vlmExc)
