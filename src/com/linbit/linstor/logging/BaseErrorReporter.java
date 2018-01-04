@@ -121,6 +121,7 @@ abstract class BaseErrorReporter
         output.print(String.format("ERROR REPORT %s-%06d\n\n", instanceId, reportNr));
         output.println(SECTION_SEPARATOR);
         output.println();
+        output.printf(ERROR_FIELD_FORMAT, "Application:", LinStor.SOFTWARE_CREATOR + " " + LinStor.PROGRAM);
         output.printf(ERROR_FIELD_FORMAT, "Module:", dmModule);
         output.printf(ERROR_FIELD_FORMAT, "Version:", LinStor.VERSION);
 

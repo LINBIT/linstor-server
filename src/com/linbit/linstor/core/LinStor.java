@@ -70,8 +70,10 @@ public abstract class LinStor
     // ============================================================
     // Product and version information
     //
+    public static final String SOFTWARE_CREATOR = "LINBIT\u00AE";
+
     public static final String PROGRAM = "LINSTOR";
-    public static final String VERSION = "0.1.0-experimental [2017-12-21_011]";
+    public static final String VERSION = "0.1.0-experimental [2018-01-04_004]";
 
     // ============================================================
     // Worker thread pool defaults
