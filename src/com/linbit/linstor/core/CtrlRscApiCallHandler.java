@@ -479,11 +479,35 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
-    public ApiCallRc deleteResource(
+    private interface ExecuteDelete {
+        void onSuccess(
+            AccessContext accCtx,
+            Peer client,
+            String nodeNameStr,
+            String rscNameStr,
+            ResourceData rscData,
+            TransactionMgr transMgr,
+            ApiCallRcImpl apiCallRc
+        ) throws AccessDeniedException, SQLException;
+    }
+
+    /**
+     * checksForDeletion does all kind of checks to delete/markdelete a resource.
+     * Like does the node exist, does the resource exist, access checks...
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeNameStr
+     * @param rscNameStr
+     * @param execDel Basically a function pointer to execute code if everything went well.
+     * @return The constructed ApiCall return code object
+     */
+    private ApiCallRc checksForDeletion(
         AccessContext accCtx,
         Peer client,
         String nodeNameStr,
-        String rscNameStr
+        String rscNameStr,
+        ExecuteDelete execDel
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -589,28 +613,8 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                rscData.setConnection(transMgr);
-                rscData.markDeleted(accCtx);
-                transMgr.commit();
-
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_RSC_DELETED);
-                String successMessage = String.format(
-                    "Resource '%s' marked to be deleted from node '%s'.",
-                    rscNameStr,
-                    nodeNameStr
-                );
-                entry.setMessageFormat(successMessage);
-                entry.putObjRef(KEY_NODE, nodeNameStr);
-                entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                entry.putObjRef(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                apiCallRc.addEntry(entry);
-
-                // TODO: tell satellites to remove all the corresponding resources
-                // TODO: if satellites are finished (or no satellite had such a resource deployed)
-                // remove the rscDfn from the DB
-                controller.getErrorReporter().logInfo(successMessage);
+                // call the success action interface
+                execDel.onSuccess(accCtx, client, nodeNameStr, rscNameStr, rscData, transMgr, apiCallRc);
             }
         }
         catch (SQLException sqlExc)
@@ -820,6 +824,112 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             }
             controller.dbConnPool.returnConnection(transMgr);
         }
+
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteResource(
+        AccessContext accCtx,
+        Peer client,
+        String nodeNameStr,
+        String rscNameStr
+    )
+    {
+        ApiCallRc apiCallRc = checksForDeletion(accCtx, client, nodeNameStr, rscNameStr, new ExecuteDelete() {
+            @Override
+            public void onSuccess(
+                    AccessContext accCtx,
+                    Peer client,
+                    String nodeNameStr,
+                    String rscNameStr,
+                    ResourceData rscData,
+                    TransactionMgr transMgr,
+                    ApiCallRcImpl apiCallRc) throws AccessDeniedException, SQLException
+            {
+                rscData.setConnection(transMgr);
+                rscData.markDeleted(accCtx);
+                transMgr.commit();
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(RC_RSC_DELETED);
+                String successMessage = String.format(
+                    "Resource '%s' marked to be deleted from node '%s'.",
+                    rscNameStr,
+                    nodeNameStr
+                );
+                entry.setMessageFormat(successMessage);
+                entry.putObjRef(KEY_NODE, nodeNameStr);
+                entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                entry.putObjRef(KEY_NODE_NAME, nodeNameStr);
+                entry.putVariable(KEY_RSC_NAME, rscNameStr);
+                apiCallRc.addEntry(entry);
+
+                // TODO: tell satellites to remove all the corresponding resources
+                // TODO: if satellites are finished (or no satellite had such a resource deployed)
+                // remove the rscDfn from the DB
+                controller.getErrorReporter().logInfo(successMessage);
+            }
+        });
+
+        return apiCallRc;
+    }
+
+    /**
+     * This is called if a satellite has deleted its resource to notify the controller
+     * that it can delete the resource.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeNameStr
+     * @param rscNameStr
+     * @return
+     */
+    public ApiCallRc resourceDeleted(
+        AccessContext accCtx,
+        Peer client,
+        String nodeNameStr,
+        String rscNameStr
+    )
+    {
+        ApiCallRc apiCallRc = checksForDeletion(accCtx, client, nodeNameStr, rscNameStr, new ExecuteDelete() {
+            @Override
+            public void onSuccess(
+                    AccessContext accCtx,
+                    Peer client,
+                    String nodeNameStr,
+                    String rscNameStr,
+                    ResourceData rscData,
+                    TransactionMgr transMgr,
+                    ApiCallRcImpl apiCallRc) throws AccessDeniedException, SQLException
+            {
+                ResourceDefinition rscDfn = rscData.getDefinition();
+                rscData.setConnection(transMgr);
+                rscData.delete(accCtx);
+                transMgr.commit();
+
+                // call cleanup if resource definition is empty
+                if (rscDfn.getResourceCount() == 0)
+                {
+                    controller.cleanup();
+                }
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(RC_RSC_DELETED);
+                String successMessage = String.format(
+                    "Resource '%s' is deleted from node '%s'.",
+                    rscNameStr,
+                    nodeNameStr
+                );
+                entry.setMessageFormat(successMessage);
+                entry.putObjRef(KEY_NODE, nodeNameStr);
+                entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                entry.putObjRef(KEY_NODE_NAME, nodeNameStr);
+                entry.putVariable(KEY_RSC_NAME, rscNameStr);
+                apiCallRc.addEntry(entry);
+
+                controller.getErrorReporter().logInfo(successMessage);
+            }
+        });
 
         return apiCallRc;
     }

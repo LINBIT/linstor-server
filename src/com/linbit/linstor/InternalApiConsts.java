@@ -16,6 +16,7 @@ public class InternalApiConsts
     public static final String API_CHANGED_RSC_DFN   = "ChangedRscDfn";
     public static final String API_REQUEST_RSC_DFN   = "RequestRscDfn";
     public static final String API_APPLY_RSC_DFN     = "ApplyRscDfn";
+    public static final String API_NOTIFY_RSC_DEL    = "NotifyRscDel";
 
     public static final String API_CHANGED_RSC       = "ChangedRsc";
     public static final String API_REQUEST_RSC       = "RequestRsc";

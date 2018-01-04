@@ -713,6 +713,47 @@ public class CtrlApiCallHandler
     }
 
     /**
+     * Called if a satellite deleted the resource.
+     *
+     * Resource will be deleted (NOT marked) and if all resources
+     * of the resource definition are deleted, cleanup will be called.
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName required
+     * @param rscName required
+     * @return
+     */
+    public ApiCallRc resourceDeleted(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName,
+        String rscName
+    )
+    {
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
+
+            apiCallRc = rscApiCallHandler.resourceDeleted(
+                accCtx,
+                client,
+                nodeName,
+                rscName
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
+        }
+
+        return apiCallRc;
+    }
+
+    /**
      * Creates a new {@link StorPoolDefinition}.
      *
      * @param accCtx
