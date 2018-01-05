@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
