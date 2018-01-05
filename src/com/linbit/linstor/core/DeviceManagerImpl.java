@@ -28,7 +28,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -740,13 +740,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
             byte[] data = null;
             {
-                ByteOutputStream dataOut = new ByteOutputStream();
+                ByteArrayOutputStream dataOut = new ByteArrayOutputStream();
                 try
                 {
                     msgHdrBld.build().writeDelimitedTo(dataOut);
                     msgDelRscBld.build().writeDelimitedTo(dataOut);
                     dataOut.close();
-                    data = dataOut.getBytes();
+                    data = dataOut.toByteArray();
                     dataOut = null;
                 }
                 catch (IOException ioExc)
@@ -758,7 +758,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 {
                     if (dataOut != null)
                     {
-                        dataOut.close();
+                        try
+                        {
+                            dataOut.close();
+                        }
+                        catch (IOException ignored)
+                        {
+                        }
                     }
                 }
             }
