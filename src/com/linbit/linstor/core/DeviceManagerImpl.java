@@ -31,11 +31,11 @@ import com.linbit.locks.SyncPoint;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Iterator;
 
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -556,10 +556,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     if (curRscDfn != null)
                     {
                         // Delete the resource from all nodes
-                        Iterator<Resource> rscIter = curRscDfn.iterateResource(wrkCtx);
-                        while (rscIter.hasNext())
+                        Map<NodeName, Resource> rscMap = new TreeMap<>();
+                        curRscDfn.copyResourceMap(wrkCtx, rscMap);
+                        for (Resource delRsc : rscMap.values())
                         {
-                            Resource delRsc = rscIter.next();
                             Node peerNode = delRsc.getAssignedNode();
                             delRsc.setConnection(transMgr);
                             delRsc.delete(wrkCtx);
