@@ -1449,6 +1449,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
 
             try
             {
+                rcfgRdLock.lock();
                 Connection conn = dbConnPool.getConnection();
                 try
                 {
@@ -1571,7 +1572,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
             }
             finally
             {
-                rcfgRdLock.lock();
+                rcfgRdLock.unlock();
             }
         }
         catch (AccessDeniedException accExc)
