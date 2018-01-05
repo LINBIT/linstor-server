@@ -850,6 +850,9 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 rscData.markDeleted(accCtx);
                 transMgr.commit();
 
+                // notify satellites
+                updateSatellites(rscData);
+
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(RC_RSC_DELETED);
                 String successMessage = String.format(

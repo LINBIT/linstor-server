@@ -688,6 +688,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
                 transMgr.commit(); // sqlExc5
 
+                // notify satellites
+                updateSatellites(resDfn);
+
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(ApiConsts.RC_RSC_DFN_DELETED);
                 entry.setMessageFormat(

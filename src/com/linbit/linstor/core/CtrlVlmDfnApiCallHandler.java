@@ -389,6 +389,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
             commit();
 
+            updateSatellites(vlmDfn.getResourceDefinition());
+
             reportSuccess("Volume definition '" + volumeNr + "' on resource definition '"
                     + rscName + "' is marked for deletion.");
 
