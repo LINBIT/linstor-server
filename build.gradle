@@ -145,6 +145,9 @@ ospackage {
     packageName 'linstor-server'
     release '1'
     os = LINUX
+    user 'root'
+
+    requires('drbd-utils', '9.2.0', GREATER | EQUAL)
 
     into '/opt/linstor-server'
 
@@ -166,8 +169,11 @@ ospackage {
 
 // we might even split these to generate separate controller/satellite packages
 buildRpm {
-
+    requires('java-1.7.0-openjdk')
+    requires('lvm2')
 }
 
 buildDeb {
+    requires('openjdk-7-jre')
+    requires('thin-provisioning-tools')
 }
