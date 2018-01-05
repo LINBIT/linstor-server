@@ -92,12 +92,18 @@ public class StltApiCallHandler
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
             for (NodePojo node : nodes)
             {
-                nodeHandler.applyChanges(node, transMgr);
+                Node curNode = nodeHandler.applyChanges(node, transMgr);
+                if (curNode != null)
+                {
+                    satellite.nodesMap.put(curNode.getName(), curNode);
+                }
             }
+
             for (StorPoolPojo storPool : storPools)
             {
                 storPoolHandler.applyChanges(storPool, transMgr);
             }
+
             for (RscPojo rsc : resources)
             {
                 rscHandler.applyChanges(rsc, transMgr);
