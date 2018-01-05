@@ -60,23 +60,31 @@ public class ConfFile implements Comparator<Resource>
         {
             satellites.add(localRsc);
         }
-        NetInterface localNetIf = localRsc.getAssignedNode().iterateNetInterfaces(accCtx).next();
-        String localAddr = localNetIf.getAddress(accCtx).getAddress();
+
         int port =  localRsc.getDefinition().getPort(accCtx).value;
-        conf.append("    on %s\n", localRsc.getAssignedNode().getName().displayValue);
-        conf.append("    {\n");
-        Iterator<Volume> vlmIterator = localRsc.iterateVolumes();
-        while (vlmIterator.hasNext())
+        // Create local network configuration
         {
-            final Volume vlm = vlmIterator.next();
-            if (vlm.getFlags().isUnset(accCtx, Volume.VlmFlags.DELETE))
+            Iterator<NetInterface> netIfIter = localRsc.getAssignedNode().iterateNetInterfaces(accCtx);
+            while (netIfIter.hasNext())
             {
-                appendVlm(vlm, accCtx, conf);
+                NetInterface localNetIf = netIfIter.next();
+                String localAddr = localNetIf.getAddress(accCtx).getAddress();
+                conf.append("    on %s\n", localRsc.getAssignedNode().getName().displayValue);
+                conf.append("    {\n");
+                Iterator<Volume> vlmIterator = localRsc.iterateVolumes();
+                while (vlmIterator.hasNext())
+                {
+                    final Volume vlm = vlmIterator.next();
+                    if (vlm.getFlags().isUnset(accCtx, Volume.VlmFlags.DELETE))
+                    {
+                        appendVlm(vlm, accCtx, conf);
+                    }
+                }
+                conf.append("        address    %s:%d;\n", localAddr, port);
+                conf.append("        node-id    %d;\n", localRsc.getNodeId().value);
+                conf.append("    }\n");
             }
         }
-        conf.append("        address    %s:%d;\n", localAddr, port);
-        conf.append("        nodeid     %d;\n", localRsc.getNodeId().value);
-        conf.append("    }\n");
 
         for (final Resource peerRsc : peerRscSet)
         {
