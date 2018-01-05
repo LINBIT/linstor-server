@@ -35,6 +35,7 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Volume.VlmApi;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -928,6 +929,83 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 entry.putObjRef(KEY_RSC_DFN, rscNameStr);
                 entry.putObjRef(KEY_NODE_NAME, nodeNameStr);
                 entry.putVariable(KEY_RSC_NAME, rscNameStr);
+                apiCallRc.addEntry(entry);
+
+                controller.getErrorReporter().logInfo(successMessage);
+            }
+        });
+
+        return apiCallRc;
+    }
+
+    ApiCallRc volumeDeleted(
+        AccessContext accCtx,
+        Peer client,
+        String nodeNameStr,
+        String rscNameStr,
+        final int volumeNr
+    )
+    {
+        ApiCallRc apiCallRc = checksForDeletion(accCtx, client, nodeNameStr, rscNameStr, new ExecuteDelete() {
+            @Override
+            public void onSuccess(
+                    AccessContext accCtx,
+                    Peer client,
+                    String nodeNameStr,
+                    String rscNameStr,
+                    ResourceData rscData,
+                    TransactionMgr transMgr,
+                    ApiCallRcImpl apiCallRc) throws AccessDeniedException, SQLException
+            {
+                VolumeNumber volumeNumber = null;
+                try {
+                    volumeNumber = new VolumeNumber(volumeNr);
+                } catch (ValueOutOfRangeException exc) {
+                    String errorMessage = String.format(
+                        "Volume number '%d' out of range",
+                        volumeNr
+                    );
+                    controller.getErrorReporter().reportError(
+                        exc,
+                        accCtx,
+                        client,
+                        errorMessage
+                    );
+                    ApiCallRcEntry entry = new ApiCallRcEntry();
+                    entry.setReturnCodeBit(RC_RSC_DEL_FAIL_UNKNOWN_ERROR);
+                    entry.setMessageFormat(errorMessage);
+                    entry.setCauseFormat(exc.getMessage());
+                    entry.putVariable(KEY_NODE_NAME, nodeNameStr);
+                    entry.putVariable(KEY_RSC_NAME, rscNameStr);
+                    entry.putObjRef(KEY_NODE, nodeNameStr);
+                    entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                    entry.putObjRef(KEY_VLM_NR, Integer.toString(volumeNr));
+
+                    apiCallRc.addEntry(entry);
+                    return;
+                }
+
+                Volume vol = rscData.getVolume(volumeNumber);
+                vol.delete(accCtx);
+
+                transMgr.commit();
+
+                //TODO check call cleanup??
+
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setReturnCodeBit(RC_VLM_DELETED);
+                String successMessage = String.format(
+                    "VolumeNr '%d' on resource '%s' is deleted from node '%s'.",
+                    volumeNr,
+                    rscNameStr,
+                    nodeNameStr
+                );
+                entry.setMessageFormat(successMessage);
+                entry.putObjRef(KEY_NODE, nodeNameStr);
+                entry.putObjRef(KEY_RSC_DFN, rscNameStr);
+                entry.putObjRef(KEY_NODE_NAME, nodeNameStr);
+                entry.putVariable(KEY_RSC_NAME, rscNameStr);
+                entry.putObjRef(KEY_VLM_NR, Integer.toString(volumeNr));
                 apiCallRc.addEntry(entry);
 
                 controller.getErrorReporter().logInfo(successMessage);

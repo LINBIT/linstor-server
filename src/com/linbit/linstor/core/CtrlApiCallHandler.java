@@ -754,6 +754,48 @@ public class CtrlApiCallHandler
     }
 
     /**
+     * Called if a satellite deleted the volume.
+     *
+     * Volume will be deleted (NOT marked).
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeName required
+     * @param rscName required
+     * @return
+     */
+    public ApiCallRc volumeDeleted(
+        AccessContext accCtx,
+        Peer client,
+        String nodeName,
+        String rscName,
+        int volumeNr
+    )
+    {
+        ApiCallRc apiCallRc;
+        try
+        {
+            controller.nodesMapLock.writeLock().lock();
+            controller.rscDfnMapLock.writeLock().lock();
+
+            apiCallRc = rscApiCallHandler.volumeDeleted(
+                accCtx,
+                client,
+                nodeName,
+                rscName,
+                volumeNr
+            );
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
+            controller.nodesMapLock.writeLock().unlock();
+        }
+
+        return apiCallRc;
+    }
+
+    /**
      * Creates a new {@link StorPoolDefinition}.
      *
      * @param accCtx
