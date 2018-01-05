@@ -174,11 +174,6 @@ public class TcpConnectorPeer implements Peer
 
         synchronized (this)
         {
-            if (!connected)
-            {
-                throw new ImplementationError(new NotYetConnectedException());
-            }
-
             // Queue the message for sending
             if (msgOut == null)
             {
