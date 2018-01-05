@@ -537,30 +537,30 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 transMgr,
                 false, // do not persist this entry
                 false // do not throw exception if the entry exists
-                );
-                rscDfn = ResourceDefinitionData.getInstance(
-                    accCtx,
-                    rscName,
-                    null, // port only needed if we want to persist this entry
-                    null, // rscFlags only needed if we want to persist this entry
-                    null, // secret only needed if we want to persist this entry
-                    null, // transportType only needed if we want to persist this entry
-                    transMgr,
-                    false, // do not persist this entry
-                    false // do not throw exception if the entry exists
-                    );
-                    rscData = ResourceData.getInstance(
-                        accCtx,
-                        rscDfn,
-                        node,
-                        null, // nodeId only needed if we want to persist this entry
-                        null, // rscFlags only needed if we want to persist this entry
-                        transMgr,
-                        false, // do not persist this entry
-                        false // do not throw exception if the entry exists
-                        );
+            );
+            rscDfn = ResourceDefinitionData.getInstance(
+                accCtx,
+                rscName,
+                null, // port only needed if we want to persist this entry
+                null, // rscFlags only needed if we want to persist this entry
+                null, // secret only needed if we want to persist this entry
+                null, // transportType only needed if we want to persist this entry
+                transMgr,
+                false, // do not persist this entry
+                false // do not throw exception if the entry exists
+            );
+            rscData = ResourceData.getInstance(
+                accCtx,
+                rscDfn,
+                node,
+                null, // nodeId only needed if we want to persist this entry
+                null, // rscFlags only needed if we want to persist this entry
+                transMgr,
+                false, // do not persist this entry
+                false // do not throw exception if the entry exists
+            );
 
-                        if (node == null)
+            if (node == null)
             {
                 ApiCallRcEntry nodeNotFoundEntry = new ApiCallRcEntry();
                 nodeNotFoundEntry.setReturnCode(RC_RSC_DEL_FAIL_NOT_FOUND_NODE);
