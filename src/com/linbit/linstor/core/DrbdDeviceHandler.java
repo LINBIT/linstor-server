@@ -1004,7 +1004,8 @@ class DrbdDeviceHandler implements DeviceHandler
             );
         }
 
-        // TODO: Notify the controller of successful deletion of volumes or the resource
+        // Notify the controller of successful deletion of the resource
+        stlt.getDeviceManager().notifyResourceDeleted(rsc);
     }
 
     /**

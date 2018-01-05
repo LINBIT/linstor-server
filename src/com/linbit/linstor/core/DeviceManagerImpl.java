@@ -2,23 +2,36 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.SatelliteTransactionMgr;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.WorkQueue;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteCoreServices;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.Volume;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.IllegalMessageStateException;
+import com.linbit.linstor.netcom.Message;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.MsgDelRscOuterClass.MsgDelRsc;
+import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Iterator;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,10 +39,18 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
 import org.slf4j.event.Level;
 
 class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 {
+    // CAUTION! Avoid locking the sched lock and satellite locks like the reconfigurationLock, rscDfnMapLock, etc.
+    //          at the same time (nesting locks).
+    //          The APIs that update resource definition, volume definition, resource, volume, etc. data with
+    //          new information from the controller hold reconfigurationLock and other locks while applying
+    //          updates, and then inform this device manager instance about the updates by taking the sched
+    //          lock and calling notify(). It is quite likely that they still hold other locks when doing so,
+    //          therefore no other locks should be taken while the sched lock is held, so as to avoid deadlock.
     private final Object sched = new Object();
 
     private final Satellite stltInstance;
@@ -44,6 +65,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private final AtomicBoolean runningFlag = new AtomicBoolean(false);
     private final AtomicBoolean shutdownFlag = new AtomicBoolean(false);
+
+    private final Set<ResourceName> deletedRscSet = new TreeSet<>();
+    private final Set<Volume.Key> deletedVlmSet = new TreeSet<>();
 
     private static final ServiceName devMgrName;
     static
@@ -331,7 +355,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
             // TODO: Initial changes to reach the target state
 
-            Set<ResourceName> dispatchRscSet = new TreeSet<>();
+            final Set<ResourceName> dispatchRscSet = new TreeSet<>();
+            final Set<NodeName> localDelNodeSet = new TreeSet<>();
+            final Set<ResourceName> localDelRscSet = new TreeSet<>();
+            final Set<Volume.Key> localDelVlmSet = new TreeSet<>();
             long cycleNr = 0;
             do
             {
@@ -460,6 +487,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     phaseLock.await();
                     // BEGIN DEBUG
                     errLog.logTrace("All resource handlers finished");
+
+                    // Cleanup deleted objects
+                    deletedObjectsCleanup(wrkCtx, localDelNodeSet, localDelRscSet, localDelVlmSet);
+
                     errLog.logTrace("End DeviceManager cycle %d", cycleNr);
                     // END DEBUG
                 }
@@ -488,6 +519,115 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             runningFlag.set(false);
         }
+    }
+
+    private void deletedObjectsCleanup(
+        final AccessContext wrkCtx,
+        final Set<NodeName> localDelNodeSet,
+        final Set<ResourceName> localDelRscSet,
+        final Set<Volume.Key> localDelVlmSet
+    )
+        throws AccessDeniedException
+    {
+        // Shallow-copy the sets to avoid having to mix locking the sched lock and
+        // the satellite's reconfigurationLock, rscDfnMapLock
+        synchronized (sched)
+        {
+            localDelRscSet.addAll(deletedRscSet);
+            localDelVlmSet.addAll(localDelVlmSet);
+            deletedRscSet.clear();
+            deletedVlmSet.clear();
+        }
+
+        Lock rcfgRdLock = stltInstance.reconfigurationLock.readLock();
+        Lock nodeMapWrLock = stltInstance.nodesMapLock.writeLock();
+        Lock rscDfnMapWrLock = stltInstance.rscDfnMapLock.writeLock();
+
+        SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+        rcfgRdLock.lock();
+        try
+        {
+            rscDfnMapWrLock.lock();
+            try
+            {
+                for (ResourceName curRscName : localDelRscSet)
+                {
+                    ResourceDefinition curRscDfn = stltInstance.rscDfnMap.get(curRscName);
+                    if (curRscDfn != null)
+                    {
+                        // Delete the resource from all nodes
+                        Iterator<Resource> rscIter = curRscDfn.iterateResource(wrkCtx);
+                        while (rscIter.hasNext())
+                        {
+                            Resource delRsc = rscIter.next();
+                            Node peerNode = delRsc.getAssignedNode();
+                            delRsc.setConnection(transMgr);
+                            delRsc.delete(wrkCtx);
+                            if (peerNode != stltInstance.localNode)
+                            {
+                                if (!(peerNode.getResourceCount() >= 1))
+                                {
+                                    // This satellite does no longer have any peer resources
+                                    // on the peer node, so is does not need to know about this
+                                    // peer node any longer, therefore
+                                    // remember to delete the peer node too
+                                    localDelNodeSet.add(peerNode.getName());
+                                }
+                            }
+                        }
+                        transMgr.commit();
+                        // Since the local node no longer has the resource, it also does not need
+                        // to know about the resource definition any longer, therefore
+                        // delete the resource definition as well
+                        stltInstance.rscDfnMap.remove(curRscName);
+                    }
+                }
+
+                // No-op; this can probably be removed, because volume entries are only removed
+                // when volume definition entries are removed from the resource definition,
+                // which can only be done by the controller.
+                // Such a change would then be received as an update from the controller.
+                //
+                // Maybe the satellite could set the "CLEAN" flag on the volume locally until then,
+                // to indicate that the volume deletion does not need to be repeated, but that is
+                // an optional optimization.
+                // for (Volume.Key vlmKey : localDelVlmSet)
+                // {
+                // }
+            }
+            finally
+            {
+                rscDfnMapWrLock.unlock();
+            }
+
+            nodeMapWrLock.lock();
+            try
+            {
+                for (NodeName curNodeName : localDelNodeSet)
+                {
+                    stltInstance.nodesMap.remove(curNodeName);
+                }
+            }
+            finally
+            {
+                nodeMapWrLock.unlock();
+            }
+
+        }
+        catch (SQLException ignored)
+        {
+            // Satellite; does not throw SQLExceptions, because the database update methods
+            // are no-ops -> ignored
+        }
+        finally
+        {
+            rcfgRdLock.unlock();
+        }
+
+        // Cleanup the temporary sets
+        localDelNodeSet.clear();
+        localDelRscSet.clear();
+        localDelVlmSet.clear();
     }
 
     private void requestNodeUpdates(Map<NodeName, UUID> nodesMap)
@@ -570,6 +710,104 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     public boolean isStarted()
     {
         return runningFlag.get();
+    }
+
+    @Override
+    public void notifyResourceDeleted(Resource rsc)
+    {
+        // Send delete notification to the controller
+        Peer ctrlPeer = stltInstance.getControllerPeer();
+        if (ctrlPeer != null)
+        {
+            // FIXME: Temporary protocol specific implementation - this method should be protocol-independent
+            //        in the final implementation. An interface should be called that is implemented by
+            //        an instance that implements whatever protocol the satellite uses and creates the
+            //        actual message
+            MsgHeader.Builder msgHdrBld = MsgHeader.newBuilder();
+            msgHdrBld.setMsgId(1);
+            msgHdrBld.setApiCall(InternalApiConsts.API_NOTIFY_RSC_DEL);
+
+            MsgDelRsc.Builder msgDelRscBld = MsgDelRsc.newBuilder();
+            String msgNodeName = rsc.getAssignedNode().getName().displayValue;
+            String msgRscName = rsc.getDefinition().getName().displayValue;
+            UUID rscUuid = rsc.getUuid();
+            com.google.protobuf.ByteString msgUuid = com.google.protobuf.ByteString.copyFrom(
+                com.linbit.utils.UuidUtils.asByteArray(rscUuid)
+            );
+            msgDelRscBld.setNodeName(msgNodeName);
+            msgDelRscBld.setRscName(msgRscName);
+            msgDelRscBld.setUuidBytes(msgUuid);
+
+            byte[] data = null;
+            {
+                ByteOutputStream dataOut = new ByteOutputStream();
+                try
+                {
+                    msgHdrBld.build().writeDelimitedTo(dataOut);
+                    msgDelRscBld.build().writeDelimitedTo(dataOut);
+                    dataOut.close();
+                    data = dataOut.getBytes();
+                    dataOut = null;
+                }
+                catch (IOException ioExc)
+                {
+                    // Not supposed to happen, because the I/O is just a byte array
+                    errLog.reportError(ioExc);
+                }
+                finally
+                {
+                    if (dataOut != null)
+                    {
+                        dataOut.close();
+                    }
+                }
+            }
+
+            if (data != null)
+            {
+                try
+                {
+                    Message netComMsg = ctrlPeer.createMessage();
+                    netComMsg.setData(data);
+                    ctrlPeer.sendMessage(netComMsg);
+                }
+                catch (IllegalMessageStateException illStateExc)
+                {
+                    throw new ImplementationError(
+                        "Attempt to send a NetCom message that has an illegal state",
+                        illStateExc
+                    );
+                }
+            }
+        }
+
+        // Remember the resource for removal after the DeviceHandler instances have finished
+        synchronized (sched)
+        {
+            deletedRscSet.add(rsc.getDefinition().getName());
+        }
+    }
+
+    @Override
+    public void notifyVolumeDeleted(Volume vlm)
+    {
+        // Send delete notification to the controller
+        Peer ctrlPeer = stltInstance.getControllerPeer();
+        if (ctrlPeer != null)
+        {
+            // TODO: Implement
+            //
+            // FIXME: Temporary protocol specific implementation - this method should be protocol-independent
+            //        in the final implementation. An interface should be called that is implemented by
+            //        an instance that implements whatever protocol the satellite uses and creates the
+            //        actual message
+        }
+
+        // Remember the volume for removal after the DeviceHandler instances have finished
+        synchronized (sched)
+        {
+            deletedVlmSet.add(new Volume.Key(vlm));
+        }
     }
 
     static class DeviceHandlerInvocation implements Runnable

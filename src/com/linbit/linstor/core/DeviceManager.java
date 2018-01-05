@@ -1,8 +1,10 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.Volume;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,5 +20,9 @@ public interface DeviceManager extends DrbdStateChange
         Set<StorPoolName> storPoolSet,
         Map<ResourceName, Set<NodeName>> rscMap
     );
+
+    void notifyResourceDeleted(Resource rsc);
+    void notifyVolumeDeleted(Volume vlm);
+
     StltUpdateTracker getUpdateTracker();
 }
