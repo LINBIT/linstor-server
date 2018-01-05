@@ -92,18 +92,15 @@ public class CmdDisplayResource extends BaseDebugCmd
                         }
 
                         ResourceDefinition rscDfn = rscDfnMap.get(prmResName);
-                        if (rscDfn != null)
+                        if (rscDfn != null && rscDfn.getResourceCount() >= 1)
                         {
-                            if (rscDfn.getResourceCount() >= 1)
-                            {
-                                printSectionSeparator(debugOut);
-                                displayRsc(debugOut, rscDfn, accCtx);
-                                printSectionSeparator(debugOut);
-                            }
+                            printSectionSeparator(debugOut);
+                            displayRsc(debugOut, rscDfn, accCtx);
+                            printSectionSeparator(debugOut);
                         }
                         else
                         {
-                            debugOut.printf("The resource definition '%s' does not exist\n", prmName);
+                            debugOut.printf("The resource '%s' does not exist\n", prmName);
                         }
                     }
                     finally
