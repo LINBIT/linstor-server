@@ -1,5 +1,5 @@
 plugins {
-    id "nebula.ospackage" version "4.5.1"
+    id "nebula.ospackage" version "4.6.0"
 }
 
 apply plugin: 'java'
@@ -63,11 +63,25 @@ jar {
   }
 }
 
+task ControllerStartup(type: CreateStartScripts) {
+    mainClassName = 'com.linbit.linstor.core.Controller'
+    applicationName = "Controller"
+    outputDir = new File(project.buildDir, 'scripts')
+    classpath = jar.outputs.files + project.configurations.runtime
+    doLast {
+        delete windowsScript
+    }
+}
+
+
 task SatelliteStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.Satellite'
     applicationName = "Satellite"
     outputDir = new File(project.buildDir, 'scripts')
     classpath = jar.outputs.files + project.configurations.runtime
+    doLast {
+        delete windowsScript
+    }
 }
 
 task RecreateDbStartup(type: CreateStartScripts) {
@@ -75,12 +89,16 @@ task RecreateDbStartup(type: CreateStartScripts) {
     applicationName = "RecreateDb"
     outputDir = new File(project.buildDir, 'scripts')
     classpath = jar.outputs.files + project.configurations.runtime
+    doLast {
+        delete windowsScript
+    }
 }
 
 applicationDistribution.into("bin") {
-            from(SatelliteStartup)
-            from(RecreateDbStartup)
-            fileMode = 0755
+    from(ControllerStartup)
+    from(SatelliteStartup)
+    from(RecreateDbStartup)
+    fileMode = 0755
 }
 
 task showMeCache << {
@@ -124,13 +142,32 @@ clean {
 }
 
 ospackage {
+    packageName 'linstor-server'
     release '1'
     os = LINUX
+
+    into '/opt/linstor-server'
+
+    from(jar.outputs.files) {
+        into 'lib'
+    }
+    from(configurations.runtime) {
+        into 'lib'
+    }
+    from(ControllerStartup) {
+        into 'bin'
+        fileMode 0550
+    }
+    from(SatelliteStartup) {
+        into 'bin'
+        fileMode 0550
+    }
 }
 
 // we might even split these to generate separate controller/satellite packages
-task buildRPM(type: Rpm) {
+buildRpm {
+
 }
 
-task buildDEB(type: Deb) {
+buildDeb {
 }
