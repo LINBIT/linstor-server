@@ -8,6 +8,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 
 import java.sql.SQLException;
@@ -97,6 +98,16 @@ public interface Resource extends TransactionObject
             }
             return flagList.toArray(new RscFlags[flagList.size()]);
         }
+
+        public static List<String> toStringList(long flagsMask)
+        {
+            return FlagsHelper.toStringList(RscFlags.class, flagsMask);
+        }
+
+        public static long fromStringList(List<String> listFlags)
+        {
+            return FlagsHelper.fromStringList(RscFlags.class, listFlags);
+        }
     }
 
     public interface RscApi {
@@ -106,6 +117,7 @@ public interface Resource extends TransactionObject
         String getNodeName();
         UUID getRscDfnUuid();
         Map<String, String> getProps();
+        long getFlags();
         List<? extends Volume.VlmApi> getVlmList();
     }
 }

@@ -6,6 +6,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 
 import java.sql.SQLException;
@@ -95,6 +96,16 @@ public interface ResourceDefinition extends TransactionObject
                 }
             }
             return list.toArray(new RscDfnFlags[list.size()]);
+        }
+
+        public static List<String> toStringList(long flagsMask)
+        {
+            return FlagsHelper.toStringList(RscDfnFlags.class, flagsMask);
+        }
+
+        public static long fromStringList(List<String> listFlags)
+        {
+            return FlagsHelper.fromStringList(RscDfnFlags.class, listFlags);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.linbit.linstor.proto.apidata;
 
+import com.linbit.linstor.Volume;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -80,7 +81,7 @@ public class VlmApiData implements VlmApi
     @Override
     public long getFlags()
     {
-        return vlm.getVlmFlags();
+        return Volume.VlmFlags.fromStringList(vlm.getVlmFlagsList());
     }
 
     @Override
@@ -110,7 +111,7 @@ public class VlmApiData implements VlmApi
         {
             builder.setMetaDisk(vlmApi.getMetaDisk());
         }
-        builder.setVlmFlags(vlmApi.getFlags());
+        builder.addAllVlmFlags(Volume.VlmFlags.toStringList(vlmApi.getFlags()));
         builder.addAllVlmProps(BaseProtoApiCall.fromMap(vlmApi.getVlmProps()));
 
         return builder.build();

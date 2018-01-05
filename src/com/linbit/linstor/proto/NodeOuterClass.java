@@ -142,10 +142,45 @@ public final class NodeOuterClass {
 
     /**
      * <pre>
+     * Node flags
+     * </pre>
+     *
+     * <code>repeated string flags = 5;</code>
+     */
+    java.util.List<java.lang.String>
+        getFlagsList();
+    /**
+     * <pre>
+     * Node flags
+     * </pre>
+     *
+     * <code>repeated string flags = 5;</code>
+     */
+    int getFlagsCount();
+    /**
+     * <pre>
+     * Node flags
+     * </pre>
+     *
+     * <code>repeated string flags = 5;</code>
+     */
+    java.lang.String getFlags(int index);
+    /**
+     * <pre>
+     * Node flags
+     * </pre>
+     *
+     * <code>repeated string flags = 5;</code>
+     */
+    com.google.protobuf.ByteString
+        getFlagsBytes(int index);
+
+    /**
+     * <pre>
      * NetInterfaces
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
      */
     java.util.List<com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface> 
         getNetInterfacesList();
@@ -154,7 +189,7 @@ public final class NodeOuterClass {
      * NetInterfaces
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
      */
     com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface getNetInterfaces(int index);
     /**
@@ -162,7 +197,7 @@ public final class NodeOuterClass {
      * NetInterfaces
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
      */
     int getNetInterfacesCount();
     /**
@@ -170,7 +205,7 @@ public final class NodeOuterClass {
      * NetInterfaces
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
      */
     java.util.List<? extends com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterfaceOrBuilder> 
         getNetInterfacesOrBuilderList();
@@ -179,7 +214,7 @@ public final class NodeOuterClass {
      * NetInterfaces
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
      */
     com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterfaceOrBuilder getNetInterfacesOrBuilder(
         int index);
@@ -200,6 +235,7 @@ public final class NodeOuterClass {
       name_ = "";
       type_ = "";
       props_ = java.util.Collections.emptyList();
+      flags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       netInterfaces_ = java.util.Collections.emptyList();
     }
 
@@ -259,9 +295,18 @@ public final class NodeOuterClass {
               break;
             }
             case 42: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-                netInterfaces_ = new java.util.ArrayList<com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface>();
+                flags_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000010;
+              }
+              flags_.add(bs);
+              break;
+            }
+            case 50: {
+              if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
+                netInterfaces_ = new java.util.ArrayList<com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface>();
+                mutable_bitField0_ |= 0x00000020;
               }
               netInterfaces_.add(
                   input.readMessage(com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.PARSER, extensionRegistry));
@@ -279,6 +324,9 @@ public final class NodeOuterClass {
           props_ = java.util.Collections.unmodifiableList(props_);
         }
         if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+          flags_ = flags_.getUnmodifiableView();
+        }
+        if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
           netInterfaces_ = java.util.Collections.unmodifiableList(netInterfaces_);
         }
         this.unknownFields = unknownFields.build();
@@ -515,14 +563,59 @@ public final class NodeOuterClass {
       return props_.get(index);
     }
 
-    public static final int NET_INTERFACES_FIELD_NUMBER = 5;
+    public static final int FLAGS_FIELD_NUMBER = 5;
+    private com.google.protobuf.LazyStringList flags_;
+    /**
+     * <pre>
+     * Node flags
+     * </pre>
+     *
+     * <code>repeated string flags = 5;</code>
+     */
+    public com.google.protobuf.ProtocolStringList
+        getFlagsList() {
+      return flags_;
+    }
+    /**
+     * <pre>
+     * Node flags
+     * </pre>
+     *
+     * <code>repeated string flags = 5;</code>
+     */
+    public int getFlagsCount() {
+      return flags_.size();
+    }
+    /**
+     * <pre>
+     * Node flags
+     * </pre>
+     *
+     * <code>repeated string flags = 5;</code>
+     */
+    public java.lang.String getFlags(int index) {
+      return flags_.get(index);
+    }
+    /**
+     * <pre>
+     * Node flags
+     * </pre>
+     *
+     * <code>repeated string flags = 5;</code>
+     */
+    public com.google.protobuf.ByteString
+        getFlagsBytes(int index) {
+      return flags_.getByteString(index);
+    }
+
+    public static final int NET_INTERFACES_FIELD_NUMBER = 6;
     private java.util.List<com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface> netInterfaces_;
     /**
      * <pre>
      * NetInterfaces
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
      */
     public java.util.List<com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface> getNetInterfacesList() {
       return netInterfaces_;
@@ -532,7 +625,7 @@ public final class NodeOuterClass {
      * NetInterfaces
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
      */
     public java.util.List<? extends com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterfaceOrBuilder> 
         getNetInterfacesOrBuilderList() {
@@ -543,7 +636,7 @@ public final class NodeOuterClass {
      * NetInterfaces
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
      */
     public int getNetInterfacesCount() {
       return netInterfaces_.size();
@@ -553,7 +646,7 @@ public final class NodeOuterClass {
      * NetInterfaces
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
      */
     public com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface getNetInterfaces(int index) {
       return netInterfaces_.get(index);
@@ -563,7 +656,7 @@ public final class NodeOuterClass {
      * NetInterfaces
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+     * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
      */
     public com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterfaceOrBuilder getNetInterfacesOrBuilder(
         int index) {
@@ -614,8 +707,11 @@ public final class NodeOuterClass {
       for (int i = 0; i < props_.size(); i++) {
         output.writeMessage(4, props_.get(i));
       }
+      for (int i = 0; i < flags_.size(); i++) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, flags_.getRaw(i));
+      }
       for (int i = 0; i < netInterfaces_.size(); i++) {
-        output.writeMessage(5, netInterfaces_.get(i));
+        output.writeMessage(6, netInterfaces_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -638,9 +734,17 @@ public final class NodeOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(4, props_.get(i));
       }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < flags_.size(); i++) {
+          dataSize += computeStringSizeNoTag(flags_.getRaw(i));
+        }
+        size += dataSize;
+        size += 1 * getFlagsList().size();
+      }
       for (int i = 0; i < netInterfaces_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(5, netInterfaces_.get(i));
+          .computeMessageSize(6, netInterfaces_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -676,6 +780,8 @@ public final class NodeOuterClass {
       }
       result = result && getPropsList()
           .equals(other.getPropsList());
+      result = result && getFlagsList()
+          .equals(other.getFlagsList());
       result = result && getNetInterfacesList()
           .equals(other.getNetInterfacesList());
       result = result && unknownFields.equals(other.unknownFields);
@@ -704,6 +810,10 @@ public final class NodeOuterClass {
       if (getPropsCount() > 0) {
         hash = (37 * hash) + PROPS_FIELD_NUMBER;
         hash = (53 * hash) + getPropsList().hashCode();
+      }
+      if (getFlagsCount() > 0) {
+        hash = (37 * hash) + FLAGS_FIELD_NUMBER;
+        hash = (53 * hash) + getFlagsList().hashCode();
       }
       if (getNetInterfacesCount() > 0) {
         hash = (37 * hash) + NET_INTERFACES_FIELD_NUMBER;
@@ -841,9 +951,11 @@ public final class NodeOuterClass {
         } else {
           propsBuilder_.clear();
         }
+        flags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000010);
         if (netInterfacesBuilder_ == null) {
           netInterfaces_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000010);
+          bitField0_ = (bitField0_ & ~0x00000020);
         } else {
           netInterfacesBuilder_.clear();
         }
@@ -892,10 +1004,15 @@ public final class NodeOuterClass {
         } else {
           result.props_ = propsBuilder_.build();
         }
+        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          flags_ = flags_.getUnmodifiableView();
+          bitField0_ = (bitField0_ & ~0x00000010);
+        }
+        result.flags_ = flags_;
         if (netInterfacesBuilder_ == null) {
-          if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          if (((bitField0_ & 0x00000020) == 0x00000020)) {
             netInterfaces_ = java.util.Collections.unmodifiableList(netInterfaces_);
-            bitField0_ = (bitField0_ & ~0x00000010);
+            bitField0_ = (bitField0_ & ~0x00000020);
           }
           result.netInterfaces_ = netInterfaces_;
         } else {
@@ -984,11 +1101,21 @@ public final class NodeOuterClass {
             }
           }
         }
+        if (!other.flags_.isEmpty()) {
+          if (flags_.isEmpty()) {
+            flags_ = other.flags_;
+            bitField0_ = (bitField0_ & ~0x00000010);
+          } else {
+            ensureFlagsIsMutable();
+            flags_.addAll(other.flags_);
+          }
+          onChanged();
+        }
         if (netInterfacesBuilder_ == null) {
           if (!other.netInterfaces_.isEmpty()) {
             if (netInterfaces_.isEmpty()) {
               netInterfaces_ = other.netInterfaces_;
-              bitField0_ = (bitField0_ & ~0x00000010);
+              bitField0_ = (bitField0_ & ~0x00000020);
             } else {
               ensureNetInterfacesIsMutable();
               netInterfaces_.addAll(other.netInterfaces_);
@@ -1001,7 +1128,7 @@ public final class NodeOuterClass {
               netInterfacesBuilder_.dispose();
               netInterfacesBuilder_ = null;
               netInterfaces_ = other.netInterfaces_;
-              bitField0_ = (bitField0_ & ~0x00000010);
+              bitField0_ = (bitField0_ & ~0x00000020);
               netInterfacesBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
                    getNetInterfacesFieldBuilder() : null;
@@ -1666,12 +1793,141 @@ public final class NodeOuterClass {
         return propsBuilder_;
       }
 
+      private com.google.protobuf.LazyStringList flags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureFlagsIsMutable() {
+        if (!((bitField0_ & 0x00000010) == 0x00000010)) {
+          flags_ = new com.google.protobuf.LazyStringArrayList(flags_);
+          bitField0_ |= 0x00000010;
+         }
+      }
+      /**
+       * <pre>
+       * Node flags
+       * </pre>
+       *
+       * <code>repeated string flags = 5;</code>
+       */
+      public com.google.protobuf.ProtocolStringList
+          getFlagsList() {
+        return flags_.getUnmodifiableView();
+      }
+      /**
+       * <pre>
+       * Node flags
+       * </pre>
+       *
+       * <code>repeated string flags = 5;</code>
+       */
+      public int getFlagsCount() {
+        return flags_.size();
+      }
+      /**
+       * <pre>
+       * Node flags
+       * </pre>
+       *
+       * <code>repeated string flags = 5;</code>
+       */
+      public java.lang.String getFlags(int index) {
+        return flags_.get(index);
+      }
+      /**
+       * <pre>
+       * Node flags
+       * </pre>
+       *
+       * <code>repeated string flags = 5;</code>
+       */
+      public com.google.protobuf.ByteString
+          getFlagsBytes(int index) {
+        return flags_.getByteString(index);
+      }
+      /**
+       * <pre>
+       * Node flags
+       * </pre>
+       *
+       * <code>repeated string flags = 5;</code>
+       */
+      public Builder setFlags(
+          int index, java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureFlagsIsMutable();
+        flags_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node flags
+       * </pre>
+       *
+       * <code>repeated string flags = 5;</code>
+       */
+      public Builder addFlags(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureFlagsIsMutable();
+        flags_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node flags
+       * </pre>
+       *
+       * <code>repeated string flags = 5;</code>
+       */
+      public Builder addAllFlags(
+          java.lang.Iterable<java.lang.String> values) {
+        ensureFlagsIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, flags_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node flags
+       * </pre>
+       *
+       * <code>repeated string flags = 5;</code>
+       */
+      public Builder clearFlags() {
+        flags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node flags
+       * </pre>
+       *
+       * <code>repeated string flags = 5;</code>
+       */
+      public Builder addFlagsBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureFlagsIsMutable();
+        flags_.add(value);
+        onChanged();
+        return this;
+      }
+
       private java.util.List<com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface> netInterfaces_ =
         java.util.Collections.emptyList();
       private void ensureNetInterfacesIsMutable() {
-        if (!((bitField0_ & 0x00000010) == 0x00000010)) {
+        if (!((bitField0_ & 0x00000020) == 0x00000020)) {
           netInterfaces_ = new java.util.ArrayList<com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface>(netInterfaces_);
-          bitField0_ |= 0x00000010;
+          bitField0_ |= 0x00000020;
          }
       }
 
@@ -1683,7 +1939,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public java.util.List<com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface> getNetInterfacesList() {
         if (netInterfacesBuilder_ == null) {
@@ -1697,7 +1953,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public int getNetInterfacesCount() {
         if (netInterfacesBuilder_ == null) {
@@ -1711,7 +1967,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface getNetInterfaces(int index) {
         if (netInterfacesBuilder_ == null) {
@@ -1725,7 +1981,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public Builder setNetInterfaces(
           int index, com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface value) {
@@ -1746,7 +2002,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public Builder setNetInterfaces(
           int index, com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.Builder builderForValue) {
@@ -1764,7 +2020,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public Builder addNetInterfaces(com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface value) {
         if (netInterfacesBuilder_ == null) {
@@ -1784,7 +2040,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public Builder addNetInterfaces(
           int index, com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface value) {
@@ -1805,7 +2061,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public Builder addNetInterfaces(
           com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.Builder builderForValue) {
@@ -1823,7 +2079,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public Builder addNetInterfaces(
           int index, com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.Builder builderForValue) {
@@ -1841,7 +2097,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public Builder addAllNetInterfaces(
           java.lang.Iterable<? extends com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface> values) {
@@ -1860,12 +2116,12 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public Builder clearNetInterfaces() {
         if (netInterfacesBuilder_ == null) {
           netInterfaces_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000010);
+          bitField0_ = (bitField0_ & ~0x00000020);
           onChanged();
         } else {
           netInterfacesBuilder_.clear();
@@ -1877,7 +2133,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public Builder removeNetInterfaces(int index) {
         if (netInterfacesBuilder_ == null) {
@@ -1894,7 +2150,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.Builder getNetInterfacesBuilder(
           int index) {
@@ -1905,7 +2161,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterfaceOrBuilder getNetInterfacesOrBuilder(
           int index) {
@@ -1919,7 +2175,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public java.util.List<? extends com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterfaceOrBuilder> 
            getNetInterfacesOrBuilderList() {
@@ -1934,7 +2190,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.Builder addNetInterfacesBuilder() {
         return getNetInterfacesFieldBuilder().addBuilder(
@@ -1945,7 +2201,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.Builder addNetInterfacesBuilder(
           int index) {
@@ -1957,7 +2213,7 @@ public final class NodeOuterClass {
        * NetInterfaces
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 5;</code>
+       * <code>repeated .com.linbit.linstor.proto.NetInterface net_interfaces = 6;</code>
        */
       public java.util.List<com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.Builder> 
            getNetInterfacesBuilderList() {
@@ -1970,7 +2226,7 @@ public final class NodeOuterClass {
           netInterfacesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface, com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.Builder, com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterfaceOrBuilder>(
                   netInterfaces_,
-                  ((bitField0_ & 0x00000010) == 0x00000010),
+                  ((bitField0_ & 0x00000020) == 0x00000020),
                   getParentForChildren(),
                   isClean());
           netInterfaces_ = null;
@@ -2042,11 +2298,12 @@ public final class NodeOuterClass {
     java.lang.String[] descriptorData = {
       "\n\020proto/Node.proto\022\030com.linbit.linstor.p" +
       "roto\032\033proto/LinStorMapEntry.proto\032\030proto" +
-      "/NetInterface.proto\"\252\001\n\004Node\022\014\n\004uuid\030\001 \001" +
+      "/NetInterface.proto\"\271\001\n\004Node\022\014\n\004uuid\030\001 \001" +
       "(\t\022\014\n\004name\030\002 \002(\t\022\014\n\004type\030\003 \002(\t\0228\n\005props\030" +
       "\004 \003(\0132).com.linbit.linstor.proto.LinStor" +
-      "MapEntry\022>\n\016net_interfaces\030\005 \003(\0132&.com.l" +
-      "inbit.linstor.proto.NetInterfaceP\000P\001"
+      "MapEntry\022\r\n\005flags\030\005 \003(\t\022>\n\016net_interface" +
+      "s\030\006 \003(\0132&.com.linbit.linstor.proto.NetIn" +
+      "terfaceP\000P\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2067,7 +2324,7 @@ public final class NodeOuterClass {
     internal_static_com_linbit_linstor_proto_Node_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_Node_descriptor,
-        new java.lang.String[] { "Uuid", "Name", "Type", "Props", "NetInterfaces", });
+        new java.lang.String[] { "Uuid", "Name", "Type", "Props", "Flags", "NetInterfaces", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.linstor.proto.NetInterfaceOuterClass.getDescriptor();
   }

@@ -7,6 +7,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.Flags;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 
 import java.sql.SQLException;
@@ -189,6 +190,16 @@ public interface Node extends TransactionObject
             }
             return flagList.toArray(new NodeFlag[flagList.size()]);
         }
+
+        public static List<String> toStringList(long flagsMask)
+        {
+            return FlagsHelper.toStringList(NodeFlag.class, flagsMask);
+        }
+
+        public static long fromStringList(List<String> listFlags)
+        {
+            return FlagsHelper.fromStringList(NodeFlag.class, listFlags);
+        }
     }
 
     public interface NodeApi
@@ -197,6 +208,7 @@ public interface Node extends TransactionObject
         String getType();
         UUID getUuid();
         Map<String, String> getProps();
+        long getFlags();
         List<NetInterface.NetInterfaceApi> getNetInterfaces();
     }
 }

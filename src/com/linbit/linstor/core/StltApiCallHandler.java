@@ -84,6 +84,11 @@ public class StltApiCallHandler
         {
             satellite.reconfigurationLock.writeLock().lock();
 
+            // clear all data
+            satellite.nodesMap.clear();
+            satellite.rscDfnMap.clear();
+            satellite.storPoolDfnMap.clear();
+
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
             for (NodePojo node : nodes)
             {

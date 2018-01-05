@@ -111,7 +111,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
                     .setVlmNr(vlmDfn.getVolumeNumber().value)
                     .setVlmSize(vlmDfn.getVolumeSize(serializerCtx))
                     .setVlmMinor(vlmDfn.getMinorNr(serializerCtx).value)
-                    .setVlmFlags(vlmDfn.getFlags().getFlagsBits(serializerCtx))
+                    .addAllVlmFlags(Volume.VlmFlags.toStringList(vlmDfn.getFlags().getFlagsBits(serializerCtx)))
                     .addAllVlmProps(BaseProtoApiCall.fromMap(vlmDfnProps))
                     .build()
             );
@@ -135,7 +135,7 @@ public class ResourceDataSerializerProto extends AbsSerializerProto<Resource>
                 .setVlmDfnUuid(vol.getVolumeDefinition().getUuid().toString())
                 .setVlmUuid(vol.getUuid().toString())
                 .setVlmNr(vol.getVolumeDefinition().getVolumeNumber().value)
-                .setVlmFlags(vol.getFlags().getFlagsBits(serializerCtx))
+                .addAllVlmFlags(Volume.VlmFlags.toStringList(vol.getFlags().getFlagsBits(serializerCtx)))
                 .setStorPoolUuid(vlmStorPool.getUuid().toString())
                 .setStorPoolName(vlmStorPool.getName().displayValue)
                 .addAllVlmProps(BaseProtoApiCall.fromMap(volProps));

@@ -118,17 +118,35 @@ public final class RscDfnOuterClass {
      * Resource flags
      * </pre>
      *
-     * <code>optional sint64 rsc_dfn_flags = 5;</code>
+     * <code>repeated string rsc_dfn_flags = 5;</code>
      */
-    boolean hasRscDfnFlags();
+    java.util.List<java.lang.String>
+        getRscDfnFlagsList();
     /**
      * <pre>
      * Resource flags
      * </pre>
      *
-     * <code>optional sint64 rsc_dfn_flags = 5;</code>
+     * <code>repeated string rsc_dfn_flags = 5;</code>
      */
-    long getRscDfnFlags();
+    int getRscDfnFlagsCount();
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_dfn_flags = 5;</code>
+     */
+    java.lang.String getRscDfnFlags(int index);
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_dfn_flags = 5;</code>
+     */
+    com.google.protobuf.ByteString
+        getRscDfnFlagsBytes(int index);
 
     /**
      * <pre>
@@ -264,7 +282,7 @@ public final class RscDfnOuterClass {
       rscName_ = "";
       rscDfnPort_ = 0;
       rscDfnSecret_ = "";
-      rscDfnFlags_ = 0L;
+      rscDfnFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       rscDfnProps_ = java.util.Collections.emptyList();
       vlmDfns_ = java.util.Collections.emptyList();
       rscDfnTransportType_ = "";
@@ -321,9 +339,13 @@ public final class RscDfnOuterClass {
               rscDfnSecret_ = bs;
               break;
             }
-            case 40: {
-              bitField0_ |= 0x00000010;
-              rscDfnFlags_ = input.readSInt64();
+            case 42: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+                rscDfnFlags_ = new com.google.protobuf.LazyStringArrayList();
+                mutable_bitField0_ |= 0x00000010;
+              }
+              rscDfnFlags_.add(bs);
               break;
             }
             case 50: {
@@ -346,7 +368,7 @@ public final class RscDfnOuterClass {
             }
             case 66: {
               com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000020;
+              bitField0_ |= 0x00000010;
               rscDfnTransportType_ = bs;
               break;
             }
@@ -358,6 +380,9 @@ public final class RscDfnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+          rscDfnFlags_ = rscDfnFlags_.getUnmodifiableView();
+        }
         if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
           rscDfnProps_ = java.util.Collections.unmodifiableList(rscDfnProps_);
         }
@@ -567,26 +592,48 @@ public final class RscDfnOuterClass {
     }
 
     public static final int RSC_DFN_FLAGS_FIELD_NUMBER = 5;
-    private long rscDfnFlags_;
+    private com.google.protobuf.LazyStringList rscDfnFlags_;
     /**
      * <pre>
      * Resource flags
      * </pre>
      *
-     * <code>optional sint64 rsc_dfn_flags = 5;</code>
+     * <code>repeated string rsc_dfn_flags = 5;</code>
      */
-    public boolean hasRscDfnFlags() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
+    public com.google.protobuf.ProtocolStringList
+        getRscDfnFlagsList() {
+      return rscDfnFlags_;
     }
     /**
      * <pre>
      * Resource flags
      * </pre>
      *
-     * <code>optional sint64 rsc_dfn_flags = 5;</code>
+     * <code>repeated string rsc_dfn_flags = 5;</code>
      */
-    public long getRscDfnFlags() {
-      return rscDfnFlags_;
+    public int getRscDfnFlagsCount() {
+      return rscDfnFlags_.size();
+    }
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_dfn_flags = 5;</code>
+     */
+    public java.lang.String getRscDfnFlags(int index) {
+      return rscDfnFlags_.get(index);
+    }
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_dfn_flags = 5;</code>
+     */
+    public com.google.protobuf.ByteString
+        getRscDfnFlagsBytes(int index) {
+      return rscDfnFlags_.getByteString(index);
     }
 
     public static final int RSC_DFN_PROPS_FIELD_NUMBER = 6;
@@ -709,7 +756,7 @@ public final class RscDfnOuterClass {
      * <code>optional string rsc_dfn_transport_type = 8;</code>
      */
     public boolean hasRscDfnTransportType() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
+      return ((bitField0_ & 0x00000010) == 0x00000010);
     }
     /**
      * <pre>
@@ -793,8 +840,8 @@ public final class RscDfnOuterClass {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 4, rscDfnSecret_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeSInt64(5, rscDfnFlags_);
+      for (int i = 0; i < rscDfnFlags_.size(); i++) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, rscDfnFlags_.getRaw(i));
       }
       for (int i = 0; i < rscDfnProps_.size(); i++) {
         output.writeMessage(6, rscDfnProps_.get(i));
@@ -802,7 +849,7 @@ public final class RscDfnOuterClass {
       for (int i = 0; i < vlmDfns_.size(); i++) {
         output.writeMessage(7, vlmDfns_.get(i));
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 8, rscDfnTransportType_);
       }
       unknownFields.writeTo(output);
@@ -826,9 +873,13 @@ public final class RscDfnOuterClass {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, rscDfnSecret_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(5, rscDfnFlags_);
+      {
+        int dataSize = 0;
+        for (int i = 0; i < rscDfnFlags_.size(); i++) {
+          dataSize += computeStringSizeNoTag(rscDfnFlags_.getRaw(i));
+        }
+        size += dataSize;
+        size += 1 * getRscDfnFlagsList().size();
       }
       for (int i = 0; i < rscDfnProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
@@ -838,7 +889,7 @@ public final class RscDfnOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(7, vlmDfns_.get(i));
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, rscDfnTransportType_);
       }
       size += unknownFields.getSerializedSize();
@@ -878,11 +929,8 @@ public final class RscDfnOuterClass {
         result = result && getRscDfnSecret()
             .equals(other.getRscDfnSecret());
       }
-      result = result && (hasRscDfnFlags() == other.hasRscDfnFlags());
-      if (hasRscDfnFlags()) {
-        result = result && (getRscDfnFlags()
-            == other.getRscDfnFlags());
-      }
+      result = result && getRscDfnFlagsList()
+          .equals(other.getRscDfnFlagsList());
       result = result && getRscDfnPropsList()
           .equals(other.getRscDfnPropsList());
       result = result && getVlmDfnsList()
@@ -919,10 +967,9 @@ public final class RscDfnOuterClass {
         hash = (37 * hash) + RSC_DFN_SECRET_FIELD_NUMBER;
         hash = (53 * hash) + getRscDfnSecret().hashCode();
       }
-      if (hasRscDfnFlags()) {
+      if (getRscDfnFlagsCount() > 0) {
         hash = (37 * hash) + RSC_DFN_FLAGS_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getRscDfnFlags());
+        hash = (53 * hash) + getRscDfnFlagsList().hashCode();
       }
       if (getRscDfnPropsCount() > 0) {
         hash = (37 * hash) + RSC_DFN_PROPS_FIELD_NUMBER;
@@ -1068,7 +1115,7 @@ public final class RscDfnOuterClass {
         bitField0_ = (bitField0_ & ~0x00000004);
         rscDfnSecret_ = "";
         bitField0_ = (bitField0_ & ~0x00000008);
-        rscDfnFlags_ = 0L;
+        rscDfnFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000010);
         if (rscDfnPropsBuilder_ == null) {
           rscDfnProps_ = java.util.Collections.emptyList();
@@ -1124,8 +1171,9 @@ public final class RscDfnOuterClass {
           to_bitField0_ |= 0x00000008;
         }
         result.rscDfnSecret_ = rscDfnSecret_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
+        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          rscDfnFlags_ = rscDfnFlags_.getUnmodifiableView();
+          bitField0_ = (bitField0_ & ~0x00000010);
         }
         result.rscDfnFlags_ = rscDfnFlags_;
         if (rscDfnPropsBuilder_ == null) {
@@ -1147,7 +1195,7 @@ public final class RscDfnOuterClass {
           result.vlmDfns_ = vlmDfnsBuilder_.build();
         }
         if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
-          to_bitField0_ |= 0x00000020;
+          to_bitField0_ |= 0x00000010;
         }
         result.rscDfnTransportType_ = rscDfnTransportType_;
         result.bitField0_ = to_bitField0_;
@@ -1210,8 +1258,15 @@ public final class RscDfnOuterClass {
           rscDfnSecret_ = other.rscDfnSecret_;
           onChanged();
         }
-        if (other.hasRscDfnFlags()) {
-          setRscDfnFlags(other.getRscDfnFlags());
+        if (!other.rscDfnFlags_.isEmpty()) {
+          if (rscDfnFlags_.isEmpty()) {
+            rscDfnFlags_ = other.rscDfnFlags_;
+            bitField0_ = (bitField0_ & ~0x00000010);
+          } else {
+            ensureRscDfnFlagsIsMutable();
+            rscDfnFlags_.addAll(other.rscDfnFlags_);
+          }
+          onChanged();
         }
         if (rscDfnPropsBuilder_ == null) {
           if (!other.rscDfnProps_.isEmpty()) {
@@ -1659,37 +1714,69 @@ public final class RscDfnOuterClass {
         return this;
       }
 
-      private long rscDfnFlags_ ;
-      /**
-       * <pre>
-       * Resource flags
-       * </pre>
-       *
-       * <code>optional sint64 rsc_dfn_flags = 5;</code>
-       */
-      public boolean hasRscDfnFlags() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
+      private com.google.protobuf.LazyStringList rscDfnFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureRscDfnFlagsIsMutable() {
+        if (!((bitField0_ & 0x00000010) == 0x00000010)) {
+          rscDfnFlags_ = new com.google.protobuf.LazyStringArrayList(rscDfnFlags_);
+          bitField0_ |= 0x00000010;
+         }
       }
       /**
        * <pre>
        * Resource flags
        * </pre>
        *
-       * <code>optional sint64 rsc_dfn_flags = 5;</code>
+       * <code>repeated string rsc_dfn_flags = 5;</code>
        */
-      public long getRscDfnFlags() {
-        return rscDfnFlags_;
+      public com.google.protobuf.ProtocolStringList
+          getRscDfnFlagsList() {
+        return rscDfnFlags_.getUnmodifiableView();
       }
       /**
        * <pre>
        * Resource flags
        * </pre>
        *
-       * <code>optional sint64 rsc_dfn_flags = 5;</code>
+       * <code>repeated string rsc_dfn_flags = 5;</code>
        */
-      public Builder setRscDfnFlags(long value) {
-        bitField0_ |= 0x00000010;
-        rscDfnFlags_ = value;
+      public int getRscDfnFlagsCount() {
+        return rscDfnFlags_.size();
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_dfn_flags = 5;</code>
+       */
+      public java.lang.String getRscDfnFlags(int index) {
+        return rscDfnFlags_.get(index);
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_dfn_flags = 5;</code>
+       */
+      public com.google.protobuf.ByteString
+          getRscDfnFlagsBytes(int index) {
+        return rscDfnFlags_.getByteString(index);
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_dfn_flags = 5;</code>
+       */
+      public Builder setRscDfnFlags(
+          int index, java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureRscDfnFlagsIsMutable();
+        rscDfnFlags_.set(index, value);
         onChanged();
         return this;
       }
@@ -1698,11 +1785,60 @@ public final class RscDfnOuterClass {
        * Resource flags
        * </pre>
        *
-       * <code>optional sint64 rsc_dfn_flags = 5;</code>
+       * <code>repeated string rsc_dfn_flags = 5;</code>
+       */
+      public Builder addRscDfnFlags(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureRscDfnFlagsIsMutable();
+        rscDfnFlags_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_dfn_flags = 5;</code>
+       */
+      public Builder addAllRscDfnFlags(
+          java.lang.Iterable<java.lang.String> values) {
+        ensureRscDfnFlagsIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, rscDfnFlags_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_dfn_flags = 5;</code>
        */
       public Builder clearRscDfnFlags() {
+        rscDfnFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000010);
-        rscDfnFlags_ = 0L;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_dfn_flags = 5;</code>
+       */
+      public Builder addRscDfnFlagsBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureRscDfnFlagsIsMutable();
+        rscDfnFlags_.add(value);
         onChanged();
         return this;
       }
@@ -2498,7 +2634,7 @@ public final class RscDfnOuterClass {
       "to/VlmDfn.proto\"\213\002\n\006RscDfn\022\024\n\014rsc_dfn_uu" +
       "id\030\001 \001(\t\022\020\n\010rsc_name\030\002 \002(\t\022\024\n\014rsc_dfn_po" +
       "rt\030\003 \001(\021\022\026\n\016rsc_dfn_secret\030\004 \001(\t\022\025\n\rrsc_" +
-      "dfn_flags\030\005 \001(\022\022@\n\rrsc_dfn_props\030\006 \003(\0132)" +
+      "dfn_flags\030\005 \003(\t\022@\n\rrsc_dfn_props\030\006 \003(\0132)" +
       ".com.linbit.linstor.proto.LinStorMapEntr" +
       "y\0222\n\010vlm_dfns\030\007 \003(\0132 .com.linbit.linstor" +
       ".proto.VlmDfn\022\036\n\026rsc_dfn_transport_type\030" +

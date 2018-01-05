@@ -92,6 +92,12 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     }
 
     @Override
+    public long getFlags()
+    {
+        return nodeFlags;
+    }
+
+    @Override
     public int compareTo(NodePojo otherNodePojo)
     {
         return nodeName.compareTo(otherNodePojo.nodeName);

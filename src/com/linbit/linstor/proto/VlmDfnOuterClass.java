@@ -104,17 +104,35 @@ public final class VlmDfnOuterClass {
      * Volume flags
      * </pre>
      *
-     * <code>optional sint64 vlm_flags = 5;</code>
+     * <code>repeated string vlm_flags = 5;</code>
      */
-    boolean hasVlmFlags();
+    java.util.List<java.lang.String>
+        getVlmFlagsList();
     /**
      * <pre>
      * Volume flags
      * </pre>
      *
-     * <code>optional sint64 vlm_flags = 5;</code>
+     * <code>repeated string vlm_flags = 5;</code>
      */
-    long getVlmFlags();
+    int getVlmFlagsCount();
+    /**
+     * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>repeated string vlm_flags = 5;</code>
+     */
+    java.lang.String getVlmFlags(int index);
+    /**
+     * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>repeated string vlm_flags = 5;</code>
+     */
+    com.google.protobuf.ByteString
+        getVlmFlagsBytes(int index);
 
     /**
      * <pre>
@@ -180,7 +198,7 @@ public final class VlmDfnOuterClass {
       vlmNr_ = 0;
       vlmSize_ = 0L;
       vlmMinor_ = 0;
-      vlmFlags_ = 0L;
+      vlmFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       vlmProps_ = java.util.Collections.emptyList();
     }
 
@@ -233,9 +251,13 @@ public final class VlmDfnOuterClass {
               vlmMinor_ = input.readSInt32();
               break;
             }
-            case 40: {
-              bitField0_ |= 0x00000010;
-              vlmFlags_ = input.readSInt64();
+            case 42: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+                vlmFlags_ = new com.google.protobuf.LazyStringArrayList();
+                mutable_bitField0_ |= 0x00000010;
+              }
+              vlmFlags_.add(bs);
               break;
             }
             case 50: {
@@ -255,6 +277,9 @@ public final class VlmDfnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
+          vlmFlags_ = vlmFlags_.getUnmodifiableView();
+        }
         if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
           vlmProps_ = java.util.Collections.unmodifiableList(vlmProps_);
         }
@@ -403,26 +428,48 @@ public final class VlmDfnOuterClass {
     }
 
     public static final int VLM_FLAGS_FIELD_NUMBER = 5;
-    private long vlmFlags_;
+    private com.google.protobuf.LazyStringList vlmFlags_;
     /**
      * <pre>
      * Volume flags
      * </pre>
      *
-     * <code>optional sint64 vlm_flags = 5;</code>
+     * <code>repeated string vlm_flags = 5;</code>
      */
-    public boolean hasVlmFlags() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
+    public com.google.protobuf.ProtocolStringList
+        getVlmFlagsList() {
+      return vlmFlags_;
     }
     /**
      * <pre>
      * Volume flags
      * </pre>
      *
-     * <code>optional sint64 vlm_flags = 5;</code>
+     * <code>repeated string vlm_flags = 5;</code>
      */
-    public long getVlmFlags() {
-      return vlmFlags_;
+    public int getVlmFlagsCount() {
+      return vlmFlags_.size();
+    }
+    /**
+     * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>repeated string vlm_flags = 5;</code>
+     */
+    public java.lang.String getVlmFlags(int index) {
+      return vlmFlags_.get(index);
+    }
+    /**
+     * <pre>
+     * Volume flags
+     * </pre>
+     *
+     * <code>repeated string vlm_flags = 5;</code>
+     */
+    public com.google.protobuf.ByteString
+        getVlmFlagsBytes(int index) {
+      return vlmFlags_.getByteString(index);
     }
 
     public static final int VLM_PROPS_FIELD_NUMBER = 6;
@@ -514,8 +561,8 @@ public final class VlmDfnOuterClass {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         output.writeSInt32(4, vlmMinor_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeSInt64(5, vlmFlags_);
+      for (int i = 0; i < vlmFlags_.size(); i++) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, vlmFlags_.getRaw(i));
       }
       for (int i = 0; i < vlmProps_.size(); i++) {
         output.writeMessage(6, vlmProps_.get(i));
@@ -543,9 +590,13 @@ public final class VlmDfnOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeSInt32Size(4, vlmMinor_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(5, vlmFlags_);
+      {
+        int dataSize = 0;
+        for (int i = 0; i < vlmFlags_.size(); i++) {
+          dataSize += computeStringSizeNoTag(vlmFlags_.getRaw(i));
+        }
+        size += dataSize;
+        size += 1 * getVlmFlagsList().size();
       }
       for (int i = 0; i < vlmProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
@@ -588,11 +639,8 @@ public final class VlmDfnOuterClass {
         result = result && (getVlmMinor()
             == other.getVlmMinor());
       }
-      result = result && (hasVlmFlags() == other.hasVlmFlags());
-      if (hasVlmFlags()) {
-        result = result && (getVlmFlags()
-            == other.getVlmFlags());
-      }
+      result = result && getVlmFlagsList()
+          .equals(other.getVlmFlagsList());
       result = result && getVlmPropsList()
           .equals(other.getVlmPropsList());
       result = result && unknownFields.equals(other.unknownFields);
@@ -623,10 +671,9 @@ public final class VlmDfnOuterClass {
         hash = (37 * hash) + VLM_MINOR_FIELD_NUMBER;
         hash = (53 * hash) + getVlmMinor();
       }
-      if (hasVlmFlags()) {
+      if (getVlmFlagsCount() > 0) {
         hash = (37 * hash) + VLM_FLAGS_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getVlmFlags());
+        hash = (53 * hash) + getVlmFlagsList().hashCode();
       }
       if (getVlmPropsCount() > 0) {
         hash = (37 * hash) + VLM_PROPS_FIELD_NUMBER;
@@ -763,7 +810,7 @@ public final class VlmDfnOuterClass {
         bitField0_ = (bitField0_ & ~0x00000004);
         vlmMinor_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
-        vlmFlags_ = 0L;
+        vlmFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000010);
         if (vlmPropsBuilder_ == null) {
           vlmProps_ = java.util.Collections.emptyList();
@@ -811,8 +858,9 @@ public final class VlmDfnOuterClass {
           to_bitField0_ |= 0x00000008;
         }
         result.vlmMinor_ = vlmMinor_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
+        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          vlmFlags_ = vlmFlags_.getUnmodifiableView();
+          bitField0_ = (bitField0_ & ~0x00000010);
         }
         result.vlmFlags_ = vlmFlags_;
         if (vlmPropsBuilder_ == null) {
@@ -880,8 +928,15 @@ public final class VlmDfnOuterClass {
         if (other.hasVlmMinor()) {
           setVlmMinor(other.getVlmMinor());
         }
-        if (other.hasVlmFlags()) {
-          setVlmFlags(other.getVlmFlags());
+        if (!other.vlmFlags_.isEmpty()) {
+          if (vlmFlags_.isEmpty()) {
+            vlmFlags_ = other.vlmFlags_;
+            bitField0_ = (bitField0_ & ~0x00000010);
+          } else {
+            ensureVlmFlagsIsMutable();
+            vlmFlags_.addAll(other.vlmFlags_);
+          }
+          onChanged();
         }
         if (vlmPropsBuilder_ == null) {
           if (!other.vlmProps_.isEmpty()) {
@@ -1197,37 +1252,69 @@ public final class VlmDfnOuterClass {
         return this;
       }
 
-      private long vlmFlags_ ;
-      /**
-       * <pre>
-       * Volume flags
-       * </pre>
-       *
-       * <code>optional sint64 vlm_flags = 5;</code>
-       */
-      public boolean hasVlmFlags() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
+      private com.google.protobuf.LazyStringList vlmFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureVlmFlagsIsMutable() {
+        if (!((bitField0_ & 0x00000010) == 0x00000010)) {
+          vlmFlags_ = new com.google.protobuf.LazyStringArrayList(vlmFlags_);
+          bitField0_ |= 0x00000010;
+         }
       }
       /**
        * <pre>
        * Volume flags
        * </pre>
        *
-       * <code>optional sint64 vlm_flags = 5;</code>
+       * <code>repeated string vlm_flags = 5;</code>
        */
-      public long getVlmFlags() {
-        return vlmFlags_;
+      public com.google.protobuf.ProtocolStringList
+          getVlmFlagsList() {
+        return vlmFlags_.getUnmodifiableView();
       }
       /**
        * <pre>
        * Volume flags
        * </pre>
        *
-       * <code>optional sint64 vlm_flags = 5;</code>
+       * <code>repeated string vlm_flags = 5;</code>
        */
-      public Builder setVlmFlags(long value) {
-        bitField0_ |= 0x00000010;
-        vlmFlags_ = value;
+      public int getVlmFlagsCount() {
+        return vlmFlags_.size();
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>repeated string vlm_flags = 5;</code>
+       */
+      public java.lang.String getVlmFlags(int index) {
+        return vlmFlags_.get(index);
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>repeated string vlm_flags = 5;</code>
+       */
+      public com.google.protobuf.ByteString
+          getVlmFlagsBytes(int index) {
+        return vlmFlags_.getByteString(index);
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>repeated string vlm_flags = 5;</code>
+       */
+      public Builder setVlmFlags(
+          int index, java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureVlmFlagsIsMutable();
+        vlmFlags_.set(index, value);
         onChanged();
         return this;
       }
@@ -1236,11 +1323,60 @@ public final class VlmDfnOuterClass {
        * Volume flags
        * </pre>
        *
-       * <code>optional sint64 vlm_flags = 5;</code>
+       * <code>repeated string vlm_flags = 5;</code>
+       */
+      public Builder addVlmFlags(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureVlmFlagsIsMutable();
+        vlmFlags_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>repeated string vlm_flags = 5;</code>
+       */
+      public Builder addAllVlmFlags(
+          java.lang.Iterable<java.lang.String> values) {
+        ensureVlmFlagsIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, vlmFlags_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>repeated string vlm_flags = 5;</code>
        */
       public Builder clearVlmFlags() {
+        vlmFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000010);
-        vlmFlags_ = 0L;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Volume flags
+       * </pre>
+       *
+       * <code>repeated string vlm_flags = 5;</code>
+       */
+      public Builder addVlmFlagsBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureVlmFlagsIsMutable();
+        vlmFlags_.add(value);
         onChanged();
         return this;
       }
@@ -1623,7 +1759,7 @@ public final class VlmDfnOuterClass {
       ".proto\032\033proto/LinStorMapEntry.proto\"\244\001\n\006" +
       "VlmDfn\022\024\n\014vlm_dfn_uuid\030\001 \001(\t\022\016\n\006vlm_nr\030\002" +
       " \001(\021\022\020\n\010vlm_size\030\003 \002(\003\022\021\n\tvlm_minor\030\004 \001(" +
-      "\021\022\021\n\tvlm_flags\030\005 \001(\022\022<\n\tvlm_props\030\006 \003(\0132" +
+      "\021\022\021\n\tvlm_flags\030\005 \003(\t\022<\n\tvlm_props\030\006 \003(\0132" +
       ").com.linbit.linstor.proto.LinStorMapEnt" +
       "ryP\000"
     };

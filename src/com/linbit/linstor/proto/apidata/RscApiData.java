@@ -85,6 +85,12 @@ public class RscApiData implements Resource.RscApi
     }
 
     @Override
+    public long getFlags()
+    {
+        return Resource.RscFlags.fromStringList(resource.getRscFlagsList());
+    }
+
+    @Override
     public List<? extends Volume.VlmApi> getVlmList()
     {
         return VlmApiData.toApiList(resource.getVlmsList());
@@ -99,6 +105,7 @@ public class RscApiData implements Resource.RscApi
         rscBld.setNodeName(apiResource.getNodeName());
         rscBld.setNodeUuid(apiResource.getNodeUuid().toString());
         rscBld.setRscDfnUuid(apiResource.getRscDfnUuid().toString());
+        rscBld.addAllRscFlags(Resource.RscFlags.toStringList(apiResource.getFlags()));
         rscBld.addAllProps(BaseProtoApiCall.fromMap(apiResource.getProps()));
         rscBld.addAllVlms(VlmApiData.toVlmProtoList(apiResource.getVlmList()));
 

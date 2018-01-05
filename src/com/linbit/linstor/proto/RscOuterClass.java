@@ -194,10 +194,45 @@ public final class RscOuterClass {
 
     /**
      * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_flags = 7;</code>
+     */
+    java.util.List<java.lang.String>
+        getRscFlagsList();
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_flags = 7;</code>
+     */
+    int getRscFlagsCount();
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_flags = 7;</code>
+     */
+    java.lang.String getRscFlags(int index);
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_flags = 7;</code>
+     */
+    com.google.protobuf.ByteString
+        getRscFlagsBytes(int index);
+
+    /**
+     * <pre>
      * Volume
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
      */
     java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm> 
         getVlmsList();
@@ -206,7 +241,7 @@ public final class RscOuterClass {
      * Volume
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
      */
     com.linbit.linstor.proto.VlmOuterClass.Vlm getVlms(int index);
     /**
@@ -214,7 +249,7 @@ public final class RscOuterClass {
      * Volume
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
      */
     int getVlmsCount();
     /**
@@ -222,7 +257,7 @@ public final class RscOuterClass {
      * Volume
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
      */
     java.util.List<? extends com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder> 
         getVlmsOrBuilderList();
@@ -231,7 +266,7 @@ public final class RscOuterClass {
      * Volume
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
      */
     com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder getVlmsOrBuilder(
         int index);
@@ -258,6 +293,7 @@ public final class RscOuterClass {
       nodeName_ = "";
       rscDfnUuid_ = "";
       props_ = java.util.Collections.emptyList();
+      rscFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       vlms_ = java.util.Collections.emptyList();
     }
 
@@ -329,9 +365,18 @@ public final class RscOuterClass {
               break;
             }
             case 58: {
+              com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
-                vlms_ = new java.util.ArrayList<com.linbit.linstor.proto.VlmOuterClass.Vlm>();
+                rscFlags_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000040;
+              }
+              rscFlags_.add(bs);
+              break;
+            }
+            case 66: {
+              if (!((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
+                vlms_ = new java.util.ArrayList<com.linbit.linstor.proto.VlmOuterClass.Vlm>();
+                mutable_bitField0_ |= 0x00000080;
               }
               vlms_.add(
                   input.readMessage(com.linbit.linstor.proto.VlmOuterClass.Vlm.PARSER, extensionRegistry));
@@ -349,6 +394,9 @@ public final class RscOuterClass {
           props_ = java.util.Collections.unmodifiableList(props_);
         }
         if (((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
+          rscFlags_ = rscFlags_.getUnmodifiableView();
+        }
+        if (((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
           vlms_ = java.util.Collections.unmodifiableList(vlms_);
         }
         this.unknownFields = unknownFields.build();
@@ -693,14 +741,59 @@ public final class RscOuterClass {
       return props_.get(index);
     }
 
-    public static final int VLMS_FIELD_NUMBER = 7;
+    public static final int RSC_FLAGS_FIELD_NUMBER = 7;
+    private com.google.protobuf.LazyStringList rscFlags_;
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_flags = 7;</code>
+     */
+    public com.google.protobuf.ProtocolStringList
+        getRscFlagsList() {
+      return rscFlags_;
+    }
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_flags = 7;</code>
+     */
+    public int getRscFlagsCount() {
+      return rscFlags_.size();
+    }
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_flags = 7;</code>
+     */
+    public java.lang.String getRscFlags(int index) {
+      return rscFlags_.get(index);
+    }
+    /**
+     * <pre>
+     * Resource flags
+     * </pre>
+     *
+     * <code>repeated string rsc_flags = 7;</code>
+     */
+    public com.google.protobuf.ByteString
+        getRscFlagsBytes(int index) {
+      return rscFlags_.getByteString(index);
+    }
+
+    public static final int VLMS_FIELD_NUMBER = 8;
     private java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm> vlms_;
     /**
      * <pre>
      * Volume
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
      */
     public java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm> getVlmsList() {
       return vlms_;
@@ -710,7 +803,7 @@ public final class RscOuterClass {
      * Volume
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
      */
     public java.util.List<? extends com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder> 
         getVlmsOrBuilderList() {
@@ -721,7 +814,7 @@ public final class RscOuterClass {
      * Volume
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
      */
     public int getVlmsCount() {
       return vlms_.size();
@@ -731,7 +824,7 @@ public final class RscOuterClass {
      * Volume
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
      */
     public com.linbit.linstor.proto.VlmOuterClass.Vlm getVlms(int index) {
       return vlms_.get(index);
@@ -741,7 +834,7 @@ public final class RscOuterClass {
      * Volume
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
      */
     public com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder getVlmsOrBuilder(
         int index) {
@@ -798,8 +891,11 @@ public final class RscOuterClass {
       for (int i = 0; i < props_.size(); i++) {
         output.writeMessage(6, props_.get(i));
       }
+      for (int i = 0; i < rscFlags_.size(); i++) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 7, rscFlags_.getRaw(i));
+      }
       for (int i = 0; i < vlms_.size(); i++) {
-        output.writeMessage(7, vlms_.get(i));
+        output.writeMessage(8, vlms_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -828,9 +924,17 @@ public final class RscOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(6, props_.get(i));
       }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < rscFlags_.size(); i++) {
+          dataSize += computeStringSizeNoTag(rscFlags_.getRaw(i));
+        }
+        size += dataSize;
+        size += 1 * getRscFlagsList().size();
+      }
       for (int i = 0; i < vlms_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(7, vlms_.get(i));
+          .computeMessageSize(8, vlms_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -876,6 +980,8 @@ public final class RscOuterClass {
       }
       result = result && getPropsList()
           .equals(other.getPropsList());
+      result = result && getRscFlagsList()
+          .equals(other.getRscFlagsList());
       result = result && getVlmsList()
           .equals(other.getVlmsList());
       result = result && unknownFields.equals(other.unknownFields);
@@ -912,6 +1018,10 @@ public final class RscOuterClass {
       if (getPropsCount() > 0) {
         hash = (37 * hash) + PROPS_FIELD_NUMBER;
         hash = (53 * hash) + getPropsList().hashCode();
+      }
+      if (getRscFlagsCount() > 0) {
+        hash = (37 * hash) + RSC_FLAGS_FIELD_NUMBER;
+        hash = (53 * hash) + getRscFlagsList().hashCode();
       }
       if (getVlmsCount() > 0) {
         hash = (37 * hash) + VLMS_FIELD_NUMBER;
@@ -1057,9 +1167,11 @@ public final class RscOuterClass {
         } else {
           propsBuilder_.clear();
         }
+        rscFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000040);
         if (vlmsBuilder_ == null) {
           vlms_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000040);
+          bitField0_ = (bitField0_ & ~0x00000080);
         } else {
           vlmsBuilder_.clear();
         }
@@ -1116,10 +1228,15 @@ public final class RscOuterClass {
         } else {
           result.props_ = propsBuilder_.build();
         }
+        if (((bitField0_ & 0x00000040) == 0x00000040)) {
+          rscFlags_ = rscFlags_.getUnmodifiableView();
+          bitField0_ = (bitField0_ & ~0x00000040);
+        }
+        result.rscFlags_ = rscFlags_;
         if (vlmsBuilder_ == null) {
-          if (((bitField0_ & 0x00000040) == 0x00000040)) {
+          if (((bitField0_ & 0x00000080) == 0x00000080)) {
             vlms_ = java.util.Collections.unmodifiableList(vlms_);
-            bitField0_ = (bitField0_ & ~0x00000040);
+            bitField0_ = (bitField0_ & ~0x00000080);
           }
           result.vlms_ = vlms_;
         } else {
@@ -1218,11 +1335,21 @@ public final class RscOuterClass {
             }
           }
         }
+        if (!other.rscFlags_.isEmpty()) {
+          if (rscFlags_.isEmpty()) {
+            rscFlags_ = other.rscFlags_;
+            bitField0_ = (bitField0_ & ~0x00000040);
+          } else {
+            ensureRscFlagsIsMutable();
+            rscFlags_.addAll(other.rscFlags_);
+          }
+          onChanged();
+        }
         if (vlmsBuilder_ == null) {
           if (!other.vlms_.isEmpty()) {
             if (vlms_.isEmpty()) {
               vlms_ = other.vlms_;
-              bitField0_ = (bitField0_ & ~0x00000040);
+              bitField0_ = (bitField0_ & ~0x00000080);
             } else {
               ensureVlmsIsMutable();
               vlms_.addAll(other.vlms_);
@@ -1235,7 +1362,7 @@ public final class RscOuterClass {
               vlmsBuilder_.dispose();
               vlmsBuilder_ = null;
               vlms_ = other.vlms_;
-              bitField0_ = (bitField0_ & ~0x00000040);
+              bitField0_ = (bitField0_ & ~0x00000080);
               vlmsBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
                    getVlmsFieldBuilder() : null;
@@ -2100,12 +2227,141 @@ public final class RscOuterClass {
         return propsBuilder_;
       }
 
+      private com.google.protobuf.LazyStringList rscFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureRscFlagsIsMutable() {
+        if (!((bitField0_ & 0x00000040) == 0x00000040)) {
+          rscFlags_ = new com.google.protobuf.LazyStringArrayList(rscFlags_);
+          bitField0_ |= 0x00000040;
+         }
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_flags = 7;</code>
+       */
+      public com.google.protobuf.ProtocolStringList
+          getRscFlagsList() {
+        return rscFlags_.getUnmodifiableView();
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_flags = 7;</code>
+       */
+      public int getRscFlagsCount() {
+        return rscFlags_.size();
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_flags = 7;</code>
+       */
+      public java.lang.String getRscFlags(int index) {
+        return rscFlags_.get(index);
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_flags = 7;</code>
+       */
+      public com.google.protobuf.ByteString
+          getRscFlagsBytes(int index) {
+        return rscFlags_.getByteString(index);
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_flags = 7;</code>
+       */
+      public Builder setRscFlags(
+          int index, java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureRscFlagsIsMutable();
+        rscFlags_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_flags = 7;</code>
+       */
+      public Builder addRscFlags(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureRscFlagsIsMutable();
+        rscFlags_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_flags = 7;</code>
+       */
+      public Builder addAllRscFlags(
+          java.lang.Iterable<java.lang.String> values) {
+        ensureRscFlagsIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, rscFlags_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_flags = 7;</code>
+       */
+      public Builder clearRscFlags() {
+        rscFlags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Resource flags
+       * </pre>
+       *
+       * <code>repeated string rsc_flags = 7;</code>
+       */
+      public Builder addRscFlagsBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureRscFlagsIsMutable();
+        rscFlags_.add(value);
+        onChanged();
+        return this;
+      }
+
       private java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm> vlms_ =
         java.util.Collections.emptyList();
       private void ensureVlmsIsMutable() {
-        if (!((bitField0_ & 0x00000040) == 0x00000040)) {
+        if (!((bitField0_ & 0x00000080) == 0x00000080)) {
           vlms_ = new java.util.ArrayList<com.linbit.linstor.proto.VlmOuterClass.Vlm>(vlms_);
-          bitField0_ |= 0x00000040;
+          bitField0_ |= 0x00000080;
          }
       }
 
@@ -2117,7 +2373,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm> getVlmsList() {
         if (vlmsBuilder_ == null) {
@@ -2131,7 +2387,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public int getVlmsCount() {
         if (vlmsBuilder_ == null) {
@@ -2145,7 +2401,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public com.linbit.linstor.proto.VlmOuterClass.Vlm getVlms(int index) {
         if (vlmsBuilder_ == null) {
@@ -2159,7 +2415,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public Builder setVlms(
           int index, com.linbit.linstor.proto.VlmOuterClass.Vlm value) {
@@ -2180,7 +2436,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public Builder setVlms(
           int index, com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder builderForValue) {
@@ -2198,7 +2454,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public Builder addVlms(com.linbit.linstor.proto.VlmOuterClass.Vlm value) {
         if (vlmsBuilder_ == null) {
@@ -2218,7 +2474,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public Builder addVlms(
           int index, com.linbit.linstor.proto.VlmOuterClass.Vlm value) {
@@ -2239,7 +2495,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public Builder addVlms(
           com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder builderForValue) {
@@ -2257,7 +2513,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public Builder addVlms(
           int index, com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder builderForValue) {
@@ -2275,7 +2531,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public Builder addAllVlms(
           java.lang.Iterable<? extends com.linbit.linstor.proto.VlmOuterClass.Vlm> values) {
@@ -2294,12 +2550,12 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public Builder clearVlms() {
         if (vlmsBuilder_ == null) {
           vlms_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000040);
+          bitField0_ = (bitField0_ & ~0x00000080);
           onChanged();
         } else {
           vlmsBuilder_.clear();
@@ -2311,7 +2567,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public Builder removeVlms(int index) {
         if (vlmsBuilder_ == null) {
@@ -2328,7 +2584,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder getVlmsBuilder(
           int index) {
@@ -2339,7 +2595,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder getVlmsOrBuilder(
           int index) {
@@ -2353,7 +2609,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public java.util.List<? extends com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder> 
            getVlmsOrBuilderList() {
@@ -2368,7 +2624,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder addVlmsBuilder() {
         return getVlmsFieldBuilder().addBuilder(
@@ -2379,7 +2635,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder addVlmsBuilder(
           int index) {
@@ -2391,7 +2647,7 @@ public final class RscOuterClass {
        * Volume
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
+       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 8;</code>
        */
       public java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder> 
            getVlmsBuilderList() {
@@ -2404,7 +2660,7 @@ public final class RscOuterClass {
           vlmsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               com.linbit.linstor.proto.VlmOuterClass.Vlm, com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder, com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder>(
                   vlms_,
-                  ((bitField0_ & 0x00000040) == 0x00000040),
+                  ((bitField0_ & 0x00000080) == 0x00000080),
                   getParentForChildren(),
                   isClean());
           vlms_ = null;
@@ -2476,12 +2732,12 @@ public final class RscOuterClass {
     java.lang.String[] descriptorData = {
       "\n\017proto/Rsc.proto\022\030com.linbit.linstor.pr" +
       "oto\032\033proto/LinStorMapEntry.proto\032\017proto/" +
-      "Vlm.proto\"\304\001\n\003Rsc\022\014\n\004uuid\030\001 \001(\t\022\014\n\004name\030" +
+      "Vlm.proto\"\327\001\n\003Rsc\022\014\n\004uuid\030\001 \001(\t\022\014\n\004name\030" +
       "\002 \002(\t\022\021\n\tnode_uuid\030\003 \001(\t\022\021\n\tnode_name\030\004 " +
       "\002(\t\022\024\n\014rsc_dfn_uuid\030\005 \001(\t\0228\n\005props\030\006 \003(\013" +
       "2).com.linbit.linstor.proto.LinStorMapEn" +
-      "try\022+\n\004vlms\030\007 \003(\0132\035.com.linbit.linstor.p" +
-      "roto.VlmP\000P\001"
+      "try\022\021\n\trsc_flags\030\007 \003(\t\022+\n\004vlms\030\010 \003(\0132\035.c" +
+      "om.linbit.linstor.proto.VlmP\000P\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2502,7 +2758,7 @@ public final class RscOuterClass {
     internal_static_com_linbit_linstor_proto_Rsc_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_Rsc_descriptor,
-        new java.lang.String[] { "Uuid", "Name", "NodeUuid", "NodeName", "RscDfnUuid", "Props", "Vlms", });
+        new java.lang.String[] { "Uuid", "Name", "NodeUuid", "NodeName", "RscDfnUuid", "Props", "RscFlags", "Vlms", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.linstor.proto.VlmOuterClass.getDescriptor();
   }

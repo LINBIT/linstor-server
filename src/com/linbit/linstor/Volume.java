@@ -5,6 +5,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 
 import java.sql.SQLException;
@@ -79,6 +80,16 @@ public interface Volume extends TransactionObject
                 }
             }
             return flagList.toArray(new VlmFlags[flagList.size()]);
+        }
+
+        public static List<String> toStringList(long flagsMask)
+        {
+            return FlagsHelper.toStringList(VlmFlags.class, flagsMask);
+        }
+
+        public static long fromStringList(List<String> listFlags)
+        {
+            return FlagsHelper.fromStringList(VlmFlags.class, listFlags);
         }
     }
 

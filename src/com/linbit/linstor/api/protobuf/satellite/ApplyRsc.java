@@ -102,7 +102,7 @@ public class ApplyRsc extends BaseProtoApiCall
                     vlmDfn.getVlmNr(),
                     vlmDfn.getVlmMinor(),
                     vlmDfn.getVlmSize(),
-                    vlmDfn.getVlmFlags(),
+                    Volume.VlmFlags.fromStringList(vlmDfn.getVlmFlagsList()),
                     asMap(vlmDfn.getVlmPropsList())
                 )
             );
@@ -124,7 +124,7 @@ public class ApplyRsc extends BaseProtoApiCall
                     vol.getBlockDevice(),
                     vol.getMetaDisk(),
                     vol.getVlmNr(),
-                    vol.getVlmFlags(),
+                    Volume.VlmFlags.fromStringList(vol.getVlmFlagsList()),
                     asMap(vol.getVlmPropsList())
                 )
             );

@@ -5,6 +5,7 @@ import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.NetInterface;
+import com.linbit.linstor.Resource;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +58,11 @@ public class NodeApiData implements Node.NodeApi {
     }
 
     @Override
+    public long getFlags() {
+        return Node.NodeFlag.fromStringList(node.getFlagsList());
+    }
+
+    @Override
     public List<NetInterface.NetInterfaceApi> getNetInterfaces() {
         ArrayList<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
         for (NetInterfaceOuterClass.NetInterface netinter : node.getNetInterfacesList())
@@ -75,6 +81,7 @@ public class NodeApiData implements Node.NodeApi {
         bld.setType(nodeApi.getType());
         bld.setUuid(nodeApi.getUuid().toString());
         bld.addAllProps(BaseProtoApiCall.fromMap(nodeApi.getProps()));
+        bld.addAllFlags(Node.NodeFlag.toStringList(nodeApi.getFlags()));
         bld.addAllNetInterfaces(NetInterfaceApiData.toNetInterfaceProtoList(nodeApi.getNetInterfaces()));
 
         return bld.build();

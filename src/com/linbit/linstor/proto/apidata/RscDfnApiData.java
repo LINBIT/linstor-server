@@ -56,8 +56,7 @@ public class RscDfnApiData implements ResourceDefinition.RscDfnApi {
 
     @Override
     public long getFlags() {
-        return rscDfn.getRscDfnFlags()
-            ;
+        return ResourceDefinition.RscDfnFlags.fromStringList(rscDfn.getRscDfnFlagsList());
     }
 
     @Override
