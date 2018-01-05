@@ -26,6 +26,7 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  *
@@ -300,6 +301,17 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return resourceMap.values().iterator();
+    }
+
+    @Override
+    public void copyResourceMap(
+        AccessContext accCtx, Map<? super NodeName, ? super Resource> dstMap
+    )
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        dstMap.putAll(resourceMap);
     }
 
     @Override

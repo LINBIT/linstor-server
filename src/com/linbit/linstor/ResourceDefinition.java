@@ -43,6 +43,11 @@ public interface ResourceDefinition extends TransactionObject
     public Iterator<Resource> iterateResource(AccessContext accCtx)
         throws AccessDeniedException;
 
+    public void copyResourceMap(
+        AccessContext accCtx, Map<? super NodeName, ? super Resource> dstMap
+    )
+        throws AccessDeniedException;
+
     public Resource getResource(AccessContext accCtx, NodeName clNodeName)
         throws AccessDeniedException;
 
