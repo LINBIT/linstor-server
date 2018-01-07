@@ -48,6 +48,15 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.slf4j.event.Level;
 
+/* TODO
+ *
+ * createResource() -- handling of resources known to LINSTOR vs. rogue resources not known to LINSTOR
+ *                     required restructuring
+ * vlmState.skip -- needs a better definition
+ * rscState should possibly contain all vlmStates
+ * vlmState should probably know whether the volume is a LINSTOR volume or a volume only seen by DRBD
+ */
+
 class DrbdDeviceHandler implements DeviceHandler
 {
     private Satellite stlt;
@@ -663,72 +672,93 @@ class DrbdDeviceHandler implements DeviceHandler
 
                 if (!vlmState.markedForDelete)
                 {
-                    // Check DRBD meta data
-                    if (!vlmState.hasDisk)
+                    Volume vlm = rsc.getVolume(vlmState.vlmNr);
+
+                    if (vlm != null)
                     {
-                        System.out.println(
-                            "Resource " + rscName.displayValue + " Volume " + vlmState.vlmNr.value +
-                            " has no backend storage => hasMetaData = false, checkMetaData = false"
-                        );
-                        // If there is no disk, then there cannot be any meta data
-                        vlmState.checkMetaData = false;
-                        vlmState.hasMetaData = false;
-                    }
-                    else
-                    if (vlmState.checkMetaData)
-                    {
-                        // Check for the existence of meta data
-                        try
+                        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+                        if (!vlmState.driverKnown)
                         {
-                            System.out.println(
-                                "Checking resource " + rscName.displayValue + " Volume " + vlmState.vlmNr.value +
-                                " meta data"
+                            getVolumeStorageDriver(
+                                rscName, localNode, vlm, vlmDfn,
+                                vlmState, nodeProps, rscProps, rscDfnProps
                             );
-                            // FIXME: Get the storage volume path and name from the storage driver
-                            vlmState.hasMetaData = drbdUtils.hasMetaData(
-                                "/dev/drbdpool/" + vlmState.storVlmName, vlmState.minorNr.value, "internal"
-                            );
+                        }
+
+                        // Check DRBD meta data
+                        if (!vlmState.hasDisk)
+                        {
                             System.out.println(
                                 "Resource " + rscName.displayValue + " Volume " + vlmState.vlmNr.value +
-                                " hasMetaData = " + vlmState.hasMetaData
+                                " has no backend storage => hasMetaData = false, checkMetaData = false"
                             );
+                            // If there is no disk, then there cannot be any meta data
+                            vlmState.checkMetaData = false;
+                            vlmState.hasMetaData = false;
                         }
-                        catch (ExtCmdFailedException cmdExc)
+                        else
+                        if (vlmState.checkMetaData)
                         {
-                            errLog.reportError(Level.ERROR, cmdExc);
+                            // Check for the existence of meta data
+                            try
+                            {
+                                System.out.println(
+                                    "Checking resource " + rscName.displayValue + " Volume " + vlmState.vlmNr.value +
+                                    " meta data"
+                                );
+                                vlmState.hasMetaData = drbdUtils.hasMetaData(
+                                    vlmState.driver.getVolumePath(vlmState.storVlmName),
+                                    vlmState.minorNr.value, "internal"
+                                );
+                                System.out.println(
+                                    "Resource " + rscName.displayValue + " Volume " + vlmState.vlmNr.value +
+                                    " hasMetaData = " + vlmState.hasMetaData
+                                );
+                            }
+                            catch (ExtCmdFailedException cmdExc)
+                            {
+                                errLog.reportError(Level.ERROR, cmdExc);
+                            }
                         }
-                    }
 
-                    // Create backend storage if required
-                    if (!vlmState.hasDisk)
-                    {
-                        createStorageVolume(rscDfn, vlmState);
-                        vlmState.hasDisk = true;
-                        vlmState.hasMetaData = false;
-                    }
+                        // Create backend storage if required
+                        if (!vlmState.hasDisk && vlm != null)
+                        {
+                            createStorageVolume(rscDfn, vlmState);
+                            vlmState.hasDisk = true;
+                            vlmState.hasMetaData = false;
+                        }
 
-                    // TODO: Wait for the backend storage block device files to appear in the /dev directory
-                    //       if the volume is supposed to have backend storage
+                        // TODO: Wait for the backend storage block device files to appear in the /dev directory
+                        //       if the volume is supposed to have backend storage
 
-                    // Set block device paths
-                    Volume vlm = rsc.getVolume(vlmState.vlmNr);
-                    if (vlmState.hasDisk)
-                    {
-                        // FIXME: Get the storage volume path and name from the storage driver
-                        vlm.setBlockDevicePath(wrkCtx, "/dev/drbdpool/" + vlmState.storVlmName);
-                        vlm.setMetaDiskPath(wrkCtx, "internal");
+                        // Set block device paths
+                        if (vlmState.hasDisk)
+                        {
+                            String bdPath = vlmState.driver.getVolumePath(vlmState.storVlmName);
+                            vlm.setBlockDevicePath(wrkCtx, bdPath);
+                            vlm.setMetaDiskPath(wrkCtx, "internal");
+                        }
+                        else
+                        {
+                            vlm.setBlockDevicePath(wrkCtx, "none");
+                            vlm.setMetaDiskPath(wrkCtx, null);
+                        }
+                        errLog.logTrace(
+                            "Resource '" + rscName + "' volume " + vlmState.vlmNr.toString() +
+                            " block device = %s, meta disk = %s",
+                            vlm.getBlockDevicePath(wrkCtx),
+                            vlm.getMetaDiskPath(wrkCtx)
+                        );
                     }
                     else
                     {
-                        vlm.setBlockDevicePath(wrkCtx, "none");
-                        vlm.setMetaDiskPath(wrkCtx, null);
+                        // If there is no volume for the volumeState, then LINSTOR does not know about
+                        // this volume, and the volume will later be removed from the resource
+                        // when the resource is adjusted.
+                        // Therefore, the volume is ignored, and no backend storage is created for the volume
+                        vlmState.skip = true;
                     }
-                    errLog.logTrace(
-                        "Resource '" + rscName + "' volume " + vlmState.vlmNr.toString() +
-                        " block device = %s, meta disk = %s",
-                        vlm.getBlockDevicePath(wrkCtx),
-                        vlm.getMetaDiskPath(wrkCtx)
-                    );
                 }
             }
             catch (MdException mdExc)
@@ -740,6 +770,28 @@ class DrbdDeviceHandler implements DeviceHandler
             {
                 vlmState.skip = true;
                 errLog.reportProblem(Level.ERROR, vlmExc, null, null, null);
+            }
+            catch (StorageException storExc)
+            {
+                vlmState.skip = true;
+                errLog.reportProblem(
+                    Level.ERROR,
+                    new VolumeException(
+                        "The storage driver could not determine the block device path for " +
+                        "volume " + vlmState.vlmNr + " of resource " + rscName.displayValue,
+                        this.getAbortMsg(rscName, vlmState.vlmNr),
+                        "The storage driver could not determine the block device path for the volume's " +
+                        "backend storage",
+                        "- Check whether the storage driver is configured correctly\n" +
+                        "- Check whether any external programs required by the storage driver are\n" +
+                        "  functional\n",
+                        null,
+                        storExc
+                    ),
+                    null,
+                    null,
+                    null
+                );
             }
         }
 

@@ -365,4 +365,10 @@ public class LvmDriver extends AbsStorageDriver
             }
         }
     }
+
+    @Override
+    public String getVolumePath(String identifier) throws StorageException
+    {
+        return "/dev/" + volumeGroup + "/" + identifier;
+    }
 }
