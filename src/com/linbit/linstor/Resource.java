@@ -30,11 +30,17 @@ public interface Resource extends TransactionObject
 
     public ResourceDefinition getDefinition();
 
+    public void setDefinition(AccessContext accCtx, ResourceDefinition rscDfnRef)
+        throws AccessDeniedException;
+
     public Volume getVolume(VolumeNumber volNr);
 
     public Iterator<Volume> iterateVolumes();
 
     public Node getAssignedNode();
+
+    public void setAssignedNode(AccessContext accCtx, Node nodeRef)
+        throws AccessDeniedException;
 
     public NodeId getNodeId();
 
