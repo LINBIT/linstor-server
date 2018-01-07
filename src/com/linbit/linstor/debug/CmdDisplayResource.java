@@ -1,6 +1,7 @@
 package com.linbit.linstor.debug;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -9,6 +10,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.utils.UuidUtils;
 import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.Map;
@@ -295,7 +297,8 @@ public class CmdDisplayResource extends BaseDebugCmd
             {
                 Resource rsc = rscIter.next();
                 ObjectProtection rscProt = rsc.getObjProt();
-                NodeName peerNodeName = rsc.getAssignedNode().getName();
+                Node peerNode = rsc.getAssignedNode();
+                NodeName peerNodeName = peerNode.getName();
 
                 String pfxIndent;
                 if (rscIter.hasNext())
@@ -309,10 +312,20 @@ public class CmdDisplayResource extends BaseDebugCmd
                     pfxIndent = "    ";
                 }
                 outText.append(peerNodeName.displayValue).append("\n");
-                outText.append(pfxIndent).append(PFX_SUB).append("  UUID: ");
+                outText.append(pfxIndent).append(PFX_SUB).append("  Resource UUID: ");
                 outText.append(rsc.getUuid().toString().toUpperCase()).append("\n");
+                outText.append(pfxIndent).append(PFX_SUB).append("  Resource volatile UUID: ");
+                outText.append(UuidUtils.dbgInstanceIdString(rsc)).append("\n");
+                outText.append(pfxIndent).append(PFX_SUB).append("  Resource definition UUID: ");
+                outText.append(rscDfn.getUuid().toString().toUpperCase()).append("\n");
+                outText.append(pfxIndent).append(PFX_SUB).append("  Resource definition volatile UUID: ");
+                outText.append(UuidUtils.dbgInstanceIdString(rscDfn)).append("\n");
                 outText.append(pfxIndent).append(PFX_SUB).append("  Node-ID: ");
                 outText.append(Integer.toString(rsc.getNodeId().value)).append("\n");
+                outText.append(pfxIndent).append(PFX_SUB).append("  Node UUID: ");
+                outText.append(peerNode.getUuid().toString().toUpperCase()).append("\n");
+                outText.append(pfxIndent).append(PFX_SUB).append("  Node volatile UUID: ");
+                outText.append(UuidUtils.dbgInstanceIdString(peerNode)).append("\n");
                 try
                 {
                     long flagsBits = rsc.getStateFlags().getFlagsBits(accCtx);

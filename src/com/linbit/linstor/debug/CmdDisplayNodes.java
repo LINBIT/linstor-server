@@ -9,6 +9,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.utils.UuidUtils;
 
 import java.io.PrintStream;
 import java.util.Iterator;
@@ -277,11 +278,13 @@ public class CmdDisplayNodes extends BaseDebugCmd
             boolean hasNetIf = netIfIter.hasNext();
             output.printf(
                 "\u001b[1;37m%-40s\u001b[0m %-36s\n" +
+                "%s  Volatile UUID: %s\n" +
                 "%s  Flags: %016x\n" +
                 "%s  Creator: %-24s Owner: %-24s\n" +
                 "%s  Security type: %-24s\n",
                 nodeRef.getName().displayValue,
                 nodeRef.getUuid().toString().toUpperCase(),
+                PFX_SUB, UuidUtils.dbgInstanceIdString(nodeRef),
                 PFX_SUB, nodeRef.getFlags().getFlagsBits(accCtx),
                 PFX_SUB, objProt.getCreator().name.displayValue,
                 objProt.getOwner().name.displayValue,

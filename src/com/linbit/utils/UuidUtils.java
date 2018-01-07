@@ -1,5 +1,6 @@
 package com.linbit.utils;
 
+import com.linbit.linstor.DbgInstanceUuid;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
@@ -19,6 +20,28 @@ public class UuidUtils
         long mostSig = buffer.getLong();
         long leastSig = buffer.getLong();
         return new UUID(mostSig, leastSig);
+    }
+
+    public static String dbgInstanceIdString(DbgInstanceUuid objRef)
+    {
+        String idText;
+        if (objRef != null)
+        {
+            UUID id = objRef.debugGetVolatileUuid();
+            if (id != null)
+            {
+                idText = id.toString().toUpperCase();
+            }
+            else
+            {
+                idText = "<null UUID>";
+            }
+        }
+        else
+        {
+            idText = "<null objRef>";
+        }
+        return idText;
     }
 
     private UuidUtils()

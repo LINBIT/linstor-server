@@ -40,6 +40,9 @@ public class NodeData extends BaseTransactionObject implements Node
     // Object identifier
     private final UUID objId;
 
+    // Runtime instance identifier for debug purposes
+    private final UUID dbgInstanceId;
+
     // Node name
     private final NodeName clNodeName;
 
@@ -118,6 +121,7 @@ public class NodeData extends BaseTransactionObject implements Node
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
 
         objId = uuidRef;
+        dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         clNodeName = nameRef;
         dbDriver = LinStor.getNodeDataDatabaseDriver();
@@ -562,6 +566,12 @@ public class NodeData extends BaseTransactionObject implements Node
     public String toString()
     {
         return "Node: '" + clNodeName + "'";
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
     private static final class NodeFlagsImpl extends StateFlagsBits<NodeData, NodeFlag>

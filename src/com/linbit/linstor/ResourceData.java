@@ -45,6 +45,9 @@ public class ResourceData extends BaseTransactionObject implements Resource
     // Object identifier
     private final UUID objId;
 
+    // Runtime instance identifier for debug purposes
+    private final UUID dbgInstanceId;
+
     // Reference to the resource definition
     private ResourceDefinition resourceDfn;
 
@@ -128,6 +131,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         resourceDfn = resDfnRef;
         assgNode = nodeRef;
         objId = objIdRef;
+        dbgInstanceId = UUID.randomUUID();
 
         dbDriver = LinStor.getResourceDataDatabaseDriver();
 
@@ -564,6 +568,12 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         return "Node: '" + assgNode.getName() + "', " +
                "Rsc: '" + resourceDfn.getName() + "'";
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
     private static final class RscFlagsImpl extends StateFlagsBits<ResourceData, RscFlags>

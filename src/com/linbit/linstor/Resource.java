@@ -22,7 +22,7 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface Resource extends TransactionObject
+public interface Resource extends TransactionObject, DbgInstanceUuid
 {
     public UUID getUuid();
 

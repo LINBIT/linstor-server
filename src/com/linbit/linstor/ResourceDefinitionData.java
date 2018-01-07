@@ -37,6 +37,9 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     // Object identifier
     private final UUID objId;
 
+    // Runtime instance identifier for debug purposes
+    private final UUID dbgInstanceId;
+
     // Resource name
     private final ResourceName resourceName;
 
@@ -116,6 +119,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ResourceName.class, resName);
         ErrorCheck.ctorNotNull(ResourceDefinitionData.class, ObjectProtection.class, objProtRef);
         objId = objIdRef;
+        dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         resourceName = resName;
         secret = secretRef;
@@ -444,6 +448,12 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     public String toString()
     {
         return "Rsc: '" + resourceName + "'";
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
     private static final class RscDfnFlagsImpl extends StateFlagsBits<ResourceDefinitionData, RscDfnFlags>
