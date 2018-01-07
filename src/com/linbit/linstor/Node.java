@@ -38,6 +38,9 @@ public interface Node extends TransactionObject
     public Resource getResource(AccessContext accCtx, ResourceName resName)
         throws AccessDeniedException;
 
+    public void addResource(AccessContext accCtx, Resource resRef)
+        throws AccessDeniedException;
+
     public NodeConnection getNodeConnection(AccessContext accCtx, Node otherNode)
         throws AccessDeniedException;
 

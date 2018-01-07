@@ -344,7 +344,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         this.port.set(port);
     }
 
-    void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
+    public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
