@@ -33,8 +33,8 @@ public final class SecurityType implements Comparable<SecurityType>
     // Access control rules for this type
     private final Map<SecTypeName, AccessType> rules;
 
-    static final SecurityType SYSTEM_TYPE;
-    static final SecurityType PUBLIC_TYPE;
+    public static final SecurityType SYSTEM_TYPE;
+    public static final SecurityType PUBLIC_TYPE;
 
     static
     {

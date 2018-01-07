@@ -28,8 +28,8 @@ public final class Identity implements Comparable<Identity>
     // Name of this security identity
     public final IdentityName name;
 
-    static final Identity SYSTEM_ID;
-    static final Identity PUBLIC_ID;
+    public static final Identity SYSTEM_ID;
+    public static final Identity PUBLIC_ID;
 
     static
     {

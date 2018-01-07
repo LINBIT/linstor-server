@@ -31,8 +31,8 @@ public final class Role implements Comparable<Role>
     // Set of privileges assigned to this role
     public final PrivilegeSet privileges;
 
-    static final Role SYSTEM_ROLE;
-    static final Role PUBLIC_ROLE;
+    public static final Role SYSTEM_ROLE;
+    public static final Role PUBLIC_ROLE;
 
     static
     {
