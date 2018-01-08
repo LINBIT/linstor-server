@@ -18,7 +18,7 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface VolumeDefinition extends TransactionObject
+public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
 {
     public UUID getUuid();
 

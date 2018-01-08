@@ -7,7 +7,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-public interface VolumeConnection
+public interface VolumeConnection extends DbgInstanceUuid
 {
     public UUID getUuid();
 

@@ -38,7 +38,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     private final UUID objId;
 
     // Runtime instance identifier for debug purposes
-    private final UUID dbgInstanceId;
+    private final transient UUID dbgInstanceId;
 
     // Resource name
     private final ResourceName resourceName;

@@ -41,6 +41,9 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     // Object identifier
     private final UUID objId;
 
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
+
     // Resource definition this VolumeDefinition belongs to
     private final ResourceDefinition resourceDfn;
 
@@ -106,7 +109,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     )
         throws MdException, AccessDeniedException, SQLException
     {
-
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, VolumeNumber.class, volNr);
         ErrorCheck.ctorNotNull(VolumeDefinitionData.class, MinorNumber.class, minor);
@@ -135,6 +137,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         }
 
         objId = uuid;
+        dbgInstanceId = UUID.randomUUID();
         resourceDfn = resDfnRef;
 
         dbDriver = LinStor.getVolumeDefinitionDataDatabaseDriver();
@@ -174,6 +177,12 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         );
 
         ((ResourceDefinitionData) resourceDfn).putVolumeDefinition(accCtx, this);
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
     public static VolumeDefinitionData getInstance(

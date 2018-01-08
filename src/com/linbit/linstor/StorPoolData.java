@@ -31,6 +31,10 @@ import java.util.ArrayList;
 public class StorPoolData extends BaseTransactionObject implements StorPool
 {
     private final UUID uuid;
+
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
+
     private final StorPoolDefinition storPoolDef;
     private final StorageDriver storDriver;
     private final String storDriverSimpleClassName;
@@ -81,6 +85,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         throws SQLException, AccessDeniedException
     {
         uuid = id;
+        dbgInstanceId = UUID.randomUUID();
         storPoolDef = storPoolDefRef;
         storDriver = storDriverRef;
         storDriverSimpleClassName = storDriverSimpleClassNameRef;
@@ -109,6 +114,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     protected StorPoolData()
     {
         uuid = null;
+        dbgInstanceId = UUID.randomUUID();
         storPoolDef = null;
         storDriver = null;
         storDriverSimpleClassName = null;
@@ -118,6 +124,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         volumeMap = null;
 
         transObjs = Collections.emptyList();
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
 

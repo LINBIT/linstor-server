@@ -25,6 +25,10 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
 {
     // Object identifier
     private final UUID objId;
+
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
+
     private final Volume sourceVolume;
     private final Volume targetVolume;
 
@@ -86,6 +90,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         }
 
         objId = uuid;
+        dbgInstanceId = UUID.randomUUID();
 
         NodeName sourceNodeName = sourceVolumeRef.getResource().getAssignedNode().getName();
         NodeName targetNodeName = targetVolumeRef.getResource().getAssignedNode().getName();
@@ -121,6 +126,12 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
 
         sourceVolume.setVolumeConnection(accCtx, this);
         targetVolume.setVolumeConnection(accCtx, this);
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
     public static VolumeConnectionData getInstance(

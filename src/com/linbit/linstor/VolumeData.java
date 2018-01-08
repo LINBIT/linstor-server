@@ -32,6 +32,9 @@ public class VolumeData extends BaseTransactionObject implements Volume
     // Object identifier
     private final UUID objId;
 
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
+
     // Reference to the resource this volume belongs to
     private final Resource resource;
 
@@ -105,6 +108,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         throws SQLException, AccessDeniedException
     {
         objId = uuid;
+        dbgInstanceId = UUID.randomUUID();
         resource = resRef;
         resourceDfn = resRef.getDefinition();
         volumeDfn = volDfnRef;
@@ -143,6 +147,12 @@ public class VolumeData extends BaseTransactionObject implements Volume
         ((ResourceData) resRef).putVolume(accCtx, this);
         ((StorPoolData) storPoolRef).putVolume(accCtx, this);
         ((VolumeDefinitionData) volDfnRef).putVolume(accCtx, this);
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
     public static VolumeData getInstance(

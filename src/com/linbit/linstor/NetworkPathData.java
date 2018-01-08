@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ErrorCheck;
+import com.linbit.TransactionObject;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -15,6 +16,9 @@ public class NetworkPathData extends BaseTransactionObject implements NetworkPat
 {
     // Object identifier
     private UUID objId;
+
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
 
     private NetInterface srcInterface;
     private Node         dstNode;
@@ -36,10 +40,18 @@ public class NetworkPathData extends BaseTransactionObject implements NetworkPat
         dstNode = toNode;
         dstInterface = toInterface;
 
+        dbgInstanceId = UUID.randomUUID();
+
         transObjs = Arrays.asList(
-            srcInterface,
-            dstNode,
-            dstInterface
+            (TransactionObject) srcInterface,
+            (TransactionObject) dstNode,
+            (TransactionObject) dstInterface
         );
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 }

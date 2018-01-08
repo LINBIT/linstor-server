@@ -41,7 +41,7 @@ public class NodeData extends BaseTransactionObject implements Node
     private final UUID objId;
 
     // Runtime instance identifier for debug purposes
-    private final UUID dbgInstanceId;
+    private final transient UUID dbgInstanceId;
 
     // Node name
     private final NodeName clNodeName;

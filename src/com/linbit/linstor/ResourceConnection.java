@@ -11,7 +11,7 @@ import com.linbit.linstor.security.AccessDeniedException;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface ResourceConnection
+public interface ResourceConnection extends DbgInstanceUuid
 {
     public UUID getUuid();
 

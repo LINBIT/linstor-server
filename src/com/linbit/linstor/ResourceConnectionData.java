@@ -25,6 +25,10 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 {
     // Object identifier
     private final UUID objId;
+
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
+
     private final Resource sourceResource;
     private final Resource targetResource;
 
@@ -85,6 +89,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         }
 
         objId = uuid;
+        dbgInstanceId = UUID.randomUUID();
 
         if (sourceNodeName.getName().compareTo(targetNodeName.getName()) < 0)
         {
@@ -116,6 +121,12 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
         sourceResource.setResourceConnection(accCtx, this);
         targetResource.setResourceConnection(accCtx, this);
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
     public static ResourceConnectionData getInstance(

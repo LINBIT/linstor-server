@@ -7,7 +7,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
-public interface NodeConnection
+public interface NodeConnection extends DbgInstanceUuid
 {
     public UUID getUuid();
 

@@ -14,5 +14,5 @@ public interface DbgInstanceUuid
      *
      * @return UUID that identifies the instance
      */
-    public UUID debugGetVolatileUuid();
+    UUID debugGetVolatileUuid();
 }

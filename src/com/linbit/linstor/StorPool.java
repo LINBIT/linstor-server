@@ -18,7 +18,7 @@ import java.util.Map;
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface StorPool extends TransactionObject
+public interface StorPool extends TransactionObject, DbgInstanceUuid
 {
     public static final String STORAGE_DRIVER_PROP_NAMESPACE = "storDriver";
 

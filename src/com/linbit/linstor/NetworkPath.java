@@ -7,7 +7,7 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public interface NetworkPath
+public interface NetworkPath extends DbgInstanceUuid
 {
     public UUID getUuid();
 }

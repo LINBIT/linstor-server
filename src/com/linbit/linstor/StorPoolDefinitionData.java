@@ -25,6 +25,10 @@ import com.linbit.linstor.security.ObjectProtection;
 public class StorPoolDefinitionData extends BaseTransactionObject implements StorPoolDefinition
 {
     private final UUID uuid;
+
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
+
     private final StorPoolName name;
     private final ObjectProtection objProt;
     private final StorPoolDefinitionDataDatabaseDriver dbDriver;
@@ -72,6 +76,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         throws SQLException
     {
         uuid = id;
+        dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         name = nameRef;
         storPools = new TransactionMap<>(new TreeMap<NodeName, StorPool>(), null);
@@ -88,6 +93,12 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
             storPools,
             props
         );
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
     public static StorPoolDefinitionData getInstance(

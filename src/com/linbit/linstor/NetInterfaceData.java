@@ -24,6 +24,10 @@ import com.linbit.linstor.security.AccessType;
 public class NetInterfaceData extends BaseTransactionObject implements NetInterface
 {
     private final UUID niUuid;
+
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
+
     private final Node niNode;
     private final NetInterfaceName niName;
 
@@ -68,6 +72,8 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         niNode = node;
         niName = netName;
 
+        dbgInstanceId = UUID.randomUUID();
+
         dbDriver = LinStor.getNetInterfaceDataDatabaseDriver();
 
         niAddress = new TransactionSimpleObject<>(
@@ -78,6 +84,12 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         transObjs = Arrays.<TransactionObject> asList(niAddress);
         ((NodeData) node).addNetInterface(accCtx, this);
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
     public static NetInterfaceData getInstance(

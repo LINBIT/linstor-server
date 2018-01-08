@@ -25,6 +25,10 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
 {
     // Object identifier
     private final UUID objId;
+
+    // Runtime instance identifier for debug purposes
+    private final transient UUID dbgInstanceId;
+
     private final Node sourceNode;
     private final Node targetNode;
 
@@ -67,6 +71,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         throws SQLException, AccessDeniedException
     {
         objId = uuid;
+        dbgInstanceId = UUID.randomUUID();
 
         if (node1.getName().compareTo(node2.getName()) < 0)
         {
@@ -96,6 +101,12 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         );
         sourceNode.setNodeConnection(accCtx, this);
         targetNode.setNodeConnection(accCtx, this);
+    }
+
+    @Override
+    public UUID debugGetVolatileUuid()
+    {
+        return dbgInstanceId;
     }
 
     public static NodeConnectionData getInstance(
