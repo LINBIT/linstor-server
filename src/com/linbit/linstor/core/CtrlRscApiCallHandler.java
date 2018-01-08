@@ -847,20 +847,37 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                     TransactionMgr transMgr,
                     ApiCallRcImpl apiCallRc) throws AccessDeniedException, SQLException
             {
+                int volumeCount = rscData.getVolumeCount();
                 rscData.setConnection(transMgr);
-                rscData.markDeleted(accCtx);
+                String successMessage = "";
+                if (volumeCount > 0)
+                {
+                    successMessage = String.format(
+                        "Resource '%s' marked to be deleted from node '%s'.",
+                        rscNameStr,
+                        nodeNameStr
+                    );
+                    rscData.markDeleted(accCtx);
+                }
+                else
+                {
+                    successMessage = String.format(
+                        "Resource '%s' is deleted from node '%s'.",
+                        rscNameStr,
+                        nodeNameStr
+                    );
+                    rscData.delete(accCtx);
+                }
                 transMgr.commit();
 
-                // notify satellites
-                updateSatellites(rscData);
+                if (volumeCount > 0)
+                {
+                    // notify satellites
+                    updateSatellites(rscData);
+                }
 
                 ApiCallRcEntry entry = new ApiCallRcEntry();
                 entry.setReturnCodeBit(RC_RSC_DELETED);
-                String successMessage = String.format(
-                    "Resource '%s' marked to be deleted from node '%s'.",
-                    rscNameStr,
-                    nodeNameStr
-                );
                 entry.setMessageFormat(successMessage);
                 entry.putObjRef(KEY_NODE, nodeNameStr);
                 entry.putObjRef(KEY_RSC_DFN, rscNameStr);
