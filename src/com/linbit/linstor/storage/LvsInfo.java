@@ -53,28 +53,25 @@ public class LvsInfo extends VolumeInfo
         final String[] lines = stdOut.split("\n");
         for (final String line : lines)
         {
-            if (line.isEmpty())
-                continue;
-
             final String[] data = line.trim().split(DELIMITER);
-
-            if (data.length < 3)
-                continue; // broken output?
-
-            final String identifier = data[0];
-            final String path = data[1];
-            final String rawSize = data[2];
-
-            int indexOf = rawSize.indexOf('.');
-            if (indexOf == -1)
+            if (data.length >= 3)
             {
-                indexOf = rawSize.indexOf(','); // localization
-            }
-            final String rawSizeLong = rawSize.substring(0, indexOf);
-            final long size = Long.parseLong(rawSizeLong);
 
-            final LvsInfo info = new LvsInfo(size, identifier, path);
-            infoByIdentifier.put(info.getIdentifier(), info);
+                final String identifier = data[0];
+                final String path = data[1];
+                final String rawSize = data[2];
+
+                int indexOf = rawSize.indexOf('.');
+                if (indexOf == -1)
+                {
+                    indexOf = rawSize.indexOf(','); // localization
+                }
+                final String rawSizeLong = rawSize.substring(0, indexOf);
+                final long size = Long.parseLong(rawSizeLong);
+
+                final LvsInfo info = new LvsInfo(size, identifier, path);
+                infoByIdentifier.put(info.getIdentifier(), info);
+            }
         }
 
         return infoByIdentifier;
