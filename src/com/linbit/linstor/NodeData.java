@@ -558,7 +558,8 @@ public class NodeData extends BaseTransactionObject implements Node
             getNodeType(accCtx).name(),
             getFlags().getFlagsBits(accCtx),
             netInterfaces,
-            getProps(accCtx).map()
+            getProps(accCtx).map(),
+            getPeer(accCtx).isConnected()
         );
     }
 

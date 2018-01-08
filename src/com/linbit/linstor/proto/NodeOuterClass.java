@@ -218,6 +218,23 @@ public final class NodeOuterClass {
      */
     com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterfaceOrBuilder getNetInterfacesOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * Node connected
+     * </pre>
+     *
+     * <code>optional bool connected = 7;</code>
+     */
+    boolean hasConnected();
+    /**
+     * <pre>
+     * Node connected
+     * </pre>
+     *
+     * <code>optional bool connected = 7;</code>
+     */
+    boolean getConnected();
   }
   /**
    * Protobuf type {@code com.linbit.linstor.proto.Node}
@@ -237,6 +254,7 @@ public final class NodeOuterClass {
       props_ = java.util.Collections.emptyList();
       flags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       netInterfaces_ = java.util.Collections.emptyList();
+      connected_ = false;
     }
 
     @java.lang.Override
@@ -310,6 +328,11 @@ public final class NodeOuterClass {
               }
               netInterfaces_.add(
                   input.readMessage(com.linbit.linstor.proto.NetInterfaceOuterClass.NetInterface.PARSER, extensionRegistry));
+              break;
+            }
+            case 56: {
+              bitField0_ |= 0x00000008;
+              connected_ = input.readBool();
               break;
             }
           }
@@ -663,6 +686,29 @@ public final class NodeOuterClass {
       return netInterfaces_.get(index);
     }
 
+    public static final int CONNECTED_FIELD_NUMBER = 7;
+    private boolean connected_;
+    /**
+     * <pre>
+     * Node connected
+     * </pre>
+     *
+     * <code>optional bool connected = 7;</code>
+     */
+    public boolean hasConnected() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <pre>
+     * Node connected
+     * </pre>
+     *
+     * <code>optional bool connected = 7;</code>
+     */
+    public boolean getConnected() {
+      return connected_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -713,6 +759,9 @@ public final class NodeOuterClass {
       for (int i = 0; i < netInterfaces_.size(); i++) {
         output.writeMessage(6, netInterfaces_.get(i));
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBool(7, connected_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -745,6 +794,10 @@ public final class NodeOuterClass {
       for (int i = 0; i < netInterfaces_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(6, netInterfaces_.get(i));
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(7, connected_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -784,6 +837,11 @@ public final class NodeOuterClass {
           .equals(other.getFlagsList());
       result = result && getNetInterfacesList()
           .equals(other.getNetInterfacesList());
+      result = result && (hasConnected() == other.hasConnected());
+      if (hasConnected()) {
+        result = result && (getConnected()
+            == other.getConnected());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -818,6 +876,11 @@ public final class NodeOuterClass {
       if (getNetInterfacesCount() > 0) {
         hash = (37 * hash) + NET_INTERFACES_FIELD_NUMBER;
         hash = (53 * hash) + getNetInterfacesList().hashCode();
+      }
+      if (hasConnected()) {
+        hash = (37 * hash) + CONNECTED_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+            getConnected());
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -959,6 +1022,8 @@ public final class NodeOuterClass {
         } else {
           netInterfacesBuilder_.clear();
         }
+        connected_ = false;
+        bitField0_ = (bitField0_ & ~0x00000040);
         return this;
       }
 
@@ -1018,6 +1083,10 @@ public final class NodeOuterClass {
         } else {
           result.netInterfaces_ = netInterfacesBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.connected_ = connected_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1136,6 +1205,9 @@ public final class NodeOuterClass {
               netInterfacesBuilder_.addAllMessages(other.netInterfaces_);
             }
           }
+        }
+        if (other.hasConnected()) {
+          setConnected(other.getConnected());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -2233,6 +2305,54 @@ public final class NodeOuterClass {
         }
         return netInterfacesBuilder_;
       }
+
+      private boolean connected_ ;
+      /**
+       * <pre>
+       * Node connected
+       * </pre>
+       *
+       * <code>optional bool connected = 7;</code>
+       */
+      public boolean hasConnected() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <pre>
+       * Node connected
+       * </pre>
+       *
+       * <code>optional bool connected = 7;</code>
+       */
+      public boolean getConnected() {
+        return connected_;
+      }
+      /**
+       * <pre>
+       * Node connected
+       * </pre>
+       *
+       * <code>optional bool connected = 7;</code>
+       */
+      public Builder setConnected(boolean value) {
+        bitField0_ |= 0x00000040;
+        connected_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node connected
+       * </pre>
+       *
+       * <code>optional bool connected = 7;</code>
+       */
+      public Builder clearConnected() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        connected_ = false;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -2298,12 +2418,12 @@ public final class NodeOuterClass {
     java.lang.String[] descriptorData = {
       "\n\020proto/Node.proto\022\030com.linbit.linstor.p" +
       "roto\032\033proto/LinStorMapEntry.proto\032\030proto" +
-      "/NetInterface.proto\"\271\001\n\004Node\022\014\n\004uuid\030\001 \001" +
+      "/NetInterface.proto\"\314\001\n\004Node\022\014\n\004uuid\030\001 \001" +
       "(\t\022\014\n\004name\030\002 \002(\t\022\014\n\004type\030\003 \002(\t\0228\n\005props\030" +
       "\004 \003(\0132).com.linbit.linstor.proto.LinStor" +
       "MapEntry\022\r\n\005flags\030\005 \003(\t\022>\n\016net_interface" +
       "s\030\006 \003(\0132&.com.linbit.linstor.proto.NetIn" +
-      "terfaceP\000P\001"
+      "terface\022\021\n\tconnected\030\007 \001(\010P\000P\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2324,7 +2444,7 @@ public final class NodeOuterClass {
     internal_static_com_linbit_linstor_proto_Node_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_Node_descriptor,
-        new java.lang.String[] { "Uuid", "Name", "Type", "Props", "Flags", "NetInterfaces", });
+        new java.lang.String[] { "Uuid", "Name", "Type", "Props", "Flags", "NetInterfaces", "Connected", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.linstor.proto.NetInterfaceOuterClass.getDescriptor();
   }

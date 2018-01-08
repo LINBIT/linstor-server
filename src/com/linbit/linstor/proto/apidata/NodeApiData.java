@@ -58,6 +58,13 @@ public class NodeApiData implements Node.NodeApi {
     }
 
     @Override
+    public Boolean isConnected() {
+        if (node.hasConnected())
+            return node.getConnected();
+        return null;
+    }
+
+    @Override
     public long getFlags() {
         return Node.NodeFlag.fromStringList(node.getFlagsList());
     }
@@ -83,6 +90,7 @@ public class NodeApiData implements Node.NodeApi {
         bld.addAllProps(BaseProtoApiCall.fromMap(nodeApi.getProps()));
         bld.addAllFlags(Node.NodeFlag.toStringList(nodeApi.getFlags()));
         bld.addAllNetInterfaces(NetInterfaceApiData.toNetInterfaceProtoList(nodeApi.getNetInterfaces()));
+        bld.setConnected(nodeApi.isConnected());
 
         return bld.build();
     }

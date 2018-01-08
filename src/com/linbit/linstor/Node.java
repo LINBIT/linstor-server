@@ -210,6 +210,7 @@ public interface Node extends TransactionObject, DbgInstanceUuid
         String getName();
         String getType();
         UUID getUuid();
+        Boolean isConnected();
         Map<String, String> getProps();
         long getFlags();
         List<NetInterface.NetInterfaceApi> getNetInterfaces();

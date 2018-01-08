@@ -12,6 +12,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final UUID nodeUuid;
     private final String nodeName;
     private final String nodeType;
+    private final Boolean isConnected;
     private final long nodeFlags;
     private final List<NetInterface.NetInterfaceApi> nodeNetInterfaces;
     private final List<NodeConnPojo> nodeConns;
@@ -31,6 +32,25 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         this.nodeNetInterfaces = nodeNetInterfaces;
         this.nodeConns = null;
         this.nodeProps = nodeProps;
+        this.isConnected = null;
+    }
+
+    public NodePojo(
+            final String name,
+            final UUID uuid,
+            final String type,
+            final long nodeFlags,
+            final List<NetInterface.NetInterfaceApi> nodeNetInterfaces,
+            final Map<String, String> nodeProps,
+            final boolean connected) {
+        this.nodeName = name;
+        this.nodeUuid = uuid;
+        this.nodeType = type;
+        this.nodeFlags = nodeFlags;
+        this.nodeNetInterfaces = nodeNetInterfaces;
+        this.nodeConns = null;
+        this.nodeProps = nodeProps;
+        this.isConnected = connected;
     }
 
     public NodePojo(
@@ -50,6 +70,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         this.nodeNetInterfaces = nodeNetInterfaces;
         this.nodeConns = nodeConns;
         this.nodeProps = nodeProps;
+        this.isConnected = null;
     }
 
     @Override
@@ -72,6 +93,11 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     public long getNodeFlags()
     {
         return nodeFlags;
+    }
+
+    public Boolean isConnected()
+    {
+        return isConnected;
     }
 
     @Override
