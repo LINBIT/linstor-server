@@ -113,4 +113,54 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
         long getFlags();
         Map<String, String> getProps();
     }
+
+    /**
+     * Sortable key for sets of volumes. Sorts by resource name, then volume number.
+     */
+    public static class Key implements Comparable<Key>
+    {
+        public final ResourceName rscName;
+        public final VolumeNumber vlmNr;
+
+        public Key(ResourceName rscNameRef, VolumeNumber vlmNrRef)
+        {
+            rscName = rscNameRef;
+            vlmNr = vlmNrRef;
+        }
+
+        public Key(Resource rscRef, VolumeNumber vlmNrRef)
+        {
+            rscName = rscRef.getDefinition().getName();
+            vlmNr = vlmNrRef;
+        }
+
+        public Key(ResourceDefinition rscDfnRef, VolumeNumber vlmNrRef)
+        {
+            rscName = rscDfnRef.getName();
+            vlmNr = vlmNrRef;
+        }
+
+        public Key(VolumeDefinition vlmDfn)
+        {
+            rscName = vlmDfn.getResourceDefinition().getName();
+            vlmNr = vlmDfn.getVolumeNumber();
+        }
+
+        public Key(Volume vlm)
+        {
+            rscName = vlm.getResourceDefinition().getName();
+            vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
+        }
+
+        @Override
+        public int compareTo(Key other)
+        {
+            int result = rscName.compareTo(other.rscName);
+            if (result == 0)
+            {
+                result = vlmNr.compareTo(other.vlmNr);
+            }
+            return result;
+        }
+    }
 }
