@@ -158,44 +158,49 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public void sendMessage(Message msg)
+    public boolean sendMessage(Message msg)
         throws IllegalMessageStateException
     {
-        TcpConnectorMessage tcpConMsg;
-        try
+        boolean connFlag = connected;
+        if (connFlag)
         {
-            tcpConMsg = (TcpConnectorMessage) msg;
-        }
-        catch (ClassCastException ccExc)
-        {
-            tcpConMsg = createMessage(true);
-            tcpConMsg.setData(msg.getData());
-        }
-
-        synchronized (this)
-        {
-            // Queue the message for sending
-            if (msgOut == null)
-            {
-                msgOut = tcpConMsg;
-            }
-            else
-            {
-                msgOutQueue.add(tcpConMsg);
-            }
-
+            TcpConnectorMessage tcpConMsg;
             try
             {
-                // Outbound messages present, enable OP_WRITE
-                selKey.interestOps(OP_READ | OP_WRITE);
-                connector.wakeup();
+                tcpConMsg = (TcpConnectorMessage) msg;
             }
-            catch (IllegalStateException illState)
+            catch (ClassCastException ccExc)
             {
-                // No-op; Subclasses of illState can be thrown
-                // when the connection has been closed
+                tcpConMsg = createMessage(true);
+                tcpConMsg.setData(msg.getData());
+            }
+
+            synchronized (this)
+            {
+                // Queue the message for sending
+                if (msgOut == null)
+                {
+                    msgOut = tcpConMsg;
+                }
+                else
+                {
+                    msgOutQueue.add(tcpConMsg);
+                }
+
+                try
+                {
+                    // Outbound messages present, enable OP_WRITE
+                    selKey.interestOps(OP_READ | OP_WRITE);
+                    connector.wakeup();
+                }
+                catch (IllegalStateException illState)
+                {
+                    // No-op; Subclasses of illState can be thrown
+                    // when the connection has been closed
+                }
             }
         }
+        return connFlag;
     }
 
     @Override

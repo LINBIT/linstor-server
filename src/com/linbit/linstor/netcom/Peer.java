@@ -81,7 +81,7 @@ public interface Peer
      * @param msg Message to send
      * @throws IllegalMessageStateException If the message object is not in a valid state for sending
      */
-    void sendMessage(Message msg) throws IllegalMessageStateException;
+    boolean sendMessage(Message msg) throws IllegalMessageStateException;
 
     /**
      * Closes the connection to the peer
