@@ -9,6 +9,7 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.WorkQueue;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -451,6 +452,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     // BEGIN DEBUG
                     errLog.logTrace("Scheduling resource handlers");
                     // END DEBUG
+
+                    NodeData localNode = stltInstance.getLocalNode();
                     for (ResourceName rscName : dispatchRscSet)
                     {
                         // Dispatch resources that were affected by changes to worker threads
@@ -458,7 +461,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         ResourceDefinition rscDfn = stltInstance.rscDfnMap.get(rscName);
                         if (rscDfn != null)
                         {
-                            Resource rsc = rscDfn.getResource(wrkCtx, stltInstance.localNode.getName());
+                            Resource rsc = rscDfn.getResource(wrkCtx, localNode.getName());
                             if (rsc != null)
                             {
                                 dispatchResource(wrkCtx, rsc, phaseLock);
@@ -564,7 +567,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                             Node peerNode = delRsc.getAssignedNode();
                             delRsc.setConnection(transMgr);
                             delRsc.delete(wrkCtx);
-                            if (peerNode != stltInstance.localNode)
+                            if (peerNode != stltInstance.getLocalNode())
                             {
                                 if (!(peerNode.getResourceCount() >= 1))
                                 {

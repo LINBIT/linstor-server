@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
@@ -96,67 +97,81 @@ class StltNodeApiCallHandler
         throws DivergentUuidsException, ImplementationError, InvalidNameException, AccessDeniedException,
         SQLException, InvalidIpAddressException
     {
-        NodeFlag[] nodeFlags = NodeFlag.restoreFlags(nodePojo.getNodeFlags());
-        NodeData node = NodeData.getInstanceSatellite(
-            apiCtx,
-            nodePojo.getUuid(),
-            new NodeName(nodePojo.getName()),
-            NodeType.valueOf(nodePojo.getType()),
-            nodeFlags,
-            transMgr
-        );
-        checkUuid(node, nodePojo);
+        Lock reConfReadLock = satellite.reconfigurationLock.readLock();
+        Lock nodesWriteLock = satellite.nodesMapLock.writeLock();
 
-        node.getFlags().resetFlagsTo(apiCtx, nodeFlags);
-
-        Map<String, String> map = node.getProps(apiCtx).map();
-        map.clear();
-        map.putAll(nodePojo.getProps());
-
-        for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
+        try
         {
-            NodeData otherNode = NodeData.getInstanceSatellite(
+            reConfReadLock.lock();
+            nodesWriteLock.lock();
+
+            NodeFlag[] nodeFlags = NodeFlag.restoreFlags(nodePojo.getNodeFlags());
+            NodeData node = NodeData.getInstanceSatellite(
                 apiCtx,
-                nodeConn.getOtherNodeUuid(),
-                new NodeName(nodeConn.getOtherNodeName()),
-                NodeType.valueOf(nodeConn.getOtherNodeType()),
-                NodeFlag.restoreFlags(nodeConn.getOtherNodeFlags()),
+                nodePojo.getUuid(),
+                new NodeName(nodePojo.getName()),
+                NodeType.valueOf(nodePojo.getType()),
+                nodeFlags,
                 transMgr
             );
-            NodeConnectionData nodeCon = NodeConnectionData.getInstanceSatellite(
-                apiCtx,
-                nodeConn.getNodeConnUuid(),
-                node,
-                otherNode,
-                transMgr
-            );
-            Map<String, String> props = nodeCon.getProps(apiCtx).map();
-            props.clear();
-            props.putAll(nodeConn.getNodeConnProps());
-        }
+            checkUuid(node, nodePojo);
 
-        for (NetInterface.NetInterfaceApi netIfApi : nodePojo.getNetInterfaces())
-        {
-            NetInterfaceName netIfName = new NetInterfaceName(netIfApi.getName());
-            LsIpAddress ipAddress = new LsIpAddress(netIfApi.getAddress());
-            NetInterface netIf = node.getNetInterface(apiCtx, netIfName);
-            if (netIf == null)
+            node.getFlags().resetFlagsTo(apiCtx, nodeFlags);
+
+            Map<String, String> map = node.getProps(apiCtx).map();
+            map.clear();
+            map.putAll(nodePojo.getProps());
+
+            for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
             {
-                NetInterfaceData.getInstanceSatellite(
+                NodeData otherNode = NodeData.getInstanceSatellite(
                     apiCtx,
-                    netIfApi.getUuid(),
-                    node,
-                    netIfName,
-                    ipAddress,
+                    nodeConn.getOtherNodeUuid(),
+                    new NodeName(nodeConn.getOtherNodeName()),
+                    NodeType.valueOf(nodeConn.getOtherNodeType()),
+                    NodeFlag.restoreFlags(nodeConn.getOtherNodeFlags()),
                     transMgr
                 );
+                NodeConnectionData nodeCon = NodeConnectionData.getInstanceSatellite(
+                    apiCtx,
+                    nodeConn.getNodeConnUuid(),
+                    node,
+                    otherNode,
+                    transMgr
+                );
+                Map<String, String> props = nodeCon.getProps(apiCtx).map();
+                props.clear();
+                props.putAll(nodeConn.getNodeConnProps());
             }
-            else
+
+            for (NetInterface.NetInterfaceApi netIfApi : nodePojo.getNetInterfaces())
             {
-                netIf.setAddress(apiCtx, ipAddress);
+                NetInterfaceName netIfName = new NetInterfaceName(netIfApi.getName());
+                LsIpAddress ipAddress = new LsIpAddress(netIfApi.getAddress());
+                NetInterface netIf = node.getNetInterface(apiCtx, netIfName);
+                if (netIf == null)
+                {
+                    NetInterfaceData.getInstanceSatellite(
+                        apiCtx,
+                        netIfApi.getUuid(),
+                        node,
+                        netIfName,
+                        ipAddress,
+                        transMgr
+                    );
+                }
+                else
+                {
+                    netIf.setAddress(apiCtx, ipAddress);
+                }
             }
+            return node;
         }
-        return node;
+        finally
+        {
+            nodesWriteLock.unlock();
+            reConfReadLock.unlock();
+        }
     }
 
     private void checkUuid(NodeData node, NodePojo nodePojo) throws DivergentUuidsException

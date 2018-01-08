@@ -8,6 +8,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeData;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinition;
@@ -74,8 +75,13 @@ class StltStorPoolApiCallHandler
 //          checkUuid(satellite.localNode, storPoolRaw);
 
         storPoolName = new StorPoolName(storPoolRaw.getStorPoolName());
-        StorPool storPool = satellite.localNode.getStorPool(apiCtx, storPoolName);
-
+        NodeData localNode = satellite.getLocalNode();
+        StorPool storPool;
+        if (localNode == null)
+        {
+            throw new ImplementationError("ApplyChanges called with invalid localnode", new NullPointerException());
+        }
+        storPool = localNode.getStorPool(apiCtx, storPoolName);
         if (storPool != null)
         {
             checkUuid(storPool, storPoolRaw);
@@ -100,7 +106,7 @@ class StltStorPoolApiCallHandler
             storPool = StorPoolData.getInstanceSatellite(
                 apiCtx,
                 storPoolRaw.getStorPoolUuid(),
-                satellite.localNode,
+                satellite.getLocalNode(),
                 storPoolDfn,
                 storPoolRaw.getDriver(),
                 transMgr,

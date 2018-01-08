@@ -247,7 +247,6 @@ public class SatelliteDbDriver implements DatabaseDriver
 
         @Override
         public NodeData load(NodeName nodeName, boolean logWarnIfNotExists, TransactionMgr transMgr)
-
         {
             return (NodeData) nodesMap.get(nodeName);
         }

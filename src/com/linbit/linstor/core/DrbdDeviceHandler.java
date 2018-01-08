@@ -1123,10 +1123,17 @@ class DrbdDeviceHandler implements DeviceHandler
     {
         System.out.println();
         System.out.println("\u001b[1;31m== BEGIN DrbdDeviceHandler.debugListSatelliteObjects() ==\u001b[0m");
-        System.out.printf(
-            "localNode = %s\n",
-            stlt.localNode.getName().displayValue
-        );
+        if (stlt.getLocalNode() != null)
+        {
+            System.out.printf(
+                "localNode = %s\n",
+                stlt.getLocalNode().getName().displayValue
+            );
+        }
+        else
+        {
+            System.out.printf("localNode = not initialized\n");
+        }
         for (Node curNode : stlt.nodesMap.values())
         {
             System.out.printf(
@@ -1147,7 +1154,7 @@ class DrbdDeviceHandler implements DeviceHandler
             {
             }
         }
-        Node localNode = stlt.localNode;
+        Node localNode = stlt.getLocalNode();
         if (localNode != null)
         {
             try

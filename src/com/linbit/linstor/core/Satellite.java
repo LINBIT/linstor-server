@@ -146,8 +146,8 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     // Map of all storage pools
     Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
-    // Local NodeData received from the currently active controller
-    NodeData localNode;
+    // Local NodeName received from the currently active controller
+    private NodeName localNodeName;
 
     // The currently connected controller peer (can be null)
     private Peer controllerPeer;
@@ -774,7 +774,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
 
     public NodeData getLocalNode()
     {
-        return localNode;
+        return (NodeData) nodesMap.get(localNodeName);
     }
 
     public Peer getControllerPeer()
@@ -787,6 +787,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         try
         {
             reconfigurationLock.writeLock().lock();
+            nodesMapLock.writeLock().lock();
 
             controllerPeer = controllerPeerRef;
 
@@ -794,32 +795,33 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
             tmpCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+            NodeData localNode;
             try
             {
+                localNodeName = new NodeName(nodeName);
+
                 localNode = NodeData.getInstanceSatellite(
                     sysCtx,
                     nodeUuid,
-                    new NodeName(nodeName),
+                    localNodeName,
                     NodeType.SATELLITE,
                     new NodeFlag[] {},
                     transMgr
                 );
                 transMgr.commit();
+
+                nodesMap.clear();
+                rscDfnMap.clear();
+                storPoolDfnMap.clear();
+                // TODO: make sure everything is cleared
+
                 nodesMap.put(localNode.getName(), localNode);
+                setControllerPeerToCurrentLocalNode();
             }
             catch (ImplementationError | SQLException | InvalidNameException exc)
             {
                 getErrorReporter().reportError(exc);
             }
-
-            // TODO: make sure everything is cleared
-
-            nodesMap.clear();
-            rscDfnMap.clear();
-            storPoolDfnMap.clear();
-
-            nodesMap.put(localNode.getName(), localNode);
-            localNode.setPeer(tmpCtx, controllerPeerRef);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -830,7 +832,27 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         }
         finally
         {
+            nodesMapLock.writeLock().unlock();
             reconfigurationLock.writeLock().unlock();
+        }
+    }
+
+    public void setControllerPeerToCurrentLocalNode()
+    {
+        reconfigurationLock.readLock().lock();
+        nodesMapLock.readLock().lock();
+        try
+        {
+            nodesMap.get(localNodeName).setPeer(sysCtx, controllerPeer);
+        }
+        catch (AccessDeniedException exc)
+        {
+            getErrorReporter().reportError(exc);
+        }
+        finally
+        {
+            nodesMapLock.readLock().unlock();
+            reconfigurationLock.readLock().unlock();
         }
     }
 }

@@ -332,6 +332,7 @@ public class NodeData extends BaseTransactionObject implements Node
         return PropsAccess.secureGetProps(accCtx, objProt, nodeProps);
     }
 
+    @Override
     public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
         checkDeleted();

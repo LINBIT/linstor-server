@@ -83,6 +83,9 @@ public class StltApiCallHandler
         try
         {
             satellite.reconfigurationLock.writeLock().lock();
+            satellite.nodesMapLock.writeLock().lock();
+            satellite.rscDfnMapLock.writeLock().lock();
+            satellite.storPoolDfnMapLock.writeLock().lock();
 
             // clear all data
             satellite.nodesMap.clear();
@@ -98,6 +101,7 @@ public class StltApiCallHandler
                     satellite.nodesMap.put(curNode.getName(), curNode);
                 }
             }
+            satellite.setControllerPeerToCurrentLocalNode();
 
             for (StorPoolPojo storPool : storPools)
             {
@@ -128,7 +132,7 @@ public class StltApiCallHandler
             satellite.getErrorReporter().logTrace("Full sync with controller finished");
 
             // Atomically notify the DeviceManager to check all resources
-            Node localNode = satellite.localNode;
+            Node localNode = satellite.getLocalNode();
             if (localNode != null)
             {
                 Map<ResourceName, UUID> updatedResources = new TreeMap();
@@ -155,6 +159,9 @@ public class StltApiCallHandler
         }
         finally
         {
+            satellite.storPoolDfnMapLock.writeLock().unlock();
+            satellite.rscDfnMapLock.writeLock().unlock();
+            satellite.nodesMapLock.writeLock().unlock();
             satellite.reconfigurationLock.writeLock().unlock();
         }
     }
