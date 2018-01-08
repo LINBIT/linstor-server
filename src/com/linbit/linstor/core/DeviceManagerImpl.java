@@ -16,6 +16,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteCoreServices;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
@@ -67,7 +68,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private final AtomicBoolean shutdownFlag = new AtomicBoolean(false);
 
     private final Set<ResourceName> deletedRscSet = new TreeSet<>();
-    private final Set<Volume.Key> deletedVlmSet = new TreeSet<>();
+    private final Set<VolumeDefinition.Key> deletedVlmSet = new TreeSet<>();
 
     private static final ServiceName devMgrName;
     static
@@ -358,7 +359,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             final Set<ResourceName> dispatchRscSet = new TreeSet<>();
             final Set<NodeName> localDelNodeSet = new TreeSet<>();
             final Set<ResourceName> localDelRscSet = new TreeSet<>();
-            final Set<Volume.Key> localDelVlmSet = new TreeSet<>();
+            final Set<VolumeDefinition.Key> localDelVlmSet = new TreeSet<>();
             long cycleNr = 0;
             do
             {
@@ -525,7 +526,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         final AccessContext wrkCtx,
         final Set<NodeName> localDelNodeSet,
         final Set<ResourceName> localDelRscSet,
-        final Set<Volume.Key> localDelVlmSet
+        final Set<VolumeDefinition.Key> localDelVlmSet
     )
         throws AccessDeniedException
     {
@@ -812,7 +813,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         // Remember the volume for removal after the DeviceHandler instances have finished
         synchronized (sched)
         {
-            deletedVlmSet.add(new Volume.Key(vlm));
+            deletedVlmSet.add(new VolumeDefinition.Key(vlm));
         }
     }
 
