@@ -45,7 +45,7 @@ public final class MsgIntDelVlm {
   }
   /**
    * <pre>
-   * linstor - Delete resource
+   * linstor - volume deleted notification message
    * </pre>
    *
    * Protobuf type {@code com.linbit.linstor.proto.javainternal.MsgDelVlm}
@@ -366,7 +366,7 @@ public final class MsgIntDelVlm {
     }
     /**
      * <pre>
-     * linstor - Delete resource
+     * linstor - volume deleted notification message
      * </pre>
      *
      * Protobuf type {@code com.linbit.linstor.proto.javainternal.MsgDelVlm}
