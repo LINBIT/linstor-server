@@ -165,6 +165,10 @@ ospackage {
         into 'bin'
         fileMode 0550
     }
+    from(RecreateDbStartup) {
+        into 'bin'
+        fileMode 0550
+    }
 }
 
 // we might even split these to generate separate controller/satellite packages
