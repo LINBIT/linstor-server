@@ -277,7 +277,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
     {
         if (deleted)
         {
-            throw new ImplementationError("Access to deleted NodeConnection", null);
+            throw new ImplementationError("Access to deleted node connection", null);
         }
     }
 

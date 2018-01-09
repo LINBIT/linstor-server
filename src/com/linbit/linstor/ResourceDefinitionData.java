@@ -348,6 +348,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         this.port.set(port);
     }
 
+    @Override
     public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {
         checkDeleted();
@@ -417,7 +418,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     {
         if (deleted)
         {
-            throw new ImplementationError("Access to deleted node", null);
+            throw new ImplementationError("Access to deleted resource definition", null);
         }
     }
 

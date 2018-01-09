@@ -220,6 +220,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         storPools.remove(storPoolData.getNode().getName());
     }
 
+    @Override
     public StorPool getStorPool(AccessContext accCtx, NodeName nodeName) throws AccessDeniedException
     {
         checkDeleted();
@@ -256,7 +257,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     {
         if (deleted)
         {
-            throw new ImplementationError("Access to deleted node", null);
+            throw new ImplementationError("Access to deleted storage pool definition", null);
         }
     }
 

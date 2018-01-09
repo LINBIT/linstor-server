@@ -203,7 +203,7 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
     {
         if (deleted)
         {
-            throw new ImplementationError("Access to deleted node", null);
+            throw new ImplementationError("Access to deleted satellite connection", null);
         }
     }
 }

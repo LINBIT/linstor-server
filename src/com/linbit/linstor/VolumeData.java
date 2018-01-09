@@ -367,6 +367,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         return metaDiskPath;
     }
 
+    @Override
     public void setBlockDevicePath(AccessContext accCtx, String path) throws AccessDeniedException
     {
         checkDeleted();
@@ -374,6 +375,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
         blockDevicePath = path;
     }
 
+    @Override
     public void setMetaDiskPath(AccessContext accCtx, String path) throws AccessDeniedException
     {
         checkDeleted();
@@ -407,7 +409,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
     {
         if (deleted)
         {
-            throw new ImplementationError("Access to deleted node", null);
+            throw new ImplementationError("Access to deleted volume", null);
         }
     }
 

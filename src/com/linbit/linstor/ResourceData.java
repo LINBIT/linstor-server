@@ -543,7 +543,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         if (deleted)
         {
-            throw new ImplementationError("Access to deleted node", null);
+            throw new ImplementationError("Access to deleted resource", null);
         }
     }
 
