@@ -150,6 +150,7 @@ ospackage {
     requires('drbd-utils', '9.2.0', GREATER | EQUAL)
 
     into '/opt/linstor-server'
+    postInstall file('scripts/postinstall.sh')
 
     from(jar.outputs.files) {
         into 'lib'

@@ -13,6 +13,7 @@ nbproject/project.xml
 !.gitignore
 !test-support
 !test-data
+!scripts/
 test-data/*
 test-support/TestProcess
 test-support/TestOutput
