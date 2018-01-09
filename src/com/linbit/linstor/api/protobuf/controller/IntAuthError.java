@@ -35,7 +35,7 @@ public class IntAuthError extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "Satellite will call this api if an error happened during authentication.";
+        return "Called by the satellite to indicate that controller authentication failed";
     }
 
     @Override

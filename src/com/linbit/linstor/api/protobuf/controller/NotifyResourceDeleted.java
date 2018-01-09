@@ -40,7 +40,7 @@ public class NotifyResourceDeleted extends BaseProtoApiCall {
     @Override
     public String getDescription()
     {
-        return "Notify controller that the satellite deleted the resource.";
+        return "Called by the satellite to notify the controller of successful resource deletion";
     }
 
     @Override

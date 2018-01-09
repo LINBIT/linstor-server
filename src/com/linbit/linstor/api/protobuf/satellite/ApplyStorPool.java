@@ -34,7 +34,7 @@ public class ApplyStorPool extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "Deployes the storpool";
+        return "Applies storage pool update data";
     }
 
     @Override

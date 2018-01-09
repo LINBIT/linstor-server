@@ -39,8 +39,7 @@ public class ChangedStorPool extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "Controller calls this API when a resource has changed and this satellite should " +
-            "ask for the change";
+        return "Called by the controller to indicate that a storage pool was modified";
     }
 
     @Override

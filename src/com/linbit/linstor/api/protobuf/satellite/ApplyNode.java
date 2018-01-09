@@ -41,7 +41,7 @@ public class ApplyNode extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "Applies the changes for the given node";
+        return "Applies node update data";
     }
 
     @Override

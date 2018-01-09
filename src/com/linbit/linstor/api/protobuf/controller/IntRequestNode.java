@@ -33,7 +33,7 @@ public class IntRequestNode extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "Requests the information about the given node";
+        return "Called by the satellite to request node update data";
     }
 
     @Override

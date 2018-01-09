@@ -35,7 +35,7 @@ public class CtrlAuth extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "The authentication api the controller has to call first";
+        return "Called by the controller to authenticate the controller to the satellite";
     }
 
     @Override

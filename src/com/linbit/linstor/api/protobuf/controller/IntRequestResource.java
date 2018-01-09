@@ -33,7 +33,7 @@ public class IntRequestResource extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "This request is answered with a full data response of the requested resource";
+        return "Called by the satellite to request resource update data";
     }
 
     @Override

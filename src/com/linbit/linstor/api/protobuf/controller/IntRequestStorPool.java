@@ -33,7 +33,7 @@ public class IntRequestStorPool extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "This request is answered with a full data response of the requested storpool";
+        return "Called by the satellite to request storage pool update data";
     }
 
     @Override

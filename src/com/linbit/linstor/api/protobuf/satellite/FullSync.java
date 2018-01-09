@@ -42,7 +42,7 @@ public class FullSync extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "All needed data for this satellite, containing nodes, storPools and resources";
+        return "Transfers initial data for all objects to a satellite";
     }
 
     @Override

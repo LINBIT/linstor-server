@@ -33,7 +33,7 @@ public class ListNode extends BaseProtoApiCall {
     @Override
     public String getDescription()
     {
-        return "List nodes";
+        return "Queries the list of nodes";
     }
 
     @Override

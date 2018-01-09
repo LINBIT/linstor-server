@@ -35,7 +35,7 @@ public class NotifyVolumeDeleted extends BaseProtoApiCall {
     @Override
     public String getDescription()
     {
-        return "Notify controller that the satellite deleted the volume.";
+        return "Called by the satellite to notify the controller of successful volume deletion";
     }
 
     @Override

@@ -38,7 +38,7 @@ abstract class RequestObject extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "This request is answered with a full data response of the requested " + descriptionType;
+        return "Called by the satellite to fetch an update of an object of type " + descriptionType;
     }
 
     @Override

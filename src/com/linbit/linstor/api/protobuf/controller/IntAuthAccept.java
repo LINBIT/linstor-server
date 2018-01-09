@@ -31,7 +31,7 @@ public class IntAuthAccept extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "Satellite will call this api to confirm our authentication";
+        return "Called by the satellite to indicate that controller authentication succeeded";
     }
 
     @Override

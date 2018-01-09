@@ -49,7 +49,7 @@ public class ApplyRsc extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "Deployes the resources";
+        return "Applies resource update data";
     }
 
     @Override

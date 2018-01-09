@@ -33,7 +33,7 @@ public class ListResourceDefinition extends BaseProtoApiCall {
     @Override
     public String getDescription()
     {
-        return "List resource definitions";
+        return "Queries the list of resource definitions";
     }
 
     @Override

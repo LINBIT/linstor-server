@@ -37,7 +37,7 @@ public class ModifyResourceDefinition extends BaseProtoApiCall
     @Override
     public String getDescription()
     {
-        return "Modifies an existing resource definition";
+        return "Modifies a resource definition";
     }
 
     @Override
