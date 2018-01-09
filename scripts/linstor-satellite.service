@@ -1,0 +1,13 @@
+[Unit]
+Description=LINSTOR Satellite Service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/linstor-server
+ExecStart=/opt/linstor-server/bin/Satellite
+User=root
+
+[Install]
+Wanted=multi-user.target

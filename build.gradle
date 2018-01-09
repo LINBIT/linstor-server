@@ -149,9 +149,18 @@ ospackage {
 
     requires('drbd-utils', '9.2.0', GREATER | EQUAL)
 
-    into '/opt/linstor-server'
     postInstall file('scripts/postinstall.sh')
 
+    from('scripts/linstor-controller.service') {
+        into '/lib/systemd/system'
+        fileMode 0644
+    }
+    from('scripts/linstor-satellite.service') {
+        into '/lib/systemd/system'
+        fileMode 0644
+    }
+
+    into '/opt/linstor-server'
     from(jar.outputs.files) {
         into 'lib'
     }
