@@ -92,22 +92,24 @@ public class CtrlAuth extends BaseProtoApiCall
             satellite.setControllerPeer(controllerPeer, nodeUuid, nodeName);
 
             byte[] msgAuthAccept = prepareMessage(
-                    accCtx,
-                    new byte[0],
-                    controllerPeer,
-                    msgId,
-                    InternalApiConsts.API_AUTH_ACCEPT);
+                accCtx,
+                new byte[0],
+                controllerPeer,
+                msgId,
+                InternalApiConsts.API_AUTH_ACCEPT
+            );
             sendAnswer(controllerPeer, msgAuthAccept);
         }
         else
         {
             // some auth error happend, send error response
             byte[] msgData = prepareMessage(
-                    accCtx,
-                    createApiCallResponse(accCtx, apicallrc, controllerPeer),
-                    controllerPeer,
-                    msgId,
-                    InternalApiConsts.API_AUTH_ERROR);
+                accCtx,
+                createApiCallResponse(accCtx, apicallrc, controllerPeer),
+                controllerPeer,
+                msgId,
+                InternalApiConsts.API_AUTH_ERROR
+            );
             sendAnswer(controllerPeer, msgData);
         }
     }
