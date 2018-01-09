@@ -3,10 +3,7 @@ package com.linbit.linstor.core;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
@@ -1263,14 +1260,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 Resource currentRsc = rscIterator.next();
                 Peer peer = currentRsc.getAssignedNode().getPeer(apiCtx);
 
-                if (peer.isConnected())
+                boolean connected = peer.isConnected();
+                if (connected)
                 {
                     Message rscChangedMsg = peer.createMessage();
                     byte[] data = rscSerializer.getChangedMessage(currentRsc);
                     rscChangedMsg.setData(data);
-                    peer.sendMessage(rscChangedMsg);
+                    connected = peer.sendMessage(rscChangedMsg);
                 }
-                else
+                if (!connected)
                 {
                     String nodeName = currentRsc.getAssignedNode().getName().displayValue;
                     addAnswer(
@@ -1309,14 +1307,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
         try
         {
             Peer satellitePeer = storPool.getNode().getPeer(apiCtx);
-            if (satellitePeer.isConnected())
+            boolean connected = satellitePeer.isConnected();
+            if (connected)
             {
                 Message msg = satellitePeer.createMessage();
                 byte[] data = storPoolSerializer.getChangedMessage(storPool);
                 msg.setData(data);
-                satellitePeer.sendMessage(msg);
+                connected = satellitePeer.sendMessage(msg);
             }
-            else
+            if (!connected)
             {
                 addAnswer(
                     "No active connection to satellite '" + storPool.getNode().getName().displayValue + "'",

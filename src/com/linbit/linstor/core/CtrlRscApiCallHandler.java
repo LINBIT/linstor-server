@@ -363,14 +363,15 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 Resource currentRsc = rscIterator.next();
                 Peer peer = currentRsc.getAssignedNode().getPeer(apiCtx);
 
-                if (peer.isConnected())
+                boolean connected = peer.isConnected();
+                if (connected)
                 {
                     Message message = peer.createMessage();
                     byte[] data = rscSerializer.getChangedMessage(currentRsc);
                     message.setData(data);
-                    peer.sendMessage(message);
+                    connected = peer.sendMessage(message);
                 }
-                else
+                if (!connected)
                 {
                     ApiCallRcEntry notConnected = new ApiCallRcEntry();
                     notConnected.setReturnCode(RC_RSC_CRT_WARN_NOT_CONNECTED);
@@ -1120,7 +1121,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                         new ImplementationError(
                             String.format(
                                 "A requested resource name '%s' with the uuid '%s' was not found "+
-                                    "in the controllers list of resources",
+                                    "in the controller's list of resources",
                                     rscName,
                                     rscUuid.toString()
                                 ),

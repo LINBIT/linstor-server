@@ -405,14 +405,15 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         try
         {
             Peer satellitePeer = storPool.getNode().getPeer(apiCtx);
-            if (satellitePeer.isConnected())
+            boolean connected = satellitePeer.isConnected();
+            if (connected)
             {
                 Message msg = satellitePeer.createMessage();
                 byte[] data = storPoolSerializer.getChangedMessage(storPool);
                 msg.setData(data);
-                satellitePeer.sendMessage(msg);
+                connected = satellitePeer.sendMessage(msg);
             }
-            else
+            if (!connected)
             {
                 ApiCallRcEntry notConnected = new ApiCallRcEntry();
                 notConnected.setReturnCode(RC_STOR_POOL_CRT_WARN_NOT_CONNECTED);
