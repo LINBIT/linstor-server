@@ -850,6 +850,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 int volumeCount = rscData.getVolumeCount();
                 rscData.setConnection(transMgr);
                 String successMessage = "";
+
                 if (volumeCount > 0)
                 {
                     successMessage = String.format(

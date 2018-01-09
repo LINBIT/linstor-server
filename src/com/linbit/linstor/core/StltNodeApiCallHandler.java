@@ -21,13 +21,11 @@ import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.api.interfaces.serializer.StltRequestSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import java.util.Iterator;
 
 class StltNodeApiCallHandler
 {
@@ -56,29 +54,6 @@ class StltNodeApiCallHandler
             Node node = applyChanges(nodePojo, transMgr);
             NodeName nodeName = new NodeName(nodePojo.getName());
             transMgr.commit();
-
-            // BEGIN EXPERIMENTAL SECTION
-            // FIXME: This should probably be moved to a more central location in the code,
-            //        where the satellite can figure out, which nodes, resource definitions,
-            //        resources, etc. are replaced at the same time, and then avoid
-            //        unnecessary updating of objects that are going to be replaced
-            //        in the next step.
-            //        Also, this section needs to be checked for collisions with possibly existing
-            //        other code that also attempts to update references between nodes and resources.
-            Node replacedNode = satellite.nodesMap.get(nodeName);
-            if (replacedNode != null)
-            {
-                Iterator<Resource> rscIter = replacedNode.iterateResources(apiCtx);
-                while (rscIter.hasNext())
-                {
-                    Resource rsc = rscIter.next();
-                    // Update the existing resource to reference the new node object
-                    rsc.setAssignedNode(apiCtx, node);
-                    // Update the new node object to reference the resource object
-                    node.addResource(apiCtx, rsc);
-                }
-            }
-            // END EXPERIMENTAL SECTION
 
             satellite.nodesMap.put(nodeName, node);
             satellite.getErrorReporter().logInfo("Node '" + nodePojo.getName() + "' created.");

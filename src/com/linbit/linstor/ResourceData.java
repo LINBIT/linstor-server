@@ -27,7 +27,6 @@ import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
@@ -49,7 +48,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     private final transient UUID dbgInstanceId;
 
     // Reference to the resource definition
-    private ResourceDefinition resourceDfn;
+    private final ResourceDefinition resourceDfn;
 
     // Connections to the peer resources
     private final TransactionMap<Resource, ResourceConnection> resourceConnections;
@@ -58,7 +57,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     private final TransactionMap<VolumeNumber, Volume> volumeMap;
 
     // Reference to the node this resource is assigned to
-    private Node assgNode;
+    private final Node assgNode;
 
     // State flags
     private final StateFlags<RscFlags> flags;
@@ -279,23 +278,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     @Override
-    public void setDefinition(AccessContext accCtx, ResourceDefinition rscDfnRef)
-        throws AccessDeniedException
-    {
-        if (accCtx.subjectId == Identity.SYSTEM_ID)
-        {
-            resourceDfn = rscDfnRef;
-        }
-        else
-        {
-            throw new AccessDeniedException(
-                "Non-SYSTEM access context is not authorized to change the ResourceDefinition object reference " +
-                "of a ResourceData object"
-            );
-        }
-    }
-
-    @Override
     public synchronized void setResourceConnection(AccessContext accCtx, ResourceConnection resCon)
         throws AccessDeniedException
     {
@@ -386,6 +368,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
     )
         throws InvalidNameException, LinStorException
     {
+        checkDeleted();
         Iterator<VolumeDefinition> vlmDfns;
         try
         {
@@ -473,23 +456,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
     {
         checkDeleted();
         return assgNode;
-    }
-
-    @Override
-    public void setAssignedNode(AccessContext accCtx, Node nodeRef)
-        throws AccessDeniedException
-    {
-        if (accCtx.subjectId == Identity.SYSTEM_ID)
-        {
-            assgNode = nodeRef;
-        }
-        else
-        {
-            throw new AccessDeniedException(
-                "Non-SYSTEM access context is not authorized to change the Node object reference " +
-                "of a ResourceData object"
-            );
-        }
     }
 
     @Override
