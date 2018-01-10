@@ -67,8 +67,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
     private final ResourceDefinitionDataDatabaseDriver dbDriver;
 
-    private boolean deleted = false;
-
+    private final TransactionSimpleObject<ResourceDefinitionData, Boolean> deleted;
 
     /*
      * used by getInstance
@@ -129,6 +128,7 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         port = new TransactionSimpleObject<>(this, portRef, dbDriver.getPortDriver());
         volumeMap = new TransactionMap<>(new TreeMap<VolumeNumber, VolumeDefinition>(), null);
         resourceMap = new TransactionMap<>(new TreeMap<NodeName, Resource>(), null);
+        deleted = new TransactionSimpleObject<>(this, false, null);
 
         rscDfnProps = PropsContainer.getInstance(
             PropsContainer.buildPath(resName),
@@ -145,7 +145,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
             resourceMap,
             rscDfnProps,
             port,
-            transportType
+            transportType,
+            deleted
         );
     }
 
@@ -410,13 +411,14 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
+        objProt.delete(accCtx);
         dbDriver.delete(this, transMgr);
-        deleted = true;
+        deleted.set(true);
     }
 
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted resource definition", null);
         }

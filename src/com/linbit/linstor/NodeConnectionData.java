@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
+import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -36,7 +37,7 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
 
     private final NodeConnectionDataDatabaseDriver dbDriver;
 
-    private boolean deleted = false;
+    private final TransactionSimpleObject<NodeConnectionData, Boolean> deleted;
 
     /*
      * used by getInstance
@@ -91,13 +92,15 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
             ),
             transMgr
         );
+        deleted = new TransactionSimpleObject<>(this, false, null);
 
         dbDriver = LinStor.getNodeConnectionDatabaseDriver();
 
         transObjs = Arrays.asList(
             sourceNode,
             targetNode,
-            props
+            props,
+            deleted
         );
         sourceNode.setNodeConnection(accCtx, this);
         targetNode.setNodeConnection(accCtx, this);
@@ -270,12 +273,12 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
         targetNode.removeNodeConnection(accCtx, this);
 
         dbDriver.delete(this, transMgr);
-        deleted = true;
+        deleted.set(true);
     }
 
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted node connection", null);
         }

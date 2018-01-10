@@ -30,7 +30,7 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
 
     private final SatelliteConnectionDataDatabaseDriver dbDriver;
 
-    private boolean deleted = false;
+    private final TransactionSimpleObject<SatelliteConnectionData, Boolean> deleted;
 
     private SatelliteConnectionData(
         Node node,
@@ -67,12 +67,14 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
 
         port = new TransactionSimpleObject<>(this, portRef, dbDriver.getSatelliteConnectionPortDriver());
         encryptionType = new TransactionSimpleObject<>(this, encryptionTypeRef, dbDriver.getSatelliteConnectionTypeDriver());
+        deleted = new TransactionSimpleObject<>(this, false, null);
 
         transObjs = Arrays.asList(
             node,
             netIf,
             port,
-            encryptionType
+            encryptionType,
+            deleted
         );
     }
 
@@ -201,7 +203,7 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
 
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted satellite connection", null);
         }

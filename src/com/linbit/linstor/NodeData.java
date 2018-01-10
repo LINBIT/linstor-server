@@ -76,7 +76,7 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private transient SatelliteConnection satelliteConnection;
 
-    private boolean deleted = false;
+    private TransactionSimpleObject<NodeData, Boolean> deleted;
 
     /*
      * Only used by getInstance method
@@ -129,6 +129,7 @@ public class NodeData extends BaseTransactionObject implements Node
         resourceMap = new TransactionMap<>(new TreeMap<ResourceName, Resource>(), null);
         netInterfaceMap = new TransactionMap<>(new TreeMap<NetInterfaceName, NetInterface>(), null);
         storPoolMap = new TransactionMap<>(new TreeMap<StorPoolName, StorPool>(), null);
+        deleted = new TransactionSimpleObject<>(this, false, null);
 
         nodeProps = PropsContainer.getInstance(
             PropsContainer.buildPath(nameRef),
@@ -152,7 +153,8 @@ public class NodeData extends BaseTransactionObject implements Node
             netInterfaceMap,
             storPoolMap,
             nodeConnections,
-            nodeProps
+            nodeProps,
+            deleted
         );
     }
 
@@ -545,18 +547,20 @@ public class NodeData extends BaseTransactionObject implements Node
             throw accDeniedExc;
         }
 
+        objProt.delete(accCtx);
         dbDriver.delete(this, transMgr);
-        deleted = true;
+
+        deleted.set(true);
     }
 
     public boolean isDeleted()
     {
-        return deleted;
+        return deleted.get();
     }
 
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted node", null);
         }

@@ -35,7 +35,7 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
     private final NetInterfaceDataDatabaseDriver dbDriver;
 
-    private boolean deleted = false;
+    private final TransactionSimpleObject<NetInterfaceData, Boolean> deleted;
 
     // used by getInstance
     private NetInterfaceData(
@@ -81,8 +81,12 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
             addr,
             dbDriver.getNetInterfaceAddressDriver()
         );
+        deleted = new TransactionSimpleObject<>(this, false, null);
 
-        transObjs = Arrays.<TransactionObject> asList(niAddress);
+        transObjs = Arrays.<TransactionObject> asList(
+            niAddress,
+            deleted
+        );
         ((NodeData) node).addNetInterface(accCtx, this);
     }
 
@@ -213,12 +217,12 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
 
         ((NodeData) niNode).removeNetInterface(accCtx, this);
         dbDriver.delete(this, transMgr);
-        deleted = true;
+        deleted.set(true);
     }
 
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted NetInterface", null);
         }

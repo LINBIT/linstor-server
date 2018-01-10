@@ -11,6 +11,7 @@ import com.linbit.ImplementationError;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
+import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDataDatabaseDriver;
@@ -62,7 +63,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
 
     private final VolumeDataDatabaseDriver dbDriver;
 
-    private boolean deleted = false;
+    private final TransactionSimpleObject<VolumeData, Boolean> deleted;
 
 
     /*
@@ -136,6 +137,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
             ),
             transMgr
         );
+        deleted = new TransactionSimpleObject<>(this, false, null);
 
         transObjs = Arrays.asList(
             resource,
@@ -143,7 +145,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
             storPool,
             volumeConnections,
             volumeProps,
-            flags
+            flags,
+            deleted
         );
 
         ((ResourceData) resRef).putVolume(accCtx, this);
@@ -421,12 +424,12 @@ public class VolumeData extends BaseTransactionObject implements Volume
         }
         ((ResourceData) resource).removeVolume(accCtx, this);
         dbDriver.delete(this, transMgr);
-        deleted = true;
+        deleted.set(true);
     }
 
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted volume", null);
         }

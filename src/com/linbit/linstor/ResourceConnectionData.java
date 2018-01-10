@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
+import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -36,7 +37,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
     private final ResourceConnectionDataDatabaseDriver dbDriver;
 
-    private boolean deleted = false;
+    private final TransactionSimpleObject<ResourceConnectionData, Boolean> deleted;
 
     /*
      * used by getInstance
@@ -111,12 +112,15 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             transMgr
         );
 
+        deleted = new TransactionSimpleObject<>(this, false, null);
+
         dbDriver = LinStor.getResourceConnectionDatabaseDriver();
 
         transObjs = Arrays.asList(
             sourceResource,
             targetResource,
-            props
+            props,
+            deleted
         );
 
         sourceResource.setResourceConnection(accCtx, this);
@@ -296,7 +300,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
         targetResource.removeResourceConnection(accCtx, this);
 
         dbDriver.delete(this, transMgr);
-        deleted = true;
+        deleted.set(true);
     }
 
     @Override
@@ -309,7 +313,7 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
 
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted resource connection", null);
         }

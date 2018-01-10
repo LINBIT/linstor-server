@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMgr;
+import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDataDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -36,7 +37,7 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
 
     private final VolumeConnectionDataDatabaseDriver dbDriver;
 
-    private boolean deleted = false;
+    private final TransactionSimpleObject<VolumeConnectionData, Boolean> deleted;
 
     /*
      * used by getInstance
@@ -115,13 +116,15 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
             ),
             transMgr
         );
+        deleted = new TransactionSimpleObject<>(this, false, null);
 
         dbDriver = LinStor.getVolumeConnectionDatabaseDriver();
 
         transObjs = Arrays.asList(
             sourceVolume,
             targetVolume,
-            props
+            props,
+            deleted
         );
 
         sourceVolume.setVolumeConnection(accCtx, this);
@@ -301,12 +304,12 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
         targetVolume.removeVolumeConnection(accCtx, this);
 
         dbDriver.delete(this, transMgr);
-        deleted = true;
+        deleted.set(true);
     }
 
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted volume connection", null);
         }

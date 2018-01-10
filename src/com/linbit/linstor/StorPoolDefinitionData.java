@@ -11,6 +11,7 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
+import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.StorPoolDfnPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDataDatabaseDriver;
@@ -34,8 +35,7 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     private final StorPoolDefinitionDataDatabaseDriver dbDriver;
     private final TransactionMap<NodeName, StorPool> storPools;
     private final Props props;
-
-    private boolean deleted = false;
+    private final TransactionSimpleObject<StorPoolDefinitionData, Boolean> deleted;
 
     /**
      * Constructor used by {@link StorPoolDefinition#getInstance(AccessContext, StorPoolName, TransactionMgr, boolean)}
@@ -85,13 +85,15 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
             PropsContainer.buildPath(nameRef),
             transMgr
         );
+        deleted = new TransactionSimpleObject<>(this, false, null);
 
         dbDriver = LinStor.getStorPoolDefinitionDataDatabaseDriver();
 
         transObjs = Arrays.<TransactionObject>asList(
             objProt,
             storPools,
-            props
+            props,
+            deleted
         );
     }
 
@@ -242,8 +244,9 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
+        objProt.delete(accCtx);
         dbDriver.delete(this, transMgr);
-        deleted = true;
+        deleted.set(true);
     }
 
     @Override
@@ -251,11 +254,9 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         return new StorPoolDfnPojo(getUuid(), getName().getDisplayName(), getProps(accCtx).map());
     }
 
-
-
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted storage pool definition", null);
         }

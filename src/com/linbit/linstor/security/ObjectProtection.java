@@ -365,6 +365,19 @@ public final class ObjectProtection extends BaseTransactionObject
         cachedAcl.clear();
     }
 
+    /**
+     * Deletes this object protection. In order to do this, the given access context
+     * needs {@link AccessType#CONTROL}.
+     * @param accCtx
+     * @throws AccessDeniedException
+     * @throws SQLException
+     */
+    public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        requireAccess(accCtx, AccessType.CONTROL);
+        dbDriver.deleteOp(objPath, transMgr);
+    }
+
     private void setAcl(Role entryRole, AccessType grantedAccess, AccessControlEntry oldEntry) throws SQLException
     {
         if (isInitialized())

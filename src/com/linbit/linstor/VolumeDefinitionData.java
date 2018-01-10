@@ -66,7 +66,7 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
     private final VolumeDefinitionDataDatabaseDriver dbDriver;
 
-    private boolean deleted = false;
+    private final TransactionSimpleObject<VolumeDefinitionData, Boolean> deleted;
 
     /*
      * used by getInstance
@@ -167,13 +167,15 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             dbDriver.getStateFlagsPersistence(),
             initFlags
         );
+        deleted = new TransactionSimpleObject<>(this, false, null);
 
         transObjs = Arrays.asList(
             vlmDfnProps,
             resourceDfn,
             minorNr,
             volumeSize,
-            flags
+            flags,
+            deleted
         );
 
         ((ResourceDefinitionData) resourceDfn).putVolumeDefinition(accCtx, this);
@@ -390,12 +392,12 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
 
         ((ResourceDefinitionData) resourceDfn).removeVolumeDefinition(accCtx, this);
         dbDriver.delete(this, transMgr);
-        deleted = true;
+        deleted.set(true);
     }
 
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted volume definition", null);
         }

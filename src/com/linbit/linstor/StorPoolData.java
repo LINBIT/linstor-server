@@ -13,6 +13,7 @@ import com.linbit.SatelliteTransactionMgr;
 import com.linbit.TransactionMap;
 import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
+import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDataDatabaseDriver;
@@ -44,7 +45,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
     private final TransactionMap<String, Volume> volumeMap;
 
-    private boolean deleted = false;
+    private final TransactionSimpleObject<StorPoolData, Boolean> deleted;
 
     /*
      * used only by getInstance
@@ -96,12 +97,14 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             PropsContainer.buildPath(storPoolDef.getName(), node.getName()),
             transMgr
         );
+        deleted = new TransactionSimpleObject<>(this, false, null);
 
         dbDriver = LinStor.getStorPoolDataDatabaseDriver();
 
         transObjs = Arrays.<TransactionObject>asList(
             volumeMap,
-            props
+            props,
+            deleted
         );
 
         ((NodeData) nodeRef).addStorPool(accCtx, this);
@@ -122,6 +125,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         node = null;
         dbDriver = null;
         volumeMap = null;
+        deleted = null;
 
         transObjs = Collections.emptyList();
     }
@@ -335,12 +339,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         ((NodeData) node).removeStorPool(accCtx, this);
         ((StorPoolDefinitionData) storPoolDef).removeStorPool(accCtx, this);
         dbDriver.delete(this, transMgr);
-        deleted = true;
+        deleted.set(true);
     }
 
     private void checkDeleted()
     {
-        if (deleted)
+        if (deleted.get())
         {
             throw new ImplementationError("Access to deleted storage pool", null);
         }
