@@ -8,7 +8,7 @@ apply plugin: 'application'
 apply plugin: 'nebula.ospackage-base'
 
 sourceCompatibility = 1.7
-version = '1.0'
+version = '0.1'
 
 sourceSets {
     main {
