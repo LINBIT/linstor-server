@@ -50,11 +50,33 @@ public class TransactionMap<T, U> implements TransactionObject, Map<T, U>
         {
             throw new ImplementationError("setConnection was called AFTER data was manipulated", null);
         }
+
         if (transMgr != null)
         {
-            transMgr.register(this);
-            con = transMgr.dbCon;
-            this.transMgr = transMgr;
+            if (transMgr != this.transMgr)
+            {
+                transMgr.register(this);
+                con = transMgr.dbCon;
+                this.transMgr = transMgr;
+
+                // forward transaction manager on keys
+                for (T k : map.keySet())
+                {
+                    if (k instanceof TransactionObject)
+                    {
+                        ((TransactionObject) k).setConnection(transMgr);
+                    }
+                }
+
+                // forward transaction manager on values
+                for (U v : map.values())
+                {
+                    if (v instanceof TransactionObject)
+                    {
+                        ((TransactionObject) v).setConnection(transMgr);
+                    }
+                }
+            }
         }
         else
         {
