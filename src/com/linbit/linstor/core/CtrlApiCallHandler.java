@@ -49,6 +49,7 @@ public class CtrlApiCallHandler
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
     private final CtrlVlmDfnApiCallHandler vlmDfnApiCallHandler;
     private final CtrlRscApiCallHandler rscApiCallHandler;
+    private final CtrlVlmApiCallHandler vlmApiCallHandler;
     private final CtrlStorPoolDfnApiCallHandler storPoolDfnApiCallHandler;
     private final CtrlStorPoolApiCallHandler storPoolApiCallHandler;
     private final CtrlNodeConnectionApiCallHandler nodeConnApiCallHandler;
@@ -105,11 +106,12 @@ public class CtrlApiCallHandler
         );
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
         rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, resourceListSerializer, apiCtx);
+        vlmApiCallHandler = new CtrlVlmApiCallHandler(controllerRef, apiCtx);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef, storPoolDfnListSerializer);
         storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef, storPoolSerializer, storPoolListSerializer, apiCtx);
-        nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef, nodeSerializer);
-        rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef, rscSerializer);
-        vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef, rscSerializer);
+        nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef, nodeSerializer, apiCtx);
+        rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef, rscSerializer, apiCtx);
+        vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef, rscSerializer, apiCtx);
     }
 
     public void completeSatelliteAuthentication(Peer peer)
@@ -778,7 +780,7 @@ public class CtrlApiCallHandler
             controller.nodesMapLock.writeLock().lock();
             controller.rscDfnMapLock.writeLock().lock();
 
-            apiCallRc = rscApiCallHandler.volumeDeleted(
+            apiCallRc = vlmApiCallHandler.volumeDeleted(
                 accCtx,
                 client,
                 nodeName,

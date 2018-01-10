@@ -136,7 +136,7 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid
                     type = RoCE;
                     break;
                 default:
-                    throw new LinStorRuntimeException(
+                    throw new IllegalArgumentException(
                         "Unknown TransportType: '" + str + "'"
                     );
             }

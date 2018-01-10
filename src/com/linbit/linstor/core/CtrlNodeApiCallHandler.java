@@ -86,16 +86,6 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         Map<String, String> propsMap
     )
     {
-        /*
-         * Usually its better to handle exceptions "close" to their appearance.
-         * However, as in this method almost every other line throws an exception,
-         * the code would get completely unreadable; thus, unmaintainable.
-         *
-         * For that reason there is (almost) only one try block with many catches, and
-         * those catch blocks handle the different cases (commented as <some>Exc<count> in
-         * the try block and a matching "handle <some>Exc<count>" in the catch block)
-         */
-
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
@@ -155,10 +145,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 commit();
                 controller.nodesMap.put(nodeName, node);
 
-                reportSuccess(
-                    "New node '" + nodeNameStr + "' created.",
-                    "Node '" + nodeNameStr + "' UUID is " + node.getUuid()
-                );
+                reportSuccess(node.getUuid());
 
                 if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
                 {
@@ -170,19 +157,19 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             // a report and a corresponding api-response already created. nothing to do here
         }
-        catch (Exception exc)
+        catch (Exception | ImplementationError exc)
         {
-            asExc(
+            reportStatic(
                 exc,
-                "Creation of a node object failed due to an unhandled exception.",
-                ApiConsts.FAIL_UNKNOWN_ERROR
+                ApiCallType.CREATE,
+                getObjectDescriptionInline(nodeNameStr),
+                getObjRefs(nodeNameStr),
+                getVariables(nodeNameStr),
+                apiCallRc,
+                accCtx,
+                client
             );
         }
-        catch (ImplementationError implErr)
-        {
-            asImplError(implErr);
-        }
-
         return apiCallRc;
     }
 
@@ -234,24 +221,24 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             commit();
 
             updateSatellites(node);
-            reportSuccess("Node '" + nodeNameStr + "' updated.");
+            reportSuccess(node.getUuid());
         }
         catch (ApiCallHandlerFailedException ignore)
         {
-            // failure was reported and added to returning apiCallRc
-            // this is only for flow-control.
+            // a report and a corresponding api-response already created. nothing to do here
         }
-        catch (Exception exc)
+        catch (Exception | ImplementationError exc)
         {
-            asExc(
+            reportStatic(
                 exc,
-                "Modifying node '" + nodeNameStr + "' failed due to an unknown exception.",
-                ApiConsts.FAIL_UNKNOWN_ERROR
+                ApiCallType.MODIFY,
+                getObjectDescriptionInline(nodeNameStr),
+                getObjRefs(nodeNameStr),
+                getVariables(nodeNameStr),
+                apiCallRc,
+                accCtx,
+                client
             );
-        }
-        catch (ImplementationError implErr)
-        {
-            asImplError(implErr);
         }
 
         return apiCallRc;
@@ -329,22 +316,16 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
                 if (success)
                 {
-                    String successMessage;
+                    String successMessage = getObjectDescriptionInlineFirstLetterCaps();
                     if (hasRsc)
                     {
                         markDeleted(nodeData);
-                        successMessage = String.format(
-                            "Node '%s' marked for deletion.",
-                            nodeNameStr
-                        );
+                        successMessage += " marked for deletion.";
                     }
                     else
                     {
                         delete(nodeData);
-                        successMessage = String.format(
-                            "Node '%s' deleted.",
-                            nodeNameStr
-                        );
+                        successMessage += " deleted.";
                     }
 
                     commit();
@@ -358,7 +339,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                         updateSatellites(nodeData);
                     }
 
-                    reportSuccess(successMessage);
+                    reportSuccess(
+                        successMessage,
+                        getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + nodeData.getUuid().toString()
+                    );
 
                     // TODO: tell satellites to remove all the corresponding resources and storPools
                     // TODO: if satellites finished, cleanup the storPools and then remove the node from DB
@@ -367,19 +351,19 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (ApiCallHandlerFailedException ignore)
         {
-            // failure was reported and added to returning apiCallRc
-            // this is only for flow-control.
+            // a report and a corresponding api-response already created. nothing to do here
         }
         catch (Exception | ImplementationError exc)
         {
-            // handle any other exception
-            asExc(
+            reportStatic(
                 exc,
-                String.format(
-                    "An unknown exception occured while deleting node '%s'.",
-                    nodeNameStr
-                ),
-                ApiConsts.FAIL_UNKNOWN_ERROR
+                ApiCallType.DELETE,
+                getObjectDescriptionInline(nodeNameStr),
+                getObjRefs(nodeNameStr),
+                getVariables(nodeNameStr),
+                apiCallRc,
+                accCtx,
+                client
             );
         }
 
@@ -512,7 +496,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                         break;
                     default:
                         throw new ImplementationError(
-                            "Unhandeld default case for EncryptionType",
+                            "Unhandled default case for EncryptionType",
                             null
                         );
                 }
@@ -1015,16 +999,32 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         String nodeTypeStr
     )
     {
-        super.setCurrent(accCtx, client, apiCallType, apiCallRc, transMgr);
+        super.setCurrent(
+            accCtx,
+            client,
+            apiCallType,
+            apiCallRc,
+            transMgr,
+            getObjRefs(nodeNameStr),
+            getVariables(nodeNameStr)
+        );
         currentNodeName.set(nodeNameStr);
         currentNodeType.set(nodeTypeStr);
-        Map<String, String> objRefs = currentObjRefs.get();
-        objRefs.clear();
-        objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
-        Map<String, String> vars = currentVariables.get();
-        vars.clear();
-        vars.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
         return this;
+    }
+
+    private Map<String, String> getObjRefs(String nodeNameStr)
+    {
+        Map<String, String> map = new TreeMap<>();
+        map.put(ApiConsts.KEY_NODE, nodeNameStr);
+        return map;
+    }
+
+    private Map<String, String> getVariables(String nodeNameStr)
+    {
+        Map<String, String> map = new TreeMap<>();
+        map.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
+        return map;
     }
 
     @Override
@@ -1036,6 +1036,13 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescriptionInline()
     {
-        return "node '" + currentNodeName.get() +"'";
+        return getObjectDescriptionInline(currentNodeName.get());
     }
+
+    private String getObjectDescriptionInline(String nodeNameStr)
+    {
+        return "node '" + nodeNameStr + "'";
+    }
+
+
 }

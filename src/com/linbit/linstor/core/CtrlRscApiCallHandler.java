@@ -35,7 +35,6 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Volume.VlmApi;
-import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -214,58 +213,43 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            // TODO: AFTER REWORK report ALL stuff
-            reportSuccess(
-                "Resource '" + rscNameStr + "' successfully created on node '" + nodeNameStr + "'."
-            );
+            reportSuccess(rsc.getUuid());
+
             for (Entry<Integer, Volume> entry : vlmMap.entrySet())
             {
-                 reportSuccess(
-                     "Volume with number '" + entry.getKey() + "' on resource '" +
-                     entry.getValue().getResourceDefinition().getName().displayValue + "' on node '" +
-                     entry.getValue().getResource().getAssignedNode().getName().displayValue + "' successfully created",
-                     "Volume UUID is: " + entry.getValue().getUuid().toString()
-                 );
+                ApiCallRcEntry vlmCreatedRcEntry = new ApiCallRcEntry();
+                vlmCreatedRcEntry.setMessageFormat(
+                    "Volume with number '" + entry.getKey() + "' on resource '" +
+                        entry.getValue().getResourceDefinition().getName().displayValue + "' on node '" +
+                        entry.getValue().getResource().getAssignedNode().getName().displayValue + "' successfully created"
+                );
+                vlmCreatedRcEntry.setDetailsFormat(
+                    "Volume UUID is: " + entry.getValue().getUuid().toString()
+                );
+                vlmCreatedRcEntry.setReturnCode(ApiConsts.RC_VLM_CREATED);
+                vlmCreatedRcEntry.putAllObjRef(currentObjRefs.get());
+                vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
+                vlmCreatedRcEntry.putAllVariables(currentVariables.get());
+                vlmCreatedRcEntry.putVariable(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
+
+                apiCallRc.addEntry(vlmCreatedRcEntry);
             }
             updateSatellites(rsc);
             // TODO: if a satellite confirms creation, also log it to controller.info
         }
         catch (ApiCallHandlerFailedException ignore)
         {
-            // exception already reported and added to client's answer-set
+            // a report and a corresponding api-response already created. nothing to do here
         }
-        catch (Exception exc)
+        catch (Exception | ImplementationError exc)
         {
             reportStatic(
                 exc,
-                "An unknown exception occured during creation of resource '" + rscNameStr + "' on node '" +
-                nodeNameStr + "'.",
-                null, // cause
-                null, // details
-                null, // corerction
-                ApiConsts.RC_RSC_CRT_FAIL_UNKNOWN_ERROR,
+                ApiCallType.CREATE,
+                getObjectDescriptionInline(nodeNameStr, rscNameStr),
                 getObjRefs(nodeNameStr, rscNameStr),
                 getVariables(nodeNameStr, rscNameStr),
                 apiCallRc,
-                controller,
-                accCtx,
-                client
-            );
-        }
-        catch (ImplementationError implError)
-        {
-            reportStatic(
-                implError,
-                "An implementation error occured during creation of resource '" + rscNameStr + "' on node '" +
-                nodeNameStr + "'.",
-                null, // cause
-                null, // details
-                null, // corerction
-                ApiConsts.RC_RSC_CRT_FAIL_IMPL_ERROR,
-                getObjRefs(nodeNameStr, rscNameStr),
-                getVariables(nodeNameStr, rscNameStr),
-                apiCallRc,
-                controller,
                 accCtx,
                 client
             );
@@ -351,66 +335,6 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         return nodeId;
     }
 
-    private void notifySatellites(AccessContext accCtx, ResourceData rsc, ApiCallRcImpl apiCallRc)
-    {
-        // TODO: replace this method with super.updateSatellites(Resource) when reworking this API
-        try
-        {
-            // notify all peers that (at least one of) their resource has changed
-            Iterator<Resource> rscIterator = rsc.getDefinition().iterateResource(accCtx);
-            while (rscIterator.hasNext())
-            {
-                Resource currentRsc = rscIterator.next();
-                Peer peer = currentRsc.getAssignedNode().getPeer(apiCtx);
-
-                boolean connected = peer.isConnected();
-                if (connected)
-                {
-                    Message message = peer.createMessage();
-                    byte[] data = rscSerializer.getChangedMessage(currentRsc);
-                    message.setData(data);
-                    connected = peer.sendMessage(message);
-                }
-                if (!connected)
-                {
-                    ApiCallRcEntry notConnected = new ApiCallRcEntry();
-                    notConnected.setReturnCode(RC_RSC_CRT_WARN_NOT_CONNECTED);
-                    String nodeName = currentRsc.getAssignedNode().getName().displayValue;
-                    notConnected.setMessageFormat(
-                        "No active connection to satellite '" + nodeName + "'"
-                    );
-                    notConnected.setDetailsFormat(
-                        "The satellite was added and the controller tries to (re-) establish connection to it." +
-                        "The controller stored the new Resource and as soon the satellite is connected, it will " +
-                        "receive this update."
-                    );
-                    notConnected.putObjRef(ApiConsts.KEY_NODE, nodeName);
-                    notConnected.putObjRef(ApiConsts.KEY_RSC_DFN, currentRsc.getDefinition().getName().displayValue);
-                    notConnected.putVariable(ApiConsts.KEY_NODE_NAME, nodeName);
-                    apiCallRc.addEntry(notConnected);
-                }
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Failed to contact all satellites about a resource change",
-                    accDeniedExc
-                )
-            );
-        }
-        catch (IllegalMessageStateException illegalMessageStateExc)
-        {
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Controller could not send send a message to target node",
-                    illegalMessageStateExc
-                )
-            );
-        }
-    }
-
     public ApiCallRc modifyResource(
         AccessContext accCtx,
         Peer client,
@@ -457,374 +381,25 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            notifySatellites(accCtx, rsc, apiCallRc); // TODO: update this when reworking APIs
-            reportSuccess("Resource '" + rscNameStr + "' on node '" + nodeNameStr + "' modified.");
+            reportSuccess(rsc.getUuid());
+            updateSatellites(rsc);
         }
         catch (ApiCallHandlerFailedException ignore)
         {
-            // failure was reported and added to returning apiCallRc
-            // this is only for flow-control.
-        }
-        catch (Exception exc)
-        {
-            asExc(
-                exc,
-                "Modification of a node failed due to an unknown exception.",
-                ApiConsts.FAIL_UNKNOWN_ERROR
-            );
-        }
-        catch (ImplementationError implErr)
-        {
-            asImplError(implErr);
-        }
-
-        return apiCallRc;
-    }
-
-    private interface ExecuteDelete {
-        void onSuccess(
-            AccessContext accCtx,
-            Peer client,
-            String nodeNameStr,
-            String rscNameStr,
-            ResourceData rscData,
-            TransactionMgr transMgr,
-            ApiCallRcImpl apiCallRc
-        ) throws AccessDeniedException, SQLException;
-    }
-
-    /**
-     * checksForDeletion does all kind of checks to delete/markdelete a resource.
-     * Like does the node exist, does the resource exist, access checks...
-     *
-     * @param accCtx
-     * @param client
-     * @param nodeNameStr
-     * @param rscNameStr
-     * @param execDel Basically a function pointer to execute code if everything went well.
-     * @return The constructed ApiCall return code object
-     */
-    private ApiCallRc checksForDeletion(
-        AccessContext accCtx,
-        Peer client,
-        String nodeNameStr,
-        String rscNameStr,
-        ExecuteDelete execDel
-    )
-    {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-
-        TransactionMgr transMgr = null;
-
-        NodeName nodeName = null;
-        ResourceName rscName = null;
-
-        NodeData node = null;
-        ResourceDefinitionData rscDfn = null;
-        ResourceData rscData = null;
-
-        try
-        {
-            transMgr = new TransactionMgr(controller.dbConnPool);
-
-            nodeName = new NodeName(nodeNameStr);
-            rscName = new ResourceName(rscNameStr);
-
-            node = NodeData.getInstance(
-                accCtx,
-                nodeName,
-                null, // nodeType only needed if we want to persist this entry
-                null, // nodeFlags only needed if we want to persist this entry
-                transMgr,
-                false, // do not persist this entry
-                false // do not throw exception if the entry exists
-            );
-            rscDfn = ResourceDefinitionData.getInstance(
-                accCtx,
-                rscName,
-                null, // port only needed if we want to persist this entry
-                null, // rscFlags only needed if we want to persist this entry
-                null, // secret only needed if we want to persist this entry
-                null, // transportType only needed if we want to persist this entry
-                transMgr,
-                false, // do not persist this entry
-                false // do not throw exception if the entry exists
-            );
-            rscData = ResourceData.getInstance(
-                accCtx,
-                rscDfn,
-                node,
-                null, // nodeId only needed if we want to persist this entry
-                null, // rscFlags only needed if we want to persist this entry
-                transMgr,
-                false, // do not persist this entry
-                false // do not throw exception if the entry exists
-            );
-
-            if (node == null)
-            {
-                ApiCallRcEntry nodeNotFoundEntry = new ApiCallRcEntry();
-                nodeNotFoundEntry.setReturnCode(RC_RSC_DEL_FAIL_NOT_FOUND_NODE);
-                nodeNotFoundEntry.setCauseFormat(
-                    String.format(
-                        "The specified node '%s' could not be found in the database.",
-                        nodeNameStr
-                        )
-                    );
-                    nodeNotFoundEntry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                nodeNotFoundEntry.putObjRef(KEY_NODE, nodeNameStr);
-                nodeNotFoundEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-                apiCallRc.addEntry(nodeNotFoundEntry);
-            }
-            else
-            if (rscDfn == null)
-            {
-                ApiCallRcEntry rscDfnNotFoundEntry = new ApiCallRcEntry();
-                rscDfnNotFoundEntry.setReturnCode(RC_RSC_DEL_FAIL_NOT_FOUND_RSC_DFN);
-                rscDfnNotFoundEntry.setCauseFormat(
-                    String.format(
-                        "The specified resource definition '%s' could not be found in the database.",
-                        rscNameStr
-                        )
-                    );
-                    rscDfnNotFoundEntry.putVariable(KEY_RSC_NAME, rscNameStr);
-                rscDfnNotFoundEntry.putObjRef(KEY_NODE, nodeNameStr);
-                rscDfnNotFoundEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-                apiCallRc.addEntry(rscDfnNotFoundEntry);
-            }
-            else
-            if (rscData == null)
-            {
-                ApiCallRcEntry rscNotFoundEntry = new ApiCallRcEntry();
-                rscNotFoundEntry.setReturnCode(RC_RSC_DEL_WARN_NOT_FOUND);
-                rscNotFoundEntry.setCauseFormat(
-                    String.format(
-                        "The specified resource '%s' on node '%s' could not be found in the database.",
-                        rscNameStr,
-                        nodeNameStr
-                        )
-                    );
-                    rscNotFoundEntry.putVariable(KEY_RSC_NAME, rscNameStr);
-                rscNotFoundEntry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                rscNotFoundEntry.putObjRef(KEY_NODE, nodeNameStr);
-                rscNotFoundEntry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-                apiCallRc.addEntry(rscNotFoundEntry);
-            }
-            else
-            {
-                // call the success action interface
-                execDel.onSuccess(accCtx, client, nodeNameStr, rscNameStr, rscData, transMgr, apiCallRc);
-            }
-        }
-        catch (SQLException sqlExc)
-        {
-            String errorMessage = String.format(
-                "A database error occured while trying to delete the resource '%s' on node '%s'.",
-                nodeNameStr,
-                rscNameStr
-                );
-                controller.getErrorReporter().reportError(
-                    sqlExc,
-                    accCtx,
-                    client,
-                    errorMessage
-                    );
-
-                    ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DEL_FAIL_SQL);
-            entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(sqlExc.getMessage());
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            String errorMessage;
-            if (nodeName == null)
-            {
-                errorMessage = String.format("Given node name '%s' is invalid.", nodeNameStr);
-                entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.setReturnCodeBit(RC_RSC_DEL_FAIL_INVLD_NODE_NAME);
-            }
-            else
-            {
-                errorMessage = String.format("Given resource name '%s' is invalid.", rscNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                entry.setReturnCodeBit(RC_RSC_DEL_FAIL_INVLD_RSC_NAME);
-            }
-            controller.getErrorReporter().reportError(
-                invalidNameExc,
-                accCtx,
-                client,
-                errorMessage
-                );
-                entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(invalidNameExc.getMessage());
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            String action = "Given user has no permission to ";
-            if (node == null)
-            { // accDeniedExc1
-                action += String.format(
-                    "access the node '%s'.",
-                    nodeNameStr
-                );
-                entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                entry.setReturnCodeBit(RC_RSC_DEL_FAIL_ACC_DENIED_NODE);
-            }
-            else
-                if (rscDfn == null)
-                { // accDeniedExc2
-                    action += String.format(
-                        "access the resource definition '%s'.",
-                        rscNameStr
-                    );
-                    entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                    entry.setReturnCodeBit(RC_RSC_DEL_FAIL_ACC_DENIED_RSC_DFN);
-                }
-                else
-                    if (rscData == null)
-                    { // accDeniedExc3
-                        action += String.format(
-                            "access the resource '%s' on node '%s'.",
-                            rscNameStr,
-                            nodeNameStr
-                            );
-                            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                        entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                        entry.setReturnCodeBit(RC_RSC_DEL_FAIL_ACC_DENIED_RSC);
-                    }
-                    else
-                    { // accDeniedExc4
-                        action += String.format(
-                            "delete the resource '%s' on node '%s'.",
-                            rscNameStr,
-                            nodeNameStr
-                            );
-                            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                        entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                        entry.setReturnCodeBit(RC_RSC_DEL_FAIL_ACC_DENIED_VLM_DFN);
-                    }
-            controller.getErrorReporter().reportError(
-                accDeniedExc,
-                accCtx,
-                client,
-                action
-                );
-                entry.setCauseFormat(accDeniedExc.getMessage());
-            entry.setMessageFormat(action);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    String.format(
-                        ".getInstance was called with failIfExists=false, still threw an AlreadyExistsException " +
-                            "(Node name: '%s', resource name: '%s')",
-                        nodeNameStr,
-                        rscNameStr
-                        ),
-                    dataAlreadyExistsExc
-                        )
-                    );
-
-                    ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DEL_FAIL_IMPL_ERROR);
-            entry.setMessageFormat(
-                String.format(
-                    "Failed to delete the resource '%s' on node '%s' due to an implementation error.",
-                    rscNameStr,
-                    nodeNameStr
-                    )
-                    );
-                    entry.setCauseFormat(dataAlreadyExistsExc.getMessage());
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-
-            apiCallRc.addEntry(entry);
+            // a report and a corresponding api-response already created. nothing to do here
         }
         catch (Exception | ImplementationError exc)
         {
-            // handle any other exception
-            String errorMessage = String.format(
-                "An unknown exception occured while deleting resource '%s' on node '%s'.",
-                rscNameStr,
-                nodeNameStr
-                );
-                controller.getErrorReporter().reportError(
-                    exc,
-                    accCtx,
-                    client,
-                    errorMessage
-                    );
-                    ApiCallRcEntry entry = new ApiCallRcEntry();
-            entry.setReturnCodeBit(RC_RSC_DEL_FAIL_UNKNOWN_ERROR);
-            entry.setMessageFormat(errorMessage);
-            entry.setCauseFormat(exc.getMessage());
-            entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-            entry.putVariable(KEY_RSC_NAME, rscNameStr);
-            entry.putObjRef(KEY_NODE, nodeNameStr);
-            entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-
-            apiCallRc.addEntry(entry);
-        }
-
-        if (transMgr != null)
-        {
-            if (transMgr.isDirty())
-            {
-                try
-                {
-                    transMgr.rollback();
-                }
-                catch (SQLException sqlExc)
-                {
-                    String errorMessage = String.format(
-                        "A database error occured while trying to rollback the deletion of " +
-                            "resource '%s' on node '%s'.",
-                        rscNameStr,
-                        nodeNameStr
-                    );
-                    controller.getErrorReporter().reportError(
-                        sqlExc,
-                        accCtx,
-                        client,
-                        errorMessage
-                    );
-
-                    ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(RC_RSC_DEL_FAIL_SQL_ROLLBACK);
-                    entry.setMessageFormat(errorMessage);
-                    entry.setCauseFormat(sqlExc.getMessage());
-                    entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                    entry.putObjRef(KEY_NODE, nodeNameStr);
-                    entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                    entry.putVariable(KEY_RSC_NAME, rscNameStr);
-
-                    apiCallRc.addEntry(entry);
-                }
-            }
-            controller.dbConnPool.returnConnection(transMgr);
+            reportStatic(
+                exc,
+                ApiCallType.MODIFY,
+                getObjectDescriptionInline(nodeNameStr, rscNameStr),
+                getObjRefs(nodeNameStr, rscNameStr),
+                getVariables(nodeNameStr, rscNameStr),
+                apiCallRc,
+                accCtx,
+                client
+            );
         }
 
         return apiCallRc;
@@ -837,62 +412,66 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         String rscNameStr
     )
     {
-        ApiCallRc apiCallRc = checksForDeletion(accCtx, client, nodeNameStr, rscNameStr, new ExecuteDelete() {
-            @Override
-            public void onSuccess(
-                    AccessContext accCtx,
-                    Peer client,
-                    String nodeNameStr,
-                    String rscNameStr,
-                    ResourceData rscData,
-                    TransactionMgr transMgr,
-                    ApiCallRcImpl apiCallRc) throws AccessDeniedException, SQLException
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.DELETE,
+                apiCallRc,
+                null, // create new transMgr
+                nodeNameStr,
+                rscNameStr
+            );
+        )
+        {
+            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr);
+
+            int volumeCount = rscData.getVolumeCount();
+            String successMessage;
+            String details;
+            if (volumeCount > 0)
             {
-                int volumeCount = rscData.getVolumeCount();
-                rscData.setConnection(transMgr);
-                String successMessage = "";
-
-                if (volumeCount > 0)
-                {
-                    successMessage = String.format(
-                        "Resource '%s' marked to be deleted from node '%s'.",
-                        rscNameStr,
-                        nodeNameStr
-                    );
-                    rscData.markDeleted(accCtx);
-                }
-                else
-                {
-                    successMessage = String.format(
-                        "Resource '%s' is deleted from node '%s'.",
-                        rscNameStr,
-                        nodeNameStr
-                    );
-                    rscData.delete(accCtx);
-                }
-                transMgr.commit();
-
-                if (volumeCount > 0)
-                {
-                    // notify satellites
-                    updateSatellites(rscData);
-                }
-
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_RSC_DELETED);
-                entry.setMessageFormat(successMessage);
-                entry.putObjRef(KEY_NODE, nodeNameStr);
-                entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                entry.putObjRef(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                apiCallRc.addEntry(entry);
-
-                // TODO: tell satellites to remove all the corresponding resources
-                // TODO: if satellites are finished (or no satellite had such a resource deployed)
-                // remove the rscDfn from the DB
-                controller.getErrorReporter().logInfo(successMessage);
+                successMessage = getObjectDescriptionInlineFirstLetterCaps() + " marked for deletion.";
+                details = getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + rscData.getUuid();
+                markDeleted(rscData);
             }
-        });
+            else
+            {
+                successMessage = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
+                details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscData.getUuid();
+                delete(rscData);
+            }
+
+            commit();
+
+            if (volumeCount > 0)
+            {
+                // notify satellites
+                updateSatellites(rscData);
+            }
+
+            reportSuccess(successMessage, details);
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // a report and a corresponding api-response already created. nothing to do here
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            reportStatic(
+                exc,
+                ApiCallType.DELETE,
+                getObjectDescriptionInline(nodeNameStr, rscNameStr),
+                getObjRefs(nodeNameStr, rscNameStr),
+                getVariables(nodeNameStr, rscNameStr),
+                apiCallRc,
+                accCtx,
+                client
+            );
+        }
+
 
         return apiCallRc;
     }
@@ -914,125 +493,55 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         String rscNameStr
     )
     {
-        ApiCallRc apiCallRc = checksForDeletion(accCtx, client, nodeNameStr, rscNameStr, new ExecuteDelete() {
-            @Override
-            public void onSuccess(
-                    AccessContext accCtx,
-                    Peer client,
-                    String nodeNameStr,
-                    String rscNameStr,
-                    ResourceData rscData,
-                    TransactionMgr transMgr,
-                    ApiCallRcImpl apiCallRc) throws AccessDeniedException, SQLException
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try (
+            AbsApiCallHandler basicallyThis = setCurrent(
+                accCtx,
+                client,
+                ApiCallType.DELETE,
+                apiCallRc,
+                null, // create new transMgr
+                nodeNameStr,
+                rscNameStr
+            );
+        )
+        {
+            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr);
+
+            ResourceDefinition rscDfn = rscData.getDefinition();
+            delete(rscData);
+            commit();
+
+            // call cleanup if resource definition is empty
+            if (rscDfn.getResourceCount() == 0)
             {
-                ResourceDefinition rscDfn = rscData.getDefinition();
-                rscData.setConnection(transMgr);
-                rscData.delete(accCtx);
-                transMgr.commit();
-
-                // call cleanup if resource definition is empty
-                if (rscDfn.getResourceCount() == 0)
-                {
-                    controller.cleanup();
-                }
-
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_RSC_DELETED);
-                String successMessage = String.format(
-                    "Resource '%s' is deleted from node '%s'.",
-                    rscNameStr,
-                    nodeNameStr
-                );
-                entry.setMessageFormat(successMessage);
-                entry.putObjRef(KEY_NODE, nodeNameStr);
-                entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                entry.putObjRef(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                apiCallRc.addEntry(entry);
-
-                controller.getErrorReporter().logInfo(successMessage);
+                controller.cleanup();
             }
-        });
+
+            reportSuccess(rscData.getUuid());
+        }
+        catch (ApiCallHandlerFailedException ignore)
+        {
+            // a report and a corresponding api-response already created. nothing to do here
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            reportStatic(
+                exc,
+                ApiCallType.MODIFY,
+                getObjectDescriptionInline(nodeNameStr, rscNameStr),
+                getObjRefs(nodeNameStr, rscNameStr),
+                getVariables(nodeNameStr, rscNameStr),
+                apiCallRc,
+                accCtx,
+                client
+            );
+        }
 
         return apiCallRc;
     }
 
-    ApiCallRc volumeDeleted(
-        AccessContext accCtx,
-        Peer client,
-        String nodeNameStr,
-        String rscNameStr,
-        final int volumeNr
-    )
-    {
-        ApiCallRc apiCallRc = checksForDeletion(accCtx, client, nodeNameStr, rscNameStr, new ExecuteDelete() {
-            @Override
-            public void onSuccess(
-                    AccessContext accCtx,
-                    Peer client,
-                    String nodeNameStr,
-                    String rscNameStr,
-                    ResourceData rscData,
-                    TransactionMgr transMgr,
-                    ApiCallRcImpl apiCallRc) throws AccessDeniedException, SQLException
-            {
-                VolumeNumber volumeNumber = null;
-                try {
-                    volumeNumber = new VolumeNumber(volumeNr);
-                } catch (ValueOutOfRangeException exc) {
-                    String errorMessage = String.format(
-                        "Volume number '%d' out of range",
-                        volumeNr
-                    );
-                    controller.getErrorReporter().reportError(
-                        exc,
-                        accCtx,
-                        client,
-                        errorMessage
-                    );
-                    ApiCallRcEntry entry = new ApiCallRcEntry();
-                    entry.setReturnCodeBit(RC_RSC_DEL_FAIL_UNKNOWN_ERROR);
-                    entry.setMessageFormat(errorMessage);
-                    entry.setCauseFormat(exc.getMessage());
-                    entry.putVariable(KEY_NODE_NAME, nodeNameStr);
-                    entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                    entry.putObjRef(KEY_NODE, nodeNameStr);
-                    entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                    entry.putObjRef(KEY_VLM_NR, Integer.toString(volumeNr));
-
-                    apiCallRc.addEntry(entry);
-                    return;
-                }
-
-                Volume vol = rscData.getVolume(volumeNumber);
-                vol.delete(accCtx);
-
-                transMgr.commit();
-
-                //TODO check call cleanup??
-
-                ApiCallRcEntry entry = new ApiCallRcEntry();
-                entry.setReturnCodeBit(RC_VLM_DELETED);
-                String successMessage = String.format(
-                    "VolumeNr '%d' on resource '%s' is deleted from node '%s'.",
-                    volumeNr,
-                    rscNameStr,
-                    nodeNameStr
-                );
-                entry.setMessageFormat(successMessage);
-                entry.putObjRef(KEY_NODE, nodeNameStr);
-                entry.putObjRef(KEY_RSC_DFN, rscNameStr);
-                entry.putObjRef(KEY_NODE_NAME, nodeNameStr);
-                entry.putVariable(KEY_RSC_NAME, rscNameStr);
-                entry.putObjRef(KEY_VLM_NR, Integer.toString(volumeNr));
-                apiCallRc.addEntry(entry);
-
-                controller.getErrorReporter().logInfo(successMessage);
-            }
-        });
-
-        return apiCallRc;
-    }
 
     byte[] listResources(int msgId, AccessContext accCtx, Peer client)
     {
@@ -1205,19 +714,17 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         String rscNameStr
     )
     {
-        super.setCurrent(accCtx, peer, type, apiCallRc, transMgr);
+        super.setCurrent(
+            accCtx,
+            peer,
+            type,
+            apiCallRc,
+            transMgr,
+            getObjRefs(nodeNameStr, rscNameStr),
+            getVariables(nodeNameStr, rscNameStr)
+        );
         currentNodeName.set(nodeNameStr);
         currentRscName.set(rscNameStr);
-
-        Map<String, String> objRefs = currentObjRefs.get();
-        objRefs.clear();
-        objRefs.put(ApiConsts.KEY_NODE, nodeNameStr);
-        objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
-        Map<String, String> vars = currentVariables.get();
-        vars.clear();
-        vars.put(ApiConsts.KEY_NODE_NAME, nodeNameStr);
-        vars.put(ApiConsts.KEY_RSC_NAME, rscNameStr);
-
         return this;
     }
 
@@ -1230,7 +737,12 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescriptionInline()
     {
-        return "resource '" + currentRscName.get() + "' on node '" + currentNodeName.get() + "'";
+        return getObjectDescriptionInline(currentNodeName.get(), currentRscName.get());
+    }
+
+    private String getObjectDescriptionInline(String nodeNameStr, String rscNameStr)
+    {
+        return "resource '" + rscNameStr + "' on node '" + nodeNameStr + "'";
     }
 
     private Map<String, String> getObjRefs(String nodeNameStr, String rscNameStr)
@@ -1285,48 +797,6 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 dataAlreadyExistsExc,
                 "A " + getObjectDescriptionInline() + " already exists.",
                 ApiConsts.FAIL_EXISTS_RSC
-            );
-        }
-    }
-
-    private ResourceData loadRsc(String nodeName, String rscName) throws ApiCallHandlerFailedException
-    {
-        Node node = loadNode(nodeName, true);
-        ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
-
-        try
-        {
-            return ResourceData.getInstance(
-                currentAccCtx.get(),
-                rscDfn,
-                node,
-                null,
-                null,
-                currentTransMgr.get(),
-                false,
-                false
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "loading resource '" + rscName + "' on node '" + nodeName + "'.",
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ImplementationError(
-                "Loading a resource caused DataAlreadyExistsException",
-                dataAlreadyExistsExc
-            );
-        }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(
-                sqlExc,
-                "loading resource '" + rscName + "' on node '" + nodeName + "'."
             );
         }
     }
@@ -1391,6 +861,51 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         {
             throw asImplError(accDeniedExc);
         }
+    }
 
+    private void markDeleted(ResourceData rscData)
+    {
+        try
+        {
+            rscData.markDeleted(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "mark " + getObjectDescriptionInline() + " as deleted",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "marking " + getObjectDescriptionInline() + " as deleted"
+            );
+        }
+    }
+
+    private void delete(ResourceData rscData)
+    {
+        try
+        {
+            rscData.delete(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "delete " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "deleting " + getObjectDescriptionInline()
+            );
+        }
     }
 }

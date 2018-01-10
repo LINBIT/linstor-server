@@ -4,6 +4,8 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
@@ -15,6 +17,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
@@ -55,15 +58,17 @@ abstract class AbsApiCallHandler implements AutoCloseable
             this.opMask = opMask;
         }
     }
+
     private final long objMask;
 
     protected final ThreadLocal<AccessContext> currentAccCtx = new ThreadLocal<>();
-    protected final ThreadLocal<Peer> currentPeer = new ThreadLocal<>();
+    protected final ThreadLocal<Peer> currentClient = new ThreadLocal<>();
     protected final ThreadLocal<ApiCallType> currentApiCallType = new ThreadLocal<>();
     protected final ThreadLocal<ApiCallRcImpl> currentApiCallRc = new ThreadLocal<>();
     protected final ThreadLocal<TransactionMgr> currentTransMgr = new ThreadLocal<>();
     protected final ThreadLocal<Map<String, String>> currentObjRefs = new ThreadLocal<>();
     protected final ThreadLocal<Map<String, String>> currentVariables = new ThreadLocal<>();
+
     protected final Controller controller;
     protected final AccessContext apiCtx;
 
@@ -88,14 +93,16 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     protected AbsApiCallHandler setCurrent(
         AccessContext accCtx,
-        Peer peer,
+        Peer client,
         ApiCallType type,
         ApiCallRcImpl apiCallRc,
-        TransactionMgr transMgr
+        TransactionMgr transMgr,
+        Map<String, String> objRefs,
+        Map<String, String> vars
     )
     {
         currentAccCtx.set(accCtx);
-        currentPeer.set(peer);
+        currentClient.set(client);
         currentApiCallType.set(type);
         currentApiCallRc.set(apiCallRc);
         if (transMgr == null)
@@ -106,8 +113,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             currentTransMgr.set(transMgr);
         }
-        currentObjRefs.set(new TreeMap<String, String>());
-        currentVariables.set(new TreeMap<String, String>());
+        currentObjRefs.set(objRefs);
+        currentVariables.set(vars);
         return this;
     }
 
@@ -117,7 +124,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         rollbackIfDirty();
 
         currentAccCtx.set(null);
-        currentPeer.set(null);
+        currentClient.set(null);
         currentApiCallType.set(null);
         currentApiCallRc.set(null);
         currentObjRefs.set(null);
@@ -252,7 +259,23 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final String getAction(String crtAction, String modAction, String delAction)
     {
-        switch (currentApiCallType.get())
+        return getAction(crtAction, modAction, delAction, currentApiCallType.get());
+    }
+
+    /**
+     * Depending on the parameter apiCallType, this method returns the first parameter when the
+     * apiCallType is {@link ApiCallType#CREATE}, the second for {@link ApiCallType#MODIFY} or the third
+     * for {@link ApiCallType#DELETE}. The default case throws an {@link ImplementationError}.
+     *
+     * @param crtAction
+     * @param modAction
+     * @param delAction
+     * @param apiCallType
+     * @return
+     */
+    protected final String getAction(String crtAction, String modAction, String delAction, ApiCallType apiCallType)
+    {
+        switch (apiCallType)
         {
             case CREATE:
                 return crtAction;
@@ -262,7 +285,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 return modAction;
             default:
                 throw new ImplementationError(
-                    "Unknown api call type: " + currentApiCallType.get(),
+                    "Unknown api call type: " + apiCallType,
                     null
                 );
         }
@@ -382,6 +405,48 @@ abstract class AbsApiCallHandler implements AutoCloseable
         catch (SQLException sqlExc)
         {
             throw asSqlExc(sqlExc, "loading resource definition '" + rscName.displayValue + "'.");
+        }
+    }
+
+    protected ResourceData loadRsc(String nodeName, String rscName) throws ApiCallHandlerFailedException
+    {
+        Node node = loadNode(nodeName, true);
+        ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
+
+        try
+        {
+            return ResourceData.getInstance(
+                currentAccCtx.get(),
+                rscDfn,
+                node,
+                null,
+                null,
+                currentTransMgr.get(),
+                false,
+                false
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "loading resource '" + rscName + "' on node '" + nodeName + "'.",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ImplementationError(
+                "Loading a resource caused DataAlreadyExistsException",
+                dataAlreadyExistsExc
+            );
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "loading resource '" + rscName + "' on node '" + nodeName + "'."
+            );
         }
     }
 
@@ -796,7 +861,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         controller.getErrorReporter().reportError(
             throwable,
             currentAccCtx.get(),
-            currentPeer.get(),
+            currentClient.get(),
             errorMsg
         );
         addAnswer(errorMsg, causeMsg, detailsMsg, correctionMsg, retCode);
@@ -865,6 +930,111 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     /**
      * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the given
+     * {@link ApiCallRcImpl} with a generated error message.
+     * This method can be called from the catch / finally section after the try-with-resource.
+     * @param exc
+     * @param type
+     * @param objDescr
+     * @param objRefs
+     * @param variables
+     * @param apiCallRc
+     * @param accCtx
+     * @param peer
+     */
+    protected void reportStatic (
+        Throwable exc,
+        ApiCallType type,
+        String objDescr,
+        Map<String, String> objRefs,
+        Map<String, String> variables,
+        ApiCallRcImpl apiCallRc,
+        AccessContext accCtx,
+        Peer peer
+    )
+    {
+        String errorType;
+        long retCode = objMask | type.opMask;
+        if (exc instanceof ImplementationError)
+        {
+            errorType = "implementation error";
+            retCode |= ApiConsts.FAIL_IMPL_ERROR;
+        }
+        else
+        {
+            errorType = "unknown exception";
+            retCode |= ApiConsts.FAIL_UNKNOWN_ERROR;
+        }
+
+        reportStatic(
+            exc,
+            getAction("Creation", "Modification", "Deletion", type) + " of " + objDescr + " failed due to an " +
+            errorType + ".",
+            retCode,
+            objRefs,
+            variables,
+            apiCallRc,
+            controller,
+            accCtx,
+            peer
+        );
+    }
+
+
+    /**
+     * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the given
+     * {@link ApiCallRcImpl}.
+     * The only difference between this method and {@link #report(Throwable, String, long)}
+     * is that this method does not access non-static variables. This method also calls
+     * {@link #addAnswerStatic(String, String, String, String, long, Map, Map, ApiCallRcImpl)} for
+     * adding an answer to the {@link ApiCallRcImpl} (cause, details and correction messages are filled
+     * with null values).
+     *
+     * @param throwable
+     * @param errorMsg
+     * @param retCode
+     * @param objRefs,
+     * @param variables
+     * @param apiCallRc,
+     * @param controller,
+     * @param accCtx,
+     * @param peer
+     */
+    protected static final void reportStatic(
+        Throwable throwable,
+        String errorMsg,
+        long retCode,
+        Map<String, String> objRefs,
+        Map<String, String> variables,
+        ApiCallRcImpl apiCallRc,
+        Controller controller,
+        AccessContext accCtx,
+        Peer peer
+        )
+    {
+        if (throwable == null)
+        {
+            throwable = new LinStorException(errorMsg);
+        }
+        controller.getErrorReporter().reportError(
+            throwable,
+            accCtx,
+            peer,
+            errorMsg
+        );
+        addAnswerStatic(
+            errorMsg,
+            null,
+            null,
+            null,
+            retCode,
+            objRefs,
+            variables,
+            apiCallRc
+        );
+    }
+
+    /**
+     * Reports the given {@link Throwable} to controller's {@link ErrorReporter} and the given
      * {@link ApiCallRcImpl}.
      * The only difference between this method and {@link #report(Throwable, String, String, String, String, long)}
      * is that this method does not access non-static variables. This method also calls
@@ -877,6 +1047,12 @@ abstract class AbsApiCallHandler implements AutoCloseable
      * @param detailsMsg
      * @param correctionMsg
      * @param retCode
+     * @param objRefs
+     * @param variables
+     * @param apiCallRc
+     * @param controller
+     * @param accCtx
+     * @param peer
      */
     protected static final void reportStatic(
         Throwable throwable,
@@ -964,6 +1140,43 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
 
         apiCallRc.addEntry(entry);
+    }
+
+    /**
+     * Generates a default success report depending on the current {@link ApiCallType}.
+     * Inserts the given UUID as details-message
+     * @param msg
+     */
+    protected final void reportSuccess(UUID uuid)
+    {
+        currentObjRefs.get().put(ApiConsts.KEY_UUID, uuid.toString());
+
+        switch (currentApiCallType.get())
+        {
+            case CREATE:
+                reportSuccess(
+                    "New " + getObjectDescriptionInline() + " created.",
+                    getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + uuid.toString()
+                );
+                break;
+            case DELETE:
+                reportSuccess(
+                    getObjectDescriptionInlineFirstLetterCaps() + " deleted.",
+                    getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + uuid.toString()
+                );
+                break;
+            case MODIFY:
+                reportSuccess(
+                    getObjectDescriptionInlineFirstLetterCaps() + " updated.",
+                    getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + uuid.toString()
+                );
+                break;
+            default:
+                throw new ImplementationError(
+                    "Unknown api call type: " + currentApiCallType.get(),
+                    null
+                );
+        }
     }
 
     /**
@@ -1105,16 +1318,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
         throw asExc(
             throwable,
-            "The " + getObjectDescriptionInline() + " could not be " + getAction("created", "deleted", "modified") +
-            " due to an implementation error",
+            "The " + getObjectDescriptionInline() + " could not be " +
+                getAction("created", "deleted", "modified") + " due to an implementation error",
             ApiConsts.FAIL_IMPL_ERROR
         );
-    }
-
-    protected final ApiCallHandlerFailedException missingNode(String nodeNameStr)
-    {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     protected TransactionMgr createNewTransMgr() throws ApiCallHandlerFailedException
@@ -1362,6 +1569,12 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected CtrlSerializer<StorPool> getStorPoolSerializer()
     {
         return null;
+    }
+
+    protected String getObjectDescriptionInlineFirstLetterCaps()
+    {
+        String objDescrLower = getObjectDescriptionInline();
+        return objDescrLower.substring(0, 1).toUpperCase() + objDescrLower.substring(1);
     }
 
     protected abstract String getObjectDescription();
