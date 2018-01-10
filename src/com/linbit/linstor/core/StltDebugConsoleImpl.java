@@ -50,8 +50,8 @@ class StltDebugConsoleImpl extends BaseDebugConsole
             "CmdSetTraceMode",
             "CmdDisplayReport",
             "CmdDisplayReportList",
+            "CmdRunDeviceManager",
             "CmdTestErrorLog",
-            "CmdSetTraceMode",
             "CmdShutdown"
         };
         public static final String STLT_COMMAND_CLASS_PKG = "com.linbit.linstor.debug";
