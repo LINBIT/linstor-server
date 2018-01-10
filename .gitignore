@@ -15,6 +15,7 @@ nbproject/project.xml
 !test-data
 !scripts/
 !Makefile
+!README.md
 test-data/*
 test-support/TestProcess
 test-support/TestOutput
