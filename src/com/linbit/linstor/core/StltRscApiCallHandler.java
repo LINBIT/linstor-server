@@ -162,11 +162,15 @@ class StltRscApiCallHandler
         rscDfnProps.putAll(rscRawData.getRscDfnProps());
         rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
 
-        Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
-        if (!rscIterator.hasNext())
+        // merge vlmDfns
         {
-            // our rscDfn is empty
-            // that means, just create everything we need
+            Map<VolumeNumber, VolumeDefinition> vlmDfnsToDelete = new TreeMap<>();
+            Iterator<VolumeDefinition> iterateVolumeDfn = rscDfn.iterateVolumeDfn(apiCtx);
+            while (iterateVolumeDfn.hasNext())
+            {
+                VolumeDefinition vlmDfn = iterateVolumeDfn.next();
+                vlmDfnsToDelete.put(vlmDfn.getVolumeNumber(), vlmDfn);
+            }
 
             for (VolumeDefinition.VlmDfnApi vlmDfnRaw : rscRawData.getVlmDfns())
             {
@@ -185,7 +189,28 @@ class StltRscApiCallHandler
                 Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
                 vlmDfnPropsMap.clear();
                 vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
+
+                vlmDfnsToDelete.remove(vlmNr);
             }
+
+            for (Entry<VolumeNumber, VolumeDefinition> entry : vlmDfnsToDelete.entrySet())
+            {
+                 VolumeDefinition vlmDfn = entry.getValue();
+                 Iterator<Volume> iterateVolumes = vlmDfn.iterateVolumes(apiCtx);
+                 while (iterateVolumes.hasNext())
+                 {
+                     Volume vlm = iterateVolumes.next();
+                     vlm.delete(apiCtx);
+                 }
+                 vlmDfn.delete(apiCtx);
+            }
+        }
+
+        Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
+        if (!rscIterator.hasNext())
+        {
+            // our rscDfn is empty
+            // that means, just create everything we need
 
             NodeData localNode = satellite.getLocalNode();
 
@@ -248,7 +273,6 @@ class StltRscApiCallHandler
         else
         {
             // iterator contains at least one resource.
-
             List<Resource> removedList = new ArrayList<>();
             List<Resource> newResources = new ArrayList<>();
             List<Resource> modifiedResources = new ArrayList<>();

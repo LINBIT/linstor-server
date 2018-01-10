@@ -406,12 +406,13 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     @Override
     public VlmDfnApi getApiData(AccessContext accCtx) throws AccessDeniedException {
         return new VlmDfnPojo(
-                getUuid(),
-                getVolumeNumber().value,
-                getMinorNr(accCtx).value,
-                getVolumeSize(accCtx),
-                getFlags().getFlagsBits(accCtx),
-                getProps(accCtx).map());
+            getUuid(),
+            getVolumeNumber().value,
+            getMinorNr(accCtx).value,
+            getVolumeSize(accCtx),
+            getFlags().getFlagsBits(accCtx),
+            getProps(accCtx).map()
+        );
     }
 
 
