@@ -35,10 +35,10 @@ public interface Volume extends TransactionObject, DbgInstanceUuid
     public VolumeConnection getVolumeConnection(AccessContext dbCtx, Volume otherVol)
         throws AccessDeniedException;
 
-    public void setVolumeConnection(AccessContext accCtx, VolumeConnectionData volumeConnection)
+    public void setVolumeConnection(AccessContext accCtx, VolumeConnection volumeConnection)
         throws AccessDeniedException;
 
-    public void removeVolumeConnection(AccessContext accCtx, VolumeConnectionData volumeConnection)
+    public void removeVolumeConnection(AccessContext accCtx, VolumeConnection volumeConnection)
         throws AccessDeniedException;
 
     public StorPool getStorPool(AccessContext accCtx) throws AccessDeniedException;

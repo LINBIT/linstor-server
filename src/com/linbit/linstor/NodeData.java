@@ -527,6 +527,24 @@ public class NodeData extends BaseTransactionObject implements Node
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
 
+        List<NodeConnection> deletedNodeConns = new ArrayList<>();
+        try
+        {
+            for (NodeConnection nodeConn : nodeConnections.values())
+            {
+                nodeConn.delete(accCtx);
+                deletedNodeConns.add(nodeConn);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            for (NodeConnection deletedNodeConn : deletedNodeConns)
+            {
+                setNodeConnection(accCtx, deletedNodeConn);
+            }
+            throw accDeniedExc;
+        }
+
         dbDriver.delete(this, transMgr);
         deleted = true;
     }

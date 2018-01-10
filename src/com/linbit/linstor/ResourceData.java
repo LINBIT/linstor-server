@@ -490,13 +490,24 @@ public class ResourceData extends BaseTransactionObject implements Resource
             ((NodeData) assgNode).removeResource(accCtx, this);
             synchronized (resourceDfn)
             {
+                List<ResourceConnection> deletedRscConns = new ArrayList<>();
                 try
                 {
                     ((ResourceDefinitionData) resourceDfn).removeResource(accCtx, this);
+
+                    for (ResourceConnection rscConn : resourceConnections.values())
+                    {
+                        rscConn.delete(accCtx);
+                        deletedRscConns.add(rscConn);
+                    }
                 }
                 catch (AccessDeniedException accessDeniedExc)
                 {
                     ((NodeData) assgNode).addResource(accCtx, this);
+                    for (ResourceConnection deletedRscConn : deletedRscConns)
+                    {
+                        setResourceConnection(accCtx, deletedRscConn);
+                    }
                     throw accessDeniedExc;
                 }
             }
