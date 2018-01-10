@@ -601,16 +601,8 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         {
             NodeName nodeName = new NodeName(nodeNameStr);
 
-            TransactionMgr transMgr = new TransactionMgr(controller.dbConnPool);
-            NodeData node = NodeData.getInstance(
-                apiCtx,
-                nodeName,
-                null,
-                null,
-                transMgr,
-                false,
-                false
-            );
+            Node node = controller.nodesMap.get(nodeName);
+
             if (node != null)
             {
                 ResourceName rscName = new ResourceName(rscNameStr);
@@ -654,17 +646,6 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 );
                 satellitePeer.closeConnection();
             }
-            transMgr.rollback(); // just to be sure
-            controller.dbConnPool.returnConnection(transMgr);
-        }
-        catch (SQLException sqlExc)
-        {
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Could not create a transMgr",
-                    sqlExc
-                )
-            );
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -690,15 +671,6 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 new ImplementationError(
                     "Failed to respond to resource data request",
                     illegalMessageStateExc
-                )
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            controller.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Read-only NodeData.getInstance threw a dataAlreadyExistsException",
-                    dataAlreadyExistsExc
                 )
             );
         }
