@@ -49,13 +49,12 @@ public class NotifyVolumeDeleted extends BaseProtoApiCall {
         throws IOException
     {
         MsgIntDelVlm.MsgDelVlm msgDelVlm = MsgIntDelVlm.MsgDelVlm.parseDelimitedFrom(msgDataIn);
-        ApiCallRc apiCallRc = controller.getApiCallHandler().volumeDeleted(
+        controller.getApiCallHandler().volumeDeleted(
                 accCtx,
                 client,
                 msgDelVlm.getNodeName(),
                 msgDelVlm.getRscName(),
-                msgDelVlm.getVlmNr());
-
-        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
+                msgDelVlm.getVlmNr()
+        );
     }
 }

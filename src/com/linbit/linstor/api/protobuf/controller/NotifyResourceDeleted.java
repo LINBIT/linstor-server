@@ -54,13 +54,11 @@ public class NotifyResourceDeleted extends BaseProtoApiCall {
         throws IOException
     {
         MsgDelRscOuterClass.MsgDelRsc msgDeleteRsc = MsgDelRscOuterClass.MsgDelRsc.parseDelimitedFrom(msgDataIn);
-        ApiCallRc apiCallRc = controller.getApiCallHandler().resourceDeleted(
+        controller.getApiCallHandler().resourceDeleted(
             accCtx,
             client,
             msgDeleteRsc.getNodeName(),
             msgDeleteRsc.getRscName()
         );
-
-        super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }
 }
