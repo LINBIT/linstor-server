@@ -1,6 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -13,9 +12,11 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Resource;
@@ -34,10 +35,17 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
+import com.linbit.linstor.netcom.IllegalMessageStateException;
+import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import java.io.IOException;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 
 class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
@@ -45,6 +53,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
     private final ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
 
+    private final InterComSerializer interComSerializer;
     private final CtrlSerializer<Resource> rscSerializer;
     private final CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializer;
 
@@ -53,6 +62,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         Controller controllerRef,
         CtrlSerializer<Resource> rscSerializerRef,
         CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializerRef,
+        InterComSerializer interComSerializer,
         AccessContext apiCtxRef
     )
     {
@@ -60,6 +70,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         super.setNullOnAutoClose(currentRscNameStr);
         rscSerializer = rscSerializerRef;
         rscDfnListSerializer = rscDfnListSerializerRef;
+        this.interComSerializer = interComSerializer;
     }
 
     @Override
@@ -363,6 +374,94 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    void handlePrimaryResourceRequest(
+        AccessContext accCtx,
+        Peer satellite,
+        int msgId,
+        String rscNameStr,
+        UUID rscUuid
+    )
+    {
+        TransactionMgr transMgr = null;
+        try
+        {
+            controller.rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE); // accDeniedExc1
+            transMgr = new TransactionMgr(controller.dbConnPool.getConnection()); // sqlExc1
+
+            ResourceName resName = new ResourceName(rscNameStr); // invalidNameExc1
+            ResourceDefinitionData resDfn = ResourceDefinitionData.getInstance( // accDeniedExc2, sqlExc2, dataAlreadyExistsExc1
+                accCtx,
+                resName,
+                null, // port only needed if we want to persist this entry
+                null, // rscFlags only needed if we want to persist this entry
+                null, // secret only needed if we want to persist this object
+                null, // transportType only needed if we want to persist this object
+                transMgr,
+                false, // do not persist this entry
+                false // do not throw exception if the entry exists
+            );
+
+            if (resDfn.getProps(accCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null)
+            {
+                Resource resPrimary = resDfn.getResource(accCtx, satellite.getNode().getName());
+                resDfn.getProps(accCtx).setProp(
+                    InternalApiConsts.PROP_PRIMARY_SET,
+                    resPrimary.getAssignedNode().getName().value
+                );
+                transMgr.commit();
+                controller.getErrorReporter().logTrace(
+                    "Primary set for " + satellite.getNode().getName().getDisplayName()
+                );
+
+                updateSatellites(resDfn);
+
+
+                byte[] data = interComSerializer.buildMessage(
+                    interComSerializer.getHeader(InternalApiConsts.API_PRIMARY_RSC, 1),
+                    interComSerializer.getPrimaryRequest(rscNameStr, resPrimary.getUuid().toString())
+                );
+
+                try
+                {
+                    Message netComMsg = satellite.createMessage();
+                    netComMsg.setData(data);
+                    satellite.sendMessage(netComMsg);
+                }
+                catch (IllegalMessageStateException illStateExc)
+                {
+                    throw new ImplementationError(
+                        "Attempt to send a NetCom message that has an illegal state",
+                        illStateExc
+                    );
+                }
+            }
+        }
+        catch (LinStorDataAlreadyExistsException | InvalidNameException | InvalidKeyException |
+            InvalidValueException | AccessDeniedException _ignore)  { }
+        catch (SQLException sqlExc)
+        {
+            String errorMessage = String.format(
+                "A database error occured while trying to rollback the deletion of "+
+                    "resource definition '%s'.",
+                rscNameStr
+            );
+            controller.getErrorReporter().reportError(
+                sqlExc,
+                accCtx,
+                satellite,
+                errorMessage
+            );
+        }
+        finally
+        {
+            if (transMgr != null)
+            {
+                // return db connection
+                controller.dbConnPool.returnConnection(transMgr);
+            }
+        }
     }
 
     byte[] listResourceDefinitions(int msgId, AccessContext accCtx, Peer client)

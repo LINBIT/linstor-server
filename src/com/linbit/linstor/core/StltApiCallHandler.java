@@ -264,6 +264,25 @@ public class StltApiCallHandler
         }
     }
 
+    public void handlePrimaryResource(
+        Peer controllerPeer,
+        int msgId,
+        String rscNameStr,
+        UUID rscUuid
+    )
+    {
+        try
+        {
+            satellite.rscDfnMapLock.writeLock().lock();
+            rscDfnHandler.primaryResource(rscNameStr, rscUuid);
+        }
+        finally
+        {
+            satellite.rscDfnMapLock.writeLock().unlock();
+        }
+
+    }
+
     private void sendRequest(byte[] requestData)
     {
         try

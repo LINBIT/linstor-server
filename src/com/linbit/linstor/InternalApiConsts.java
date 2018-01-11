@@ -18,6 +18,8 @@ public class InternalApiConsts
     public static final String API_APPLY_RSC_DFN     = "ApplyRscDfn";
     public static final String API_NOTIFY_RSC_DEL    = "NotifyRscDel";
     public static final String API_NOTIFY_VLM_DEL    = "NotifyVlmDel";
+    public static final String API_REQUEST_PRIMARY_RSC = "RequestPrimaryRsc";
+    public static final String API_PRIMARY_RSC       = "PrimaryRsc";
 
     public static final String API_CHANGED_RSC       = "ChangedRsc";
     public static final String API_REQUEST_RSC       = "RequestRsc";
@@ -28,6 +30,8 @@ public class InternalApiConsts
     public static final String API_APPLY_STOR_POOL   = "ApplyStorPool";
 
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
+
+    public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
 
     private InternalApiConsts()
     {

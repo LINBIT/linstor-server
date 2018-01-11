@@ -76,6 +76,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
     private final TransactionSimpleObject<ResourceData, Boolean> deleted;
 
+    private boolean createPrimary = false;
+
     /*
      * used by getInstance
      */
@@ -526,6 +528,21 @@ public class ResourceData extends BaseTransactionObject implements Resource
         {
             throw new ImplementationError("Access to deleted resource", null);
         }
+    }
+
+    public void setCreatePrimary()
+    {
+        createPrimary = true;
+    }
+
+    public void unsetCreatePrimary()
+    {
+        createPrimary = false;
+    }
+
+    public boolean isCreatePrimary()
+    {
+        return createPrimary;
     }
 
     @Override

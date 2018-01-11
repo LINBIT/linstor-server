@@ -67,6 +67,8 @@ public interface Resource extends TransactionObject, DbgInstanceUuid
 
     public RscApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
+    public boolean isCreatePrimary();
+
     public enum RscFlags implements Flags
     {
         CLEAN(1L),

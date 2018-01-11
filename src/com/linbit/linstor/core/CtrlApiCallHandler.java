@@ -36,6 +36,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.protobuf.ProtoInterComSerializer;
 import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDefinitionListSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.ResourceListSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolDefinitionListSerializerProto;
@@ -72,6 +74,7 @@ public class CtrlApiCallHandler
         final CtrlListSerializer<StorPoolDefinition.StorPoolDfnApi> storPoolDfnListSerializer;
         final CtrlListSerializer<StorPool.StorPoolApi> storPoolListSerializer;
         final CtrlListSerializer<Resource.RscApi> resourceListSerializer;
+        final InterComSerializer interComSrzl;
 
         switch (type)
         {
@@ -91,6 +94,7 @@ public class CtrlApiCallHandler
                 storPoolDfnListSerializer = new StorPoolDefinitionListSerializerProto();
                 storPoolListSerializer = new StorPoolListSerializerProto();
                 resourceListSerializer = new ResourceListSerializerProto();
+                interComSrzl = new ProtoInterComSerializer(errorReporter);
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
@@ -102,6 +106,7 @@ public class CtrlApiCallHandler
             controllerRef,
             rscSerializer,
             rscDfnListSerializer,
+            interComSrzl,
             apiCtx
         );
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
@@ -1593,6 +1598,25 @@ public class CtrlApiCallHandler
         finally
         {
             controller.nodesMapLock.readLock().unlock();
+        }
+    }
+
+    public void handlePrimaryResourceRequest(
+        AccessContext accCtx,
+        Peer satellite,
+        int msgId,
+        String rscName,
+        UUID rscUuid
+    )
+    {
+        try
+        {
+            controller.rscDfnMapLock.writeLock().lock();
+            rscDfnApiCallHandler.handlePrimaryResourceRequest(accCtx, satellite, msgId, rscName, rscUuid);
+        }
+        finally
+        {
+            controller.rscDfnMapLock.writeLock().unlock();
         }
     }
 }

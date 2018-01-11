@@ -8,12 +8,14 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.ConfFile;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteCoreServices;
@@ -23,12 +25,16 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.protobuf.ProtoInterComSerializer;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.drbdstate.NoInitialStateException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.IllegalMessageStateException;
+import com.linbit.linstor.netcom.Message;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -149,9 +155,27 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     deleteResource(rsc, rscDfn, localNode, rscState, vlmStateMap);
                 }
+                else if (rsc.isCreatePrimary() &&
+                        !rscState.isPrimary)
+                {
+                    // set primary
+                    errLog.logTrace("Setting resource primary on %s", rscName.getDisplayName());
+                    setResourcePrimary(rsc);
+                    ((ResourceData)rsc).unsetCreatePrimary();
+                }
                 else
                 {
                     createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState, vlmStateMap);
+
+                    if (rscDfn.getProps(wrkCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null)
+                    {
+                        errLog.logTrace("Requesting primary on %s", rscName.getDisplayName());
+                        sendRequestPrimaryResource(
+                            localNode.getPeer(wrkCtx),
+                            rscDfn.getName().getDisplayName(),
+                            rsc.getUuid().toString()
+                        );
+                    }
                 }
             }
             catch (ResourceException rscExc)
@@ -206,6 +230,36 @@ class DrbdDeviceHandler implements DeviceHandler
             "DrbdDeviceHandler: dispatchRsc() - End actions: Resource '" +
             rsc.getDefinition().getName().displayValue + "'"
         );
+    }
+
+    private void sendRequestPrimaryResource(
+        final Peer ctrlPeer,
+        final String rscName,
+        final String rscUuid
+    )
+    {
+        ProtoInterComSerializer pic = new ProtoInterComSerializer(this.errLog);
+        byte[] data = pic.buildMessage(
+            pic.getHeader(InternalApiConsts.API_REQUEST_PRIMARY_RSC, 1),
+            pic.getPrimaryRequest(rscName, rscUuid)
+        );
+
+        if (data != null)
+        {
+            try
+            {
+                Message netComMsg = ctrlPeer.createMessage();
+                netComMsg.setData(data);
+                ctrlPeer.sendMessage(netComMsg);
+            }
+            catch (IllegalMessageStateException illStateExc)
+            {
+                throw new ImplementationError(
+                    "Attempt to send a NetCom message that has an illegal state",
+                    illStateExc
+                );
+            }
+        }
     }
 
     private void evaluateDelDrbdResource(
@@ -958,6 +1012,31 @@ class DrbdDeviceHandler implements DeviceHandler
         }
     }
 
+    private void setResourcePrimary(
+        Resource rsc
+    )
+        throws ResourceException
+    {
+        ResourceName rscName = rsc.getDefinition().getName();
+        try {
+            drbdUtils.primary(rscName, true, false);
+        }
+        catch (ExtCmdFailedException cmdExc)
+        {
+            throw new ResourceException(
+                "Setting primary on the DRBD resource '" + rscName.getDisplayName() + " failed",
+                getAbortMsg(rscName),
+                "The external command for stopping the DRBD resource failed",
+                "- Check whether the required software is installed\n" +
+                "- Check whether the application's search path includes the location\n" +
+                "  of the external software\n" +
+                "- Check whether the application has execute permission for the external command\n",
+                null,
+                cmdExc
+            );
+        }
+    }
+
     /**
      * Deletes a resource
      * (and will somehow have to inform the device manager, or directly the controller, if the resource
@@ -1243,6 +1322,7 @@ class DrbdDeviceHandler implements DeviceHandler
             rscActions.append("Resource '").append(rscName.displayValue).append("'\n");
             rscActions.append("    isPresent = ").append(rscState.isPresent).append("\n");
             rscActions.append("    requiresAdjust = ").append(rscState.requiresAdjust).append("\n");
+            rscActions.append("    isPrimary = ").append(rscState.isPrimary).append("\n");
             for (VolumeState vlmState : vlmStateMap.values())
             {
                 rscActions.append("    Volume ").append(vlmState.vlmNr.value).append("\n");
