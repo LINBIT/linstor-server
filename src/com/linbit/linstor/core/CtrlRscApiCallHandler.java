@@ -61,14 +61,14 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
 
     CtrlRscApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         CtrlSerializer<Resource> rscSerializerRef,
         InterComSerializer interComSerializerRef,
         AccessContext apiCtxRef
     )
     {
         super (
-            controllerRef,
+            apiCtrlAccessorsRef,
             apiCtxRef,
             ApiConsts.MASK_RSC
         );
@@ -140,7 +140,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 }
                 if (storPoolNameStr == null || "".equals(storPoolNameStr))
                 {
-                    storPoolNameStr = controller.getDefaultStorPoolName();
+                    storPoolNameStr = apiCtrlAccessors.getDefaultStorPoolName();
                 }
 
                 StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
@@ -175,7 +175,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                     String storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
                     if (storPoolNameStr == null || "".equals(storPoolNameStr))
                     {
-                        storPoolNameStr = controller.getDefaultStorPoolName();
+                        storPoolNameStr = apiCtrlAccessors.getDefaultStorPoolName();
                     }
 
                     StorPool dfltStorPool = rsc.getAssignedNode().getStorPool(
@@ -287,7 +287,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             int val = rsc.getNodeId().value;
             if (idsInUse[val] != null)
             {
-                controller.getErrorReporter().reportError(
+                apiCtrlAccessors.getErrorReporter().reportError(
                     new ImplementationError(
                         String.format(
                             "NodeId '%d' is used for resource '%s' on node '%s' AND '%s'",
@@ -315,7 +315,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         {
             if (id == -1)
             {
-                controller.getErrorReporter().reportError(
+                apiCtrlAccessors.getErrorReporter().reportError(
                     new LinStorException(
                         String.format(
                             "Could not find valid nodeId. Most likely because the maximum count (%d)" +
@@ -329,7 +329,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         }
         catch (ValueOutOfRangeException valueOutOfRangeExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError("Found nodeId was invalid", valueOutOfRangeExc)
             );
         }
@@ -517,7 +517,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             // call cleanup if resource definition is empty
             if (rscDfn.getResourceCount() == 0)
             {
-                controller.cleanup();
+                apiCtrlAccessors.cleanup();
             }
 
             reportSuccess(rscData.getUuid());
@@ -549,9 +549,9 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
         try
         {
-            controller.rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
-            controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
-            for (ResourceDefinition rscDfn : controller.rscDfnMap.values())
+            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            apiCtrlAccessors.getNodesMapProtection().requireAccess(accCtx, AccessType.VIEW);
+            for (ResourceDefinition rscDfn : apiCtrlAccessors.getRscDfnMap().values())
             {
                 try
                 {
@@ -591,7 +591,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         {
             NodeName nodeName = new NodeName(nodeNameStr);
 
-            Node node = controller.nodesMap.get(nodeName);
+            Node node = apiCtrlAccessors.getNodesMap().get(nodeName);
 
             if (node != null)
             {
@@ -608,7 +608,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 }
                 else
                 {
-                    controller.getErrorReporter().reportError(
+                    apiCtrlAccessors.getErrorReporter().reportError(
                         new ImplementationError(
                             String.format(
                                 "A requested resource name '%s' with the uuid '%s' was not found "+
@@ -627,7 +627,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                controller.getErrorReporter().reportError(
+                apiCtrlAccessors.getErrorReporter().reportError(
                     new ImplementationError(
                         "Satellite requested resource '" + rscNameStr + "' on node '" + nodeNameStr + "' " +
                             "but that node does not exist.",
@@ -639,7 +639,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         }
         catch (InvalidNameException invalidNameExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError(
                     "Satellite requested data for invalid name (node or rsc name).",
                     invalidNameExc
@@ -648,7 +648,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError(
                     "Controller's api context has not enough privileges to gather requested resource data.",
                     accDeniedExc
@@ -657,7 +657,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         }
         catch (IllegalMessageStateException illegalMessageStateExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError(
                     "Failed to respond to resource data request",
                     illegalMessageStateExc

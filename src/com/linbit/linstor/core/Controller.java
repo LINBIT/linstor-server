@@ -1,5 +1,6 @@
 package com.linbit.linstor.core;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +12,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +25,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.slf4j.event.Level;
 
 import com.linbit.ImplementationError;
@@ -37,8 +46,8 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.CoreServices;
-import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -79,15 +88,6 @@ import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.Base64;
 import com.linbit.utils.MathUtils;
-import java.io.File;
-import java.sql.Connection;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 
 /**
  * linstor controller prototype
@@ -206,6 +206,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
     ObjectProtection storPoolDfnMapProt;
 
+    private ApiCtrlAccessorImpl apiCtrlAccessors;
+
     private short defaultPeerCount = DEFAULT_PEER_COUNT;
     private long defaultAlSize = DEFAULT_AL_SIZE;
     private int defaultAlStripes = DEFAULT_AL_STRIPES;
@@ -265,6 +267,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         // the corresponding protectionObjects will be initialized in the initialize method
         // after the initialization of the database
 
+        apiCtrlAccessors = new ApiCtrlAccessorImpl(this);
+
         {
             AccessContext apiCtx = sysCtx.clone();
             try
@@ -276,7 +280,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                     Privilege.PRIV_OBJ_CONTROL,
                     Privilege.PRIV_MAC_OVRD
                 );
-                apiCallHandler = new CtrlApiCallHandler(this, apiType, apiCtx);
+                apiCallHandler = new CtrlApiCallHandler(apiCtrlAccessors, apiType, apiCtx);
             }
             catch (AccessDeniedException accDeniedExc)
             {
@@ -346,38 +350,38 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                     errorLogRef.reportError(ioExc);
                     System.exit(2);
                 }
-                    try
+                try
+                {
+                    // TODO: determine which DBDriver to use
+                    AccessContext privCtx = sysCtx.clone();
+                    privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+                    securityDbDriver = new DbDerbyPersistence(privCtx, errorLogRef);
+                    persistenceDbDriver = new DerbyDriver(
+                        privCtx,
+                        errorLogRef,
+                        nodesMap,
+                        rscDfnMap,
+                        storPoolDfnMap
+                    );
+
+                    if (testDbPool == null)
                     {
-                        // TODO: determine which DBDriver to use
-                        AccessContext privCtx = sysCtx.clone();
-                        privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                        securityDbDriver = new DbDerbyPersistence(privCtx, errorLogRef);
-                        persistenceDbDriver = new DerbyDriver(
-                            privCtx,
-                            errorLogRef,
-                            nodesMap,
-                            rscDfnMap,
-                            storPoolDfnMap
+                        String connectionUrl = dbProps.getProperty(
+                            DB_CONN_URL,
+                            persistenceDbDriver.getDefaultConnectionUrl()
                         );
 
-                        if (testDbPool == null)
-                        {
-                            String connectionUrl = dbProps.getProperty(
-                                DB_CONN_URL,
-                                persistenceDbDriver.getDefaultConnectionUrl()
-                            );
-
-                            // Connect the database connection pool to the database
-                            dbConnPool.initializeDataSource(
-                                connectionUrl,
-                                dbProps
-                            );
-                        }
+                        // Connect the database connection pool to the database
+                        dbConnPool.initializeDataSource(
+                            connectionUrl,
+                            dbProps
+                        );
                     }
-                    catch (SQLException sqlExc)
-                    {
-                        errorLogRef.reportError(sqlExc);
-                    }
+                }
+                catch (SQLException sqlExc)
+                {
+                    errorLogRef.reportError(sqlExc);
+                }
 
                 errorLogRef.logInfo("Initializing authentication subsystem");
                 try
@@ -552,7 +556,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                     for (Node node : nodes)
                     {
                         errorLogRef.logDebug("Reconnecting to node '" + node.getName() + "'.");
-                        CtrlNodeApiCallHandler.startConnecting(node, initCtx, null, this);
+                        CtrlNodeApiCallHandler.startConnecting(node, initCtx, null, apiCtrlAccessors);
                     }
                     errorLogRef.logInfo("Reconnect requests sent");
                 }

@@ -1,6 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -59,13 +58,13 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private final InterComSerializer interComSerializer;
 
     CtrlNodeApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef,
         CtrlNodeSerializer nodeSerializer,
         InterComSerializer interComSerializer
     )
     {
-        super(controllerRef, apiCtxRef, ApiConsts.MASK_NODE);
+        super(apiCtrlAccessorsRef, apiCtxRef, ApiConsts.MASK_NODE);
         this.nodeSerializer = nodeSerializer;
         this.interComSerializer = interComSerializer;
     }
@@ -143,13 +142,13 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 );
 
                 commit();
-                controller.nodesMap.put(nodeName, node);
+                apiCtrlAccessors.getNodesMap().put(nodeName, node);
 
                 reportSuccess(node.getUuid());
 
                 if (type.equals(NodeType.SATELLITE) || type.equals(NodeType.COMBINED))
                 {
-                    startConnecting(node, accCtx, client, controller);
+                    startConnecting(node, accCtx, client, apiCtrlAccessors);
                 }
             }
         }
@@ -333,7 +332,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
                     if (!hasRsc)
                     {
-                        controller.nodesMap.remove(nodeName);
+                        apiCtrlAccessors.getNodesMap().remove(nodeName);
                     }
                     else
                     {
@@ -376,8 +375,8 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         ArrayList<Node.NodeApi> nodes = new ArrayList<>();
         try
         {
-            controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
-            for (Node n : controller.nodesMap.values())
+            apiCtrlAccessors.getNodesMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            for (Node n : apiCtrlAccessors.getNodesMap().values())
             {
                 try {
                     nodes.add(n.getApiData(accCtx));
@@ -402,7 +401,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         {
             NodeName nodeName = new NodeName(nodeNameStr);
 
-            Node node = controller.nodesMap.get(nodeName);
+            Node node = apiCtrlAccessors.getNodesMap().get(nodeName);
             if (node != null)
             {
                 if (node.getUuid().equals(nodeUuid))
@@ -432,7 +431,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 }
                 else
                 {
-                    controller.getErrorReporter().reportError(
+                    apiCtrlAccessors.getErrorReporter().reportError(
                         new ImplementationError(
                             "Satellite '" + satellite.getId() + "' requested a node with an outdated " +
                             "UUID. Current UUID: " + node.getUuid() + ", satellites outdated UUID: " +
@@ -444,7 +443,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                controller.getErrorReporter().reportError(
+                apiCtrlAccessors.getErrorReporter().reportError(
                     new ImplementationError(
                         "A requested node '" + nodeNameStr + "' was not found in controllers nodesMap",
                         null
@@ -454,7 +453,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (Exception exc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError(exc)
             );
         }
@@ -464,7 +463,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         Node node,
         AccessContext accCtx,
         Peer client,
-        Controller controller
+        ApiCtrlAccessors apiCtrlAccessors
     )
     {
         try
@@ -491,7 +490,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 try
                 {
                     dfltConSvcName = new ServiceName(
-                        controller.ctrlConf.getProp(serviceType)
+                        apiCtrlAccessors.getCtrlConf().getProp(serviceType)
                     );
                 }
                 catch (InvalidNameException invalidNameExc)
@@ -501,11 +500,11 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                         invalidNameExc
                     );
                 }
-                TcpConnector tcpConnector = controller.netComConnectors.get(dfltConSvcName);
+                TcpConnector tcpConnector = apiCtrlAccessors.getNetComConnector(dfltConSvcName);
 
                 if (tcpConnector != null)
                 {
-                    controller.connectSatellite(
+                    apiCtrlAccessors.connectSatellite(
                         new InetSocketAddress(
                             satelliteConnection.getNetInterface().getAddress(accCtx).getAddress(),
                             satelliteConnection.getPort().value
@@ -536,7 +535,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            controller.nodesMapProt.requireAccess(
+            apiCtrlAccessors.getNodesMapProtection().requireAccess(
                 currentAccCtx.get(),
                 AccessType.CHANGE
             );

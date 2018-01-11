@@ -27,13 +27,13 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
     private final CtrlNodeSerializer nodeSerializer;
 
     CtrlNodeConnectionApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         CtrlNodeSerializer nodeSerializerRef,
         AccessContext apiCtxRef
     )
     {
         super(
-            controllerRef,
+            apiCtrlAccessorsRef,
             apiCtxRef,
             ApiConsts.MASK_NODE_CONN
         );

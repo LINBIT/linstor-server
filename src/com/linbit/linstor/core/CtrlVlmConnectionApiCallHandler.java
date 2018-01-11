@@ -31,13 +31,13 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
     private final CtrlSerializer<Resource> rscSerializer;
 
     CtrlVlmConnectionApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         CtrlSerializer<Resource> rscSerializerRef,
         AccessContext apiCtxRef
     )
     {
         super(
-            controllerRef,
+            apiCtrlAccessorsRef,
             apiCtxRef,
             ApiConsts.MASK_VLM_CONN
         );

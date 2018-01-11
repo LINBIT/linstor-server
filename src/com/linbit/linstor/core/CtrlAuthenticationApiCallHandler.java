@@ -10,15 +10,15 @@ import com.linbit.linstor.netcom.Peer;
 
 class CtrlAuthenticationApiCallHandler
 {
-    private Controller controller;
+    private ApiCtrlAccessors apiCtrlAccessors;
     private CtrlAuthSerializer serializer;
 
     public CtrlAuthenticationApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         CtrlAuthSerializer serializerRef
     )
     {
-        controller = controllerRef;
+        apiCtrlAccessors = apiCtrlAccessorsRef;
         serializer = serializerRef;
     }
 
@@ -26,7 +26,7 @@ class CtrlAuthenticationApiCallHandler
     {
         try
         {
-            controller.getErrorReporter().logDebug("Sending authentication to satellite '" + peer.getNode().getName() + "'");
+            apiCtrlAccessors.getErrorReporter().logDebug("Sending authentication to satellite '" + peer.getNode().getName() + "'");
             Message msg = peer.createMessage();
             // TODO make the shared secret customizable
             msg.setData(serializer.getAuthMessage(peer.getNode(), "Hello, LinStor!".getBytes()));
@@ -34,7 +34,7 @@ class CtrlAuthenticationApiCallHandler
         }
         catch (IllegalMessageStateException illegalMessageStateExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError(
                     "Failed to complete authentication to satellite.",
                     illegalMessageStateExc
@@ -43,7 +43,7 @@ class CtrlAuthenticationApiCallHandler
         }
         catch (IOException e)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 e,
                 null,
                 peer,

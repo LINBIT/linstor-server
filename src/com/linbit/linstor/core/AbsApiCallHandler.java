@@ -66,18 +66,18 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected final ThreadLocal<Map<String, String>> currentObjRefs = new ThreadLocal<>();
     protected final ThreadLocal<Map<String, String>> currentVariables = new ThreadLocal<>();
 
-    protected final Controller controller;
+    protected final ApiCtrlAccessors apiCtrlAccessors;
     protected final AccessContext apiCtx;
 
     private ThreadLocal<?>[] customThreadLocals;
 
     protected AbsApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef,
         long objMaskRef
     )
     {
-        controller = controllerRef;
+        apiCtrlAccessors = apiCtrlAccessorsRef;
         apiCtx = apiCtxRef;
         objMask = objMaskRef;
     }
@@ -138,7 +138,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
         if (transMgr != null)
         {
-            controller.dbConnPool.returnConnection(transMgr);
+            apiCtrlAccessors.getDbConnPool().returnConnection(transMgr);
         }
     }
 
@@ -737,7 +737,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             throwable = new LinStorException(errorMsg);
         }
-        controller.getErrorReporter().reportError(
+        apiCtrlAccessors.getErrorReporter().reportError(
             throwable,
             currentAccCtx.get(),
             currentClient.get(),
@@ -852,7 +852,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             objRefs,
             variables,
             apiCallRc,
-            controller,
+            apiCtrlAccessors,
             accCtx,
             peer
         );
@@ -885,7 +885,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         Map<String, String> objRefs,
         Map<String, String> variables,
         ApiCallRcImpl apiCallRc,
-        Controller controller,
+        ApiCtrlAccessors apiCtrlAccessors,
         AccessContext accCtx,
         Peer peer
         )
@@ -894,7 +894,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             throwable = new LinStorException(errorMsg);
         }
-        controller.getErrorReporter().reportError(
+        apiCtrlAccessors.getErrorReporter().reportError(
             throwable,
             accCtx,
             peer,
@@ -1119,7 +1119,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
 
         currentApiCallRc.get().addEntry(entry);
-        controller.getErrorReporter().logInfo(msg);
+        apiCtrlAccessors.getErrorReporter().logInfo(msg);
     }
 
 
@@ -1207,7 +1207,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     {
         try
         {
-            return new TransactionMgr(controller.dbConnPool.getConnection());
+            return new TransactionMgr(apiCtrlAccessors.getDbConnPool().getConnection());
         }
         catch (SQLException sqlExc)
         {
@@ -1258,7 +1258,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             }
             finally
             {
-                controller.dbConnPool.returnConnection(transMgr);
+                apiCtrlAccessors.getDbConnPool().returnConnection(transMgr);
             }
         }
     }

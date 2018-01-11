@@ -42,14 +42,14 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
 
     CtrlStorPoolApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         CtrlSerializer<StorPool> storPoolSerializerRef,
         InterComSerializer interComSerializerRef,
         AccessContext apiCtxRef
     )
     {
         super (
-            controllerRef,
+            apiCtrlAccessorsRef,
             apiCtxRef,
             ApiConsts.MASK_STOR_POOL
         );
@@ -94,7 +94,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         {
             // as the storage pool definition is implicitly created if it doesn't exist
             // we always will update the storPoolDfnMap even if not necessary
-            // Therefore we need to be able to modify controller.storPoolDfnMap
+            // Therefore we need to be able to modify apiCtrlAccessors.storPoolDfnMap
             requireStorPoolDfnMapChangeAccess();
 
             StorPoolData storPool = createStorPool(nodeNameStr, storPoolNameStr, driver);
@@ -300,7 +300,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                controller.getErrorReporter().reportError(
+                apiCtrlAccessors.getErrorReporter().reportError(
                     new ImplementationError(
                         String.format(
                             "A requested storpool name '%s' with the uuid '%s' was not found "+
@@ -315,7 +315,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
         catch (InvalidNameException invalidNameExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError(
                     "Satellite requested data for invalid storpool name '" + storPoolNameStr + "'.",
                     invalidNameExc
@@ -324,7 +324,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError(
                     "Controller's api context has not enough privileges to gather requested storpool data.",
                     accDeniedExc
@@ -333,7 +333,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         }
         catch (IllegalMessageStateException illegalMessageStateExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError(
                     "Failed to respond to storpool data request",
                     illegalMessageStateExc
@@ -346,9 +346,9 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         ArrayList<StorPool.StorPoolApi> storPools = new ArrayList<>();
         try {
-            controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);
-            controller.storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
-            for (StorPoolDefinition storPoolDfn : controller.storPoolDfnMap.values())
+            apiCtrlAccessors.getNodesMapProtection().requireAccess(accCtx, AccessType.VIEW);
+            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            for (StorPoolDefinition storPoolDfn : apiCtrlAccessors.getStorPoolDfnMap().values())
             {
                 try
                 {
@@ -405,7 +405,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            controller.storPoolDfnMapProt.requireAccess(
+            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(
                 currentAccCtx.get(),
                 AccessType.CHANGE
             );
@@ -478,7 +478,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            controller.storPoolDfnMap.put(
+            apiCtrlAccessors.getStorPoolDfnMap().put(
                 storPool.getName(),
                 storPool.getDefinition(apiCtx)
             );

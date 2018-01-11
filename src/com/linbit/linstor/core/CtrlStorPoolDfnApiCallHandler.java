@@ -31,12 +31,12 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
 
     CtrlStorPoolDfnApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         InterComSerializer interComSerializerRef
     )
     {
         super(
-            controllerRef,
+            apiCtrlAccessorsRef,
             null, // apiCtx
             ApiConsts.MASK_STOR_POOL_DFN
         );
@@ -271,8 +271,8 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         ArrayList<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfns = new ArrayList<>();
         try
         {
-            controller.storPoolDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
-            for (StorPoolDefinition storPoolDfn : controller.storPoolDfnMap.values())
+            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            for (StorPoolDefinition storPoolDfn : apiCtrlAccessors.getStorPoolDfnMap().values())
             {
                 try
                 {
@@ -374,7 +374,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            controller.storPoolDfnMapProt.requireAccess(
+            apiCtrlAccessors.getStorPoolDfnMapProtection().requireAccess(
                 currentAccCtx.get(),
                 AccessType.CHANGE
             );

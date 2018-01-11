@@ -30,13 +30,13 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     private final CtrlSerializer<Resource> rscSerializer;
 
     CtrlRscConnectionApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         CtrlSerializer<Resource> rscSerializerRef,
         AccessContext apiCtxRef
     )
     {
         super (
-            controllerRef,
+            apiCtrlAccessorsRef,
             apiCtxRef,
             ApiConsts.MASK_RSC_CONN
         );

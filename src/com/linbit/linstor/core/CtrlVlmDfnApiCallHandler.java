@@ -47,12 +47,12 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
 
     CtrlVlmDfnApiCallHandler(
-        Controller controller,
+        ApiCtrlAccessors apiCtrlAccessors,
         CtrlSerializer<Resource> rscSerializerRef,
         AccessContext apiCtx
     )
     {
-        super(controller, apiCtx, ApiConsts.MASK_VLM_DFN);
+        super(apiCtrlAccessors, apiCtx, ApiConsts.MASK_VLM_DFN);
         super.setNullOnAutoClose(
             currentRscNameStr,
             currentVlmDfnApi,
@@ -167,7 +167,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            controller.rscDfnMap.put(rscDfn.getName(), rscDfn);
+            apiCtrlAccessors.getRscDfnMap().put(rscDfn.getName(), rscDfn);
 
             for (VolumeDefinition vlmDfn : vlmDfnsCreated)
             {
@@ -368,7 +368,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            controller.rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE);
+            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.CHANGE);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -380,7 +380,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             throw new ApiCallHandlerFailedException();
         }
     }
-
 
     private VolumeDefinitionData loadVlmDfn(String rscName, int vlmNr)
     {
@@ -458,7 +457,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             );
             entry.setReturnCodeBit(ApiConsts.RC_VLM_DFN_CRT_FAIL_INVLD_VLM_NR);
 
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 valOORangeExc,
                 accCtx,
                 currentClient.get(),
@@ -495,7 +494,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             );
             entry.setReturnCodeBit(ApiConsts.RC_VLM_DFN_CRT_FAIL_INVLD_MINOR_NR);
 
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 valOORangeExc,
                 currentAccCtx.get(),
                 currentClient.get(),
@@ -592,7 +591,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rsc.adjustVolumes(apiCtx, currentTransMgr.get(), controller.getDefaultStorPoolName());
+            rsc.adjustVolumes(apiCtx, currentTransMgr.get(), apiCtrlAccessors.getDefaultStorPoolName());
         }
         catch (InvalidNameException invalidNameExc)
         {
@@ -628,7 +627,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
             vlmDfnCrtSuccessEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmDfn.getVolumeNumber().value));
 
-            controller.getErrorReporter().logInfo(successMessage);
+            apiCtrlAccessors.getErrorReporter().logInfo(successMessage);
         }
         catch (AccessDeniedException accDeniedExc)
         {

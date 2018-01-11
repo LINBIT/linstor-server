@@ -19,18 +19,18 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 class CtrlFullSyncApiCallHandler
 {
-    private Controller controller;
+    private ApiCtrlAccessors apiCtrlAccessors;
     private AccessContext apiCtx;
     private CtrlFullSyncSerializer fullSyncSerializer;
 
     CtrlFullSyncApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef,
         CtrlFullSyncSerializer fullSyncSerializerRef)
     {
-        this.controller = controllerRef;
-        this.apiCtx = apiCtxRef;
-        this.fullSyncSerializer = fullSyncSerializerRef;
+        apiCtrlAccessors = apiCtrlAccessorsRef;
+        apiCtx = apiCtxRef;
+        fullSyncSerializer = fullSyncSerializerRef;
     }
 
     void sendFullSync(Peer satellite)
@@ -67,14 +67,14 @@ class CtrlFullSyncApiCallHandler
             }
 
             byte[] data = fullSyncSerializer.getData(0, nodes, storPools, rscs);
-            controller.getErrorReporter().logTrace("Sending full sync to satellite '" + satellite.getId() + "'.");
+            apiCtrlAccessors.getErrorReporter().logTrace("Sending full sync to satellite '" + satellite.getId() + "'.");
             Message msg = satellite.createMessage();
             msg.setData(data);
             satellite.sendMessage(msg);
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError(
                     "ApiCtx does not have enough privileges to create a full sync for satellite " + satellite.getId(),
                     accDeniedExc
@@ -84,7 +84,7 @@ class CtrlFullSyncApiCallHandler
         }
         catch (IOException ioExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 ioExc,
                 apiCtx,
                 satellite,
@@ -93,7 +93,7 @@ class CtrlFullSyncApiCallHandler
         }
         catch (IllegalMessageStateException illegalMessageStateExc)
         {
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 new ImplementationError(
                     "Failed to send a full sync to the satellite " + satellite.getId(),
                     illegalMessageStateExc

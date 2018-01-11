@@ -22,12 +22,12 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 
 
     protected CtrlVlmApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef
     )
     {
         super(
-            controllerRef,
+            apiCtrlAccessorsRef,
             apiCtxRef,
             ApiConsts.MASK_VLM
         );

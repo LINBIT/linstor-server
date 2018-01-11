@@ -55,13 +55,13 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
 
     CtrlRscDfnApiCallHandler(
-        Controller controllerRef,
+        ApiCtrlAccessors apiCtrlAccessorsRef,
         CtrlSerializer<Resource> rscSerializerRef,
         InterComSerializer interComSerializer,
         AccessContext apiCtxRef
     )
     {
-        super(controllerRef, apiCtxRef, ApiConsts.MASK_RSC_DFN);
+        super(apiCtrlAccessorsRef, apiCtxRef, ApiConsts.MASK_RSC_DFN);
         super.setNullOnAutoClose(currentRscNameStr);
         rscSerializer = rscSerializerRef;
         this.interComSerializer = interComSerializer;
@@ -86,9 +86,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        short peerCount = getAsShort(props, ApiConsts.KEY_PEER_COUNT, controller.getDefaultPeerCount());
-        int alStripes = getAsInt(props, ApiConsts.KEY_AL_STRIPES, controller.getDefaultAlStripes());
-        long alStripeSize = getAsLong(props, ApiConsts.KEY_AL_SIZE, controller.getDefaultAlSize());
+        short peerCount = getAsShort(props, ApiConsts.KEY_PEER_COUNT, apiCtrlAccessors.getDefaultPeerCount());
+        int alStripes = getAsInt(props, ApiConsts.KEY_AL_STRIPES, apiCtrlAccessors.getDefaultAlStripes());
+        long alStripeSize = getAsLong(props, ApiConsts.KEY_AL_SIZE, apiCtrlAccessors.getDefaultAlStripes());
 
         VolumeNumber volNr;
         try (
@@ -135,7 +135,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
             commit();
 
-            controller.rscDfnMap.put(rscDfn.getName(), rscDfn);
+            apiCtrlAccessors.getRscDfnMap().put(rscDfn.getName(), rscDfn);
 
             for (VolumeDefinitionData vlmDfn : createdVlmDfns)
             {
@@ -156,7 +156,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
                 apiCallRc.addEntry(volSuccessEntry);
 
-                controller.getErrorReporter().logInfo(successMessage);
+                apiCtrlAccessors.getErrorReporter().logInfo(successMessage);
             }
 
             reportSuccess(rscDfn.getUuid());
@@ -381,8 +381,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         TransactionMgr transMgr = null;
         try
         {
-            controller.rscDfnMapProt.requireAccess(accCtx, AccessType.CHANGE); // accDeniedExc1
-            transMgr = new TransactionMgr(controller.dbConnPool.getConnection()); // sqlExc1
+            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.CHANGE); // accDeniedExc1
+            transMgr = new TransactionMgr(apiCtrlAccessors.getDbConnPool().getConnection()); // sqlExc1
 
             ResourceName resName = new ResourceName(rscNameStr); // invalidNameExc1
             ResourceDefinitionData resDfn = ResourceDefinitionData.getInstance( // accDeniedExc2, sqlExc2, dataAlreadyExistsExc1
@@ -405,7 +405,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     resPrimary.getAssignedNode().getName().value
                 );
                 transMgr.commit();
-                controller.getErrorReporter().logTrace(
+                apiCtrlAccessors.getErrorReporter().logTrace(
                     "Primary set for " + satellite.getNode().getName().getDisplayName()
                 );
 
@@ -440,7 +440,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     "resource definition '%s'.",
                 rscNameStr
             );
-            controller.getErrorReporter().reportError(
+            apiCtrlAccessors.getErrorReporter().reportError(
                 sqlExc,
                 accCtx,
                 satellite,
@@ -452,7 +452,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             if (transMgr != null)
             {
                 // return db connection
-                controller.dbConnPool.returnConnection(transMgr);
+                apiCtrlAccessors.getDbConnPool().returnConnection(transMgr);
             }
         }
     }
@@ -462,8 +462,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         ArrayList<ResourceDefinitionData.RscDfnApi> rscdfns = new ArrayList<>();
         try
         {
-            controller.rscDfnMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
-            for (ResourceDefinition rscdfn : controller.rscDfnMap.values())
+            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
+            for (ResourceDefinition rscdfn : apiCtrlAccessors.getRscDfnMap().values())
             {
                 try
                 {
@@ -568,7 +568,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            controller.rscDfnMapProt.requireAccess(
+            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(
                 currentAccCtx.get(),
                 AccessType.CHANGE
             );
@@ -677,7 +677,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            controller.getMetaDataApi().getGrossSize(size, peerCount, alStripes, alStripeSize);
+            apiCtrlAccessors.getMetaDataApi().getGrossSize(size, peerCount, alStripes, alStripeSize);
         }
         catch (MdException mdExc)
         {
