@@ -120,29 +120,30 @@ public class DrbdAdm
     )
         throws ExtCmdFailedException
     {
-        List<String> command = new ArrayList<>();
         if (withDrbdSetup)
         {
+            List<String> command = new ArrayList<>();
             command.add(DRBDSETUP_UTIL);
+            if (force)
+            {
+                command.add("--force");
+            }
+            command.add("primary");
+            command.add(resourceName.value);
+
+            execute(command);
         }
         else
         {
-            command.add(DRBDADM_UTIL);
-            command.add("-vvv");
-            command.addAll(asConfigParameter(resourceName.value));
-        }
-        if (force)
-        {
-            if (!withDrbdSetup)
+            if (force)
             {
-                command.add("--");
+                simpleAdmCommand(resourceName, null, "primary", "--force");
             }
-            command.add("--force");
+            else
+            {
+                simpleAdmCommand(resourceName, null, "primary");
+            }
         }
-        command.add("primary");
-        command.add(resourceName.value);
-
-        execute(command);
     }
 
     /**
