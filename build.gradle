@@ -49,6 +49,9 @@ dependencies
     testCompile group: 'junit', name: 'junit', version: '4.+'
     // testCompile group: 'org.mockito', name: 'mockito', version: '2.7.19'
     testCompile group: 'org.powermock', name: 'powermock-mockito-release-full', version: '1.6.4'
+
+    // A higher version could be used with Java 8
+    testCompile group: 'org.assertj', name: 'assertj-core', version: '2.9.0'
 }
 
 processResources {

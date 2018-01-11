@@ -7,7 +7,7 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.extproc.ExtCmdFailedException;
-import com.linbit.linstor.ConfFile;
+import com.linbit.linstor.ConfFileBuilder;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.MinorNumber;
@@ -988,7 +988,7 @@ class DrbdDeviceHandler implements DeviceHandler
             )
         )
         {
-            String content = ConfFile.asConfigFile(wrkCtx, rsc, peerResources.values());
+            String content = new ConfFileBuilder(wrkCtx, rsc, peerResources.values()).build();
             resFileOut.write(content.getBytes());
         }
         catch (IOException ioExc)

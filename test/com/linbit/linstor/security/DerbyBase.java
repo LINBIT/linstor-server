@@ -1,8 +1,38 @@
 package com.linbit.linstor.security;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_PROPS_CONTAINERS;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.PROPS_INSTANCE;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.PROP_KEY;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.PROP_VALUE;
+
+import com.linbit.InvalidNameException;
+import com.linbit.TransactionMgr;
+import com.linbit.linstor.NetInterfaceName;
+import com.linbit.linstor.Node;
+import com.linbit.linstor.Node.NodeType;
+import com.linbit.linstor.NodeId;
+import com.linbit.linstor.NodeName;
+import com.linbit.linstor.Resource;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.core.CoreUtils;
+import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbdrivers.DerbyDriver;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.utils.UuidUtils;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,35 +46,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.rules.TestName;
-
-import com.linbit.InvalidNameException;
-import com.linbit.TransactionMgr;
-import com.linbit.linstor.NetInterfaceName;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeId;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceName;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.Node.NodeType;
-import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
-import com.linbit.linstor.Volume.VlmFlags;
-import com.linbit.linstor.core.CoreUtils;
-import com.linbit.linstor.dbcp.DbConnectionPool;
-import com.linbit.linstor.dbdrivers.DerbyDriver;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.logging.StdErrorReporter;
-import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.utils.UuidUtils;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public abstract class DerbyBase implements DerbyTestConstants
 {
@@ -67,8 +70,8 @@ public abstract class DerbyBase implements DerbyTestConstants
     protected static DbConnectionPool dbConnPool;
     private static List<Connection> connections = new ArrayList<>();
 
-    protected static final AccessContext SYS_CTX;
-    protected static final AccessContext PUBLIC_CTX;
+    protected static final AccessContext SYS_CTX = DummySecurityInitializer.getSystemAccessContext();
+    protected static final AccessContext PUBLIC_CTX = DummySecurityInitializer.getPublicAccessContext();
     private static boolean initialized = false;
     private static DbDerbyPersistence secureDbDriver;
     private static DerbyDriver persistenceDbDriver;
@@ -79,20 +82,6 @@ public abstract class DerbyBase implements DerbyTestConstants
     protected static ErrorReporter errorReporter =
 //        new EmptyErrorReporter(true);
         new StdErrorReporter("TESTS", "");
-
-    static
-    {
-        SYS_CTX = TestAccessContextProvider.SYS_CTX;
-        PUBLIC_CTX = TestAccessContextProvider.PUBLIC_CTX;
-        try
-        {
-            SYS_CTX.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new RuntimeException("Could not grant sysCtx privileges");
-        }
-    }
 
     public DerbyBase()
     {
