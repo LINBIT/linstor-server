@@ -76,7 +76,7 @@ public abstract class DerbyBase implements DerbyConstants
 
     protected static ErrorReporter errorReporter =
 //        new EmptyErrorReporter(true);
-        new StdErrorReporter("TESTS");
+        new StdErrorReporter("TESTS", "");
 
     static
     {

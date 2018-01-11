@@ -738,7 +738,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         );
         printStartupInfo();
 
-        ErrorReporter errorLog = new StdErrorReporter(Satellite.MODULE);
+        ErrorReporter errorLog = new StdErrorReporter(Satellite.MODULE, "");
 
         try
         {

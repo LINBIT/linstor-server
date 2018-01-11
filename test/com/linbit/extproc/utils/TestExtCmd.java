@@ -22,7 +22,7 @@ public class TestExtCmd extends ExtCmd
 
     public TestExtCmd()
     {
-        super(new GenericTimer<String, Action<String>>(), new StdErrorReporter("LINSTOR-UNITTESTS"));
+        super(new GenericTimer<String, Action<String>>(), new StdErrorReporter("LINSTOR-UNITTESTS", ""));
     }
 
     public void clearBehaviors()

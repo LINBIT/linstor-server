@@ -37,10 +37,12 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
 
     private final Logger mainLogger;
     private final AtomicLong errorNr;
+    private final String baseLogDirectory;
 
-    public StdErrorReporter(String moduleName)
+    public StdErrorReporter(String moduleName, String logDirectory)
     {
         super(moduleName);
+        this.baseLogDirectory = logDirectory;
         mainLogger = org.slf4j.LoggerFactory.getLogger(LinStor.PROGRAM + "/" + moduleName);
 
         errorNr = new AtomicLong();
@@ -48,7 +50,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         // Generate a unique instance ID based on the creation time of this instance
 
         // check if the log directory exists
-        File logDir = new File(LOG_DIRECTORY);
+        File logDir = new File(baseLogDirectory + LOG_DIRECTORY);
         if (!logDir.exists())
         {
             logDir.mkdirs();
