@@ -89,7 +89,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.CREATE,
@@ -185,7 +185,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.MODIFY,
@@ -249,7 +249,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallythis = setCurrent(
+            AbsApiCallHandler basicallythis = setContext(
                 accCtx,
                 client,
                 ApiCallType.DELETE,
@@ -989,7 +989,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         );
     }
 
-    private AbsApiCallHandler setCurrent(
+    private AbsApiCallHandler setContext(
         AccessContext accCtx,
         Peer client,
         ApiCallType apiCallType,
@@ -999,7 +999,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         String nodeTypeStr
     )
     {
-        super.setCurrent(
+        super.setContext(
             accCtx,
             client,
             apiCallType,

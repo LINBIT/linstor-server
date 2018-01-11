@@ -66,7 +66,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.CREATE,
@@ -120,7 +120,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.MODIFY,
@@ -190,7 +190,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.DELETE,
@@ -230,7 +230,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
-    private AbsApiCallHandler setCurrent(
+    private AbsApiCallHandler setContext(
         AccessContext accCtx,
         Peer client,
         ApiCallType type,
@@ -241,7 +241,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         String rscNameStr
     )
     {
-        super.setCurrent(
+        super.setContext(
             accCtx,
             client,
             type,

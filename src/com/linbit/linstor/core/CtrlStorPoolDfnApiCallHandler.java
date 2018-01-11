@@ -55,7 +55,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.CREATE,
@@ -106,7 +106,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.MODIFY,
@@ -169,7 +169,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.DELETE,
@@ -307,7 +307,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         return null;
     }
 
-    protected AbsApiCallHandler setCurrent(
+    protected AbsApiCallHandler setContext(
         AccessContext accCtx,
         Peer peer,
         ApiCallType type,
@@ -316,7 +316,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
         String storPoolNameStr
     )
     {
-        super.setCurrent(
+        super.setContext(
             accCtx,
             peer,
             type,

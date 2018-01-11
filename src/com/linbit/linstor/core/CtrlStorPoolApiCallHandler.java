@@ -82,7 +82,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.CREATE,
@@ -141,7 +141,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.MODIFY,
@@ -209,7 +209,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try(
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.DELETE,
@@ -387,7 +387,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         return null;
     }
 
-    private AbsApiCallHandler setCurrent(
+    private AbsApiCallHandler setContext(
         AccessContext accCtx,
         Peer peer,
         ApiCallType type,
@@ -397,7 +397,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
         String storPoolNameStr
     )
     {
-        super.setCurrent(
+        super.setContext(
             accCtx,
             peer,
             type,
@@ -567,5 +567,22 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             loadNode(nodeNameStr, true),
             failIfNull
         );
+    }
+
+    protected final Props getProps(StorPoolData storPool) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return storPool.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access properties of storage pool '" + storPool.getName().displayValue +
+                "' on node '" + storPool.getNode().getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
+            );
+        }
     }
 }

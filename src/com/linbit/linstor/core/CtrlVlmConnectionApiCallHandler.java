@@ -63,7 +63,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.CREATE,
@@ -120,7 +120,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.MODIFY,
@@ -192,7 +192,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.DELETE,
@@ -242,7 +242,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
-    private AbsApiCallHandler setCurrent(
+    private AbsApiCallHandler setContext(
         AccessContext accCtx,
         Peer client,
         ApiCallType type,
@@ -254,7 +254,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
         Integer vlmNr
     )
     {
-        super.setCurrent(
+        super.setContext(
             accCtx,
             client,
             type,

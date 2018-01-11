@@ -15,6 +15,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
@@ -33,6 +34,7 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
+import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.ApiCallRc;
@@ -98,7 +100,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.CREATE,
@@ -347,7 +349,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.MODIFY,
@@ -415,7 +417,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.DELETE,
@@ -496,7 +498,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.DELETE,
@@ -676,7 +678,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    private AbsApiCallHandler setCurrent(
+    private AbsApiCallHandler setContext(
         AccessContext accCtx,
         Peer peer,
         ApiCallType type,
@@ -686,7 +688,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         String rscNameStr
     )
     {
-        super.setCurrent(
+        super.setContext(
             accCtx,
             peer,
             type,
@@ -823,6 +825,72 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         }
     }
 
+    protected final VolumeDefinitionData loadVlmDfn(
+        ResourceDefinitionData rscDfn,
+        int vlmNr,
+        boolean failIfNull
+    )
+        throws ApiCallHandlerFailedException
+    {
+        return loadVlmDfn(rscDfn, asVlmNr(vlmNr), failIfNull);
+    }
+
+    protected final VolumeDefinitionData loadVlmDfn(
+        ResourceDefinitionData rscDfn,
+        VolumeNumber vlmNr,
+        boolean failIfNull
+    )
+        throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstance(
+                currentAccCtx.get(),
+                rscDfn,
+                vlmNr,
+                null, // minor
+                null, // volsize
+                null, // flags
+                currentTransMgr.get(),
+                false, // do not create
+                false // do not fail if exists
+            );
+
+            if (failIfNull && vlmDfn == null)
+            {
+                throw asExc(
+                    null,
+                    "Volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' not found.",
+                    "The specified volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' could not be found in the database",
+                    null, // details
+                    "Create a volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' first.",
+                    ApiConsts.FAIL_NOT_FOUND_VLM_DFN
+                );
+            }
+
+            return vlmDfn;
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "load " + getObjectDescriptionInline(),
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        catch (LinStorDataAlreadyExistsException | MdException implErr)
+        {
+            throw asImplError(implErr);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "loading " + getObjectDescriptionInline()
+            );
+        }
+    }
+
     private Iterator<VolumeDefinition> getVlmDfnIterator(ResourceDefinitionData rscDfn)
     {
         try
@@ -832,6 +900,41 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             throw asImplError(accDeniedExc);
+        }
+    }
+
+    protected final Props getProps(Resource rsc) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return rsc.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access properties for resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
+                rsc.getAssignedNode().getName().displayValue + "'.",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+    }
+
+    protected final Props getProps(Volume vlm) throws ApiCallHandlerFailedException
+    {
+        try
+        {
+            return vlm.getProps(currentAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "access properties for volume with number '" + vlm.getVolumeDefinition().getVolumeNumber().value + "' " +
+                "on resource '" + vlm.getResourceDefinition().getName().displayValue + "' " +
+                "on node '" + vlm.getResource().getAssignedNode().getName().displayValue + "'.",
+                ApiConsts.FAIL_ACC_DENIED_VLM
+            );
         }
     }
 

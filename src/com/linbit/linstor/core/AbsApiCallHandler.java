@@ -10,7 +10,6 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
@@ -25,9 +24,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
-import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -91,7 +88,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     }
 
-    protected AbsApiCallHandler setCurrent(
+    protected AbsApiCallHandler setContext(
         AccessContext accCtx,
         Peer client,
         ApiCallType type,
@@ -450,72 +447,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
     }
 
-    protected final VolumeDefinitionData loadVlmDfn(
-        ResourceDefinitionData rscDfn,
-        int vlmNr,
-        boolean failIfNull
-    )
-        throws ApiCallHandlerFailedException
-    {
-        return loadVlmDfn(rscDfn, asVlmNr(vlmNr), failIfNull);
-    }
-
-    protected final VolumeDefinitionData loadVlmDfn(
-        ResourceDefinitionData rscDfn,
-        VolumeNumber vlmNr,
-        boolean failIfNull
-    )
-        throws ApiCallHandlerFailedException
-    {
-        try
-        {
-            VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstance(
-                currentAccCtx.get(),
-                rscDfn,
-                vlmNr,
-                null, // minor
-                null, // volsize
-                null, // flags
-                currentTransMgr.get(),
-                false, // do not create
-                false // do not fail if exists
-            );
-
-            if (failIfNull && vlmDfn == null)
-            {
-                throw asExc(
-                    null,
-                    "Volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' not found.",
-                    "The specified volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' could not be found in the database",
-                    null, // details
-                    "Create a volume definition with number '" + vlmNr.value + "' on resource definition '" + rscDfn.getName().displayValue + "' first.",
-                    ApiConsts.FAIL_NOT_FOUND_VLM_DFN
-                );
-            }
-
-            return vlmDfn;
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "load " + getObjectDescriptionInline(),
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        catch (LinStorDataAlreadyExistsException | MdException implErr)
-        {
-            throw asImplError(implErr);
-        }
-        catch (SQLException sqlExc)
-        {
-            throw asSqlExc(
-                sqlExc,
-                "loading " + getObjectDescriptionInline()
-            );
-        }
-    }
-
     protected final StorPoolDefinitionData loadStorPoolDfn(String storPoolNameStr, boolean failIfNull) throws ApiCallHandlerFailedException
     {
         return loadStorPoolDfn(asStorPoolName(storPoolNameStr), failIfNull);
@@ -642,7 +573,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "access props for node '" + node.getName().displayValue + "'.",
+                "access properties for node '" + node.getName().displayValue + "'.",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
@@ -658,25 +589,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             throw asAccDeniedExc(
                 accDeniedExc,
-                "access props for resource definition '" + rscDfn.getName().displayValue + "'.",
+                "access properties for resource definition '" + rscDfn.getName().displayValue + "'.",
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-    }
-
-    protected final Props getProps(Resource rsc) throws ApiCallHandlerFailedException
-    {
-        try
-        {
-            return rsc.getProps(currentAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "access properties for resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
-                rsc.getAssignedNode().getName().displayValue + "'.",
-                ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
     }
@@ -694,41 +608,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 "access properties for volume definition with number '" + vlmDfn.getVolumeNumber().value + "' " +
                 "on resource definition '" + vlmDfn.getResourceDefinition().getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-    }
-
-    protected final Props getProps(Volume vlm) throws ApiCallHandlerFailedException
-    {
-        try
-        {
-            return vlm.getProps(currentAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "access properties for volume with number '" + vlm.getVolumeDefinition().getVolumeNumber().value + "' " +
-                "on resource '" + vlm.getResourceDefinition().getName().displayValue + "' " +
-                "on node '" + vlm.getResource().getAssignedNode().getName().displayValue + "'.",
-                ApiConsts.FAIL_ACC_DENIED_VLM
-            );
-        }
-    }
-
-    protected final Props getProps(StorPoolData storPool) throws ApiCallHandlerFailedException
-    {
-        try
-        {
-            return storPool.getProps(currentAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "access properties of storage pool '" + storPool.getName().displayValue +
-                "' on node '" + storPool.getNode().getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
         }
     }

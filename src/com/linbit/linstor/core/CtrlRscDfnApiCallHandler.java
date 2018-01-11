@@ -98,7 +98,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
         VolumeNumber volNr;
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.CREATE,
@@ -226,7 +226,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        try (AbsApiCallHandler basicallyThis = setCurrent(
+        try (AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.MODIFY,
@@ -301,7 +301,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         try (
-            AbsApiCallHandler basicallyThis = setCurrent(
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
                 client,
                 ApiCallType.DELETE,
@@ -558,7 +558,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         return ret;
     }
 
-    private AbsApiCallHandler setCurrent(
+    private AbsApiCallHandler setContext(
         AccessContext accCtx,
         Peer peer,
         ApiCallType type,
@@ -567,7 +567,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         String rscNameStr
     )
     {
-        super.setCurrent(
+        super.setContext(
             accCtx,
             peer,
             type,
