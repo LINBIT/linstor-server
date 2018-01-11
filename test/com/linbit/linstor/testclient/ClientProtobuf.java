@@ -14,6 +14,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,107 +82,119 @@ public class ClientProtobuf implements Runnable
             String details, Map<String, String> objRefsMap, Map<String, String> variablesMap);
     }
 
-    private static final Map<Long, String> RET_CODES_TYPE = new HashMap<>();
-    private static final Map<Long, String> RET_CODES_OBJ = new HashMap<>();
-    private static final Map<Long, String> RET_CODES_ACTION = new HashMap<>();
+    public static final Map<Long, String> RET_CODES_TYPE;
+    public static final Map<Long, String> RET_CODES_OP;
+    public static final Map<Long, String> RET_CODES_OBJ;
+    public static final Map<Long, String> RET_CODES_ACTION;
 
     static
     {
-        RET_CODES_TYPE.put(MASK_ERROR, "Error");
-        RET_CODES_TYPE.put(MASK_WARN, "Warn");
-        RET_CODES_TYPE.put(MASK_INFO, "Info");
-        RET_CODES_TYPE.put(MASK_SUCCESS, "Success");
+        HashMap<Long, String> tmpMap = new HashMap<>();
+        tmpMap.put(MASK_ERROR, "Error");
+        tmpMap.put(MASK_WARN, "Warn");
+        tmpMap.put(MASK_INFO, "Info");
+        tmpMap.put(MASK_SUCCESS, "Success");
+        RET_CODES_TYPE = Collections.unmodifiableMap(tmpMap);
 
-        RET_CODES_OBJ.put(MASK_NODE, "Node");
-        RET_CODES_OBJ.put(MASK_RSC_DFN, "RscDfn");
-        RET_CODES_OBJ.put(MASK_RSC, "Rsc");
-        RET_CODES_OBJ.put(MASK_VLM_DFN, "VlmDfn");
-        RET_CODES_OBJ.put(MASK_VLM, "Vlm");
-        RET_CODES_OBJ.put(MASK_STOR_POOL_DFN, "StorPoolDfn");
-        RET_CODES_OBJ.put(MASK_STOR_POOL, "StorPool");
-        RET_CODES_OBJ.put(MASK_NODE_CONN, "NodeConn");
-        RET_CODES_OBJ.put(MASK_RSC_CONN, "RscConn");
-        RET_CODES_OBJ.put(MASK_VLM_CONN, "VlmConn");
-        RET_CODES_OBJ.put(MASK_NET_IF, "NetIf");
+        tmpMap = new HashMap<>();
+        tmpMap.put(MASK_CRT, "Create");
+        tmpMap.put(MASK_MOD, "Modify");
+        tmpMap.put(MASK_DEL, "Delete");
+        RET_CODES_OP = Collections.unmodifiableMap(tmpMap);
 
-        RET_CODES_ACTION.put(CREATED, "created" );
-        RET_CODES_ACTION.put(DELETED, "deleted");
-        RET_CODES_ACTION.put(MODIFIED, "modified");
+        tmpMap = new HashMap<>();
+        tmpMap.put(MASK_NODE, "Node");
+        tmpMap.put(MASK_RSC_DFN, "RscDfn");
+        tmpMap.put(MASK_RSC, "Rsc");
+        tmpMap.put(MASK_VLM_DFN, "VlmDfn");
+        tmpMap.put(MASK_VLM, "Vlm");
+        tmpMap.put(MASK_STOR_POOL_DFN, "StorPoolDfn");
+        tmpMap.put(MASK_STOR_POOL, "StorPool");
+        tmpMap.put(MASK_NODE_CONN, "NodeConn");
+        tmpMap.put(MASK_RSC_CONN, "RscConn");
+        tmpMap.put(MASK_VLM_CONN, "VlmConn");
+        tmpMap.put(MASK_NET_IF, "NetIf");
+        RET_CODES_OBJ = Collections.unmodifiableMap(tmpMap);
 
-        RET_CODES_ACTION.put(FAIL_SQL, "FAIL_SQL");
-        RET_CODES_ACTION.put(FAIL_SQL_ROLLBACK, "FAIL_SQL_ROLLBACK");
-        RET_CODES_ACTION.put(FAIL_INVLD_NODE_NAME, "FAIL_INVLD_NODE_NAME");
-        RET_CODES_ACTION.put(FAIL_INVLD_NODE_TYPE, "FAIL_INVLD_NODE_TYPE");
-        RET_CODES_ACTION.put(FAIL_INVLD_RSC_NAME, "FAIL_INVLD_RSC_NAME");
-        RET_CODES_ACTION.put(FAIL_INVLD_RSC_PORT, "FAIL_INVLD_RSC_PORT");
-        RET_CODES_ACTION.put(FAIL_INVLD_NODE_ID, "FAIL_INVLD_NODE_ID");
-        RET_CODES_ACTION.put(FAIL_INVLD_VLM_NR, "FAIL_INVLD_VLM_NR");
-        RET_CODES_ACTION.put(FAIL_INVLD_VLM_SIZE, "FAIL_INVLD_VLM_SIZE");
-        RET_CODES_ACTION.put(FAIL_INVLD_MINOR_NR, "FAIL_INVLD_MINOR_NR");
-        RET_CODES_ACTION.put(FAIL_INVLD_STOR_POOL_NAME, "FAIL_INVLD_STOR_POOL_NAME");
-        RET_CODES_ACTION.put(FAIL_INVLD_NET_NAME, "FAIL_INVLD_NET_NAME");
-        RET_CODES_ACTION.put(FAIL_INVLD_NET_ADDR, "FAIL_INVLD_NET_ADDR");
-        RET_CODES_ACTION.put(FAIL_INVLD_NET_PORT, "FAIL_INVLD_NET_PORT");
-        RET_CODES_ACTION.put(FAIL_INVLD_NET_TYPE, "FAIL_INVLD_NET_TYPE");
-        RET_CODES_ACTION.put(FAIL_INVLD_PROP, "FAIL_INVLD_PROP");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_NODE, "FAIL_NOT_FOUND_NODE");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_RSC_DFN, "FAIL_NOT_FOUND_RSC_DFN");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_RSC, "FAIL_NOT_FOUND_RSC");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_VLM_DFN, "FAIL_NOT_FOUND_VLM_DFN");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_VLM, "FAIL_NOT_FOUND_VLM");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_NET_IF, "FAIL_NOT_FOUND_NET_IF");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_NODE_CONN, "FAIL_NOT_FOUND_NODE_CONN");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_RSC_CONN, "FAIL_NOT_FOUND_RSC_CONN");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_VLM_CONN, "FAIL_NOT_FOUND_VLM_CONN");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_STOR_POOL_DFN, "FAIL_NOT_FOUND_STOR_POOL_DFN");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_STOR_POOL, "FAIL_NOT_FOUND_STOR_POOL");
-        RET_CODES_ACTION.put(FAIL_NOT_FOUND_DFLT_STOR_POOL, "FAIL_NOT_FOUND_DFLT_STOR_POOL");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_NODE, "FAIL_ACC_DENIED_NODE");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_RSC_DFN, "FAIL_ACC_DENIED_RSC_DFN");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_RSC, "FAIL_ACC_DENIED_RSC");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_VLM_DFN, "FAIL_ACC_DENIED_VLM_DFN");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_VLM, "FAIL_ACC_DENIED_VLM");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_STOR_POOL_DFN, "FAIL_ACC_DENIED_STOR_POOL_DFN");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_STOR_POOL, "FAIL_ACC_DENIED_STOR_POOL");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_NODE_CONN, "FAIL_ACC_DENIED_NODE_CONN");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_RSC_CONN, "FAIL_ACC_DENIED_RSC_CONN");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_VLM_CONN, "FAIL_ACC_DENIED_VLM_CONN");
-        RET_CODES_ACTION.put(FAIL_ACC_DENIED_STLT_CONN, "FAIL_ACC_DENIED_STLT_CONN");
-        RET_CODES_ACTION.put(FAIL_EXISTS_NODE, "FAIL_EXISTS_NODE");
-        RET_CODES_ACTION.put(FAIL_EXISTS_RSC_DFN, "FAIL_EXISTS_RSC_DFN");
-        RET_CODES_ACTION.put(FAIL_EXISTS_RSC, "FAIL_EXISTS_RSC");
-        RET_CODES_ACTION.put(FAIL_EXISTS_VLM_DFN, "FAIL_EXISTS_VLM_DFN");
-        RET_CODES_ACTION.put(FAIL_EXISTS_VLM, "FAIL_EXISTS_VLM");
-        RET_CODES_ACTION.put(FAIL_EXISTS_NET_IF, "FAIL_EXISTS_NET_IF");
-        RET_CODES_ACTION.put(FAIL_EXISTS_NODE_CONN, "FAIL_EXISTS_NODE_CONN");
-        RET_CODES_ACTION.put(FAIL_EXISTS_RSC_CONN, "FAIL_EXISTS_RSC_CONN");
-        RET_CODES_ACTION.put(FAIL_EXISTS_VLM_CONN, "FAIL_EXISTS_VLM_CONN");
-        RET_CODES_ACTION.put(FAIL_EXISTS_STOR_POOL_DFN, "FAIL_EXISTS_STOR_POOL_DFN");
-        RET_CODES_ACTION.put(FAIL_EXISTS_STOR_POOL, "FAIL_EXISTS_STOR_POOL");
-        RET_CODES_ACTION.put(FAIL_MISSING_PROPS, "FAIL_MISSING_PROPS");
-        RET_CODES_ACTION.put(FAIL_MISSING_PROPS_NETCOM_TYPE, "FAIL_MISSING_PROPS_NETCOM_TYPE");
-        RET_CODES_ACTION.put(FAIL_MISSING_PROPS_NETCOM_PORT, "FAIL_MISSING_PROPS_NETCOM_PORT");
-        RET_CODES_ACTION.put(FAIL_MISSING_NETCOM, "FAIL_MISSING_NETCOM");
-        RET_CODES_ACTION.put(FAIL_MISSING_PROPS_NETIF_NAME, "FAIL_MISSING_PROPS_NETIF_NAME");
-        RET_CODES_ACTION.put(FAIL_MISSING_STLT_CONN, "FAIL_MISSING_STLT_CONN");
-        RET_CODES_ACTION.put(FAIL_UUID_NODE, "FAIL_UUID_NODE");
-        RET_CODES_ACTION.put(FAIL_UUID_RSC_DFN, "FAIL_UUID_RSC_DFN");
-        RET_CODES_ACTION.put(FAIL_UUID_RSC, "FAIL_UUID_RSC");
-        RET_CODES_ACTION.put(FAIL_UUID_VLM_DFN, "FAIL_UUID_VLM_DFN");
-        RET_CODES_ACTION.put(FAIL_UUID_VLM, "FAIL_UUID_VLM");
-        RET_CODES_ACTION.put(FAIL_UUID_NET_IF, "FAIL_UUID_NET_IF");
-        RET_CODES_ACTION.put(FAIL_UUID_NODE_CONN, "FAIL_UUID_NODE_CONN");
-        RET_CODES_ACTION.put(FAIL_UUID_RSC_CONN, "FAIL_UUID_RSC_CONN");
-        RET_CODES_ACTION.put(FAIL_UUID_VLM_CONN, "FAIL_UUID_VLM_CONN");
-        RET_CODES_ACTION.put(FAIL_UUID_STOR_POOL_DFN, "FAIL_UUID_STOR_POOL_DFN");
-        RET_CODES_ACTION.put(FAIL_UUID_STOR_POOL, "FAIL_UUID_STOR_POOL");
-        RET_CODES_ACTION.put(FAIL_IN_USE, "FAIL_IN_USE");
-        RET_CODES_ACTION.put(FAIL_UNKNOWN_ERROR, "FAIL_UNKNOWN_ERROR");
-        RET_CODES_ACTION.put(FAIL_IMPL_ERROR, "FAIL_IMPL_ERROR");
-        RET_CODES_ACTION.put(WARN_INVLD_OPT_PROP_NETCOM_ENABLED, "WARN_INVLD_OPT_PROP_NETCOM_ENABLED");
-        RET_CODES_ACTION.put(WARN_NOT_CONNECTED, "WARN_NOT_CONNECTED");
-        RET_CODES_ACTION.put(WARN_NOT_FOUND, "WARN_NOT_FOUND");
+        tmpMap = new HashMap<>();
+        tmpMap.put(CREATED, "created" );
+        tmpMap.put(DELETED, "deleted");
+        tmpMap.put(MODIFIED, "modified");
 
+        tmpMap.put(FAIL_SQL, "FAIL_SQL");
+        tmpMap.put(FAIL_SQL_ROLLBACK, "FAIL_SQL_ROLLBACK");
+        tmpMap.put(FAIL_INVLD_NODE_NAME, "FAIL_INVLD_NODE_NAME");
+        tmpMap.put(FAIL_INVLD_NODE_TYPE, "FAIL_INVLD_NODE_TYPE");
+        tmpMap.put(FAIL_INVLD_RSC_NAME, "FAIL_INVLD_RSC_NAME");
+        tmpMap.put(FAIL_INVLD_RSC_PORT, "FAIL_INVLD_RSC_PORT");
+        tmpMap.put(FAIL_INVLD_NODE_ID, "FAIL_INVLD_NODE_ID");
+        tmpMap.put(FAIL_INVLD_VLM_NR, "FAIL_INVLD_VLM_NR");
+        tmpMap.put(FAIL_INVLD_VLM_SIZE, "FAIL_INVLD_VLM_SIZE");
+        tmpMap.put(FAIL_INVLD_MINOR_NR, "FAIL_INVLD_MINOR_NR");
+        tmpMap.put(FAIL_INVLD_STOR_POOL_NAME, "FAIL_INVLD_STOR_POOL_NAME");
+        tmpMap.put(FAIL_INVLD_NET_NAME, "FAIL_INVLD_NET_NAME");
+        tmpMap.put(FAIL_INVLD_NET_ADDR, "FAIL_INVLD_NET_ADDR");
+        tmpMap.put(FAIL_INVLD_NET_PORT, "FAIL_INVLD_NET_PORT");
+        tmpMap.put(FAIL_INVLD_NET_TYPE, "FAIL_INVLD_NET_TYPE");
+        tmpMap.put(FAIL_INVLD_PROP, "FAIL_INVLD_PROP");
+        tmpMap.put(FAIL_NOT_FOUND_NODE, "FAIL_NOT_FOUND_NODE");
+        tmpMap.put(FAIL_NOT_FOUND_RSC_DFN, "FAIL_NOT_FOUND_RSC_DFN");
+        tmpMap.put(FAIL_NOT_FOUND_RSC, "FAIL_NOT_FOUND_RSC");
+        tmpMap.put(FAIL_NOT_FOUND_VLM_DFN, "FAIL_NOT_FOUND_VLM_DFN");
+        tmpMap.put(FAIL_NOT_FOUND_VLM, "FAIL_NOT_FOUND_VLM");
+        tmpMap.put(FAIL_NOT_FOUND_NET_IF, "FAIL_NOT_FOUND_NET_IF");
+        tmpMap.put(FAIL_NOT_FOUND_NODE_CONN, "FAIL_NOT_FOUND_NODE_CONN");
+        tmpMap.put(FAIL_NOT_FOUND_RSC_CONN, "FAIL_NOT_FOUND_RSC_CONN");
+        tmpMap.put(FAIL_NOT_FOUND_VLM_CONN, "FAIL_NOT_FOUND_VLM_CONN");
+        tmpMap.put(FAIL_NOT_FOUND_STOR_POOL_DFN, "FAIL_NOT_FOUND_STOR_POOL_DFN");
+        tmpMap.put(FAIL_NOT_FOUND_STOR_POOL, "FAIL_NOT_FOUND_STOR_POOL");
+        tmpMap.put(FAIL_NOT_FOUND_DFLT_STOR_POOL, "FAIL_NOT_FOUND_DFLT_STOR_POOL");
+        tmpMap.put(FAIL_ACC_DENIED_NODE, "FAIL_ACC_DENIED_NODE");
+        tmpMap.put(FAIL_ACC_DENIED_RSC_DFN, "FAIL_ACC_DENIED_RSC_DFN");
+        tmpMap.put(FAIL_ACC_DENIED_RSC, "FAIL_ACC_DENIED_RSC");
+        tmpMap.put(FAIL_ACC_DENIED_VLM_DFN, "FAIL_ACC_DENIED_VLM_DFN");
+        tmpMap.put(FAIL_ACC_DENIED_VLM, "FAIL_ACC_DENIED_VLM");
+        tmpMap.put(FAIL_ACC_DENIED_STOR_POOL_DFN, "FAIL_ACC_DENIED_STOR_POOL_DFN");
+        tmpMap.put(FAIL_ACC_DENIED_STOR_POOL, "FAIL_ACC_DENIED_STOR_POOL");
+        tmpMap.put(FAIL_ACC_DENIED_NODE_CONN, "FAIL_ACC_DENIED_NODE_CONN");
+        tmpMap.put(FAIL_ACC_DENIED_RSC_CONN, "FAIL_ACC_DENIED_RSC_CONN");
+        tmpMap.put(FAIL_ACC_DENIED_VLM_CONN, "FAIL_ACC_DENIED_VLM_CONN");
+        tmpMap.put(FAIL_ACC_DENIED_STLT_CONN, "FAIL_ACC_DENIED_STLT_CONN");
+        tmpMap.put(FAIL_EXISTS_NODE, "FAIL_EXISTS_NODE");
+        tmpMap.put(FAIL_EXISTS_RSC_DFN, "FAIL_EXISTS_RSC_DFN");
+        tmpMap.put(FAIL_EXISTS_RSC, "FAIL_EXISTS_RSC");
+        tmpMap.put(FAIL_EXISTS_VLM_DFN, "FAIL_EXISTS_VLM_DFN");
+        tmpMap.put(FAIL_EXISTS_VLM, "FAIL_EXISTS_VLM");
+        tmpMap.put(FAIL_EXISTS_NET_IF, "FAIL_EXISTS_NET_IF");
+        tmpMap.put(FAIL_EXISTS_NODE_CONN, "FAIL_EXISTS_NODE_CONN");
+        tmpMap.put(FAIL_EXISTS_RSC_CONN, "FAIL_EXISTS_RSC_CONN");
+        tmpMap.put(FAIL_EXISTS_VLM_CONN, "FAIL_EXISTS_VLM_CONN");
+        tmpMap.put(FAIL_EXISTS_STOR_POOL_DFN, "FAIL_EXISTS_STOR_POOL_DFN");
+        tmpMap.put(FAIL_EXISTS_STOR_POOL, "FAIL_EXISTS_STOR_POOL");
+        tmpMap.put(FAIL_MISSING_PROPS, "FAIL_MISSING_PROPS");
+        tmpMap.put(FAIL_MISSING_PROPS_NETCOM_TYPE, "FAIL_MISSING_PROPS_NETCOM_TYPE");
+        tmpMap.put(FAIL_MISSING_PROPS_NETCOM_PORT, "FAIL_MISSING_PROPS_NETCOM_PORT");
+        tmpMap.put(FAIL_MISSING_NETCOM, "FAIL_MISSING_NETCOM");
+        tmpMap.put(FAIL_MISSING_PROPS_NETIF_NAME, "FAIL_MISSING_PROPS_NETIF_NAME");
+        tmpMap.put(FAIL_MISSING_STLT_CONN, "FAIL_MISSING_STLT_CONN");
+        tmpMap.put(FAIL_UUID_NODE, "FAIL_UUID_NODE");
+        tmpMap.put(FAIL_UUID_RSC_DFN, "FAIL_UUID_RSC_DFN");
+        tmpMap.put(FAIL_UUID_RSC, "FAIL_UUID_RSC");
+        tmpMap.put(FAIL_UUID_VLM_DFN, "FAIL_UUID_VLM_DFN");
+        tmpMap.put(FAIL_UUID_VLM, "FAIL_UUID_VLM");
+        tmpMap.put(FAIL_UUID_NET_IF, "FAIL_UUID_NET_IF");
+        tmpMap.put(FAIL_UUID_NODE_CONN, "FAIL_UUID_NODE_CONN");
+        tmpMap.put(FAIL_UUID_RSC_CONN, "FAIL_UUID_RSC_CONN");
+        tmpMap.put(FAIL_UUID_VLM_CONN, "FAIL_UUID_VLM_CONN");
+        tmpMap.put(FAIL_UUID_STOR_POOL_DFN, "FAIL_UUID_STOR_POOL_DFN");
+        tmpMap.put(FAIL_UUID_STOR_POOL, "FAIL_UUID_STOR_POOL");
+        tmpMap.put(FAIL_IN_USE, "FAIL_IN_USE");
+        tmpMap.put(FAIL_UNKNOWN_ERROR, "FAIL_UNKNOWN_ERROR");
+        tmpMap.put(FAIL_IMPL_ERROR, "FAIL_IMPL_ERROR");
+        tmpMap.put(WARN_INVLD_OPT_PROP_NETCOM_ENABLED, "WARN_INVLD_OPT_PROP_NETCOM_ENABLED");
+        tmpMap.put(WARN_NOT_CONNECTED, "WARN_NOT_CONNECTED");
+        tmpMap.put(WARN_NOT_FOUND, "WARN_NOT_FOUND");
+        RET_CODES_ACTION = Collections.unmodifiableMap(tmpMap);
     }
 
     private Socket sock;
@@ -525,17 +538,28 @@ public class ClientProtobuf implements Runnable
             successCount++;
         }
 
-        decode(sb, retCode, 0xC000000000000000L, RET_CODES_TYPE);
-        decode(sb, retCode, 0x00000000003C0000L, RET_CODES_OBJ);
-        decode(sb, retCode, 0xC00000000000FFFFL, RET_CODES_ACTION);
-        sb.append(Long.toHexString(retCode));
+        appendReadableRetCode(sb, retCode);
         if ((retCode & 0x00FFFFFFFFFFFFFFL) == 0)
         {
             sb.append(" This looks wrong - please report to developer");
         }
     }
 
-    private void decode(StringBuilder sb, long retCode, long mask, Map<Long, String> retCodes)
+    public static void appendReadableRetCode(StringBuilder sb, long retCode)
+    {
+        appendReadableRetCode(sb, retCode, 0xC000000000000000L, RET_CODES_TYPE);
+        appendReadableRetCode(sb, retCode, 0x0000000003000000L, RET_CODES_OP);
+        appendReadableRetCode(sb, retCode, 0x00000000003C0000L, RET_CODES_OBJ);
+        appendReadableRetCode(sb, retCode, 0xC00000000000FFFFL, RET_CODES_ACTION);
+        sb.append(Long.toHexString(retCode));
+    }
+
+    public static void appendReadableRetCode(
+        StringBuilder sb,
+        long retCode,
+        long mask,
+        Map<Long, String> retCodes
+    )
     {
         for (Entry<Long, String> entry : retCodes.entrySet())
         {

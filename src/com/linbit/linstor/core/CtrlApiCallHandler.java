@@ -52,9 +52,9 @@ public class CtrlApiCallHandler
     private final CtrlRscConnectionApiCallHandler rscConnApiCallHandler;
     private final CtrlVlmConnectionApiCallHandler vlmConnApiCallHandler;
 
-    private ApiCtrlAccessorImpl apiCtrlAccessors;
+    private ApiCtrlAccessors apiCtrlAccessors;
 
-    CtrlApiCallHandler(ApiCtrlAccessorImpl apiCtrlAccessorsRef, ApiType type, AccessContext apiCtx)
+    CtrlApiCallHandler(ApiCtrlAccessors apiCtrlAccessorsRef, ApiType type, AccessContext apiCtx)
     {
 
         apiCtrlAccessors = apiCtrlAccessorsRef;

@@ -58,7 +58,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(getConnection());
 
         node = NodeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeName,
             null, // types
             null, // flags
@@ -68,9 +68,9 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         );
 
         niUuid = java.util.UUID.randomUUID();
-        niData = new NetInterfaceData(niUuid, sysCtx, niName, node, niAddr); // does not persist
+        niData = new NetInterfaceData(niUuid, SYS_CTX, niName, node, niAddr); // does not persist
 
-        dbDriver = new NetInterfaceDataDerbyDriver(sysCtx, errorReporter);
+        dbDriver = new NetInterfaceDataDerbyDriver(SYS_CTX, errorReporter);
         niAddrDriver = dbDriver.getNetInterfaceAddressDriver();
     }
 
@@ -115,7 +115,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
     {
         NetInterfaceName netInterfaceName = new NetInterfaceName("TestNetIface");
         NetInterfaceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             node,
             netInterfaceName,
             niAddr,
@@ -151,7 +151,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData.getNode().getName().value);
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
-        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress());
+        assertEquals(niAddrStr, netData.getAddress(SYS_CTX).getAddress());
     }
 
     @Test
@@ -167,7 +167,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData.getNode().getName().value);
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
-        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress());
+        assertEquals(niAddrStr, netData.getAddress(SYS_CTX).getAddress());
     }
 
     @Test
@@ -177,7 +177,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         dbDriver.create(niData, transMgr);
 
         NetInterfaceData netData1 = NetInterfaceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             node,
             niName,
             niAddr,
@@ -191,10 +191,10 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData1.getNode().getName().value);
         assertEquals(niName.value, netData1.getName().value);
         assertEquals(niName.displayValue, netData1.getName().displayValue);
-        assertEquals(niAddrStr, netData1.getAddress(sysCtx).getAddress());
+        assertEquals(niAddrStr, netData1.getAddress(SYS_CTX).getAddress());
 
         NetInterfaceData netData2 = NetInterfaceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             node,
             niName,
             niAddr,
@@ -220,14 +220,14 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         assertEquals(nodeName.value, netData.getNode().getName().value);
         assertEquals(niName.value, netData.getName().value);
         assertEquals(niName.displayValue, netData.getName().displayValue);
-        assertEquals(niAddrStr, netData.getAddress(sysCtx).getAddress());
+        assertEquals(niAddrStr, netData.getAddress(SYS_CTX).getAddress());
     }
 
     @Test
     public void testCache() throws Exception
     {
         NetInterfaceData storedInstance = NetInterfaceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             node,
             niName,
             niAddr,
@@ -286,7 +286,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         LsIpAddress addr = new LsIpAddress(addrStr);
 
         niData.setConnection(transMgr);
-        niData.setAddress(sysCtx, addr);
+        niData.setAddress(SYS_CTX, addr);
         transMgr.commit();
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
@@ -325,7 +325,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         satelliteMode();
 
         NetInterfaceData netData = NetInterfaceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             node,
             niName,
             niAddr,
@@ -335,7 +335,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         );
 
         assertNotNull(netData);
-        assertEquals(niAddr, netData.getAddress(sysCtx));
+        assertEquals(niAddr, netData.getAddress(SYS_CTX));
         assertEquals(niName, netData.getName());
         assertEquals(node, netData.getNode());
         assertNotNull(netData.getUuid());
@@ -355,7 +355,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
 
         NodeName nodeName2 = new NodeName("OtherNodeName");
         NodeData node2 = NodeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeName2,
             null, // types
             null, // flags
@@ -365,7 +365,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         );
 
         NetInterfaceData netData = NetInterfaceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             node2,
             niName,
             niAddr,
@@ -404,7 +404,7 @@ public class NetInterfaceDataDerbyTest extends DerbyBase
         dbDriver.create(niData, transMgr);
 
         NetInterfaceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             node,
             niName,
             niAddr,

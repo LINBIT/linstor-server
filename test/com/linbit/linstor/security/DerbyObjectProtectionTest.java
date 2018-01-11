@@ -42,7 +42,7 @@ public class DerbyObjectProtectionTest extends DerbyBase
         final TransactionMgr transMgr = new TransactionMgr(con);
 
         final String objPath = "testPath";
-        ObjectProtection.getInstance(sysCtx, objPath, true, transMgr);
+        ObjectProtection.getInstance(SYS_CTX, objPath, true, transMgr);
 
         final PreparedStatement stmt = con.prepareStatement(OP_SELECT);
         stmt.setString(1, objPath);
@@ -51,9 +51,9 @@ public class DerbyObjectProtectionTest extends DerbyBase
         assertTrue("Database did not persist objectProtection instance", resultSet.next());
 
         assertEquals(objPath, resultSet.getString(OBJECT_PATH));
-        assertEquals(sysCtx.subjectId.name.value, resultSet.getString(CREATOR_IDENTITY_NAME));
-        assertEquals(sysCtx.subjectRole.name.value, resultSet.getString(OWNER_ROLE_NAME));
-        assertEquals(sysCtx.subjectDomain.name.value, resultSet.getString(SECURITY_TYPE_NAME));
+        assertEquals(SYS_CTX.subjectId.name.value, resultSet.getString(CREATOR_IDENTITY_NAME));
+        assertEquals(SYS_CTX.subjectRole.name.value, resultSet.getString(OWNER_ROLE_NAME));
+        assertEquals(SYS_CTX.subjectDomain.name.value, resultSet.getString(SECURITY_TYPE_NAME));
 
         assertFalse("Database contains more data than expected", resultSet.next());
 
@@ -72,9 +72,9 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
         AccessContext accCtx = new AccessContext(
             new Identity(new IdentityName("UNKNOWN")),
-            sysCtx.subjectRole,
-            sysCtx.subjectDomain,
-            sysCtx.privEffective
+            SYS_CTX.subjectRole,
+            SYS_CTX.subjectDomain,
+            SYS_CTX.privEffective
         );
         ObjectProtection.getInstance(accCtx, objPath, true, transMgr);
         fail("Creating an ObjectProtection with an unknown identity should have failed");
@@ -90,10 +90,10 @@ public class DerbyObjectProtectionTest extends DerbyBase
         final String objPath = "testPath";
 
         AccessContext accCtx = new AccessContext(
-            sysCtx.subjectId,
+            SYS_CTX.subjectId,
             new Role(new RoleName("UNKNOWN")),
-            sysCtx.subjectDomain,
-            sysCtx.privEffective
+            SYS_CTX.subjectDomain,
+            SYS_CTX.privEffective
         );
         ObjectProtection.getInstance(accCtx, objPath, true, transMgr);
         fail("Creating an ObjectProtection with an unknown role should have failed");
@@ -109,10 +109,10 @@ public class DerbyObjectProtectionTest extends DerbyBase
         final String objPath = "testPath";
 
         AccessContext accCtx = new AccessContext(
-            sysCtx.subjectId,
-            sysCtx.subjectRole,
+            SYS_CTX.subjectId,
+            SYS_CTX.subjectRole,
             new SecurityType(new SecTypeName("UNKNOWN")),
-            sysCtx.privEffective
+            SYS_CTX.privEffective
         );
         ObjectProtection.getInstance(accCtx, objPath, true, transMgr);
         fail("Creating an ObjectProtection with an unknown identity should have failed");
@@ -126,9 +126,9 @@ public class DerbyObjectProtectionTest extends DerbyBase
         PreparedStatement stmt = con.prepareStatement(OP_INSERT);
         final String objPath = "testPath";
         stmt.setString(1, objPath);
-        stmt.setString(2, sysCtx.subjectId.name.value);
-        stmt.setString(3, sysCtx.subjectRole.name.value);
-        stmt.setString(4, sysCtx.subjectDomain.name.value);
+        stmt.setString(2, SYS_CTX.subjectId.name.value);
+        stmt.setString(3, SYS_CTX.subjectRole.name.value);
+        stmt.setString(4, SYS_CTX.subjectDomain.name.value);
         stmt.executeUpdate();
         stmt.close();
 
@@ -137,11 +137,11 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
         con = getConnection();
         TransactionMgr transMgr = new TransactionMgr(con);
-        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, objPath, false, transMgr);
+        ObjectProtection objProt = ObjectProtection.getInstance(SYS_CTX, objPath, false, transMgr);
 
-        assertEquals(sysCtx.subjectId, objProt.getCreator());
-        assertEquals(sysCtx.subjectRole, objProt.getOwner());
-        assertEquals(sysCtx.subjectDomain, objProt.getSecurityType());
+        assertEquals(SYS_CTX.subjectId, objProt.getCreator());
+        assertEquals(SYS_CTX.subjectRole, objProt.getOwner());
+        assertEquals(SYS_CTX.subjectDomain, objProt.getSecurityType());
     }
 
 
@@ -154,20 +154,20 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
         final String objPath = "testPath";
 
-        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, objPath, true, transMgr);
+        ObjectProtection objProt = ObjectProtection.getInstance(SYS_CTX, objPath, true, transMgr);
         objProt.setConnection(transMgr);
-        Role testRole = Role.create(sysCtx, new RoleName("test"));
+        Role testRole = Role.create(SYS_CTX, new RoleName("test"));
 
         PreparedStatement stmt = con.prepareStatement(ROLES_INSERT);
         stmt.setString(1, testRole.name.value);
         stmt.setString(2, testRole.name.displayValue);
-        stmt.setString(3, sysCtx.subjectDomain.name.value);
+        stmt.setString(3, SYS_CTX.subjectDomain.name.value);
         stmt.setBoolean(4, true);
         stmt.setLong(5, Privilege.PRIV_SYS_ALL.id);
         stmt.executeUpdate();
         stmt.close();
 
-        objProt.addAclEntry(sysCtx, testRole, AccessType.CHANGE);
+        objProt.addAclEntry(SYS_CTX, testRole, AccessType.CHANGE);
         transMgr.commit();
 
         stmt = con.prepareStatement(ACL_SELECT_BY_OBJPATH_AND_ROLE);
@@ -195,11 +195,11 @@ public class DerbyObjectProtectionTest extends DerbyBase
         TransactionMgr transMgr = new TransactionMgr(con);
 
         final String objPath = "testPath";
-        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, objPath, true, transMgr);
+        ObjectProtection objProt = ObjectProtection.getInstance(SYS_CTX, objPath, true, transMgr);
         objProt.setConnection(transMgr);
-        objProt.addAclEntry(sysCtx, sysCtx.subjectRole, AccessType.CHANGE);
+        objProt.addAclEntry(SYS_CTX, SYS_CTX.subjectRole, AccessType.CHANGE);
 
-        objProt.delAclEntry(sysCtx, sysCtx.subjectRole);
+        objProt.delAclEntry(SYS_CTX, SYS_CTX.subjectRole);
 
         PreparedStatement stmt = con.prepareStatement(ACL_SELECT);
         stmt.setString(1, objPath);
@@ -221,15 +221,15 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
         PreparedStatement stmt = con.prepareStatement(OP_INSERT);
         stmt.setString(1, objPath);
-        stmt.setString(2, sysCtx.subjectId.name.value);
-        stmt.setString(3, sysCtx.subjectRole.name.value);
-        stmt.setString(4, sysCtx.subjectDomain.name.value);
+        stmt.setString(2, SYS_CTX.subjectId.name.value);
+        stmt.setString(3, SYS_CTX.subjectRole.name.value);
+        stmt.setString(4, SYS_CTX.subjectDomain.name.value);
         stmt.executeUpdate();
         stmt.close();
 
         stmt = con.prepareStatement(ACL_INSERT);
         stmt.setString(1, objPath);
-        stmt.setString(2, sysCtx.subjectRole.name.value);
+        stmt.setString(2, SYS_CTX.subjectRole.name.value);
         stmt.setShort(3, AccessType.CHANGE.getAccessMask());
         stmt.executeUpdate();
         stmt.close();
@@ -239,8 +239,8 @@ public class DerbyObjectProtectionTest extends DerbyBase
 
         con = getConnection();
         TransactionMgr transMgr = new TransactionMgr(con);
-        ObjectProtection objProt = ObjectProtection.getInstance(sysCtx, objPath, false, transMgr);
+        ObjectProtection objProt = ObjectProtection.getInstance(SYS_CTX, objPath, false, transMgr);
 
-        assertEquals(AccessType.CHANGE, objProt.getAcl().getEntry(sysCtx));
+        assertEquals(AccessType.CHANGE, objProt.getAcl().getEntry(SYS_CTX));
     }
 }

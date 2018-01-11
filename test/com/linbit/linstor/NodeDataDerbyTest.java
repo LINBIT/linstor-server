@@ -75,7 +75,7 @@ public class NodeDataDerbyTest extends DerbyBase
         transMgr = new TransactionMgr(getConnection());
 
         uuid = randomUUID();
-        objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPath(nodeName), true, transMgr);
+        objProt = ObjectProtection.getInstance(SYS_CTX, ObjectProtection.buildPath(nodeName), true, transMgr);
         initialFlags = NodeFlag.QIGNORE.flagValue;
         initialType = NodeType.AUXILIARY;
         node = new NodeData(
@@ -113,7 +113,7 @@ public class NodeDataDerbyTest extends DerbyBase
     public void testPersistGetInstance() throws Exception
     {
         NodeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeName,
             null,
             null,
@@ -157,7 +157,7 @@ public class NodeDataDerbyTest extends DerbyBase
         stmt.close();
 
         ObjectProtection loadedObjProt = ObjectProtection.getInstance(
-            sysCtx,
+            SYS_CTX,
             ObjectProtection.buildPath(nodeName),
             false,
             transMgr
@@ -178,11 +178,11 @@ public class NodeDataDerbyTest extends DerbyBase
         insertNode(transMgr, uuid, nodeName, 0, NodeType.AUXILIARY);
         transMgr.commit();
 
-        NodeData loaded = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false, false);
+        NodeData loaded = NodeData.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
 
         assertNotNull(loaded);
         loaded.setConnection(transMgr);
-        loaded.getFlags().enableFlags(sysCtx, NodeFlag.DELETE);
+        loaded.getFlags().enableFlags(SYS_CTX, NodeFlag.DELETE);
         transMgr.commit();
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_NODES);
@@ -207,27 +207,27 @@ public class NodeDataDerbyTest extends DerbyBase
 
         assertEquals(nodeName.value, loaded.getName().value);
         assertEquals(nodeName.displayValue, loaded.getName().displayValue);
-        assertEquals(NodeFlag.QIGNORE.flagValue, loaded.getFlags().getFlagsBits(sysCtx));
-        assertEquals(Node.NodeType.AUXILIARY, loaded.getNodeType(sysCtx));
+        assertEquals(NodeFlag.QIGNORE.flagValue, loaded.getFlags().getFlagsBits(SYS_CTX));
+        assertEquals(Node.NodeType.AUXILIARY, loaded.getNodeType(SYS_CTX));
 
     };
 
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false, false);
+        NodeData loadedNode = NodeData.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
         assertNull(loadedNode);
 
         insertNode(transMgr, uuid, nodeName, 0, NodeType.AUXILIARY);
         transMgr.commit();
 
-        loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false, false);
+        loadedNode = NodeData.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
 
         assertNotNull(loadedNode);
         assertEquals(nodeName, loadedNode.getName()); // NodeName class implements equals
-        assertEquals(0, loadedNode.getFlags().getFlagsBits(sysCtx));
-        assertEquals(NodeType.AUXILIARY, loadedNode.getNodeType(sysCtx));
-        assertEquals(0, loadedNode.getProps(sysCtx).size()); // serial number
+        assertEquals(0, loadedNode.getFlags().getFlagsBits(SYS_CTX));
+        assertEquals(NodeType.AUXILIARY, loadedNode.getNodeType(SYS_CTX));
+        assertEquals(0, loadedNode.getProps(SYS_CTX).size()); // serial number
     }
 
     @Test
@@ -320,7 +320,7 @@ public class NodeDataDerbyTest extends DerbyBase
         {
             // node1
             NodeData node1 = NodeData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 nodeName,
                 NodeType.AUXILIARY,
                 new NodeFlag[] {NodeFlag.QIGNORE},
@@ -328,14 +328,14 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            node1.getProps(sysCtx).setProp(node1TestKey, node1TestValue);
+            node1.getProps(SYS_CTX).setProp(node1TestKey, node1TestValue);
             node1Uuid = node1.getUuid();
 
             nodesMap.put(node1.getName(), node1);
 
             // node1's netIface
             NetInterfaceData netIf = NetInterfaceData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 node1,
                 netName,
                 new LsIpAddress(netHost),
@@ -347,7 +347,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
             // node2
             NodeData node2 = NodeData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 nodeName2,
                 NodeType.AUXILIARY,
                 null,
@@ -360,7 +360,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
             // resDfn
             ResourceDefinitionData resDfn = ResourceDefinitionData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 resName,
                 resPort,
                 new RscDfnFlags[] {RscDfnFlags.DELETE},
@@ -370,14 +370,14 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            resDfn.getProps(sysCtx).setProp(resDfnTestKey, resDfnTestValue);
+            resDfn.getProps(SYS_CTX).setProp(resDfnTestKey, resDfnTestValue);
             resDfnUuid = resDfn.getUuid();
 
-            resDfnMap.put(resDfn.getName(), resDfn);
+            rscDfnMap.put(resDfn.getName(), resDfn);
 
             // volDfn
             VolumeDefinitionData volDfn = VolumeDefinitionData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 resDfn,
                 volDfnNr,
                 new MinorNumber(volDfnMinorNr),
@@ -387,12 +387,12 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            volDfn.getProps(sysCtx).setProp(volDfnTestKey, volDfnTestValue);
+            volDfn.getProps(SYS_CTX).setProp(volDfnTestKey, volDfnTestValue);
             volDfnUuid = volDfn.getUuid();
 
             // storPoolDfn
             StorPoolDefinitionData storPoolDfn = StorPoolDefinitionData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 poolName,
                 transMgr,
                 true,
@@ -404,7 +404,7 @@ public class NodeDataDerbyTest extends DerbyBase
 
             // node1 storPool
             StorPoolData storPool1 = StorPoolData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 node1,
                 storPoolDfn,
                 storPoolDriver1,
@@ -412,11 +412,11 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            storPool1.getProps(sysCtx).setProp(storPool1TestKey, storPool1TestValue);
+            storPool1.getProps(SYS_CTX).setProp(storPool1TestKey, storPool1TestValue);
 
             // node2 storPool
             StorPoolData storPool2 = StorPoolData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 node2,
                 storPoolDfn,
                 storPoolDriver2,
@@ -424,11 +424,11 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            storPool2.getProps(sysCtx).setProp(storPool2TestKey, storPool2TestValue);
+            storPool2.getProps(SYS_CTX).setProp(storPool2TestKey, storPool2TestValue);
 
             // node1 res
             ResourceData res1 = ResourceData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 resDfn,
                 node1,
                 node1Id,
@@ -437,12 +437,12 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            res1.getProps(sysCtx).setProp(res1TestKey, res1TestValue);
+            res1.getProps(SYS_CTX).setProp(res1TestKey, res1TestValue);
             res1Uuid = res1.getUuid();
 
             // node1 vol
             VolumeData vol1 = VolumeData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 res1,
                 volDfn,
                 storPool1,
@@ -453,12 +453,12 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            vol1.getProps(sysCtx).setProp(vol1TestKey, vol1TestValue);
+            vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
             vol1Uuid = vol1.getUuid();
 
             // node2 res
             ResourceData res2 = ResourceData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 resDfn,
                 node2,
                 node2Id,
@@ -467,12 +467,12 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            res2.getProps(sysCtx).setProp(res2TestKey, res2TestValue);
+            res2.getProps(SYS_CTX).setProp(res2TestKey, res2TestValue);
             res2Uuid = res2.getUuid();
 
             // node2 vol
             VolumeData vol2 = VolumeData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 res2,
                 volDfn,
                 storPool2,
@@ -483,61 +483,61 @@ public class NodeDataDerbyTest extends DerbyBase
                 true,
                 true
             );
-            vol2.getProps(sysCtx).setProp(vol2TestKey, vol2TestValue);
+            vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);
             vol2Uuid = vol2.getUuid();
 
             // nodeCon node1 <-> node2
             NodeConnectionData nodeCon = NodeConnectionData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 node1,
                 node2,
                 transMgr,
                 true,
                 true
             );
-            nodeCon.getProps(sysCtx).setProp(nodeConTestKey, nodeConTestValue);
+            nodeCon.getProps(SYS_CTX).setProp(nodeConTestKey, nodeConTestValue);
             nodeConUuid = nodeCon.getUuid();
 
             // resCon res1 <-> res2
             ResourceConnectionData resCon = ResourceConnectionData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 res1,
                 res2,
                 transMgr,
                 true,
                 true
             );
-            resCon.getProps(sysCtx).setProp(resConTestKey, resConTestValue);
+            resCon.getProps(SYS_CTX).setProp(resConTestKey, resConTestValue);
             resConUuid = resCon.getUuid();
 
             // volCon vol1 <-> vol2
             VolumeConnectionData volCon = VolumeConnectionData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 vol1,
                 vol2,
                 transMgr,
                 true,
                 true
             );
-            volCon.getProps(sysCtx).setProp(volConTestKey, volConTestValue);
+            volCon.getProps(SYS_CTX).setProp(volConTestKey, volConTestValue);
             volConUuid = volCon.getUuid();
 
             transMgr.commit();
         }
 //        clearCaches();
 
-        NodeData loadedNode = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, false, false);
-        NodeData loadedNode2 = NodeData.getInstance(sysCtx, nodeName2, null, null, transMgr, false, false);
+        NodeData loadedNode = NodeData.getInstance(SYS_CTX, nodeName, null, null, transMgr, false, false);
+        NodeData loadedNode2 = NodeData.getInstance(SYS_CTX, nodeName2, null, null, transMgr, false, false);
 
         assertNotNull(loadedNode);
 
-        assertEquals(NodeFlag.QIGNORE.flagValue, loadedNode.getFlags().getFlagsBits(sysCtx));
+        assertEquals(NodeFlag.QIGNORE.flagValue, loadedNode.getFlags().getFlagsBits(SYS_CTX));
         assertEquals(nodeName, loadedNode.getName()); // NodeName class implements equals
         {
-            NetInterface netIf = loadedNode.getNetInterface(sysCtx, netName);
+            NetInterface netIf = loadedNode.getNetInterface(SYS_CTX, netName);
             assertNotNull(netIf);
             {
-                LsIpAddress address = netIf.getAddress(sysCtx);
+                LsIpAddress address = netIf.getAddress(SYS_CTX);
                 assertNotNull(address);
                 assertEquals(netHost, address.getAddress());
             }
@@ -546,40 +546,40 @@ public class NodeDataDerbyTest extends DerbyBase
             assertEquals(netIfUuid, netIf.getUuid());
         }
 
-        assertEquals(NodeType.AUXILIARY, loadedNode.getNodeType(sysCtx));
+        assertEquals(NodeType.AUXILIARY, loadedNode.getNodeType(SYS_CTX));
         assertNotNull(loadedNode.getObjProt());
         {
-            Props nodeProps = loadedNode.getProps(sysCtx);
+            Props nodeProps = loadedNode.getProps(SYS_CTX);
             assertNotNull(nodeProps);
             assertEquals(node1TestValue, nodeProps.getProp(node1TestKey));
             assertEquals(1, nodeProps.size());
         }
         {
-            Resource res = loadedNode.getResource(sysCtx, resName);
+            Resource res = loadedNode.getResource(SYS_CTX, resName);
             assertNotNull(res);
             assertEquals(loadedNode, res.getAssignedNode());
             {
                 ResourceDefinition resDfn = res.getDefinition();
                 assertNotNull(resDfn);
-                assertEquals(RscDfnFlags.DELETE.flagValue, resDfn.getFlags().getFlagsBits(sysCtx));
+                assertEquals(RscDfnFlags.DELETE.flagValue, resDfn.getFlags().getFlagsBits(SYS_CTX));
                 assertEquals(resName, resDfn.getName());
-                assertEquals(resPort, resDfn.getPort(sysCtx));
+                assertEquals(resPort, resDfn.getPort(SYS_CTX));
                 assertNotNull(resDfn.getObjProt());
                 {
-                    Props resDfnProps = resDfn.getProps(sysCtx);
+                    Props resDfnProps = resDfn.getProps(SYS_CTX);
                     assertNotNull(resDfnProps);
 
                     assertEquals(resDfnTestValue, resDfnProps.getProp(resDfnTestKey));
                     assertEquals(1, resDfnProps.size());
                 }
-                assertEquals(res, resDfn.getResource(sysCtx, nodeName));
+                assertEquals(res, resDfn.getResource(SYS_CTX, nodeName));
                 assertEquals(resDfnUuid, resDfn.getUuid());
-                assertEquals(res.getVolume(volDfnNr).getVolumeDefinition(), resDfn.getVolumeDfn(sysCtx, volDfnNr));
+                assertEquals(res.getVolume(volDfnNr).getVolumeDefinition(), resDfn.getVolumeDfn(SYS_CTX, volDfnNr));
             }
             assertEquals(node1Id, res.getNodeId());
             assertNotNull(res.getObjProt());
             {
-                Props resProps = res.getProps(sysCtx);
+                Props resProps = res.getProps(SYS_CTX);
                 assertNotNull(resProps);
 
                 assertEquals(res1TestValue, resProps.getProp(res1TestKey));
@@ -588,8 +588,8 @@ public class NodeDataDerbyTest extends DerbyBase
             {
                 StateFlags<RscFlags> resStateFlags = res.getStateFlags();
                 assertNotNull(resStateFlags);
-                assertTrue(resStateFlags.isSet(sysCtx, RscFlags.CLEAN));
-                assertFalse(resStateFlags.isSet(sysCtx, RscFlags.DELETE));
+                assertTrue(resStateFlags.isSet(SYS_CTX, RscFlags.CLEAN));
+                assertFalse(resStateFlags.isSet(SYS_CTX, RscFlags.DELETE));
             }
             assertEquals(res1Uuid, res.getUuid());
             {
@@ -598,10 +598,10 @@ public class NodeDataDerbyTest extends DerbyBase
                 {
                     StateFlags<VlmFlags> flags = vol.getFlags();
                     assertNotNull(flags);
-                    flags.isSet(sysCtx, Volume.VlmFlags.CLEAN);
+                    flags.isSet(SYS_CTX, Volume.VlmFlags.CLEAN);
                 }
                 {
-                    Props volProps = vol.getProps(sysCtx);
+                    Props volProps = vol.getProps(SYS_CTX);
                     assertNotNull(volProps);
                     assertEquals(vol1TestValue, volProps.getProp(vol1TestKey));
                     assertEquals(1, volProps.size());
@@ -611,10 +611,10 @@ public class NodeDataDerbyTest extends DerbyBase
                 assertEquals(vol1Uuid, vol.getUuid());
                 {
                     VolumeDefinition volDfn = vol.getVolumeDefinition();
-                    assertTrue(volDfn.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
-                    assertEquals(volDfnMinorNr, volDfn.getMinorNr(sysCtx).value);
+                    assertTrue(volDfn.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
+                    assertEquals(volDfnMinorNr, volDfn.getMinorNr(SYS_CTX).value);
                     {
-                        Props volDfnProps = volDfn.getProps(sysCtx);
+                        Props volDfnProps = volDfn.getProps(SYS_CTX);
                         assertNotNull(volDfnProps);
                         assertEquals(volDfnTestValue, volDfnProps.getProp(volDfnTestKey));
                         assertEquals(1, volDfnProps.size());
@@ -622,38 +622,38 @@ public class NodeDataDerbyTest extends DerbyBase
                     assertEquals(res.getDefinition(), volDfn.getResourceDefinition());
                     assertEquals(volDfnUuid, volDfn.getUuid());
                     assertEquals(volDfnNr, volDfn.getVolumeNumber());
-                    assertEquals(volDfnSize, volDfn.getVolumeSize(sysCtx));
+                    assertEquals(volDfnSize, volDfn.getVolumeSize(SYS_CTX));
                 }
                 {
-                    Volume vol2 = loadedNode2.getResource(sysCtx, resName).getVolume(volDfnNr);
+                    Volume vol2 = loadedNode2.getResource(SYS_CTX, resName).getVolume(volDfnNr);
                     assertEquals(vol2Uuid, vol2.getUuid());
                     assertNotNull(vol2);
 
-                    VolumeConnection volCon = vol.getVolumeConnection(sysCtx, vol2);
+                    VolumeConnection volCon = vol.getVolumeConnection(SYS_CTX, vol2);
                     assertNotNull(volCon);
 
-                    assertEquals(vol, volCon.getSourceVolume(sysCtx));
-                    assertEquals(vol2, volCon.getTargetVolume(sysCtx));
+                    assertEquals(vol, volCon.getSourceVolume(SYS_CTX));
+                    assertEquals(vol2, volCon.getTargetVolume(SYS_CTX));
                     assertEquals(volConUuid, volCon.getUuid());
 
-                    Props volConProps = volCon.getProps(sysCtx);
+                    Props volConProps = volCon.getProps(SYS_CTX);
                     assertNotNull(volConProps);
                     assertEquals(volConTestValue, volConProps.getProp(volConTestKey));
                     assertEquals(1, volConProps.size());
                 }
             }
             {
-                Resource res2 = loadedNode2.getResource(sysCtx, resName);
+                Resource res2 = loadedNode2.getResource(SYS_CTX, resName);
                 assertNotNull(res2);
                 assertEquals(res2Uuid, res2.getUuid());
-                ResourceConnection resCon = res.getResourceConnection(sysCtx, res2);
+                ResourceConnection resCon = res.getResourceConnection(SYS_CTX, res2);
                 assertNotNull(resCon);
 
-                assertEquals(res, resCon.getSourceResource(sysCtx));
-                assertEquals(res2, resCon.getTargetResource(sysCtx));
+                assertEquals(res, resCon.getSourceResource(SYS_CTX));
+                assertEquals(res2, resCon.getTargetResource(SYS_CTX));
                 assertEquals(resConUuid, resCon.getUuid());
 
-                Props resConProps = resCon.getProps(sysCtx);
+                Props resConProps = resCon.getProps(SYS_CTX);
                 assertNotNull(resConProps);
                 assertEquals(resConTestValue, resConProps.getProp(resConTestKey));
                 assertEquals(1, resConProps.size());
@@ -661,23 +661,23 @@ public class NodeDataDerbyTest extends DerbyBase
         }
 
         {
-            StorPool storPool = loadedNode.getStorPool(sysCtx, poolName);
+            StorPool storPool = loadedNode.getStorPool(SYS_CTX, poolName);
             assertNotNull(storPool);
             {
-                Props storPoolConfig = storPool.getProps(sysCtx);
+                Props storPoolConfig = storPool.getProps(SYS_CTX);
                 assertNotNull(storPoolConfig);
                 assertEquals(storPool1TestValue, storPoolConfig.getProp(storPool1TestKey));
                 assertEquals(1, storPoolConfig.size());
             }
             {
-                StorPoolDefinition storPoolDefinition = storPool.getDefinition(sysCtx);
+                StorPoolDefinition storPoolDefinition = storPool.getDefinition(SYS_CTX);
                 assertNotNull(storPoolDefinition);
                 assertEquals(poolName, storPoolDefinition.getName());
                 assertNotNull(storPoolDefinition.getObjProt());
                 assertEquals(storPoolDfnUuid, storPoolDefinition.getUuid());
             }
             {
-                StorageDriver storageDriver = storPool.getDriver(sysCtx);
+                StorageDriver storageDriver = storPool.getDriver(SYS_CTX);
                 assertNull(storageDriver);
                 // in controller storDriver HAS to be null (as we are testing database, we have to be testing the controller)
             }
@@ -686,14 +686,14 @@ public class NodeDataDerbyTest extends DerbyBase
         }
         assertEquals(node1Uuid, loadedNode.getUuid());
 
-        NodeConnection nodeCon = loadedNode.getNodeConnection(sysCtx, loadedNode2);
+        NodeConnection nodeCon = loadedNode.getNodeConnection(SYS_CTX, loadedNode2);
         assertNotNull(nodeCon);
 
-        assertEquals(loadedNode, nodeCon.getSourceNode(sysCtx));
-        assertEquals(loadedNode2, nodeCon.getTargetNode(sysCtx));
+        assertEquals(loadedNode, nodeCon.getSourceNode(SYS_CTX));
+        assertEquals(loadedNode2, nodeCon.getTargetNode(SYS_CTX));
         assertEquals(nodeConUuid, nodeCon.getUuid());
 
-        Props nodeConProps = nodeCon.getProps(sysCtx);
+        Props nodeConProps = nodeCon.getProps(SYS_CTX);
         assertNotNull(nodeConProps);
         assertEquals(nodeConTestValue, nodeConProps.getProp(nodeConTestKey));
         assertEquals(1, nodeConProps.size());
@@ -733,7 +733,7 @@ public class NodeDataDerbyTest extends DerbyBase
         satelliteMode();
 
         NodeData nodeData = NodeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeName,
             null,
             null,
@@ -759,7 +759,7 @@ public class NodeDataDerbyTest extends DerbyBase
         satelliteMode();
 
         NodeData nodeData = NodeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeName,
             null,
             null,
@@ -797,7 +797,7 @@ public class NodeDataDerbyTest extends DerbyBase
         dbDriver.create(node, transMgr);
         NodeName nodeName2 = new NodeName("NodeName2");
         NodeData node2 = NodeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeName2,
             NodeType.CONTROLLER,
             null,
@@ -816,12 +816,12 @@ public class NodeDataDerbyTest extends DerbyBase
 
         assertEquals(node.getName().value, allNodes.get(0).getName().value);
         assertEquals(node.getName().displayValue, allNodes.get(0).getName().displayValue);
-        assertEquals(node.getNodeType(sysCtx), allNodes.get(0).getNodeType(sysCtx));
+        assertEquals(node.getNodeType(SYS_CTX), allNodes.get(0).getNodeType(SYS_CTX));
         assertEquals(node.getUuid(), allNodes.get(0).getUuid());
 
         assertEquals(node2.getName().value, allNodes.get(1).getName().value);
         assertEquals(node2.getName().displayValue, allNodes.get(1).getName().displayValue);
-        assertEquals(node2.getNodeType(sysCtx), allNodes.get(1).getNodeType(sysCtx));
+        assertEquals(node2.getNodeType(SYS_CTX), allNodes.get(1).getNodeType(SYS_CTX));
         assertEquals(node2.getUuid(), allNodes.get(1).getUuid());
     }
 
@@ -830,7 +830,7 @@ public class NodeDataDerbyTest extends DerbyBase
     {
         dbDriver.create(node, transMgr);
 
-        NodeData.getInstance(sysCtx, nodeName, initialType, null, transMgr, false, true);
+        NodeData.getInstance(SYS_CTX, nodeName, initialType, null, transMgr, false, true);
     }
 
 }

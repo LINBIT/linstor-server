@@ -72,7 +72,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         resDfnUuid = randomUUID();
 
         resDfnObjProt = ObjectProtection.getInstance(
-            sysCtx,
+            SYS_CTX,
             ObjectProtection.buildPath(resName),
             true,
             transMgr
@@ -80,7 +80,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         node1Id = new NodeId(1);
         node1 = NodeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeName,
             null,
             null,
@@ -130,7 +130,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testPersistGetInstance() throws Exception
     {
         ResourceDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
@@ -164,9 +164,9 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testLoad() throws Exception
     {
         driver.create(resDfn, transMgr);
-        resDfnMap.put(resName, resDfn);
+        rscDfnMap.put(resName, resDfn);
         ResourceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             node1,
             node1Id,
@@ -181,17 +181,17 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
-        assertEquals(port, loadedResDfn.getPort(sysCtx));
-        assertEquals(secret, loadedResDfn.getSecret(sysCtx));
-        assertEquals(transportType, loadedResDfn.getTransportType(sysCtx));
-        assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
+        assertEquals(port, loadedResDfn.getPort(SYS_CTX));
+        assertEquals(secret, loadedResDfn.getSecret(SYS_CTX));
+        assertEquals(transportType, loadedResDfn.getTransportType(SYS_CTX));
+        assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(SYS_CTX));
     }
 
     @Test
     public void testLoadGetInstance() throws Exception
     {
         ResourceDefinitionData loadedResDfn = ResourceDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
@@ -206,10 +206,10 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         driver.create(resDfn, transMgr);
 
-        resDfnMap.put(resDfn.getName(), resDfn);
+        rscDfnMap.put(resDfn.getName(), resDfn);
 
         ResourceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             node1,
             node1Id,
@@ -220,7 +220,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         );
 
         loadedResDfn = ResourceDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resName,
             null,
             null,
@@ -234,17 +234,17 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         assertNotNull("Database did not persist resource / resourceDefinition", loadedResDfn);
         assertEquals(resDfnUuid, loadedResDfn.getUuid());
         assertEquals(resName, loadedResDfn.getName());
-        assertEquals(port, loadedResDfn.getPort(sysCtx));
-        assertEquals(secret, loadedResDfn.getSecret(sysCtx));
-        assertEquals(transportType, loadedResDfn.getTransportType(sysCtx));
-        assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(sysCtx));
+        assertEquals(port, loadedResDfn.getPort(SYS_CTX));
+        assertEquals(secret, loadedResDfn.getSecret(SYS_CTX));
+        assertEquals(transportType, loadedResDfn.getTransportType(SYS_CTX));
+        assertEquals(RscDfnFlags.DELETE.flagValue, loadedResDfn.getFlags().getFlagsBits(SYS_CTX));
     }
 
     @Test
     public void testCache() throws Exception
     {
         ResourceDefinitionData storedInstance = ResourceDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resName,
             port,
             null,
@@ -254,7 +254,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             true,
             false
         );
-        resDfnMap.put(resName, storedInstance);
+        rscDfnMap.put(resName, storedInstance);
         // no clearCaches
 
         assertEquals(storedInstance, driver.load(resName, true, transMgr));
@@ -287,7 +287,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         resDfn.setConnection(transMgr);
         driver.create(resDfn, transMgr);
 
-        Props props = resDfn.getProps(sysCtx);
+        Props props = resDfn.getProps(SYS_CTX);
         String testKey = "TestKey";
         String testValue = "TestValue";
         props.setProp(testKey, testValue);
@@ -303,14 +303,14 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     public void testLoadResources() throws Exception
     {
         driver.create(resDfn, transMgr);
-        resDfnMap.put(resDfn.getName(), resDfn);
+        rscDfnMap.put(resDfn.getName(), resDfn);
         NodeName nodeName = new NodeName("TestNodeName");
-        Node node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true, false);
+        Node node = NodeData.getInstance(SYS_CTX, nodeName, null, null, transMgr, true, false);
         nodesMap.put(node.getName(), node);
 
         NodeId nodeId = new NodeId(13);
         ResourceData res = ResourceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             node,
             nodeId,
@@ -321,15 +321,15 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         );
 
         ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
-        Resource loadedRes = loadedResDfn.getResource(sysCtx, nodeName);
+        Resource loadedRes = loadedResDfn.getResource(SYS_CTX, nodeName);
 
         assertNotNull(loadedRes);
         assertEquals(nodeName, loadedRes.getAssignedNode().getName());
         assertEquals(loadedResDfn, loadedRes.getDefinition());
         assertEquals(nodeId, loadedRes.getNodeId());
         assertNotNull(loadedRes.getObjProt());
-        assertNotNull(loadedRes.getProps(sysCtx));
-        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(sysCtx));
+        assertNotNull(loadedRes.getProps(SYS_CTX));
+        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(SYS_CTX));
         assertEquals(res.getUuid(), loadedRes.getUuid());
     }
 
@@ -342,7 +342,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         MinorNumber minor = new MinorNumber(42);
         long volSize = 5_000;
         VolumeDefinitionData volDfn = VolumeDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             volNr,
             minor,
@@ -354,14 +354,14 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         );
 
         ResourceDefinitionData loadedResDfn = driver.load(resName, true, transMgr);
-        VolumeDefinition loadedVolDfn = loadedResDfn.getVolumeDfn(sysCtx, volNr);
+        VolumeDefinition loadedVolDfn = loadedResDfn.getVolumeDfn(SYS_CTX, volNr);
 
         assertNotNull(loadedVolDfn);
         assertEquals(volDfn.getUuid(), loadedVolDfn.getUuid());
-        assertEquals(volDfn.getFlags().getFlagsBits(sysCtx), loadedVolDfn.getFlags().getFlagsBits(sysCtx));
-        assertEquals(minor, loadedVolDfn.getMinorNr(sysCtx));
+        assertEquals(volDfn.getFlags().getFlagsBits(SYS_CTX), loadedVolDfn.getFlags().getFlagsBits(SYS_CTX));
+        assertEquals(minor, loadedVolDfn.getMinorNr(SYS_CTX));
         assertEquals(volNr, loadedVolDfn.getVolumeNumber());
-        assertEquals(volSize, loadedVolDfn.getVolumeSize(sysCtx));
+        assertEquals(volSize, loadedVolDfn.getVolumeSize(SYS_CTX));
         assertEquals(loadedResDfn, loadedVolDfn.getResourceDefinition());
     }
 
@@ -372,7 +372,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         resDfn.initialized();
         resDfn.setConnection(transMgr);
 
-        resDfn.getFlags().disableAllFlags(sysCtx);
+        resDfn.getFlags().disableAllFlags(SYS_CTX);
 
         transMgr.commit();
 
@@ -394,7 +394,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         resDfn.setConnection(transMgr);
 
         TcpPortNumber otherPort = new TcpPortNumber(9001);
-        resDfn.setPort(sysCtx, otherPort);
+        resDfn.setPort(SYS_CTX, otherPort);
         transMgr.commit();
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
@@ -415,7 +415,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         resDfn.setConnection(transMgr);
 
         TransportType newTransportType = TransportType.RDMA;
-        resDfn.setTransportType(sysCtx, newTransportType);
+        resDfn.setTransportType(SYS_CTX, newTransportType);
         transMgr.commit();
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCE_DEFINITIONS);
@@ -441,7 +441,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     {
         satelliteMode();
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
@@ -469,7 +469,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
     {
         satelliteMode();
         ResourceDefinitionData instance = ResourceDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resName,
             port,
             new RscDfnFlags[] { RscDfnFlags.DELETE },
@@ -527,7 +527,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         driver.create(resDfn, transMgr);
         ResourceName resName2 = new ResourceName("ResName2");
         ResourceDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resName2,
             port,
             null,
@@ -555,7 +555,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         satelliteMode();
         SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
         ResourceDefinitionData rscDfn = ResourceDefinitionData.getInstanceSatellite(
-            sysCtx,
+            SYS_CTX,
             resDfnUuid,
             resName,
             port,
@@ -564,10 +564,10 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             transportType,
             transMgr
         );
-        rscDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
+        rscDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
 
         VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstanceSatellite(
-            sysCtx,
+            SYS_CTX,
             java.util.UUID.randomUUID(),
             rscDfn,
             new VolumeNumber(0),
@@ -589,7 +589,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         satelliteMode();
         SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
         ResourceDefinitionData rscDfn = ResourceDefinitionData.getInstanceSatellite(
-            sysCtx,
+            SYS_CTX,
             resDfnUuid,
             resName,
             port,
@@ -600,7 +600,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         );
         SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
         rscDfn.setConnection(transMgrOther); // throws ImplementationError
-        rscDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
+        rscDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
     }
 
     @Test
@@ -612,7 +612,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         satelliteMode();
         SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
         ResourceDefinitionData rscDfn = ResourceDefinitionData.getInstanceSatellite(
-            sysCtx,
+            SYS_CTX,
             resDfnUuid,
             resName,
             port,
@@ -628,7 +628,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
 
         SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
         rscDfn.setConnection(transMgrOther);
-        rscDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
+        rscDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
         assertTrue(rscDfn.hasTransMgr());
         assertTrue(rscDfn.isDirty());
     }
@@ -642,7 +642,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         satelliteMode();
         SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
         ResourceDefinitionData rscDfn = ResourceDefinitionData.getInstanceSatellite(
-            sysCtx,
+            SYS_CTX,
             resDfnUuid,
             resName,
             port,
@@ -653,7 +653,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         );
         transMgr.commit();
 
-        rscDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
+        rscDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
         SatelliteTransactionMgr transMgrOther = new SatelliteTransactionMgr();
         rscDfn.setConnection(transMgrOther); // throws ImplementationError
     }
@@ -665,7 +665,7 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
         driver.create(resDfn, transMgr);
 
         ResourceDefinitionData.getInstance(
-            sysCtx, resName, port, null, "secret", transportType, transMgr, false, true
+            SYS_CTX, resName, port, null, "secret", transportType, transMgr, false, true
         );
     }
 }

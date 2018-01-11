@@ -69,19 +69,19 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         uuid = randomUUID();
 
         resDfn = ResourceDefinitionData.getInstance(
-            sysCtx, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
         );
-        resDfnMap.put(resDfn.getName(), resDfn);
-        nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
-        nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
+        rscDfnMap.put(resDfn.getName(), resDfn);
+        nodeSrc = NodeData.getInstance(SYS_CTX, sourceName, null, null, transMgr, true, false);
+        nodeDst = NodeData.getInstance(SYS_CTX, targetName, null, null, transMgr, true, false);
 
         nodeIdSrc = new NodeId(13);
         nodeIdDst = new NodeId(14);
 
-        resSrc = ResourceData.getInstance(sysCtx, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true, false);
-        resDst = ResourceData.getInstance(sysCtx, resDfn, nodeDst, nodeIdDst, null, transMgr, true, false);
+        resSrc = ResourceData.getInstance(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, transMgr, true, false);
+        resDst = ResourceData.getInstance(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, transMgr, true, false);
 
-        resCon = new ResourceConnectionData(uuid, sysCtx, resSrc, resDst, transMgr);
+        resCon = new ResourceConnectionData(uuid, SYS_CTX, resSrc, resDst, transMgr);
         driver = (ResourceConnectionDataDerbyDriver) LinStor.getResourceConnectionDatabaseDriver();
     }
 
@@ -96,7 +96,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        ResourceConnectionData.getInstance(sysCtx, resSrc, resDst, transMgr, true, false);
+        ResourceConnectionData.getInstance(SYS_CTX, resSrc, resDst, transMgr, true, false);
 
         checkDbPersist(false);
     }
@@ -134,7 +134,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         driver.create(resCon, transMgr);
 
         ResourceConnectionData loadedConDfn = ResourceConnectionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resSrc,
             resDst,
             transMgr,
@@ -149,7 +149,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     public void testCache() throws Exception
     {
         ResourceConnectionData storedInstance = ResourceConnectionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resSrc,
             resDst,
             transMgr,
@@ -189,7 +189,7 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     {
         satelliteMode();
         ResourceConnectionData satelliteConDfn = ResourceConnectionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resSrc,
             resDst,
             null,
@@ -215,14 +215,14 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         NodeName srcNodeName2 = new NodeName("OtherSourceNodeName");
         NodeName dstNodeName2 = new NodeName("OtherTargetNodeName");
 
-        NodeData nodeSrc2 = NodeData.getInstance(sysCtx, srcNodeName2, null, null, transMgr, true, false);
-        NodeData nodeDst2 = NodeData.getInstance(sysCtx, dstNodeName2, null, null, transMgr, true, false);
+        NodeData nodeSrc2 = NodeData.getInstance(SYS_CTX, srcNodeName2, null, null, transMgr, true, false);
+        NodeData nodeDst2 = NodeData.getInstance(SYS_CTX, dstNodeName2, null, null, transMgr, true, false);
 
-        ResourceData resSrc2 = ResourceData.getInstance(sysCtx, resDfn, nodeSrc2, nodeIdSrc, null, transMgr, true, false);
-        ResourceData resDst2 = ResourceData.getInstance(sysCtx, resDfn, nodeDst2, nodeIdDst, null, transMgr, true, false);
+        ResourceData resSrc2 = ResourceData.getInstance(SYS_CTX, resDfn, nodeSrc2, nodeIdSrc, null, transMgr, true, false);
+        ResourceData resDst2 = ResourceData.getInstance(SYS_CTX, resDfn, nodeDst2, nodeIdDst, null, transMgr, true, false);
 
         ResourceConnectionData satelliteConDfn = ResourceConnectionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resSrc2,
             resDst2,
             null,
@@ -267,8 +267,8 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
         {
             assertEquals(uuid, loadedConDfn.getUuid());
         }
-        Resource sourceResource = loadedConDfn.getSourceResource(sysCtx);
-        Resource targetResource = loadedConDfn.getTargetResource(sysCtx);
+        Resource sourceResource = loadedConDfn.getSourceResource(SYS_CTX);
+        Resource targetResource = loadedConDfn.getTargetResource(SYS_CTX);
 
         assertEquals(resName, sourceResource.getDefinition().getName());
         assertEquals(sourceName, sourceResource.getAssignedNode().getName());
@@ -281,6 +281,6 @@ public class ResourceConnectionDataDerbyTest extends DerbyBase
     {
         driver.create(resCon, transMgr);
 
-        ResourceConnectionData.getInstance(sysCtx, resSrc, resDst, transMgr, false, true);
+        ResourceConnectionData.getInstance(SYS_CTX, resSrc, resDst, transMgr, false, true);
     }
 }

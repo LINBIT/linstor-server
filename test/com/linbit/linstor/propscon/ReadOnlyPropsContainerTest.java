@@ -43,7 +43,7 @@ public class ReadOnlyPropsContainerTest
         Map<StorPoolName, StorPoolDefinition> storPoolDfnMap = new HashMap<>();
 
         CoreUtils.satelliteMode(
-            TestAccessContextProvider.sysCtx,
+            TestAccessContextProvider.SYS_CTX,
             nodesMap,
             resDfnMap,
             storPoolDfnMap

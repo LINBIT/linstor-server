@@ -53,12 +53,12 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
 
         uuid = randomUUID();
 
-        nodeSrc = NodeData.getInstance(sysCtx, sourceName, null, null, transMgr, true, false);
+        nodeSrc = NodeData.getInstance(SYS_CTX, sourceName, null, null, transMgr, true, false);
         nodesMap.put(nodeSrc.getName(), nodeSrc);
-        nodeDst = NodeData.getInstance(sysCtx, targetName, null, null, transMgr, true, false);
+        nodeDst = NodeData.getInstance(SYS_CTX, targetName, null, null, transMgr, true, false);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
-        nodeCon = new NodeConnectionData(uuid, sysCtx, nodeSrc, nodeDst, transMgr);
+        nodeCon = new NodeConnectionData(uuid, SYS_CTX, nodeSrc, nodeDst, transMgr);
         driver = (NodeConnectionDataDerbyDriver) LinStor.getNodeConnectionDatabaseDriver();
     }
 
@@ -73,7 +73,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
-        NodeConnectionData.getInstance(sysCtx, nodeSrc, nodeDst, transMgr, true, false);
+        NodeConnectionData.getInstance(SYS_CTX, nodeSrc, nodeDst, transMgr, true, false);
 
         checkDbPersist(false);
     }
@@ -111,7 +111,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
         driver.create(nodeCon, transMgr);
 
         NodeConnectionData loadedConDfn = NodeConnectionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeSrc,
             nodeDst,
             transMgr,
@@ -126,7 +126,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     public void testCache() throws Exception
     {
         NodeConnectionData storedInstance = NodeConnectionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeSrc,
             nodeDst,
             transMgr,
@@ -166,7 +166,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     {
         satelliteMode();
         NodeConnectionData satelliteConDfn = NodeConnectionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeSrc,
             nodeDst,
             null,
@@ -191,11 +191,11 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
 
         NodeName sourceName2 = new NodeName("OtherSourceNode");
         NodeName targetName2 = new NodeName("OtherTargetNode");
-        NodeData nodeSrc2 = NodeData.getInstance(sysCtx, sourceName2, null, null, transMgr, true, false);
-        NodeData nodeDst2 = NodeData.getInstance(sysCtx, targetName2, null, null, transMgr, true, false);
+        NodeData nodeSrc2 = NodeData.getInstance(SYS_CTX, sourceName2, null, null, transMgr, true, false);
+        NodeData nodeDst2 = NodeData.getInstance(SYS_CTX, targetName2, null, null, transMgr, true, false);
 
         NodeConnectionData satelliteConDfn = NodeConnectionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeSrc2,
             nodeDst2,
             null,
@@ -218,7 +218,7 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
     {
         driver.create(nodeCon, transMgr);
 
-        NodeConnectionData.getInstance(sysCtx, nodeSrc, nodeDst, transMgr, false, true);
+        NodeConnectionData.getInstance(SYS_CTX, nodeSrc, nodeDst, transMgr, false, true);
     }
 
 
@@ -248,8 +248,8 @@ public class NodeConnectionDataDerbyTest extends DerbyBase
         {
             assertEquals(uuid, loadedConDfn.getUuid());
         }
-        Node sourceNode = loadedConDfn.getSourceNode(sysCtx);
-        Node targetNode = loadedConDfn.getTargetNode(sysCtx);
+        Node sourceNode = loadedConDfn.getSourceNode(SYS_CTX);
+        Node targetNode = loadedConDfn.getTargetNode(SYS_CTX);
 
         assertEquals(sourceName, sourceNode.getName());
         assertEquals(targetName, targetNode.getName());

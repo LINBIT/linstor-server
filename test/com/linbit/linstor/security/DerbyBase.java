@@ -63,15 +63,16 @@ public abstract class DerbyBase implements DerbyConstants
 
     private List<Statement> statements = new ArrayList<>();
     private static Connection con;
-    private static DbConnectionPool dbConnPool;
+    protected static DbConnectionPool dbConnPool;
     private static List<Connection> connections = new ArrayList<>();
 
-    protected static final AccessContext sysCtx;
+    protected static final AccessContext SYS_CTX;
+    protected static final AccessContext PUBLIC_CTX;
     private static boolean initialized = false;
     private static DbDerbyPersistence secureDbDriver;
     private static DerbyDriver persistenceDbDriver;
     protected static HashMap<NodeName, Node> nodesMap;
-    protected static HashMap<ResourceName, ResourceDefinition> resDfnMap;
+    protected static HashMap<ResourceName, ResourceDefinition> rscDfnMap;
     protected static HashMap<StorPoolName, StorPoolDefinition> storPoolDfnMap;
 
     protected static ErrorReporter errorReporter =
@@ -80,21 +81,15 @@ public abstract class DerbyBase implements DerbyConstants
 
     static
     {
-        PrivilegeSet sysPrivs = new PrivilegeSet(Privilege.PRIV_SYS_ALL);
-
-        sysCtx = new AccessContext(
-            Identity.SYSTEM_ID,
-            Role.SYSTEM_ROLE,
-            SecurityType.SYSTEM_TYPE,
-            sysPrivs
-        );
+        SYS_CTX = TestAccessContextProvider.SYS_CTX;
+        PUBLIC_CTX = TestAccessContextProvider.PUBLIC_CTX;
         try
         {
-            sysCtx.privEffective.enablePrivileges(Privilege.PRIV_SYS_ALL);
+            SYS_CTX.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
         }
-        catch (AccessDeniedException iAmNotRootExc)
+        catch (AccessDeniedException exc)
         {
-            throw new RuntimeException(iAmNotRootExc);
+            throw new RuntimeException("Could not grant sysCtx privileges");
         }
     }
 
@@ -122,7 +117,7 @@ public abstract class DerbyBase implements DerbyConstants
     }
 
     @BeforeClass
-    public static void setUpBeforeClass() throws SQLException
+    public static void setUpBeforeClass() throws Exception
     {
         if (dbConnPool == null)
         {
@@ -135,17 +130,17 @@ public abstract class DerbyBase implements DerbyConstants
             dbConnPool.initializeDataSource(DB_URL, DB_PROPS);
 
             con = dbConnPool.getConnection();
-            secureDbDriver = new DbDerbyPersistence(sysCtx, errorReporter);
+            secureDbDriver = new DbDerbyPersistence(SYS_CTX, errorReporter);
 
             nodesMap = new HashMap<NodeName, Node>();
-            resDfnMap = new HashMap<ResourceName, ResourceDefinition>();
+            rscDfnMap = new HashMap<ResourceName, ResourceDefinition>();
             storPoolDfnMap = new HashMap<StorPoolName, StorPoolDefinition>();
 
             persistenceDbDriver = new DerbyDriver(
-                sysCtx,
+                SYS_CTX,
                 errorReporter,
                 nodesMap,
-                resDfnMap,
+                rscDfnMap,
                 storPoolDfnMap
             );
         }
@@ -187,22 +182,22 @@ public abstract class DerbyBase implements DerbyConstants
     protected void clearCaches()
     {
         nodesMap.clear();
-        resDfnMap.clear();
+        rscDfnMap.clear();
         storPoolDfnMap.clear();
     }
 
     protected void setSecurityLevel(SecurityLevel level) throws AccessDeniedException, SQLException
     {
-        SecurityLevel.set(sysCtx, level, dbConnPool, secureDbDriver);
+        SecurityLevel.set(SYS_CTX, level, dbConnPool, secureDbDriver);
     }
 
     protected void satelliteMode()
     {
-        CoreUtils.satelliteMode(sysCtx, nodesMap, resDfnMap, storPoolDfnMap);
+        CoreUtils.satelliteMode(SYS_CTX, nodesMap, rscDfnMap, storPoolDfnMap);
     }
 
     @After
-    public void tearDown() throws SQLException
+    public void tearDown() throws Exception
     {
         for (Statement statement : statements)
         {

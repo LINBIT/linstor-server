@@ -58,7 +58,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         resName = new ResourceName("TestResource");
         resPort = new TcpPortNumber(9001);
         resDfn = ResourceDefinitionData.getInstance(
-            sysCtx, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
         );
 
         uuid = randomUUID();
@@ -67,7 +67,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         volSize = 5_000_000;
         volDfn = new VolumeDefinitionData(
             uuid,
-            sysCtx,
+            SYS_CTX,
             resDfn,
             volNr,
             minor,
@@ -76,7 +76,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
             transMgr
         );
 
-        driver = new VolumeDefinitionDataDerbyDriver(sysCtx, errorReporter);
+        driver = new VolumeDefinitionDataDerbyDriver(SYS_CTX, errorReporter);
     }
 
     @Test
@@ -115,7 +115,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         resultSet.close();
 
         ResourceDefinition resDefinitionTest = ResourceDefinitionData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 new ResourceName("TestResource2"),
                 resPort,
                 null,
@@ -126,7 +126,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                 false);
 
         VolumeDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDefinitionTest,
             volNr,
             minor,
@@ -161,9 +161,9 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertEquals(uuid, loadedVd.getUuid());
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
         assertEquals(volNr, loadedVd.getVolumeNumber());
-        assertEquals(volSize, loadedVd.getVolumeSize(sysCtx));
-        assertEquals(minor, loadedVd.getMinorNr(sysCtx));
-        assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
+        assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
+        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX));
+        assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
     }
 
     @Test
@@ -172,7 +172,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         driver.create(volDfn, transMgr);
 
         VolumeDefinitionData loadedVd = VolumeDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             volNr,
             minor,
@@ -186,9 +186,9 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertNotNull(loadedVd);
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
         assertEquals(volNr, loadedVd.getVolumeNumber());
-        assertEquals(volSize, loadedVd.getVolumeSize(sysCtx));
-        assertEquals(minor, loadedVd.getMinorNr(sysCtx));
-        assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
+        assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
+        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX));
+        assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
     }
 
     @Test
@@ -199,7 +199,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         List<VolumeDefinition> volDfnList = driver.loadAllVolumeDefinitionsByResourceDefinition(
             resDfn,
             transMgr,
-            sysCtx
+            SYS_CTX
         );
 
         assertNotNull(volDfnList);
@@ -209,9 +209,9 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertNotNull(loadedVd);
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
         assertEquals(volNr, loadedVd.getVolumeNumber());
-        assertEquals(volSize, loadedVd.getVolumeSize(sysCtx));
-        assertEquals(minor, loadedVd.getMinorNr(sysCtx));
-        assertTrue(loadedVd.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
+        assertEquals(volSize, loadedVd.getVolumeSize(SYS_CTX));
+        assertEquals(minor, loadedVd.getMinorNr(SYS_CTX));
+        assertTrue(loadedVd.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
     }
 
     @Test
@@ -242,7 +242,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         volDfn.initialized();
         volDfn.setConnection(transMgr);
 
-        Props props = volDfn.getProps(sysCtx);
+        Props props = volDfn.getProps(SYS_CTX);
         String testKey = "TestKey";
         String testValue = "TestValue";
         props.setProp(testKey, testValue);
@@ -283,7 +283,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         volDfn.setConnection(transMgr);
 
         MinorNumber minor2 = new MinorNumber(32);
-        volDfn.setMinorNr(sysCtx, minor2);
+        volDfn.setMinorNr(SYS_CTX, minor2);
 
         transMgr.commit();
 
@@ -305,7 +305,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         volDfn.initialized();
         volDfn.setConnection(transMgr);
 
-        volDfn.getFlags().disableAllFlags(sysCtx);
+        volDfn.getFlags().disableAllFlags(SYS_CTX);
 
         transMgr.commit();
 
@@ -347,7 +347,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         volDfn.setConnection(transMgr);
 
         long size = 9001;
-        volDfn.setVolumeSize(sysCtx, size);
+        volDfn.setVolumeSize(SYS_CTX, size);
 
         transMgr.commit();
 
@@ -386,7 +386,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         satelliteMode();
 
         VolumeDefinitionData volDfnSat = VolumeDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             volNr,
             minor,
@@ -400,9 +400,9 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         assertNotNull(volDfnSat);
         assertEquals(resName, volDfnSat.getResourceDefinition().getName());
         assertEquals(volNr, volDfnSat.getVolumeNumber());
-        assertEquals(volSize, volDfnSat.getVolumeSize(sysCtx));
-        assertEquals(minor, volDfnSat.getMinorNr(sysCtx));
-        assertTrue(volDfnSat.getFlags().isSet(sysCtx, VlmDfnFlags.DELETE));
+        assertEquals(volSize, volDfnSat.getVolumeSize(SYS_CTX));
+        assertEquals(minor, volDfnSat.getMinorNr(SYS_CTX));
+        assertTrue(volDfnSat.getFlags().isSet(SYS_CTX, VlmDfnFlags.DELETE));
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
@@ -419,7 +419,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
         satelliteMode();
 
         ResourceDefinitionData resDfn2 = ResourceDefinitionData.getInstance(
-                sysCtx,
+                SYS_CTX,
                 new ResourceName("Resource2"),
                 resPort,
                 null,
@@ -430,7 +430,7 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
                 false);
 
         VolumeDefinitionData volDfnSat = VolumeDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn2,
             volNr,
             minor,
@@ -457,6 +457,6 @@ public class VolumeDefinitionDataDerbyTest extends DerbyBase
     {
         driver.create(volDfn, transMgr);
 
-        VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, false, true);
+        VolumeDefinitionData.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr, false, true);
     }
 }

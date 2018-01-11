@@ -61,13 +61,13 @@ public class ResouceDataDerbyTest extends DerbyBase
 
         transMgr = new TransactionMgr(getConnection());
 
-        node = NodeData.getInstance(sysCtx, nodeName, null, null, transMgr, true, false);
+        node = NodeData.getInstance(SYS_CTX, nodeName, null, null, transMgr, true, false);
         resDfn = ResourceDefinitionData.getInstance(
-            sysCtx, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
+            SYS_CTX, resName, resPort, null, "secret", TransportType.IP, transMgr, true, false
         );
 
         resUuid = randomUUID();
-        objProt = ObjectProtection.getInstance(sysCtx, ObjectProtection.buildPath(nodeName, resName), true, transMgr);
+        objProt = ObjectProtection.getInstance(SYS_CTX, ObjectProtection.buildPath(nodeName, resName), true, transMgr);
 
         initFlags = RscFlags.CLEAN.flagValue;
 
@@ -77,7 +77,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testPersist() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, sysCtx, objProt, resDfn, node, nodeId, initFlags, transMgr);
+        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr);
         driver.create(res, transMgr);
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
@@ -99,7 +99,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     public void testPersistGetInstance() throws Exception
     {
         ResourceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             node,
             nodeId,
@@ -129,7 +129,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testLoad() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, sysCtx, objProt, resDfn, node, nodeId, initFlags, transMgr);
+        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr);
         driver.create(res, transMgr);
 
         ResourceData loadedRes = driver.load(node, resName, true, transMgr);
@@ -141,14 +141,14 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertNotNull(loadedRes.getDefinition());
         assertEquals(resName, loadedRes.getDefinition().getName());
         assertEquals(nodeId, loadedRes.getNodeId());
-        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(sysCtx));
+        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(SYS_CTX));
     }
 
     @Test
     public void testLoadGetInstance() throws Exception
     {
         ResourceData loadedRes = ResourceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             node,
             nodeId,
@@ -159,11 +159,11 @@ public class ResouceDataDerbyTest extends DerbyBase
         );
         assertNull(loadedRes);
 
-        ResourceData res = new ResourceData(resUuid, sysCtx, objProt, resDfn, node, nodeId, initFlags, transMgr);
+        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr);
         driver.create(res, transMgr);
 
         loadedRes = ResourceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             node,
             nodeId,
@@ -180,16 +180,16 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertNotNull(loadedRes.getDefinition());
         assertEquals(resName, loadedRes.getDefinition().getName());
         assertEquals(nodeId, loadedRes.getNodeId());
-        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(sysCtx));
+        assertEquals(RscFlags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(SYS_CTX));
     }
 
     @Test
     public void testLoadAll() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, sysCtx, objProt, resDfn, node, nodeId, initFlags, transMgr);
+        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr);
         driver.create(res, transMgr);
 
-        List<ResourceData> resList= driver.loadResourceData(sysCtx, node, transMgr);
+        List<ResourceData> resList= driver.loadResourceData(SYS_CTX, node, transMgr);
 
         assertNotNull(resList);
         assertEquals(1, resList.size());
@@ -201,14 +201,14 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertNotNull(resData.getDefinition());
         assertEquals(resName, resData.getDefinition().getName());
         assertEquals(nodeId, resData.getNodeId());
-        assertEquals(RscFlags.CLEAN.flagValue, resData.getStateFlags().getFlagsBits(sysCtx));
+        assertEquals(RscFlags.CLEAN.flagValue, resData.getStateFlags().getFlagsBits(SYS_CTX));
     }
 
     @Test
     public void testCache() throws Exception
     {
         ResourceData storedInstance = ResourceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             node,
             nodeId,
@@ -226,7 +226,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testDelete() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, sysCtx, objProt, resDfn, node, nodeId, initFlags, transMgr);
+        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr);
         driver.create(res, transMgr);
         driver.delete(res, transMgr);
 
@@ -242,7 +242,7 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test
     public void testStateFlagPersistence() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, sysCtx, objProt, resDfn, node, nodeId, initFlags, transMgr);
+        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr);
         driver.create(res, transMgr);
         StateFlagsPersistence<ResourceData> stateFlagPersistence = driver.getStateFlagPersistence();
         stateFlagPersistence.persist(res, StateFlagsBits.getMask(RscFlags.DELETE), transMgr);
@@ -268,8 +268,8 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        ResourceData res = new ResourceData(resUuid, sysCtx, objProt, resDfn, node, nodeId, initFlags, transMgr);
-        driver.ensureResExists(sysCtx, res, transMgr);
+        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr);
+        driver.ensureResExists(SYS_CTX, res, transMgr);
 
         resultSet = stmt.executeQuery();
 
@@ -277,7 +277,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertFalse(resultSet.next());
         resultSet.close();
 
-        driver.ensureResExists(sysCtx, res, transMgr);
+        driver.ensureResExists(SYS_CTX, res, transMgr);
 
         resultSet = stmt.executeQuery();
 
@@ -293,7 +293,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         satelliteMode();
 
         ResourceData resData = ResourceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             node,
             nodeId,
@@ -307,8 +307,8 @@ public class ResouceDataDerbyTest extends DerbyBase
         assertEquals(resDfn, resData.getDefinition());
         assertEquals(nodeId, resData.getNodeId());
         assertNotNull(resData.getObjProt());
-        assertNotNull(resData.getProps(sysCtx));
-        assertTrue(resData.getStateFlags().isSet(sysCtx, RscFlags.CLEAN));
+        assertNotNull(resData.getProps(SYS_CTX));
+        assertTrue(resData.getStateFlags().isSet(SYS_CTX, RscFlags.CLEAN));
         assertNotNull(resData.getUuid());
 
         PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_RESOURCES);
@@ -324,7 +324,7 @@ public class ResouceDataDerbyTest extends DerbyBase
         satelliteMode();
 
         ResourceData resData = ResourceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             node,
             nodeId,
@@ -346,9 +346,9 @@ public class ResouceDataDerbyTest extends DerbyBase
     @Test (expected = LinStorDataAlreadyExistsException.class)
     public void testAlreadyExists() throws Exception
     {
-        ResourceData res = new ResourceData(resUuid, sysCtx, objProt, resDfn, node, nodeId, initFlags, transMgr);
+        ResourceData res = new ResourceData(resUuid, SYS_CTX, objProt, resDfn, node, nodeId, initFlags, transMgr);
         driver.create(res, transMgr);
 
-        ResourceData.getInstance(sysCtx, resDfn, node, nodeId, null, transMgr, false, true);
+        ResourceData.getInstance(SYS_CTX, resDfn, node, nodeId, null, transMgr, false, true);
     }
 }

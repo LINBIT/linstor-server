@@ -83,35 +83,35 @@ public class ConnectionPropsTest extends DerbyBase
 
         transMgr = new TransactionMgr(getConnection());
 
-        node1 = NodeData.getInstance(sysCtx, nodeName1, NodeType.CONTROLLER, null, transMgr, true, false);
-        node2 = NodeData.getInstance(sysCtx, nodeName2, NodeType.CONTROLLER, null, transMgr, true, false);
+        node1 = NodeData.getInstance(SYS_CTX, nodeName1, NodeType.CONTROLLER, null, transMgr, true, false);
+        node2 = NodeData.getInstance(SYS_CTX, nodeName2, NodeType.CONTROLLER, null, transMgr, true, false);
 
         resDfn = ResourceDefinitionData.getInstance(
-            sysCtx, resName, resDfnPort, null, "secret", resDfnTransportType, transMgr, true, false
+            SYS_CTX, resName, resDfnPort, null, "secret", resDfnTransportType, transMgr, true, false
         );
 
-        res1 = ResourceData.getInstance(sysCtx, resDfn, node1, nodeId1, null, transMgr, true, false);
-        res2 = ResourceData.getInstance(sysCtx, resDfn, node2, nodeId2, null, transMgr, true, false);
+        res1 = ResourceData.getInstance(SYS_CTX, resDfn, node1, nodeId1, null, transMgr, true, false);
+        res2 = ResourceData.getInstance(SYS_CTX, resDfn, node2, nodeId2, null, transMgr, true, false);
 
-        storPoolDfn = StorPoolDefinitionData.getInstance(sysCtx, storPoolName, transMgr, true, false);
+        storPoolDfn = StorPoolDefinitionData.getInstance(SYS_CTX, storPoolName, transMgr, true, false);
 
-        storPool1 = StorPoolData.getInstance(sysCtx, node1, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
-        storPool2 = StorPoolData.getInstance(sysCtx, node2, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
+        storPool1 = StorPoolData.getInstance(SYS_CTX, node1, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
+        storPool2 = StorPoolData.getInstance(SYS_CTX, node2, storPoolDfn, LvmDriver.class.getSimpleName(), transMgr, true, false);
 
-        volDfn = VolumeDefinitionData.getInstance(sysCtx, resDfn, volNr, minor, volSize, null, transMgr, true, false);
+        volDfn = VolumeDefinitionData.getInstance(SYS_CTX, resDfn, volNr, minor, volSize, null, transMgr, true, false);
 
-        vol1 = VolumeData.getInstance(sysCtx, res1, volDfn, storPool1, blockDev1, metaDisk1, null, transMgr, true, false);
-        vol2 = VolumeData.getInstance(sysCtx, res1, volDfn, storPool2, blockDev2, metaDisk2, null, transMgr, true, false);
+        vol1 = VolumeData.getInstance(SYS_CTX, res1, volDfn, storPool1, blockDev1, metaDisk1, null, transMgr, true, false);
+        vol2 = VolumeData.getInstance(SYS_CTX, res1, volDfn, storPool2, blockDev2, metaDisk2, null, transMgr, true, false);
 
-        nodeCon = NodeConnectionData.getInstance(sysCtx, node1, node2, transMgr, true, false);
-        resCon = ResourceConnectionData.getInstance(sysCtx, res1, res2, transMgr, true, false);
-        volCon = VolumeConnectionData.getInstance(sysCtx, vol1, vol2, transMgr, true, false);
+        nodeCon = NodeConnectionData.getInstance(SYS_CTX, node1, node2, transMgr, true, false);
+        resCon = ResourceConnectionData.getInstance(SYS_CTX, res1, res2, transMgr, true, false);
+        volCon = VolumeConnectionData.getInstance(SYS_CTX, vol1, vol2, transMgr, true, false);
 
-        nodeConProps = nodeCon.getProps(sysCtx);
-        resConProps = resCon.getProps(sysCtx);
-        volConProps = volCon.getProps(sysCtx);
+        nodeConProps = nodeCon.getProps(SYS_CTX);
+        resConProps = resCon.getProps(SYS_CTX);
+        volConProps = volCon.getProps(SYS_CTX);
 
-        conProps = new PriorityProps(sysCtx, nodeCon, resCon, volCon);
+        conProps = new PriorityProps(SYS_CTX, nodeCon, resCon, volCon);
     }
 
     @Test

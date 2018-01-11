@@ -74,7 +74,7 @@ public class VolumeDataDerbyTest extends DerbyBase
 
         nodeName = new NodeName("TestNodeName");
         node = NodeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             nodeName,
             null,
             null,
@@ -86,7 +86,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         resName = new ResourceName("TestResName");
         resPort = new TcpPortNumber(9001);
         resDfn = ResourceDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resName,
             resPort,
             null,
@@ -99,7 +99,7 @@ public class VolumeDataDerbyTest extends DerbyBase
 
         nodeId = new NodeId(7);
         res = ResourceData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             node,
             nodeId,
@@ -111,7 +111,7 @@ public class VolumeDataDerbyTest extends DerbyBase
 
         storPoolName = new StorPoolName("TestStorPoolName");
         storPoolDfn = StorPoolDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             storPoolName,
             transMgr,
             true,
@@ -119,7 +119,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         );
 
         storPool = StorPoolData.getInstance(
-            sysCtx,
+            SYS_CTX,
             node,
             storPoolDfn,
             LvmDriver.class.getSimpleName(),
@@ -132,7 +132,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         minor = new MinorNumber(42);
         volSize = 5_000_000;
         volDfn = VolumeDefinitionData.getInstance(
-            sysCtx,
+            SYS_CTX,
             resDfn,
             volNr,
             minor,
@@ -155,7 +155,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -188,7 +188,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     public void testPersistGetInstance() throws Exception
     {
         VolumeData volData = VolumeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -202,11 +202,11 @@ public class VolumeDataDerbyTest extends DerbyBase
 
         assertNotNull(volData);
         assertNotNull(volData.getUuid());
-        assertEquals(blockDevicePath, volData.getBlockDevicePath(sysCtx));
-        assertEquals(metaDiskPath, volData.getMetaDiskPath(sysCtx));
+        assertEquals(blockDevicePath, volData.getBlockDevicePath(SYS_CTX));
+        assertEquals(metaDiskPath, volData.getMetaDiskPath(SYS_CTX));
         assertNotNull(volData.getFlags());
-        assertTrue(volData.getFlags().isSet(sysCtx, VlmFlags.CLEAN));
-        assertNotNull(volData.getProps(sysCtx));
+        assertTrue(volData.getFlags().isSet(SYS_CTX, VlmFlags.CLEAN));
+        assertNotNull(volData.getProps(SYS_CTX));
         assertEquals(res, volData.getResource());
         assertEquals(resDfn, volData.getResourceDefinition());
         assertEquals(volDfn, volData.getVolumeDefinition());
@@ -233,7 +233,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -254,7 +254,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -281,7 +281,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -293,7 +293,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         driver.create(vol, transMgr);
 
         VolumeData loadedVol = VolumeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -311,7 +311,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     public void testCache() throws Exception
     {
         VolumeData storedInstance = VolumeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -333,7 +333,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -367,7 +367,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -382,7 +382,7 @@ public class VolumeDataDerbyTest extends DerbyBase
 
         String testKey = "TestKey";
         String testValue = "TestValue";
-        vol.getProps(sysCtx).setProp(testKey, testValue);
+        vol.getProps(SYS_CTX).setProp(testKey, testValue);
 
         Map<String, String> map = new HashMap<>();
         map.put(testKey, testValue);
@@ -395,7 +395,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -422,7 +422,7 @@ public class VolumeDataDerbyTest extends DerbyBase
          *
          * To avoid this problem, we have to "unregister" the volume.
          */
-        res.removeVolume(sysCtx, vol);
+        res.removeVolume(SYS_CTX, vol);
 
         VolumeData loadedVol = driver.load(res, volDfn, true, transMgr);
 
@@ -432,7 +432,7 @@ public class VolumeDataDerbyTest extends DerbyBase
          */
 
         assertNotNull(loadedVol);
-        Props props = loadedVol.getProps(sysCtx);
+        Props props = loadedVol.getProps(SYS_CTX);
         assertNotNull(props);
         assertEquals(testValue, props.getProp(testKey));
     }
@@ -442,7 +442,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -456,7 +456,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         vol.initialized();
         vol.setConnection(transMgr);
 
-        vol.getFlags().disableAllFlags(sysCtx);
+        vol.getFlags().disableAllFlags(SYS_CTX);
 
         transMgr.commit();
 
@@ -478,7 +478,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         satelliteMode();
 
         VolumeData volData = VolumeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -506,7 +506,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         satelliteMode();
         VolumeData volData = VolumeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -541,15 +541,15 @@ public class VolumeDataDerbyTest extends DerbyBase
         {
             assertEquals(uuid, loadedVol.getUuid());
         }
-        assertEquals(blockDevicePath, loadedVol.getBlockDevicePath(sysCtx));
-        assertEquals(metaDiskPath, loadedVol.getMetaDiskPath(sysCtx));
+        assertEquals(blockDevicePath, loadedVol.getBlockDevicePath(SYS_CTX));
+        assertEquals(metaDiskPath, loadedVol.getMetaDiskPath(SYS_CTX));
         assertNotNull(loadedVol.getFlags());
-        assertTrue(loadedVol.getFlags().isSet(sysCtx, VlmFlags.CLEAN));
-        assertNotNull(loadedVol.getProps(sysCtx));
+        assertTrue(loadedVol.getFlags().isSet(SYS_CTX, VlmFlags.CLEAN));
+        assertNotNull(loadedVol.getProps(SYS_CTX));
         assertEquals(res.getDefinition().getName(), loadedVol.getResource().getDefinition().getName());
-        assertEquals(volDfn.getMinorNr(sysCtx), loadedVol.getVolumeDefinition().getMinorNr(sysCtx));
+        assertEquals(volDfn.getMinorNr(SYS_CTX), loadedVol.getVolumeDefinition().getMinorNr(SYS_CTX));
         assertEquals(volDfn.getVolumeNumber(), loadedVol.getVolumeDefinition().getVolumeNumber());
-        assertEquals(volDfn.getVolumeSize(sysCtx), loadedVol.getVolumeDefinition().getVolumeSize(sysCtx));
+        assertEquals(volDfn.getVolumeSize(SYS_CTX), loadedVol.getVolumeDefinition().getVolumeSize(SYS_CTX));
         assertEquals(volDfn.getUuid(), loadedVol.getVolumeDefinition().getUuid());
     }
 
@@ -558,7 +558,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     {
         VolumeData vol = new VolumeData(
             uuid,
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -570,7 +570,7 @@ public class VolumeDataDerbyTest extends DerbyBase
         driver.create(vol, transMgr);
 
         VolumeData.getInstance(
-            sysCtx,
+            SYS_CTX,
             res,
             volDfn,
             storPool,
@@ -630,7 +630,7 @@ public class VolumeDataDerbyTest extends DerbyBase
     public void testTransactionObjectsRollbackDirty() throws Exception
     {
         assertNotEquals(transMgr.sizeObjects(), 0);
-        resDfn.getProps(sysCtx).setProp("test", "make this rscDfn dirty");
+        resDfn.getProps(SYS_CTX).setProp("test", "make this rscDfn dirty");
         transMgr.rollback();
         assertEquals(0, transMgr.sizeObjects());
         assertFalse(node.hasTransMgr());
