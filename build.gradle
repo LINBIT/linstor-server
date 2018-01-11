@@ -149,6 +149,7 @@ ospackage {
     release '1'
     os = LINUX
     user 'root'
+    packager 'LINBIT HA-Solutions GmbH <drbd-user@lists.linbit.com>'
 
     requires('drbd-utils', '9.2.0', GREATER | EQUAL)
 
