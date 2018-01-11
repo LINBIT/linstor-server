@@ -26,14 +26,14 @@ public class ConfFileBuilder
     private int indentDepth;
 
     public ConfFileBuilder(
-        final AccessContext accCtx,
-        final Resource localRsc,
-        final Collection<Resource> remoteResources
+        final AccessContext accCtxRef,
+        final Resource localRscRef,
+        final Collection<Resource> remoteResourcesRef
     )
     {
-        this.accCtx = accCtx;
-        this.localRsc = localRsc;
-        this.remoteResources = remoteResources;
+        accCtx = accCtxRef;
+        localRsc = localRscRef;
+        remoteResources = remoteResourcesRef;
 
         stringBuilder = new StringBuilder();
         indentDepth = 0;
@@ -57,8 +57,10 @@ public class ConfFileBuilder
             appendLine("net");
             try (Section netSection = new Section())
             {
-                appendLine("cram-hmac-alg     %s;", "sha1"); // TODO: make configurable
-                appendLine("shared-secret     \"%s\";", localRsc.getDefinition().getSecret(accCtx)); // TODO: make configurable
+                // TODO: make configurable
+                appendLine("cram-hmac-alg     %s;", "sha1");
+                // TODO: make configurable
+                appendLine("shared-secret     \"%s\";", localRsc.getDefinition().getSecret(accCtx));
                 // TODO: print other "custom" net properties
             }
 
@@ -168,6 +170,7 @@ public class ConfFileBuilder
                 }
             }
 
+//            FIXME: dead code (for connection meshes)
 //            if (!nodeMeshes.isEmpty())
 //            {
 //                appendLine("connection-mesh");
@@ -211,46 +214,44 @@ public class ConfFileBuilder
         return stringBuilder.toString();
     }
 
-    private void appendVlmIfPresent(Volume vlm, AccessContext accCtx)
+    private void appendVlmIfPresent(Volume vlm, AccessContext localAccCtx)
         throws AccessDeniedException
     {
-        if (vlm.getFlags().isUnset(accCtx, Volume.VlmFlags.DELETE, Volume.VlmFlags.CLEAN))
+        if (vlm.getFlags().isUnset(localAccCtx, Volume.VlmFlags.DELETE, Volume.VlmFlags.CLEAN))
         {
             final String disk;
-            if (
-                vlm.getBlockDevicePath(accCtx) == null ||
-                vlm.getResource().getStateFlags().isSet(accCtx, RscFlags.DISKLESS)
-            )
+            if (vlm.getBlockDevicePath(localAccCtx) == null ||
+                vlm.getResource().getStateFlags().isSet(localAccCtx, RscFlags.DISKLESS))
             {
                 disk = "none";
             }
             else
             {
-                String tmpDisk = vlm.getBlockDevicePath(accCtx);
+                String tmpDisk = vlm.getBlockDevicePath(localAccCtx);
                 if (tmpDisk.trim().equals(""))
                 {
                     disk = "/dev/drbd/this/is/not/used";
                 }
                 else
                 {
-                    disk = vlm.getBlockDevicePath(accCtx);
+                    disk = vlm.getBlockDevicePath(localAccCtx);
                 }
             }
             final String metaDisk;
-            if (vlm.getMetaDiskPath(accCtx) == null)
+            if (vlm.getMetaDiskPath(localAccCtx) == null)
             {
                 metaDisk = "internal";
             }
             else
             {
-                String tmpMeta = vlm.getMetaDiskPath(accCtx);
+                String tmpMeta = vlm.getMetaDiskPath(localAccCtx);
                 if (tmpMeta.trim().equals(""))
                 {
                     metaDisk = "internal";
                 }
                 else
                 {
-                    metaDisk = vlm.getMetaDiskPath(accCtx);
+                    metaDisk = vlm.getMetaDiskPath(localAccCtx);
                 }
             }
             appendLine("volume %s", vlm.getVolumeDefinition().getVolumeNumber().value);
@@ -260,7 +261,7 @@ public class ConfFileBuilder
                 // TODO: print disk properties
                 appendLine("meta-disk   %s;", metaDisk);
                 appendLine("device      minor %d;",
-                    vlm.getVolumeDefinition().getMinorNr(accCtx).value
+                    vlm.getVolumeDefinition().getMinorNr(localAccCtx).value
                     // TODO: impl and ask storPool for device
                 );
                 // TODO: add "disk { ... }" section
@@ -270,7 +271,7 @@ public class ConfFileBuilder
 
     private void appendIndent()
     {
-        for (int i = 0; i < indentDepth; i++)
+        for (int idx = 0; idx < indentDepth; idx++)
         {
             stringBuilder.append("    ");
         }
@@ -304,7 +305,7 @@ public class ConfFileBuilder
      */
     private class Section implements AutoCloseable
     {
-        public Section()
+        Section()
         {
             appendLine("{");
             indentDepth++;
