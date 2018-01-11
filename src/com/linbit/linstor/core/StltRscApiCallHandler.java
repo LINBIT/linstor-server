@@ -306,7 +306,19 @@ class StltRscApiCallHandler
                     )
                 );
             }
-            // TODO: apply changes on localRsc
+
+            localRsc.setConnection(transMgr);
+
+            // update props
+            {
+                Map<String, String> localRscProps = localRsc.getProps(apiCtx).map();
+                localRscProps.clear();
+                localRscProps.putAll(rscRawData.getLocalRscProps());
+            }
+
+            // update flags
+            localRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(rscRawData.getLocalRscFlags()));
+
             add(localRsc, updatedRscMap);
 
             for (OtherRscPojo otherRsc : rscRawData.getOtherRscList())
@@ -418,6 +430,9 @@ class StltRscApiCallHandler
                     Map<String, String> remoteRscProps = remoteRsc.getProps(apiCtx).map();
                     remoteRscProps.clear();
                     remoteRscProps.putAll(otherRsc.getRscProps());
+
+                    // update flags
+                    remoteRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(otherRsc.getRscFlags()));
 
                     // TODO: volumes
                     List<Volume.VlmApi> otherRscVlms = otherRsc.getVlms();
