@@ -63,6 +63,8 @@ jar {
   }
 }
 
+startScripts.enabled = false
+
 task ControllerStartup(type: CreateStartScripts) {
     mainClassName = 'com.linbit.linstor.core.Controller'
     applicationName = "Controller"
