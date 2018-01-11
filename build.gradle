@@ -190,6 +190,6 @@ buildRpm {
 }
 
 buildDeb {
-    requires('openjdk-7-jre')
+    requires('default-jre-headless')
     requires('thin-provisioning-tools')
 }
