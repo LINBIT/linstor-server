@@ -317,6 +317,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                 if (success)
                 {
                     String successMessage = getObjectDescriptionInlineFirstLetterCaps();
+                    UUID nodeUuid = nodeData.getUuid(); // store node uuid to avoid deleted node acess
                     if (hasRsc)
                     {
                         markDeleted(nodeData);
@@ -341,7 +342,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
                     reportSuccess(
                         successMessage,
-                        getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + nodeData.getUuid().toString()
+                        getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + nodeUuid.toString()
                     );
 
                     // TODO: tell satellites to remove all the corresponding resources and storPools
