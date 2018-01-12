@@ -255,10 +255,11 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             }
             else
             {
+                UUID storPoolUuid = storPool.getUuid(); // cache storpool uuid to avoid access deleted storpool
                 delete(storPool);
                 commit();
 
-                reportSuccess(storPool.getUuid());
+                reportSuccess(storPoolUuid);
             }
         }
         catch (ApiCallHandlerFailedException ignore)
