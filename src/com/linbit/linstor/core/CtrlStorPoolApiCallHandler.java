@@ -22,8 +22,8 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -31,13 +31,12 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import java.io.IOException;
 import java.util.ArrayList;
 
 class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlSerializer<StorPool> storPoolSerializer;
-    private final CtrlListSerializer<StorPool.StorPoolApi> listSerializer;
+    private final InterComSerializer interComSerializer;
 
     private final ThreadLocal<String> currentNodeNameStr = new ThreadLocal<>();
     private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
@@ -45,7 +44,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     CtrlStorPoolApiCallHandler(
         Controller controllerRef,
         CtrlSerializer<StorPool> storPoolSerializerRef,
-        CtrlListSerializer<StorPool.StorPoolApi> listSerializerRef,
+        InterComSerializer interComSerializerRef,
         AccessContext apiCtxRef
     )
     {
@@ -59,7 +58,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             currentStorPoolNameStr
         );
         storPoolSerializer = storPoolSerializerRef;
-        listSerializer = listSerializerRef;
+        interComSerializer = interComSerializerRef;
 
         super.setNullOnAutoClose(currentNodeNameStr, currentStorPoolNameStr);
     }
@@ -371,21 +370,10 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        try
-        {
-            return listSerializer.getListMessage(msgId, storPools);
-        }
-        catch (IOException e)
-        {
-            controller.getErrorReporter().reportError(
-                e,
-                null,
-                client,
-                "Could not complete list message due to an IOException"
-            );
-        }
-
-        return null;
+        return interComSerializer
+                .builder(ApiConsts.API_LST_STOR_POOL, msgId)
+                .storPoolList(storPools)
+                .build();
     }
 
     private AbsApiCallHandler setContext(

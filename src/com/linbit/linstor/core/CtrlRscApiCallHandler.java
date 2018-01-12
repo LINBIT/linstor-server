@@ -41,8 +41,8 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
-import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -50,13 +50,12 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import java.io.IOException;
 import java.util.ArrayList;
 
 class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
     private final CtrlSerializer<Resource> rscSerializer;
-    private final CtrlListSerializer<Resource.RscApi> rscListSerializer;
+    private final InterComSerializer interComSerializer;
 
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
@@ -64,7 +63,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
     CtrlRscApiCallHandler(
         Controller controllerRef,
         CtrlSerializer<Resource> rscSerializerRef,
-        CtrlListSerializer<Resource.RscApi> rscListSerializerRef,
+        InterComSerializer interComSerializerRef,
         AccessContext apiCtxRef
     )
     {
@@ -78,7 +77,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             currentRscName
         );
         rscSerializer = rscSerializerRef;
-        rscListSerializer = rscListSerializerRef;
+        interComSerializer = interComSerializerRef;
     }
 
     @Override
@@ -574,21 +573,10 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        try
-        {
-            return rscListSerializer.getListMessage(msgId, rscs);
-        }
-        catch (IOException e)
-        {
-            controller.getErrorReporter().reportError(
-                e,
-                null,
-                client,
-                "Could not complete list message due to an IOException"
-            );
-        }
-
-        return null;
+        return interComSerializer
+                .builder(API_LST_RSC, msgId)
+                .resourceList(rscs)
+                .build();
     }
 
     public void respondResource(

@@ -33,18 +33,15 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import java.io.IOException;
 import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 
 class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
@@ -55,13 +52,11 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
     private final InterComSerializer interComSerializer;
     private final CtrlSerializer<Resource> rscSerializer;
-    private final CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializer;
 
 
     CtrlRscDfnApiCallHandler(
         Controller controllerRef,
         CtrlSerializer<Resource> rscSerializerRef,
-        CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializerRef,
         InterComSerializer interComSerializer,
         AccessContext apiCtxRef
     )
@@ -69,7 +64,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         super(controllerRef, apiCtxRef, ApiConsts.MASK_RSC_DFN);
         super.setNullOnAutoClose(currentRscNameStr);
         rscSerializer = rscSerializerRef;
-        rscDfnListSerializer = rscDfnListSerializerRef;
         this.interComSerializer = interComSerializer;
     }
 
@@ -418,10 +412,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 updateSatellites(resDfn);
 
 
-                byte[] data = interComSerializer.buildMessage(
-                    interComSerializer.getHeader(InternalApiConsts.API_PRIMARY_RSC, 1),
-                    interComSerializer.getPrimaryRequest(rscNameStr, resPrimary.getUuid().toString())
-                );
+                byte[] data = interComSerializer.builder(InternalApiConsts.API_PRIMARY_RSC, 1)
+                        .primaryRequest(rscNameStr, resPrimary.getUuid().toString())
+                        .build();
 
                 try
                 {
@@ -487,21 +480,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        try
-        {
-            return rscDfnListSerializer.getListMessage(msgId, rscdfns);
-        }
-        catch (IOException e)
-        {
-            controller.getErrorReporter().reportError(
-                e,
-                null,
-                client,
-                "Could not complete list message due to an IOException"
-            );
-        }
-
-        return null;
+        return interComSerializer
+                .builder(ApiConsts.API_LST_RSC_DFN, msgId)
+                .resourceDfnList(rscdfns)
+                .build();
     }
 
     private short getAsShort(Map<String, String> props, String key, short defaultValue)

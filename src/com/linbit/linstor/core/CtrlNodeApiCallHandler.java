@@ -40,8 +40,8 @@ import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlNodeSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
@@ -56,18 +56,18 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeType = new ThreadLocal<>();
     private final CtrlNodeSerializer nodeSerializer;
-    private final CtrlListSerializer<Node.NodeApi> nodeListSerializer;
+    private final InterComSerializer interComSerializer;
 
     CtrlNodeApiCallHandler(
         Controller controllerRef,
         AccessContext apiCtxRef,
         CtrlNodeSerializer nodeSerializer,
-        CtrlListSerializer<Node.NodeApi> nodeListSerializer
+        InterComSerializer interComSerializer
     )
     {
         super(controllerRef, apiCtxRef, ApiConsts.MASK_NODE);
         this.nodeSerializer = nodeSerializer;
-        this.nodeListSerializer = nodeListSerializer;
+        this.interComSerializer = interComSerializer;
     }
 
     @Override
@@ -373,7 +373,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 
     byte[] listNodes(int msgId, AccessContext accCtx, Peer client)
     {
-        ArrayList<Node.NodeApi> nodes = new ArrayList<Node.NodeApi>();
+        ArrayList<Node.NodeApi> nodes = new ArrayList<>();
         try
         {
             controller.nodesMapProt.requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
@@ -393,21 +393,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        try
-        {
-            return nodeListSerializer.getListMessage(msgId, nodes);
-        }
-        catch (IOException e)
-        {
-            controller.getErrorReporter().reportError(
-                e,
-                null,
-                client,
-                "Could not complete list message due to an IOException"
-            );
-        }
-
-        return null;
+        return interComSerializer.builder(ApiConsts.API_LST_NODE, msgId).nodeList(nodes).build();
     }
 
     void respondNode(int msgId, Peer satellite, UUID nodeUuid, String nodeNameStr)

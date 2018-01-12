@@ -29,19 +29,13 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.protobuf.controller.serializer.AuthSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.FullSyncSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.NodeDataSerializerProto;
-import com.linbit.linstor.api.protobuf.controller.serializer.NodeListSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDataSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolDataSerializerProto;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
 import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.api.protobuf.ProtoInterComSerializer;
-import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDefinitionListSerializerProto;
-import com.linbit.linstor.api.protobuf.controller.serializer.ResourceListSerializerProto;
-import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolDefinitionListSerializerProto;
-import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolListSerializerProto;
 
 public class CtrlApiCallHandler
 {
@@ -69,11 +63,6 @@ public class CtrlApiCallHandler
         final CtrlNodeSerializer nodeSerializer;
         final CtrlSerializer<Resource> rscSerializer;
         final CtrlSerializer<StorPool> storPoolSerializer;
-        final CtrlListSerializer<Node.NodeApi> nodeListSerializer;
-        final CtrlListSerializer<ResourceDefinition.RscDfnApi> rscDfnListSerializer;
-        final CtrlListSerializer<StorPoolDefinition.StorPoolDfnApi> storPoolDfnListSerializer;
-        final CtrlListSerializer<StorPool.StorPoolApi> storPoolListSerializer;
-        final CtrlListSerializer<Resource.RscApi> resourceListSerializer;
         final InterComSerializer interComSrzl;
 
         switch (type)
@@ -89,11 +78,6 @@ public class CtrlApiCallHandler
                     (ResourceDataSerializerProto) rscSerializer,
                     (StorPoolDataSerializerProto) storPoolSerializer
                 );
-                nodeListSerializer = new NodeListSerializerProto();
-                rscDfnListSerializer = new ResourceDefinitionListSerializerProto();
-                storPoolDfnListSerializer = new StorPoolDefinitionListSerializerProto();
-                storPoolListSerializer = new StorPoolListSerializerProto();
-                resourceListSerializer = new ResourceListSerializerProto();
                 interComSrzl = new ProtoInterComSerializer(errorReporter);
                 break;
             default:
@@ -101,19 +85,18 @@ public class CtrlApiCallHandler
         }
         authApiCallHandler = new CtrlAuthenticationApiCallHandler(controllerRef, authSerializer);
         fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(controllerRef, apiCtx, fullSyncSerializer);
-        nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, apiCtx, nodeSerializer, nodeListSerializer);
+        nodeApiCallHandler = new CtrlNodeApiCallHandler(controllerRef, apiCtx, nodeSerializer, interComSrzl);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(
             controllerRef,
             rscSerializer,
-            rscDfnListSerializer,
             interComSrzl,
             apiCtx
         );
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(controllerRef, rscSerializer, apiCtx);
-        rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, resourceListSerializer, apiCtx);
+        rscApiCallHandler = new CtrlRscApiCallHandler(controllerRef, rscSerializer, interComSrzl, apiCtx);
         vlmApiCallHandler = new CtrlVlmApiCallHandler(controllerRef, apiCtx);
-        storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef, storPoolDfnListSerializer);
-        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef, storPoolSerializer, storPoolListSerializer, apiCtx);
+        storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(controllerRef, interComSrzl);
+        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(controllerRef, storPoolSerializer, interComSrzl, apiCtx);
         nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(controllerRef, nodeSerializer, apiCtx);
         rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(controllerRef, rscSerializer, apiCtx);
         vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(controllerRef, rscSerializer, apiCtx);

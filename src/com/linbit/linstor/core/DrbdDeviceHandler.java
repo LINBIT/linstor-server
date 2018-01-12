@@ -239,10 +239,9 @@ class DrbdDeviceHandler implements DeviceHandler
     )
     {
         ProtoInterComSerializer pic = new ProtoInterComSerializer(this.errLog);
-        byte[] data = pic.buildMessage(
-            pic.getHeader(InternalApiConsts.API_REQUEST_PRIMARY_RSC, 1),
-            pic.getPrimaryRequest(rscName, rscUuid)
-        );
+        byte[] data = pic.builder(InternalApiConsts.API_REQUEST_PRIMARY_RSC, 1)
+                .primaryRequest(rscName, rscUuid)
+                .build();
 
         if (data != null)
         {

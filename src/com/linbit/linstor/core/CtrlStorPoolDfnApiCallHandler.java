@@ -16,24 +16,23 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlListSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
 class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 {
-    private final CtrlListSerializer<StorPoolDefinitionData.StorPoolDfnApi> listSerializer;
+    private final InterComSerializer interComSerializer;
     private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
 
     CtrlStorPoolDfnApiCallHandler(
         Controller controllerRef,
-        CtrlListSerializer<StorPoolDefinitionData.StorPoolDfnApi> storPoolDfnSerializer
+        InterComSerializer interComSerializerRef
     )
     {
         super(
@@ -42,7 +41,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             ApiConsts.MASK_STOR_POOL_DFN
         );
         super.setNullOnAutoClose(currentStorPoolNameStr);
-        listSerializer = storPoolDfnSerializer;
+        interComSerializer = interComSerializerRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -290,21 +289,10 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        try
-        {
-            return listSerializer.getListMessage(msgId, storPoolDfns);
-        }
-        catch (IOException e)
-        {
-            controller.getErrorReporter().reportError(
-                e,
-                null,
-                client,
-                "Could not complete list message due to an IOException"
-            );
-        }
-
-        return null;
+        return interComSerializer
+                .builder(ApiConsts.API_LST_STOR_POOL_DFN, msgId)
+                .storPoolDfnList(storPoolDfns)
+                .build();
     }
 
     protected AbsApiCallHandler setContext(
