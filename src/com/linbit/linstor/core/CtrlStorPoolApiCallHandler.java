@@ -434,10 +434,22 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
     private StorPoolData createStorPool (String nodeNameStr, String storPoolNameStr, String driver)
     {
         NodeData node = loadNode(nodeNameStr, true);
-        StorPoolDefinitionData storPoolDef = loadStorPoolDfn(storPoolNameStr, true);
+        StorPoolDefinitionData storPoolDef = loadStorPoolDfn(storPoolNameStr, false);
 
         try
         {
+            if (storPoolDef == null)
+            {
+                // implicitly create storage pool definition if it doesn't exist
+                storPoolDef = StorPoolDefinitionData.getInstance( // accDeniedExc2, dataAlreadyExistsExc0
+                    currentAccCtx.get(),
+                    asStorPoolName(storPoolNameStr),
+                    currentTransMgr.get(),
+                    true,  // create and persist if not exists
+                    false  // do not throw exception if exists
+                );
+            }
+
             return StorPoolData.getInstance(
                 currentAccCtx.get(),
                 node,
