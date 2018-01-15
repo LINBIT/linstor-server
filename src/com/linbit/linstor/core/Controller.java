@@ -1497,10 +1497,11 @@ public final class Controller extends LinStor implements Runnable, CoreServices
             AccessContext privCtx = sysCtx.clone();
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
+            Connection conn = null;
             try
             {
                 rcfgRdLock.lock();
-                Connection conn = dbConnPool.getConnection();
+                conn = dbConnPool.getConnection();
                 try
                 {
                     nodesWrLock.lock();
@@ -1623,6 +1624,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
             finally
             {
                 rcfgRdLock.unlock();
+                dbConnPool.returnConnection(conn);
             }
         }
         catch (AccessDeniedException accExc)
