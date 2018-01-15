@@ -56,8 +56,6 @@ public class ApiTestBase extends DerbyBase
         BOB_ACC_CTX = TestAccessContextProvider.BOB_ACC_CTX;
     }
 
-    protected final ApiType apiType;
-
     /*
      * Controller fields START
      */
@@ -80,9 +78,8 @@ public class ApiTestBase extends DerbyBase
     private ApiCtrlAccessors testApiCtrlAccessors;
     protected CtrlApiCallHandler apiCallHandler;
 
-    public ApiTestBase(ApiType apiTypeRef)
+    public ApiTestBase()
     {
-        apiType = apiTypeRef;
         testApiCtrlAccessors = new TestApiCtrlAccessorImpl();
 
         tcpConnector = new TestTcpConnector();

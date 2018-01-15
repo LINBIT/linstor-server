@@ -1,8 +1,6 @@
 package com.linbit.linstor.api;
 
 import java.util.Arrays;
-import java.util.Collections;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -24,7 +22,7 @@ public class NodeApiTest extends ApiTestBase
 {
     public NodeApiTest()
     {
-        super(ApiType.PROTOBUF);
+        super();
     }
 
     @Test
