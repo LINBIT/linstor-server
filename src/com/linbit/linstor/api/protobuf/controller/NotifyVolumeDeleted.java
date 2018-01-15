@@ -1,14 +1,14 @@
 package com.linbit.linstor.api.protobuf.controller;
 
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.javainternal.MsgIntDelVlm;
+import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass;
 import com.linbit.linstor.security.AccessContext;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -48,7 +48,7 @@ public class NotifyVolumeDeleted extends BaseProtoApiCall {
     )
         throws IOException
     {
-        MsgIntDelVlm.MsgDelVlm msgDelVlm = MsgIntDelVlm.MsgDelVlm.parseDelimitedFrom(msgDataIn);
+        MsgIntDelVlmOuterClass.MsgIntDelVlm msgDelVlm = MsgIntDelVlmOuterClass.MsgIntDelVlm.parseDelimitedFrom(msgDataIn);
         controller.getApiCallHandler().volumeDeleted(
                 accCtx,
                 client,

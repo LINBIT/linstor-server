@@ -6,12 +6,10 @@ import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.interfaces.serializer.InterComBuilder;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.proto.MsgHeaderOuterClass;
-import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.MsgDelRscOuterClass;
+import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.MsgLstNodeOuterClass;
 import com.linbit.linstor.proto.MsgLstRscDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstRscOuterClass;
@@ -22,6 +20,11 @@ import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.RscDfnApiData;
 import com.linbit.linstor.proto.apidata.StorPoolApiData;
 import com.linbit.linstor.proto.apidata.StorPoolDfnApiData;
+import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -167,6 +170,38 @@ class ProtoInterComBuilder implements InterComBuilder {
 
         try {
             msgListRscsBuilder.build().writeDelimitedTo(baos);
+        } catch (IOException ex) {
+            errReporter.reportError(ex);
+        }
+
+        return this;
+    }
+
+    @Override
+    public InterComBuilder notifyResourceDeleted(String nodeName, String resourceName, String rscUuid) {
+        MsgDelRscOuterClass.MsgDelRsc.Builder msgDelRscBld = MsgDelRscOuterClass.MsgDelRsc.newBuilder();
+        msgDelRscBld.setNodeName(nodeName);
+        msgDelRscBld.setRscName(resourceName);
+        msgDelRscBld.setUuid(rscUuid);
+
+        try {
+            msgDelRscBld.build().writeDelimitedTo(baos);
+        } catch (IOException ex) {
+            errReporter.reportError(ex);
+        }
+
+        return this;
+    }
+
+    @Override
+    public InterComBuilder notifyVolumeDeleted(String nodeName, String resourceName, int volumeNr) {
+        MsgIntDelVlmOuterClass.MsgIntDelVlm.Builder msgDelVlmBld = MsgIntDelVlmOuterClass.MsgIntDelVlm.newBuilder();
+        msgDelVlmBld.setNodeName(nodeName);
+        msgDelVlmBld.setRscName(resourceName);
+        msgDelVlmBld.setVlmNr(volumeNr);
+
+        try {
+            msgDelVlmBld.build().writeDelimitedTo(baos);
         } catch (IOException ex) {
             errReporter.reportError(ex);
         }

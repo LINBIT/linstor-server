@@ -723,55 +723,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         Peer ctrlPeer = stltInstance.getControllerPeer();
         if (ctrlPeer != null)
         {
-            // FIXME: Temporary protocol specific implementation - this method should be protocol-independent
-            //        in the final implementation. An interface should be called that is implemented by
-            //        an instance that implements whatever protocol the satellite uses and creates the
-            //        actual message
-            MsgHeader.Builder msgHdrBld = MsgHeader.newBuilder();
-            msgHdrBld.setMsgId(1);
-            msgHdrBld.setApiCall(InternalApiConsts.API_NOTIFY_RSC_DEL);
-
-            MsgDelRsc.Builder msgDelRscBld = MsgDelRsc.newBuilder();
             String msgNodeName = rsc.getAssignedNode().getName().displayValue;
             String msgRscName = rsc.getDefinition().getName().displayValue;
             UUID rscUuid = rsc.getUuid();
-            com.google.protobuf.ByteString msgUuid = com.google.protobuf.ByteString.copyFrom(
-                com.linbit.utils.UuidUtils.asByteArray(rscUuid)
-            );
-            msgDelRscBld.setNodeName(msgNodeName);
-            msgDelRscBld.setRscName(msgRscName);
-            msgDelRscBld.setUuidBytes(msgUuid);
 
-            byte[] data = null;
-            {
-                ByteArrayOutputStream dataOut = new ByteArrayOutputStream();
-                try
-                {
-                    msgHdrBld.build().writeDelimitedTo(dataOut);
-                    msgDelRscBld.build().writeDelimitedTo(dataOut);
-                    dataOut.close();
-                    data = dataOut.toByteArray();
-                    dataOut = null;
-                }
-                catch (IOException ioExc)
-                {
-                    // Not supposed to happen, because the I/O is just a byte array
-                    errLog.reportError(ioExc);
-                }
-                finally
-                {
-                    if (dataOut != null)
-                    {
-                        try
-                        {
-                            dataOut.close();
-                        }
-                        catch (IOException ignored)
-                        {
-                        }
-                    }
-                }
-            }
+            byte[] data = stltInstance.getInterComSerializer()
+                .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
+                .notifyResourceDeleted(msgNodeName, msgRscName, rscUuid.toString())
+                .build();
 
             if (data != null)
             {
@@ -805,12 +764,30 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         Peer ctrlPeer = stltInstance.getControllerPeer();
         if (ctrlPeer != null)
         {
-            // TODO: Implement
-            //
-            // FIXME: Temporary protocol specific implementation - this method should be protocol-independent
-            //        in the final implementation. An interface should be called that is implemented by
-            //        an instance that implements whatever protocol the satellite uses and creates the
-            //        actual message
+            String msgNodeName = vlm.getResource().getAssignedNode().getName().displayValue;
+            String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
+
+            byte[] data = stltInstance.getInterComSerializer()
+                    .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
+                    .notifyVolumeDeleted(msgNodeName, msgRscName, vlm.getVolumeDefinition().getVolumeNumber().value)
+                    .build();
+
+            if (data != null)
+            {
+                try
+                {
+                    Message netComMsg = ctrlPeer.createMessage();
+                    netComMsg.setData(data);
+                    ctrlPeer.sendMessage(netComMsg);
+                }
+                catch (IllegalMessageStateException illStateExc)
+                {
+                    throw new ImplementationError(
+                            "Attempt to send a NetCom message that has an illegal state",
+                            illStateExc
+                    );
+                }
+            }
         }
 
         // Remember the volume for removal after the DeviceHandler instances have finished

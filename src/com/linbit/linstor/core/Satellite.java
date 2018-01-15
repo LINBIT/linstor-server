@@ -23,6 +23,8 @@ import com.linbit.linstor.SatellitePeerCtx;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.protobuf.ProtoInterComSerializer;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.drbdstate.DrbdStateTracker;
@@ -167,6 +169,8 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
 
     // Lock for major global changes
     public final ReadWriteLock stltConfLock;
+
+    private InterComSerializer interComSerializer;
 
     public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
         throws IOException
@@ -347,6 +351,9 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                 // Initialize the network communications service
                 errorLogRef.logInfo("Initializing main network communications service");
                 initMainNetComService(initCtx);
+
+                // Init protobuf serializer implementation
+                interComSerializer = new ProtoInterComSerializer(getErrorReporter());
             }
             catch (AccessDeniedException accessExc)
             {
@@ -854,5 +861,9 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
             nodesMapLock.readLock().unlock();
             reconfigurationLock.readLock().unlock();
         }
+    }
+
+    public InterComSerializer getInterComSerializer() {
+        return interComSerializer;
     }
 }

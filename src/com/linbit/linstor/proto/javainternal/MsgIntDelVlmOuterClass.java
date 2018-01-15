@@ -3,8 +3,8 @@
 
 package com.linbit.linstor.proto.javainternal;
 
-public final class MsgIntDelVlm {
-  private MsgIntDelVlm() {}
+public final class MsgIntDelVlmOuterClass {
+  private MsgIntDelVlmOuterClass() {}
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistryLite registry) {
   }
@@ -14,8 +14,8 @@ public final class MsgIntDelVlm {
     registerAllExtensions(
         (com.google.protobuf.ExtensionRegistryLite) registry);
   }
-  public interface MsgDelVlmOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:com.linbit.linstor.proto.javainternal.MsgDelVlm)
+  public interface MsgIntDelVlmOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:com.linbit.linstor.proto.javainternal.MsgIntDelVlm)
       com.google.protobuf.MessageOrBuilder {
 
     /**
@@ -48,17 +48,17 @@ public final class MsgIntDelVlm {
    * linstor - volume deleted notification message
    * </pre>
    *
-   * Protobuf type {@code com.linbit.linstor.proto.javainternal.MsgDelVlm}
+   * Protobuf type {@code com.linbit.linstor.proto.javainternal.MsgIntDelVlm}
    */
-  public  static final class MsgDelVlm extends
+  public  static final class MsgIntDelVlm extends
       com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:com.linbit.linstor.proto.javainternal.MsgDelVlm)
-      MsgDelVlmOrBuilder {
-    // Use MsgDelVlm.newBuilder() to construct.
-    private MsgDelVlm(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      // @@protoc_insertion_point(message_implements:com.linbit.linstor.proto.javainternal.MsgIntDelVlm)
+      MsgIntDelVlmOrBuilder {
+    // Use MsgIntDelVlm.newBuilder() to construct.
+    private MsgIntDelVlm(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
-    private MsgDelVlm() {
+    private MsgIntDelVlm() {
       nodeName_ = "";
       rscName_ = "";
       vlmNr_ = 0;
@@ -69,7 +69,7 @@ public final class MsgIntDelVlm {
     getUnknownFields() {
       return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
     }
-    private MsgDelVlm(
+    private MsgIntDelVlm(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -119,14 +119,14 @@ public final class MsgIntDelVlm {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return com.linbit.linstor.proto.javainternal.MsgIntDelVlm.internal_static_com_linbit_linstor_proto_javainternal_MsgDelVlm_descriptor;
+      return com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.internal_static_com_linbit_linstor_proto_javainternal_MsgIntDelVlm_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return com.linbit.linstor.proto.javainternal.MsgIntDelVlm.internal_static_com_linbit_linstor_proto_javainternal_MsgDelVlm_fieldAccessorTable
+      return com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.internal_static_com_linbit_linstor_proto_javainternal_MsgIntDelVlm_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm.class, com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm.Builder.class);
+              com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm.class, com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm.Builder.class);
     }
 
     public static final int NODE_NAME_FIELD_NUMBER = 1;
@@ -254,10 +254,10 @@ public final class MsgIntDelVlm {
       if (obj == this) {
        return true;
       }
-      if (!(obj instanceof com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm)) {
+      if (!(obj instanceof com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm)) {
         return super.equals(obj);
       }
-      com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm other = (com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm) obj;
+      com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm other = (com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm) obj;
 
       boolean result = true;
       result = result && getNodeName()
@@ -287,58 +287,58 @@ public final class MsgIntDelVlm {
       return hash;
     }
 
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parseFrom(
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parseFrom(
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parseFrom(byte[] data)
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parseFrom(
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parseFrom(java.io.InputStream input)
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parseFrom(
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parseDelimitedFrom(java.io.InputStream input)
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input);
     }
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parseDelimitedFrom(
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parseFrom(
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parseFrom(
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -350,7 +350,7 @@ public final class MsgIntDelVlm {
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
     }
-    public static Builder newBuilder(com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm prototype) {
+    public static Builder newBuilder(com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() {
@@ -369,25 +369,25 @@ public final class MsgIntDelVlm {
      * linstor - volume deleted notification message
      * </pre>
      *
-     * Protobuf type {@code com.linbit.linstor.proto.javainternal.MsgDelVlm}
+     * Protobuf type {@code com.linbit.linstor.proto.javainternal.MsgIntDelVlm}
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:com.linbit.linstor.proto.javainternal.MsgDelVlm)
-        com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlmOrBuilder {
+        // @@protoc_insertion_point(builder_implements:com.linbit.linstor.proto.javainternal.MsgIntDelVlm)
+        com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlmOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return com.linbit.linstor.proto.javainternal.MsgIntDelVlm.internal_static_com_linbit_linstor_proto_javainternal_MsgDelVlm_descriptor;
+        return com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.internal_static_com_linbit_linstor_proto_javainternal_MsgIntDelVlm_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return com.linbit.linstor.proto.javainternal.MsgIntDelVlm.internal_static_com_linbit_linstor_proto_javainternal_MsgDelVlm_fieldAccessorTable
+        return com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.internal_static_com_linbit_linstor_proto_javainternal_MsgIntDelVlm_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm.class, com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm.Builder.class);
+                com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm.class, com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm.Builder.class);
       }
 
-      // Construct using com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm.newBuilder()
+      // Construct using com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -415,23 +415,23 @@ public final class MsgIntDelVlm {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return com.linbit.linstor.proto.javainternal.MsgIntDelVlm.internal_static_com_linbit_linstor_proto_javainternal_MsgDelVlm_descriptor;
+        return com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.internal_static_com_linbit_linstor_proto_javainternal_MsgIntDelVlm_descriptor;
       }
 
-      public com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm getDefaultInstanceForType() {
-        return com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm.getDefaultInstance();
+      public com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm getDefaultInstanceForType() {
+        return com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm.getDefaultInstance();
       }
 
-      public com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm build() {
-        com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm result = buildPartial();
+      public com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm build() {
+        com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      public com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm buildPartial() {
-        com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm result = new com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm(this);
+      public com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm buildPartial() {
+        com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm result = new com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm(this);
         result.nodeName_ = nodeName_;
         result.rscName_ = rscName_;
         result.vlmNr_ = vlmNr_;
@@ -466,16 +466,16 @@ public final class MsgIntDelVlm {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm) {
-          return mergeFrom((com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm)other);
+        if (other instanceof com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm) {
+          return mergeFrom((com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm other) {
-        if (other == com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm.getDefaultInstance()) return this;
+      public Builder mergeFrom(com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm other) {
+        if (other == com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm.getDefaultInstance()) return this;
         if (!other.getNodeName().isEmpty()) {
           nodeName_ = other.nodeName_;
           onChanged();
@@ -499,11 +499,11 @@ public final class MsgIntDelVlm {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm parsedMessage = null;
+        com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm) e.getUnfinishedMessage();
+          parsedMessage = (com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm) e.getUnfinishedMessage();
           throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
@@ -687,49 +687,49 @@ public final class MsgIntDelVlm {
       }
 
 
-      // @@protoc_insertion_point(builder_scope:com.linbit.linstor.proto.javainternal.MsgDelVlm)
+      // @@protoc_insertion_point(builder_scope:com.linbit.linstor.proto.javainternal.MsgIntDelVlm)
     }
 
-    // @@protoc_insertion_point(class_scope:com.linbit.linstor.proto.javainternal.MsgDelVlm)
-    private static final com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm DEFAULT_INSTANCE;
+    // @@protoc_insertion_point(class_scope:com.linbit.linstor.proto.javainternal.MsgIntDelVlm)
+    private static final com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm DEFAULT_INSTANCE;
     static {
-      DEFAULT_INSTANCE = new com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm();
+      DEFAULT_INSTANCE = new com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm();
     }
 
-    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm getDefaultInstance() {
+    public static com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm getDefaultInstance() {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<MsgDelVlm>
-        PARSER = new com.google.protobuf.AbstractParser<MsgDelVlm>() {
-      public MsgDelVlm parsePartialFrom(
+    private static final com.google.protobuf.Parser<MsgIntDelVlm>
+        PARSER = new com.google.protobuf.AbstractParser<MsgIntDelVlm>() {
+      public MsgIntDelVlm parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new MsgDelVlm(input, extensionRegistry);
+          return new MsgIntDelVlm(input, extensionRegistry);
       }
     };
 
-    public static com.google.protobuf.Parser<MsgDelVlm> parser() {
+    public static com.google.protobuf.Parser<MsgIntDelVlm> parser() {
       return PARSER;
     }
 
     @java.lang.Override
-    public com.google.protobuf.Parser<MsgDelVlm> getParserForType() {
+    public com.google.protobuf.Parser<MsgIntDelVlm> getParserForType() {
       return PARSER;
     }
 
-    public com.linbit.linstor.proto.javainternal.MsgIntDelVlm.MsgDelVlm getDefaultInstanceForType() {
+    public com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass.MsgIntDelVlm getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 
   }
 
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_com_linbit_linstor_proto_javainternal_MsgDelVlm_descriptor;
+    internal_static_com_linbit_linstor_proto_javainternal_MsgIntDelVlm_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_com_linbit_linstor_proto_javainternal_MsgDelVlm_fieldAccessorTable;
+      internal_static_com_linbit_linstor_proto_javainternal_MsgIntDelVlm_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -740,9 +740,9 @@ public final class MsgIntDelVlm {
   static {
     java.lang.String[] descriptorData = {
       "\n%proto/javainternal/MsgIntDelVlm.proto\022" +
-      "%com.linbit.linstor.proto.javainternal\"@" +
-      "\n\tMsgDelVlm\022\021\n\tnode_name\030\001 \001(\t\022\020\n\010rsc_na" +
-      "me\030\002 \001(\t\022\016\n\006vlm_nr\030\003 \001(\021b\006proto3"
+      "%com.linbit.linstor.proto.javainternal\"C" +
+      "\n\014MsgIntDelVlm\022\021\n\tnode_name\030\001 \001(\t\022\020\n\010rsc" +
+      "_name\030\002 \001(\t\022\016\n\006vlm_nr\030\003 \001(\021b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -756,11 +756,11 @@ public final class MsgIntDelVlm {
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         }, assigner);
-    internal_static_com_linbit_linstor_proto_javainternal_MsgDelVlm_descriptor =
+    internal_static_com_linbit_linstor_proto_javainternal_MsgIntDelVlm_descriptor =
       getDescriptor().getMessageTypes().get(0);
-    internal_static_com_linbit_linstor_proto_javainternal_MsgDelVlm_fieldAccessorTable = new
+    internal_static_com_linbit_linstor_proto_javainternal_MsgIntDelVlm_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_com_linbit_linstor_proto_javainternal_MsgDelVlm_descriptor,
+        internal_static_com_linbit_linstor_proto_javainternal_MsgIntDelVlm_descriptor,
         new java.lang.String[] { "NodeName", "RscName", "VlmNr", });
   }
 

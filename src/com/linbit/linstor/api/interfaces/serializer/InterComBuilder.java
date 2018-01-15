@@ -21,4 +21,7 @@ public interface InterComBuilder {
     public InterComBuilder storPoolList(List<StorPool.StorPoolApi> storOools);
     public InterComBuilder resourceDfnList(List<ResourceDefinition.RscDfnApi> rscDfns);
     public InterComBuilder resourceList(List<Resource.RscApi> rscs);
+
+    InterComBuilder notifyResourceDeleted(String nodeName, String resourceName, String rscUuid);
+    InterComBuilder notifyVolumeDeleted(String nodeName, String resourceName, int volumeNr);
 }
