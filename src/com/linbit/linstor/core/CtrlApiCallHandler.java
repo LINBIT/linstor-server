@@ -1,32 +1,17 @@
 package com.linbit.linstor.core;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeConnection;
-import com.linbit.linstor.Resource;
-import com.linbit.linstor.ResourceConnection;
-import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.*;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
-import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.Volume;
-import com.linbit.linstor.VolumeConnection;
-import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiType;
-import com.linbit.linstor.api.interfaces.serializer.CtrlAuthSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlFullSyncSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlNodeSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
-import com.linbit.linstor.api.protobuf.controller.serializer.AuthSerializerProto;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.protobuf.ProtoInterComSerializer;
 import com.linbit.linstor.api.protobuf.controller.serializer.FullSyncSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.NodeDataSerializerProto;
 import com.linbit.linstor.api.protobuf.controller.serializer.ResourceDataSerializerProto;
@@ -34,8 +19,12 @@ import com.linbit.linstor.api.protobuf.controller.serializer.StorPoolDataSeriali
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
-import com.linbit.linstor.api.protobuf.ProtoInterComSerializer;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class CtrlApiCallHandler
 {
@@ -59,7 +48,6 @@ public class CtrlApiCallHandler
 
         apiCtrlAccessors = apiCtrlAccessorsRef;
         final ErrorReporter errorReporter = apiCtrlAccessors.getErrorReporter();
-        final CtrlAuthSerializer authSerializer;
         final CtrlFullSyncSerializer fullSyncSerializer;
         final CtrlNodeSerializer nodeSerializer;
         final CtrlSerializer<Resource> rscSerializer;
@@ -69,7 +57,6 @@ public class CtrlApiCallHandler
         switch (type)
         {
             case PROTOBUF:
-                authSerializer = new AuthSerializerProto();
                 nodeSerializer = new NodeDataSerializerProto(apiCtx, errorReporter);
                 rscSerializer = new ResourceDataSerializerProto(apiCtx, errorReporter);
                 storPoolSerializer = new StorPoolDataSerializerProto(apiCtx, errorReporter);
@@ -84,7 +71,7 @@ public class CtrlApiCallHandler
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
         }
-        authApiCallHandler = new CtrlAuthenticationApiCallHandler(apiCtrlAccessors, authSerializer);
+        authApiCallHandler = new CtrlAuthenticationApiCallHandler(apiCtrlAccessors, interComSrzl);
         fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(apiCtrlAccessors, apiCtx, fullSyncSerializer);
         nodeApiCallHandler = new CtrlNodeApiCallHandler(apiCtrlAccessors, apiCtx, nodeSerializer, interComSrzl);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(

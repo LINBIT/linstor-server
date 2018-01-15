@@ -1,21 +1,22 @@
 package com.linbit.linstor.core;
 
-import java.io.IOException;
-
 import com.linbit.ImplementationError;
-import com.linbit.linstor.api.interfaces.serializer.CtrlAuthSerializer;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 
+import java.io.IOException;
+
 class CtrlAuthenticationApiCallHandler
 {
     private ApiCtrlAccessors apiCtrlAccessors;
-    private CtrlAuthSerializer serializer;
+    private InterComSerializer serializer;
 
     public CtrlAuthenticationApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        CtrlAuthSerializer serializerRef
+        InterComSerializer serializerRef
     )
     {
         apiCtrlAccessors = apiCtrlAccessorsRef;
@@ -29,7 +30,14 @@ class CtrlAuthenticationApiCallHandler
             apiCtrlAccessors.getErrorReporter().logDebug("Sending authentication to satellite '" + peer.getNode().getName() + "'");
             Message msg = peer.createMessage();
             // TODO make the shared secret customizable
-            msg.setData(serializer.getAuthMessage(peer.getNode(), "Hello, LinStor!".getBytes()));
+            msg.setData(serializer
+                    .builder(InternalApiConsts.API_AUTH, 1)
+                    .authMessage(
+                            peer.getNode().getUuid(),
+                            peer.getNode().getName().getDisplayName(),
+                            "Hello, LinStor!".getBytes())
+                    .build()
+            );
             peer.sendMessage(msg);
         }
         catch (IllegalMessageStateException illegalMessageStateExc)
@@ -39,15 +47,6 @@ class CtrlAuthenticationApiCallHandler
                     "Failed to complete authentication to satellite.",
                     illegalMessageStateExc
                 )
-            );
-        }
-        catch (IOException e)
-        {
-            apiCtrlAccessors.getErrorReporter().reportError(
-                e,
-                null,
-                peer,
-                "Could not complete authentication due to an IOException"
             );
         }
     }

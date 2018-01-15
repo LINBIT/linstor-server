@@ -1,5 +1,7 @@
 package com.linbit.linstor.api.protobuf;
 
+import com.google.protobuf.ByteString;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -20,12 +22,14 @@ import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.RscDfnApiData;
 import com.linbit.linstor.proto.apidata.StorPoolApiData;
 import com.linbit.linstor.proto.apidata.StorPoolDfnApiData;
+import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 /**
  *
@@ -202,6 +206,22 @@ class ProtoInterComBuilder implements InterComBuilder {
 
         try {
             msgDelVlmBld.build().writeDelimitedTo(baos);
+        } catch (IOException ex) {
+            errReporter.reportError(ex);
+        }
+
+        return this;
+    }
+
+    @Override
+    public InterComBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret) {
+        try {
+            MsgIntAuthOuterClass.MsgIntAuth.newBuilder()
+                    .setNodeUuid(nodeUuid.toString())
+                    .setNodeName(nodeName)
+                    .setSharedSecret(ByteString.copyFrom(sharedSecret))
+                    .build()
+                    .writeDelimitedTo(baos);
         } catch (IOException ex) {
             errReporter.reportError(ex);
         }
