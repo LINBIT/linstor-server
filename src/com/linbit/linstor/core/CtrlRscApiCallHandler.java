@@ -511,6 +511,8 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr);
 
             ResourceDefinition rscDfn = rscData.getDefinition();
+            UUID rscUuid = rscData.getUuid();
+
             delete(rscData);
             commit();
 
@@ -520,7 +522,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 apiCtrlAccessors.cleanup();
             }
 
-            reportSuccess(rscData.getUuid());
+            reportSuccess(rscUuid);
         }
         catch (ApiCallHandlerFailedException ignore)
         {
