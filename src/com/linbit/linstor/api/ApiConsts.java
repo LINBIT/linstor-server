@@ -154,17 +154,17 @@ public class ApiConsts
     /*
      * Codes 700-799: uuid mismatch failures
      */
-    public static final long FAIL_UUID_NODE = 600 | MASK_ERROR;
-    public static final long FAIL_UUID_RSC_DFN = 601 | MASK_ERROR;
-    public static final long FAIL_UUID_RSC = 602 | MASK_ERROR;
-    public static final long FAIL_UUID_VLM_DFN = 603 | MASK_ERROR;
-    public static final long FAIL_UUID_VLM = 604 | MASK_ERROR;
-    public static final long FAIL_UUID_NET_IF = 605 | MASK_ERROR;
-    public static final long FAIL_UUID_NODE_CONN = 606 | MASK_ERROR;
-    public static final long FAIL_UUID_RSC_CONN = 607 | MASK_ERROR;
-    public static final long FAIL_UUID_VLM_CONN = 608 | MASK_ERROR;
-    public static final long FAIL_UUID_STOR_POOL_DFN = 609 | MASK_ERROR;
-    public static final long FAIL_UUID_STOR_POOL = 610 | MASK_ERROR;
+    public static final long FAIL_UUID_NODE = 700 | MASK_ERROR;
+    public static final long FAIL_UUID_RSC_DFN = 701 | MASK_ERROR;
+    public static final long FAIL_UUID_RSC = 702 | MASK_ERROR;
+    public static final long FAIL_UUID_VLM_DFN = 703 | MASK_ERROR;
+    public static final long FAIL_UUID_VLM = 704 | MASK_ERROR;
+    public static final long FAIL_UUID_NET_IF = 705 | MASK_ERROR;
+    public static final long FAIL_UUID_NODE_CONN = 706 | MASK_ERROR;
+    public static final long FAIL_UUID_RSC_CONN = 707 | MASK_ERROR;
+    public static final long FAIL_UUID_VLM_CONN = 708 | MASK_ERROR;
+    public static final long FAIL_UUID_STOR_POOL_DFN = 709 | MASK_ERROR;
+    public static final long FAIL_UUID_STOR_POOL = 710 | MASK_ERROR;
 
     /*
      * Other failures
