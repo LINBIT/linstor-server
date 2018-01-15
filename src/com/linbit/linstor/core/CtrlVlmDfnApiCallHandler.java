@@ -905,7 +905,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         return getObjectDescriptionInline(currentRscNameStr.get(), currentVlmNr.get());
     }
 
-    private String getObjectDescriptionInline(String rscName, int vlmNr)
+    public static String getObjectDescriptionInline(String rscName, int vlmNr)
     {
         return "volume definition with number '" + vlmNr + "' of resource definition '" + rscName + "'";
     }

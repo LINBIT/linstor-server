@@ -495,25 +495,16 @@ public class ResourceData extends BaseTransactionObject implements Resource
             ((NodeData) assgNode).removeResource(accCtx, this);
             synchronized (resourceDfn)
             {
-                List<ResourceConnection> deletedRscConns = new ArrayList<>();
-                try
-                {
-                    ((ResourceDefinitionData) resourceDfn).removeResource(accCtx, this);
+                ((ResourceDefinitionData) resourceDfn).removeResource(accCtx, this);
 
-                    for (ResourceConnection rscConn : resourceConnections.values())
-                    {
-                        rscConn.delete(accCtx);
-                        deletedRscConns.add(rscConn);
-                    }
-                }
-                catch (AccessDeniedException accessDeniedExc)
+                for (ResourceConnection rscConn : resourceConnections.values())
                 {
-                    ((NodeData) assgNode).addResource(accCtx, this);
-                    for (ResourceConnection deletedRscConn : deletedRscConns)
-                    {
-                        setResourceConnection(accCtx, deletedRscConn);
-                    }
-                    throw accessDeniedExc;
+                    rscConn.delete(accCtx);
+                }
+
+                for (Volume vlm : volumeMap.values())
+                {
+                    vlm.delete(accCtx);
                 }
             }
         }
@@ -540,6 +531,7 @@ public class ResourceData extends BaseTransactionObject implements Resource
         createPrimary = false;
     }
 
+    @Override
     public boolean isCreatePrimary()
     {
         return createPrimary;

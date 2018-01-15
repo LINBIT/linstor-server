@@ -136,12 +136,6 @@ class ApiCtrlAccessorImpl implements ApiCtrlAccessors
     }
 
     @Override
-    public void cleanup()
-    {
-        controller.cleanup();
-    }
-
-    @Override
     public MetaDataApi getMetaDataApi()
     {
         return controller.getMetaDataApi();

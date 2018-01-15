@@ -349,8 +349,6 @@ public class NodeData extends BaseTransactionObject implements Node
         objProt.requireAccess(accCtx, AccessType.USE);
 
         resourceMap.remove(resRef.getDefinition().getName());
-        // TODO: gh - if a resource is removed from the map, should we "invalidate" the resource?
-        // should we also update the database to remove the resource from the db?
     }
 
     @Override

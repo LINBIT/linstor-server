@@ -755,6 +755,7 @@ public class CtrlApiCallHandler
         {
             apiCtrlAccessors.getNodesMapLock().writeLock().lock();
             apiCtrlAccessors.getRscDfnMapLock().writeLock().lock();
+            apiCtrlAccessors.getStorPoolDfnMapLock().writeLock().lock();
 
             apiCallRc = vlmApiCallHandler.volumeDeleted(
                 accCtx,
@@ -766,6 +767,7 @@ public class CtrlApiCallHandler
         }
         finally
         {
+            apiCtrlAccessors.getStorPoolDfnMapLock().writeLock().unlock();
             apiCtrlAccessors.getRscDfnMapLock().writeLock().unlock();
             apiCtrlAccessors.getNodesMapLock().writeLock().unlock();
         }

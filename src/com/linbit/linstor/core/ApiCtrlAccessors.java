@@ -41,7 +41,6 @@ public interface ApiCtrlAccessors
     public ReadWriteLock getRscDfnMapLock();
     public String generateSharedSecret();
 
-    public void cleanup();
     public short getDefaultPeerCount();
     public int getDefaultAlStripes();
 

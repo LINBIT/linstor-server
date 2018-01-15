@@ -1,8 +1,11 @@
 package com.linbit.linstor.core;
 
-import static com.linbit.linstor.api.ApiConsts.*;
+import static com.linbit.linstor.api.ApiConsts.API_LST_RSC;
+import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
+import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -19,28 +22,30 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceData;
+import com.linbit.linstor.ResourceDefinition;
+import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinitionData;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolData;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
@@ -50,7 +55,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import java.util.ArrayList;
 
 class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
@@ -511,18 +515,51 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr);
 
             ResourceDefinition rscDfn = rscData.getDefinition();
+            Node node = rscData.getAssignedNode();
             UUID rscUuid = rscData.getUuid();
 
-            delete(rscData);
+            delete(rscData); // also deletes all of its volumes
+
             commit();
 
-            // call cleanup if resource definition is empty
-            if (rscDfn.getResourceCount() == 0)
+
+            UUID rscDfnUuid = null;
+            ResourceName deletedRscDfnName = null;
+            UUID nodeUuid = null;
+            NodeName deletedNodeName = null;
+            // cleanup resource definition if empty and marked for deletion
+            if (rscDfn.getResourceCount() == 0 && isMarkedForDeletion(rscDfn))
             {
-                apiCtrlAccessors.cleanup();
+                deletedRscDfnName = rscDfn.getName();
+                rscDfnUuid = rscDfn.getUuid();
+                delete(rscDfn);
             }
 
+            // cleanup node if empty and marked for deletion
+            if (node.getResourceCount() == 0 &&
+                node.getStorPoolCount() == 0 &&
+                isMarkedForDeletion(node)
+            )
+            {
+                deletedNodeName = node.getName();
+                nodeUuid = node.getUuid();
+                delete(node);
+            }
+
+            commit();
+
             reportSuccess(rscUuid);
+
+            if (deletedRscDfnName != null)
+            {
+                addRscDfnDeletedAnswer(deletedRscDfnName, rscDfnUuid);
+                apiCtrlAccessors.getRscDfnMap().remove(deletedRscDfnName);
+            }
+            if (deletedNodeName != null)
+            {
+                apiCtrlAccessors.getNodesMap().remove(deletedNodeName);
+                addNodeDeletedAnswer(deletedNodeName, nodeUuid);
+            }
         }
         catch (ApiCallHandlerFailedException ignore)
         {
@@ -544,7 +581,6 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
         return apiCallRc;
     }
-
 
     byte[] listResources(int msgId, AccessContext accCtx, Peer client)
     {
@@ -933,6 +969,12 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         try
         {
             rscData.markDeleted(currentAccCtx.get());
+            Iterator<Volume> volumesIterator = rscData.iterateVolumes();
+            while (volumesIterator.hasNext())
+            {
+                Volume vlm = volumesIterator.next();
+                vlm.markDeleted(currentAccCtx.get());
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -955,7 +997,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            rscData.delete(currentAccCtx.get());
+            rscData.delete(currentAccCtx.get()); // also deletes all of its volumes
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -972,5 +1014,99 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 "deleting " + getObjectDescriptionInline()
             );
         }
+    }
+
+    private void delete(ResourceDefinition rscDfn)
+    {
+        try
+        {
+            rscDfn.delete(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "deleting " + CtrlRscDfnApiCallHandler.getObjectDescriptionInline(rscDfn.getName().displayValue)
+            );
+        }
+    }
+
+    private void delete(Node node)
+    {
+        try
+        {
+            node.delete(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "deleting " + CtrlNodeApiCallHandler.getObjectDescriptionInline(node.getName().displayValue)
+            );
+        }
+    }
+
+    private boolean isMarkedForDeletion(ResourceDefinition rscDfn)
+    {
+        try
+        {
+            return rscDfn.getFlags().isSet(apiCtx, RscDfnFlags.DELETE);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+    }
+
+    private boolean isMarkedForDeletion(Node node)
+    {
+        try
+        {
+            return node.getFlags().isSet(apiCtx, NodeFlag.DELETE);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+    }
+
+    private void addRscDfnDeletedAnswer(ResourceName rscName, UUID rscDfnUuid)
+    {
+        ApiCallRcEntry entry = new ApiCallRcEntry();
+
+        String rscDeletedMsg = CtrlRscDfnApiCallHandler.getObjectDescriptionInline(rscName.displayValue) +
+            " deleted.";
+        entry.setMessageFormat(rscDeletedMsg);
+        entry.setReturnCode(ApiConsts.RC_RSC_DFN_DELETED);
+        entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue);
+        entry.putObjRef(ApiConsts.KEY_UUID, rscDfnUuid.toString());
+        entry.putVariable(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
+
+        currentApiCallRc.get().addEntry(entry);
+        apiCtrlAccessors.getErrorReporter().logInfo(rscDeletedMsg);
+    }
+
+    private void addNodeDeletedAnswer(NodeName nodeName, UUID nodeUuid)
+    {
+        ApiCallRcEntry entry = new ApiCallRcEntry();
+
+        String rscDeletedMsg = CtrlNodeApiCallHandler.getObjectDescriptionInline(nodeName.displayValue) +
+            " deleted.";
+        entry.setMessageFormat(rscDeletedMsg);
+        entry.setReturnCode(ApiConsts.RC_NODE_DELETED);
+        entry.putObjRef(ApiConsts.KEY_NODE, nodeName.displayValue);
+        entry.putObjRef(ApiConsts.KEY_UUID, nodeUuid.toString());
+        entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeName.displayValue);
+
+        currentApiCallRc.get().addEntry(entry);
+        apiCtrlAccessors.getErrorReporter().logInfo(rscDeletedMsg);
     }
 }

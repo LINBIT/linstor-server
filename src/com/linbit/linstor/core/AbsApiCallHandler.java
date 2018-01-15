@@ -1183,7 +1183,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             String.format(
                 "A database error occured while %s.",
                 action
-                ),
+            ),
             ApiConsts.FAIL_SQL_ROLLBACK
         );
     }

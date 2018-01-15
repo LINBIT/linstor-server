@@ -1025,7 +1025,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         return getObjectDescriptionInline(currentNodeName.get());
     }
 
-    private String getObjectDescriptionInline(String nodeNameStr)
+    static String getObjectDescriptionInline(String nodeNameStr)
     {
         return "node '" + nodeNameStr + "'";
     }

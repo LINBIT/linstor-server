@@ -253,12 +253,6 @@ public class ApiTestBase extends DerbyBase
         }
 
         @Override
-        public void cleanup()
-        {
-            // ignore for now
-        }
-
-        @Override
         public short getDefaultPeerCount()
         {
             return Controller.DEFAULT_PEER_COUNT;

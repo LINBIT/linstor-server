@@ -890,7 +890,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         return getObjectDescriptionInline(currentRscNameStr.get());
     }
 
-    private String getObjectDescriptionInline(String rscName)
+    static String getObjectDescriptionInline(String rscName)
     {
         return "resource definition '" + rscName + "'";
     }

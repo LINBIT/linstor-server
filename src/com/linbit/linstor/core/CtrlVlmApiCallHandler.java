@@ -1,5 +1,7 @@
 package com.linbit.linstor.core;
 
+import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -7,12 +9,16 @@ import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.Volume.VlmFlags;
+import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 
 public class CtrlVlmApiCallHandler extends AbsApiCallHandler
 {
@@ -63,12 +69,29 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             ResourceData rscData = loadRsc(nodeNameStr, rscNameStr);
             VolumeNumber volumeNumber = asVlmNr(volumeNr);
 
-            Volume vol = rscData.getVolume(volumeNumber);
-            vol.delete(accCtx);
+            Volume vlm = rscData.getVolume(volumeNumber);
+            markClean(vlm);
 
             commit();
 
-            reportSuccess(vol.getUuid());
+            boolean allVlmsClean = true;
+            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+            Iterator<Volume> vlmIterator = getVolumeIterator(vlmDfn);
+            while (vlmIterator.hasNext())
+            {
+                Volume volume = vlmIterator.next();
+                if (!isMarkedAsClean(volume))
+                {
+                    allVlmsClean = false;
+                    break;
+                }
+            }
+            if (allVlmsClean && isMarkedForDeletion(vlmDfn))
+            {
+                delete(vlmDfn); // also deletes all of its volumes
+            }
+
+            reportSuccess(vlm.getUuid());
         }
         catch (ApiCallHandlerFailedException ignore)
         {
@@ -158,6 +181,83 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             map.put(ApiConsts.KEY_VLM_NR, rscNameStr);
         }
         return map;
+    }
+
+    private void markClean(Volume vol)
+    {
+        try
+        {
+            vol.getFlags().enableFlags(apiCtx, VlmFlags.CLEAN);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "marking " + getObjectDescriptionInline() + " as clean."
+            );
+        }
+    }
+
+    private Iterator<Volume> getVolumeIterator(VolumeDefinition vlmDfn)
+    {
+        try
+        {
+            return vlmDfn.iterateVolumes(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+    }
+
+    private boolean isMarkedAsClean(Volume vlm)
+    {
+        try
+        {
+            return vlm.getFlags().isSet(apiCtx, VlmFlags.CLEAN);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+    }
+
+    private boolean isMarkedForDeletion(VolumeDefinition vlmDfn)
+    {
+        try
+        {
+            return vlmDfn.getFlags().isSet(apiCtx, VlmDfnFlags.DELETE);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+    }
+
+    private void delete(VolumeDefinition vlmDfn)
+    {
+        try
+        {
+            vlmDfn.delete(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asImplError(accDeniedExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            throw asSqlExc(
+                sqlExc,
+                "deleting " + CtrlVlmDfnApiCallHandler.getObjectDescriptionInline(
+                    vlmDfn.getResourceDefinition().getName().displayValue,
+                    vlmDfn.getVolumeNumber().value
+                )
+            );
+        }
     }
 
 }
