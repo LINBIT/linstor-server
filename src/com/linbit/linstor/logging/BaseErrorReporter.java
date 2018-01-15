@@ -5,9 +5,14 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
+
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Calendar;
 
@@ -18,6 +23,8 @@ abstract class BaseErrorReporter
     static final String ERROR_FIELD_FORMAT = "%-32s    %s\n";
     static final String SECTION_SEPARATOR;
     static final int SEPARATOR_WIDTH = 60;
+
+    static final String CURRENT_GIT_HASH;
 
     final String dmModule;
     final Calendar cal;
@@ -35,6 +42,21 @@ abstract class BaseErrorReporter
         char[] separator = new char[SEPARATOR_WIDTH];
         Arrays.fill(separator, '=');
         SECTION_SEPARATOR = new String(separator);
+
+        Path hashFile = Paths.get("logs", "git-hash");
+        String currentGitHash = null;
+        if (Files.exists(hashFile))
+        {
+            try
+            {
+                currentGitHash = new String(Files.readAllBytes(hashFile));
+            }
+            catch (IOException ignore)
+            {
+                // ignore
+            }
+        }
+        CURRENT_GIT_HASH = currentGitHash;
     }
 
     BaseErrorReporter(String moduleName)
@@ -146,6 +168,11 @@ abstract class BaseErrorReporter
 
         output.printf(ERROR_FIELD_FORMAT, "Date:", String.format("%04d-%02d-%02d", year, month, day));
         output.printf(ERROR_FIELD_FORMAT, "Time:", String.format("%02d:%02d:%02d", hour, minute, second));
+
+        if (CURRENT_GIT_HASH != null)
+        {
+            output.printf(ERROR_FIELD_FORMAT, "Git-Hash:", CURRENT_GIT_HASH);
+        }
 
         output.println();
         output.println(SECTION_SEPARATOR);
