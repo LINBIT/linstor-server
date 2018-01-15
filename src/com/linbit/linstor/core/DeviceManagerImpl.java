@@ -23,17 +23,14 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.proto.MsgDelRscOuterClass.MsgDelRsc;
-import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.sql.SQLException;
+import org.slf4j.event.Level;
 
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -42,7 +39,6 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
-import org.slf4j.event.Level;
 
 class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 {
@@ -727,7 +723,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             String msgRscName = rsc.getDefinition().getName().displayValue;
             UUID rscUuid = rsc.getUuid();
 
-            byte[] data = stltInstance.getInterComSerializer()
+            byte[] data = stltInstance.getApiCallHandler().getInterComSerializer()
                 .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
                 .notifyResourceDeleted(msgNodeName, msgRscName, rscUuid.toString())
                 .build();
@@ -767,7 +763,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             String msgNodeName = vlm.getResource().getAssignedNode().getName().displayValue;
             String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
 
-            byte[] data = stltInstance.getInterComSerializer()
+            byte[] data = stltInstance.getApiCallHandler().getInterComSerializer()
                     .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
                     .notifyVolumeDeleted(msgNodeName, msgRscName, vlm.getVolumeDefinition().getVolumeNumber().value)
                     .build();

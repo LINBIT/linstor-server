@@ -21,7 +21,6 @@ import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.NodeConnectionData;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
-import com.linbit.linstor.api.interfaces.serializer.StltRequestSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.security.AccessContext;
@@ -31,13 +30,11 @@ class StltNodeApiCallHandler
 {
     private Satellite satellite;
     private AccessContext apiCtx;
-    private StltRequestSerializer<NodeName> nodeRequestSerializer;
 
-    public StltNodeApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef, StltRequestSerializer<NodeName> nodeRequestSerializer)
+    public StltNodeApiCallHandler(Satellite satelliteRef, AccessContext apiCtxRef)
     {
         satellite = satelliteRef;
         apiCtx = apiCtxRef;
-        this.nodeRequestSerializer = nodeRequestSerializer;
     }
 
     public void requestChange(Node node)

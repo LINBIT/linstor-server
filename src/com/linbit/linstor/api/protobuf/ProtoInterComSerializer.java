@@ -24,6 +24,8 @@ import com.linbit.linstor.proto.apidata.StorPoolApiData;
 import com.linbit.linstor.proto.apidata.StorPoolDfnApiData;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntDelVlmOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass;
+import com.linbit.linstor.proto.javainternal.MsgIntObjectIdOuterClass;
 import com.linbit.linstor.proto.javainternal.MsgIntPrimaryOuterClass;
 
 import java.io.ByteArrayOutputStream;
@@ -222,6 +224,71 @@ class ProtoInterComBuilder implements InterComBuilder {
                     .setSharedSecret(ByteString.copyFrom(sharedSecret))
                     .build()
                     .writeDelimitedTo(baos);
+        } catch (IOException ex) {
+            errReporter.reportError(ex);
+        }
+
+        return this;
+    }
+
+    @Override
+    public InterComBuilder requestNodeUpdate(UUID nodeUuid, String nodeName) {
+        try {
+            MsgIntObjectIdOuterClass.MsgIntObjectId.newBuilder()
+                    .setUuid(nodeUuid.toString())
+                    .setName(nodeName)
+                    .build()
+                    .writeDelimitedTo(baos);
+        } catch (IOException ex) {
+            errReporter.reportError(ex);
+        }
+
+        return this;
+    }
+
+    @Override
+    public InterComBuilder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName) {
+        try {
+            MsgIntObjectIdOuterClass.MsgIntObjectId.newBuilder()
+                .setUuid(rscDfnUuid.toString())
+                .setName(rscName)
+                .build()
+                .writeDelimitedTo(baos);
+        } catch (IOException ex) {
+            errReporter.reportError(ex);
+        }
+
+        return this;
+    }
+
+    @Override
+    public InterComBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName) {
+        try {
+            MsgIntObjectIdOuterClass.MsgIntObjectId.newBuilder()
+                // no nodeUuid
+                .setName(nodeName)
+                .build()
+                .writeDelimitedTo(baos);
+            MsgIntObjectIdOuterClass.MsgIntObjectId.newBuilder()
+                .setUuid(rscUuid.toString())
+                .setName(rscName)
+                .build()
+                .writeDelimitedTo(baos);
+        } catch (IOException ex) {
+            errReporter.reportError(ex);
+        }
+
+        return this;
+    }
+
+    @Override
+    public InterComBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName) {
+        try {
+            MsgIntObjectIdOuterClass.MsgIntObjectId.newBuilder()
+                .setUuid(storPoolUuid.toString())
+                .setName(storPoolName)
+                .build()
+                .writeDelimitedTo(baos);
         } catch (IOException ex) {
             errReporter.reportError(ex);
         }

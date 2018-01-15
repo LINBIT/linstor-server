@@ -27,4 +27,9 @@ public interface InterComBuilder {
 
     InterComBuilder notifyResourceDeleted(String nodeName, String resourceName, String rscUuid);
     InterComBuilder notifyVolumeDeleted(String nodeName, String resourceName, int volumeNr);
+
+    InterComBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);
+    InterComBuilder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName);
+    InterComBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);
+    InterComBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName);
 }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -14,20 +15,17 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
-import com.linbit.linstor.api.interfaces.serializer.StltRequestSerializer;
-import com.linbit.linstor.api.interfaces.serializer.StltResourceRequestSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
-import com.linbit.linstor.api.protobuf.satellite.serializer.GenericRequestSerializerProto;
-import com.linbit.linstor.api.protobuf.satellite.serializer.ResourceRequestSerializerProto;
+import com.linbit.linstor.api.protobuf.ProtoInterComSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import java.util.Iterator;
 
 public class StltApiCallHandler
 {
@@ -38,12 +36,9 @@ public class StltApiCallHandler
     private final StltRscApiCallHandler rscHandler;
     private final StltStorPoolApiCallHandler storPoolHandler;
 
-    private final StltRequestSerializer<NodeName> nodeRequestSerializer;
-    private final StltRequestSerializer<ResourceName> rscDfnRequestSerializer;
-    private final StltResourceRequestSerializer rscRequestSerializer;
-    private final StltRequestSerializer<StorPoolName> storPoolRequestSerializer;
-
     private final AccessContext apiCtx;
+
+    private final InterComSerializer interComSerializer;
 
     public StltApiCallHandler(Satellite satelliteRef, ApiType apiType, AccessContext apiCtx)
     {
@@ -53,30 +48,21 @@ public class StltApiCallHandler
         switch (apiType)
         {
             case PROTOBUF:
-                nodeRequestSerializer = new GenericRequestSerializerProto<>(
-                    errorReporter,
-                    InternalApiConsts.API_REQUEST_NODE
-                );
-                rscDfnRequestSerializer = new GenericRequestSerializerProto<>(
-                    errorReporter,
-                    InternalApiConsts.API_REQUEST_RSC_DFN
-                );
-                rscRequestSerializer = new ResourceRequestSerializerProto(errorReporter);
-                storPoolRequestSerializer = new GenericRequestSerializerProto<>(
-                    errorReporter,
-                    InternalApiConsts.API_REQUEST_STOR_POOL
-                );
+                interComSerializer = new ProtoInterComSerializer(errorReporter);
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + apiType, null);
         }
 
-        nodeHandler = new StltNodeApiCallHandler(satelliteRef, apiCtx, nodeRequestSerializer);
+        nodeHandler = new StltNodeApiCallHandler(satelliteRef, apiCtx);
         rscDfnHandler = new StltRscDfnApiCallHandler(satelliteRef, apiCtx);
         rscHandler = new StltRscApiCallHandler(satelliteRef, apiCtx);
         storPoolHandler = new StltStorPoolApiCallHandler(satelliteRef, apiCtx);
     }
 
+    public InterComSerializer getInterComSerializer() {
+        return interComSerializer;
+    }
 
     public void applyFullSync(Set<NodePojo> nodes, Set<StorPoolPojo> storPools, Set<RscPojo> resources)
     {
@@ -168,46 +154,37 @@ public class StltApiCallHandler
 
     public void requestNodeUpdate(UUID nodeUuid, NodeName nodeName)
     {
-        sendRequest(
-            nodeRequestSerializer.getRequestMessage(
-                0,
-                nodeUuid,
-                nodeName
-            )
+        sendRequest(satellite.getApiCallHandler().getInterComSerializer()
+                .builder(InternalApiConsts.API_REQUEST_NODE, 0)
+                .requestNodeUpdate(nodeUuid, nodeName.getDisplayName())
+                .build()
         );
     }
 
     public void requestRscDfnUpate(UUID rscDfnUuid, ResourceName rscName)
     {
-        sendRequest(
-            rscDfnRequestSerializer.getRequestMessage(
-                0,
-                rscDfnUuid,
-                rscName
-            )
+        sendRequest(satellite.getApiCallHandler().getInterComSerializer()
+            .builder(InternalApiConsts.API_REQUEST_RSC_DFN, 0)
+            .requestResourceDfnUpdate(rscDfnUuid, rscName.getDisplayName())
+            .build()
         );
     }
 
     public void requestRscUpdate(UUID rscUuid, NodeName nodeName, ResourceName rscName)
     {
-        sendRequest(
-            rscRequestSerializer.getRequestMessage(
-                0,
-                rscUuid,
-                nodeName,
-                rscName
-            )
+        sendRequest(satellite.getApiCallHandler().getInterComSerializer()
+            .builder(InternalApiConsts.API_REQUEST_RSC, 0)
+            .requestResourceUpdate(rscUuid, nodeName.getDisplayName(), rscName.getDisplayName())
+            .build()
         );
     }
 
     public void requestStorPoolUpdate(UUID storPoolUuid, StorPoolName storPoolName)
     {
-        sendRequest(
-            storPoolRequestSerializer.getRequestMessage(
-                0,
-                storPoolUuid,
-                storPoolName
-            )
+        sendRequest(satellite.getApiCallHandler().getInterComSerializer()
+            .builder(InternalApiConsts.API_REQUEST_STOR_POOL, 0)
+            .requestStoragePoolUpdate(storPoolUuid, storPoolName.getDisplayName())
+            .build()
         );
     }
 

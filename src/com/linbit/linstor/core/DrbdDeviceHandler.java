@@ -238,9 +238,10 @@ class DrbdDeviceHandler implements DeviceHandler
         final String rscUuid
     )
     {
-        byte[] data = stlt.getInterComSerializer().builder(InternalApiConsts.API_REQUEST_PRIMARY_RSC, 1)
-                .primaryRequest(rscName, rscUuid)
-                .build();
+        byte[] data = stlt.getApiCallHandler().getInterComSerializer()
+            .builder(InternalApiConsts.API_REQUEST_PRIMARY_RSC, 1)
+            .primaryRequest(rscName, rscUuid)
+            .build();
 
         if (data != null)
         {
