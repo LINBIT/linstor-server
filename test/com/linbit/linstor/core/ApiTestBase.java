@@ -9,10 +9,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
 import com.linbit.TransactionMgr;
@@ -43,8 +39,6 @@ import com.linbit.linstor.security.TestAccessContextProvider;
 import com.linbit.linstor.testclient.ClientProtobuf;
 import com.linbit.utils.Base64;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(Controller.class)
 public class ApiTestBase extends DerbyBase
 {
     protected static final AccessContext ALICE_ACC_CTX;

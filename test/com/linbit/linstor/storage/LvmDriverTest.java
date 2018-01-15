@@ -369,26 +369,12 @@ public class LvmDriverTest extends StorageTestUtils
     public void testVolumePath() throws StorageException
     {
         final String identifier = "testVolume";
-//        final long volumeSize = 102_400;
-
-//        expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, volumeSize);
 
         final String path = driver.getVolumePath(identifier);
         assertEquals("/dev/" +
             LVM_VOLUME_GROUP_DEFAULT + "/" +
             identifier,
             path);
-    }
-
-    @Test(expected = StorageException.class)
-    public void testVolumePathUnknownVolume() throws StorageException
-    {
-//        final String identifier = "testVolume";
-//        final long volumeSize = 102_400;
-
-//        expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, identifier, volumeSize);
-
-        driver.getVolumePath("otherVolume");
     }
 
     @Test
