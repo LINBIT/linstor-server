@@ -51,6 +51,7 @@ class StltDebugConsoleImpl extends BaseDebugConsole
             "CmdDisplayReport",
             "CmdDisplayReportList",
             "CmdRunDeviceManager",
+            "CmdDisplayObjProt",
             "CmdTestErrorLog",
             "CmdShutdown"
         };
