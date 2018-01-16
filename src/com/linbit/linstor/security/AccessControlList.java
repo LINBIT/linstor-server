@@ -166,6 +166,16 @@ public final class AccessControlList
         return acl.remove(entryRole.name);
     }
 
+    public Map<RoleName, AccessControlEntry> getEntries()
+    {
+        Map<RoleName, AccessControlEntry> aclCopy = new TreeMap<>();
+        synchronized (acl)
+        {
+            aclCopy.putAll(acl);
+        }
+        return aclCopy;
+    }
+
     private boolean hasAccessPrivilege(AccessContext context, AccessType requested)
     {
         PrivilegeSet privileges = context.privEffective;
