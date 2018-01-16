@@ -65,7 +65,7 @@ public class CtrlApiCallHandler
         vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
         rscApiCallHandler = new CtrlRscApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
         vlmApiCallHandler = new CtrlVlmApiCallHandler(apiCtrlAccessors, apiCtx);
-        storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(apiCtrlAccessors, interComSrzl);
+        storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
         storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
         nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
         rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);

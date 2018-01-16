@@ -31,12 +31,13 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 
     CtrlStorPoolDfnApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        InterComSerializer interComSerializer
+        InterComSerializer interComSerializer,
+        AccessContext apiCtxRef
     )
     {
         super(
             apiCtrlAccessorsRef,
-            null, // apiCtx
+            apiCtxRef,
             ApiConsts.MASK_STOR_POOL_DFN,
             interComSerializer
         );
