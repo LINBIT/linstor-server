@@ -408,14 +408,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
         }
     }
 
-    protected ResourceData loadRsc(String nodeName, String rscName) throws ApiCallHandlerFailedException
+    protected ResourceData loadRsc(String nodeName, String rscName, boolean failIfNull)
+        throws ApiCallHandlerFailedException
     {
         Node node = loadNode(nodeName, true);
         ResourceDefinitionData rscDfn = loadRscDfn(rscName, true);
 
         try
         {
-            return ResourceData.getInstance(
+            ResourceData rscData = ResourceData.getInstance(
                 currentAccCtx.get(),
                 rscDfn,
                 node,
@@ -425,6 +426,20 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 false,
                 false
             );
+            if (rscData == null && failIfNull)
+            {
+                throw asExc(
+                    null,
+                    "Resource '" + rscName+ "' on node '" + nodeName + "' not found.",
+                    "The specified resource '" + rscName + "' on node '" + nodeName + "' could not " +
+                        "be found in the database",
+                    null, // details
+                    "Create a resource with the name '" + rscName + "' on node '" + nodeName + "' first.",
+                    ApiConsts.FAIL_NOT_FOUND_RSC_DFN
+                );
+            }
+
+            return rscData;
         }
         catch (AccessDeniedException accDeniedExc)
         {

@@ -67,7 +67,7 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             )
         )
         {
-            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr);
+            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
             VolumeNumber volumeNumber = asVlmNr(volumeNr);
 
             Volume vlm = rscData.getVolume(volumeNumber);

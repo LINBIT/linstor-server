@@ -352,7 +352,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             );
         )
         {
-            ResourceData rsc = loadRsc(nodeNameStr, rscNameStr);
+            ResourceData rsc = loadRsc(nodeNameStr, rscNameStr, true);
 
             if (rscUuid != null && !rscUuid.equals(rsc.getUuid()))
             {
@@ -420,7 +420,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             );
         )
         {
-            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr);
+            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, true);
 
             int volumeCount = rscData.getVolumeCount();
             String successMessage;
@@ -501,7 +501,16 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             );
         )
         {
-            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr);
+            ResourceData rscData = loadRsc(nodeNameStr, rscNameStr, false);
+
+            if (rscData == null)
+            {
+                addAnswer(
+                    getObjectDescriptionInlineFirstLetterCaps() + " not found",
+                    ApiConsts.WARN_NOT_FOUND
+                );
+                throw new ApiCallHandlerFailedException();
+            }
 
             ResourceDefinition rscDfn = rscData.getDefinition();
             Node node = rscData.getAssignedNode();
