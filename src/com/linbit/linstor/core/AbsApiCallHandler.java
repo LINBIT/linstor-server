@@ -791,37 +791,41 @@ abstract class AbsApiCallHandler implements AutoCloseable
         long retCode
     )
     {
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-        entry.setReturnCodeBit(retCode | currentApiCallType.get().opMask | objMask);
-        entry.setMessageFormat(msg);
-        entry.setCauseFormat(cause);
-
-        String objDescription = getObjectDescription();
-
-        if (details == null)
+        ApiCallRcImpl apiCallRc = currentApiCallRc.get();
+        if (apiCallRc != null)
         {
-            details = objDescription;
-        }
-        else
-        {
-            details += "\n" + objDescription;
-        }
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            entry.setReturnCodeBit(retCode | currentApiCallType.get().opMask | objMask);
+            entry.setMessageFormat(msg);
+            entry.setCauseFormat(cause);
 
-        entry.setDetailsFormat(details);
-        entry.setCorrectionFormat(correction);
+            String objDescription = getObjectDescription();
 
-        Map<String, String> objsRef = currentObjRefs.get();
-        if (objsRef != null)
-        {
-            entry.putAllObjRef(objsRef);
-        }
-        Map<String, String> variables = currentVariables.get();
-        if (variables != null)
-        {
-            entry.putAllVariables(variables);
-        }
+            if (details == null)
+            {
+                details = objDescription;
+            }
+            else
+            {
+                details += "\n" + objDescription;
+            }
 
-        currentApiCallRc.get().addEntry(entry);
+            entry.setDetailsFormat(details);
+            entry.setCorrectionFormat(correction);
+
+            Map<String, String> objsRef = currentObjRefs.get();
+            if (objsRef != null)
+            {
+                entry.putAllObjRef(objsRef);
+            }
+            Map<String, String> variables = currentVariables.get();
+            if (variables != null)
+            {
+                entry.putAllVariables(variables);
+            }
+
+            apiCallRc.addEntry(entry);
+        }
     }
 
 
@@ -1102,41 +1106,45 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final void reportSuccess(String msg, String details)
     {
-        ApiCallRcEntry entry = new ApiCallRcEntry();
-        long baseRetCode;
-        switch (currentApiCallType.get())
+        ApiCallRcImpl apiCallRc = currentApiCallRc.get();
+        if (apiCallRc != null)
         {
-            case CREATE:
-                baseRetCode = ApiConsts.CREATED;
-                break;
-            case DELETE:
-                baseRetCode = ApiConsts.DELETED;
-                break;
-            case MODIFY:
-                baseRetCode = ApiConsts.MODIFIED;
-                break;
-            default:
-                throw new ImplementationError(
-                    "Unknown api call type: " + currentApiCallType.get(),
-                    null
-                );
-        }
-        entry.setReturnCodeBit(baseRetCode | objMask);
-        entry.setMessageFormat(msg);
-        entry.setDetailsFormat(details);
+            ApiCallRcEntry entry = new ApiCallRcEntry();
+            long baseRetCode;
+            switch (currentApiCallType.get())
+            {
+                case CREATE:
+                    baseRetCode = ApiConsts.CREATED;
+                    break;
+                case DELETE:
+                    baseRetCode = ApiConsts.DELETED;
+                    break;
+                case MODIFY:
+                    baseRetCode = ApiConsts.MODIFIED;
+                    break;
+                default:
+                    throw new ImplementationError(
+                        "Unknown api call type: " + currentApiCallType.get(),
+                        null
+                    );
+            }
+            entry.setReturnCodeBit(baseRetCode | objMask);
+            entry.setMessageFormat(msg);
+            entry.setDetailsFormat(details);
 
-        Map<String, String> objsRef = currentObjRefs.get();
-        if (objsRef != null)
-        {
-            entry.putAllObjRef(objsRef);
-        }
-        Map<String, String> variables = currentVariables.get();
-        if (variables != null)
-        {
-            entry.putAllVariables(variables);
-        }
+            Map<String, String> objsRef = currentObjRefs.get();
+            if (objsRef != null)
+            {
+                entry.putAllObjRef(objsRef);
+            }
+            Map<String, String> variables = currentVariables.get();
+            if (variables != null)
+            {
+                entry.putAllVariables(variables);
+            }
 
-        currentApiCallRc.get().addEntry(entry);
+            apiCallRc.addEntry(entry);
+        }
         apiCtrlAccessors.getErrorReporter().logInfo(msg);
     }
 

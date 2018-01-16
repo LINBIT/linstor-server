@@ -12,7 +12,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
@@ -38,6 +37,7 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -369,33 +369,34 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         UUID rscUuid
     )
     {
-        TransactionMgr transMgr = null;
-        try
-        {
-            apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.CHANGE); // accDeniedExc1
-            transMgr = new TransactionMgr(apiCtrlAccessors.getDbConnPool().getConnection()); // sqlExc1
-
-            ResourceName resName = new ResourceName(rscNameStr); // invalidNameExc1
-            ResourceDefinitionData resDfn = ResourceDefinitionData.getInstance( // accDeniedExc2, sqlExc2, dataAlreadyExistsExc1
+        try (
+            AbsApiCallHandler basicallyThis = setContext(
                 accCtx,
-                resName,
-                null, // port only needed if we want to persist this entry
-                null, // rscFlags only needed if we want to persist this entry
-                null, // secret only needed if we want to persist this object
-                null, // transportType only needed if we want to persist this object
-                transMgr,
-                false, // do not persist this entry
-                false // do not throw exception if the entry exists
+                satellite,
+                ApiCallType.MODIFY,
+                null, // apiCallRc
+                null, // create new transMgr
+                rscNameStr
+            )
+        )
+        {
+            Resource res = loadRsc(
+                satellite.getNode().getName().displayValue,
+                rscNameStr,
+                true
             );
+            ResourceDefinitionData resDfn = (ResourceDefinitionData) res.getDefinition();
 
-            if (resDfn.getProps(accCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null)
+            Props resDfnProps = getProps(resDfn);
+            if (resDfnProps.getProp(InternalApiConsts.PROP_PRIMARY_SET) == null)
             {
-                Resource resPrimary = resDfn.getResource(accCtx, satellite.getNode().getName());
-                resDfn.getProps(accCtx).setProp(
+                resDfnProps.setProp(
                     InternalApiConsts.PROP_PRIMARY_SET,
-                    resPrimary.getAssignedNode().getName().value
+                    res.getAssignedNode().getName().value
                 );
-                transMgr.commit();
+
+                commit();
+
                 apiCtrlAccessors.getErrorReporter().logTrace(
                     "Primary set for " + satellite.getNode().getName().getDisplayName()
                 );
@@ -404,8 +405,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
 
                 byte[] data = serializer
-                    .builder(InternalApiConsts.API_PRIMARY_RSC, 1)
-                    .primaryRequest(rscNameStr, resPrimary.getUuid().toString())
+                    .builder(InternalApiConsts.API_PRIMARY_RSC, msgId)
+                    .primaryRequest(rscNameStr, res.getUuid().toString())
                     .build();
                 try
                 {
@@ -422,8 +423,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 }
             }
         }
-        catch (LinStorDataAlreadyExistsException | InvalidNameException | InvalidKeyException |
-            InvalidValueException | AccessDeniedException _ignore)  { }
+        catch (InvalidKeyException | InvalidValueException | AccessDeniedException _ignore)  { }
         catch (SQLException sqlExc)
         {
             String errorMessage = String.format(
@@ -437,14 +437,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 satellite,
                 errorMessage
             );
-        }
-        finally
-        {
-            if (transMgr != null)
-            {
-                // return db connection
-                apiCtrlAccessors.getDbConnPool().returnConnection(transMgr);
-            }
         }
     }
 

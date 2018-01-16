@@ -228,7 +228,16 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
                 apiCallRc.addEntry(vlmCreatedRcEntry);
             }
-            updateSatellites(rsc);
+            if (rsc.getVolumeCount() > 0)
+            {
+                // only notify satellite if there are volumes to deploy.
+                // otherwise a bug occurs when an empty resource is deleted
+                // the controller instantly deletes it (without marking for deletion first)
+                // but doesn't tell the satellite...
+                // the next time a resource with the same name will get a different UUID and
+                // will cause a conflict (and thus, an exception) on the satellite
+                updateSatellites(rsc);
+            }
             // TODO: if a satellite confirms creation, also log it to controller.info
         }
         catch (ApiCallHandlerFailedException ignore)
