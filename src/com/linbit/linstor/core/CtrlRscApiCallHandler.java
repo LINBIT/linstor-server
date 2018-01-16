@@ -182,7 +182,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                             new LinStorException("Dependency not found"),
                             "The default storage pool '" + storPoolNameStr + "' " +
                             "for resource '" + rsc.getDefinition().getName().displayValue + "' " +
-                            "for volume number " +  vlmDfn.getVolumeNumber().value + "' " +
+                            "for volume number '" +  vlmDfn.getVolumeNumber().value + "' " +
                             "is not deployed on node '" + rsc.getAssignedNode().getName().displayValue + "'.",
                             null, // cause
                             "The resource which should be deployed had at least one volume definition " +
