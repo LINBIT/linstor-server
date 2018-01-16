@@ -1024,7 +1024,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     /**
      * Generates a default success report depending on the current {@link ApiCallType}.
      * Inserts the given UUID as details-message
-     * @param msg
+     * @param uuid
      */
     protected final void reportSuccess(UUID uuid)
     {
@@ -1357,12 +1357,16 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 if (!connected)
                 {
                     String nodeName = currentRsc.getAssignedNode().getName().displayValue;
+                    String details = String.format(
+                        "The satellite was added and the controller tries to (re-) establish connection to it. " +
+                        "The controller queued the %s of the resource and as soon the satellite is connected, " +
+                        "it will receive this update.",
+                        getAction("creation", "modification", "deletion")
+                    );
                     addAnswer(
                         "No active connection to satellite '" + nodeName + "'",
                         null, // cause
-                        "The satellite was added and the controller tries to (re-) establish connection to it." +
-                        "The controller stored the new Resource and as soon the satellite is connected, it will " +
-                        "receive this update.",
+                        details,
                         null, // correction
                         ApiConsts.WARN_NOT_CONNECTED
                     );
