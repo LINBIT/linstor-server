@@ -10,6 +10,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
@@ -30,8 +31,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlNodeSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -68,24 +68,27 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     protected final ApiCtrlAccessors apiCtrlAccessors;
     protected final AccessContext apiCtx;
+    protected final InterComSerializer serializer;
 
     private ThreadLocal<?>[] customThreadLocals;
+
 
     protected AbsApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef,
-        long objMaskRef
+        long objMaskRef,
+        InterComSerializer serializerRef
     )
     {
         apiCtrlAccessors = apiCtrlAccessorsRef;
         apiCtx = apiCtxRef;
         objMask = objMaskRef;
+        serializer = serializerRef;
     }
 
     public void setNullOnAutoClose(ThreadLocal<?>... customThreadLocals)
     {
         this.customThreadLocals = customThreadLocals;
-
     }
 
     protected AbsApiCallHandler setContext(
@@ -1264,14 +1267,13 @@ abstract class AbsApiCallHandler implements AutoCloseable
     }
 
     /**
-     * If a subclass calls this method, {@link #getNodeSerializer()} has to return
-     * a valid {@link CtrlNodeSerializer}. Otherwise an {@link ImplementationError} is thrown.
+     * This method depends on a valid instance of {@link InterComSerializer}. If none was given
+     * at construction time an {@link ImplementationError} is thrown.
      * @return
      */
     protected final void updateSatellites(Node node)
     {
-        CtrlNodeSerializer nodeSerializer = getNodeSerializer();
-        if (nodeSerializer == null)
+        if (serializer == null)
         {
             throw new ImplementationError(
                 "UpdateSatellites(Node) was called without providing a valid node serializer",
@@ -1295,7 +1297,13 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 }
             }
 
-            byte[] changedMessage = nodeSerializer.getChangedMessage(node);
+            byte[] changedMessage = serializer
+                .builder(InternalApiConsts.API_CHANGED_NODE, 0)
+                .changedNode(
+                    node.getUuid(),
+                    node.getName().displayValue
+                )
+                .build();
             for (Node nodeToContact : nodesToContact.values())
             {
                 Peer peer = nodeToContact.getPeer(apiCtx);
@@ -1314,8 +1322,8 @@ abstract class AbsApiCallHandler implements AutoCloseable
     }
 
     /**
-     * If a subclass calls this method, {@link #getResourceSerializer()} has to return
-     * a valid {@link CtrlSerializer<Resource>}. Otherwise an {@link ImplementationError} is thrown.
+     * This method depends on a valid instance of {@link InterComSerializer}. If none was given
+     * at construction time an {@link ImplementationError} is thrown.
      * @return
      */
     protected final void updateSatellites(Resource rsc)
@@ -1324,13 +1332,13 @@ abstract class AbsApiCallHandler implements AutoCloseable
     }
 
     /**
-     * If a subclass calls this method, {@link #getResourceSerializer()} has to return a valid
-     * {@link CtrlSerializer<Resource>}. Otherwise an {@link ImplementationError} is thrown.
+     * This method depends on a valid instance of {@link InterComSerializer}. If none was given
+     * at construction time an {@link ImplementationError} is thrown.
+     * @return
      */
     protected final void updateSatellites(ResourceDefinition rscDfn)
     {
-        CtrlSerializer<Resource> rscSerializer = getResourceSerializer();
-        if (rscSerializer == null)
+        if (serializer == null)
         {
             throw new ImplementationError(
                 "UpdateSatellites(ResourceDefinition) was called without providing a valid resource serializer",
@@ -1350,7 +1358,13 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 if (connected)
                 {
                     Message rscChangedMsg = peer.createMessage();
-                    byte[] data = rscSerializer.getChangedMessage(currentRsc);
+                    byte[] data = serializer
+                        .builder(InternalApiConsts.API_CHANGED_RSC, 0)
+                        .changedResource(
+                            currentRsc.getUuid(),
+                            currentRsc.getDefinition().getName().displayValue
+                        )
+                        .build();
                     rscChangedMsg.setData(data);
                     connected = peer.sendMessage(rscChangedMsg);
                 }
@@ -1380,14 +1394,13 @@ abstract class AbsApiCallHandler implements AutoCloseable
     }
 
     /**
-     * If a subclass calls this method, {@link #getStorPoolSerializer()} has to return
-     * a valid {@link CtrlSerializer<StorPool>}. Otherwise an {@link ImplementationError} is thrown.
+     * This method depends on a valid instance of {@link InterComSerializer}. If none was given
+     * at construction time an {@link ImplementationError} is thrown.
      * @return
      */
     protected final void updateSatellite(StorPool storPool)
     {
-        CtrlSerializer<StorPool> storPoolSerializer = getStorPoolSerializer();
-        if (storPoolSerializer == null)
+        if (serializer == null)
         {
             throw new ImplementationError(
                 "UpdateSatellites(StorPool) was called without providing a valid StorPool serializer",
@@ -1401,7 +1414,13 @@ abstract class AbsApiCallHandler implements AutoCloseable
             if (connected)
             {
                 Message msg = satellitePeer.createMessage();
-                byte[] data = storPoolSerializer.getChangedMessage(storPool);
+                byte[] data = serializer
+                    .builder(InternalApiConsts.API_CHANGED_STOR_POOL, 0)
+                    .changedStorPool(
+                        storPool.getUuid(),
+                        storPool.getName().displayValue
+                    )
+                    .build();
                 msg.setData(data);
                 connected = satellitePeer.sendMessage(msg);
             }
@@ -1422,36 +1441,6 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             throw asImplError(implError);
         }
-    }
-
-    /**
-     * If a subclass wants to call {@link #updateSatellites(Node)}, this method has to return
-     * a valid {@link CtrlNodeSerializer}. Otherwise an {@link ImplementationError} is thrown.
-     * @return
-     */
-    protected CtrlNodeSerializer getNodeSerializer()
-    {
-        return null;
-    }
-
-    /**
-     * If a subclass wants to call {@link #updateSatellites(Resource)} or {@link #updateSatellites(ResourceDefinition)}
-     * this method has to return a valid {@link CtrlSerializer<Resource>}. Otherwise an {@link ImplementationError} is thrown.
-     * @return
-     */
-    protected CtrlSerializer<Resource> getResourceSerializer()
-    {
-        return null;
-    }
-
-    /**
-     * If a subclass wants to call {@link #updateSatellites(StorPool)}
-     * this method has to return a valid {@link CtrlSerializer<StorPool>}. Otherwise an {@link ImplementationError} is thrown.
-     * @return
-     */
-    protected CtrlSerializer<StorPool> getStorPoolSerializer()
-    {
-        return null;
     }
 
     protected String getObjectDescriptionInlineFirstLetterCaps()

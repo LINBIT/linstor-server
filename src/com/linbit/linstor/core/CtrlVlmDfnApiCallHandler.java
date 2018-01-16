@@ -31,7 +31,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -40,31 +40,28 @@ import com.linbit.linstor.security.AccessType;
 
 class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 {
-    private final CtrlSerializer<Resource> rscSerializer;
-
     private final ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
     private final ThreadLocal<VlmDfnApi> currentVlmDfnApi = new ThreadLocal<>();
     private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
 
     CtrlVlmDfnApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessors,
-        CtrlSerializer<Resource> rscSerializerRef,
+        InterComSerializer interComSerializer,
         AccessContext apiCtx
     )
     {
-        super(apiCtrlAccessors, apiCtx, ApiConsts.MASK_VLM_DFN);
+        super(
+            apiCtrlAccessors,
+            apiCtx,
+            ApiConsts.MASK_VLM_DFN,
+            interComSerializer
+
+        );
         super.setNullOnAutoClose(
             currentRscNameStr,
             currentVlmDfnApi,
             currentVlmNr
         );
-        rscSerializer = rscSerializerRef;
-    }
-
-    @Override
-    protected CtrlSerializer<Resource> getResourceSerializer()
-    {
-        return rscSerializer;
     }
 
     ApiCallRc createVolumeDefinitions(

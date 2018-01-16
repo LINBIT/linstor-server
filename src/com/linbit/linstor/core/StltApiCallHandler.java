@@ -40,15 +40,15 @@ public class StltApiCallHandler
 
     private final InterComSerializer interComSerializer;
 
-    public StltApiCallHandler(Satellite satelliteRef, ApiType apiType, AccessContext apiCtx)
+    public StltApiCallHandler(Satellite satelliteRef, ApiType apiType, AccessContext apiCtxRef)
     {
         satellite = satelliteRef;
-        this.apiCtx = apiCtx;
+        apiCtx = apiCtxRef;
         ErrorReporter errorReporter = satelliteRef.getErrorReporter();
         switch (apiType)
         {
             case PROTOBUF:
-                interComSerializer = new ProtoInterComSerializer(errorReporter);
+                interComSerializer = new ProtoInterComSerializer(errorReporter, apiCtxRef);
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + apiType, null);

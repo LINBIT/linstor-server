@@ -19,6 +19,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
@@ -46,7 +47,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -58,36 +58,25 @@ import com.linbit.linstor.security.AccessType;
 
 class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
-    private final CtrlSerializer<Resource> rscSerializer;
-    private final InterComSerializer interComSerializer;
-
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
 
     CtrlRscApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        CtrlSerializer<Resource> rscSerializerRef,
-        InterComSerializer interComSerializerRef,
+        InterComSerializer interComSerializer,
         AccessContext apiCtxRef
     )
     {
         super (
             apiCtrlAccessorsRef,
             apiCtxRef,
-            ApiConsts.MASK_RSC
+            ApiConsts.MASK_RSC,
+            interComSerializer
         );
         super.setNullOnAutoClose(
             currentNodeName,
             currentRscName
         );
-        rscSerializer = rscSerializerRef;
-        interComSerializer = interComSerializerRef;
-    }
-
-    @Override
-    protected CtrlSerializer<Resource> getResourceSerializer()
-    {
-        return rscSerializer;
     }
 
     public ApiCallRc createResource(
@@ -537,10 +526,12 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
             // cleanup node if empty and marked for deletion
             if (node.getResourceCount() == 0 &&
-                node.getStorPoolCount() == 0 &&
                 isMarkedForDeletion(node)
             )
             {
+                // TODO check if the remaining storage pools have deployed values left (impl error)
+
+
                 deletedNodeName = node.getName();
                 nodeUuid = node.getUuid();
                 delete(node);
@@ -611,7 +602,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        return interComSerializer
+        return serializer
                 .builder(API_LST_RSC, msgId)
                 .resourceList(rscs)
                 .build();
@@ -638,7 +629,10 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 // TODO: check if the localResource has the same uuid as rscUuid
                 if (rsc != null)
                 {
-                    byte[] data = rscSerializer.getDataMessage(msgId, rsc);
+                    byte[] data = serializer
+                        .builder(InternalApiConsts.API_APPLY_RSC, msgId)
+                        .resourceData(rsc)
+                        .build();
 
                     Message response = satellitePeer.createMessage();
                     response.setData(data);

@@ -16,7 +16,7 @@ import com.linbit.linstor.VolumeConnectionData;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -28,26 +28,19 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 	private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
 	private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
 	private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
-    private final CtrlSerializer<Resource> rscSerializer;
 
     CtrlVlmConnectionApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        CtrlSerializer<Resource> rscSerializerRef,
+        InterComSerializer interComSerializer,
         AccessContext apiCtxRef
     )
     {
         super(
             apiCtrlAccessorsRef,
             apiCtxRef,
-            ApiConsts.MASK_VLM_CONN
+            ApiConsts.MASK_VLM_CONN,
+            interComSerializer
         );
-        rscSerializer = rscSerializerRef;
-    }
-
-    @Override
-    protected CtrlSerializer<Resource> getResourceSerializer()
-    {
-        return rscSerializer;
     }
 
     public ApiCallRc createVolumeConnection(

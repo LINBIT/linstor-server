@@ -17,6 +17,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.LsIpAddress;
@@ -39,7 +40,6 @@ import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlNodeSerializer;
 import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -54,25 +54,14 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeType = new ThreadLocal<>();
-    private final CtrlNodeSerializer nodeSerializer;
-    private final InterComSerializer interComSerializer;
 
     CtrlNodeApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef,
-        CtrlNodeSerializer nodeSerializer,
         InterComSerializer interComSerializer
     )
     {
-        super(apiCtrlAccessorsRef, apiCtxRef, ApiConsts.MASK_NODE);
-        this.nodeSerializer = nodeSerializer;
-        this.interComSerializer = interComSerializer;
-    }
-
-    @Override
-    protected CtrlNodeSerializer getNodeSerializer()
-    {
-        return nodeSerializer;
+        super(apiCtrlAccessorsRef, apiCtxRef, ApiConsts.MASK_NODE, interComSerializer);
     }
 
     ApiCallRc createNode(
@@ -392,7 +381,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        return interComSerializer.builder(ApiConsts.API_LST_NODE, msgId).nodeList(nodes).build();
+        return serializer.builder(ApiConsts.API_LST_NODE, msgId).nodeList(nodes).build();
     }
 
     void respondNode(int msgId, Peer satellite, UUID nodeUuid, String nodeNameStr)
@@ -424,7 +413,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                             }
                         }
                     }
-                    byte[] data = nodeSerializer.getDataMessage(msgId, node, otherNodes);
+                    byte[] data = serializer
+                        .builder(InternalApiConsts.API_APPLY_NODE, msgId)
+                        .nodeData(node, otherNodes)
+                        .build();
                     Message message = satellite.createMessage();
                     message.setData(data);
                     satellite.sendMessage(message);

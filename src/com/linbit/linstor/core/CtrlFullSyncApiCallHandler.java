@@ -1,16 +1,16 @@
 package com.linbit.linstor.core;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.interfaces.serializer.CtrlFullSyncSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -21,16 +21,17 @@ class CtrlFullSyncApiCallHandler
 {
     private ApiCtrlAccessors apiCtrlAccessors;
     private AccessContext apiCtx;
-    private CtrlFullSyncSerializer fullSyncSerializer;
+    private InterComSerializer interComSerializer;
 
     CtrlFullSyncApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef,
-        CtrlFullSyncSerializer fullSyncSerializerRef)
+        InterComSerializer interComSerializerRef
+    )
     {
         apiCtrlAccessors = apiCtrlAccessorsRef;
         apiCtx = apiCtxRef;
-        fullSyncSerializer = fullSyncSerializerRef;
+        interComSerializer = interComSerializerRef;
     }
 
     void sendFullSync(Peer satellite)
@@ -66,7 +67,10 @@ class CtrlFullSyncApiCallHandler
                 }
             }
 
-            byte[] data = fullSyncSerializer.getData(0, nodes, storPools, rscs);
+            byte[] data = interComSerializer
+                .builder(InternalApiConsts.API_FULL_SYNC_DATA, 0)
+                .fullSync(nodes, storPools, rscs)
+                .build();
             apiCtrlAccessors.getErrorReporter().logTrace("Sending full sync to satellite '" + satellite.getId() + "'.");
             Message msg = satellite.createMessage();
             msg.setData(data);
@@ -81,15 +85,6 @@ class CtrlFullSyncApiCallHandler
                 )
             );
 
-        }
-        catch (IOException ioExc)
-        {
-            apiCtrlAccessors.getErrorReporter().reportError(
-                ioExc,
-                apiCtx,
-                satellite,
-                "Failed to serialize a full sync for satellite '" + satellite.getId() + "'."
-            );
         }
         catch (IllegalMessageStateException illegalMessageStateExc)
         {

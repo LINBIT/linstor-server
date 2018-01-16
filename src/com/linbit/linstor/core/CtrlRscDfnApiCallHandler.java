@@ -33,7 +33,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -50,27 +49,19 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
     private final ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
 
-    private final InterComSerializer interComSerializer;
-    private final CtrlSerializer<Resource> rscSerializer;
-
-
     CtrlRscDfnApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        CtrlSerializer<Resource> rscSerializerRef,
         InterComSerializer interComSerializer,
         AccessContext apiCtxRef
     )
     {
-        super(apiCtrlAccessorsRef, apiCtxRef, ApiConsts.MASK_RSC_DFN);
+        super(
+            apiCtrlAccessorsRef,
+            apiCtxRef,
+            ApiConsts.MASK_RSC_DFN,
+            interComSerializer
+        );
         super.setNullOnAutoClose(currentRscNameStr);
-        rscSerializer = rscSerializerRef;
-        this.interComSerializer = interComSerializer;
-    }
-
-    @Override
-    protected CtrlSerializer<Resource> getResourceSerializer()
-    {
-        return rscSerializer;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -412,10 +403,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 updateSatellites(resDfn);
 
 
-                byte[] data = interComSerializer.builder(InternalApiConsts.API_PRIMARY_RSC, 1)
-                        .primaryRequest(rscNameStr, resPrimary.getUuid().toString())
-                        .build();
-
+                byte[] data = serializer
+                    .builder(InternalApiConsts.API_PRIMARY_RSC, 1)
+                    .primaryRequest(rscNameStr, resPrimary.getUuid().toString())
+                    .build();
                 try
                 {
                     Message netComMsg = satellite.createMessage();
@@ -480,10 +471,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        return interComSerializer
-                .builder(ApiConsts.API_LST_RSC_DFN, msgId)
-                .resourceDfnList(rscdfns)
-                .build();
+        return serializer
+            .builder(ApiConsts.API_LST_RSC_DFN, msgId)
+            .resourceDfnList(rscdfns)
+            .build();
     }
 
     private short getAsShort(Map<String, String> props, String key, short defaultValue)

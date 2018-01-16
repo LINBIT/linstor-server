@@ -27,21 +27,20 @@ import java.util.Iterator;
 
 class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 {
-    private final InterComSerializer interComSerializer;
     private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
 
     CtrlStorPoolDfnApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        InterComSerializer interComSerializerRef
+        InterComSerializer interComSerializer
     )
     {
         super(
             apiCtrlAccessorsRef,
             null, // apiCtx
-            ApiConsts.MASK_STOR_POOL_DFN
+            ApiConsts.MASK_STOR_POOL_DFN,
+            interComSerializer
         );
         super.setNullOnAutoClose(currentStorPoolNameStr);
-        interComSerializer = interComSerializerRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -289,10 +288,10 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        return interComSerializer
-                .builder(ApiConsts.API_LST_STOR_POOL_DFN, msgId)
-                .storPoolDfnList(storPoolDfns)
-                .build();
+        return serializer
+            .builder(ApiConsts.API_LST_STOR_POOL_DFN, msgId)
+            .storPoolDfnList(storPoolDfns)
+            .build();
     }
 
     protected AbsApiCallHandler setContext(

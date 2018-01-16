@@ -35,7 +35,8 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
         super(
             apiCtrlAccessorsRef,
             apiCtxRef,
-            ApiConsts.MASK_VLM
+            ApiConsts.MASK_VLM,
+            null // interComSerializer
         );
         super.setNullOnAutoClose(
             currentNodeName,

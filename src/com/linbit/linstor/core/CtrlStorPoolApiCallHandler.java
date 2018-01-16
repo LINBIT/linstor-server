@@ -11,6 +11,7 @@ import java.util.Iterator;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.StorPool;
@@ -22,7 +23,6 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
 import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -35,38 +35,27 @@ import java.util.ArrayList;
 
 class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
 {
-    private final CtrlSerializer<StorPool> storPoolSerializer;
-    private final InterComSerializer interComSerializer;
-
     private final ThreadLocal<String> currentNodeNameStr = new ThreadLocal<>();
     private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
 
     CtrlStorPoolApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        CtrlSerializer<StorPool> storPoolSerializerRef,
-        InterComSerializer interComSerializerRef,
+        InterComSerializer interComSerializer,
         AccessContext apiCtxRef
     )
     {
         super (
             apiCtrlAccessorsRef,
             apiCtxRef,
-            ApiConsts.MASK_STOR_POOL
+            ApiConsts.MASK_STOR_POOL,
+            interComSerializer
         );
         super.setNullOnAutoClose(
             currentNodeNameStr,
             currentStorPoolNameStr
         );
-        storPoolSerializer = storPoolSerializerRef;
-        interComSerializer = interComSerializerRef;
 
         super.setNullOnAutoClose(currentNodeNameStr, currentStorPoolNameStr);
-    }
-
-    @Override
-    protected CtrlSerializer<StorPool> getStorPoolSerializer()
-    {
-        return storPoolSerializer;
     }
 
     public ApiCallRc createStorPool(
@@ -292,7 +281,10 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             // TODO: check if the storPool has the same uuid as storPoolUuid
             if (storPool != null)
             {
-                byte[] data = storPoolSerializer.getDataMessage(msgId, storPool);
+                byte[] data = serializer
+                    .builder(InternalApiConsts.API_APPLY_STOR_POOL, msgId)
+                    .storPoolData(storPool)
+                    .build();
 
                 Message response = satellitePeer.createMessage();
                 response.setData(data);
@@ -370,10 +362,10 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        return interComSerializer
-                .builder(ApiConsts.API_LST_STOR_POOL, msgId)
-                .storPoolList(storPools)
-                .build();
+        return serializer
+            .builder(ApiConsts.API_LST_STOR_POOL, msgId)
+            .storPoolList(storPools)
+            .build();
     }
 
     private AbsApiCallHandler setContext(

@@ -1,12 +1,15 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
-import java.util.List;
-import java.util.UUID;
 
 /**
  *
@@ -32,4 +35,13 @@ public interface InterComBuilder {
     InterComBuilder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName);
     InterComBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);
     InterComBuilder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName);
+
+    InterComBuilder changedNode(UUID nodeUuid, String nodeName);
+    InterComBuilder changedResource(UUID nodeUuid, String nodeName);
+    InterComBuilder changedStorPool(UUID nodeUuid, String nodeName);
+
+    InterComBuilder nodeData(Node node, Collection<Node> relatedNodes);
+    InterComBuilder resourceData(Resource localResource);
+    InterComBuilder storPoolData(StorPool storPool);
+    InterComBuilder fullSync(Set<Node> nodeSet, Set<StorPool> storPools, Set<Resource> resources);
 }

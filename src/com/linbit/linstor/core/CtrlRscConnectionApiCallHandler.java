@@ -16,7 +16,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.CtrlSerializer;
+import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -27,31 +27,24 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<String> currentNodeName1 = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeName2 = new ThreadLocal<>();
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
-    private final CtrlSerializer<Resource> rscSerializer;
 
     CtrlRscConnectionApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        CtrlSerializer<Resource> rscSerializerRef,
+        InterComSerializer interComSerializer,
         AccessContext apiCtxRef
     )
     {
         super (
             apiCtrlAccessorsRef,
             apiCtxRef,
-            ApiConsts.MASK_RSC_CONN
+            ApiConsts.MASK_RSC_CONN,
+            interComSerializer
         );
         super.setNullOnAutoClose(
             currentNodeName1,
             currentNodeName2,
             currentRscName
         );
-        rscSerializer = rscSerializerRef;
-    }
-
-    @Override
-    protected CtrlSerializer<Resource> getResourceSerializer()
-    {
-        return rscSerializer;
     }
 
     public ApiCallRc createResourceConnection(
