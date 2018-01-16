@@ -50,6 +50,7 @@ import com.linbit.linstor.proto.MsgDelRscOuterClass.MsgDelRsc;
 import com.linbit.linstor.proto.MsgDelStorPoolDfnOuterClass.MsgDelStorPoolDfn;
 import com.linbit.linstor.proto.MsgDelStorPoolOuterClass.MsgDelStorPool;
 import com.linbit.linstor.proto.MsgDelVlmConnOuterClass.MsgDelVlmConn;
+import com.linbit.linstor.proto.MsgDelVlmDfnOuterClass.MsgDelVlmDfn;
 import com.linbit.linstor.proto.MsgHeaderOuterClass.MsgHeader;
 import com.linbit.linstor.proto.MsgModNodeConnOuterClass.MsgModNodeConn;
 import com.linbit.linstor.proto.MsgModNodeOuterClass.MsgModNode;
@@ -1039,6 +1040,31 @@ public class ClientProtobuf implements Runnable
         if (delPropKeys != null)
         {
             builder.addAllDeletePropKeys(delPropKeys);
+        }
+        send
+        (
+            msgId,
+            API_MOD_VLM_DFN,
+            builder.build()
+        );
+        return msgId;
+    }
+
+    public int sendDeleteVlmDfn(
+        UUID uuid,
+        String rscName,
+        int vlmNr
+    )
+        throws IOException
+    {
+        int msgId = this.msgId.incrementAndGet();
+        MsgDelVlmDfn.Builder builder = MsgDelVlmDfn.newBuilder()
+            .setRscName(rscName)
+            .setVlmNr(vlmNr);
+
+        if (uuid != null)
+        {
+            builder.setVlmDfnUuid(uuid.toString());
         }
         send
         (

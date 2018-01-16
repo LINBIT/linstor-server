@@ -19,18 +19,18 @@ public final class MsgDelVlmDfnOuterClass {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>optional string rsc_dfn_uuid = 1;</code>
+     * <code>optional string vlm_dfn_uuid = 1;</code>
      */
-    boolean hasRscDfnUuid();
+    boolean hasVlmDfnUuid();
     /**
-     * <code>optional string rsc_dfn_uuid = 1;</code>
+     * <code>optional string vlm_dfn_uuid = 1;</code>
      */
-    java.lang.String getRscDfnUuid();
+    java.lang.String getVlmDfnUuid();
     /**
-     * <code>optional string rsc_dfn_uuid = 1;</code>
+     * <code>optional string vlm_dfn_uuid = 1;</code>
      */
     com.google.protobuf.ByteString
-        getRscDfnUuidBytes();
+        getVlmDfnUuidBytes();
 
     /**
      * <pre>
@@ -91,7 +91,7 @@ public final class MsgDelVlmDfnOuterClass {
       super(builder);
     }
     private MsgDelVlmDfn() {
-      rscDfnUuid_ = "";
+      vlmDfnUuid_ = "";
       rscName_ = "";
       vlmNr_ = 0;
     }
@@ -127,7 +127,7 @@ public final class MsgDelVlmDfnOuterClass {
             case 10: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
-              rscDfnUuid_ = bs;
+              vlmDfnUuid_ = bs;
               break;
             }
             case 18: {
@@ -166,19 +166,19 @@ public final class MsgDelVlmDfnOuterClass {
     }
 
     private int bitField0_;
-    public static final int RSC_DFN_UUID_FIELD_NUMBER = 1;
-    private volatile java.lang.Object rscDfnUuid_;
+    public static final int VLM_DFN_UUID_FIELD_NUMBER = 1;
+    private volatile java.lang.Object vlmDfnUuid_;
     /**
-     * <code>optional string rsc_dfn_uuid = 1;</code>
+     * <code>optional string vlm_dfn_uuid = 1;</code>
      */
-    public boolean hasRscDfnUuid() {
+    public boolean hasVlmDfnUuid() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>optional string rsc_dfn_uuid = 1;</code>
+     * <code>optional string vlm_dfn_uuid = 1;</code>
      */
-    public java.lang.String getRscDfnUuid() {
-      java.lang.Object ref = rscDfnUuid_;
+    public java.lang.String getVlmDfnUuid() {
+      java.lang.Object ref = vlmDfnUuid_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -186,22 +186,22 @@ public final class MsgDelVlmDfnOuterClass {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          rscDfnUuid_ = s;
+          vlmDfnUuid_ = s;
         }
         return s;
       }
     }
     /**
-     * <code>optional string rsc_dfn_uuid = 1;</code>
+     * <code>optional string vlm_dfn_uuid = 1;</code>
      */
     public com.google.protobuf.ByteString
-        getRscDfnUuidBytes() {
-      java.lang.Object ref = rscDfnUuid_;
+        getVlmDfnUuidBytes() {
+      java.lang.Object ref = vlmDfnUuid_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        rscDfnUuid_ = b;
+        vlmDfnUuid_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
@@ -306,7 +306,7 @@ public final class MsgDelVlmDfnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, rscDfnUuid_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, vlmDfnUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 2, rscName_);
@@ -323,7 +323,7 @@ public final class MsgDelVlmDfnOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, rscDfnUuid_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, vlmDfnUuid_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, rscName_);
@@ -349,10 +349,10 @@ public final class MsgDelVlmDfnOuterClass {
       com.linbit.linstor.proto.MsgDelVlmDfnOuterClass.MsgDelVlmDfn other = (com.linbit.linstor.proto.MsgDelVlmDfnOuterClass.MsgDelVlmDfn) obj;
 
       boolean result = true;
-      result = result && (hasRscDfnUuid() == other.hasRscDfnUuid());
-      if (hasRscDfnUuid()) {
-        result = result && getRscDfnUuid()
-            .equals(other.getRscDfnUuid());
+      result = result && (hasVlmDfnUuid() == other.hasVlmDfnUuid());
+      if (hasVlmDfnUuid()) {
+        result = result && getVlmDfnUuid()
+            .equals(other.getVlmDfnUuid());
       }
       result = result && (hasRscName() == other.hasRscName());
       if (hasRscName()) {
@@ -375,9 +375,9 @@ public final class MsgDelVlmDfnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasRscDfnUuid()) {
-        hash = (37 * hash) + RSC_DFN_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getRscDfnUuid().hashCode();
+      if (hasVlmDfnUuid()) {
+        hash = (37 * hash) + VLM_DFN_UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getVlmDfnUuid().hashCode();
       }
       if (hasRscName()) {
         hash = (37 * hash) + RSC_NAME_FIELD_NUMBER;
@@ -509,7 +509,7 @@ public final class MsgDelVlmDfnOuterClass {
       }
       public Builder clear() {
         super.clear();
-        rscDfnUuid_ = "";
+        vlmDfnUuid_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
         rscName_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -542,7 +542,7 @@ public final class MsgDelVlmDfnOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.rscDfnUuid_ = rscDfnUuid_;
+        result.vlmDfnUuid_ = vlmDfnUuid_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
@@ -593,9 +593,9 @@ public final class MsgDelVlmDfnOuterClass {
 
       public Builder mergeFrom(com.linbit.linstor.proto.MsgDelVlmDfnOuterClass.MsgDelVlmDfn other) {
         if (other == com.linbit.linstor.proto.MsgDelVlmDfnOuterClass.MsgDelVlmDfn.getDefaultInstance()) return this;
-        if (other.hasRscDfnUuid()) {
+        if (other.hasVlmDfnUuid()) {
           bitField0_ |= 0x00000001;
-          rscDfnUuid_ = other.rscDfnUuid_;
+          vlmDfnUuid_ = other.vlmDfnUuid_;
           onChanged();
         }
         if (other.hasRscName()) {
@@ -640,24 +640,24 @@ public final class MsgDelVlmDfnOuterClass {
       }
       private int bitField0_;
 
-      private java.lang.Object rscDfnUuid_ = "";
+      private java.lang.Object vlmDfnUuid_ = "";
       /**
-       * <code>optional string rsc_dfn_uuid = 1;</code>
+       * <code>optional string vlm_dfn_uuid = 1;</code>
        */
-      public boolean hasRscDfnUuid() {
+      public boolean hasVlmDfnUuid() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>optional string rsc_dfn_uuid = 1;</code>
+       * <code>optional string vlm_dfn_uuid = 1;</code>
        */
-      public java.lang.String getRscDfnUuid() {
-        java.lang.Object ref = rscDfnUuid_;
+      public java.lang.String getVlmDfnUuid() {
+        java.lang.Object ref = vlmDfnUuid_;
         if (!(ref instanceof java.lang.String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
-            rscDfnUuid_ = s;
+            vlmDfnUuid_ = s;
           }
           return s;
         } else {
@@ -665,53 +665,53 @@ public final class MsgDelVlmDfnOuterClass {
         }
       }
       /**
-       * <code>optional string rsc_dfn_uuid = 1;</code>
+       * <code>optional string vlm_dfn_uuid = 1;</code>
        */
       public com.google.protobuf.ByteString
-          getRscDfnUuidBytes() {
-        java.lang.Object ref = rscDfnUuid_;
+          getVlmDfnUuidBytes() {
+        java.lang.Object ref = vlmDfnUuid_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          rscDfnUuid_ = b;
+          vlmDfnUuid_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>optional string rsc_dfn_uuid = 1;</code>
+       * <code>optional string vlm_dfn_uuid = 1;</code>
        */
-      public Builder setRscDfnUuid(
+      public Builder setVlmDfnUuid(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-        rscDfnUuid_ = value;
+        vlmDfnUuid_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string rsc_dfn_uuid = 1;</code>
+       * <code>optional string vlm_dfn_uuid = 1;</code>
        */
-      public Builder clearRscDfnUuid() {
+      public Builder clearVlmDfnUuid() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        rscDfnUuid_ = getDefaultInstance().getRscDfnUuid();
+        vlmDfnUuid_ = getDefaultInstance().getVlmDfnUuid();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string rsc_dfn_uuid = 1;</code>
+       * <code>optional string vlm_dfn_uuid = 1;</code>
        */
-      public Builder setRscDfnUuidBytes(
+      public Builder setVlmDfnUuidBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-        rscDfnUuid_ = value;
+        vlmDfnUuid_ = value;
         onChanged();
         return this;
       }
@@ -929,7 +929,7 @@ public final class MsgDelVlmDfnOuterClass {
       "\n\030proto/MsgDelVlmDfn.proto\022\030com.linbit.l" +
       "instor.proto\032\033proto/LinStorMapEntry.prot" +
       "o\032\022proto/VlmDfn.proto\"F\n\014MsgDelVlmDfn\022\024\n" +
-      "\014rsc_dfn_uuid\030\001 \001(\t\022\020\n\010rsc_name\030\002 \002(\t\022\016\n" +
+      "\014vlm_dfn_uuid\030\001 \001(\t\022\020\n\010rsc_name\030\002 \002(\t\022\016\n" +
       "\006vlm_nr\030\003 \002(\021P\000P\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
@@ -951,7 +951,7 @@ public final class MsgDelVlmDfnOuterClass {
     internal_static_com_linbit_linstor_proto_MsgDelVlmDfn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgDelVlmDfn_descriptor,
-        new java.lang.String[] { "RscDfnUuid", "RscName", "VlmNr", });
+        new java.lang.String[] { "VlmDfnUuid", "RscName", "VlmNr", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.linstor.proto.VlmDfnOuterClass.getDescriptor();
   }
