@@ -17,7 +17,7 @@ import java.util.UUID;
 @ProtobufApiCall
 public class ApplyStorPool extends BaseProtoApiCall
 {
-    private Satellite satellite;
+    private final Satellite satellite;
 
     public ApplyStorPool(Satellite satellite)
     {

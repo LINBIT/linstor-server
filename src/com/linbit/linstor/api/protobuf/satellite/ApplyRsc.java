@@ -32,7 +32,7 @@ import java.util.UUID;
 @ProtobufApiCall
 public class ApplyRsc extends BaseProtoApiCall
 {
-    private Satellite satellite;
+    private final Satellite satellite;
 
     public ApplyRsc(Satellite satellite)
     {

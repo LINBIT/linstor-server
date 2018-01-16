@@ -18,7 +18,7 @@ import com.linbit.linstor.security.AccessContext;
 @ProtobufApiCall
 public class CtrlAuth extends BaseProtoApiCall
 {
-    private Satellite satellite;
+    private final Satellite satellite;
 
     public CtrlAuth(Satellite satellite)
     {

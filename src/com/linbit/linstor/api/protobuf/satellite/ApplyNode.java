@@ -24,7 +24,7 @@ import java.util.UUID;
 @ProtobufApiCall
 public class ApplyNode extends BaseProtoApiCall
 {
-    private Satellite satellite;
+    private final Satellite satellite;
 
     public ApplyNode(Satellite satellite)
     {

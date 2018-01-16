@@ -18,7 +18,7 @@ import java.util.UUID;
  */
 @ProtobufApiCall
 public class PrimaryResource extends BaseProtoApiCall {
-    private Satellite satellite;
+    private final Satellite satellite;
 
     public PrimaryResource(Satellite satellite)
     {

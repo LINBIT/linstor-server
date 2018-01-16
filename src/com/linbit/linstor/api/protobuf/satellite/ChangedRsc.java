@@ -23,7 +23,7 @@ import com.linbit.linstor.security.AccessContext;
 @ProtobufApiCall
 public class ChangedRsc extends BaseProtoApiCall
 {
-    private Satellite satellite;
+    private final Satellite satellite;
 
     public ChangedRsc(Satellite satellite)
     {

@@ -121,7 +121,7 @@ public class StltApiCallHandler
             Node localNode = satellite.getLocalNode();
             if (localNode != null)
             {
-                Map<ResourceName, UUID> updatedResources = new TreeMap();
+                Map<ResourceName, UUID> updatedResources = new TreeMap<>();
                 Iterator<Resource> rscIter = localNode.iterateResources(apiCtx);
                 while (rscIter.hasNext())
                 {
@@ -154,7 +154,8 @@ public class StltApiCallHandler
 
     public void requestNodeUpdate(UUID nodeUuid, NodeName nodeName)
     {
-        sendRequest(satellite.getApiCallHandler().getInterComSerializer()
+        sendRequest(
+            satellite.getApiCallHandler().getInterComSerializer()
                 .builder(InternalApiConsts.API_REQUEST_NODE, 0)
                 .requestNodeUpdate(nodeUuid, nodeName.getDisplayName())
                 .build()
@@ -163,28 +164,31 @@ public class StltApiCallHandler
 
     public void requestRscDfnUpate(UUID rscDfnUuid, ResourceName rscName)
     {
-        sendRequest(satellite.getApiCallHandler().getInterComSerializer()
-            .builder(InternalApiConsts.API_REQUEST_RSC_DFN, 0)
-            .requestResourceDfnUpdate(rscDfnUuid, rscName.getDisplayName())
-            .build()
+        sendRequest(
+            satellite.getApiCallHandler().getInterComSerializer()
+                .builder(InternalApiConsts.API_REQUEST_RSC_DFN, 0)
+                .requestResourceDfnUpdate(rscDfnUuid, rscName.getDisplayName())
+                .build()
         );
     }
 
     public void requestRscUpdate(UUID rscUuid, NodeName nodeName, ResourceName rscName)
     {
-        sendRequest(satellite.getApiCallHandler().getInterComSerializer()
-            .builder(InternalApiConsts.API_REQUEST_RSC, 0)
-            .requestResourceUpdate(rscUuid, nodeName.getDisplayName(), rscName.getDisplayName())
-            .build()
+        sendRequest(
+            satellite.getApiCallHandler().getInterComSerializer()
+                .builder(InternalApiConsts.API_REQUEST_RSC, 0)
+                .requestResourceUpdate(rscUuid, nodeName.getDisplayName(), rscName.getDisplayName())
+                .build()
         );
     }
 
     public void requestStorPoolUpdate(UUID storPoolUuid, StorPoolName storPoolName)
     {
-        sendRequest(satellite.getApiCallHandler().getInterComSerializer()
-            .builder(InternalApiConsts.API_REQUEST_STOR_POOL, 0)
-            .requestStoragePoolUpdate(storPoolUuid, storPoolName.getDisplayName())
-            .build()
+        sendRequest(
+            satellite.getApiCallHandler().getInterComSerializer()
+                .builder(InternalApiConsts.API_REQUEST_STOR_POOL, 0)
+                .requestStoragePoolUpdate(storPoolUuid, storPoolName.getDisplayName())
+                .build()
         );
     }
 

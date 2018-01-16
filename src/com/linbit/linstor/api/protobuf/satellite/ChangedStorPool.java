@@ -22,7 +22,7 @@ import com.linbit.linstor.security.AccessContext;
 @ProtobufApiCall
 public class ChangedStorPool extends BaseProtoApiCall
 {
-    private Satellite satellite;
+    private final Satellite satellite;
 
     public ChangedStorPool(Satellite satellite)
     {

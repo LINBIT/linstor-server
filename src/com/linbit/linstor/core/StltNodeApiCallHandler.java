@@ -37,11 +37,6 @@ class StltNodeApiCallHandler
         apiCtx = apiCtxRef;
     }
 
-    public void requestChange(Node node)
-    {
-        // TODO: implement
-    }
-
     public void applyChanges(NodePojo nodePojo)
     {
         try

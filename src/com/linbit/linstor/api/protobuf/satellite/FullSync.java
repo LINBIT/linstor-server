@@ -25,7 +25,7 @@ import com.linbit.linstor.security.AccessContext;
 @ProtobufApiCall
 public class FullSync extends BaseProtoApiCall
 {
-    private Satellite satellite;
+    private final Satellite satellite;
 
     public FullSync(Satellite satellite)
     {
