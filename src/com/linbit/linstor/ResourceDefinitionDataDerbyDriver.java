@@ -13,6 +13,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
 import com.linbit.linstor.ResourceDefinition.TransportType;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
@@ -23,7 +24,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionDataDatabaseDriver
@@ -111,7 +114,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     @Override
     public void create(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating ResourceDfinition %s", getTraceId(resourceDefinition));
+        errorReporter.logTrace("Creating ResourceDfinition %s", getId(resourceDefinition));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(resourceDefinition.getUuid()));
@@ -123,7 +126,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
             stmt.setString(7, resourceDefinition.getTransportType(dbCtx).name());
             stmt.executeUpdate();
 
-            errorReporter.logTrace("ResourceDefinition created %s", getDebugId(resourceDefinition));
+            errorReporter.logTrace("ResourceDefinition created %s", getId(resourceDefinition));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -154,7 +157,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     )
         throws SQLException
     {
-        errorReporter.logTrace("Loading ResourceDefinition %s", getTraceId(resourceName));
+        errorReporter.logTrace("Loading ResourceDefinition %s", getId(resourceName));
         ResourceDefinitionData resDfn = null;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_SELECT))
         {
@@ -168,7 +171,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 else
                 if (logWarnIfNotExists)
                 {
-                    errorReporter.logWarning("ResourceDefinition not found in the DB %s", getDebugId(resourceName));
+                    errorReporter.logWarning("ResourceDefinition not found in the DB %s", getId(resourceName));
                 }
             }
         }
@@ -260,7 +263,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     rscDfnCache.put(resourceName, resDfn);
                 }
 
-                errorReporter.logTrace("ResourceDefinition instance created %s", getTraceId(resDfn));
+                errorReporter.logTrace("ResourceDefinition instance created %s", getId(resDfn));
 
                 // restore volumeDefinitions
                 List<VolumeDefinition> volDfns =
@@ -275,7 +278,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 }
                 errorReporter.logTrace(
                     "Restored ResourceDefinition's VolumeDefinitions %s",
-                    getTraceId(resDfn)
+                    getId(resDfn)
                 );
 
                 // restore resources
@@ -289,7 +292,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     resDfn.addResource(dbCtx, res);
                 }
 
-                errorReporter.logTrace("Restored ResourceDefinition's Resources %s", getTraceId(resDfn));
+                errorReporter.logTrace("Restored ResourceDefinition's Resources %s", getId(resDfn));
             }
             catch (AccessDeniedException accessDeniedExc)
             {
@@ -299,7 +302,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         }
         else
         {
-            errorReporter.logTrace("ResourceDefinition loaded from cache %s", getDebugId(resDfn));
+            errorReporter.logTrace("ResourceDefinition loaded from cache %s", getId(resDfn));
         }
         return resDfn;
     }
@@ -316,7 +319,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         if (objProt == null)
         {
             throw new ImplementationError(
-                "ResourceDefinition's DB entry exists, but is missing an entry in ObjProt table! " + getTraceId(resourceName),
+                "ResourceDefinition's DB entry exists, but is missing an entry in ObjProt table! " + getId(resourceName),
                 null
             );
         }
@@ -332,13 +335,13 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
     @Override
     public void delete(ResourceDefinitionData resourceDefinition, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting ResourceDefinition %s", getTraceId(resourceDefinition));
+        errorReporter.logTrace("Deleting ResourceDefinition %s", getId(resourceDefinition));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_DELETE))
         {
             stmt.setString(1, resourceDefinition.getName().value);
             stmt.executeUpdate();
         }
-        errorReporter.logTrace("ResourceDfinition deleted %s", getDebugId(resourceDefinition));
+        errorReporter.logTrace("ResourceDfinition deleted %s", getId(resourceDefinition));
     }
 
     @Override
@@ -359,22 +362,12 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         return transTypeDriver;
     }
 
-    private String getTraceId(ResourceDefinitionData resourceDefinition)
-    {
-        return getId(resourceDefinition.getName().value);
-    }
-
-    private String getTraceId(ResourceName resourceName)
-    {
-        return getId(resourceName.value);
-    }
-
-    private String getDebugId(ResourceDefinitionData resourceDefinition)
+    private String getId(ResourceDefinitionData resourceDefinition)
     {
         return getId(resourceDefinition.getName().displayValue);
     }
 
-    private String getDebugId(ResourceName resourceName)
+    private String getId(ResourceName resourceName)
     {
         return getId(resourceName.displayValue);
     }
@@ -391,11 +384,25 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
         {
             try
             {
+                String fromFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        RscDfnFlags.class,
+                        resourceDefinition.getFlags().getFlagsBits(dbCtx)
+                    ),
+                    ", "
+                );
+                String toFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        RscDfnFlags.class,
+                        flags
+                    ),
+                    ", "
+                );
                 errorReporter.logTrace(
                     "Updating ResourceDefinition's flags from [%s] to [%s] %s",
-                    Long.toBinaryString(resourceDefinition.getFlags().getFlagsBits(dbCtx)),
-                    Long.toBinaryString(flags),
-                    getTraceId(resourceDefinition)
+                    fromFlags,
+                    toFlags,
+                    getId(resourceDefinition)
                 );
                 try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_UPDATE_FLAGS))
                 {
@@ -405,9 +412,9 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                 }
                 errorReporter.logTrace(
                     "ResourceDefinition's flags updated from [%s] to [%s] %s",
-                    Long.toBinaryString(resourceDefinition.getFlags().getFlagsBits(dbCtx)),
-                    Long.toBinaryString(flags),
-                    getDebugId(resourceDefinition)
+                    fromFlags,
+                    toFlags,
+                    getId(resourceDefinition)
                 );
             }
             catch (AccessDeniedException accDeniedExc)
@@ -429,7 +436,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     "Updating ResourceDefinition's flags from [%d] to [%d] %s",
                     resourceDefinition.getPort(dbCtx).value,
                     port.value,
-                    getTraceId(resourceDefinition)
+                    getId(resourceDefinition)
                 );
                 try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_UPDATE_PORT))
                 {
@@ -441,7 +448,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     "ResourceDefinition's flags updated from [%d] to [%d] %s",
                     resourceDefinition.getPort(dbCtx).value,
                     port.value,
-                    getDebugId(resourceDefinition)
+                    getId(resourceDefinition)
                 );
             }
             catch (AccessDeniedException accDeniedExc)
@@ -468,7 +475,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     "Updating ResourceDefinition's transport type from [%s] to [%s] %s",
                     resourceDefinition.getTransportType(dbCtx).name(),
                     transType.name(),
-                    getTraceId(resourceDefinition)
+                    getId(resourceDefinition)
                 );
                 try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RD_UPDATE_TRANS_TYPE))
                 {
@@ -480,7 +487,7 @@ public class ResourceDefinitionDataDerbyDriver implements ResourceDefinitionData
                     "ResourceDefinition's transport type updated from [%s] to [%s] %s",
                     resourceDefinition.getTransportType(dbCtx).name(),
                     transType.name(),
-                    getDebugId(resourceDefinition)
+                    getId(resourceDefinition)
                 );
             }
             catch (AccessDeniedException accDeniedExc)

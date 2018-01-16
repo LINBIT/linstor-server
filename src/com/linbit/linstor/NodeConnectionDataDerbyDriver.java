@@ -72,7 +72,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
     )
         throws SQLException
     {
-        errorReporter.logTrace("Loading NodeConnection %s", getTraceId(sourceNode, targetNode));
+        errorReporter.logTrace("Loading NodeConnection %s", getId(sourceNode, targetNode));
 
         NodeConnectionData ret = null;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SELECT))
@@ -92,7 +92,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
                 {
                     errorReporter.logWarning(
                         "NodeConnection not found in DB %s",
-                        getDebugId(sourceNode, targetNode)
+                        getId(sourceNode, targetNode)
                     );
                 }
             }
@@ -201,11 +201,11 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
             {
                 DerbyDriver.handleAccessDeniedException(accDeniedExc);
             }
-            errorReporter.logTrace("ResourceConnection loaded from DB %s", getDebugId(nodeConData));
+            errorReporter.logTrace("ResourceConnection loaded from DB %s", getId(nodeConData));
         }
         else
         {
-            errorReporter.logTrace("ResourceConnection loaded from cache %s", getDebugId(nodeConData));
+            errorReporter.logTrace("ResourceConnection loaded from cache %s", getId(nodeConData));
         }
 
         return nodeConData;
@@ -214,7 +214,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
     @Override
     public void create(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating NodeConnection %s", getTraceId(nodeConDfnData));
+        errorReporter.logTrace("Creating NodeConnection %s", getId(nodeConDfnData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
         {
             NodeName sourceNodeName = nodeConDfnData.getSourceNode(dbCtx).getName();
@@ -226,7 +226,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
 
             stmt.executeUpdate();
 
-            errorReporter.logTrace("NodeConnection created s", getDebugId(nodeConDfnData));
+            errorReporter.logTrace("NodeConnection created s", getId(nodeConDfnData));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -237,7 +237,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
     @Override
     public void delete(NodeConnectionData nodeConDfnData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting NodeConnection %s", getTraceId(nodeConDfnData));
+        errorReporter.logTrace("Deleting NodeConnection %s", getId(nodeConDfnData));
         try
         {
             NodeName sourceNodeName = nodeConDfnData.getSourceNode(dbCtx).getName();
@@ -250,7 +250,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
 
                 stmt.executeUpdate();
             }
-            errorReporter.logTrace("NodeConnection deleted %s", getDebugId(nodeConDfnData));
+            errorReporter.logTrace("NodeConnection deleted %s", getId(nodeConDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -273,26 +273,9 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
     }
 
     /*
-     * Trace and Debug ID methods
+     * Debug ID methods
      */
-    private String getTraceId(NodeConnectionData conData)
-    {
-        String id = null;
-        try
-        {
-            id = getId(
-                conData.getSourceNode(dbCtx).getName().value,
-                conData.getTargetNode(dbCtx).getName().value
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return id;
-    }
-
-    private String getDebugId(NodeConnectionData conData)
+    private String getId(NodeConnectionData conData)
     {
         String id = null;
         try
@@ -309,15 +292,7 @@ public class NodeConnectionDataDerbyDriver implements NodeConnectionDataDatabase
         return id;
     }
 
-    private String getTraceId(Node src, Node dst)
-    {
-        return getId(
-            src.getName().value,
-            dst.getName().value
-        );
-    }
-
-    private String getDebugId(Node src, Node dst)
+    private String getId(Node src, Node dst)
     {
         return getId(
             src.getName().displayValue,

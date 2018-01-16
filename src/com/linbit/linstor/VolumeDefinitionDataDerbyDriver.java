@@ -10,13 +10,16 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataDatabaseDriver
@@ -87,7 +90,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     {
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_INSERT))
         {
-            errorReporter.logTrace("Creating VolumeDefinition %s", getTraceId(volumeDefinition));
+            errorReporter.logTrace("Creating VolumeDefinition %s", getId(volumeDefinition));
 
             stmt.setBytes(1, UuidUtils.asByteArray(volumeDefinition.getUuid()));
             stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
@@ -98,7 +101,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
             stmt.executeUpdate();
 
-            errorReporter.logTrace("VolumeDefinition created %s", getDebugId(volumeDefinition));
+            errorReporter.logTrace("VolumeDefinition created %s", getId(volumeDefinition));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -115,7 +118,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     )
         throws SQLException
     {
-        errorReporter.logTrace("Loading VolumeDefinition %s", getTraceId(resourceDefinition, volumeNumber));
+        errorReporter.logTrace("Loading VolumeDefinition %s", getId(resourceDefinition, volumeNumber));
         VolumeDefinitionData ret = null;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_SELECT))
         {
@@ -135,14 +138,14 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                             transMgr,
                             dbCtx
                         );
-                        errorReporter.logTrace("VolumeDefinition loaded %s", getDebugId(resourceDefinition, volumeNumber));
+                        errorReporter.logTrace("VolumeDefinition loaded %s", getId(resourceDefinition, volumeNumber));
                     }
                     else
                     if (logWarnIfNotExists)
                     {
                         errorReporter.logWarning(
                             "Requested VolumeDefinition %s could not be found in the Database",
-                            getDebugId(resourceDefinition, volumeNumber)
+                            getId(resourceDefinition, volumeNumber)
                         );
                     }
                 }
@@ -160,7 +163,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     )
         throws SQLException
     {
-        errorReporter.logTrace("Restoring VolumeDefinition %s", getTraceId(resDfn, volNr));
+        errorReporter.logTrace("Restoring VolumeDefinition %s", getId(resDfn, volNr));
         VolumeDefinitionData ret = null;
         try
         {
@@ -178,12 +181,12 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     resultSet.getLong(VD_FLAGS),
                     transMgr
                 );
-                errorReporter.logTrace("VolumeDefinition %s created during restore", getTraceId(ret));
+                errorReporter.logTrace("VolumeDefinition %s created during restore", getId(ret));
                 // restore references
             }
             else
             {
-                errorReporter.logTrace("VolumeDefinition %s restored from cache", getTraceId(ret));
+                errorReporter.logTrace("VolumeDefinition %s restored from cache", getId(ret));
             }
         }
         catch (AccessDeniedException accessDeniedExc)
@@ -267,7 +270,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                         transMgr,
                         accCtx
                     );
-                    errorReporter.logTrace("VolumeDefinition created %s", getTraceId(volDfn));
+                    errorReporter.logTrace("VolumeDefinition created %s", getId(volDfn));
 
                     ret.add(volDfn);
                 }
@@ -279,13 +282,13 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
     @Override
     public void delete(VolumeDefinitionData volumeDefinition, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting VolumeDefinition %s", getTraceId(volumeDefinition));
+        errorReporter.logTrace("Deleting VolumeDefinition %s", getId(volumeDefinition));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_DELETE))
         {
             stmt.setString(1, volumeDefinition.getResourceDefinition().getName().value);
             stmt.setInt(2, volumeDefinition.getVolumeNumber().value);
             stmt.executeUpdate();
-            errorReporter.logTrace("VolumeDefinition deleted %s", getDebugId(volumeDefinition));
+            errorReporter.logTrace("VolumeDefinition deleted %s", getId(volumeDefinition));
         }
     }
 
@@ -323,34 +326,18 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         return ret;
     }
 
-    private String getDebugId(VolumeDefinitionData volDfn)
+    private String getId(VolumeDefinitionData volDfn)
     {
-        return getDebugId(
+        return getId(
             volDfn.getResourceDefinition(),
             volDfn.getVolumeNumber()
         );
     }
 
-    private String getDebugId(ResourceDefinition resourceDefinition, VolumeNumber volumeNumber)
+    private String getId(ResourceDefinition resourceDefinition, VolumeNumber volumeNumber)
     {
         return getId(
             resourceDefinition.getName().displayValue,
-            volumeNumber
-        );
-    }
-
-    private String getTraceId(VolumeDefinitionData volDfn)
-    {
-        return getTraceId(
-            volDfn.getResourceDefinition(),
-            volDfn.getVolumeNumber()
-        );
-    }
-
-    private String getTraceId(ResourceDefinition resourceDefinition, VolumeNumber volumeNumber)
-    {
-        return getId(
-            resourceDefinition.getName().value,
             volumeNumber
         );
     }
@@ -367,11 +354,25 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
         {
             try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(VD_UPDATE_FLAGS))
             {
+                String fromFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        VlmDfnFlags.class,
+                        volumeDefinition.getFlags().getFlagsBits(dbCtx)
+                    ),
+                    ", "
+                );
+                String toFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        VlmDfnFlags.class,
+                        flags
+                    ),
+                    ", "
+                );
                 errorReporter.logTrace(
                     "Updating VolumeDefinition's flags from [%s] to [%s] %s",
-                    Long.toBinaryString(volumeDefinition.getFlags().getFlagsBits(dbCtx)),
-                    Long.toBinaryString(flags),
-                    getTraceId(volumeDefinition)
+                    fromFlags,
+                    toFlags,
+                    getId(volumeDefinition)
                 );
                 stmt.setLong(1, flags);
                 stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
@@ -380,9 +381,9 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
 
                 errorReporter.logTrace(
                     "VolumeDefinition's flags updated from [%s] to [%s] %s",
-                    Long.toBinaryString(volumeDefinition.getFlags().getFlagsBits(dbCtx)),
-                    Long.toBinaryString(flags),
-                    getDebugId(volumeDefinition)
+                    fromFlags,
+                    toFlags,
+                    getId(volumeDefinition)
                 );
             }
             catch (AccessDeniedException accessDeniedExc)
@@ -404,7 +405,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     "Updating VolumeDefinition's MinorNumber from [%d] to [%d] %s",
                     volumeDefinition.getMinorNr(dbCtx).value,
                     newNumber.value,
-                    getTraceId(volumeDefinition)
+                    getId(volumeDefinition)
                 );
                 stmt.setInt(1, newNumber.value);
                 stmt.setString(2, volumeDefinition.getResourceDefinition().getName().value);
@@ -415,7 +416,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     "VolumeDefinition's MinorNumber updated from [%d] to [%d] %s",
                     volumeDefinition.getMinorNr(dbCtx).value,
                     newNumber.value,
-                    getDebugId(volumeDefinition)
+                    getId(volumeDefinition)
                 );
             }
             catch (AccessDeniedException accessDeniedExc)
@@ -436,7 +437,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     "Updating VolumeDefinition's Size from [%d] to [%d] %s",
                     volumeDefinition.getVolumeSize(dbCtx),
                     size,
-                    getTraceId(volumeDefinition)
+                    getId(volumeDefinition)
                 );
 
                 stmt.setLong(1, size);
@@ -448,7 +449,7 @@ public class VolumeDefinitionDataDerbyDriver implements VolumeDefinitionDataData
                     "VolumeDefinition's Size updated from [%d] to [%d] %s",
                     volumeDefinition.getVolumeSize(dbCtx),
                     size,
-                    getDebugId(volumeDefinition)
+                    getId(volumeDefinition)
                 );
             }
             catch (AccessDeniedException accessDeniedExc)

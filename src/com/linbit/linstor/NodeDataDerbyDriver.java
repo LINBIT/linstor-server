@@ -12,6 +12,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
@@ -22,7 +23,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
@@ -112,7 +115,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     @Override
     public void create(NodeData node, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating Node %s", getTraceId(node));
+        errorReporter.logTrace("Creating Node %s", getId(node));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(node.getUuid()));
@@ -122,7 +125,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
             stmt.setLong(5, node.getNodeType(dbCtx).getFlagValue());
             stmt.executeUpdate();
 
-            errorReporter.logTrace("Node created %s", getDebugId(node));
+            errorReporter.logTrace("Node created %s", getId(node));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -155,7 +158,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         throws SQLException
     {
         NodeData node = null;
-        errorReporter.logTrace("Loading node %s", getTraceId(nodeName));
+        errorReporter.logTrace("Loading node %s", getId(nodeName));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_SELECT))
         {
             stmt.setString(1, nodeName.value);
@@ -170,7 +173,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 {
                     errorReporter.logWarning(
                         "Node not found in the DB %s",
-                        getDebugId(nodeName)
+                        getId(nodeName)
                     );
                 }
             }
@@ -217,7 +220,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 transMgr
             );
 
-            errorReporter.logTrace("Node instance created %s", getTraceId(node));
+            errorReporter.logTrace("Node instance created %s", getId(node));
 
             // (-> == loads)
             // node -> resource
@@ -238,7 +241,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 }
                 errorReporter.logTrace(
                     "Node's NetInterfaces restored %s Count: %d",
-                    getTraceId(node),
+                    getId(node),
                     netIfaces.size()
                 );
 
@@ -246,7 +249,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 node.setSatelliteConnection(dbCtx, satelliteConnection);
                 errorReporter.logTrace(
                     "Node's SatelliteConnection restored %s",
-                    getTraceId(node)
+                    getId(node)
                 );
 
                 List<ResourceData> resList = resourceDataDriver.loadResourceData(dbCtx, node, transMgr);
@@ -256,7 +259,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 }
                 errorReporter.logTrace(
                     "Node's Resources restored %s Count: %d",
-                    getTraceId(node),
+                    getId(node),
                     resList.size()
                 );
 
@@ -267,7 +270,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 }
                 errorReporter.logTrace(
                     "Node's StorPools restored %s Count: %d",
-                    getTraceId(node),
+                    getId(node),
                     storPoolList.size()
                 );
 
@@ -279,11 +282,11 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 }
                 errorReporter.logTrace(
                     "Node's ConnectionDefinitions restored %s Count: %d",
-                    getTraceId(node),
+                    getId(node),
                     nodeConDfnList.size()
                 );
 
-                errorReporter.logTrace("Node loaded from DB %s", getDebugId(node));
+                errorReporter.logTrace("Node loaded from DB %s", getId(node));
             }
             catch (AccessDeniedException accessDeniedExc)
             {
@@ -292,7 +295,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         }
         else
         {
-            errorReporter.logTrace("Node loaded from cache %s", getDebugId(node));
+            errorReporter.logTrace("Node loaded from cache %s", getId(node));
         }
         return node;
     }
@@ -308,7 +311,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         if (objProt == null)
         {
             throw new ImplementationError(
-                "Node's DB entry exists, but is missing an entry in ObjProt table! " + getTraceId(nodeName),
+                "Node's DB entry exists, but is missing an entry in ObjProt table! " + getId(nodeName),
                 null
             );
         }
@@ -318,14 +321,14 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
     @Override
     public void delete(NodeData node, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting node %s", getTraceId(node));
+        errorReporter.logTrace("Deleting node %s", getId(node));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_DELETE))
         {
             stmt.setString(1, node.getName().value);
 
             stmt.executeUpdate();
         }
-        errorReporter.logTrace("Node deleted %s", getDebugId(node));
+        errorReporter.logTrace("Node deleted %s", getId(node));
     }
 
     public void clearCache()
@@ -346,22 +349,12 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         return typeDriver;
     }
 
-    private String getTraceId(NodeData node)
-    {
-        return getId(node.getName().value);
-    }
-
-    private String getDebugId(NodeData node)
+    private String getId(NodeData node)
     {
         return getId(node.getName().displayValue);
     }
 
-    private String getTraceId(NodeName nodeName)
-    {
-        return getId(nodeName.value);
-    }
-
-    private String getDebugId(NodeName nodeName)
+    private String getId(NodeName nodeName)
     {
         return getId(nodeName.displayValue);
     }
@@ -378,10 +371,25 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         {
             try
             {
+                String fromFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        NodeFlag.class,
+                        node.getFlags().getFlagsBits(dbCtx)
+                    ),
+                    ", "
+                );
+                String toFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        NodeFlag.class,
+                        flags
+                    ),
+                    ", "
+                );
+
                 errorReporter.logTrace("Updating Node's flags from [%s] to [%s] %s",
-                    Long.toBinaryString(node.getFlags().getFlagsBits(dbCtx)),
-                    Long.toBinaryString(flags),
-                    getTraceId(node)
+                    fromFlags,
+                    toFlags,
+                    getId(node)
                 );
                 try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_UPDATE_FLAGS))
                 {
@@ -391,9 +399,9 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     stmt.executeUpdate();
                 }
                 errorReporter.logTrace("Node's flags updated from [%s] to [%s] %s",
-                    Long.toBinaryString(node.getFlags().getFlagsBits(dbCtx)),
-                    Long.toBinaryString(flags),
-                    getDebugId(node)
+                    fromFlags,
+                    toFlags,
+                    getId(node)
                 );
             }
             catch (AccessDeniedException accDeniedExc)
@@ -413,7 +421,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 errorReporter.logTrace("Updating Node's NodeType from [%s] to [%s] %s",
                     parent.getNodeType(dbCtx).name(),
                     element.name(),
-                    getTraceId(parent)
+                    getId(parent)
                 );
                 try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NODE_UPDATE_TYPE))
                 {
@@ -425,7 +433,7 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                 errorReporter.logTrace("Node's NodeType updated from [%s] to [%s] %s",
                     parent.getNodeType(dbCtx).name(),
                     element.name(),
-                    getDebugId(parent)
+                    getId(parent)
                 );
             }
             catch (AccessDeniedException accDeniedExc)

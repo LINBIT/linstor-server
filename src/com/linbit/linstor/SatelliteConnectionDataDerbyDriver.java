@@ -74,7 +74,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
     @Override
     public void create(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating SatelliteConnection %s", getTraceId(satelliteConnectionData));
+        errorReporter.logTrace("Creating SatelliteConnection %s", getId(satelliteConnectionData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SC_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(satelliteConnectionData.getUuid()));
@@ -85,7 +85,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
 
             stmt.executeUpdate();
         }
-        errorReporter.logTrace("SatelliteConnection created %s", getTraceId(satelliteConnectionData));
+        errorReporter.logTrace("SatelliteConnection created %s", getId(satelliteConnectionData));
 
     }
     @Override
@@ -96,7 +96,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
     )
         throws SQLException
     {
-        errorReporter.logTrace("Loading SatelliteConnection %s", getTraceId(node));
+        errorReporter.logTrace("Loading SatelliteConnection %s", getId(node));
         SatelliteConnectionData stltConn = null;
         try
         {
@@ -161,7 +161,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                                 port,
                                 encryptionType
                             );
-                            errorReporter.logTrace("SatelliteConnection restored from DB %s", getTraceId(node));
+                            errorReporter.logTrace("SatelliteConnection restored from DB %s", getId(node));
                         }
                         else
                         {
@@ -175,7 +175,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
             }
             else
             {
-                errorReporter.logTrace("SatelliteConnection loaded from cache %s", getTraceId(node));
+                errorReporter.logTrace("SatelliteConnection loaded from cache %s", getId(node));
             }
         }
         catch (AccessDeniedException accDeniedExc)
@@ -189,13 +189,13 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
     @Override
     public void delete(SatelliteConnection satelliteConnectionData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting SatelliteConnection %s", getTraceId(satelliteConnectionData));
+        errorReporter.logTrace("Deleting SatelliteConnection %s", getId(satelliteConnectionData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SC_DELETE))
         {
             stmt.setString(1, satelliteConnectionData.getNode().getName().value);
             stmt.executeUpdate();
         }
-        errorReporter.logTrace("SatelliteConnection deleted %s", getTraceId(satelliteConnectionData));
+        errorReporter.logTrace("SatelliteConnection deleted %s", getId(satelliteConnectionData));
     }
 
     @Override
@@ -210,16 +210,16 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
         return typeDriver;
     }
 
-    private String getTraceId(Node node)
+    private String getId(Node node)
     {
-        return getNodeId(node.getName().value);
+        return getNodeId(node.getName().displayValue);
     }
 
-    private Object getTraceId(SatelliteConnection satelliteConnectionData)
+    private String getId(SatelliteConnection satelliteConnectionData)
     {
         return getId(
-            satelliteConnectionData.getNode().getName().value,
-            satelliteConnectionData.getNetInterface().getName().value
+            satelliteConnectionData.getNode().getName().displayValue,
+            satelliteConnectionData.getNetInterface().getName().displayValue
         );
     }
 
@@ -247,7 +247,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                     "Updating SatelliteConnection's port from [%d] to [%d] %s",
                     oldPort,
                     port.value,
-                    getTraceId(stltConn)
+                    getId(stltConn)
                 );
 
                 stmt.setInt(1, port.value);
@@ -258,7 +258,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                     "SatelliteConnection's port updated from [%d] to [%d] %s",
                     oldPort,
                     port.value,
-                    getTraceId(stltConn)
+                    getId(stltConn)
                 );
             }
         }
@@ -278,7 +278,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                     "Updating SatelliteConnection's port from [%s] to [%s] %s",
                     oldType,
                     type.name(),
-                    getTraceId(stltConn)
+                    getId(stltConn)
                 );
 
                 stmt.setString(1, type.name());
@@ -289,7 +289,7 @@ public class SatelliteConnectionDataDerbyDriver implements SatelliteConnectionDa
                     "SatelliteConnection's port updated from [%s] to [%s] %s",
                     oldType,
                     type.name(),
-                    getTraceId(stltConn)
+                    getId(stltConn)
                 );
             }
         }

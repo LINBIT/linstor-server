@@ -80,7 +80,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     )
         throws SQLException
     {
-        errorReporter.logTrace("Loading ResourceConnection %s", getTraceId(sourceResource, targetResource));
+        errorReporter.logTrace("Loading ResourceConnection %s", getId(sourceResource, targetResource));
 
         ResourceDefinition resDfn = sourceResource.getDefinition();
         if (resDfn != targetResource.getDefinition())
@@ -114,7 +114,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
                 {
                     errorReporter.logWarning(
                         "ResourceConnection not found in DB %s",
-                        getDebugId(sourceResource, targetResource)
+                        getId(sourceResource, targetResource)
                     );
                 }
             }
@@ -194,11 +194,11 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
             {
                 DerbyDriver.handleAccessDeniedException(accDeniedExc);
             }
-            errorReporter.logTrace("ResourceConnection loaded from DB %s", getDebugId(resConData));
+            errorReporter.logTrace("ResourceConnection loaded from DB %s", getId(resConData));
         }
         else
         {
-            errorReporter.logTrace("ResourceConnection loaded from cache %s", getDebugId(resConData));
+            errorReporter.logTrace("ResourceConnection loaded from cache %s", getId(resConData));
         }
 
         return resConData;
@@ -247,7 +247,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     @Override
     public void create(ResourceConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating ResourceConnection %s", getTraceId(conDfnData));
+        errorReporter.logTrace("Creating ResourceConnection %s", getId(conDfnData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
         {
             NodeName sourceNodeName = conDfnData.getSourceResource(dbCtx).getAssignedNode().getName();
@@ -261,7 +261,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
 
             stmt.executeUpdate();
 
-            errorReporter.logTrace("ResourceConnection created s", getDebugId(conDfnData));
+            errorReporter.logTrace("ResourceConnection created s", getId(conDfnData));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -272,7 +272,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
     @Override
     public void delete(ResourceConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting ResourceConnection %s", getTraceId(conDfnData));
+        errorReporter.logTrace("Deleting ResourceConnection %s", getId(conDfnData));
         try
         {
             NodeName sourceNodeName = conDfnData.getSourceResource(dbCtx).getAssignedNode().getName();
@@ -287,7 +287,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
 
                 stmt.executeUpdate();
             }
-            errorReporter.logTrace("ResourceConnection deleted %s", getDebugId(conDfnData));
+            errorReporter.logTrace("ResourceConnection deleted %s", getId(conDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -312,25 +312,7 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         return ret;
     }
 
-    private String getTraceId(ResourceConnectionData conData)
-    {
-        String id = null;
-        try
-        {
-            id = getId(
-                conData.getSourceResource(dbCtx).getAssignedNode().getName().value,
-                conData.getTargetResource(dbCtx).getAssignedNode().getName().value,
-                conData.getSourceResource(dbCtx).getDefinition().getName().value
-            );
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            DerbyDriver.handleAccessDeniedException(accDeniedExc);
-        }
-        return id;
-    }
-
-    private String getDebugId(ResourceConnectionData conData)
+    private String getId(ResourceConnectionData conData)
     {
         String id = null;
         try
@@ -347,16 +329,8 @@ public class ResourceConnectionDataDerbyDriver implements ResourceConnectionData
         }
         return id;
     }
-    private String getTraceId(Resource src, Resource dst)
-    {
-        return getId(
-            src.getAssignedNode().getName().value,
-            dst.getAssignedNode().getName().value,
-            src.getDefinition().getName().value
-        );
-    }
 
-    private String getDebugId(Resource src, Resource dst)
+    private String getId(Resource src, Resource dst)
     {
         return getId(
             src.getAssignedNode().getName().displayValue,

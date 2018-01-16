@@ -11,6 +11,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
@@ -21,7 +22,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
@@ -103,7 +106,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
     private void create(AccessContext accCtx, ResourceData res, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating Resource %s", getTraceId(res));
+        errorReporter.logTrace("Creating Resource %s", getId(res));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(res.getUuid()));
@@ -117,13 +120,13 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         {
             DerbyDriver.handleAccessDeniedException(accessDeniedExc);
         }
-        errorReporter.logTrace("Resource created %s", getDebugId(res));
+        errorReporter.logTrace("Resource created %s", getId(res));
     }
 
     public void ensureResExists(AccessContext accCtx, ResourceData res, TransactionMgr transMgr)
         throws SQLException
     {
-        errorReporter.logTrace("Ensuring Resource exists %s", getTraceId(res));
+        errorReporter.logTrace("Ensuring Resource exists %s", getId(res));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT))
         {
             stmt.setString(1, res.getAssignedNode().getName().value);
@@ -148,7 +151,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     )
         throws SQLException
     {
-        errorReporter.logTrace("Loading Resource %s", getTraceId(node, resourceName));
+        errorReporter.logTrace("Loading Resource %s", getId(node, resourceName));
         ResourceData ret = null;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_SELECT))
         {
@@ -166,7 +169,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 else
                 if (logWarnIfNotExists)
                 {
-                    errorReporter.logWarning("Resource could not be found %s", getDebugId(node, resourceName));
+                    errorReporter.logWarning("Resource could not be found %s", getId(node, resourceName));
                 }
             }
         }
@@ -337,7 +340,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                             resCache.put(new ResPrimaryKey(node, resDfn), resData);
                         }
 
-                        errorReporter.logTrace("Resource instance created %s", getTraceId(resData));
+                        errorReporter.logTrace("Resource instance created %s", getId(resData));
 
                         // restore ResourceConnection
                         List<ResourceConnectionData> cons = resourceConnectionDriver.loadAllByResource(
@@ -350,7 +353,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         }
                         errorReporter.logTrace(
                             "Restored Resource's ConnectionDefinitions %s",
-                            getTraceId(resData)
+                            getId(resData)
                         );
 
                         // restore volumes
@@ -359,8 +362,8 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                         {
                             resData.putVolume(dbCtx, volData);
                         }
-                        errorReporter.logTrace("Resource's Volumes restored %s", getTraceId(resData));
-                        errorReporter.logTrace("Resource loaded from DB %s", getTraceId(resData));
+                        errorReporter.logTrace("Resource's Volumes restored %s", getId(resData));
+                        errorReporter.logTrace("Resource loaded from DB %s", getId(resData));
                     }
                     else
                     {
@@ -369,7 +372,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                 }
                 else
                 {
-                    errorReporter.logTrace("Resource loaded from cache %s", getDebugId(resData));
+                    errorReporter.logTrace("Resource loaded from cache %s", getId(resData));
                 }
                 resList.add(resData);
             }
@@ -393,7 +396,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         if (objProt == null)
         {
             throw new ImplementationError(
-                "Resource's DB entry exists, but is missing an entry in ObjProt table! " + getTraceId(node, resName),
+                "Resource's DB entry exists, but is missing an entry in ObjProt table! " + getId(node, resName),
                 null
             );
         }
@@ -403,7 +406,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
     @Override
     public void delete(ResourceData resource, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting Resource %s", getTraceId(resource));
+        errorReporter.logTrace("Deleting Resource %s", getId(resource));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_DELETE))
         {
             stmt.setString(1, resource.getAssignedNode().getName().value);
@@ -411,7 +414,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
 
             stmt.executeUpdate();
         }
-        errorReporter.logTrace("Resource deleted %s", getTraceId(resource));
+        errorReporter.logTrace("Resource deleted %s", getId(resource));
     }
 
     @Override
@@ -434,23 +437,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         return ret;
     }
 
-    private String getTraceId(Node node, ResourceName resourceName)
-    {
-        return getId(
-            node.getName().value,
-            resourceName.value
-        );
-    }
-
-    private String getTraceId(ResourceData res)
-    {
-        return getId(
-            res.getAssignedNode().getName().value,
-            res.getDefinition().getName().value
-        );
-    }
-
-    private String getDebugId(Node node, ResourceName resourceName)
+    private String getId(Node node, ResourceName resourceName)
     {
         return getId(
             node.getName().displayValue,
@@ -458,7 +445,7 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         );
     }
 
-    private String getDebugId(ResourceData res)
+    private String getId(ResourceData res)
     {
         return getId(
             res.getAssignedNode().getName().displayValue,
@@ -488,10 +475,25 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
         {
             try
             {
+                String fromFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        RscFlags.class,
+                        resource.getStateFlags().getFlagsBits(dbCtx)
+                    ),
+                    ", "
+                );
+                String toFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        RscFlags.class,
+                        flags
+                    ),
+                    ", "
+                );
+
                 errorReporter.logTrace("Updating Reource's flags from [%s] to [%s] %s",
-                    Long.toBinaryString(resource.getStateFlags().getFlagsBits(dbCtx)),
-                    Long.toBinaryString(flags),
-                    getTraceId(resource)
+                    fromFlags,
+                    toFlags,
+                    getId(resource)
                 );
                 try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(RES_UPDATE_FLAG))
                 {
@@ -503,9 +505,9 @@ public class ResourceDataDerbyDriver implements ResourceDataDatabaseDriver
                     stmt.executeUpdate();
 
                     errorReporter.logTrace("Reource's flags updated from [%s] to [%s] %s",
-                        Long.toBinaryString(resource.getStateFlags().getFlagsBits(dbCtx)),
-                        Long.toBinaryString(flags),
-                        getDebugId(resource)
+                        fromFlags,
+                        toFlags,
+                        getId(resource)
                     );
                 }
             }

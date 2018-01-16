@@ -79,7 +79,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         TransactionMgr transMgr)
         throws SQLException
     {
-        errorReporter.logTrace("Loading NetInterface %s", getTraceId(node, niName));
+        errorReporter.logTrace("Loading NetInterface %s", getId(node, niName));
 
         NetInterfaceData netIfData = null;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_SELECT_BY_NODE_AND_NET))
@@ -112,7 +112,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                 else
                 if (logWarnIfNotExists)
                 {
-                    errorReporter.logWarning("NetInterface not found in DB %s", getDebugId(node, niName));
+                    errorReporter.logWarning("NetInterface not found in DB %s", getId(node, niName));
                 }
             }
         }
@@ -122,7 +122,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     @Override
     public void create(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating NetInterface %s", getTraceId(netInterfaceData));
+        errorReporter.logTrace("Creating NetInterface %s", getId(netInterfaceData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_INSERT))
         {
             LsIpAddress inetAddress = getAddress(netInterfaceData);
@@ -135,12 +135,12 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
             stmt.executeUpdate();
         }
-        errorReporter.logTrace("NetInterface created %s", getDebugId(netInterfaceData));
+        errorReporter.logTrace("NetInterface created %s", getId(netInterfaceData));
     }
 
     public void ensureEntryExists(NetInterfaceData netIfData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Ensuring NetInterface exists %s", getTraceId(netIfData));
+        errorReporter.logTrace("Ensuring NetInterface exists %s", getId(netIfData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_SELECT_BY_NODE_AND_NET))
         {
             stmt.setString(1, netIfData.getNode().getName().value);
@@ -159,7 +159,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     @Override
     public void delete(NetInterfaceData netInterfaceData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting NetInterface %s", getTraceId(netInterfaceData));
+        errorReporter.logTrace("Deleting NetInterface %s", getId(netInterfaceData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_DELETE))
         {
             stmt.setString(1, netInterfaceData.getNode().getName().value);
@@ -167,7 +167,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
 
             stmt.executeUpdate();
         }
-        errorReporter.logTrace("NetInterface deleted %s", getDebugId(netInterfaceData));
+        errorReporter.logTrace("NetInterface deleted %s", getId(netInterfaceData));
     }
 
     @Override
@@ -179,7 +179,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
     public List<NetInterfaceData> loadNetInterfaceData(Node node, TransactionMgr transMgr)
         throws SQLException
     {
-        errorReporter.logTrace("Loading all NetInterfaces by node %s", getTraceId(node));
+        errorReporter.logTrace("Loading all NetInterfaces by node %s", getId(node));
         List<NetInterfaceData> netIfDataList;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_SELECT_BY_NODE))
         {
@@ -213,7 +213,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         errorReporter.logTrace(
             "Loaded %d NetInterfaces for node %s",
             netIfDataList.size(),
-            getDebugId(node)
+            getId(node)
         );
         return netIfDataList;
     }
@@ -295,15 +295,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return ret;
     }
 
-    private String getTraceId(Node node, NetInterfaceName niName)
-    {
-        return getId(
-            node.getName().value,
-            niName.value
-        );
-    }
-
-    private String getDebugId(Node node, NetInterfaceName niName)
+    private String getId(Node node, NetInterfaceName niName)
     {
         return getId(
             node.getName().displayValue,
@@ -311,15 +303,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         );
     }
 
-    private String getTraceId(NetInterfaceData netIfData)
-    {
-        return getId(
-            netIfData.getNode().getName().value,
-            netIfData.getName().value
-        );
-    }
-
-    private String getDebugId(NetInterfaceData netIfData)
+    private String getId(NetInterfaceData netIfData)
     {
         return getId(
             netIfData.getNode().getName().displayValue,
@@ -332,12 +316,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
         return "(NodeName=" + nodeName + " NetInterfaceName=" + niName + ")";
     }
 
-    private String getTraceId(Node node)
-    {
-        return getNodeId(node.getName().value);
-    }
-
-    private String getDebugId(Node node)
+    private String getId(Node node)
     {
         return getNodeId(node.getName().displayValue);
     }
@@ -356,7 +335,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                 "Updating NetInterface's address from [%s] to [%s] %s",
                 getAddress(parent).getAddress(),
                 inetAddress.getAddress(),
-                getTraceId(parent)
+                getId(parent)
             );
             try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(NNI_UPDATE_ADR))
             {
@@ -370,7 +349,7 @@ public class NetInterfaceDataDerbyDriver implements NetInterfaceDataDatabaseDriv
                 "NetInterface's address updated from [%s] to [%s] %s",
                 getAddress(parent).getAddress(),
                 inetAddress.getAddress(),
-                getDebugId(parent)
+                getId(parent)
             );
         }
     }

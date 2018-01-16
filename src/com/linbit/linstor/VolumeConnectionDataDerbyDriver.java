@@ -121,7 +121,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
 
         errorReporter.logTrace(
             "Loading VolumeConnection %s",
-            getTraceId(sourceVolume, targetVolume)
+            getId(sourceVolume, targetVolume)
         );
 
         Node sourceNode = sourceVolume.getResource().getAssignedNode();
@@ -153,7 +153,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                         );
                         errorReporter.logTrace(
                             "VolumeConnection loaded %s",
-                            getDebugId(ret)
+                            getId(ret)
                         );
                     }
                     else
@@ -161,7 +161,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
                     {
                         errorReporter.logWarning(
                             "VolumeConnection not found in the DB %s",
-                            getDebugId(sourceVolume, targetVolume)
+                            getId(sourceVolume, targetVolume)
                         );
                     }
                 }
@@ -326,7 +326,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
     @Override
     public void create(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating VolumeConnection %s", getTraceId(conDfnData));
+        errorReporter.logTrace("Creating VolumeConnection %s", getId(conDfnData));
 
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
         {
@@ -341,7 +341,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
 
             stmt.executeUpdate();
 
-            errorReporter.logTrace("VolumeConnection created %s", getDebugId(conDfnData));
+            errorReporter.logTrace("VolumeConnection created %s", getId(conDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -352,7 +352,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
     @Override
     public void delete(VolumeConnectionData conDfnData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting VolumeConnection %s", getTraceId(conDfnData));
+        errorReporter.logTrace("Deleting VolumeConnection %s", getId(conDfnData));
 
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(DELETE))
         {
@@ -366,7 +366,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
 
             stmt.executeUpdate();
 
-            errorReporter.logTrace("VolumeConnection deleted %s", getDebugId(conDfnData));
+            errorReporter.logTrace("VolumeConnection deleted %s", getId(conDfnData));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -404,29 +404,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         return ret;
     }
 
-    private String getTraceId(VolumeConnectionData volConData)
-    {
-        String id = null;
-
-        try
-        {
-            Volume sourceVolume = volConData.getSourceVolume(dbCtx);
-            Volume targetVolume = volConData.getTargetVolume(dbCtx);
-            id = getId(
-                sourceVolume.getResource().getAssignedNode().getName().value,
-                targetVolume.getResource().getAssignedNode().getName().value,
-                sourceVolume.getResourceDefinition().getName().value,
-                sourceVolume.getVolumeDefinition().getVolumeNumber().value
-            );
-        }
-        catch (AccessDeniedException accDeniedException)
-        {
-            DerbyDriver.handleAccessDeniedException(accDeniedException);
-        }
-        return id;
-    }
-
-    private String getDebugId(VolumeConnectionData volConData)
+    private String getId(VolumeConnectionData volConData)
     {
         String id = null;
         try
@@ -446,17 +424,7 @@ public class VolumeConnectionDataDerbyDriver implements VolumeConnectionDataData
         return id;
     }
 
-    private String getTraceId(Volume sourceVolume, Volume targetVolume)
-    {
-        return getId(
-            sourceVolume.getResource().getAssignedNode().getName().value,
-            targetVolume.getResource().getAssignedNode().getName().value,
-            sourceVolume.getResource().getDefinition().getName().value,
-            sourceVolume.getVolumeDefinition().getVolumeNumber().value
-        );
-    }
-
-    private String getDebugId(Volume sourceVolume, Volume targetVolume)
+    private String getId(Volume sourceVolume, Volume targetVolume)
     {
         return getId(
             sourceVolume.getResource().getAssignedNode().getName().displayValue,

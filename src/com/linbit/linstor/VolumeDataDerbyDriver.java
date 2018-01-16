@@ -21,8 +21,10 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDataDatabaseDrive
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
@@ -119,7 +121,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         {
             errorReporter.logTrace(
                 "Loading Volume %s",
-                getTraceId(resource)
+                getId(resource)
             );
 
             stmt.setString(1, resource.getAssignedNode().getName().value);
@@ -138,14 +140,14 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 if (!volList.isEmpty())
                 {
                     ret = volList.get(0);
-                    errorReporter.logTrace("Volume loaded from DB %s", getDebugId(ret));
+                    errorReporter.logTrace("Volume loaded from DB %s", getId(ret));
                 }
                 else
                 if (logWarnIfNotExists)
                 {
                     errorReporter.logWarning(
                         "Volume not found in DB %s",
-                        getDebugId(
+                        getId(
                             resource,
                             volumeDefintion
                         )
@@ -167,7 +169,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         {
             errorReporter.logTrace(
                 "Loading all Volumes by resource %s",
-                getTraceId(resRef)
+                getId(resRef)
             );
             stmt.setString(1, resRef.getAssignedNode().getName().value);
             stmt.setString(2, resRef.getDefinition().getName().value);
@@ -176,7 +178,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 ret = load(dbCtx, resRef, resultSet, transMgr);
             }
         }
-        errorReporter.logTrace("%d volumes loaded for resource %s", ret.size(), getDebugId(resRef));
+        errorReporter.logTrace("%d volumes loaded for resource %s", ret.size(), getId(resRef));
         return ret;
     }
 
@@ -191,7 +193,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         {
             errorReporter.logTrace(
                 "Loading all Volumes by StorPool %s",
-                getTraceId(storPoolData)
+                getId(storPoolData)
             );
             stmt.setString(1, storPoolData.getNode().getName().value);
             stmt.setString(2, getStorPoolDfn(storPoolData).getName().value);
@@ -200,7 +202,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                 ret = load(dbCtx, null, resultSet, transMgr);
             }
         }
-        errorReporter.logTrace("%d volumes loaded for StorPool %s", ret.size(), getDebugId(storPoolData));
+        errorReporter.logTrace("%d volumes loaded for StorPool %s", ret.size(), getId(storPoolData));
         return ret;
     }
 
@@ -347,7 +349,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                         resultSet.getLong(VOL_FLAGS),
                         transMgr
                     );
-                    errorReporter.logTrace("Volume created %s", getTraceId(volData));
+                    errorReporter.logTrace("Volume created %s", getId(volData));
                     if (!cacheCleared)
                     {
                         volCache.put(primaryKey, volData);
@@ -366,7 +368,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     errorReporter.logTrace(
                         "Volume's flags restored to %d %s",
                         lFlags,
-                        getTraceId(volData)
+                        getId(volData)
                     );
 
                     // restore volCon
@@ -379,10 +381,10 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
                     errorReporter.logTrace(
                         "%d VolumeConnections restored %s",
                         volConDfnList.size(),
-                        getTraceId(volData)
+                        getId(volData)
                     );
 
-                    errorReporter.logTrace("Volume restored %s", getTraceId(volData));
+                    errorReporter.logTrace("Volume restored %s", getId(volData));
                 }
                 catch (AccessDeniedException accessDeniedExc)
                 {
@@ -391,7 +393,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             }
             else
             {
-                errorReporter.logTrace("Volume loaded from cache %s", getTraceId(volData));
+                errorReporter.logTrace("Volume loaded from cache %s", getId(volData));
             }
             volList.add(volData);
         }
@@ -404,7 +406,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     {
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(INSERT))
         {
-            errorReporter.logTrace("Creating Volume %s", getDebugId(vol));
+            errorReporter.logTrace("Creating Volume %s", getId(vol));
 
             stmt.setBytes(1, UuidUtils.asByteArray(vol.getUuid()));
             stmt.setString(2, vol.getResource().getAssignedNode().getName().value);
@@ -416,7 +418,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
             stmt.setLong(8, vol.getFlags().getFlagsBits(dbCtx));
             stmt.executeUpdate();
 
-            errorReporter.logTrace("Volume created %s", getDebugId(vol));
+            errorReporter.logTrace("Volume created %s", getId(vol));
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -429,14 +431,14 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
     {
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(DELETE))
         {
-            errorReporter.logTrace("Deleting Volume %s", getTraceId(volume));
+            errorReporter.logTrace("Deleting Volume %s", getId(volume));
 
             stmt.setString(1, volume.getResource().getAssignedNode().getName().value);
             stmt.setString(2, volume.getResource().getDefinition().getName().value);
             stmt.setInt(3, volume.getVolumeDefinition().getVolumeNumber().value);
             stmt.executeUpdate();
 
-            errorReporter.logTrace("Volume deleted %s", getDebugId(volume));
+            errorReporter.logTrace("Volume deleted %s", getId(volume));
         }
     }
 
@@ -467,16 +469,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return ret;
     }
 
-    private String getTraceId(VolumeData volume)
-    {
-        return getVolId(
-            volume.getResource().getAssignedNode().getName().value,
-            volume.getResource().getDefinition().getName().value,
-            volume.getVolumeDefinition().getVolumeNumber()
-        );
-    }
-
-    private String getDebugId(Resource resource, VolumeDefinition volumeDefintion)
+    private String getId(Resource resource, VolumeDefinition volumeDefintion)
     {
         return getVolId(
             resource.getAssignedNode().getName().displayValue,
@@ -485,7 +478,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         );
     }
 
-    private String getDebugId(VolumeData volume)
+    private String getId(VolumeData volume)
     {
         return getVolId(
             volume.getResource().getAssignedNode().getName().displayValue,
@@ -499,15 +492,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return "(NodeName=" + nodeName + " ResName=" + resName + " VolNum=" + volNum.value + ")";
     }
 
-    private String getTraceId(Resource resRef)
-    {
-        return getResId(
-            resRef.getAssignedNode().getName().value,
-            resRef.getDefinition().getName().value
-        );
-    }
-
-    private String getDebugId(Resource resRef)
+    private String getId(Resource resRef)
     {
         return getResId(
             resRef.getAssignedNode().getName().displayValue,
@@ -520,14 +505,7 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         return "(NodeName=" + nodeName + " ResName=" + resName+ ")";
     }
 
-    private String getTraceId(StorPoolData storPool)
-    {
-        return getStorPoolId(
-            getStorPoolDfn(storPool).getName().value
-        );
-    }
-
-    private String getDebugId(StorPoolData storPool)
+    private String getId(StorPoolData storPool)
     {
         return getStorPoolId(
             getStorPoolDfn(storPool).getName().displayValue
@@ -567,11 +545,26 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
         {
             try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(UPDATE_FLAGS))
             {
+                String fromFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        VlmFlags.class,
+                        volume.getFlags().getFlagsBits(dbCtx)
+                    ),
+                    ", "
+                );
+                String toFlags = StringUtils.join(
+                    FlagsHelper.toStringList(
+                        VlmFlags.class,
+                        flags
+                    ),
+                    ", "
+                );
+
                 errorReporter.logTrace(
                     "Updating Volume's flags from [%s] to [%s] %s",
-                    Long.toBinaryString(volume.getFlags().getFlagsBits(dbCtx)),
-                    Long.toBinaryString(flags),
-                    getTraceId(volume)
+                    fromFlags,
+                    toFlags,
+                    getId(volume)
                 );
 
                 stmt.setLong(1, flags);
@@ -582,9 +575,9 @@ public class VolumeDataDerbyDriver implements VolumeDataDatabaseDriver
 
                 errorReporter.logTrace(
                     "Volume's flags updated from [%s] to [%s] %s",
-                    Long.toBinaryString(volume.getFlags().getFlagsBits(dbCtx)),
-                    Long.toBinaryString(flags),
-                    getDebugId(volume)
+                    fromFlags,
+                    toFlags,
+                    getId(volume)
                 );
             }
             catch (AccessDeniedException accessDeniedExc)

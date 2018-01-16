@@ -57,7 +57,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     @Override
     public void create(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating StorPoolDefinition %s", getTraceId(storPoolDefinitionData));
+        errorReporter.logTrace("Creating StorPoolDefinition %s", getId(storPoolDefinitionData));
 
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_INSERT))
         {
@@ -66,7 +66,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
             stmt.setString(3, storPoolDefinitionData.getName().displayValue);
             stmt.executeUpdate();
         }
-        errorReporter.logTrace("StorPoolDefinition created %s", getDebugId(storPoolDefinitionData));
+        errorReporter.logTrace("StorPoolDefinition created %s", getId(storPoolDefinitionData));
     }
 
     @Override
@@ -77,7 +77,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     )
         throws SQLException
     {
-        errorReporter.logTrace("Loading StorPoolDefinition %s", getTraceId(storPoolName));
+        errorReporter.logTrace("Loading StorPoolDefinition %s", getId(storPoolName));
 
         StorPoolDefinitionData storPoolDefinition = null;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_SELECT))
@@ -94,7 +94,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
                 {
                     errorReporter.logWarning(
                         "StorPoolDefinition was not found in the DB %s",
-                        getDebugId(storPoolName)
+                        getId(storPoolName)
                     );
                 }
             }
@@ -151,11 +151,11 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
             ObjectProtection objProt = getObjectProtection(storPoolName, transMgr);
 
             storPoolDefinition = new StorPoolDefinitionData(uuid, objProt, storPoolName);
-            errorReporter.logTrace("StorPoolDefinition loaded from DB %s", getDebugId(storPoolName));
+            errorReporter.logTrace("StorPoolDefinition loaded from DB %s", getId(storPoolName));
         }
         else
         {
-            errorReporter.logTrace("StorPoolDefinition loaded from cache %s", getDebugId(storPoolName));
+            errorReporter.logTrace("StorPoolDefinition loaded from cache %s", getId(storPoolName));
         }
         return storPoolDefinition;
     }
@@ -172,7 +172,7 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         if (objProt == null)
         {
             throw new ImplementationError(
-                "StorPoolDefinition's DB entry exists, but is missing an entry in ObjProt table! " + getTraceId(storPoolName),
+                "StorPoolDefinition's DB entry exists, but is missing an entry in ObjProt table! " + getId(storPoolName),
                 null
             );
         }
@@ -182,13 +182,13 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
     @Override
     public void delete(StorPoolDefinitionData storPoolDefinitionData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting StorPoolDefinition %s", getTraceId(storPoolDefinitionData));
+        errorReporter.logTrace("Deleting StorPoolDefinition %s", getId(storPoolDefinitionData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SPD_DELETE))
         {
             stmt.setString(1, storPoolDefinitionData.getName().value);
             stmt.executeUpdate();
         }
-        errorReporter.logTrace("StorPoolDefinition deleted %s", getDebugId(storPoolDefinitionData));
+        errorReporter.logTrace("StorPoolDefinition deleted %s", getId(storPoolDefinitionData));
     }
 
     private StorPoolDefinitionData cacheGet(StorPoolName sName)
@@ -196,22 +196,12 @@ public class StorPoolDefinitionDataDerbyDriver implements StorPoolDefinitionData
         return (StorPoolDefinitionData) storPoolDfnMap.get(sName);
     }
 
-    private String getTraceId(StorPoolDefinitionData storPoolDefinition)
-    {
-        return getId(storPoolDefinition.getName().value);
-    }
-
-    private String getTraceId(StorPoolName storPoolName)
-    {
-        return getId(storPoolName.value);
-    }
-
-    private String getDebugId(StorPoolDefinitionData storPoolDefinition)
+    private String getId(StorPoolDefinitionData storPoolDefinition)
     {
         return getId(storPoolDefinition.getName().displayValue);
     }
 
-    private String getDebugId(StorPoolName storPoolName)
+    private String getId(StorPoolName storPoolName)
     {
         return getId(storPoolName.displayValue);
     }

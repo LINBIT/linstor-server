@@ -69,7 +69,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     @Override
     public void create(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Creating StorPool %s", getTraceId(storPoolData));
+        errorReporter.logTrace("Creating StorPool %s", getId(storPoolData));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_INSERT))
         {
             stmt.setBytes(1, UuidUtils.asByteArray(storPoolData.getUuid()));
@@ -78,7 +78,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             stmt.setString(4, storPoolData.getDriverName());
             stmt.executeUpdate();
         }
-        errorReporter.logTrace("StorPool created %s", getDebugId(storPoolData));
+        errorReporter.logTrace("StorPool created %s", getId(storPoolData));
     }
 
     @Override
@@ -90,7 +90,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     )
         throws SQLException
     {
-        errorReporter.logTrace("Loading StorPool %s", getTraceId(node, storPoolDfn));
+        errorReporter.logTrace("Loading StorPool %s", getId(node, storPoolDfn));
         StorPoolData sp = cacheGet(node, storPoolDfn);
         if (sp == null)
         {
@@ -107,7 +107,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                         {
                             errorReporter.logWarning(
                                 "StorPool was not found in the DB %s",
-                                getDebugId(node, storPoolDfn)
+                                getId(node, storPoolDfn)
                             );
                         }
                     }
@@ -119,14 +119,14 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                     else
                     {
                         sp = list.get(0);
-                        errorReporter.logTrace("StorPool loaded from DB", getDebugId(sp));
+                        errorReporter.logTrace("StorPool loaded from DB", getId(sp));
                     }
                 }
             }
         }
         else
         {
-            errorReporter.logTrace("StorPool loaded from cache %s", getDebugId(sp));
+            errorReporter.logTrace("StorPool loaded from cache %s", getId(sp));
         }
         return sp;
     }
@@ -270,14 +270,14 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 }
                 errorReporter.logTrace("%d Volumes restored for StorPool %s",
                     volumes.size(),
-                    getDebugId(storPoolData)
+                    getId(storPoolData)
                 );
 
-                errorReporter.logTrace("Loaded StorPool from DB %s", getDebugId(storPoolData));
+                errorReporter.logTrace("Loaded StorPool from DB %s", getId(storPoolData));
             }
             else
             {
-                errorReporter.logTrace("Loaded StorPool from cache %s", getDebugId(storPoolData));
+                errorReporter.logTrace("Loaded StorPool from cache %s", getId(storPoolData));
             }
             storPoolList.add(storPoolData);
         }
@@ -287,7 +287,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     @Override
     public void delete(StorPoolData storPool, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Deleting StorPool %s", getTraceId(storPool));
+        errorReporter.logTrace("Deleting StorPool %s", getId(storPool));
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_DELETE))
         {
             Node node = storPool.getNode();
@@ -297,7 +297,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
             stmt.setString(2, storPoolDfn.getName().value);
 
             stmt.executeUpdate();
-            errorReporter.logTrace("StorPool deleted %s", getDebugId(storPool));
+            errorReporter.logTrace("StorPool deleted %s", getId(storPool));
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -308,7 +308,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
     @Override
     public void ensureEntryExists(StorPoolData storPoolData, TransactionMgr transMgr) throws SQLException
     {
-        errorReporter.logTrace("Ensuring StorPool exists %s", getTraceId(storPoolData));
+        errorReporter.logTrace("Ensuring StorPool exists %s", getId(storPoolData));
         Node node = storPoolData.getNode();
         StorPoolDefinition storPoolDfn;
         try (PreparedStatement stmt = transMgr.dbCon.prepareStatement(SP_SELECT_BY_NODE_AND_SP);)
@@ -326,7 +326,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                 }
                 else
                 {
-                    errorReporter.logTrace("StorPool existed, nothing to do %s", getTraceId(storPoolData));
+                    errorReporter.logTrace("StorPool existed, nothing to do %s", getId(storPoolData));
                 }
             }
         }
@@ -367,23 +367,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         return ret;
     }
 
-    private String getTraceId(StorPoolData storPoolData)
-    {
-        return getId(
-            storPoolData.getNode().getName().value,
-            storPoolData.getName().value
-        );
-    }
-
-    private String getTraceId(Node node, StorPoolDefinition storPoolDfn)
-    {
-        return getId(
-            node.getName().value,
-            storPoolDfn.getName().value
-        );
-    }
-
-    private String getDebugId(StorPoolData storPoolData)
+    private String getId(StorPoolData storPoolData)
     {
         return getId(
             storPoolData.getNode().getName().displayValue,
@@ -391,7 +375,7 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
         );
     }
 
-    private String getDebugId(Node node, StorPoolDefinition storPoolDfn)
+    private String getId(Node node, StorPoolDefinition storPoolDfn)
     {
         return getId(
             node.getName().displayValue,
