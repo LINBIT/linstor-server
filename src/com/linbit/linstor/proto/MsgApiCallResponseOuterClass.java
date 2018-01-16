@@ -23,7 +23,7 @@ public final class MsgApiCallResponseOuterClass {
      * return code (see ApiCallRcConstants)
      * </pre>
      *
-     * <code>required sint64 ret_code = 1;</code>
+     * <code>required uint64 ret_code = 1;</code>
      */
     boolean hasRetCode();
     /**
@@ -31,7 +31,7 @@ public final class MsgApiCallResponseOuterClass {
      * return code (see ApiCallRcConstants)
      * </pre>
      *
-     * <code>required sint64 ret_code = 1;</code>
+     * <code>required uint64 ret_code = 1;</code>
      */
     long getRetCode();
 
@@ -282,7 +282,7 @@ public final class MsgApiCallResponseOuterClass {
             }
             case 8: {
               bitField0_ |= 0x00000001;
-              retCode_ = input.readSInt64();
+              retCode_ = input.readUInt64();
               break;
             }
             case 18: {
@@ -365,7 +365,7 @@ public final class MsgApiCallResponseOuterClass {
      * return code (see ApiCallRcConstants)
      * </pre>
      *
-     * <code>required sint64 ret_code = 1;</code>
+     * <code>required uint64 ret_code = 1;</code>
      */
     public boolean hasRetCode() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -375,7 +375,7 @@ public final class MsgApiCallResponseOuterClass {
      * return code (see ApiCallRcConstants)
      * </pre>
      *
-     * <code>required sint64 ret_code = 1;</code>
+     * <code>required uint64 ret_code = 1;</code>
      */
     public long getRetCode() {
       return retCode_;
@@ -740,7 +740,7 @@ public final class MsgApiCallResponseOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeSInt64(1, retCode_);
+        output.writeUInt64(1, retCode_);
       }
       for (int i = 0; i < objRefs_.size(); i++) {
         output.writeMessage(2, objRefs_.get(i));
@@ -770,7 +770,7 @@ public final class MsgApiCallResponseOuterClass {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(1, retCode_);
+          .computeUInt64Size(1, retCode_);
       }
       for (int i = 0; i < objRefs_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
@@ -1253,7 +1253,7 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>required sint64 ret_code = 1;</code>
+       * <code>required uint64 ret_code = 1;</code>
        */
       public boolean hasRetCode() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -1263,7 +1263,7 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>required sint64 ret_code = 1;</code>
+       * <code>required uint64 ret_code = 1;</code>
        */
       public long getRetCode() {
         return retCode_;
@@ -1273,7 +1273,7 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>required sint64 ret_code = 1;</code>
+       * <code>required uint64 ret_code = 1;</code>
        */
       public Builder setRetCode(long value) {
         bitField0_ |= 0x00000001;
@@ -1286,7 +1286,7 @@ public final class MsgApiCallResponseOuterClass {
        * return code (see ApiCallRcConstants)
        * </pre>
        *
-       * <code>required sint64 ret_code = 1;</code>
+       * <code>required uint64 ret_code = 1;</code>
        */
       public Builder clearRetCode() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -2384,7 +2384,7 @@ public final class MsgApiCallResponseOuterClass {
       "\n\036proto/MsgApiCallResponse.proto\022\030com.li" +
       "nbit.linstor.proto\032\033proto/LinStorMapEntr" +
       "y.proto\"\202\002\n\022MsgApiCallResponse\022\020\n\010ret_co" +
-      "de\030\001 \002(\022\022;\n\010obj_refs\030\002 \003(\0132).com.linbit." +
+      "de\030\001 \002(\004\022;\n\010obj_refs\030\002 \003(\0132).com.linbit." +
       "linstor.proto.LinStorMapEntry\022\026\n\016message" +
       "_format\030\003 \002(\t\022\024\n\014cause_format\030\004 \001(\t\022\031\n\021c" +
       "orrection_format\030\005 \001(\t\022\026\n\016details_format" +
