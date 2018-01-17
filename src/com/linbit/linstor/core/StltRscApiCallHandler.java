@@ -41,7 +41,6 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.Volume.VlmApi;
-import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
@@ -194,6 +193,8 @@ class StltRscApiCallHandler
                     Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
                     vlmDfnPropsMap.clear();
                     vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
+
+                    // corresponding volumes will be created later when iterating over (local|remote)vlmApis
 
                     vlmDfnsToDelete.remove(vlmNr);
                 }
@@ -455,8 +456,19 @@ class StltRscApiCallHandler
                     // update flags
                     remoteRsc.getStateFlags().resetFlagsTo(apiCtx, RscFlags.restoreFlags(otherRsc.getRscFlags()));
 
-                    // TODO: volumes
-                    List<Volume.VlmApi> otherRscVlms = otherRsc.getVlms();
+                    // update volumes
+                    {
+                        // we do not have to care about deletion, as the merge of vlmDfns should have already marked
+                        // all the corresponding volumes for deletion
+                        for (VlmApi remoteVlmApi : otherRsc.getVlms())
+                        {
+                            Volume vlm = remoteRsc.getVolume(new VolumeNumber(remoteVlmApi.getVlmNr()));
+                            if (vlm == null)
+                            {
+                                createVlm(remoteVlmApi, remoteRsc, true, transMgr);
+                            }
+                        }
+                    }
 
                     // everything ok, mark the resource to be kept
                     removedList.remove(remoteRsc);
@@ -538,51 +550,7 @@ class StltRscApiCallHandler
 
         for (Volume.VlmApi vlmRaw : vlms)
         {
-            StorPool storPool = node.getStorPool(
-                apiCtx,
-                new StorPoolName(vlmRaw.getStorPoolName())
-            );
-            if (storPool == null)
-            {
-                if (remoteRsc)
-                {
-                    storPool = Satellite.DUMMY_REMOTE_STOR_POOL;
-                }
-                else
-                {
-                    throw new DivergentDataException("Unknown StorPool: '" + vlmRaw.getStorPoolName() + "'");
-                }
-            }
-            if (!remoteRsc && !storPool.getUuid().equals(vlmRaw.getStorPoolUuid()))
-            {
-                throw new DivergentUuidsException(
-                    "StorPool",
-                    storPool.toString(),
-                    vlmRaw.getStorPoolName(),
-                    storPool.getUuid(),
-                    vlmRaw.getStorPoolUuid()
-                );
-            }
-
-            VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(apiCtx, new VolumeNumber(vlmRaw.getVlmNr()));
-
-            VolumeData vlm = VolumeData.getInstanceSatellite(
-                apiCtx,
-                vlmRaw.getVlmUuid(),
-                rsc,
-                vlmDfn,
-                storPool,
-                vlmRaw.getBlockDevice(),
-                vlmRaw.getMetaDisk(),
-                VlmFlags.restoreFlags(vlmRaw.getFlags()),
-                transMgr
-            );
-            checkUuid(
-                vlm,
-                vlmRaw,
-                node.getName().displayValue,
-                rscDfn.getName().displayValue
-            );
+            createVlm(vlmRaw, rsc, remoteRsc, transMgr);
         }
 
         return rsc;

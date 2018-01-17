@@ -704,15 +704,15 @@ public class ProtoInterComSerializer implements InterComSerializer
             return list;
         }
 
-        private List<Vlm> buildVlmMessages(Resource localResource)
+        private List<Vlm> buildVlmMessages(Resource rsc)
             throws AccessDeniedException
         {
             List<Vlm> vlmList = new ArrayList<>();
 
-            Iterator<Volume> localVolIterator = localResource.iterateVolumes();
-            while (localVolIterator.hasNext())
+            Iterator<Volume> volIterator = rsc.iterateVolumes();
+            while (volIterator.hasNext())
             {
-                Volume vol = localVolIterator.next();
+                Volume vol = volIterator.next();
                 Map<String, String> volProps = vol.getProps(serializerCtx).map();
                 StorPool vlmStorPool = vol.getStorPool(serializerCtx);
                 Vlm.Builder builder = Vlm.newBuilder()

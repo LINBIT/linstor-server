@@ -116,16 +116,23 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                     if (vlmDfnApi.getVolumeNr() != null)
                     {
                         intStringOrNull = vlmDfnApi.getVolumeNr().toString();
+                        currentObjRefs.get().put(ApiConsts.KEY_VLM_NR, intStringOrNull);
                     }
-                    currentObjRefs.get().put(ApiConsts.KEY_VLM_NR, intStringOrNull);
-                    currentVariables.get().put(ApiConsts.KEY_VLM_NR, intStringOrNull);
+                    else
+                    {
+                        currentObjRefs.get().remove(ApiConsts.KEY_VLM_NR);
+                    }
 
                     intStringOrNull = null;
                     if (vlmDfnApi.getMinorNr() != null)
                     {
                         intStringOrNull = vlmDfnApi.getMinorNr().toString();
+                        currentVariables.get().put(ApiConsts.KEY_MINOR_NR, intStringOrNull);
                     }
-                    currentVariables.get().put(ApiConsts.KEY_MINOR_NR, intStringOrNull);
+                    else
+                    {
+                        currentVariables.get().remove(ApiConsts.KEY_MINOR_NR);
+                    }
                 }
                 VolumeNumber volNr = null;
                 MinorNumber minorNr = null;
@@ -740,7 +747,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 "A database error occured while creating the volume definition with the number '%d' " +
                     "in resource definition '%s'.",
                 vlmDfnApi.getVolumeNr(),
-                currentRscNameStr
+                currentRscNameStr.get()
             );
         }
         else
@@ -748,7 +755,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             errorMessage = String.format(
                 "A database error occured while creating a volume definition " +
                     "in resource definition '%s'.",
-                currentRscNameStr
+                currentRscNameStr.get()
             );
         }
         asExc(sqlExc, errorMessage, apiRcCode);
