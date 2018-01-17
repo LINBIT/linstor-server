@@ -528,8 +528,6 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
             delete(rscData); // also deletes all of its volumes
 
-            commit();
-
 
             UUID rscDfnUuid = null;
             ResourceName deletedRscDfnName = null;
@@ -1097,6 +1095,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
         String rscDeletedMsg = CtrlRscDfnApiCallHandler.getObjectDescriptionInline(rscName.displayValue) +
             " deleted.";
+        rscDeletedMsg = rscDeletedMsg.substring(0, 1).toUpperCase() + rscDeletedMsg.substring(1);
         entry.setMessageFormat(rscDeletedMsg);
         entry.setReturnCode(ApiConsts.RC_RSC_DFN_DELETED);
         entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue);

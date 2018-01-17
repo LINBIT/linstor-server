@@ -25,7 +25,6 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.protobuf.ProtoInterComSerializer;
 import com.linbit.linstor.drbdstate.DrbdConnection;
 import com.linbit.linstor.drbdstate.DrbdResource;
 import com.linbit.linstor.drbdstate.DrbdStateTracker;
@@ -1019,6 +1018,10 @@ class DrbdDeviceHandler implements DeviceHandler
         ResourceName rscName = rsc.getDefinition().getName();
         try {
             drbdUtils.primary(rscName, true, false);
+            // setting to secondary because of two reasons:
+            // * bug in drbdsetup: cannot down a primary resource
+            // * let the user choose which satellite should be primary (or let it be handled by auto-promote)
+            drbdUtils.secondary(rscName);
         }
         catch (ExtCmdFailedException cmdExc)
         {
