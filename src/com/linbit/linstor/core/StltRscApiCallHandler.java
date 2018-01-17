@@ -40,6 +40,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.Volume;
+import com.linbit.linstor.Volume.VlmApi;
 import com.linbit.linstor.Volume.VlmFlags;
 import com.linbit.linstor.VolumeData;
 import com.linbit.linstor.VolumeDefinition;
@@ -314,6 +315,21 @@ class StltRscApiCallHandler
 
             localRsc.setConnection(transMgr);
 
+            // update volumes
+            {
+
+                // we do not have to care about deletion, as the merge of vlmDfns should have already marked
+                // all the corresponding volumes for deletion
+                for (VlmApi vlmApi : rscRawData.getLocalVlms())
+                {
+                    Volume vlm = localRsc.getVolume(new VolumeNumber(vlmApi.getVlmNr()));
+                    if (vlm == null)
+                    {
+                        createVlm(vlmApi, localRsc, false, transMgr);
+                    }
+                }
+            }
+
             // update props
             {
                 Map<String, String> localRscProps = localRsc.getProps(apiCtx).map();
@@ -571,6 +587,56 @@ class StltRscApiCallHandler
 
         return rsc;
     }
+
+    private void createVlm(
+        VlmApi vlmApi,
+        Resource rsc,
+        boolean remoteRsc,
+        SatelliteTransactionMgr transMgr
+    )
+        throws AccessDeniedException, InvalidNameException, DivergentDataException, ValueOutOfRangeException
+    {
+        StorPool storPool = rsc.getAssignedNode().getStorPool(
+            apiCtx,
+            new StorPoolName(vlmApi.getStorPoolName())
+        );
+        if (storPool == null)
+        {
+            if (remoteRsc)
+            {
+                storPool = Satellite.DUMMY_REMOTE_STOR_POOL;
+            }
+            else
+            {
+                throw new DivergentDataException("Unknown StorPool: '" + vlmApi.getStorPoolName() + "'");
+            }
+        }
+        if (!remoteRsc && !storPool.getUuid().equals(vlmApi.getStorPoolUuid()))
+        {
+            throw new DivergentUuidsException(
+                "StorPool",
+                storPool.toString(),
+                vlmApi.getStorPoolName(),
+                storPool.getUuid(),
+                vlmApi.getStorPoolUuid()
+            );
+        }
+
+        VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
+
+        VolumeData.getInstanceSatellite(
+            apiCtx,
+            vlmApi.getVlmUuid(),
+            rsc,
+            vlmDfn,
+            storPool,
+            vlmApi.getBlockDevice(),
+            vlmApi.getMetaDisk(),
+            Volume.VlmFlags.restoreFlags(vlmApi.getFlags()),
+            transMgr
+        );
+    }
+
 
     private void checkUuid(Node node, OtherRscPojo otherRsc)
         throws DivergentUuidsException
