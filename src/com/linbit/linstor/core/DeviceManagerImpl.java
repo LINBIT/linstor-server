@@ -534,7 +534,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         synchronized (sched)
         {
             localDelRscSet.addAll(deletedRscSet);
-            localDelVlmSet.addAll(localDelVlmSet);
+            localDelVlmSet.addAll(deletedVlmSet);
             deletedRscSet.clear();
             deletedVlmSet.clear();
         }
