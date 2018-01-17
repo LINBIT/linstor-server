@@ -9,6 +9,7 @@ import java.util.List;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
+import com.linbit.linstor.VolumeDefinition.VlmDfnFlags;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.RscPojo.OtherNodeNetInterfacePojo;
@@ -27,6 +28,8 @@ import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.stateflags.FlagsHelper;
+
 import java.util.UUID;
 
 @ProtobufApiCall
@@ -68,14 +71,14 @@ public class ApplyRsc extends BaseProtoApiCall
         List<Volume.VlmApi> localVlms = extractRawVolumes(rscData.getLocalVolumesList());
         List<OtherRscPojo> otherRscList = extractRawOtherRsc(rscData.getOtherResourcesList());
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
-                UUID.fromString(rscData.getRscDfnUuid()),
-                rscData.getRscName(),
-                rscData.getRscDfnPort(),
-                rscData.getRscDfnSecret(),
-                rscData.getRscDfnFlags(),
-                rscData.getRscDfnTransportType(),
-                asMap(rscData.getRscDfnPropsList()),
-                vlmDfns);
+            UUID.fromString(rscData.getRscDfnUuid()),
+            rscData.getRscName(),
+            rscData.getRscDfnPort(),
+            rscData.getRscDfnSecret(),
+            rscData.getRscDfnFlags(),
+            rscData.getRscDfnTransportType(),
+            asMap(rscData.getRscDfnPropsList()),
+            vlmDfns);
         RscPojo rscRawData = new RscPojo(
             rscData.getRscName(),
             null,
@@ -102,7 +105,7 @@ public class ApplyRsc extends BaseProtoApiCall
                     vlmDfn.getVlmNr(),
                     vlmDfn.getVlmMinor(),
                     vlmDfn.getVlmSize(),
-                    Volume.VlmFlags.fromStringList(vlmDfn.getVlmFlagsList()),
+                    FlagsHelper.fromStringList(VlmDfnFlags.class, vlmDfn.getVlmFlagsList()),
                     asMap(vlmDfn.getVlmPropsList())
                 )
             );

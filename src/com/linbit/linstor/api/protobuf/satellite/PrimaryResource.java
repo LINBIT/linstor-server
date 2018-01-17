@@ -48,7 +48,6 @@ public class PrimaryResource extends BaseProtoApiCall {
     )
         throws IOException
     {
-        System.out.println("API_PRIMAR_RSC");
         MsgIntPrimaryOuterClass.MsgIntPrimary msgReqPrimary = MsgIntPrimaryOuterClass.MsgIntPrimary.parseDelimitedFrom(msgDataIn);
         satellite.getApiCallHandler().handlePrimaryResource(
             controllerPeer,

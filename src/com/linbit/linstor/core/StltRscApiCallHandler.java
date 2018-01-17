@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -174,23 +175,27 @@ class StltRscApiCallHandler
 
             for (VolumeDefinition.VlmDfnApi vlmDfnRaw : rscRawData.getVlmDfns())
             {
-                VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
-                VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstanceSatellite(
-                    apiCtx,
-                    vlmDfnRaw.getUuid(),
-                    rscDfn,
-                    vlmNr,
-                    vlmDfnRaw.getSize(),
-                    new MinorNumber(vlmDfnRaw.getMinorNr()),
-                    VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags()),
-                    transMgr
-                );
-                checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
-                Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
-                vlmDfnPropsMap.clear();
-                vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
+                VlmDfnFlags[] vlmDfnFlags = VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags());
+                if (!Arrays.asList(vlmDfnFlags).contains(VlmDfnFlags.DELETE))
+                {
+                    VolumeNumber vlmNr = new VolumeNumber(vlmDfnRaw.getVolumeNr());
+                    VolumeDefinitionData vlmDfn = VolumeDefinitionData.getInstanceSatellite(
+                        apiCtx,
+                        vlmDfnRaw.getUuid(),
+                        rscDfn,
+                        vlmNr,
+                        vlmDfnRaw.getSize(),
+                        new MinorNumber(vlmDfnRaw.getMinorNr()),
+                        VlmDfnFlags.restoreFlags(vlmDfnRaw.getFlags()),
+                        transMgr
+                    );
+                    checkUuid(vlmDfn, vlmDfnRaw, rscName.displayValue);
+                    Map<String, String> vlmDfnPropsMap = vlmDfn.getProps(apiCtx).map();
+                    vlmDfnPropsMap.clear();
+                    vlmDfnPropsMap.putAll(vlmDfnRaw.getProps());
 
-                vlmDfnsToDelete.remove(vlmNr);
+                    vlmDfnsToDelete.remove(vlmNr);
+                }
             }
 
             for (Entry<VolumeNumber, VolumeDefinition> entry : vlmDfnsToDelete.entrySet())
@@ -200,9 +205,9 @@ class StltRscApiCallHandler
                  while (iterateVolumes.hasNext())
                  {
                      Volume vlm = iterateVolumes.next();
-                     vlm.delete(apiCtx);
+                     vlm.markDeleted(apiCtx);
                  }
-                 vlmDfn.delete(apiCtx);
+                 vlmDfn.markDeleted(apiCtx);
             }
         }
 
@@ -452,8 +457,6 @@ class StltRscApiCallHandler
             // first, iterate over all resources marked for deletion and unlink them from rscDfn and node
             for (Resource rsc : removedList)
             {
-                // TODO: start undeploying this resource on drbd level
-                // TODO: when undeploy is done, check the node if it has resources left. if not, remove node
                 rsc.markDeleted(apiCtx);
             }
         }

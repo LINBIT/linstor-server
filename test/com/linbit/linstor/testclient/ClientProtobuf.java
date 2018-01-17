@@ -1069,7 +1069,7 @@ public class ClientProtobuf implements Runnable
         send
         (
             msgId,
-            API_MOD_VLM_DFN,
+            API_DEL_VLM_DFN,
             builder.build()
         );
         return msgId;

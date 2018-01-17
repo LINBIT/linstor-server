@@ -139,6 +139,8 @@ class DrbdDeviceHandler implements DeviceHandler
                         String.format("%05d", vlmNr.value);
                     vlmState.minorNr = vlmDfn.getMinorNr(wrkCtx);
                     vlmStateMap.put(vlmNr, vlmState);
+
+                    rscState.requiresAdjust |= vlmState.markedForDelete;
                 }
             }
 

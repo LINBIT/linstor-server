@@ -57,6 +57,7 @@ import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscDa
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
 
 /**
  *
@@ -689,7 +690,12 @@ public class ProtoInterComSerializer implements InterComSerializer
                         .setVlmNr(vlmDfn.getVolumeNumber().value)
                         .setVlmSize(vlmDfn.getVolumeSize(serializerCtx))
                         .setVlmMinor(vlmDfn.getMinorNr(serializerCtx).value)
-                        .addAllVlmFlags(Volume.VlmFlags.toStringList(vlmDfn.getFlags().getFlagsBits(serializerCtx)))
+                        .addAllVlmFlags(
+                            FlagsHelper.toStringList(
+                                VolumeDefinition.VlmDfnFlags.class,
+                                vlmDfn.getFlags().getFlagsBits(serializerCtx)
+                            )
+                        )
                         .addAllVlmProps(BaseProtoApiCall.fromMap(vlmDfnProps))
                         .build()
                 );
