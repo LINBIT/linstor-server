@@ -8,26 +8,27 @@ import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorSqlRuntimeException;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
+import com.linbit.linstor.dbdrivers.derby.DerbyConstants;
 import com.linbit.linstor.logging.ErrorReporter;
 
 
 public class ObjectProtectionDerbyDriver implements ObjectProtectionDatabaseDriver
 {
-    private static final String TBL_OP      = SecurityDbFields.TBL_OBJ_PROT;
-    private static final String TBL_ACL     = SecurityDbFields.TBL_ACL_MAP;
-    private static final String TBL_ROLES   = SecurityDbFields.TBL_ROLES;
+    private static final String TBL_OP      = DerbyConstants.TBL_SEC_OBJECT_PROTECTION;
+    private static final String TBL_ACL     = DerbyConstants.TBL_SEC_ACL_MAP;
+    private static final String TBL_ROLES   = DerbyConstants.TBL_SEC_ROLES;
 
-    private static final String OP_OBJECT_PATH      = SecurityDbFields.OBJECT_PATH;
-    private static final String OP_CREATOR          = SecurityDbFields.CRT_IDENTITY_NAME;
-    private static final String OP_OWNER            = SecurityDbFields.OWNER_ROLE_NAME;
-    private static final String OP_SEC_TYPE_NAME    = SecurityDbFields.SEC_TYPE_NAME;
+    private static final String OP_OBJECT_PATH      = DerbyConstants.OBJECT_PATH;
+    private static final String OP_CREATOR          = DerbyConstants.CREATOR_IDENTITY_NAME;
+    private static final String OP_OWNER            = DerbyConstants.OWNER_ROLE_NAME;
+    private static final String OP_SEC_TYPE_NAME    = DerbyConstants.SECURITY_TYPE_NAME;
 
-    private static final String ROLE_NAME           = SecurityDbFields.ROLE_NAME;
-    private static final String ROLE_PRIVILEGES     = SecurityDbFields.ROLE_PRIVILEGES;
+    private static final String ROLE_NAME           = DerbyConstants.ROLE_NAME;
+    private static final String ROLE_PRIVILEGES     = DerbyConstants.ROLE_PRIVILEGES;
 
-    private static final String ACL_OBJECT_PATH = SecurityDbFields.OBJECT_PATH;
-    private static final String ACL_ROLE_NAME   = SecurityDbFields.ROLE_NAME;
-    private static final String ACL_ACCESS_TYPE = SecurityDbFields.ACCESS_TYPE;
+    private static final String ACL_OBJECT_PATH = DerbyConstants.OBJECT_PATH;
+    private static final String ACL_ROLE_NAME   = DerbyConstants.ROLE_NAME;
+    private static final String ACL_ACCESS_TYPE = DerbyConstants.ACCESS_TYPE;
 
     // ObjectProtection SQL statements
     private static final String OP_INSERT =

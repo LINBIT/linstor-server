@@ -1,6 +1,6 @@
 package com.linbit.linstor.security;
 
-import static com.linbit.linstor.security.SecurityDbFields.*;
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,50 +18,50 @@ public class DbDerbyPersistence implements DbAccessor
 {
     private static final String SLCT_SIGNIN_ENTRY =
         "SELECT " +
-        TBL_IDENTITIES + "." + IDENTITY_NAME + ", " +
+        TBL_SEC_IDENTITIES + "." + IDENTITY_NAME + ", " +
         ID_LOCKED + ", " + ID_ENABLED + ", " +
         PASS_SALT + ", " + PASS_HASH + ", " +
-        TBL_DFLT_ROLES + "." + ROLE_NAME + ", " +
-        TBL_ROLES + "." + DOMAIN_NAME + ", " +
-        TBL_ROLES + "." + ROLE_PRIVILEGES + " " +
-        "FROM " + TBL_IDENTITIES + "\n" +
-        "    LEFT JOIN " + TBL_DFLT_ROLES + " ON " + TBL_IDENTITIES + "." + IDENTITY_NAME + " = " +
-        TBL_DFLT_ROLES + "." + IDENTITY_NAME + "\n" +
-        "    LEFT JOIN " + TBL_ROLES + " ON " + TBL_DFLT_ROLES + "." + ROLE_NAME + " = " +
-        TBL_ROLES + "." + ROLE_NAME + "\n" +
-        "    WHERE " + TBL_IDENTITIES + "." + IDENTITY_NAME + " = ?";
+        TBL_SEC_DFLT_ROLES + "." + ROLE_NAME + ", " +
+        TBL_SEC_ROLES + "." + DOMAIN_NAME + ", " +
+        TBL_SEC_ROLES + "." + ROLE_PRIVILEGES + " " +
+        "FROM " + TBL_SEC_IDENTITIES + "\n" +
+        "    LEFT JOIN " + TBL_SEC_DFLT_ROLES + " ON " + TBL_SEC_IDENTITIES + "." + IDENTITY_NAME + " = " +
+        TBL_SEC_DFLT_ROLES + "." + IDENTITY_NAME + "\n" +
+        "    LEFT JOIN " + TBL_SEC_ROLES + " ON " + TBL_SEC_DFLT_ROLES + "." + ROLE_NAME + " = " +
+        TBL_SEC_ROLES + "." + ROLE_NAME + "\n" +
+        "    WHERE " + TBL_SEC_IDENTITIES + "." + IDENTITY_NAME + " = ?";
 
     private static final String SLCT_ID_ROLE_MAP_ENTRY =
-        "SELECT " + IDENTITY_NAME + ", " + ROLE_NAME + " FROM " + TBL_ID_ROLE_MAP +
+        "SELECT " + IDENTITY_NAME + ", " + ROLE_NAME + " FROM " + TBL_SEC_ID_ROLE_MAP +
         " WHERE " + IDENTITY_NAME + " = ?" +
         " AND " + ROLE_NAME + " = ?";
 
     private static final String SLCT_DFLT_ROLE =
-        "SELECT " + IDENTITY_NAME + ", " + ROLE_NAME + " FROM " + TBL_DFLT_ROLES +
+        "SELECT " + IDENTITY_NAME + ", " + ROLE_NAME + " FROM " + TBL_SEC_DFLT_ROLES +
         " WHERE " + IDENTITY_NAME + " = '?'";
 
     private static final String SLCT_IDENTITIES =
-        "SELECT * FROM " + VW_IDENTITIES_LOAD;
+        "SELECT * FROM " + VIEW_SEC_IDENTITIES_LOAD;
 
     private static final String SLCT_SEC_TYPES =
-        "SELECT * FROM " + VW_TYPES_LOAD;
+        "SELECT * FROM " + VIEW_SEC_TYPES_LOAD;
 
     private static final String SLCT_ROLES =
-        "SELECT * FROM " + VW_ROLES_LOAD;
+        "SELECT * FROM " + VIEW_SEC_ROLES_LOAD;
 
     private static final String SLCT_TE_RULES =
-        "SELECT * FROM " + VW_TYPE_RULES_LOAD;
+        "SELECT * FROM " + VIEW_SEC_TYPE_RULES_LOAD;
 
     private static final String SLCT_SEC_LEVEL =
-        "SELECT " + CONF_KEY + ", " + CONF_VALUE +
-        " FROM " + TBL_SEC_CFG +
-        " WHERE " + CONF_KEY + " = '" + KEY_SEC_LEVEL + "'";
+        "SELECT " + ENTRY_KEY + ", " + ENTRY_VALUE +
+        " FROM " + TBL_SEC_CONFIGURATION +
+        " WHERE " + ENTRY_KEY + " = '" + KEY_SEC_LEVEL + "'";
 
     private static final String DEL_SEC_LEVEL =
-        "DELETE FROM " + TBL_SEC_CFG + " WHERE " + CONF_KEY + " = '" + KEY_SEC_LEVEL + "'";
+        "DELETE FROM " + TBL_SEC_CONFIGURATION + " WHERE " + ENTRY_KEY + " = '" + KEY_SEC_LEVEL + "'";
 
     private static final String INS_SEC_LEVEL =
-        "INSERT INTO " + TBL_SEC_CFG + " (" + CONF_KEY + ", " + CONF_DSP_KEY + ", " + CONF_VALUE +
+        "INSERT INTO " + TBL_SEC_CONFIGURATION + " (" + ENTRY_KEY + ", " + ENTRY_DSP_KEY + ", " + ENTRY_VALUE +
         ") VALUES('" + KEY_SEC_LEVEL + "', '" + KEY_DSP_SEC_LEVEL + "', ?)";
 
     private final ObjectProtectionDatabaseDriver objProtDriver;

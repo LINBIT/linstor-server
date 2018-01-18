@@ -1,5 +1,6 @@
 package com.linbit.linstor.propscon;
 
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

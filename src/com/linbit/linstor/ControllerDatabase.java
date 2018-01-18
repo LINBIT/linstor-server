@@ -15,12 +15,6 @@ public interface ControllerDatabase extends SystemService
     public static final int DEFAULT_TIMEOUT = 60000;
     public static final int DEFAULT_MAX_OPEN_STMT = 100;
 
-    public static final String TBL_CTRL_CONF    = "CTRL_CONFIGURATION";
-
-    public static final String CONF_KEY         = "ENTRY_KEY";
-    public static final String CONF_DSP_KEY     = "ENTRY_DSP_KEY";
-    public static final String CONF_VALUE       = "ENTRY_VALUE";
-
     void setTimeout(int timeout);
     void setMaxOpenPreparedStatements(int maxOpen);
 

@@ -1,5 +1,6 @@
 package com.linbit.linstor.security;
 
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
 import static org.junit.Assert.*;
 
 import java.sql.Connection;

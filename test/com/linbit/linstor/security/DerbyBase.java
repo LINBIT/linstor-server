@@ -1,5 +1,6 @@
 package com.linbit.linstor.security;
 
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -45,7 +46,7 @@ import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.utils.UuidUtils;
 
-public abstract class DerbyBase implements DerbyConstants
+public abstract class DerbyBase implements DerbyTestConstants
 {
     @Rule
     public TestName testMethodName = new TestName();
@@ -325,7 +326,7 @@ public abstract class DerbyBase implements DerbyConstants
     protected String debugGetAllProsContent() throws SQLException
     {
         Connection connection = getConnection();
-        PreparedStatement stmt = connection.prepareStatement("SELECT * FROM " + DerbyConstants.TBL_PROPS_CONTAINERS);
+        PreparedStatement stmt = connection.prepareStatement("SELECT * FROM " + TBL_PROPS_CONTAINERS);
         ResultSet allContent = stmt.executeQuery();
         StringBuilder sb = new StringBuilder();
         while (allContent.next())

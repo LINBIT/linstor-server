@@ -1,6 +1,8 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
