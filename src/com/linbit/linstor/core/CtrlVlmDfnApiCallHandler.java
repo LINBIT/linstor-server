@@ -117,10 +117,12 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                     {
                         intStringOrNull = vlmDfnApi.getVolumeNr().toString();
                         currentObjRefs.get().put(ApiConsts.KEY_VLM_NR, intStringOrNull);
+                        currentVariables.get().put(ApiConsts.KEY_VLM_NR, intStringOrNull);
                     }
                     else
                     {
                         currentObjRefs.get().remove(ApiConsts.KEY_VLM_NR);
+                        currentVariables.get().put(ApiConsts.KEY_VLM_NR, intStringOrNull);
                     }
 
                     intStringOrNull = null;
