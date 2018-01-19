@@ -13,10 +13,8 @@ import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -88,6 +86,8 @@ import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.Base64;
 import com.linbit.utils.MathUtils;
 
+import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_CONFIGURATION;
+
 /**
  * linstor controller prototype
  *
@@ -133,6 +133,9 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     public static final long DEFAULT_AL_SIZE = 32;
     public static final int DEFAULT_AL_STRIPES = 1;
     public static final String DEFAULT_STOR_POOL_NAME = "DfltStorPool";
+
+    private static final String DERBY_CONNECTION_TEST_SQL =
+        "SELECT 1 FROM " + TBL_SEC_CONFIGURATION;
 
     // System security context
     private AccessContext sysCtx;
@@ -294,367 +297,143 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         shutdownFinished = false;
     }
 
+
+    public static void main(String[] args)
+    {
+        ControllerArguments cArgs = parseCommandLine(args);
+
+        System.out.printf(
+            "%s, Module %s, Release %s\n",
+            Controller.PROGRAM, Controller.MODULE, Controller.VERSION
+        );
+        printStartupInfo();
+
+        ErrorReporter errorLog = new StdErrorReporter(Controller.MODULE, cArgs.getWorkingDirectory());
+
+        try
+        {
+            Thread.currentThread().setName("Main");
+
+            // Initialize the Controller module with the SYSTEM security context
+            Initializer sysInit = new Initializer();
+            Controller instance = sysInit.initController(cArgs);
+
+            instance.initialize(errorLog);
+            instance.run();
+        }
+        catch (Throwable error)
+        {
+            errorLog.reportError(error);
+        }
+
+        System.out.println();
+    }
+
+    private static ControllerArguments parseCommandLine(String[] args)
+    {
+        final String CONTROLLER_DIRECTORY = "controller_directory";
+        Options opts = new Options();
+        opts.addOption(Option.builder("h").longOpt("help").required(false).build());
+        opts.addOption(Option.builder("c").longOpt(CONTROLLER_DIRECTORY).hasArg().required(false).build());
+
+        CommandLineParser parser = new DefaultParser();
+        ControllerArguments cArgs = new ControllerArguments();
+        try {
+            CommandLine cmd = parser.parse(opts, args);
+
+            if (cmd.hasOption("help")) {
+                HelpFormatter helpFrmt = new HelpFormatter();
+                helpFrmt.printHelp("Controller", opts);
+                System.exit(0);
+            }
+
+            if (cmd.hasOption(CONTROLLER_DIRECTORY)) {
+                cArgs.setWorkingDirectory(cmd.getOptionValue(CONTROLLER_DIRECTORY) + "/");
+                File f = new File(cArgs.getWorkingDirectory());
+                if(!f.exists() || !f.isDirectory())
+                {
+                    System.err.println("Error: Given controller runtime directory does not exist or is no directory");
+                    System.exit(2);
+                }
+            }
+        }
+        catch (ParseException pExc) {
+            System.err.println("Command line parse error: " + pExc.getMessage());
+            System.exit(1);
+        }
+
+        return cArgs;
+    }
+
     public void initialize(ErrorReporter errorLogRef)
-        throws InitializationException, SQLException
+        throws InitializationException, SQLException, InvalidKeyException
     {
         try
         {
             reconfigurationLock.writeLock().lock();
 
             shutdownFinished = false;
-            try
-            {
-                AccessContext initCtx = sysCtx.clone();
-                initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-                // Initialize the error & exception reporting facility
-                setErrorLog(initCtx, errorLogRef);
+            AccessContext initCtx = sysCtx.clone();
+            initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
+            // Initialize the error & exception reporting facility
+            setErrorLog(initCtx, errorLogRef);
 
-                // Initialize the worker thread pool
-                try
-                {
-                    int cpuCount = getCpuCount();
-                    int thrCount = com.linbit.utils.MathUtils.bounds(MIN_WORKER_COUNT, cpuCount, MAX_CPU_COUNT);
-                    int qSize = thrCount * getWorkerQueueFactor();
-                    qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
-                    setWorkerThreadCount(initCtx, thrCount);
-                    setWorkerQueueSize(initCtx, qSize);
-                    workerThrPool = WorkerPool.initialize(
-                        thrCount, qSize, true, "MainWorkerPool", getErrorReporter(),
-                        dbConnPool
-                    );
-                    // Initialize the message processor
-                    // errorLogRef.logInfo("Initializing API call dispatcher");
-                    msgProc = new CommonMessageProcessor(this, workerThrPool);
-                }
-                catch (AccessDeniedException accessDeniedException)
-                {
-                    throw new ImplementationError(
-                        "Creation of the initialization access context failed",
-                        accessDeniedException
-                    );
-                }
+            Properties dbProps = loadDatabaseConfiguration(errorLogRef);
 
-                // Initialize the database connections
-                errorLogRef.logInfo("Initializing the database connection pool");
-                Properties dbProps = new Properties();
-                try (InputStream dbPropsIn = new FileInputStream(args.getWorkingDirectory() + DB_CONF_FILE))
-                {
-                    // Load database configuration
-                    dbProps.loadFromXML(dbPropsIn);
-                }
-                catch (IOException ioExc)
-                {
-                    errorLogRef.reportError(ioExc);
-                    System.exit(2);
-                }
-                try
-                {
-                    // TODO: determine which DBDriver to use
-                    AccessContext privCtx = sysCtx.clone();
-                    privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-                    securityDbDriver = new DbDerbyPersistence(privCtx, errorLogRef);
-                    persistenceDbDriver = new DerbyDriver(
-                        privCtx,
-                        errorLogRef,
-                        nodesMap,
-                        rscDfnMap,
-                        storPoolDfnMap
-                    );
+            initializeDatabaseConnectionPool(errorLogRef, dbProps);
 
-                    if (testDbPool == null)
-                    {
-                        String connectionUrl = dbProps.getProperty(
-                            DB_CONN_URL,
-                            persistenceDbDriver.getDefaultConnectionUrl()
-                        );
+            initializeAuthentication(errorLogRef, initCtx);
 
-                        // Connect the database connection pool to the database
-                        dbConnPool.initializeDataSource(
-                            connectionUrl,
-                            dbProps
-                        );
-                    }
-                }
-                catch (SQLException sqlExc)
-                {
-                    errorLogRef.reportError(sqlExc);
-                }
+            initializeAuthorization(errorLogRef, initCtx);
 
-                errorLogRef.logInfo("Initializing authentication subsystem");
-                try
-                {
-                    idAuthentication = new Authentication(initCtx, dbConnPool, securityDbDriver, errorLogRef);
-                }
-                catch (AccessDeniedException accExc)
-                {
-                    throw new ImplementationError(
-                        "The initialization security context does not have the necessary " +
-                        "privileges to create the authentication subsystem",
-                        accExc
-                    );
-                }
-                catch (NoSuchAlgorithmException algoExc)
-                {
-                    throw new InitializationException(
-                        "Initialization of the authentication subsystem failed because the " +
-                        "required hashing algorithm is not supported on this platform",
-                        algoExc
-                    );
-                }
+            initializeSecurityObjects(errorLogRef, initCtx);
 
-                errorLogRef.logInfo("Initializing authorization subsystem");
-                try
-                {
-                    roleAuthorization = new Authorization(initCtx, dbConnPool, securityDbDriver);
-                }
-                catch (AccessDeniedException accExc)
-                {
-                    throw new ImplementationError(
-                        "The initialization security context does not have the necessary " +
-                        "privileges to create the authorization subsystem",
-                        accExc
-                    );
-                }
+            initializeObjectProtection(initCtx);
 
-                // Load security identities, roles, domains/types, etc.
-                errorLogRef.logInfo("Loading security objects");
-                try
-                {
-                    Initializer.load(initCtx, dbConnPool, securityDbDriver);
-                }
-                catch (SQLException | InvalidNameException | AccessDeniedException exc)
-                {
-                    errorLogRef.reportError(exc);
-                }
+            // Initialize tasks
+            reconnectorTask = new ReconnectorTask(this);
+            pingTask = new PingTask(this, reconnectorTask);
+            taskScheduleService.addTask(pingTask);
+            taskScheduleService.addTask(reconnectorTask);
 
-                errorLogRef.logInfo(
-                    "Current security level is %s",
-                    SecurityLevel.get().name()
-                );
+            errorLogRef.logInfo("Core objects load from database is in progress");
+            loadCoreObjects(initCtx);
+            errorLogRef.logInfo("Core objects load from database completed");
 
-                TransactionMgr transMgr = null;
-                try
-                {
-                    transMgr = new TransactionMgr(dbConnPool);
+            taskScheduleService.addTask(new GarbageCollectorTask());
 
-                    // initializing ObjectProtections for nodeMap, rscDfnMap and storPoolMap
-                    nodesMapProt = ObjectProtection.getInstance(
-                        initCtx,
-                        ObjectProtection.buildPath(this, "nodesMap"),
-                        true,
-                        transMgr
-                    );
-                    rscDfnMapProt = ObjectProtection.getInstance(
-                        initCtx,
-                        ObjectProtection.buildPath(this, "rscDfnMap"),
-                        true,
-                        transMgr
-                    );
-                    storPoolDfnMapProt = ObjectProtection.getInstance(
-                        initCtx,
-                        ObjectProtection.buildPath(this, "storPoolMap"),
-                        true,
-                        transMgr
-                    );
+            initializeWorkerThreadPool(initCtx);
 
-                    // initializing controller serial propsCon + OP
-                    ctrlConf = loadPropsCon(errorLogRef);
-                    ctrlConfProt = ObjectProtection.getInstance(
-                        initCtx,
-                        ObjectProtection.buildPath(this, "conf"),
-                        true,
-                        transMgr
-                    );
+            errorLogRef.logInfo("Initializing test APIs");
+            LinStor.loadApiCalls(msgProc, this, this, apiType);
 
-                    shutdownProt = ObjectProtection.getInstance(
-                        initCtx,
-                        ObjectProtection.buildPath(this, "shutdown"),
-                        true,
-                        transMgr
-                    );
+            Props propsContainer = loadPropsContainer();
 
-                    shutdownProt.setConnection(transMgr);
-                    // Set CONTROL access for the SYSTEM role on shutdown
-                    shutdownProt.addAclEntry(initCtx, initCtx.getRole(), AccessType.CONTROL);
+            initNetComServices(
+                propsContainer.getNamespace(PROPSCON_KEY_NETCOM),
+                errorLogRef,
+                initCtx
+            );
 
-                    transMgr.commit();
-                }
-                catch (Exception rollbackExc)
-                {
-                    if (transMgr != null)
-                    {
-                        transMgr.rollback();
-                    }
-                    errorLogRef.reportError(rollbackExc, sysCtx, null, "Controller initialization");
-                }
-                finally
-                {
-                    if (transMgr != null)
-                    {
-                        dbConnPool.returnConnection(transMgr);
-                    }
-                }
+            startSystemServices(systemServicesMap.values());
 
-                errorLogRef.logInfo("Initializing test APIs");
-                LinStor.loadApiCalls(msgProc, this, this, apiType);
+            connectToKnownNodes(errorLogRef, initCtx);
 
-                // Initialize tasks
-                {
-                    reconnectorTask = new ReconnectorTask(this);
-                    pingTask = new PingTask(this, reconnectorTask);
-                    taskScheduleService.addTask(pingTask);
-                    taskScheduleService.addTask(reconnectorTask);
-
-                    taskScheduleService.addTask(new GarbageCollectorTask());
-                }
-
-                // Initialize the network communications service
-                Props config = loadPropsCon(errorLogRef);
-                if (config == null)
-                {
-                    // we could not load the props - the loadPropsCon(..) should have
-                    // reported the error already
-                    // as we didn't start any services yet,
-                    // TODO: we should retry in a minute or so
-                }
-                else
-                {
-                    errorLogRef.logInfo("Initializing network communications services");
-                    try
-                    {
-                        initNetComServices(
-                            config.getNamespace(PROPSCON_KEY_NETCOM),
-                            errorLogRef,
-                            initCtx
-                        );
-                    }
-                    catch (InvalidKeyException e)
-                    {
-                        errorLogRef.reportError(
-                            new ImplementationError(
-                                "Constant key is invalid: " + PROPSCON_KEY_NETCOM,
-                                e
-                            )
-                        );
-                    }
-                }
-                // Initialize system services
-                startSystemServices(systemServicesMap.values());
-
-                errorLogRef.logInfo("Core objects load from database is in progress");
-                loadCoreObjects(initCtx);
-                errorLogRef.logInfo("Core objects load from database completed");
-
-                // attempt to reconnect to known nodes
-                if (!nodesMap.isEmpty())
-                {
-                    errorLogRef.logInfo("Reconnecting to previously known nodes");
-                    Collection<Node> nodes = nodesMap.values();
-                    for (Node node : nodes)
-                    {
-                        errorLogRef.logDebug("Reconnecting to node '" + node.getName() + "'.");
-                        CtrlNodeApiCallHandler.startConnecting(node, initCtx, null, apiCtrlAccessors);
-                    }
-                    errorLogRef.logInfo("Reconnect requests sent");
-                }
-                else
-                {
-                    errorLogRef.logInfo("No known nodes.");
-                }
-
-                errorLogRef.logInfo("Controller initialized");
-            }
-            catch (AccessDeniedException accessExc)
-            {
-                errorLogRef.reportError(
-                    new ImplementationError(
-                        "The initialization security context does not have all privileges. " +
-                        "Initialization failed.",
-                        accessExc
-                    )
-                );
-            }
+            errorLogRef.logInfo("Controller initialized");
         }
-        finally
+        catch (AccessDeniedException accessExc)
         {
-            reconfigurationLock.writeLock().unlock();
-        }
-    }
-
-    public void loadCoreObjects(AccessContext initCtx)
-        throws AccessDeniedException
-    {
-        TransactionMgr transMgr = null;
-        Lock recfgWriteLock = reconfigurationLock.writeLock();
-        try
-        {
-            transMgr = new TransactionMgr(dbConnPool);
-            if (dbConnPool != null)
-            {
-                nodesMapProt.requireAccess(initCtx, AccessType.CONTROL);
-                rscDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
-                storPoolDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
-
-                try
-                {
-
-                    // Replacing the entire configuration requires locking out all other tasks
-                    //
-                    // Since others task that use the configuration must hold the reconfiguration lock
-                    // in read mode before locking any of the other system objects, locking the maps
-                    // for nodes, resource definition, storage pool definitions, etc. can be skipped.
-                    recfgWriteLock.lock();
-
-                    // Clear the maps of any existing objects
-                    //
-                    // TODO: It would be better to keep the current configuration while trying to
-                    //       load a new configuration, and only if loading the new configuration succeeded,
-                    //       clear the old configuration and replace it with the new one
-                    nodesMap.clear();
-                    rscDfnMap.clear();
-                    storPoolDfnMap.clear();
-
-                    // Reload all objects
-                    //
-                    // FIXME: Loading or reloading the configuration must ensure to either load everything
-                    //        or nothing to prevent ending up with a half-loaded configuration.
-                    //        See also the TODO above.
-                    persistenceDbDriver.loadAll(transMgr);
-                }
-                finally
-                {
-                    recfgWriteLock.unlock();
-                }
-            }
-        }
-        catch (SQLException exc)
-        {
-            getErrorReporter().reportError(
-                Level.ERROR,
-                new InitializationException(
-                    "Loading the core objects from the database failed",
-                    exc
-                )
+            throw new ImplementationError(
+                "The initialization security context does not have all privileges. " +
+                "Initialization failed.",
+                accessExc
             );
         }
         finally
         {
-            if (transMgr != null)
-            {
-                try
-                {
-                    transMgr.rollback();
-                }
-                catch (Exception ignored)
-                {
-                }
-                if (dbConnPool != null)
-                {
-                    dbConnPool.returnConnection(transMgr);
-                }
-            }
+            reconfigurationLock.writeLock().unlock();
         }
     }
 
@@ -857,146 +636,503 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         return peerDbgConsole;
     }
 
-    public static void printField(String fieldName, String fieldContent)
+    boolean deleteNetComService(String serviceNameStr, ErrorReporter errorLogRef) throws SystemServiceStopException
     {
-        System.out.printf("  %-32s: %s\n", fieldName, fieldContent);
+        ServiceName serviceName;
+        try
+        {
+            serviceName = new ServiceName(serviceNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new SystemServiceStopException(
+                String.format(
+                    "The name '%s' can not be used for a network communication service instance",
+                    serviceNameStr
+                ),
+                String.format(
+                    "The name '%s' is not a valid name for a network communication service instance",
+                    serviceNameStr
+                ),
+                null,
+                "Change the name of the network communication service instance",
+                null,
+                invalidNameExc
+            );
+        }
+        TcpConnector netComSvc = netComConnectors.get(serviceName);
+        SystemService sysSvc = systemServicesMap.get(serviceName);
+
+        boolean svcStarted = false;
+        boolean issuedShutdown = false;
+        if (netComSvc != null)
+        {
+            svcStarted = netComSvc.isStarted();
+            if (svcStarted)
+            {
+                netComSvc.shutdown();
+                issuedShutdown = true;
+            }
+        }
+        else
+        if (sysSvc != null)
+        {
+            svcStarted = sysSvc.isStarted();
+            if (svcStarted)
+            {
+                sysSvc.shutdown();
+                issuedShutdown = true;
+            }
+        }
+
+        netComConnectors.remove(serviceName);
+        systemServicesMap.remove(serviceName);
+
+        if (svcStarted && issuedShutdown)
+        {
+            errorLogRef.logInfo(
+                String.format(
+                    "Initiated shutdown of network communication service '%s'",
+                    serviceName.displayValue
+                )
+            );
+        }
+
+        if (netComSvc != null || sysSvc != null)
+        {
+            errorLogRef.logInfo(
+                String.format(
+                    "Deleted network communication service '%s'",
+                    serviceName.displayValue
+                )
+            );
+        }
+
+        return netComSvc != null || sysSvc != null;
     }
 
-    public static ControllerArguments parseCommandLine(String[] args)
+    public void connectSatellite(
+        final InetSocketAddress satelliteAddress,
+        final TcpConnector tcpConnector,
+        final Node node
+    )
     {
-        final String CONTROLLER_DIRECTORY = "controller_directory";
-        Options opts = new Options();
-        opts.addOption(Option.builder("h").longOpt("help").required(false).build());
-        opts.addOption(Option.builder("c").longOpt(CONTROLLER_DIRECTORY).hasArg().required(false).build());
-
-        CommandLineParser parser = new DefaultParser();
-        ControllerArguments cArgs = new ControllerArguments();
-        try {
-            CommandLine cmd = parser.parse(opts, args);
-
-            if (cmd.hasOption("help")) {
-                HelpFormatter helpFrmt = new HelpFormatter();
-                helpFrmt.printHelp("Controller", opts);
-                System.exit(0);
-            }
-
-            if (cmd.hasOption(CONTROLLER_DIRECTORY)) {
-                cArgs.setWorkingDirectory(cmd.getOptionValue(CONTROLLER_DIRECTORY) + "/");
-                File f = new File(cArgs.getWorkingDirectory());
-                if(!f.exists() || !f.isDirectory())
+        Runnable connectRunnable = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
                 {
-                    System.err.println("Error: Given controller runtime directory does not exist or is no directory");
-                    System.exit(2);
+                    Peer peer = tcpConnector.connect(satelliteAddress, node);
+                    {
+                        AccessContext connectorCtx = sysCtx.clone();
+                        connectorCtx.getEffectivePrivs().enablePrivileges(
+                            Privilege.PRIV_MAC_OVRD,
+                            Privilege.PRIV_OBJ_CHANGE
+                        );
+                        node.setPeer(connectorCtx, peer);
+                    }
+                    if (peer.isConnected(false))
+                    {
+                        apiCallHandler.completeSatelliteAuthentication(peer);
+                        pingTask.add(peer);
+                    }
+                    else
+                    {
+                        reconnectorTask.add(peer);
+                    }
+                }
+                catch (IOException ioExc)
+                {
+                    getErrorReporter().reportError(
+                        new LinStorException(
+                            "Cannot connect to satellite",
+                            String.format(
+                                "Establishing connection to satellite (%s:%d) failed",
+                                satelliteAddress.getAddress().getHostAddress(),
+                                satelliteAddress.getPort()
+                            ),
+                            "IOException occured. See cause for further details",
+                            null,
+                            null,
+                            ioExc
+                        )
+                    );
+                }
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    getErrorReporter().reportError(
+                        new ImplementationError(
+                            "System context has not enough privileges to set peer for a connecting node",
+                            accDeniedExc
+                        )
+                    );
+                    accDeniedExc.printStackTrace();
                 }
             }
-        }
-        catch (ParseException pExc) {
-            System.err.println("Command line parse error: " + pExc.getMessage());
-            System.exit(1);
-        }
-
-        return cArgs;
+        };
+        // This could possibly be offloaded to some specialized worker pool in the future,
+        // but not to the main worker pool used for submitting inbound requests,
+        // because submitting to the main worker pool from the Controller's initialization
+        // routines or from another task that already runs on the main worker pool
+        // can potentially deadlock if the worker pool's queue is full
+        connectRunnable.run();
     }
 
-    public static void main(String[] args)
+    /**
+     * Generates a random value for a DRBD resource's shared secret
+     *
+     * @return a 20 character long random String
+     */
+    public String generateSharedSecret()
     {
-        ControllerArguments cArgs = parseCommandLine(args);
+        byte[] randomBytes = new byte[DRBD_SHARED_SECRET_SIZE];
+        new SecureRandom().nextBytes(randomBytes);
+        String secret = Base64.encode(randomBytes);
+        return secret;
+    }
 
-        System.out.printf(
-            "%s, Module %s, Release %s\n",
-            Controller.PROGRAM, Controller.MODULE, Controller.VERSION
+    public MetaDataApi getMetaDataApi()
+    {
+        return metaData;
+    }
+
+    public short getDefaultPeerCount()
+    {
+        return defaultPeerCount;
+    }
+
+    public int getDefaultAlStripes()
+    {
+        return defaultAlStripes;
+    }
+
+    public long getDefaultAlSize()
+    {
+        return defaultAlSize;
+    }
+
+    public String getDefaultStorPoolName()
+    {
+        return defaultStorPoolName;
+    }
+
+    public CtrlApiCallHandler getApiCallHandler()
+    {
+        return apiCallHandler;
+    }
+
+    private Properties loadDatabaseConfiguration(final ErrorReporter errorLogRef)
+        throws InitializationException
+    {
+        Properties dbProps = new Properties();
+        try (InputStream dbPropsIn = new FileInputStream(args.getWorkingDirectory() + DB_CONF_FILE))
+        {
+            dbProps.loadFromXML(dbPropsIn);
+        }
+        catch (IOException ioExc)
+        {
+            throw new InitializationException("Failed to load database configuration", ioExc);
+        }
+        return dbProps;
+    }
+
+    private void initializeDatabaseConnectionPool(final ErrorReporter errorLogRef, final Properties dbProps)
+        throws AccessDeniedException, SQLException, InitializationException
+    {
+        errorLogRef.logInfo("Initializing the database connection pool");
+
+        AccessContext privCtx = sysCtx.clone();
+        privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+        securityDbDriver = new DbDerbyPersistence(privCtx, errorLogRef);
+        persistenceDbDriver = new DerbyDriver(
+            privCtx,
+            errorLogRef,
+            nodesMap,
+            rscDfnMap,
+            storPoolDfnMap
         );
-        printStartupInfo();
 
-        ErrorReporter errorLog = new StdErrorReporter(Controller.MODULE, cArgs.getWorkingDirectory());
+        if (testDbPool == null)
+        {
+            String connectionUrl = dbProps.getProperty(
+                DB_CONN_URL,
+                persistenceDbDriver.getDefaultConnectionUrl()
+            );
+
+            // Connect the database connection pool to the database
+            dbConnPool.initializeDataSource(
+                connectionUrl,
+                dbProps
+            );
+        }
+
+        // Test the database connection
+        try
+        {
+            dbConnPool.getConnection().createStatement().executeQuery(DERBY_CONNECTION_TEST_SQL);
+        }
+        catch (SQLException exc)
+        {
+            throw new InitializationException("Failed to connect to database", exc);
+        }
+    }
+
+    private void initializeAuthentication(final ErrorReporter errorLogRef, final AccessContext initCtx)
+        throws InitializationException
+    {
+        errorLogRef.logInfo("Initializing authentication subsystem");
 
         try
         {
-            Thread.currentThread().setName("Main");
-
-            // Initialize the Controller module with the SYSTEM security context
-            Initializer sysInit = new Initializer();
-            Controller instance = sysInit.initController(cArgs);
-
-            instance.initialize(errorLog);
-            instance.run();
+            idAuthentication = new Authentication(initCtx, dbConnPool, securityDbDriver, errorLogRef);
         }
-        catch (InitializationException initExc)
+        catch (AccessDeniedException accExc)
         {
-            errorLog.reportError(initExc);
-            System.err.println("Initialization of the Controller module failed.");
+            throw new ImplementationError(
+                "The initialization security context does not have the necessary " +
+                    "privileges to create the authentication subsystem",
+                accExc
+            );
         }
-        catch (ImplementationError implError)
+        catch (NoSuchAlgorithmException algoExc)
         {
-            errorLog.reportError(implError);
+            throw new InitializationException(
+                "Initialization of the authentication subsystem failed because the " +
+                    "required hashing algorithm is not supported on this platform",
+                algoExc
+            );
         }
-        catch (Throwable error)
-        {
-            errorLog.reportError(error);
-        }
-
-        System.out.println();
     }
 
-    private Props loadPropsCon(ErrorReporter errorLogRef)
+    private void initializeAuthorization(final ErrorReporter errorLogRef, final AccessContext initCtx)
     {
-        Props config = null;
+        errorLogRef.logInfo("Initializing authorization subsystem");
+
+        try
+        {
+            roleAuthorization = new Authorization(initCtx, dbConnPool, securityDbDriver);
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ImplementationError(
+                "The initialization security context does not have the necessary " +
+                    "privileges to create the authorization subsystem",
+                accExc
+            );
+        }
+    }
+
+    private void initializeSecurityObjects(final ErrorReporter errorLogRef, final AccessContext initCtx)
+        throws InitializationException
+    {
+        // Load security identities, roles, domains/types, etc.
+        errorLogRef.logInfo("Loading security objects");
+        try
+        {
+            Initializer.load(initCtx, dbConnPool, securityDbDriver);
+        }
+        catch (SQLException | InvalidNameException | AccessDeniedException exc)
+        {
+            throw new InitializationException("Failed to load security objects", exc);
+        }
+
+        errorLogRef.logInfo(
+            "Current security level is %s",
+            SecurityLevel.get().name()
+        );
+    }
+
+    private void initializeObjectProtection(final AccessContext initCtx)
+        throws SQLException, InitializationException
+    {
         TransactionMgr transMgr = null;
         try
         {
             transMgr = new TransactionMgr(dbConnPool);
-            config = PropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
+
+            // initializing ObjectProtections for nodeMap, rscDfnMap and storPoolMap
+            nodesMapProt = ObjectProtection.getInstance(
+                initCtx,
+                ObjectProtection.buildPath(this, "nodesMap"),
+                true,
+                transMgr
+            );
+            rscDfnMapProt = ObjectProtection.getInstance(
+                initCtx,
+                ObjectProtection.buildPath(this, "rscDfnMap"),
+                true,
+                transMgr
+            );
+            storPoolDfnMapProt = ObjectProtection.getInstance(
+                initCtx,
+                ObjectProtection.buildPath(this, "storPoolMap"),
+                true,
+                transMgr
+            );
+
+            // initializing controller serial propsCon + OP
+            ctrlConf = loadPropsContainer();
+            ctrlConfProt = ObjectProtection.getInstance(
+                initCtx,
+                ObjectProtection.buildPath(this, "conf"),
+                true,
+                transMgr
+            );
+
+            shutdownProt = ObjectProtection.getInstance(
+                initCtx,
+                ObjectProtection.buildPath(this, "shutdown"),
+                true,
+                transMgr
+            );
+
+            shutdownProt.setConnection(transMgr);
+            // Set CONTROL access for the SYSTEM role on shutdown
+            shutdownProt.addAclEntry(initCtx, initCtx.getRole(), AccessType.CONTROL);
+
             transMgr.commit();
         }
-        catch (SQLException sqlExc)
+        catch (Exception exc)
         {
-            if (transMgr == null)
+            if (transMgr != null)
             {
-                errorLogRef.reportError(
-                    new SystemServiceStartException("Failed to create transaction when loading controller's properties")
-                );
+                transMgr.rollback();
             }
-            else
+            throw new InitializationException("Failed to load object protection definitions", exc);
+        }
+        finally
+        {
+            if (transMgr != null)
+            {
+                dbConnPool.returnConnection(transMgr);
+            }
+        }
+    }
+
+    private void loadCoreObjects(AccessContext initCtx)
+        throws AccessDeniedException, InitializationException
+    {
+        TransactionMgr transMgr = null;
+        try
+        {
+            transMgr = new TransactionMgr(dbConnPool);
+            nodesMapProt.requireAccess(initCtx, AccessType.CONTROL);
+            rscDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
+            storPoolDfnMapProt.requireAccess(initCtx, AccessType.CONTROL);
+
+            Lock recfgWriteLock = reconfigurationLock.writeLock();
+            try
+            {
+
+                // Replacing the entire configuration requires locking out all other tasks
+                //
+                // Since others task that use the configuration must hold the reconfiguration lock
+                // in read mode before locking any of the other system objects, locking the maps
+                // for nodes, resource definition, storage pool definitions, etc. can be skipped.
+                recfgWriteLock.lock();
+
+                // Clear the maps of any existing objects
+                //
+                // TODO: It would be better to keep the current configuration while trying to
+                //       load a new configuration, and only if loading the new configuration succeeded,
+                //       clear the old configuration and replace it with the new one
+                nodesMap.clear();
+                rscDfnMap.clear();
+                storPoolDfnMap.clear();
+
+                // Reload all objects
+                //
+                // FIXME: Loading or reloading the configuration must ensure to either load everything
+                //        or nothing to prevent ending up with a half-loaded configuration.
+                //        See also the TODO above.
+                persistenceDbDriver.loadAll(transMgr);
+            }
+            finally
+            {
+                recfgWriteLock.unlock();
+            }
+        }
+        catch (SQLException exc)
+        {
+            throw new InitializationException(
+                "Loading the core objects from the database failed",
+                exc
+            );
+        }
+        finally
+        {
+            if (transMgr != null)
             {
                 try
                 {
                     transMgr.rollback();
                 }
-                catch (SQLException rollbackExc)
+                catch (Exception ignored)
                 {
-                    errorLogRef.reportError(
-                        rollbackExc,
-                        null,
-                        null,
-                        "Transaction rollback threw an exception"
-                    );
                 }
-                errorLogRef.reportError(
-                    new SystemServiceStartException(
-                        "Failed to load controller's config from the database",
-                        "Failed to load PropsContainer from the database",
-                        sqlExc.getLocalizedMessage(),
-                        null,
-                        null,
-                        sqlExc
-                    )
-                );
+                dbConnPool.returnConnection(transMgr);
             }
+        }
+    }
+
+    private void initializeWorkerThreadPool(final AccessContext initCtx)
+    {
+        try
+        {
+            int cpuCount = getCpuCount();
+            int thrCount = MathUtils.bounds(MIN_WORKER_COUNT, cpuCount, MAX_CPU_COUNT);
+            int qSize = thrCount * getWorkerQueueFactor();
+            qSize = qSize > MIN_WORKER_QUEUE_SIZE ? qSize : MIN_WORKER_QUEUE_SIZE;
+            setWorkerThreadCount(initCtx, thrCount);
+            setWorkerQueueSize(initCtx, qSize);
+            workerThrPool = WorkerPool.initialize(
+                thrCount, qSize, true, "MainWorkerPool", getErrorReporter(),
+                dbConnPool
+            );
+
+            // Initialize the message processor
+            msgProc = new CommonMessageProcessor(this, workerThrPool);
+        }
+        catch (AccessDeniedException accessDeniedException)
+        {
+            throw new ImplementationError(
+                "Failed to initialize the worker thread pool",
+                accessDeniedException
+            );
+        }
+    }
+
+    private Props loadPropsContainer()
+        throws SQLException
+    {
+        Props propsContainer;
+        TransactionMgr transMgr = null;
+        try
+        {
+            transMgr = new TransactionMgr(dbConnPool);
+            propsContainer = PropsContainer.getInstance(DB_CONTROLLER_PROPSCON_INSTANCE_NAME, transMgr);
+            transMgr.commit();
         }
         finally
         {
-            dbConnPool.returnConnection(transMgr);
+            if (transMgr != null)
+            {
+                dbConnPool.returnConnection(transMgr);
+            }
         }
-        return config;
+        return propsContainer;
     }
 
-    private List<TcpConnector> initNetComServices(
+    private void initNetComServices(
         Props netComProps,
         ErrorReporter errorLogRef,
         AccessContext initCtx
     )
     {
-        List<TcpConnector> tcpCons = new ArrayList<>();
+        errorLogRef.logInfo("Initializing network communications services");
+
         if (netComProps == null)
         {
             String errorMsg = "The controller configuration does not define any network communication services";
@@ -1019,16 +1155,12 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 try
                 {
                     String namespaceStr = namespaces.next();
-                    TcpConnector netComSvc = createNetComService(
+                    createNetComService(
                         namespaceStr,
                         netComProps,
                         errorLogRef,
                         initCtx
                     );
-                    if (netComSvc != null)
-                    {
-                        tcpCons.add(netComSvc);
-                    }
                 }
                 catch (SystemServiceStartException sysSvcStartExc)
                 {
@@ -1036,10 +1168,9 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 }
             }
         }
-        return tcpCons;
     }
 
-    TcpConnector createNetComService(
+    private void createNetComService(
         String serviceNameStr,
         Props netComProps,
         ErrorReporter errorLogRef,
@@ -1294,88 +1425,11 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 )
             );
         }
-
-        return netComSvc;
-    }
-
-    boolean deleteNetComService(String serviceNameStr, ErrorReporter errorLogRef) throws SystemServiceStopException
-    {
-        ServiceName serviceName;
-        try
-        {
-            serviceName = new ServiceName(serviceNameStr);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new SystemServiceStopException(
-                String.format(
-                    "The name '%s' can not be used for a network communication service instance",
-                    serviceNameStr
-                ),
-                String.format(
-                    "The name '%s' is not a valid name for a network communication service instance",
-                    serviceNameStr
-                ),
-                null,
-                "Change the name of the network communication service instance",
-                null,
-                invalidNameExc
-            );
-        }
-        TcpConnector netComSvc = netComConnectors.get(serviceName);
-        SystemService sysSvc = systemServicesMap.get(serviceName);
-
-        boolean svcStarted = false;
-        boolean issuedShutdown = false;
-        if (netComSvc != null)
-        {
-            svcStarted = netComSvc.isStarted();
-            if (svcStarted)
-            {
-                netComSvc.shutdown();
-                issuedShutdown = true;
-            }
-        }
-        else
-        if (sysSvc != null)
-        {
-            svcStarted = sysSvc.isStarted();
-            if (svcStarted)
-            {
-                sysSvc.shutdown();
-                issuedShutdown = true;
-            }
-        }
-
-        netComConnectors.remove(serviceName);
-        systemServicesMap.remove(serviceName);
-
-        if (svcStarted && issuedShutdown)
-        {
-            errorLogRef.logInfo(
-                String.format(
-                    "Initiated shutdown of network communication service '%s'",
-                    serviceName.displayValue
-                )
-            );
-        }
-
-        if (netComSvc != null || sysSvc != null)
-        {
-            errorLogRef.logInfo(
-                String.format(
-                    "Deleted network communication service '%s'",
-                    serviceName.displayValue
-                )
-            );
-        }
-
-        return netComSvc != null || sysSvc != null;
     }
 
     private String loadPropChecked(Props props, String key) throws SystemServiceStartException
     {
-        String value = null;
+        String value;
         try
         {
             value = props.getProp(key);
@@ -1403,115 +1457,22 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         return value;
     }
 
-    public void connectSatellite(
-        final InetSocketAddress satelliteAddress,
-        final TcpConnector tcpConnector,
-        final Node node
-    )
+    private void connectToKnownNodes(final ErrorReporter errorLogRef, final AccessContext initCtx)
     {
-        Runnable connectRunnable = new Runnable()
+        if (!nodesMap.isEmpty())
         {
-            @Override
-            public void run()
+            errorLogRef.logInfo("Reconnecting to previously known nodes");
+            Collection<Node> nodes = nodesMap.values();
+            for (Node node : nodes)
             {
-                try
-                {
-                    Peer peer = tcpConnector.connect(satelliteAddress, node);
-                    {
-                        AccessContext connectorCtx = sysCtx.clone();
-                        connectorCtx.getEffectivePrivs().enablePrivileges(
-                            Privilege.PRIV_MAC_OVRD,
-                            Privilege.PRIV_OBJ_CHANGE
-                        );
-                        node.setPeer(connectorCtx, peer);
-                    }
-                    if (peer.isConnected(false))
-                    {
-                        apiCallHandler.completeSatelliteAuthentication(peer);
-                        pingTask.add(peer);
-                    }
-                    else
-                    {
-                        reconnectorTask.add(peer);
-                    }
-                }
-                catch (IOException ioExc)
-                {
-                    getErrorReporter().reportError(
-                        new LinStorException(
-                            "Cannot connect to satellite",
-                            String.format(
-                                "Establishing connection to satellite (%s:%d) failed",
-                                satelliteAddress.getAddress().getHostAddress(),
-                                satelliteAddress.getPort()
-                            ),
-                            "IOException occured. See cause for further details",
-                            null,
-                            null,
-                            ioExc
-                        )
-                    );
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    getErrorReporter().reportError(
-                        new ImplementationError(
-                            "System context has not enough privileges to set peer for a connecting node",
-                            accDeniedExc
-                        )
-                    );
-                    accDeniedExc.printStackTrace();
-                }
+                errorLogRef.logDebug("Reconnecting to node '" + node.getName() + "'.");
+                CtrlNodeApiCallHandler.startConnecting(node, initCtx, null, apiCtrlAccessors);
             }
-        };
-        // This could possibly be offloaded to some specialized worker pool in the future,
-        // but not to the main worker pool used for submitting inbound requests,
-        // because submitting to the main worker pool from the Controller's initialization
-        // routines or from another task that already runs on the main worker pool
-        // can potentially deadlock if the worker pool's queue is full
-        connectRunnable.run();
-    }
-
-    /**
-     * Generates a random value for a DRBD resource's shared secret
-     *
-     * @return a 20 character long random String
-     */
-    public String generateSharedSecret()
-    {
-        byte[] randomBytes = new byte[DRBD_SHARED_SECRET_SIZE];
-        new SecureRandom().nextBytes(randomBytes);
-        String secret = Base64.encode(randomBytes);
-        return secret;
-    }
-
-    public MetaDataApi getMetaDataApi()
-    {
-        return metaData;
-    }
-
-    public short getDefaultPeerCount()
-    {
-        return defaultPeerCount;
-    }
-
-    public int getDefaultAlStripes()
-    {
-        return defaultAlStripes;
-    }
-
-    public long getDefaultAlSize()
-    {
-        return defaultAlSize;
-    }
-
-    public String getDefaultStorPoolName()
-    {
-        return defaultStorPoolName;
-    }
-
-    public CtrlApiCallHandler getApiCallHandler()
-    {
-        return apiCallHandler;
+            errorLogRef.logInfo("Reconnect requests sent");
+        }
+        else
+        {
+            errorLogRef.logInfo("No known nodes.");
+        }
     }
 }
