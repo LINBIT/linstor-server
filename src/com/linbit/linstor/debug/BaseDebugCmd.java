@@ -22,9 +22,6 @@ import java.util.TreeSet;
  */
 public abstract class BaseDebugCmd implements CommonDebugCmd
 {
-    public static final int SPRT_TEXT_LENGTH = 78;
-
-    public static final char SPRT_TEXT_CHAR = '\u2550';
     public static final String PFX_SUB      = "\u251C\u2500";
     public static final String PFX_SUB_LAST = "\u2514\u2500";
     public static final String PFX_VLINE    = "\u2502 ";
@@ -39,7 +36,8 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
     final boolean acceptsUndeclared = false;
 
     private boolean initialized;
-    private String  sprtText;
+
+    private final DebugPrintHelper debugPrintHelper;
 
     final Map<String, String> dspNameMap;
 
@@ -75,7 +73,8 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         undeclDescr = undeclDescrRef;
         initialized = false;
         coreSvcs    = null;
-        sprtText    = null;
+
+        debugPrintHelper = new DebugPrintHelper();
     }
 
     @Override
@@ -152,16 +151,7 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         String paramName
     )
     {
-        printError(
-            debugErr,
-            String.format(
-                "The required parameter '%s' is not present.",
-                paramName
-            ),
-            null,
-            "Reenter the command including the required parameter.",
-            null
-        );
+        debugPrintHelper.printMissingParamError(debugErr, paramName);
     }
 
     public void printMultiMissingParamError(
@@ -170,69 +160,12 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         String... paramNameList
     )
     {
-        Set<String> missingParams = new TreeSet<>();
-        for (String paramName : paramNameList)
-        {
-            if (parameters.get(paramName) == null)
-            {
-                missingParams.add(paramName);
-            }
-        }
-        String errorText = null;
-        String correctionText = null;
-        if (missingParams.size() == 1)
-        {
-            Iterator<String> paramIter = missingParams.iterator();
-            errorText = String.format(
-                "The required parameter '%s' is not present.",
-                paramIter.next()
-            );
-            correctionText = "Reenter the command including the required parameter.";
-        }
-        else
-        if (missingParams.size() > 0)
-        {
-            StringBuilder errorTextBld = new StringBuilder();
-            errorTextBld.append("The following required parameters are not present:\n");
-            for (String paramName : missingParams)
-            {
-                errorTextBld.append(String.format("    %s\n", paramName));
-            }
-            errorText = errorTextBld.toString();
-            correctionText = "Reenter the command including the required parameters.";
-        }
-        if (errorText != null && correctionText != null)
-        {
-            printError(
-                debugErr,
-                errorText,
-                null,
-                correctionText,
-                null
-            );
-        }
+        debugPrintHelper.printMultiMissingParamError(debugErr, parameters, paramNameList);
     }
 
     public void printDmException(PrintStream debugErr, LinStorException dmExc)
     {
-        String descText = dmExc.getDescriptionText();
-        if (descText == null)
-        {
-            descText = dmExc.getMessage();
-            if (descText == null)
-            {
-                descText = "(Uncommented exception of type " +
-                           dmExc.getClass().getCanonicalName() + ")";
-            }
-        }
-
-        printError(
-            debugErr,
-            descText,
-            dmExc.getCauseText(),
-            dmExc.getCorrectionText(),
-            dmExc.getDetailsText()
-        );
+        debugPrintHelper.printDmException(debugErr, dmExc);
     }
 
     public void printError(
@@ -243,36 +176,11 @@ public abstract class BaseDebugCmd implements CommonDebugCmd
         String errorDetailsText
     )
     {
-        if (errorText != null)
-        {
-            debugErr.println("Error:");
-            AutoIndent.printWithIndent(debugErr, 4, errorText);
-        }
-        if (causeText != null)
-        {
-            debugErr.println("Cause:");
-            AutoIndent.printWithIndent(debugErr, 4, causeText);
-        }
-        if (correctionText != null)
-        {
-            debugErr.println("Correction:");
-            AutoIndent.printWithIndent(debugErr, 4, correctionText);
-        }
-        if (errorDetailsText != null)
-        {
-            debugErr.println("Error details:");
-            AutoIndent.printWithIndent(debugErr, 4, errorDetailsText);
-        }
+        debugPrintHelper.printError(debugErr, errorText, causeText, correctionText, errorDetailsText);
     }
 
     public void printSectionSeparator(PrintStream output)
     {
-        if (sprtText == null)
-        {
-            char[] sprtTextData = new char[SPRT_TEXT_LENGTH];
-            Arrays.fill(sprtTextData, SPRT_TEXT_CHAR);
-            sprtText = new String(sprtTextData);
-        }
-        output.println(sprtText);
+        debugPrintHelper.printSectionSeparator(output);
     }
 }
