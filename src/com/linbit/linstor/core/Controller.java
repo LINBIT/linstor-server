@@ -12,6 +12,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -409,10 +410,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
             errorLogRef.logInfo("Initializing test APIs");
             LinStor.loadApiCalls(msgProc, this, this, apiType);
 
-            Props propsContainer = loadPropsContainer();
-
             initNetComServices(
-                propsContainer.getNamespace(PROPSCON_KEY_NETCOM),
+                ctrlConf.getNamespace(PROPSCON_KEY_NETCOM),
                 errorLogRef,
                 initCtx
             );
@@ -845,6 +844,9 @@ public final class Controller extends LinStor implements Runnable, CoreServices
 
         AccessContext privCtx = sysCtx.clone();
         privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+        // in case we support other SQL dialects than derby:
+        // TODO: determine which DBDriver to use
         securityDbDriver = new DbDerbyPersistence(privCtx, errorLogRef);
         persistenceDbDriver = new DerbyDriver(
             privCtx,
@@ -869,13 +871,22 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         }
 
         // Test the database connection
+        Connection conn = null;
         try
         {
-            dbConnPool.getConnection().createStatement().executeQuery(DERBY_CONNECTION_TEST_SQL);
+            conn = dbConnPool.getConnection();
+            conn.createStatement().executeQuery(DERBY_CONNECTION_TEST_SQL);
         }
         catch (SQLException exc)
         {
             throw new InitializationException("Failed to connect to database", exc);
+        }
+        finally
+        {
+            if (conn != null)
+            {
+                dbConnPool.returnConnection(conn);
+            }
         }
     }
 
