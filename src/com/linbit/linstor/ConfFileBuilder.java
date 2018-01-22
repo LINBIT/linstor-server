@@ -214,12 +214,13 @@ public class ConfFileBuilder
     private void appendVlmIfPresent(Volume vlm, AccessContext accCtx)
         throws AccessDeniedException
     {
-        if (vlm.getFlags().isUnset(accCtx, Volume.VlmFlags.DELETE))
+        if (vlm.getFlags().isUnset(accCtx, Volume.VlmFlags.DELETE, Volume.VlmFlags.CLEAN))
         {
             final String disk;
-            if (vlm.getBlockDevicePath(accCtx) == null ||
+            if (
+                vlm.getBlockDevicePath(accCtx) == null ||
                 vlm.getResource().getStateFlags().isSet(accCtx, RscFlags.DISKLESS)
-                )
+            )
             {
                 disk = "none";
             }
