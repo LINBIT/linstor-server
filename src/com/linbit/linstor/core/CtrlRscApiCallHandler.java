@@ -48,6 +48,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -593,6 +594,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
     byte[] listResources(int msgId, AccessContext accCtx, Peer client)
     {
         ArrayList<ResourceData.RscApi> rscs = new ArrayList<>();
+        List<ResourceState> rscStates = new ArrayList<>();
         try
         {
             apiCtrlAccessors.getRscDfnMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
@@ -613,15 +615,34 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                     // don't add storpooldfn without access
                 }
             }
+
+            // get resource states of all nodes
+            for (final Node node : apiCtrlAccessors.getNodesMap().values())
+            {
+                final Peer peer = node.getPeer(accCtx);
+                if (peer != null)
+                {
+                    final Map<ResourceName, ResourceState> resourceStateMap = peer.getResourceStates();
+
+                    if (resourceStateMap != null) {
+                        ArrayList<ResourceState> stateCopy = new ArrayList<>(resourceStateMap.values());
+                        for (ResourceState rscState : stateCopy) {
+                            rscState.setNodeName(node.getName().getDisplayName());
+                            rscStates.add(rscState);
+                        }
+                    }
+                }
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
             // for now return an empty list.
+            apiCtrlAccessors.getErrorReporter().reportError(accDeniedExc);
         }
 
         return serializer
                 .builder(API_LST_RSC, msgId)
-                .resourceList(rscs)
+                .resourceList(rscs, rscStates)
                 .build();
     }
 

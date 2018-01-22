@@ -24,6 +24,8 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.interfaces.serializer.InterComBuilder;
 import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.pojo.ResourceState;
+import com.linbit.linstor.api.pojo.VolumeState;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
@@ -36,8 +38,10 @@ import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
+import com.linbit.linstor.proto.RscStateOuterClass;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
+import com.linbit.linstor.proto.VlmStateOuterClass;
 import com.linbit.linstor.proto.apidata.NodeApiData;
 import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.RscDfnApiData;
@@ -236,7 +240,7 @@ public class ProtoInterComSerializer implements InterComSerializer
         }
 
         @Override
-        public InterComBuilder resourceList(List<Resource.RscApi> rscs)
+        public InterComBuilder resourceList(final List<Resource.RscApi> rscs, final Collection<ResourceState> rscStates)
         {
             MsgLstRscOuterClass.MsgLstRsc.Builder msgListRscsBuilder = MsgLstRscOuterClass.MsgLstRsc.newBuilder();
 
@@ -245,9 +249,62 @@ public class ProtoInterComSerializer implements InterComSerializer
                 msgListRscsBuilder.addResources(RscApiData.toRscProto(apiRsc));
             }
 
+            for (ResourceState rscState : rscStates)
+            {
+                msgListRscsBuilder.addResourceStates(buildResourceState(rscState.getNodeName(), rscState));
+            }
+
             try
             {
                 msgListRscsBuilder.build().writeDelimitedTo(baos);
+            }
+            catch (IOException ex)
+            {
+                errReporter.reportError(ex);
+                exceptionOccured = true;
+            }
+
+            return this;
+        }
+
+        private RscStateOuterClass.RscState buildResourceState(final String nodeName, final ResourceState rscState) {
+            RscStateOuterClass.RscState.Builder rscStateBuilder = RscStateOuterClass.RscState.newBuilder();
+
+            rscStateBuilder
+                .setRscName(rscState.getRscName())
+                .setNodeName(nodeName)
+                .setIsPresent(rscState.isPresent())
+                .setRequiresAdjust(rscState.requiresAdjust())
+                .setIsPrimary(rscState.isPrimary());
+
+            // volumes
+            for (VolumeState vlmState : rscState.getVolumes()) {
+                VlmStateOuterClass.VlmState.Builder vlmStateBuilder = VlmStateOuterClass.VlmState.newBuilder();
+
+                vlmStateBuilder
+                    .setVlmNr(vlmState.getVlmNr().value)
+                    .setVlmMinorNr(vlmState.getMinorNr().value)
+                    .setIsPresent(vlmState.isPresent())
+                    .setHasDisk(vlmState.hasDisk())
+                    .setHasMetaData(vlmState.hasMetaData())
+                    .setCheckMetaData(vlmState.isCheckMetaData())
+                    .setDiskFailed(vlmState.isDiskFailed())
+                    .setNetSize(vlmState.getNetSize())
+                    .setGrossSize(vlmState.getGrossSize());
+
+                rscStateBuilder.addVlmStates(vlmStateBuilder);
+            }
+
+            return rscStateBuilder.build();
+        }
+
+        @Override
+        public InterComBuilder resourceState(final String nodeName, final ResourceState rscState) {
+            RscStateOuterClass.RscState protoRscState = buildResourceState(nodeName, rscState);
+
+            try
+            {
+                protoRscState.writeDelimitedTo(baos);
             }
             catch (IOException ex)
             {

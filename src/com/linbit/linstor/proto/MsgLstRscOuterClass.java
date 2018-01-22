@@ -61,6 +61,50 @@ public final class MsgLstRscOuterClass {
      */
     com.linbit.linstor.proto.RscOuterClass.RscOrBuilder getResourcesOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * Resources states
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+     */
+    java.util.List<com.linbit.linstor.proto.RscStateOuterClass.RscState> 
+        getResourceStatesList();
+    /**
+     * <pre>
+     * Resources states
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+     */
+    com.linbit.linstor.proto.RscStateOuterClass.RscState getResourceStates(int index);
+    /**
+     * <pre>
+     * Resources states
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+     */
+    int getResourceStatesCount();
+    /**
+     * <pre>
+     * Resources states
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+     */
+    java.util.List<? extends com.linbit.linstor.proto.RscStateOuterClass.RscStateOrBuilder> 
+        getResourceStatesOrBuilderList();
+    /**
+     * <pre>
+     * Resources states
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+     */
+    com.linbit.linstor.proto.RscStateOuterClass.RscStateOrBuilder getResourceStatesOrBuilder(
+        int index);
   }
   /**
    * <pre>
@@ -79,6 +123,7 @@ public final class MsgLstRscOuterClass {
     }
     private MsgLstRsc() {
       resources_ = java.util.Collections.emptyList();
+      resourceStates_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -118,6 +163,15 @@ public final class MsgLstRscOuterClass {
                   input.readMessage(com.linbit.linstor.proto.RscOuterClass.Rsc.PARSER, extensionRegistry));
               break;
             }
+            case 18: {
+              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+                resourceStates_ = new java.util.ArrayList<com.linbit.linstor.proto.RscStateOuterClass.RscState>();
+                mutable_bitField0_ |= 0x00000002;
+              }
+              resourceStates_.add(
+                  input.readMessage(com.linbit.linstor.proto.RscStateOuterClass.RscState.PARSER, extensionRegistry));
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -128,6 +182,9 @@ public final class MsgLstRscOuterClass {
       } finally {
         if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
           resources_ = java.util.Collections.unmodifiableList(resources_);
+        }
+        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+          resourceStates_ = java.util.Collections.unmodifiableList(resourceStates_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -200,6 +257,61 @@ public final class MsgLstRscOuterClass {
       return resources_.get(index);
     }
 
+    public static final int RESOURCE_STATES_FIELD_NUMBER = 2;
+    private java.util.List<com.linbit.linstor.proto.RscStateOuterClass.RscState> resourceStates_;
+    /**
+     * <pre>
+     * Resources states
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+     */
+    public java.util.List<com.linbit.linstor.proto.RscStateOuterClass.RscState> getResourceStatesList() {
+      return resourceStates_;
+    }
+    /**
+     * <pre>
+     * Resources states
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+     */
+    public java.util.List<? extends com.linbit.linstor.proto.RscStateOuterClass.RscStateOrBuilder> 
+        getResourceStatesOrBuilderList() {
+      return resourceStates_;
+    }
+    /**
+     * <pre>
+     * Resources states
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+     */
+    public int getResourceStatesCount() {
+      return resourceStates_.size();
+    }
+    /**
+     * <pre>
+     * Resources states
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+     */
+    public com.linbit.linstor.proto.RscStateOuterClass.RscState getResourceStates(int index) {
+      return resourceStates_.get(index);
+    }
+    /**
+     * <pre>
+     * Resources states
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+     */
+    public com.linbit.linstor.proto.RscStateOuterClass.RscStateOrBuilder getResourceStatesOrBuilder(
+        int index) {
+      return resourceStates_.get(index);
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -208,6 +320,12 @@ public final class MsgLstRscOuterClass {
 
       for (int i = 0; i < getResourcesCount(); i++) {
         if (!getResources(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      for (int i = 0; i < getResourceStatesCount(); i++) {
+        if (!getResourceStates(i).isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -221,6 +339,9 @@ public final class MsgLstRscOuterClass {
       for (int i = 0; i < resources_.size(); i++) {
         output.writeMessage(1, resources_.get(i));
       }
+      for (int i = 0; i < resourceStates_.size(); i++) {
+        output.writeMessage(2, resourceStates_.get(i));
+      }
       unknownFields.writeTo(output);
     }
 
@@ -232,6 +353,10 @@ public final class MsgLstRscOuterClass {
       for (int i = 0; i < resources_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(1, resources_.get(i));
+      }
+      for (int i = 0; i < resourceStates_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(2, resourceStates_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -252,6 +377,8 @@ public final class MsgLstRscOuterClass {
       boolean result = true;
       result = result && getResourcesList()
           .equals(other.getResourcesList());
+      result = result && getResourceStatesList()
+          .equals(other.getResourceStatesList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -266,6 +393,10 @@ public final class MsgLstRscOuterClass {
       if (getResourcesCount() > 0) {
         hash = (37 * hash) + RESOURCES_FIELD_NUMBER;
         hash = (53 * hash) + getResourcesList().hashCode();
+      }
+      if (getResourceStatesCount() > 0) {
+        hash = (37 * hash) + RESOURCE_STATES_FIELD_NUMBER;
+        hash = (53 * hash) + getResourceStatesList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -386,6 +517,7 @@ public final class MsgLstRscOuterClass {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
           getResourcesFieldBuilder();
+          getResourceStatesFieldBuilder();
         }
       }
       public Builder clear() {
@@ -395,6 +527,12 @@ public final class MsgLstRscOuterClass {
           bitField0_ = (bitField0_ & ~0x00000001);
         } else {
           resourcesBuilder_.clear();
+        }
+        if (resourceStatesBuilder_ == null) {
+          resourceStates_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000002);
+        } else {
+          resourceStatesBuilder_.clear();
         }
         return this;
       }
@@ -427,6 +565,15 @@ public final class MsgLstRscOuterClass {
           result.resources_ = resources_;
         } else {
           result.resources_ = resourcesBuilder_.build();
+        }
+        if (resourceStatesBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) == 0x00000002)) {
+            resourceStates_ = java.util.Collections.unmodifiableList(resourceStates_);
+            bitField0_ = (bitField0_ & ~0x00000002);
+          }
+          result.resourceStates_ = resourceStates_;
+        } else {
+          result.resourceStates_ = resourceStatesBuilder_.build();
         }
         onBuilt();
         return result;
@@ -495,6 +642,32 @@ public final class MsgLstRscOuterClass {
             }
           }
         }
+        if (resourceStatesBuilder_ == null) {
+          if (!other.resourceStates_.isEmpty()) {
+            if (resourceStates_.isEmpty()) {
+              resourceStates_ = other.resourceStates_;
+              bitField0_ = (bitField0_ & ~0x00000002);
+            } else {
+              ensureResourceStatesIsMutable();
+              resourceStates_.addAll(other.resourceStates_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.resourceStates_.isEmpty()) {
+            if (resourceStatesBuilder_.isEmpty()) {
+              resourceStatesBuilder_.dispose();
+              resourceStatesBuilder_ = null;
+              resourceStates_ = other.resourceStates_;
+              bitField0_ = (bitField0_ & ~0x00000002);
+              resourceStatesBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getResourceStatesFieldBuilder() : null;
+            } else {
+              resourceStatesBuilder_.addAllMessages(other.resourceStates_);
+            }
+          }
+        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
@@ -503,6 +676,11 @@ public final class MsgLstRscOuterClass {
       public final boolean isInitialized() {
         for (int i = 0; i < getResourcesCount(); i++) {
           if (!getResources(i).isInitialized()) {
+            return false;
+          }
+        }
+        for (int i = 0; i < getResourceStatesCount(); i++) {
+          if (!getResourceStates(i).isInitialized()) {
             return false;
           }
         }
@@ -839,6 +1017,318 @@ public final class MsgLstRscOuterClass {
         }
         return resourcesBuilder_;
       }
+
+      private java.util.List<com.linbit.linstor.proto.RscStateOuterClass.RscState> resourceStates_ =
+        java.util.Collections.emptyList();
+      private void ensureResourceStatesIsMutable() {
+        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
+          resourceStates_ = new java.util.ArrayList<com.linbit.linstor.proto.RscStateOuterClass.RscState>(resourceStates_);
+          bitField0_ |= 0x00000002;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.RscStateOuterClass.RscState, com.linbit.linstor.proto.RscStateOuterClass.RscState.Builder, com.linbit.linstor.proto.RscStateOuterClass.RscStateOrBuilder> resourceStatesBuilder_;
+
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.RscStateOuterClass.RscState> getResourceStatesList() {
+        if (resourceStatesBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(resourceStates_);
+        } else {
+          return resourceStatesBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public int getResourceStatesCount() {
+        if (resourceStatesBuilder_ == null) {
+          return resourceStates_.size();
+        } else {
+          return resourceStatesBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public com.linbit.linstor.proto.RscStateOuterClass.RscState getResourceStates(int index) {
+        if (resourceStatesBuilder_ == null) {
+          return resourceStates_.get(index);
+        } else {
+          return resourceStatesBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public Builder setResourceStates(
+          int index, com.linbit.linstor.proto.RscStateOuterClass.RscState value) {
+        if (resourceStatesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureResourceStatesIsMutable();
+          resourceStates_.set(index, value);
+          onChanged();
+        } else {
+          resourceStatesBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public Builder setResourceStates(
+          int index, com.linbit.linstor.proto.RscStateOuterClass.RscState.Builder builderForValue) {
+        if (resourceStatesBuilder_ == null) {
+          ensureResourceStatesIsMutable();
+          resourceStates_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          resourceStatesBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public Builder addResourceStates(com.linbit.linstor.proto.RscStateOuterClass.RscState value) {
+        if (resourceStatesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureResourceStatesIsMutable();
+          resourceStates_.add(value);
+          onChanged();
+        } else {
+          resourceStatesBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public Builder addResourceStates(
+          int index, com.linbit.linstor.proto.RscStateOuterClass.RscState value) {
+        if (resourceStatesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureResourceStatesIsMutable();
+          resourceStates_.add(index, value);
+          onChanged();
+        } else {
+          resourceStatesBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public Builder addResourceStates(
+          com.linbit.linstor.proto.RscStateOuterClass.RscState.Builder builderForValue) {
+        if (resourceStatesBuilder_ == null) {
+          ensureResourceStatesIsMutable();
+          resourceStates_.add(builderForValue.build());
+          onChanged();
+        } else {
+          resourceStatesBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public Builder addResourceStates(
+          int index, com.linbit.linstor.proto.RscStateOuterClass.RscState.Builder builderForValue) {
+        if (resourceStatesBuilder_ == null) {
+          ensureResourceStatesIsMutable();
+          resourceStates_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          resourceStatesBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public Builder addAllResourceStates(
+          java.lang.Iterable<? extends com.linbit.linstor.proto.RscStateOuterClass.RscState> values) {
+        if (resourceStatesBuilder_ == null) {
+          ensureResourceStatesIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, resourceStates_);
+          onChanged();
+        } else {
+          resourceStatesBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public Builder clearResourceStates() {
+        if (resourceStatesBuilder_ == null) {
+          resourceStates_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000002);
+          onChanged();
+        } else {
+          resourceStatesBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public Builder removeResourceStates(int index) {
+        if (resourceStatesBuilder_ == null) {
+          ensureResourceStatesIsMutable();
+          resourceStates_.remove(index);
+          onChanged();
+        } else {
+          resourceStatesBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public com.linbit.linstor.proto.RscStateOuterClass.RscState.Builder getResourceStatesBuilder(
+          int index) {
+        return getResourceStatesFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public com.linbit.linstor.proto.RscStateOuterClass.RscStateOrBuilder getResourceStatesOrBuilder(
+          int index) {
+        if (resourceStatesBuilder_ == null) {
+          return resourceStates_.get(index);  } else {
+          return resourceStatesBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public java.util.List<? extends com.linbit.linstor.proto.RscStateOuterClass.RscStateOrBuilder> 
+           getResourceStatesOrBuilderList() {
+        if (resourceStatesBuilder_ != null) {
+          return resourceStatesBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(resourceStates_);
+        }
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public com.linbit.linstor.proto.RscStateOuterClass.RscState.Builder addResourceStatesBuilder() {
+        return getResourceStatesFieldBuilder().addBuilder(
+            com.linbit.linstor.proto.RscStateOuterClass.RscState.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public com.linbit.linstor.proto.RscStateOuterClass.RscState.Builder addResourceStatesBuilder(
+          int index) {
+        return getResourceStatesFieldBuilder().addBuilder(
+            index, com.linbit.linstor.proto.RscStateOuterClass.RscState.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Resources states
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.RscState resource_states = 2;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.RscStateOuterClass.RscState.Builder> 
+           getResourceStatesBuilderList() {
+        return getResourceStatesFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.RscStateOuterClass.RscState, com.linbit.linstor.proto.RscStateOuterClass.RscState.Builder, com.linbit.linstor.proto.RscStateOuterClass.RscStateOrBuilder> 
+          getResourceStatesFieldBuilder() {
+        if (resourceStatesBuilder_ == null) {
+          resourceStatesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.linstor.proto.RscStateOuterClass.RscState, com.linbit.linstor.proto.RscStateOuterClass.RscState.Builder, com.linbit.linstor.proto.RscStateOuterClass.RscStateOrBuilder>(
+                  resourceStates_,
+                  ((bitField0_ & 0x00000002) == 0x00000002),
+                  getParentForChildren(),
+                  isClean());
+          resourceStates_ = null;
+        }
+        return resourceStatesBuilder_;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -903,9 +1393,11 @@ public final class MsgLstRscOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\025proto/MsgLstRsc.proto\022\030com.linbit.lins" +
-      "tor.proto\032\017proto/Rsc.proto\"=\n\tMsgLstRsc\022" +
-      "0\n\tresources\030\001 \003(\0132\035.com.linbit.linstor." +
-      "proto.RscP\000"
+      "tor.proto\032\017proto/Rsc.proto\032\024proto/RscSta" +
+      "te.proto\"z\n\tMsgLstRsc\0220\n\tresources\030\001 \003(\013" +
+      "2\035.com.linbit.linstor.proto.Rsc\022;\n\017resou" +
+      "rce_states\030\002 \003(\0132\".com.linbit.linstor.pr" +
+      "oto.RscStateP\000P\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -919,14 +1411,16 @@ public final class MsgLstRscOuterClass {
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
           com.linbit.linstor.proto.RscOuterClass.getDescriptor(),
+          com.linbit.linstor.proto.RscStateOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_linstor_proto_MsgLstRsc_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_com_linbit_linstor_proto_MsgLstRsc_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgLstRsc_descriptor,
-        new java.lang.String[] { "Resources", });
+        new java.lang.String[] { "Resources", "ResourceStates", });
     com.linbit.linstor.proto.RscOuterClass.getDescriptor();
+    com.linbit.linstor.proto.RscStateOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

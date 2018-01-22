@@ -10,6 +10,7 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.api.pojo.ResourceState;
 
 /**
  *
@@ -26,7 +27,9 @@ public interface InterComBuilder {
     InterComBuilder storPoolDfnList(List<StorPoolDefinition.StorPoolDfnApi> storPoolDfns);
     InterComBuilder storPoolList(List<StorPool.StorPoolApi> storOools);
     InterComBuilder resourceDfnList(List<ResourceDefinition.RscDfnApi> rscDfns);
-    InterComBuilder resourceList(List<Resource.RscApi> rscs);
+    InterComBuilder resourceList(final List<Resource.RscApi> rscs, final Collection<ResourceState> rscStates);
+
+    InterComBuilder resourceState(final String nodeName, final ResourceState rsc);
 
     InterComBuilder notifyResourceDeleted(String nodeName, String resourceName, String rscUuid);
     InterComBuilder notifyVolumeDeleted(String nodeName, String resourceName, int volumeNr);

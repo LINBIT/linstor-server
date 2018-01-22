@@ -3,6 +3,8 @@ package com.linbit.linstor.netcom;
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.ResourceName;
+import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
@@ -22,6 +24,7 @@ import javax.net.ssl.SSLException;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.nio.channels.SocketChannel;
+import java.util.Map;
 
 /**
  * Tracks the status of the communication with a peer
@@ -68,6 +71,8 @@ public class TcpConnectorPeer implements Peer
 
     protected Message internalPingMsg;
     protected Message internalPongMsg;
+
+    private Map<ResourceName, ResourceState> resourceStateMap;
 
     protected TcpConnectorPeer(
         String peerIdRef,
@@ -429,5 +434,15 @@ public class TcpConnectorPeer implements Peer
     public long getLastPongReceived()
     {
         return lastPongReceived;
+    }
+
+    @Override
+    public void setResourceStates(final Map<ResourceName, ResourceState> resourceStateMap) {
+        this.resourceStateMap = resourceStateMap;
+    }
+
+    @Override
+    public Map<ResourceName, ResourceState> getResourceStates() {
+        return resourceStateMap;
     }
 }

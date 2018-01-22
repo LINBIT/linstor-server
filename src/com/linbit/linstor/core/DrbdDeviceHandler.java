@@ -152,6 +152,7 @@ class DrbdDeviceHandler implements DeviceHandler
             // Evaluate resource & volumes state by checking the DRBD state
             evaluateDrbdResource(rsc, rscDfn, rscState);
 
+            updateStatesOnController(localNode.getPeer(wrkCtx), rscState);
 
             // debug print state
             System.out.println(rscState.toString());
@@ -249,6 +250,34 @@ class DrbdDeviceHandler implements DeviceHandler
         byte[] data = stlt.getApiCallHandler().getInterComSerializer()
             .builder(InternalApiConsts.API_REQUEST_PRIMARY_RSC, 1)
             .primaryRequest(rscName, rscUuid)
+            .build();
+
+        if (data != null)
+        {
+            try
+            {
+                Message netComMsg = ctrlPeer.createMessage();
+                netComMsg.setData(data);
+                ctrlPeer.sendMessage(netComMsg);
+            }
+            catch (IllegalMessageStateException illStateExc)
+            {
+                throw new ImplementationError(
+                    "Attempt to send a NetCom message that has an illegal state",
+                    illStateExc
+                );
+            }
+        }
+    }
+
+    private void updateStatesOnController(
+        final Peer ctrlPeer,
+        ResourceState rscState
+    )
+    {
+        byte[] data = stlt.getApiCallHandler().getInterComSerializer()
+            .builder(InternalApiConsts.API_UPDATE_STATES, 1)
+            .resourceState(stlt.getLocalNode().getName().getDisplayName(), rscState)
             .build();
 
         if (data != null)
