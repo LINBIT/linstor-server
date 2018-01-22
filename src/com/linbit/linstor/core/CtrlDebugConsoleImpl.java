@@ -42,6 +42,7 @@ class CtrlDebugConsoleImpl extends BaseDebugConsole
         "CmdDisplaySystemStatus",
         "CmdDisplayApis",
         "CmdDisplayNodes",
+        "CmdDisplayStorPoolDfn",
         "CmdDisplayResourceDfn",
         "CmdDisplayResource",
         "CmdDisplayLockStatus",
