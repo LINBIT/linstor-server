@@ -233,7 +233,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 vlmCreatedRcEntry.setDetailsFormat(
                     "Volume UUID is: " + entry.getValue().getUuid().toString()
                 );
-                vlmCreatedRcEntry.setReturnCode(ApiConsts.RC_VLM_CREATED);
+                vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_VLM | ApiConsts.CREATED);
                 vlmCreatedRcEntry.putAllObjRef(currentObjRefs.get());
                 vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(entry.getKey()));
                 vlmCreatedRcEntry.putAllVariables(currentVariables.get());
@@ -1118,7 +1118,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             " deleted.";
         rscDeletedMsg = rscDeletedMsg.substring(0, 1).toUpperCase() + rscDeletedMsg.substring(1);
         entry.setMessageFormat(rscDeletedMsg);
-        entry.setReturnCode(ApiConsts.RC_RSC_DFN_DELETED);
+        entry.setReturnCode(ApiConsts.MASK_RSC_DFN | ApiConsts.DELETED);
         entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscName.displayValue);
         entry.putObjRef(ApiConsts.KEY_UUID, rscDfnUuid.toString());
         entry.putVariable(ApiConsts.KEY_RSC_NAME, rscName.displayValue);
@@ -1134,7 +1134,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         String rscDeletedMsg = CtrlNodeApiCallHandler.getObjectDescriptionInline(nodeName.displayValue) +
             " deleted.";
         entry.setMessageFormat(rscDeletedMsg);
-        entry.setReturnCode(ApiConsts.RC_NODE_DELETED);
+        entry.setReturnCode(ApiConsts.MASK_NODE | ApiConsts.DELETED);
         entry.putObjRef(ApiConsts.KEY_NODE, nodeName.displayValue);
         entry.putObjRef(ApiConsts.KEY_UUID, nodeUuid.toString());
         entry.putVariable(ApiConsts.KEY_NODE_NAME, nodeName.displayValue);

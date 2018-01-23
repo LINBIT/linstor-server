@@ -131,7 +131,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             for (VolumeDefinitionData vlmDfn : createdVlmDfns)
             {
                 ApiCallRcEntry volSuccessEntry = new ApiCallRcEntry();
-                volSuccessEntry.setReturnCode(ApiConsts.RC_VLM_DFN_CREATED);
+                volSuccessEntry.setReturnCode(ApiConsts.MASK_VLM_DFN | ApiConsts.CREATED);
                 String successMessage = String.format(
                     "Volume definition with number '%d' successfully " +
                         " created in resource definition '%s'.",

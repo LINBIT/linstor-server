@@ -46,7 +46,10 @@ public class NodeApiTest extends ApiTestBase
         Assert.assertTrue(rc.getEntries().size() == 1);
 
         RcEntry rcEntry = rc.getEntries().get(0);
-        Assert.assertEquals(rcEntry.getReturnCode(), ApiConsts.RC_NODE_CREATED);
+        Assert.assertEquals(
+            rcEntry.getReturnCode(),
+            ApiConsts.MASK_NODE | ApiConsts.MASK_CRT | ApiConsts.CREATED
+        );
 
         Assert.assertTrue(nodesMap.size() == 1);
         Assert.assertNotNull(nodesMap.get(new NodeName(nodeName)));
@@ -68,7 +71,10 @@ public class NodeApiTest extends ApiTestBase
         Assert.assertTrue(rc.getEntries().size() == 1);
 
         RcEntry rcEntry = rc.getEntries().get(0);
-        expectRc(rcEntry, ApiConsts.RC_NODE_CRT_FAIL_MISSING_NETCOM);
+        expectRc(
+            rcEntry,
+            ApiConsts.MASK_NODE | ApiConsts.MASK_CRT | ApiConsts.FAIL_MISSING_NETCOM
+        );
     }
 
     @Test
@@ -89,7 +95,10 @@ public class NodeApiTest extends ApiTestBase
         Assert.assertTrue(rc.getEntries().size() == 1);
 
         RcEntry rcEntry = rc.getEntries().get(0);
-        expectRc(rcEntry, ApiConsts.RC_NODE_CRT_FAIL_MISSING_STLT_CONN);
+        expectRc(
+            rcEntry,
+            ApiConsts.MASK_NODE | ApiConsts.MASK_CRT | ApiConsts.FAIL_MISSING_STLT_CONN
+        );
     }
 
     @Test
@@ -112,9 +121,10 @@ public class NodeApiTest extends ApiTestBase
         Assert.assertTrue(rc.getEntries().size() == 1);
 
         RcEntry rcEntry = rc.getEntries().get(0);
-        Assert.assertEquals(rcEntry.getReturnCode(), ApiConsts.RC_NODE_CREATED);
-
-
+        Assert.assertEquals(
+            rcEntry.getReturnCode(),
+            ApiConsts.MASK_NODE | ApiConsts.MASK_CRT | ApiConsts.CREATED
+        );
 
         rc = apiCallHandler.createNode(
             PUBLIC_CTX,
@@ -133,6 +143,9 @@ public class NodeApiTest extends ApiTestBase
         Assert.assertTrue(rc.getEntries().size() == 1);
 
         rcEntry = rc.getEntries().get(0);
-        Assert.assertEquals(rcEntry.getReturnCode(), ApiConsts.RC_NODE_CRT_FAIL_EXISTS_NODE);
+        Assert.assertEquals(
+            rcEntry.getReturnCode(),
+            ApiConsts.MASK_NODE | ApiConsts.MASK_CRT | ApiConsts.FAIL_EXISTS_NODE
+        );
     }
 }
