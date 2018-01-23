@@ -79,6 +79,11 @@ public class VlmApiData implements VlmApi
     }
 
     @Override
+    public int getVlmMinorNr() {
+        return vlm.getVlmMinorNr();
+    }
+
+    @Override
     public long getFlags()
     {
         return Volume.VlmFlags.fromStringList(vlm.getVlmFlagsList());
@@ -103,6 +108,7 @@ public class VlmApiData implements VlmApi
         builder.setStorPoolName(vlmApi.getStorPoolName());
         builder.setStorPoolUuid(vlmApi.getStorPoolUuid().toString());
         builder.setVlmNr(vlmApi.getVlmNr());
+        builder.setVlmMinorNr(vlmApi.getVlmMinorNr());
         if (vlmApi.getBlockDevice() != null)
         {
             builder.setBlockDevice(vlmApi.getBlockDevice());

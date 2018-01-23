@@ -776,6 +776,7 @@ public class ProtoInterComSerializer implements InterComSerializer
                     .setVlmDfnUuid(vol.getVolumeDefinition().getUuid().toString())
                     .setVlmUuid(vol.getUuid().toString())
                     .setVlmNr(vol.getVolumeDefinition().getVolumeNumber().value)
+                    .setVlmMinorNr(vol.getVolumeDefinition().getMinorNr(serializerCtx).value)
                     .addAllVlmFlags(Volume.VlmFlags.toStringList(vol.getFlags().getFlagsBits(serializerCtx)))
                     .setStorPoolUuid(vlmStorPool.getUuid().toString())
                     .setStorPoolName(vlmStorPool.getName().displayValue)

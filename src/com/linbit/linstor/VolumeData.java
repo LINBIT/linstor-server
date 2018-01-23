@@ -454,6 +454,7 @@ public class VolumeData extends BaseTransactionObject implements Volume
                 getBlockDevicePath(accCtx),
                 getMetaDiskPath(accCtx),
                 getVolumeDefinition().getVolumeNumber().value,
+                getVolumeDefinition().getMinorNr(accCtx).value,
                 getFlags().getFlagsBits(accCtx),
                 getProps(accCtx).map());
     }

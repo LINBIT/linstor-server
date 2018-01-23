@@ -97,18 +97,19 @@ public interface Volume extends TransactionObject, DbgInstanceUuid
         }
     }
 
-    public VlmApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    VlmApi getApiData(AccessContext accCtx) throws AccessDeniedException;
 
-    public interface VlmApi
+    interface VlmApi
     {
-        public UUID getVlmUuid();
-        public UUID getVlmDfnUuid();
-        public String getStorPoolName();
-        public UUID getStorPoolUuid();
-        public String getBlockDevice();
-        public String getMetaDisk();
-        public int getVlmNr();
-        public long getFlags();
-        public Map<String, String> getVlmProps();
+        UUID getVlmUuid();
+        UUID getVlmDfnUuid();
+        String getStorPoolName();
+        UUID getStorPoolUuid();
+        String getBlockDevice();
+        String getMetaDisk();
+        int getVlmNr();
+        int getVlmMinorNr();
+        long getFlags();
+        Map<String, String> getVlmProps();
     }
 }

@@ -21,6 +21,7 @@ public class VlmPojo implements Volume.VlmApi {
     private final String blockDevice;
     private final String metaDisk;
     private final int vlmNr;
+    private final int vlmMinorNr;
     private final long vlmFlags;
     private final Map<String, String> vlmProps;
 
@@ -32,6 +33,7 @@ public class VlmPojo implements Volume.VlmApi {
         final String blockDevice,
         final String metaDisk,
         final int vlmNr,
+        final int vlmMinorNr,
         final long vlmFlags,
         final Map<String, String> vlmProps)
     {
@@ -42,6 +44,7 @@ public class VlmPojo implements Volume.VlmApi {
         this.blockDevice = blockDevice;
         this.metaDisk = metaDisk;
         this.vlmNr = vlmNr;
+        this.vlmMinorNr = vlmMinorNr;
         this.vlmFlags = vlmFlags;
         this.vlmProps = vlmProps;
     }
@@ -79,6 +82,11 @@ public class VlmPojo implements Volume.VlmApi {
     @Override
     public int getVlmNr() {
         return vlmNr;
+    }
+
+    @Override
+    public int getVlmMinorNr() {
+        return vlmMinorNr;
     }
 
     @Override

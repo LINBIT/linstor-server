@@ -127,6 +127,7 @@ public class ApplyRsc extends BaseProtoApiCall
                     vol.getBlockDevice(),
                     vol.getMetaDisk(),
                     vol.getVlmNr(),
+                    vol.getVlmMinorNr(),
                     Volume.VlmFlags.fromStringList(vol.getVlmFlagsList()),
                     asMap(vol.getVlmPropsList())
                 )
