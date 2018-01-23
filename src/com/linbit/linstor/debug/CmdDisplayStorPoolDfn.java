@@ -1,6 +1,5 @@
 package com.linbit.linstor.debug;
 
-import com.linbit.AutoIndent;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
@@ -9,6 +8,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.utils.TreePrinter;
 import com.linbit.utils.UuidUtils;
 
 import java.io.PrintStream;
@@ -122,56 +122,43 @@ public class CmdDisplayStorPoolDfn extends BaseDebugCmd
             {
                 ObjectProtection objProt = storPoolDfnRef.getObjProt();
                 objProt.requireAccess(accCtx, AccessType.VIEW);
-                output.printf(
-                    "\u001b[1;37m%-40s\u001b[0m %-36s\n" +
-                        "%s  Volatile UUID: %s\n" +
-                        "%s  Creator: %-24s Owner: %-24s\n" +
-                        "%s  Security type: %-24s\n",
-                    storPoolDfnRef.getName().displayValue,
-                    storPoolDfnRef.getUuid().toString().toUpperCase(),
-                    PFX_SUB, UuidUtils.dbgInstanceIdString(storPoolDfnRef),
-                    PFX_SUB, objProt.getCreator().name.displayValue,
-                    objProt.getOwner().name.displayValue,
-                    PFX_SUB_LAST, objProt.getSecurityType().name.displayValue
-                );
+
+                TreePrinter.Builder treeBuilder = TreePrinter
+                    .builder(
+                        "\u001b[1;37m%-40s\u001b[0m %-36s",
+                        storPoolDfnRef.getName().displayValue,
+                        storPoolDfnRef.getUuid().toString().toUpperCase()
+                    )
+                    .leaf("Volatile UUID: %s", UuidUtils.dbgInstanceIdString(storPoolDfnRef))
+                    .leaf(
+                        "Creator: %-24s Owner: %-24s",
+                        objProt.getCreator().name.displayValue,
+                        objProt.getOwner().name.displayValue
+                    )
+                    .leaf("Security type: %-24s", objProt.getSecurityType().name.displayValue);
+
                 Iterator<StorPool> storPoolIterator = storPoolDfnRef.iterateStorPools(accCtx);
-                if (storPoolIterator.hasNext())
-                {
-                    AutoIndent.printWithIndent(output, 4, "Storage pools");
-                }
+
+                treeBuilder.branchHideEmpty("Storage pools");
                 while (storPoolIterator.hasNext())
                 {
                     StorPool storPool = storPoolIterator.next();
-                    String itemPfx;
-                    String treePfx;
-                    if (storPoolIterator.hasNext())
-                    {
-                        itemPfx = PFX_SUB;
-                        treePfx = PFX_VLINE;
-                    }
-                    else
-                    {
-                        itemPfx = PFX_SUB_LAST;
-                        treePfx = "  ";
-                    }
-                    AutoIndent.printWithIndent(
-                        output, 4,
-                        String.format(
-                            "%s  \u001b[1;37mStorage pool\u001b[0m %-36s\n" +
-                                "%s  %s  Node name: %s\n" +
-                                "%s  %s  Node UUID: %s\n" +
-                                "%s  %s  Node volatile UUID: %s\n" +
-                                "%s  %s  Driver name: %s\n" +
-                                "%s  %s  Volume count: %d\n",
-                            itemPfx, storPool.getUuid().toString().toUpperCase(),
-                            treePfx, PFX_SUB, storPool.getNode().getName().displayValue,
-                            treePfx, PFX_SUB, storPool.getNode().getUuid().toString().toUpperCase(),
-                            treePfx, PFX_SUB, UuidUtils.dbgInstanceIdString(storPool.getNode()),
-                            treePfx, PFX_SUB, storPool.getDriverName(),
-                            treePfx, PFX_SUB_LAST, storPool.getVolumes(accCtx).size()
+
+                    treeBuilder
+                        .branch(
+                            "\u001b[1;37mStorage pool\u001b[0m %-36s",
+                            storPool.getUuid().toString().toUpperCase()
                         )
-                    );
+                        .leaf("Node name: %s", storPool.getNode().getName().displayValue)
+                        .leaf("Node UUID: %s", storPool.getNode().getUuid().toString().toUpperCase())
+                        .leaf("Node volatile UUID: %s", UuidUtils.dbgInstanceIdString(storPool.getNode()))
+                        .leaf("Driver name: %s", storPool.getDriverName())
+                        .leaf("Volume count: %d", storPool.getVolumes(accCtx).size())
+                        .endBranch();
                 }
+                treeBuilder.endBranch();
+
+                treeBuilder.print(output);
             }
             catch (AccessDeniedException accExc)
             {

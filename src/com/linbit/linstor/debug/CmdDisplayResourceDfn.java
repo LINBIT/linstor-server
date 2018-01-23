@@ -1,6 +1,5 @@
 package com.linbit.linstor.debug;
 
-import com.linbit.AutoIndent;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
@@ -9,6 +8,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.utils.TreePrinter;
 import com.linbit.utils.UuidUtils;
 
 import java.io.PrintStream;
@@ -122,55 +122,43 @@ public class CmdDisplayResourceDfn extends BaseDebugCmd
             {
                 ObjectProtection objProt = rscDfnRef.getObjProt();
                 objProt.requireAccess(accCtx, AccessType.VIEW);
-                output.printf(
-                    "\u001b[1;37m%-40s\u001b[0m %-36s\n" +
-                        "%s  Volatile UUID: %s\n" +
-                        "%s  Flags: %016x\n" +
-                        "%s  Creator: %-24s Owner: %-24s\n" +
-                        "%s  Security type: %-24s\n",
-                    rscDfnRef.getName().displayValue,
-                    rscDfnRef.getUuid().toString().toUpperCase(),
-                    PFX_SUB, UuidUtils.dbgInstanceIdString(rscDfnRef),
-                    PFX_SUB, rscDfnRef.getFlags().getFlagsBits(accCtx),
-                    PFX_SUB, objProt.getCreator().name.displayValue,
-                    objProt.getOwner().name.displayValue,
-                    PFX_SUB_LAST, objProt.getSecurityType().name.displayValue
-                );
+
+                TreePrinter.Builder treeBuilder = TreePrinter
+                    .builder(
+                        "\u001b[1;37m%-40s\u001b[0m %-36s",
+                        rscDfnRef.getName().displayValue,
+                        rscDfnRef.getUuid().toString().toUpperCase()
+                    )
+                    .leaf("Volatile UUID: %s", UuidUtils.dbgInstanceIdString(rscDfnRef))
+                    .leaf("Flags: %016x", rscDfnRef.getFlags().getFlagsBits(accCtx))
+                    .leaf(
+                        "Creator: %-24s Owner: %-24s",
+                        objProt.getCreator().name.displayValue,
+                        objProt.getOwner().name.displayValue
+                    )
+                    .leaf("Security type: %-24s", objProt.getSecurityType().name.displayValue);
+
                 Iterator<VolumeDefinition> vlmDfnIter = rscDfnRef.iterateVolumeDfn(accCtx);
-                if (vlmDfnIter.hasNext())
-                {
-                    output.println("    Volume definitions");
-                }
+
+                treeBuilder.branchHideEmpty("Volume definitions");
                 while (vlmDfnIter.hasNext())
                 {
                     VolumeDefinition vlmDfnRef = vlmDfnIter.next();
-                    String itemPfx;
-                    String treePfx;
-                    if (vlmDfnIter.hasNext())
-                    {
-                        itemPfx = PFX_SUB;
-                        treePfx = PFX_VLINE;
-                    }
-                    else
-                    {
-                        itemPfx = PFX_SUB_LAST;
-                        treePfx = "  ";
-                    }
-                    AutoIndent.printWithIndent(
-                        output, 4,
-                        String.format(
-                            "%s  \u001b[1;37mVolume %6d\u001b[0m %-36s\n" +
-                                "%s  %s  Size:     %16d\n" +
-                                "%s  %s  Minor Nr: %16d\n" +
-                                "%s  %s  Flags:    %016x\n",
-                            itemPfx, vlmDfnRef.getVolumeNumber().value,
-                            vlmDfnRef.getUuid().toString().toUpperCase(),
-                            treePfx, PFX_SUB, vlmDfnRef.getVolumeSize(accCtx),
-                            treePfx, PFX_SUB, vlmDfnRef.getMinorNr(accCtx).value,
-                            treePfx, PFX_SUB_LAST, vlmDfnRef.getFlags().getFlagsBits(accCtx)
+
+                    treeBuilder
+                        .branch(
+                            "\u001b[1;37mVolume %6d\u001b[0m %-36s",
+                            vlmDfnRef.getVolumeNumber().value,
+                            vlmDfnRef.getUuid().toString().toUpperCase()
                         )
-                    );
+                        .leaf("Size:     %16d", vlmDfnRef.getVolumeSize(accCtx))
+                        .leaf("Minor Nr: %16d", vlmDfnRef.getMinorNr(accCtx).value)
+                        .leaf("Flags:    %016x", vlmDfnRef.getFlags().getFlagsBits(accCtx))
+                        .endBranch();
                 }
+                treeBuilder.endBranch();
+
+                treeBuilder.print(output);
             }
             catch (AccessDeniedException accExc)
             {

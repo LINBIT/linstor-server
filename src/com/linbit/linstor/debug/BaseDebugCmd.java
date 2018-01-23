@@ -22,10 +22,6 @@ import java.util.TreeSet;
  */
 public abstract class BaseDebugCmd implements CommonDebugCmd
 {
-    public static final String PFX_SUB      = "\u251C\u2500";
-    public static final String PFX_SUB_LAST = "\u2514\u2500";
-    public static final String PFX_VLINE    = "\u2502 ";
-
     final Set<String> cmdNames;
     final String      cmdInfo;
     final String      cmdDescr;

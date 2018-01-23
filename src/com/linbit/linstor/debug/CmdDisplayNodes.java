@@ -9,6 +9,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.utils.TreePrinter;
 import com.linbit.utils.UuidUtils;
 
 import java.io.PrintStream;
@@ -120,26 +121,22 @@ public class CmdDisplayNodes extends BaseDebugCmd
             {
                 ObjectProtection objProt = nodeRef.getObjProt();
                 objProt.requireAccess(accCtx, AccessType.VIEW);
+
+                TreePrinter.Builder treeBuilder = TreePrinter
+                    .builder(
+                        "\u001b[1;37m%-40s\u001b[0m %-36s",
+                        nodeRef.getName().displayValue,
+                        nodeRef.getUuid().toString().toUpperCase()
+                    )
+                    .leaf("Volatile UUID: %s", UuidUtils.dbgInstanceIdString(nodeRef))
+                    .leaf("Flags: %016x", nodeRef.getFlags().getFlagsBits(accCtx))
+                    .leaf("Creator: %-24s Owner: %-24s",
+                        objProt.getCreator().name.displayValue, objProt.getOwner().name.displayValue)
+                    .leaf("Security type: %-24s", objProt.getSecurityType().name.displayValue);
+
                 Iterator<NetInterface> netIfIter = nodeRef.iterateNetInterfaces(accCtx);
-                boolean hasNetIf = netIfIter.hasNext();
-                output.printf(
-                    "\u001b[1;37m%-40s\u001b[0m %-36s\n" +
-                        "%s  Volatile UUID: %s\n" +
-                        "%s  Flags: %016x\n" +
-                        "%s  Creator: %-24s Owner: %-24s\n" +
-                        "%s  Security type: %-24s\n",
-                    nodeRef.getName().displayValue,
-                    nodeRef.getUuid().toString().toUpperCase(),
-                    PFX_SUB, UuidUtils.dbgInstanceIdString(nodeRef),
-                    PFX_SUB, nodeRef.getFlags().getFlagsBits(accCtx),
-                    PFX_SUB, objProt.getCreator().name.displayValue,
-                    objProt.getOwner().name.displayValue,
-                    hasNetIf ? PFX_SUB : PFX_SUB_LAST, objProt.getSecurityType().name.displayValue
-                );
-                if (hasNetIf)
-                {
-                    output.println(PFX_SUB_LAST + "  Network interfaces:");
-                }
+
+                treeBuilder.branchHideEmpty("Network interfaces:");
                 while (netIfIter.hasNext())
                 {
                     NetInterface netIf = netIfIter.next();
@@ -159,15 +156,15 @@ public class CmdDisplayNodes extends BaseDebugCmd
                     catch (AccessDeniedException ignored)
                     {
                     }
-                    boolean moreNetIfs = netIfIter.hasNext();
-                    output.printf(
-                        "    %s  \u001b[1;37m%-24s\u001b[0m %s\n" +
-                            "    %s  %s  Address: %s\n",
-                        moreNetIfs ? PFX_SUB : PFX_SUB_LAST,
-                        netIf.getName().displayValue, netIf.getUuid().toString().toUpperCase(),
-                        moreNetIfs ? PFX_VLINE : "  ", PFX_SUB_LAST, address
-                    );
+
+                    treeBuilder
+                        .branch("\u001b[1;37m%-24s\u001b[0m %s", netIf.getName().displayValue, netIf.getUuid().toString().toUpperCase())
+                        .leaf("Address: %s", address)
+                        .endBranch();
                 }
+                treeBuilder.endBranch();
+
+                treeBuilder.print(output);
             }
             catch (AccessDeniedException accExc)
             {

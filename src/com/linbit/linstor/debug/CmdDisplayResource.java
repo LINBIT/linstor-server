@@ -10,6 +10,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.utils.TreePrinter;
 import com.linbit.utils.UuidUtils;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -123,11 +124,12 @@ public class CmdDisplayResource extends BaseDebugCmd
             try
             {
                 Iterator<Resource> rscIter = rscDfn.iterateResource(accCtx);
-                output.printf(
-                    "\u001b[1;37m%-48s\u001b[0m %s\n",
+
+                TreePrinter.Builder treeBuilder = TreePrinter.builder(
+                    "\u001b[1;37m%-48s\u001b[0m %s",
                     rscName.displayValue, rscDfn.getUuid().toString().toUpperCase()
                 );
-                StringBuilder outText = new StringBuilder();
+
                 while (rscIter.hasNext())
                 {
                     Resource rsc = rscIter.next();
@@ -135,56 +137,36 @@ public class CmdDisplayResource extends BaseDebugCmd
                     Node peerNode = rsc.getAssignedNode();
                     NodeName peerNodeName = peerNode.getName();
 
-                    String pfxIndent;
-                    if (rscIter.hasNext())
-                    {
-                        outText.append(PFX_SUB);
-                        pfxIndent = PFX_VLINE + "  ";
-                    }
-                    else
-                    {
-                        outText.append(PFX_SUB_LAST);
-                        pfxIndent = "    ";
-                    }
-                    outText.append(peerNodeName.displayValue).append("\n");
-                    outText.append(pfxIndent).append(PFX_SUB).append("  Resource UUID: ");
-                    outText.append(rsc.getUuid().toString().toUpperCase()).append("\n");
-                    outText.append(pfxIndent).append(PFX_SUB).append("  Resource volatile UUID: ");
-                    outText.append(UuidUtils.dbgInstanceIdString(rsc)).append("\n");
-                    outText.append(pfxIndent).append(PFX_SUB).append("  Resource definition UUID: ");
-                    outText.append(rscDfn.getUuid().toString().toUpperCase()).append("\n");
-                    outText.append(pfxIndent).append(PFX_SUB).append("  Resource definition volatile UUID: ");
-                    outText.append(UuidUtils.dbgInstanceIdString(rscDfn)).append("\n");
-                    outText.append(pfxIndent).append(PFX_SUB).append("  Node-ID: ");
-                    outText.append(Integer.toString(rsc.getNodeId().value)).append("\n");
-                    outText.append(pfxIndent).append(PFX_SUB).append("  Node UUID: ");
-                    outText.append(peerNode.getUuid().toString().toUpperCase()).append("\n");
-                    outText.append(pfxIndent).append(PFX_SUB).append("  Node volatile UUID: ");
-                    outText.append(UuidUtils.dbgInstanceIdString(peerNode)).append("\n");
+                    treeBuilder.branch(peerNodeName.displayValue)
+                        .leaf("Resource UUID: %s", rsc.getUuid().toString().toUpperCase())
+                        .leaf("Resource volatile UUID: %s", UuidUtils.dbgInstanceIdString(rsc))
+                        .leaf("Resource definition UUID: %s", rscDfn.getUuid().toString().toUpperCase())
+                        .leaf("Resource definition volatile UUID: %s", UuidUtils.dbgInstanceIdString(rscDfn))
+                        .leaf("Node-ID: %d", rsc.getNodeId().value)
+                        .leaf("Node UUID: %s", peerNode.getUuid().toString().toUpperCase())
+                        .leaf("Node volatile UUID: %s", UuidUtils.dbgInstanceIdString(peerNode));
+
                     try
                     {
                         long flagsBits = rsc.getStateFlags().getFlagsBits(accCtx);
-                        outText.append(pfxIndent).append(PFX_SUB).append("  Flags: ");
-                        outText.append(
-                            String.format("%016X\n", flagsBits)
-                        );
+                        treeBuilder.leaf("Flags: %016X", flagsBits);
                     }
                     catch (AccessDeniedException ignored)
                     {
                     }
-                    outText.append(pfxIndent).append(PFX_SUB).append("  Creator: ");
-                    outText.append(
-                        String.format(
-                            "%-24s Owner: %-24s\n",
+
+                    treeBuilder
+                        .leaf(
+                            "Creator: %-24s Owner: %-24s",
                             rscProt.getCreator().name.displayValue,
                             rscProt.getOwner().name.displayValue
                         )
-                    );
-                    outText.append(pfxIndent).append(PFX_SUB_LAST).append("  Security type: ");
-                    outText.append(rscProt.getSecurityType().name.displayValue).append("\n");
-                    output.append(outText.toString());
-                    outText.setLength(0);
+                        .leaf("Security type: %s", rscProt.getSecurityType().name.displayValue);
+
+                    treeBuilder.endBranch();
                 }
+
+                treeBuilder.print(output);
             }
             catch (AccessDeniedException ignored)
             {

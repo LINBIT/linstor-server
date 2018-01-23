@@ -72,6 +72,8 @@ public class TreePrinter
 
         private final String name;
 
+        private boolean hideIfEmpty;
+
         private List<TreePrinterNode> children;
 
         public TreePrinterNodeBuilder(final TreePrinterNodeBuilder parent, final String name)
@@ -87,9 +89,19 @@ public class TreePrinter
             return parent;
         }
 
+        public boolean shouldHide()
+        {
+            return hideIfEmpty && children.isEmpty();
+        }
+
         public TreePrinterNode build()
         {
             return new TreePrinterNode(name, children);
+        }
+
+        public void setHideIfEmpty(final boolean hideIfEmpty)
+        {
+            this.hideIfEmpty = hideIfEmpty;
         }
 
         public void addChild(TreePrinterNode node)
@@ -119,13 +131,23 @@ public class TreePrinter
             return this;
         }
 
+        public Builder branchHideEmpty(final String format, final Object... args)
+        {
+            current = new TreePrinterNodeBuilder(current, String.format(format, args));
+            current.setHideIfEmpty(true);
+            return this;
+        }
+
         public Builder endBranch()
         {
             TreePrinterNodeBuilder parent = current.getParent();
 
             if (parent != null)
             {
-                parent.addChild(current.build());
+                if (!current.shouldHide())
+                {
+                    parent.addChild(current.build());
+                }
                 current = parent;
             }
             else
