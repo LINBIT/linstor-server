@@ -19,222 +19,17 @@ public final class MsgCrtRscOuterClass {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string rsc_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
      */
-    boolean hasRscUuid();
+    boolean hasRsc();
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string rsc_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
      */
-    java.lang.String getRscUuid();
+    com.linbit.linstor.proto.RscOuterClass.Rsc getRsc();
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string rsc_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
      */
-    com.google.protobuf.ByteString
-        getRscUuidBytes();
-
-    /**
-     * <pre>
-     * Node uuid
-     * </pre>
-     *
-     * <code>optional string node_uuid = 2;</code>
-     */
-    boolean hasNodeUuid();
-    /**
-     * <pre>
-     * Node uuid
-     * </pre>
-     *
-     * <code>optional string node_uuid = 2;</code>
-     */
-    java.lang.String getNodeUuid();
-    /**
-     * <pre>
-     * Node uuid
-     * </pre>
-     *
-     * <code>optional string node_uuid = 2;</code>
-     */
-    com.google.protobuf.ByteString
-        getNodeUuidBytes();
-
-    /**
-     * <pre>
-     * Node name
-     * </pre>
-     *
-     * <code>required string node_name = 3;</code>
-     */
-    boolean hasNodeName();
-    /**
-     * <pre>
-     * Node name
-     * </pre>
-     *
-     * <code>required string node_name = 3;</code>
-     */
-    java.lang.String getNodeName();
-    /**
-     * <pre>
-     * Node name
-     * </pre>
-     *
-     * <code>required string node_name = 3;</code>
-     */
-    com.google.protobuf.ByteString
-        getNodeNameBytes();
-
-    /**
-     * <pre>
-     * Resource definition uuid
-     * </pre>
-     *
-     * <code>optional string rsc_dfn_uuid = 4;</code>
-     */
-    boolean hasRscDfnUuid();
-    /**
-     * <pre>
-     * Resource definition uuid
-     * </pre>
-     *
-     * <code>optional string rsc_dfn_uuid = 4;</code>
-     */
-    java.lang.String getRscDfnUuid();
-    /**
-     * <pre>
-     * Resource definition uuid
-     * </pre>
-     *
-     * <code>optional string rsc_dfn_uuid = 4;</code>
-     */
-    com.google.protobuf.ByteString
-        getRscDfnUuidBytes();
-
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string rsc_name = 5;</code>
-     */
-    boolean hasRscName();
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string rsc_name = 5;</code>
-     */
-    java.lang.String getRscName();
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string rsc_name = 5;</code>
-     */
-    com.google.protobuf.ByteString
-        getRscNameBytes();
-
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-     */
-    java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
-        getRscPropsList();
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-     */
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getRscProps(int index);
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-     */
-    int getRscPropsCount();
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-     */
-    java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getRscPropsOrBuilderList();
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-     */
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getRscPropsOrBuilder(
-        int index);
-
-    /**
-     * <pre>
-     * Volume
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-     */
-    java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm> 
-        getVlmsList();
-    /**
-     * <pre>
-     * Volume
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-     */
-    com.linbit.linstor.proto.VlmOuterClass.Vlm getVlms(int index);
-    /**
-     * <pre>
-     * Volume
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-     */
-    int getVlmsCount();
-    /**
-     * <pre>
-     * Volume
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-     */
-    java.util.List<? extends com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder> 
-        getVlmsOrBuilderList();
-    /**
-     * <pre>
-     * Volume
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-     */
-    com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder getVlmsOrBuilder(
-        int index);
+    com.linbit.linstor.proto.RscOuterClass.RscOrBuilder getRscOrBuilder();
   }
   /**
    * <pre>
@@ -252,13 +47,6 @@ public final class MsgCrtRscOuterClass {
       super(builder);
     }
     private MsgCrtRsc() {
-      rscUuid_ = "";
-      nodeUuid_ = "";
-      nodeName_ = "";
-      rscDfnUuid_ = "";
-      rscName_ = "";
-      rscProps_ = java.util.Collections.emptyList();
-      vlms_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -290,51 +78,16 @@ public final class MsgCrtRscOuterClass {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
+              com.linbit.linstor.proto.RscOuterClass.Rsc.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                subBuilder = rsc_.toBuilder();
+              }
+              rsc_ = input.readMessage(com.linbit.linstor.proto.RscOuterClass.Rsc.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(rsc_);
+                rsc_ = subBuilder.buildPartial();
+              }
               bitField0_ |= 0x00000001;
-              rscUuid_ = bs;
-              break;
-            }
-            case 18: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000002;
-              nodeUuid_ = bs;
-              break;
-            }
-            case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000004;
-              nodeName_ = bs;
-              break;
-            }
-            case 34: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000008;
-              rscDfnUuid_ = bs;
-              break;
-            }
-            case 42: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000010;
-              rscName_ = bs;
-              break;
-            }
-            case 50: {
-              if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
-                rscProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
-                mutable_bitField0_ |= 0x00000020;
-              }
-              rscProps_.add(
-                  input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
-              break;
-            }
-            case 58: {
-              if (!((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
-                vlms_ = new java.util.ArrayList<com.linbit.linstor.proto.VlmOuterClass.Vlm>();
-                mutable_bitField0_ |= 0x00000040;
-              }
-              vlms_.add(
-                  input.readMessage(com.linbit.linstor.proto.VlmOuterClass.Vlm.PARSER, extensionRegistry));
               break;
             }
           }
@@ -345,12 +98,6 @@ public final class MsgCrtRscOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
-          rscProps_ = java.util.Collections.unmodifiableList(rscProps_);
-        }
-        if (((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
-          vlms_ = java.util.Collections.unmodifiableList(vlms_);
-        }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
@@ -368,384 +115,25 @@ public final class MsgCrtRscOuterClass {
     }
 
     private int bitField0_;
-    public static final int RSC_UUID_FIELD_NUMBER = 1;
-    private volatile java.lang.Object rscUuid_;
+    public static final int RSC_FIELD_NUMBER = 1;
+    private com.linbit.linstor.proto.RscOuterClass.Rsc rsc_;
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string rsc_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
      */
-    public boolean hasRscUuid() {
+    public boolean hasRsc() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string rsc_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
      */
-    public java.lang.String getRscUuid() {
-      java.lang.Object ref = rscUuid_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          rscUuid_ = s;
-        }
-        return s;
-      }
+    public com.linbit.linstor.proto.RscOuterClass.Rsc getRsc() {
+      return rsc_ == null ? com.linbit.linstor.proto.RscOuterClass.Rsc.getDefaultInstance() : rsc_;
     }
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string rsc_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
      */
-    public com.google.protobuf.ByteString
-        getRscUuidBytes() {
-      java.lang.Object ref = rscUuid_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        rscUuid_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int NODE_UUID_FIELD_NUMBER = 2;
-    private volatile java.lang.Object nodeUuid_;
-    /**
-     * <pre>
-     * Node uuid
-     * </pre>
-     *
-     * <code>optional string node_uuid = 2;</code>
-     */
-    public boolean hasNodeUuid() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <pre>
-     * Node uuid
-     * </pre>
-     *
-     * <code>optional string node_uuid = 2;</code>
-     */
-    public java.lang.String getNodeUuid() {
-      java.lang.Object ref = nodeUuid_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          nodeUuid_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Node uuid
-     * </pre>
-     *
-     * <code>optional string node_uuid = 2;</code>
-     */
-    public com.google.protobuf.ByteString
-        getNodeUuidBytes() {
-      java.lang.Object ref = nodeUuid_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        nodeUuid_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int NODE_NAME_FIELD_NUMBER = 3;
-    private volatile java.lang.Object nodeName_;
-    /**
-     * <pre>
-     * Node name
-     * </pre>
-     *
-     * <code>required string node_name = 3;</code>
-     */
-    public boolean hasNodeName() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <pre>
-     * Node name
-     * </pre>
-     *
-     * <code>required string node_name = 3;</code>
-     */
-    public java.lang.String getNodeName() {
-      java.lang.Object ref = nodeName_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          nodeName_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Node name
-     * </pre>
-     *
-     * <code>required string node_name = 3;</code>
-     */
-    public com.google.protobuf.ByteString
-        getNodeNameBytes() {
-      java.lang.Object ref = nodeName_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        nodeName_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int RSC_DFN_UUID_FIELD_NUMBER = 4;
-    private volatile java.lang.Object rscDfnUuid_;
-    /**
-     * <pre>
-     * Resource definition uuid
-     * </pre>
-     *
-     * <code>optional string rsc_dfn_uuid = 4;</code>
-     */
-    public boolean hasRscDfnUuid() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
-    }
-    /**
-     * <pre>
-     * Resource definition uuid
-     * </pre>
-     *
-     * <code>optional string rsc_dfn_uuid = 4;</code>
-     */
-    public java.lang.String getRscDfnUuid() {
-      java.lang.Object ref = rscDfnUuid_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          rscDfnUuid_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Resource definition uuid
-     * </pre>
-     *
-     * <code>optional string rsc_dfn_uuid = 4;</code>
-     */
-    public com.google.protobuf.ByteString
-        getRscDfnUuidBytes() {
-      java.lang.Object ref = rscDfnUuid_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        rscDfnUuid_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int RSC_NAME_FIELD_NUMBER = 5;
-    private volatile java.lang.Object rscName_;
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string rsc_name = 5;</code>
-     */
-    public boolean hasRscName() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
-    }
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string rsc_name = 5;</code>
-     */
-    public java.lang.String getRscName() {
-      java.lang.Object ref = rscName_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          rscName_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string rsc_name = 5;</code>
-     */
-    public com.google.protobuf.ByteString
-        getRscNameBytes() {
-      java.lang.Object ref = rscName_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        rscName_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int RSC_PROPS_FIELD_NUMBER = 6;
-    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> rscProps_;
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-     */
-    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getRscPropsList() {
-      return rscProps_;
-    }
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-     */
-    public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getRscPropsOrBuilderList() {
-      return rscProps_;
-    }
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-     */
-    public int getRscPropsCount() {
-      return rscProps_.size();
-    }
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-     */
-    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getRscProps(int index) {
-      return rscProps_.get(index);
-    }
-    /**
-     * <pre>
-     * Resource properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-     */
-    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getRscPropsOrBuilder(
-        int index) {
-      return rscProps_.get(index);
-    }
-
-    public static final int VLMS_FIELD_NUMBER = 7;
-    private java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm> vlms_;
-    /**
-     * <pre>
-     * Volume
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-     */
-    public java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm> getVlmsList() {
-      return vlms_;
-    }
-    /**
-     * <pre>
-     * Volume
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-     */
-    public java.util.List<? extends com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder> 
-        getVlmsOrBuilderList() {
-      return vlms_;
-    }
-    /**
-     * <pre>
-     * Volume
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-     */
-    public int getVlmsCount() {
-      return vlms_.size();
-    }
-    /**
-     * <pre>
-     * Volume
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-     */
-    public com.linbit.linstor.proto.VlmOuterClass.Vlm getVlms(int index) {
-      return vlms_.get(index);
-    }
-    /**
-     * <pre>
-     * Volume
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-     */
-    public com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder getVlmsOrBuilder(
-        int index) {
-      return vlms_.get(index);
+    public com.linbit.linstor.proto.RscOuterClass.RscOrBuilder getRscOrBuilder() {
+      return rsc_ == null ? com.linbit.linstor.proto.RscOuterClass.Rsc.getDefaultInstance() : rsc_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -754,25 +142,13 @@ public final class MsgCrtRscOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
-      if (!hasNodeName()) {
+      if (!hasRsc()) {
         memoizedIsInitialized = 0;
         return false;
       }
-      if (!hasRscName()) {
+      if (!getRsc().isInitialized()) {
         memoizedIsInitialized = 0;
         return false;
-      }
-      for (int i = 0; i < getRscPropsCount(); i++) {
-        if (!getRscProps(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
-      for (int i = 0; i < getVlmsCount(); i++) {
-        if (!getVlms(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
       }
       memoizedIsInitialized = 1;
       return true;
@@ -781,25 +157,7 @@ public final class MsgCrtRscOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, rscUuid_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeUuid_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, nodeName_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, rscDfnUuid_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, rscName_);
-      }
-      for (int i = 0; i < rscProps_.size(); i++) {
-        output.writeMessage(6, rscProps_.get(i));
-      }
-      for (int i = 0; i < vlms_.size(); i++) {
-        output.writeMessage(7, vlms_.get(i));
+        output.writeMessage(1, getRsc());
       }
       unknownFields.writeTo(output);
     }
@@ -810,27 +168,8 @@ public final class MsgCrtRscOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, rscUuid_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeUuid_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, nodeName_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, rscDfnUuid_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, rscName_);
-      }
-      for (int i = 0; i < rscProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(6, rscProps_.get(i));
-      }
-      for (int i = 0; i < vlms_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(7, vlms_.get(i));
+          .computeMessageSize(1, getRsc());
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -849,35 +188,11 @@ public final class MsgCrtRscOuterClass {
       com.linbit.linstor.proto.MsgCrtRscOuterClass.MsgCrtRsc other = (com.linbit.linstor.proto.MsgCrtRscOuterClass.MsgCrtRsc) obj;
 
       boolean result = true;
-      result = result && (hasRscUuid() == other.hasRscUuid());
-      if (hasRscUuid()) {
-        result = result && getRscUuid()
-            .equals(other.getRscUuid());
+      result = result && (hasRsc() == other.hasRsc());
+      if (hasRsc()) {
+        result = result && getRsc()
+            .equals(other.getRsc());
       }
-      result = result && (hasNodeUuid() == other.hasNodeUuid());
-      if (hasNodeUuid()) {
-        result = result && getNodeUuid()
-            .equals(other.getNodeUuid());
-      }
-      result = result && (hasNodeName() == other.hasNodeName());
-      if (hasNodeName()) {
-        result = result && getNodeName()
-            .equals(other.getNodeName());
-      }
-      result = result && (hasRscDfnUuid() == other.hasRscDfnUuid());
-      if (hasRscDfnUuid()) {
-        result = result && getRscDfnUuid()
-            .equals(other.getRscDfnUuid());
-      }
-      result = result && (hasRscName() == other.hasRscName());
-      if (hasRscName()) {
-        result = result && getRscName()
-            .equals(other.getRscName());
-      }
-      result = result && getRscPropsList()
-          .equals(other.getRscPropsList());
-      result = result && getVlmsList()
-          .equals(other.getVlmsList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -889,33 +204,9 @@ public final class MsgCrtRscOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasRscUuid()) {
-        hash = (37 * hash) + RSC_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getRscUuid().hashCode();
-      }
-      if (hasNodeUuid()) {
-        hash = (37 * hash) + NODE_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getNodeUuid().hashCode();
-      }
-      if (hasNodeName()) {
-        hash = (37 * hash) + NODE_NAME_FIELD_NUMBER;
-        hash = (53 * hash) + getNodeName().hashCode();
-      }
-      if (hasRscDfnUuid()) {
-        hash = (37 * hash) + RSC_DFN_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getRscDfnUuid().hashCode();
-      }
-      if (hasRscName()) {
-        hash = (37 * hash) + RSC_NAME_FIELD_NUMBER;
-        hash = (53 * hash) + getRscName().hashCode();
-      }
-      if (getRscPropsCount() > 0) {
-        hash = (37 * hash) + RSC_PROPS_FIELD_NUMBER;
-        hash = (53 * hash) + getRscPropsList().hashCode();
-      }
-      if (getVlmsCount() > 0) {
-        hash = (37 * hash) + VLMS_FIELD_NUMBER;
-        hash = (53 * hash) + getVlmsList().hashCode();
+      if (hasRsc()) {
+        hash = (37 * hash) + RSC_FIELD_NUMBER;
+        hash = (53 * hash) + getRsc().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -1035,34 +326,17 @@ public final class MsgCrtRscOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
-          getRscPropsFieldBuilder();
-          getVlmsFieldBuilder();
+          getRscFieldBuilder();
         }
       }
       public Builder clear() {
         super.clear();
-        rscUuid_ = "";
+        if (rscBuilder_ == null) {
+          rsc_ = null;
+        } else {
+          rscBuilder_.clear();
+        }
         bitField0_ = (bitField0_ & ~0x00000001);
-        nodeUuid_ = "";
-        bitField0_ = (bitField0_ & ~0x00000002);
-        nodeName_ = "";
-        bitField0_ = (bitField0_ & ~0x00000004);
-        rscDfnUuid_ = "";
-        bitField0_ = (bitField0_ & ~0x00000008);
-        rscName_ = "";
-        bitField0_ = (bitField0_ & ~0x00000010);
-        if (rscPropsBuilder_ == null) {
-          rscProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000020);
-        } else {
-          rscPropsBuilder_.clear();
-        }
-        if (vlmsBuilder_ == null) {
-          vlms_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000040);
-        } else {
-          vlmsBuilder_.clear();
-        }
         return this;
       }
 
@@ -1090,40 +364,10 @@ public final class MsgCrtRscOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.rscUuid_ = rscUuid_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.nodeUuid_ = nodeUuid_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.nodeName_ = nodeName_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.rscDfnUuid_ = rscDfnUuid_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
-        }
-        result.rscName_ = rscName_;
-        if (rscPropsBuilder_ == null) {
-          if (((bitField0_ & 0x00000020) == 0x00000020)) {
-            rscProps_ = java.util.Collections.unmodifiableList(rscProps_);
-            bitField0_ = (bitField0_ & ~0x00000020);
-          }
-          result.rscProps_ = rscProps_;
+        if (rscBuilder_ == null) {
+          result.rsc_ = rsc_;
         } else {
-          result.rscProps_ = rscPropsBuilder_.build();
-        }
-        if (vlmsBuilder_ == null) {
-          if (((bitField0_ & 0x00000040) == 0x00000040)) {
-            vlms_ = java.util.Collections.unmodifiableList(vlms_);
-            bitField0_ = (bitField0_ & ~0x00000040);
-          }
-          result.vlms_ = vlms_;
-        } else {
-          result.vlms_ = vlmsBuilder_.build();
+          result.rsc_ = rscBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -1167,82 +411,8 @@ public final class MsgCrtRscOuterClass {
 
       public Builder mergeFrom(com.linbit.linstor.proto.MsgCrtRscOuterClass.MsgCrtRsc other) {
         if (other == com.linbit.linstor.proto.MsgCrtRscOuterClass.MsgCrtRsc.getDefaultInstance()) return this;
-        if (other.hasRscUuid()) {
-          bitField0_ |= 0x00000001;
-          rscUuid_ = other.rscUuid_;
-          onChanged();
-        }
-        if (other.hasNodeUuid()) {
-          bitField0_ |= 0x00000002;
-          nodeUuid_ = other.nodeUuid_;
-          onChanged();
-        }
-        if (other.hasNodeName()) {
-          bitField0_ |= 0x00000004;
-          nodeName_ = other.nodeName_;
-          onChanged();
-        }
-        if (other.hasRscDfnUuid()) {
-          bitField0_ |= 0x00000008;
-          rscDfnUuid_ = other.rscDfnUuid_;
-          onChanged();
-        }
-        if (other.hasRscName()) {
-          bitField0_ |= 0x00000010;
-          rscName_ = other.rscName_;
-          onChanged();
-        }
-        if (rscPropsBuilder_ == null) {
-          if (!other.rscProps_.isEmpty()) {
-            if (rscProps_.isEmpty()) {
-              rscProps_ = other.rscProps_;
-              bitField0_ = (bitField0_ & ~0x00000020);
-            } else {
-              ensureRscPropsIsMutable();
-              rscProps_.addAll(other.rscProps_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.rscProps_.isEmpty()) {
-            if (rscPropsBuilder_.isEmpty()) {
-              rscPropsBuilder_.dispose();
-              rscPropsBuilder_ = null;
-              rscProps_ = other.rscProps_;
-              bitField0_ = (bitField0_ & ~0x00000020);
-              rscPropsBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getRscPropsFieldBuilder() : null;
-            } else {
-              rscPropsBuilder_.addAllMessages(other.rscProps_);
-            }
-          }
-        }
-        if (vlmsBuilder_ == null) {
-          if (!other.vlms_.isEmpty()) {
-            if (vlms_.isEmpty()) {
-              vlms_ = other.vlms_;
-              bitField0_ = (bitField0_ & ~0x00000040);
-            } else {
-              ensureVlmsIsMutable();
-              vlms_.addAll(other.vlms_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.vlms_.isEmpty()) {
-            if (vlmsBuilder_.isEmpty()) {
-              vlmsBuilder_.dispose();
-              vlmsBuilder_ = null;
-              vlms_ = other.vlms_;
-              bitField0_ = (bitField0_ & ~0x00000040);
-              vlmsBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getVlmsFieldBuilder() : null;
-            } else {
-              vlmsBuilder_.addAllMessages(other.vlms_);
-            }
-          }
+        if (other.hasRsc()) {
+          mergeRsc(other.getRsc());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -1250,21 +420,11 @@ public final class MsgCrtRscOuterClass {
       }
 
       public final boolean isInitialized() {
-        if (!hasNodeName()) {
+        if (!hasRsc()) {
           return false;
         }
-        if (!hasRscName()) {
+        if (!getRsc().isInitialized()) {
           return false;
-        }
-        for (int i = 0; i < getRscPropsCount(); i++) {
-          if (!getRscProps(i).isInitialized()) {
-            return false;
-          }
-        }
-        for (int i = 0; i < getVlmsCount(); i++) {
-          if (!getVlms(i).isInitialized()) {
-            return false;
-          }
         }
         return true;
       }
@@ -1288,1128 +448,122 @@ public final class MsgCrtRscOuterClass {
       }
       private int bitField0_;
 
-      private java.lang.Object rscUuid_ = "";
+      private com.linbit.linstor.proto.RscOuterClass.Rsc rsc_ = null;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.linbit.linstor.proto.RscOuterClass.Rsc, com.linbit.linstor.proto.RscOuterClass.Rsc.Builder, com.linbit.linstor.proto.RscOuterClass.RscOrBuilder> rscBuilder_;
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string rsc_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
        */
-      public boolean hasRscUuid() {
+      public boolean hasRsc() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string rsc_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
        */
-      public java.lang.String getRscUuid() {
-        java.lang.Object ref = rscUuid_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            rscUuid_ = s;
+      public com.linbit.linstor.proto.RscOuterClass.Rsc getRsc() {
+        if (rscBuilder_ == null) {
+          return rsc_ == null ? com.linbit.linstor.proto.RscOuterClass.Rsc.getDefaultInstance() : rsc_;
+        } else {
+          return rscBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
+       */
+      public Builder setRsc(com.linbit.linstor.proto.RscOuterClass.Rsc value) {
+        if (rscBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
           }
-          return s;
+          rsc_ = value;
+          onChanged();
         } else {
-          return (java.lang.String) ref;
+          rscBuilder_.setMessage(value);
         }
-      }
-      /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string rsc_uuid = 1;</code>
-       */
-      public com.google.protobuf.ByteString
-          getRscUuidBytes() {
-        java.lang.Object ref = rscUuid_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          rscUuid_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string rsc_uuid = 1;</code>
-       */
-      public Builder setRscUuid(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        rscUuid_ = value;
-        onChanged();
+        bitField0_ |= 0x00000001;
         return this;
       }
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string rsc_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
        */
-      public Builder clearRscUuid() {
+      public Builder setRsc(
+          com.linbit.linstor.proto.RscOuterClass.Rsc.Builder builderForValue) {
+        if (rscBuilder_ == null) {
+          rsc_ = builderForValue.build();
+          onChanged();
+        } else {
+          rscBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
+       */
+      public Builder mergeRsc(com.linbit.linstor.proto.RscOuterClass.Rsc value) {
+        if (rscBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              rsc_ != null &&
+              rsc_ != com.linbit.linstor.proto.RscOuterClass.Rsc.getDefaultInstance()) {
+            rsc_ =
+              com.linbit.linstor.proto.RscOuterClass.Rsc.newBuilder(rsc_).mergeFrom(value).buildPartial();
+          } else {
+            rsc_ = value;
+          }
+          onChanged();
+        } else {
+          rscBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
+       */
+      public Builder clearRsc() {
+        if (rscBuilder_ == null) {
+          rsc_ = null;
+          onChanged();
+        } else {
+          rscBuilder_.clear();
+        }
         bitField0_ = (bitField0_ & ~0x00000001);
-        rscUuid_ = getDefaultInstance().getRscUuid();
+        return this;
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
+       */
+      public com.linbit.linstor.proto.RscOuterClass.Rsc.Builder getRscBuilder() {
+        bitField0_ |= 0x00000001;
         onChanged();
-        return this;
+        return getRscFieldBuilder().getBuilder();
       }
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string rsc_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
        */
-      public Builder setRscUuidBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        rscUuid_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object nodeUuid_ = "";
-      /**
-       * <pre>
-       * Node uuid
-       * </pre>
-       *
-       * <code>optional string node_uuid = 2;</code>
-       */
-      public boolean hasNodeUuid() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <pre>
-       * Node uuid
-       * </pre>
-       *
-       * <code>optional string node_uuid = 2;</code>
-       */
-      public java.lang.String getNodeUuid() {
-        java.lang.Object ref = nodeUuid_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            nodeUuid_ = s;
-          }
-          return s;
+      public com.linbit.linstor.proto.RscOuterClass.RscOrBuilder getRscOrBuilder() {
+        if (rscBuilder_ != null) {
+          return rscBuilder_.getMessageOrBuilder();
         } else {
-          return (java.lang.String) ref;
+          return rsc_ == null ?
+              com.linbit.linstor.proto.RscOuterClass.Rsc.getDefaultInstance() : rsc_;
         }
       }
       /**
-       * <pre>
-       * Node uuid
-       * </pre>
-       *
-       * <code>optional string node_uuid = 2;</code>
+       * <code>required .com.linbit.linstor.proto.Rsc rsc = 1;</code>
        */
-      public com.google.protobuf.ByteString
-          getNodeUuidBytes() {
-        java.lang.Object ref = nodeUuid_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          nodeUuid_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node uuid
-       * </pre>
-       *
-       * <code>optional string node_uuid = 2;</code>
-       */
-      public Builder setNodeUuid(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        nodeUuid_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node uuid
-       * </pre>
-       *
-       * <code>optional string node_uuid = 2;</code>
-       */
-      public Builder clearNodeUuid() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        nodeUuid_ = getDefaultInstance().getNodeUuid();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node uuid
-       * </pre>
-       *
-       * <code>optional string node_uuid = 2;</code>
-       */
-      public Builder setNodeUuidBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        nodeUuid_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object nodeName_ = "";
-      /**
-       * <pre>
-       * Node name
-       * </pre>
-       *
-       * <code>required string node_name = 3;</code>
-       */
-      public boolean hasNodeName() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      /**
-       * <pre>
-       * Node name
-       * </pre>
-       *
-       * <code>required string node_name = 3;</code>
-       */
-      public java.lang.String getNodeName() {
-        java.lang.Object ref = nodeName_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            nodeName_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node name
-       * </pre>
-       *
-       * <code>required string node_name = 3;</code>
-       */
-      public com.google.protobuf.ByteString
-          getNodeNameBytes() {
-        java.lang.Object ref = nodeName_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          nodeName_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node name
-       * </pre>
-       *
-       * <code>required string node_name = 3;</code>
-       */
-      public Builder setNodeName(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000004;
-        nodeName_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node name
-       * </pre>
-       *
-       * <code>required string node_name = 3;</code>
-       */
-      public Builder clearNodeName() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        nodeName_ = getDefaultInstance().getNodeName();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node name
-       * </pre>
-       *
-       * <code>required string node_name = 3;</code>
-       */
-      public Builder setNodeNameBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000004;
-        nodeName_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object rscDfnUuid_ = "";
-      /**
-       * <pre>
-       * Resource definition uuid
-       * </pre>
-       *
-       * <code>optional string rsc_dfn_uuid = 4;</code>
-       */
-      public boolean hasRscDfnUuid() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
-      }
-      /**
-       * <pre>
-       * Resource definition uuid
-       * </pre>
-       *
-       * <code>optional string rsc_dfn_uuid = 4;</code>
-       */
-      public java.lang.String getRscDfnUuid() {
-        java.lang.Object ref = rscDfnUuid_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            rscDfnUuid_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Resource definition uuid
-       * </pre>
-       *
-       * <code>optional string rsc_dfn_uuid = 4;</code>
-       */
-      public com.google.protobuf.ByteString
-          getRscDfnUuidBytes() {
-        java.lang.Object ref = rscDfnUuid_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          rscDfnUuid_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Resource definition uuid
-       * </pre>
-       *
-       * <code>optional string rsc_dfn_uuid = 4;</code>
-       */
-      public Builder setRscDfnUuid(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        rscDfnUuid_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource definition uuid
-       * </pre>
-       *
-       * <code>optional string rsc_dfn_uuid = 4;</code>
-       */
-      public Builder clearRscDfnUuid() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        rscDfnUuid_ = getDefaultInstance().getRscDfnUuid();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource definition uuid
-       * </pre>
-       *
-       * <code>optional string rsc_dfn_uuid = 4;</code>
-       */
-      public Builder setRscDfnUuidBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        rscDfnUuid_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object rscName_ = "";
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string rsc_name = 5;</code>
-       */
-      public boolean hasRscName() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
-      }
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string rsc_name = 5;</code>
-       */
-      public java.lang.String getRscName() {
-        java.lang.Object ref = rscName_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            rscName_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string rsc_name = 5;</code>
-       */
-      public com.google.protobuf.ByteString
-          getRscNameBytes() {
-        java.lang.Object ref = rscName_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          rscName_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string rsc_name = 5;</code>
-       */
-      public Builder setRscName(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000010;
-        rscName_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string rsc_name = 5;</code>
-       */
-      public Builder clearRscName() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        rscName_ = getDefaultInstance().getRscName();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string rsc_name = 5;</code>
-       */
-      public Builder setRscNameBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000010;
-        rscName_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> rscProps_ =
-        java.util.Collections.emptyList();
-      private void ensureRscPropsIsMutable() {
-        if (!((bitField0_ & 0x00000020) == 0x00000020)) {
-          rscProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(rscProps_);
-          bitField0_ |= 0x00000020;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> rscPropsBuilder_;
-
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getRscPropsList() {
-        if (rscPropsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(rscProps_);
-        } else {
-          return rscPropsBuilder_.getMessageList();
-        }
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public int getRscPropsCount() {
-        if (rscPropsBuilder_ == null) {
-          return rscProps_.size();
-        } else {
-          return rscPropsBuilder_.getCount();
-        }
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getRscProps(int index) {
-        if (rscPropsBuilder_ == null) {
-          return rscProps_.get(index);
-        } else {
-          return rscPropsBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public Builder setRscProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (rscPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureRscPropsIsMutable();
-          rscProps_.set(index, value);
-          onChanged();
-        } else {
-          rscPropsBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public Builder setRscProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (rscPropsBuilder_ == null) {
-          ensureRscPropsIsMutable();
-          rscProps_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          rscPropsBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public Builder addRscProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (rscPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureRscPropsIsMutable();
-          rscProps_.add(value);
-          onChanged();
-        } else {
-          rscPropsBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public Builder addRscProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (rscPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureRscPropsIsMutable();
-          rscProps_.add(index, value);
-          onChanged();
-        } else {
-          rscPropsBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public Builder addRscProps(
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (rscPropsBuilder_ == null) {
-          ensureRscPropsIsMutable();
-          rscProps_.add(builderForValue.build());
-          onChanged();
-        } else {
-          rscPropsBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public Builder addRscProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (rscPropsBuilder_ == null) {
-          ensureRscPropsIsMutable();
-          rscProps_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          rscPropsBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public Builder addAllRscProps(
-          java.lang.Iterable<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
-        if (rscPropsBuilder_ == null) {
-          ensureRscPropsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, rscProps_);
-          onChanged();
-        } else {
-          rscPropsBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public Builder clearRscProps() {
-        if (rscPropsBuilder_ == null) {
-          rscProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000020);
-          onChanged();
-        } else {
-          rscPropsBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public Builder removeRscProps(int index) {
-        if (rscPropsBuilder_ == null) {
-          ensureRscPropsIsMutable();
-          rscProps_.remove(index);
-          onChanged();
-        } else {
-          rscPropsBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getRscPropsBuilder(
-          int index) {
-        return getRscPropsFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getRscPropsOrBuilder(
-          int index) {
-        if (rscPropsBuilder_ == null) {
-          return rscProps_.get(index);  } else {
-          return rscPropsBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-           getRscPropsOrBuilderList() {
-        if (rscPropsBuilder_ != null) {
-          return rscPropsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(rscProps_);
-        }
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addRscPropsBuilder() {
-        return getRscPropsFieldBuilder().addBuilder(
-            com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addRscPropsBuilder(
-          int index) {
-        return getRscPropsFieldBuilder().addBuilder(
-            index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Resource properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry rsc_props = 6;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
-           getRscPropsBuilderList() {
-        return getRscPropsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-          getRscPropsFieldBuilder() {
-        if (rscPropsBuilder_ == null) {
-          rscPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
-                  rscProps_,
-                  ((bitField0_ & 0x00000020) == 0x00000020),
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.linbit.linstor.proto.RscOuterClass.Rsc, com.linbit.linstor.proto.RscOuterClass.Rsc.Builder, com.linbit.linstor.proto.RscOuterClass.RscOrBuilder> 
+          getRscFieldBuilder() {
+        if (rscBuilder_ == null) {
+          rscBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              com.linbit.linstor.proto.RscOuterClass.Rsc, com.linbit.linstor.proto.RscOuterClass.Rsc.Builder, com.linbit.linstor.proto.RscOuterClass.RscOrBuilder>(
+                  getRsc(),
                   getParentForChildren(),
                   isClean());
-          rscProps_ = null;
+          rsc_ = null;
         }
-        return rscPropsBuilder_;
-      }
-
-      private java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm> vlms_ =
-        java.util.Collections.emptyList();
-      private void ensureVlmsIsMutable() {
-        if (!((bitField0_ & 0x00000040) == 0x00000040)) {
-          vlms_ = new java.util.ArrayList<com.linbit.linstor.proto.VlmOuterClass.Vlm>(vlms_);
-          bitField0_ |= 0x00000040;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.VlmOuterClass.Vlm, com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder, com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder> vlmsBuilder_;
-
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm> getVlmsList() {
-        if (vlmsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(vlms_);
-        } else {
-          return vlmsBuilder_.getMessageList();
-        }
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public int getVlmsCount() {
-        if (vlmsBuilder_ == null) {
-          return vlms_.size();
-        } else {
-          return vlmsBuilder_.getCount();
-        }
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public com.linbit.linstor.proto.VlmOuterClass.Vlm getVlms(int index) {
-        if (vlmsBuilder_ == null) {
-          return vlms_.get(index);
-        } else {
-          return vlmsBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public Builder setVlms(
-          int index, com.linbit.linstor.proto.VlmOuterClass.Vlm value) {
-        if (vlmsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVlmsIsMutable();
-          vlms_.set(index, value);
-          onChanged();
-        } else {
-          vlmsBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public Builder setVlms(
-          int index, com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder builderForValue) {
-        if (vlmsBuilder_ == null) {
-          ensureVlmsIsMutable();
-          vlms_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          vlmsBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public Builder addVlms(com.linbit.linstor.proto.VlmOuterClass.Vlm value) {
-        if (vlmsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVlmsIsMutable();
-          vlms_.add(value);
-          onChanged();
-        } else {
-          vlmsBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public Builder addVlms(
-          int index, com.linbit.linstor.proto.VlmOuterClass.Vlm value) {
-        if (vlmsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVlmsIsMutable();
-          vlms_.add(index, value);
-          onChanged();
-        } else {
-          vlmsBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public Builder addVlms(
-          com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder builderForValue) {
-        if (vlmsBuilder_ == null) {
-          ensureVlmsIsMutable();
-          vlms_.add(builderForValue.build());
-          onChanged();
-        } else {
-          vlmsBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public Builder addVlms(
-          int index, com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder builderForValue) {
-        if (vlmsBuilder_ == null) {
-          ensureVlmsIsMutable();
-          vlms_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          vlmsBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public Builder addAllVlms(
-          java.lang.Iterable<? extends com.linbit.linstor.proto.VlmOuterClass.Vlm> values) {
-        if (vlmsBuilder_ == null) {
-          ensureVlmsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, vlms_);
-          onChanged();
-        } else {
-          vlmsBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public Builder clearVlms() {
-        if (vlmsBuilder_ == null) {
-          vlms_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000040);
-          onChanged();
-        } else {
-          vlmsBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public Builder removeVlms(int index) {
-        if (vlmsBuilder_ == null) {
-          ensureVlmsIsMutable();
-          vlms_.remove(index);
-          onChanged();
-        } else {
-          vlmsBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder getVlmsBuilder(
-          int index) {
-        return getVlmsFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder getVlmsOrBuilder(
-          int index) {
-        if (vlmsBuilder_ == null) {
-          return vlms_.get(index);  } else {
-          return vlmsBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public java.util.List<? extends com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder> 
-           getVlmsOrBuilderList() {
-        if (vlmsBuilder_ != null) {
-          return vlmsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(vlms_);
-        }
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder addVlmsBuilder() {
-        return getVlmsFieldBuilder().addBuilder(
-            com.linbit.linstor.proto.VlmOuterClass.Vlm.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder addVlmsBuilder(
-          int index) {
-        return getVlmsFieldBuilder().addBuilder(
-            index, com.linbit.linstor.proto.VlmOuterClass.Vlm.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Volume
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.Vlm vlms = 7;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder> 
-           getVlmsBuilderList() {
-        return getVlmsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.VlmOuterClass.Vlm, com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder, com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder> 
-          getVlmsFieldBuilder() {
-        if (vlmsBuilder_ == null) {
-          vlmsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              com.linbit.linstor.proto.VlmOuterClass.Vlm, com.linbit.linstor.proto.VlmOuterClass.Vlm.Builder, com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder>(
-                  vlms_,
-                  ((bitField0_ & 0x00000040) == 0x00000040),
-                  getParentForChildren(),
-                  isClean());
-          vlms_ = null;
-        }
-        return vlmsBuilder_;
+        return rscBuilder_;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -2475,13 +629,9 @@ public final class MsgCrtRscOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\025proto/MsgCrtRsc.proto\022\030com.linbit.lins" +
-      "tor.proto\032\033proto/LinStorMapEntry.proto\032\017" +
-      "proto/Vlm.proto\"\326\001\n\tMsgCrtRsc\022\020\n\010rsc_uui" +
-      "d\030\001 \001(\t\022\021\n\tnode_uuid\030\002 \001(\t\022\021\n\tnode_name\030" +
-      "\003 \002(\t\022\024\n\014rsc_dfn_uuid\030\004 \001(\t\022\020\n\010rsc_name\030" +
-      "\005 \002(\t\022<\n\trsc_props\030\006 \003(\0132).com.linbit.li" +
-      "nstor.proto.LinStorMapEntry\022+\n\004vlms\030\007 \003(" +
-      "\0132\035.com.linbit.linstor.proto.VlmP\000P\001"
+      "tor.proto\032\017proto/Rsc.proto\"7\n\tMsgCrtRsc\022" +
+      "*\n\003rsc\030\001 \002(\0132\035.com.linbit.linstor.proto." +
+      "RscP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2494,17 +644,15 @@ public final class MsgCrtRscOuterClass {
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor(),
-          com.linbit.linstor.proto.VlmOuterClass.getDescriptor(),
+          com.linbit.linstor.proto.RscOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_linstor_proto_MsgCrtRsc_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_com_linbit_linstor_proto_MsgCrtRsc_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgCrtRsc_descriptor,
-        new java.lang.String[] { "RscUuid", "NodeUuid", "NodeName", "RscDfnUuid", "RscName", "RscProps", "Vlms", });
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
-    com.linbit.linstor.proto.VlmOuterClass.getDescriptor();
+        new java.lang.String[] { "Rsc", });
+    com.linbit.linstor.proto.RscOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

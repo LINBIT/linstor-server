@@ -19,178 +19,17 @@ public final class MsgCrtNodeConnOuterClass {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string node_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
      */
-    boolean hasNodeConnUuid();
+    boolean hasNodeConn();
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string node_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
      */
-    java.lang.String getNodeConnUuid();
+    com.linbit.linstor.proto.NodeConnOuterClass.NodeConn getNodeConn();
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string node_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
      */
-    com.google.protobuf.ByteString
-        getNodeConnUuidBytes();
-
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 3;</code>
-     */
-    boolean hasNodeName1();
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 3;</code>
-     */
-    java.lang.String getNodeName1();
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 3;</code>
-     */
-    com.google.protobuf.ByteString
-        getNodeName1Bytes();
-
-    /**
-     * <pre>
-     * Node 1 uuid
-     * </pre>
-     *
-     * <code>optional string node_1_uuid = 2;</code>
-     */
-    boolean hasNode1Uuid();
-    /**
-     * <pre>
-     * Node 1 uuid
-     * </pre>
-     *
-     * <code>optional string node_1_uuid = 2;</code>
-     */
-    java.lang.String getNode1Uuid();
-    /**
-     * <pre>
-     * Node 1 uuid
-     * </pre>
-     *
-     * <code>optional string node_1_uuid = 2;</code>
-     */
-    com.google.protobuf.ByteString
-        getNode1UuidBytes();
-
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 5;</code>
-     */
-    boolean hasNodeName2();
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 5;</code>
-     */
-    java.lang.String getNodeName2();
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 5;</code>
-     */
-    com.google.protobuf.ByteString
-        getNodeName2Bytes();
-
-    /**
-     * <pre>
-     * Node 2 uuid
-     * </pre>
-     *
-     * <code>optional string node_2_uuid = 4;</code>
-     */
-    boolean hasNode2Uuid();
-    /**
-     * <pre>
-     * Node 2 uuid
-     * </pre>
-     *
-     * <code>optional string node_2_uuid = 4;</code>
-     */
-    java.lang.String getNode2Uuid();
-    /**
-     * <pre>
-     * Node 2 uuid
-     * </pre>
-     *
-     * <code>optional string node_2_uuid = 4;</code>
-     */
-    com.google.protobuf.ByteString
-        getNode2UuidBytes();
-
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-     */
-    java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
-        getNodeConnPropsList();
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-     */
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getNodeConnProps(int index);
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-     */
-    int getNodeConnPropsCount();
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-     */
-    java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getNodeConnPropsOrBuilderList();
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-     */
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodeConnPropsOrBuilder(
-        int index);
+    com.linbit.linstor.proto.NodeConnOuterClass.NodeConnOrBuilder getNodeConnOrBuilder();
   }
   /**
    * <pre>
@@ -208,12 +47,6 @@ public final class MsgCrtNodeConnOuterClass {
       super(builder);
     }
     private MsgCrtNodeConn() {
-      nodeConnUuid_ = "";
-      nodeName1_ = "";
-      node1Uuid_ = "";
-      nodeName2_ = "";
-      node2Uuid_ = "";
-      nodeConnProps_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -245,42 +78,16 @@ public final class MsgCrtNodeConnOuterClass {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000001;
-              nodeConnUuid_ = bs;
-              break;
-            }
-            case 18: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000004;
-              node1Uuid_ = bs;
-              break;
-            }
-            case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000002;
-              nodeName1_ = bs;
-              break;
-            }
-            case 34: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000010;
-              node2Uuid_ = bs;
-              break;
-            }
-            case 42: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000008;
-              nodeName2_ = bs;
-              break;
-            }
-            case 50: {
-              if (!((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
-                nodeConnProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
-                mutable_bitField0_ |= 0x00000020;
+              com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                subBuilder = nodeConn_.toBuilder();
               }
-              nodeConnProps_.add(
-                  input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              nodeConn_ = input.readMessage(com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(nodeConn_);
+                nodeConn_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000001;
               break;
             }
           }
@@ -291,9 +98,6 @@ public final class MsgCrtNodeConnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
-          nodeConnProps_ = java.util.Collections.unmodifiableList(nodeConnProps_);
-        }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
@@ -311,329 +115,25 @@ public final class MsgCrtNodeConnOuterClass {
     }
 
     private int bitField0_;
-    public static final int NODE_CONN_UUID_FIELD_NUMBER = 1;
-    private volatile java.lang.Object nodeConnUuid_;
+    public static final int NODE_CONN_FIELD_NUMBER = 1;
+    private com.linbit.linstor.proto.NodeConnOuterClass.NodeConn nodeConn_;
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string node_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
      */
-    public boolean hasNodeConnUuid() {
+    public boolean hasNodeConn() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string node_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
      */
-    public java.lang.String getNodeConnUuid() {
-      java.lang.Object ref = nodeConnUuid_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          nodeConnUuid_ = s;
-        }
-        return s;
-      }
+    public com.linbit.linstor.proto.NodeConnOuterClass.NodeConn getNodeConn() {
+      return nodeConn_ == null ? com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.getDefaultInstance() : nodeConn_;
     }
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string node_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
      */
-    public com.google.protobuf.ByteString
-        getNodeConnUuidBytes() {
-      java.lang.Object ref = nodeConnUuid_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        nodeConnUuid_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int NODE_NAME_1_FIELD_NUMBER = 3;
-    private volatile java.lang.Object nodeName1_;
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 3;</code>
-     */
-    public boolean hasNodeName1() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 3;</code>
-     */
-    public java.lang.String getNodeName1() {
-      java.lang.Object ref = nodeName1_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          nodeName1_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 3;</code>
-     */
-    public com.google.protobuf.ByteString
-        getNodeName1Bytes() {
-      java.lang.Object ref = nodeName1_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        nodeName1_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int NODE_1_UUID_FIELD_NUMBER = 2;
-    private volatile java.lang.Object node1Uuid_;
-    /**
-     * <pre>
-     * Node 1 uuid
-     * </pre>
-     *
-     * <code>optional string node_1_uuid = 2;</code>
-     */
-    public boolean hasNode1Uuid() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <pre>
-     * Node 1 uuid
-     * </pre>
-     *
-     * <code>optional string node_1_uuid = 2;</code>
-     */
-    public java.lang.String getNode1Uuid() {
-      java.lang.Object ref = node1Uuid_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          node1Uuid_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Node 1 uuid
-     * </pre>
-     *
-     * <code>optional string node_1_uuid = 2;</code>
-     */
-    public com.google.protobuf.ByteString
-        getNode1UuidBytes() {
-      java.lang.Object ref = node1Uuid_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        node1Uuid_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int NODE_NAME_2_FIELD_NUMBER = 5;
-    private volatile java.lang.Object nodeName2_;
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 5;</code>
-     */
-    public boolean hasNodeName2() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
-    }
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 5;</code>
-     */
-    public java.lang.String getNodeName2() {
-      java.lang.Object ref = nodeName2_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          nodeName2_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 5;</code>
-     */
-    public com.google.protobuf.ByteString
-        getNodeName2Bytes() {
-      java.lang.Object ref = nodeName2_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        nodeName2_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int NODE_2_UUID_FIELD_NUMBER = 4;
-    private volatile java.lang.Object node2Uuid_;
-    /**
-     * <pre>
-     * Node 2 uuid
-     * </pre>
-     *
-     * <code>optional string node_2_uuid = 4;</code>
-     */
-    public boolean hasNode2Uuid() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
-    }
-    /**
-     * <pre>
-     * Node 2 uuid
-     * </pre>
-     *
-     * <code>optional string node_2_uuid = 4;</code>
-     */
-    public java.lang.String getNode2Uuid() {
-      java.lang.Object ref = node2Uuid_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          node2Uuid_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Node 2 uuid
-     * </pre>
-     *
-     * <code>optional string node_2_uuid = 4;</code>
-     */
-    public com.google.protobuf.ByteString
-        getNode2UuidBytes() {
-      java.lang.Object ref = node2Uuid_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        node2Uuid_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int NODE_CONN_PROPS_FIELD_NUMBER = 6;
-    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> nodeConnProps_;
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-     */
-    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getNodeConnPropsList() {
-      return nodeConnProps_;
-    }
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-     */
-    public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getNodeConnPropsOrBuilderList() {
-      return nodeConnProps_;
-    }
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-     */
-    public int getNodeConnPropsCount() {
-      return nodeConnProps_.size();
-    }
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-     */
-    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getNodeConnProps(int index) {
-      return nodeConnProps_.get(index);
-    }
-    /**
-     * <pre>
-     * Node connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-     */
-    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodeConnPropsOrBuilder(
-        int index) {
-      return nodeConnProps_.get(index);
+    public com.linbit.linstor.proto.NodeConnOuterClass.NodeConnOrBuilder getNodeConnOrBuilder() {
+      return nodeConn_ == null ? com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.getDefaultInstance() : nodeConn_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -642,19 +142,13 @@ public final class MsgCrtNodeConnOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
-      if (!hasNodeName1()) {
+      if (!hasNodeConn()) {
         memoizedIsInitialized = 0;
         return false;
       }
-      if (!hasNodeName2()) {
+      if (!getNodeConn().isInitialized()) {
         memoizedIsInitialized = 0;
         return false;
-      }
-      for (int i = 0; i < getNodeConnPropsCount(); i++) {
-        if (!getNodeConnProps(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
       }
       memoizedIsInitialized = 1;
       return true;
@@ -663,22 +157,7 @@ public final class MsgCrtNodeConnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nodeConnUuid_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, node1Uuid_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, nodeName1_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, node2Uuid_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, nodeName2_);
-      }
-      for (int i = 0; i < nodeConnProps_.size(); i++) {
-        output.writeMessage(6, nodeConnProps_.get(i));
+        output.writeMessage(1, getNodeConn());
       }
       unknownFields.writeTo(output);
     }
@@ -689,23 +168,8 @@ public final class MsgCrtNodeConnOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nodeConnUuid_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, node1Uuid_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, nodeName1_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, node2Uuid_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, nodeName2_);
-      }
-      for (int i = 0; i < nodeConnProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(6, nodeConnProps_.get(i));
+          .computeMessageSize(1, getNodeConn());
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -724,33 +188,11 @@ public final class MsgCrtNodeConnOuterClass {
       com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn other = (com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn) obj;
 
       boolean result = true;
-      result = result && (hasNodeConnUuid() == other.hasNodeConnUuid());
-      if (hasNodeConnUuid()) {
-        result = result && getNodeConnUuid()
-            .equals(other.getNodeConnUuid());
+      result = result && (hasNodeConn() == other.hasNodeConn());
+      if (hasNodeConn()) {
+        result = result && getNodeConn()
+            .equals(other.getNodeConn());
       }
-      result = result && (hasNodeName1() == other.hasNodeName1());
-      if (hasNodeName1()) {
-        result = result && getNodeName1()
-            .equals(other.getNodeName1());
-      }
-      result = result && (hasNode1Uuid() == other.hasNode1Uuid());
-      if (hasNode1Uuid()) {
-        result = result && getNode1Uuid()
-            .equals(other.getNode1Uuid());
-      }
-      result = result && (hasNodeName2() == other.hasNodeName2());
-      if (hasNodeName2()) {
-        result = result && getNodeName2()
-            .equals(other.getNodeName2());
-      }
-      result = result && (hasNode2Uuid() == other.hasNode2Uuid());
-      if (hasNode2Uuid()) {
-        result = result && getNode2Uuid()
-            .equals(other.getNode2Uuid());
-      }
-      result = result && getNodeConnPropsList()
-          .equals(other.getNodeConnPropsList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -762,29 +204,9 @@ public final class MsgCrtNodeConnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasNodeConnUuid()) {
-        hash = (37 * hash) + NODE_CONN_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getNodeConnUuid().hashCode();
-      }
-      if (hasNodeName1()) {
-        hash = (37 * hash) + NODE_NAME_1_FIELD_NUMBER;
-        hash = (53 * hash) + getNodeName1().hashCode();
-      }
-      if (hasNode1Uuid()) {
-        hash = (37 * hash) + NODE_1_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getNode1Uuid().hashCode();
-      }
-      if (hasNodeName2()) {
-        hash = (37 * hash) + NODE_NAME_2_FIELD_NUMBER;
-        hash = (53 * hash) + getNodeName2().hashCode();
-      }
-      if (hasNode2Uuid()) {
-        hash = (37 * hash) + NODE_2_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getNode2Uuid().hashCode();
-      }
-      if (getNodeConnPropsCount() > 0) {
-        hash = (37 * hash) + NODE_CONN_PROPS_FIELD_NUMBER;
-        hash = (53 * hash) + getNodeConnPropsList().hashCode();
+      if (hasNodeConn()) {
+        hash = (37 * hash) + NODE_CONN_FIELD_NUMBER;
+        hash = (53 * hash) + getNodeConn().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -904,27 +326,17 @@ public final class MsgCrtNodeConnOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
-          getNodeConnPropsFieldBuilder();
+          getNodeConnFieldBuilder();
         }
       }
       public Builder clear() {
         super.clear();
-        nodeConnUuid_ = "";
-        bitField0_ = (bitField0_ & ~0x00000001);
-        nodeName1_ = "";
-        bitField0_ = (bitField0_ & ~0x00000002);
-        node1Uuid_ = "";
-        bitField0_ = (bitField0_ & ~0x00000004);
-        nodeName2_ = "";
-        bitField0_ = (bitField0_ & ~0x00000008);
-        node2Uuid_ = "";
-        bitField0_ = (bitField0_ & ~0x00000010);
-        if (nodeConnPropsBuilder_ == null) {
-          nodeConnProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000020);
+        if (nodeConnBuilder_ == null) {
+          nodeConn_ = null;
         } else {
-          nodeConnPropsBuilder_.clear();
+          nodeConnBuilder_.clear();
         }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
 
@@ -952,31 +364,10 @@ public final class MsgCrtNodeConnOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.nodeConnUuid_ = nodeConnUuid_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.nodeName1_ = nodeName1_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.node1Uuid_ = node1Uuid_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.nodeName2_ = nodeName2_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
-        }
-        result.node2Uuid_ = node2Uuid_;
-        if (nodeConnPropsBuilder_ == null) {
-          if (((bitField0_ & 0x00000020) == 0x00000020)) {
-            nodeConnProps_ = java.util.Collections.unmodifiableList(nodeConnProps_);
-            bitField0_ = (bitField0_ & ~0x00000020);
-          }
-          result.nodeConnProps_ = nodeConnProps_;
+        if (nodeConnBuilder_ == null) {
+          result.nodeConn_ = nodeConn_;
         } else {
-          result.nodeConnProps_ = nodeConnPropsBuilder_.build();
+          result.nodeConn_ = nodeConnBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -1020,56 +411,8 @@ public final class MsgCrtNodeConnOuterClass {
 
       public Builder mergeFrom(com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn other) {
         if (other == com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn.getDefaultInstance()) return this;
-        if (other.hasNodeConnUuid()) {
-          bitField0_ |= 0x00000001;
-          nodeConnUuid_ = other.nodeConnUuid_;
-          onChanged();
-        }
-        if (other.hasNodeName1()) {
-          bitField0_ |= 0x00000002;
-          nodeName1_ = other.nodeName1_;
-          onChanged();
-        }
-        if (other.hasNode1Uuid()) {
-          bitField0_ |= 0x00000004;
-          node1Uuid_ = other.node1Uuid_;
-          onChanged();
-        }
-        if (other.hasNodeName2()) {
-          bitField0_ |= 0x00000008;
-          nodeName2_ = other.nodeName2_;
-          onChanged();
-        }
-        if (other.hasNode2Uuid()) {
-          bitField0_ |= 0x00000010;
-          node2Uuid_ = other.node2Uuid_;
-          onChanged();
-        }
-        if (nodeConnPropsBuilder_ == null) {
-          if (!other.nodeConnProps_.isEmpty()) {
-            if (nodeConnProps_.isEmpty()) {
-              nodeConnProps_ = other.nodeConnProps_;
-              bitField0_ = (bitField0_ & ~0x00000020);
-            } else {
-              ensureNodeConnPropsIsMutable();
-              nodeConnProps_.addAll(other.nodeConnProps_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.nodeConnProps_.isEmpty()) {
-            if (nodeConnPropsBuilder_.isEmpty()) {
-              nodeConnPropsBuilder_.dispose();
-              nodeConnPropsBuilder_ = null;
-              nodeConnProps_ = other.nodeConnProps_;
-              bitField0_ = (bitField0_ & ~0x00000020);
-              nodeConnPropsBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getNodeConnPropsFieldBuilder() : null;
-            } else {
-              nodeConnPropsBuilder_.addAllMessages(other.nodeConnProps_);
-            }
-          }
+        if (other.hasNodeConn()) {
+          mergeNodeConn(other.getNodeConn());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -1077,16 +420,11 @@ public final class MsgCrtNodeConnOuterClass {
       }
 
       public final boolean isInitialized() {
-        if (!hasNodeName1()) {
+        if (!hasNodeConn()) {
           return false;
         }
-        if (!hasNodeName2()) {
+        if (!getNodeConn().isInitialized()) {
           return false;
-        }
-        for (int i = 0; i < getNodeConnPropsCount(); i++) {
-          if (!getNodeConnProps(i).isInitialized()) {
-            return false;
-          }
         }
         return true;
       }
@@ -1110,816 +448,122 @@ public final class MsgCrtNodeConnOuterClass {
       }
       private int bitField0_;
 
-      private java.lang.Object nodeConnUuid_ = "";
+      private com.linbit.linstor.proto.NodeConnOuterClass.NodeConn nodeConn_ = null;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.linbit.linstor.proto.NodeConnOuterClass.NodeConn, com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.Builder, com.linbit.linstor.proto.NodeConnOuterClass.NodeConnOrBuilder> nodeConnBuilder_;
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string node_conn_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
        */
-      public boolean hasNodeConnUuid() {
+      public boolean hasNodeConn() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string node_conn_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
        */
-      public java.lang.String getNodeConnUuid() {
-        java.lang.Object ref = nodeConnUuid_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            nodeConnUuid_ = s;
+      public com.linbit.linstor.proto.NodeConnOuterClass.NodeConn getNodeConn() {
+        if (nodeConnBuilder_ == null) {
+          return nodeConn_ == null ? com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.getDefaultInstance() : nodeConn_;
+        } else {
+          return nodeConnBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
+       */
+      public Builder setNodeConn(com.linbit.linstor.proto.NodeConnOuterClass.NodeConn value) {
+        if (nodeConnBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
           }
-          return s;
+          nodeConn_ = value;
+          onChanged();
         } else {
-          return (java.lang.String) ref;
+          nodeConnBuilder_.setMessage(value);
         }
-      }
-      /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string node_conn_uuid = 1;</code>
-       */
-      public com.google.protobuf.ByteString
-          getNodeConnUuidBytes() {
-        java.lang.Object ref = nodeConnUuid_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          nodeConnUuid_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string node_conn_uuid = 1;</code>
-       */
-      public Builder setNodeConnUuid(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        nodeConnUuid_ = value;
-        onChanged();
+        bitField0_ |= 0x00000001;
         return this;
       }
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string node_conn_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
        */
-      public Builder clearNodeConnUuid() {
+      public Builder setNodeConn(
+          com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.Builder builderForValue) {
+        if (nodeConnBuilder_ == null) {
+          nodeConn_ = builderForValue.build();
+          onChanged();
+        } else {
+          nodeConnBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
+       */
+      public Builder mergeNodeConn(com.linbit.linstor.proto.NodeConnOuterClass.NodeConn value) {
+        if (nodeConnBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              nodeConn_ != null &&
+              nodeConn_ != com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.getDefaultInstance()) {
+            nodeConn_ =
+              com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.newBuilder(nodeConn_).mergeFrom(value).buildPartial();
+          } else {
+            nodeConn_ = value;
+          }
+          onChanged();
+        } else {
+          nodeConnBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
+       */
+      public Builder clearNodeConn() {
+        if (nodeConnBuilder_ == null) {
+          nodeConn_ = null;
+          onChanged();
+        } else {
+          nodeConnBuilder_.clear();
+        }
         bitField0_ = (bitField0_ & ~0x00000001);
-        nodeConnUuid_ = getDefaultInstance().getNodeConnUuid();
+        return this;
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
+       */
+      public com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.Builder getNodeConnBuilder() {
+        bitField0_ |= 0x00000001;
         onChanged();
-        return this;
+        return getNodeConnFieldBuilder().getBuilder();
       }
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string node_conn_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
        */
-      public Builder setNodeConnUuidBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        nodeConnUuid_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object nodeName1_ = "";
-      /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 3;</code>
-       */
-      public boolean hasNodeName1() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 3;</code>
-       */
-      public java.lang.String getNodeName1() {
-        java.lang.Object ref = nodeName1_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            nodeName1_ = s;
-          }
-          return s;
+      public com.linbit.linstor.proto.NodeConnOuterClass.NodeConnOrBuilder getNodeConnOrBuilder() {
+        if (nodeConnBuilder_ != null) {
+          return nodeConnBuilder_.getMessageOrBuilder();
         } else {
-          return (java.lang.String) ref;
+          return nodeConn_ == null ?
+              com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.getDefaultInstance() : nodeConn_;
         }
       }
       /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 3;</code>
+       * <code>required .com.linbit.linstor.proto.NodeConn node_conn = 1;</code>
        */
-      public com.google.protobuf.ByteString
-          getNodeName1Bytes() {
-        java.lang.Object ref = nodeName1_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          nodeName1_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 3;</code>
-       */
-      public Builder setNodeName1(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        nodeName1_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 3;</code>
-       */
-      public Builder clearNodeName1() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        nodeName1_ = getDefaultInstance().getNodeName1();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 3;</code>
-       */
-      public Builder setNodeName1Bytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        nodeName1_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object node1Uuid_ = "";
-      /**
-       * <pre>
-       * Node 1 uuid
-       * </pre>
-       *
-       * <code>optional string node_1_uuid = 2;</code>
-       */
-      public boolean hasNode1Uuid() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      /**
-       * <pre>
-       * Node 1 uuid
-       * </pre>
-       *
-       * <code>optional string node_1_uuid = 2;</code>
-       */
-      public java.lang.String getNode1Uuid() {
-        java.lang.Object ref = node1Uuid_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            node1Uuid_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node 1 uuid
-       * </pre>
-       *
-       * <code>optional string node_1_uuid = 2;</code>
-       */
-      public com.google.protobuf.ByteString
-          getNode1UuidBytes() {
-        java.lang.Object ref = node1Uuid_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          node1Uuid_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node 1 uuid
-       * </pre>
-       *
-       * <code>optional string node_1_uuid = 2;</code>
-       */
-      public Builder setNode1Uuid(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000004;
-        node1Uuid_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 1 uuid
-       * </pre>
-       *
-       * <code>optional string node_1_uuid = 2;</code>
-       */
-      public Builder clearNode1Uuid() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        node1Uuid_ = getDefaultInstance().getNode1Uuid();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 1 uuid
-       * </pre>
-       *
-       * <code>optional string node_1_uuid = 2;</code>
-       */
-      public Builder setNode1UuidBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000004;
-        node1Uuid_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object nodeName2_ = "";
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 5;</code>
-       */
-      public boolean hasNodeName2() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
-      }
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 5;</code>
-       */
-      public java.lang.String getNodeName2() {
-        java.lang.Object ref = nodeName2_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            nodeName2_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 5;</code>
-       */
-      public com.google.protobuf.ByteString
-          getNodeName2Bytes() {
-        java.lang.Object ref = nodeName2_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          nodeName2_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 5;</code>
-       */
-      public Builder setNodeName2(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        nodeName2_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 5;</code>
-       */
-      public Builder clearNodeName2() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        nodeName2_ = getDefaultInstance().getNodeName2();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 5;</code>
-       */
-      public Builder setNodeName2Bytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        nodeName2_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object node2Uuid_ = "";
-      /**
-       * <pre>
-       * Node 2 uuid
-       * </pre>
-       *
-       * <code>optional string node_2_uuid = 4;</code>
-       */
-      public boolean hasNode2Uuid() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
-      }
-      /**
-       * <pre>
-       * Node 2 uuid
-       * </pre>
-       *
-       * <code>optional string node_2_uuid = 4;</code>
-       */
-      public java.lang.String getNode2Uuid() {
-        java.lang.Object ref = node2Uuid_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            node2Uuid_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node 2 uuid
-       * </pre>
-       *
-       * <code>optional string node_2_uuid = 4;</code>
-       */
-      public com.google.protobuf.ByteString
-          getNode2UuidBytes() {
-        java.lang.Object ref = node2Uuid_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          node2Uuid_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node 2 uuid
-       * </pre>
-       *
-       * <code>optional string node_2_uuid = 4;</code>
-       */
-      public Builder setNode2Uuid(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000010;
-        node2Uuid_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 2 uuid
-       * </pre>
-       *
-       * <code>optional string node_2_uuid = 4;</code>
-       */
-      public Builder clearNode2Uuid() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        node2Uuid_ = getDefaultInstance().getNode2Uuid();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 2 uuid
-       * </pre>
-       *
-       * <code>optional string node_2_uuid = 4;</code>
-       */
-      public Builder setNode2UuidBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000010;
-        node2Uuid_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> nodeConnProps_ =
-        java.util.Collections.emptyList();
-      private void ensureNodeConnPropsIsMutable() {
-        if (!((bitField0_ & 0x00000020) == 0x00000020)) {
-          nodeConnProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(nodeConnProps_);
-          bitField0_ |= 0x00000020;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> nodeConnPropsBuilder_;
-
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getNodeConnPropsList() {
-        if (nodeConnPropsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(nodeConnProps_);
-        } else {
-          return nodeConnPropsBuilder_.getMessageList();
-        }
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public int getNodeConnPropsCount() {
-        if (nodeConnPropsBuilder_ == null) {
-          return nodeConnProps_.size();
-        } else {
-          return nodeConnPropsBuilder_.getCount();
-        }
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getNodeConnProps(int index) {
-        if (nodeConnPropsBuilder_ == null) {
-          return nodeConnProps_.get(index);
-        } else {
-          return nodeConnPropsBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public Builder setNodeConnProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (nodeConnPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureNodeConnPropsIsMutable();
-          nodeConnProps_.set(index, value);
-          onChanged();
-        } else {
-          nodeConnPropsBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public Builder setNodeConnProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (nodeConnPropsBuilder_ == null) {
-          ensureNodeConnPropsIsMutable();
-          nodeConnProps_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          nodeConnPropsBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public Builder addNodeConnProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (nodeConnPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureNodeConnPropsIsMutable();
-          nodeConnProps_.add(value);
-          onChanged();
-        } else {
-          nodeConnPropsBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public Builder addNodeConnProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (nodeConnPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureNodeConnPropsIsMutable();
-          nodeConnProps_.add(index, value);
-          onChanged();
-        } else {
-          nodeConnPropsBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public Builder addNodeConnProps(
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (nodeConnPropsBuilder_ == null) {
-          ensureNodeConnPropsIsMutable();
-          nodeConnProps_.add(builderForValue.build());
-          onChanged();
-        } else {
-          nodeConnPropsBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public Builder addNodeConnProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (nodeConnPropsBuilder_ == null) {
-          ensureNodeConnPropsIsMutable();
-          nodeConnProps_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          nodeConnPropsBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public Builder addAllNodeConnProps(
-          java.lang.Iterable<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
-        if (nodeConnPropsBuilder_ == null) {
-          ensureNodeConnPropsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, nodeConnProps_);
-          onChanged();
-        } else {
-          nodeConnPropsBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public Builder clearNodeConnProps() {
-        if (nodeConnPropsBuilder_ == null) {
-          nodeConnProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000020);
-          onChanged();
-        } else {
-          nodeConnPropsBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public Builder removeNodeConnProps(int index) {
-        if (nodeConnPropsBuilder_ == null) {
-          ensureNodeConnPropsIsMutable();
-          nodeConnProps_.remove(index);
-          onChanged();
-        } else {
-          nodeConnPropsBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getNodeConnPropsBuilder(
-          int index) {
-        return getNodeConnPropsFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodeConnPropsOrBuilder(
-          int index) {
-        if (nodeConnPropsBuilder_ == null) {
-          return nodeConnProps_.get(index);  } else {
-          return nodeConnPropsBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-           getNodeConnPropsOrBuilderList() {
-        if (nodeConnPropsBuilder_ != null) {
-          return nodeConnPropsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(nodeConnProps_);
-        }
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addNodeConnPropsBuilder() {
-        return getNodeConnPropsFieldBuilder().addBuilder(
-            com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addNodeConnPropsBuilder(
-          int index) {
-        return getNodeConnPropsFieldBuilder().addBuilder(
-            index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Node connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry node_conn_props = 6;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
-           getNodeConnPropsBuilderList() {
-        return getNodeConnPropsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-          getNodeConnPropsFieldBuilder() {
-        if (nodeConnPropsBuilder_ == null) {
-          nodeConnPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
-                  nodeConnProps_,
-                  ((bitField0_ & 0x00000020) == 0x00000020),
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.linbit.linstor.proto.NodeConnOuterClass.NodeConn, com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.Builder, com.linbit.linstor.proto.NodeConnOuterClass.NodeConnOrBuilder> 
+          getNodeConnFieldBuilder() {
+        if (nodeConnBuilder_ == null) {
+          nodeConnBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              com.linbit.linstor.proto.NodeConnOuterClass.NodeConn, com.linbit.linstor.proto.NodeConnOuterClass.NodeConn.Builder, com.linbit.linstor.proto.NodeConnOuterClass.NodeConnOrBuilder>(
+                  getNodeConn(),
                   getParentForChildren(),
                   isClean());
-          nodeConnProps_ = null;
+          nodeConn_ = null;
         }
-        return nodeConnPropsBuilder_;
+        return nodeConnBuilder_;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -1985,12 +629,9 @@ public final class MsgCrtNodeConnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\032proto/MsgCrtNodeConn.proto\022\030com.linbit" +
-      ".linstor.proto\032\033proto/LinStorMapEntry.pr" +
-      "oto\"\300\001\n\016MsgCrtNodeConn\022\026\n\016node_conn_uuid" +
-      "\030\001 \001(\t\022\023\n\013node_name_1\030\003 \002(\t\022\023\n\013node_1_uu" +
-      "id\030\002 \001(\t\022\023\n\013node_name_2\030\005 \002(\t\022\023\n\013node_2_" +
-      "uuid\030\004 \001(\t\022B\n\017node_conn_props\030\006 \003(\0132).co" +
-      "m.linbit.linstor.proto.LinStorMapEntryP\000"
+      ".linstor.proto\032\024proto/NodeConn.proto\"G\n\016" +
+      "MsgCrtNodeConn\0225\n\tnode_conn\030\001 \002(\0132\".com." +
+      "linbit.linstor.proto.NodeConnP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2003,15 +644,15 @@ public final class MsgCrtNodeConnOuterClass {
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor(),
+          com.linbit.linstor.proto.NodeConnOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_linstor_proto_MsgCrtNodeConn_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_com_linbit_linstor_proto_MsgCrtNodeConn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgCrtNodeConn_descriptor,
-        new java.lang.String[] { "NodeConnUuid", "NodeName1", "Node1Uuid", "NodeName2", "Node2Uuid", "NodeConnProps", });
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
+        new java.lang.String[] { "NodeConn", });
+    com.linbit.linstor.proto.NodeConnOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

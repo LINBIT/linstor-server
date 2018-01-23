@@ -19,221 +19,17 @@ public final class MsgCrtVlmConnOuterClass {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string vlm_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
      */
-    boolean hasVlmConnUuid();
+    boolean hasVlmConn();
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string vlm_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
      */
-    java.lang.String getVlmConnUuid();
+    com.linbit.linstor.proto.VlmConnOuterClass.VlmConn getVlmConn();
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string vlm_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
      */
-    com.google.protobuf.ByteString
-        getVlmConnUuidBytes();
-
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 2;</code>
-     */
-    boolean hasNodeName1();
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 2;</code>
-     */
-    java.lang.String getNodeName1();
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 2;</code>
-     */
-    com.google.protobuf.ByteString
-        getNodeName1Bytes();
-
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 3;</code>
-     */
-    boolean hasNodeName2();
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 3;</code>
-     */
-    java.lang.String getNodeName2();
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 3;</code>
-     */
-    com.google.protobuf.ByteString
-        getNodeName2Bytes();
-
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string resource_name = 4;</code>
-     */
-    boolean hasResourceName();
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string resource_name = 4;</code>
-     */
-    java.lang.String getResourceName();
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string resource_name = 4;</code>
-     */
-    com.google.protobuf.ByteString
-        getResourceNameBytes();
-
-    /**
-     * <pre>
-     * Volume number
-     * </pre>
-     *
-     * <code>required sint32 volume_nr = 5;</code>
-     */
-    boolean hasVolumeNr();
-    /**
-     * <pre>
-     * Volume number
-     * </pre>
-     *
-     * <code>required sint32 volume_nr = 5;</code>
-     */
-    int getVolumeNr();
-
-    /**
-     * <pre>
-     * Volume 1 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_1_uuid = 6;</code>
-     */
-    boolean hasVlm1Uuid();
-    /**
-     * <pre>
-     * Volume 1 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_1_uuid = 6;</code>
-     */
-    java.lang.String getVlm1Uuid();
-    /**
-     * <pre>
-     * Volume 1 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_1_uuid = 6;</code>
-     */
-    com.google.protobuf.ByteString
-        getVlm1UuidBytes();
-
-    /**
-     * <pre>
-     * Volume 2 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_2_uuid = 7;</code>
-     */
-    boolean hasVlm2Uuid();
-    /**
-     * <pre>
-     * Volume 2 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_2_uuid = 7;</code>
-     */
-    java.lang.String getVlm2Uuid();
-    /**
-     * <pre>
-     * Volume 2 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_2_uuid = 7;</code>
-     */
-    com.google.protobuf.ByteString
-        getVlm2UuidBytes();
-
-    /**
-     * <pre>
-     * Volume connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-     */
-    java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
-        getVolumeConnPropsList();
-    /**
-     * <pre>
-     * Volume connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-     */
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVolumeConnProps(int index);
-    /**
-     * <pre>
-     * Volume connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-     */
-    int getVolumeConnPropsCount();
-    /**
-     * <pre>
-     * Volume connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-     */
-    java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getVolumeConnPropsOrBuilderList();
-    /**
-     * <pre>
-     * Volume connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-     */
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVolumeConnPropsOrBuilder(
-        int index);
+    com.linbit.linstor.proto.VlmConnOuterClass.VlmConnOrBuilder getVlmConnOrBuilder();
   }
   /**
    * <pre>
@@ -251,14 +47,6 @@ public final class MsgCrtVlmConnOuterClass {
       super(builder);
     }
     private MsgCrtVlmConn() {
-      vlmConnUuid_ = "";
-      nodeName1_ = "";
-      nodeName2_ = "";
-      resourceName_ = "";
-      volumeNr_ = 0;
-      vlm1Uuid_ = "";
-      vlm2Uuid_ = "";
-      volumeConnProps_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -290,53 +78,16 @@ public final class MsgCrtVlmConnOuterClass {
               break;
             }
             case 10: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000001;
-              vlmConnUuid_ = bs;
-              break;
-            }
-            case 18: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000002;
-              nodeName1_ = bs;
-              break;
-            }
-            case 26: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000004;
-              nodeName2_ = bs;
-              break;
-            }
-            case 34: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000008;
-              resourceName_ = bs;
-              break;
-            }
-            case 40: {
-              bitField0_ |= 0x00000010;
-              volumeNr_ = input.readSInt32();
-              break;
-            }
-            case 50: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000020;
-              vlm1Uuid_ = bs;
-              break;
-            }
-            case 58: {
-              com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000040;
-              vlm2Uuid_ = bs;
-              break;
-            }
-            case 66: {
-              if (!((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
-                volumeConnProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
-                mutable_bitField0_ |= 0x00000080;
+              com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                subBuilder = vlmConn_.toBuilder();
               }
-              volumeConnProps_.add(
-                  input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              vlmConn_ = input.readMessage(com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(vlmConn_);
+                vlmConn_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000001;
               break;
             }
           }
@@ -347,9 +98,6 @@ public final class MsgCrtVlmConnOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
-          volumeConnProps_ = java.util.Collections.unmodifiableList(volumeConnProps_);
-        }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
@@ -367,406 +115,25 @@ public final class MsgCrtVlmConnOuterClass {
     }
 
     private int bitField0_;
-    public static final int VLM_CONN_UUID_FIELD_NUMBER = 1;
-    private volatile java.lang.Object vlmConnUuid_;
+    public static final int VLM_CONN_FIELD_NUMBER = 1;
+    private com.linbit.linstor.proto.VlmConnOuterClass.VlmConn vlmConn_;
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string vlm_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
      */
-    public boolean hasVlmConnUuid() {
+    public boolean hasVlmConn() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string vlm_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
      */
-    public java.lang.String getVlmConnUuid() {
-      java.lang.Object ref = vlmConnUuid_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          vlmConnUuid_ = s;
-        }
-        return s;
-      }
+    public com.linbit.linstor.proto.VlmConnOuterClass.VlmConn getVlmConn() {
+      return vlmConn_ == null ? com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.getDefaultInstance() : vlmConn_;
     }
     /**
-     * <pre>
-     * UUID
-     * </pre>
-     *
-     * <code>optional string vlm_conn_uuid = 1;</code>
+     * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
      */
-    public com.google.protobuf.ByteString
-        getVlmConnUuidBytes() {
-      java.lang.Object ref = vlmConnUuid_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        vlmConnUuid_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int NODE_NAME_1_FIELD_NUMBER = 2;
-    private volatile java.lang.Object nodeName1_;
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 2;</code>
-     */
-    public boolean hasNodeName1() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 2;</code>
-     */
-    public java.lang.String getNodeName1() {
-      java.lang.Object ref = nodeName1_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          nodeName1_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Node 1 name
-     * </pre>
-     *
-     * <code>required string node_name_1 = 2;</code>
-     */
-    public com.google.protobuf.ByteString
-        getNodeName1Bytes() {
-      java.lang.Object ref = nodeName1_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        nodeName1_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int NODE_NAME_2_FIELD_NUMBER = 3;
-    private volatile java.lang.Object nodeName2_;
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 3;</code>
-     */
-    public boolean hasNodeName2() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 3;</code>
-     */
-    public java.lang.String getNodeName2() {
-      java.lang.Object ref = nodeName2_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          nodeName2_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Node 2 name
-     * </pre>
-     *
-     * <code>required string node_name_2 = 3;</code>
-     */
-    public com.google.protobuf.ByteString
-        getNodeName2Bytes() {
-      java.lang.Object ref = nodeName2_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        nodeName2_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int RESOURCE_NAME_FIELD_NUMBER = 4;
-    private volatile java.lang.Object resourceName_;
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string resource_name = 4;</code>
-     */
-    public boolean hasResourceName() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
-    }
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string resource_name = 4;</code>
-     */
-    public java.lang.String getResourceName() {
-      java.lang.Object ref = resourceName_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          resourceName_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Resource name
-     * </pre>
-     *
-     * <code>required string resource_name = 4;</code>
-     */
-    public com.google.protobuf.ByteString
-        getResourceNameBytes() {
-      java.lang.Object ref = resourceName_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        resourceName_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int VOLUME_NR_FIELD_NUMBER = 5;
-    private int volumeNr_;
-    /**
-     * <pre>
-     * Volume number
-     * </pre>
-     *
-     * <code>required sint32 volume_nr = 5;</code>
-     */
-    public boolean hasVolumeNr() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
-    }
-    /**
-     * <pre>
-     * Volume number
-     * </pre>
-     *
-     * <code>required sint32 volume_nr = 5;</code>
-     */
-    public int getVolumeNr() {
-      return volumeNr_;
-    }
-
-    public static final int VLM_1_UUID_FIELD_NUMBER = 6;
-    private volatile java.lang.Object vlm1Uuid_;
-    /**
-     * <pre>
-     * Volume 1 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_1_uuid = 6;</code>
-     */
-    public boolean hasVlm1Uuid() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
-    }
-    /**
-     * <pre>
-     * Volume 1 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_1_uuid = 6;</code>
-     */
-    public java.lang.String getVlm1Uuid() {
-      java.lang.Object ref = vlm1Uuid_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          vlm1Uuid_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Volume 1 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_1_uuid = 6;</code>
-     */
-    public com.google.protobuf.ByteString
-        getVlm1UuidBytes() {
-      java.lang.Object ref = vlm1Uuid_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        vlm1Uuid_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int VLM_2_UUID_FIELD_NUMBER = 7;
-    private volatile java.lang.Object vlm2Uuid_;
-    /**
-     * <pre>
-     * Volume 2 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_2_uuid = 7;</code>
-     */
-    public boolean hasVlm2Uuid() {
-      return ((bitField0_ & 0x00000040) == 0x00000040);
-    }
-    /**
-     * <pre>
-     * Volume 2 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_2_uuid = 7;</code>
-     */
-    public java.lang.String getVlm2Uuid() {
-      java.lang.Object ref = vlm2Uuid_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          vlm2Uuid_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Volume 2 uuid
-     * </pre>
-     *
-     * <code>optional string vlm_2_uuid = 7;</code>
-     */
-    public com.google.protobuf.ByteString
-        getVlm2UuidBytes() {
-      java.lang.Object ref = vlm2Uuid_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        vlm2Uuid_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int VOLUME_CONN_PROPS_FIELD_NUMBER = 8;
-    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> volumeConnProps_;
-    /**
-     * <pre>
-     * Volume connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-     */
-    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getVolumeConnPropsList() {
-      return volumeConnProps_;
-    }
-    /**
-     * <pre>
-     * Volume connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-     */
-    public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getVolumeConnPropsOrBuilderList() {
-      return volumeConnProps_;
-    }
-    /**
-     * <pre>
-     * Volume connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-     */
-    public int getVolumeConnPropsCount() {
-      return volumeConnProps_.size();
-    }
-    /**
-     * <pre>
-     * Volume connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-     */
-    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVolumeConnProps(int index) {
-      return volumeConnProps_.get(index);
-    }
-    /**
-     * <pre>
-     * Volume connection properties map
-     * </pre>
-     *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-     */
-    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVolumeConnPropsOrBuilder(
-        int index) {
-      return volumeConnProps_.get(index);
+    public com.linbit.linstor.proto.VlmConnOuterClass.VlmConnOrBuilder getVlmConnOrBuilder() {
+      return vlmConn_ == null ? com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.getDefaultInstance() : vlmConn_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -775,27 +142,13 @@ public final class MsgCrtVlmConnOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
-      if (!hasNodeName1()) {
+      if (!hasVlmConn()) {
         memoizedIsInitialized = 0;
         return false;
       }
-      if (!hasNodeName2()) {
+      if (!getVlmConn().isInitialized()) {
         memoizedIsInitialized = 0;
         return false;
-      }
-      if (!hasResourceName()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasVolumeNr()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      for (int i = 0; i < getVolumeConnPropsCount(); i++) {
-        if (!getVolumeConnProps(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
       }
       memoizedIsInitialized = 1;
       return true;
@@ -804,28 +157,7 @@ public final class MsgCrtVlmConnOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, vlmConnUuid_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, nodeName1_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, nodeName2_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, resourceName_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeSInt32(5, volumeNr_);
-      }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 6, vlm1Uuid_);
-      }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 7, vlm2Uuid_);
-      }
-      for (int i = 0; i < volumeConnProps_.size(); i++) {
-        output.writeMessage(8, volumeConnProps_.get(i));
+        output.writeMessage(1, getVlmConn());
       }
       unknownFields.writeTo(output);
     }
@@ -836,30 +168,8 @@ public final class MsgCrtVlmConnOuterClass {
 
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, vlmConnUuid_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, nodeName1_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, nodeName2_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, resourceName_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt32Size(5, volumeNr_);
-      }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, vlm1Uuid_);
-      }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, vlm2Uuid_);
-      }
-      for (int i = 0; i < volumeConnProps_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(8, volumeConnProps_.get(i));
+          .computeMessageSize(1, getVlmConn());
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -878,43 +188,11 @@ public final class MsgCrtVlmConnOuterClass {
       com.linbit.linstor.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn other = (com.linbit.linstor.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn) obj;
 
       boolean result = true;
-      result = result && (hasVlmConnUuid() == other.hasVlmConnUuid());
-      if (hasVlmConnUuid()) {
-        result = result && getVlmConnUuid()
-            .equals(other.getVlmConnUuid());
+      result = result && (hasVlmConn() == other.hasVlmConn());
+      if (hasVlmConn()) {
+        result = result && getVlmConn()
+            .equals(other.getVlmConn());
       }
-      result = result && (hasNodeName1() == other.hasNodeName1());
-      if (hasNodeName1()) {
-        result = result && getNodeName1()
-            .equals(other.getNodeName1());
-      }
-      result = result && (hasNodeName2() == other.hasNodeName2());
-      if (hasNodeName2()) {
-        result = result && getNodeName2()
-            .equals(other.getNodeName2());
-      }
-      result = result && (hasResourceName() == other.hasResourceName());
-      if (hasResourceName()) {
-        result = result && getResourceName()
-            .equals(other.getResourceName());
-      }
-      result = result && (hasVolumeNr() == other.hasVolumeNr());
-      if (hasVolumeNr()) {
-        result = result && (getVolumeNr()
-            == other.getVolumeNr());
-      }
-      result = result && (hasVlm1Uuid() == other.hasVlm1Uuid());
-      if (hasVlm1Uuid()) {
-        result = result && getVlm1Uuid()
-            .equals(other.getVlm1Uuid());
-      }
-      result = result && (hasVlm2Uuid() == other.hasVlm2Uuid());
-      if (hasVlm2Uuid()) {
-        result = result && getVlm2Uuid()
-            .equals(other.getVlm2Uuid());
-      }
-      result = result && getVolumeConnPropsList()
-          .equals(other.getVolumeConnPropsList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -926,37 +204,9 @@ public final class MsgCrtVlmConnOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasVlmConnUuid()) {
-        hash = (37 * hash) + VLM_CONN_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getVlmConnUuid().hashCode();
-      }
-      if (hasNodeName1()) {
-        hash = (37 * hash) + NODE_NAME_1_FIELD_NUMBER;
-        hash = (53 * hash) + getNodeName1().hashCode();
-      }
-      if (hasNodeName2()) {
-        hash = (37 * hash) + NODE_NAME_2_FIELD_NUMBER;
-        hash = (53 * hash) + getNodeName2().hashCode();
-      }
-      if (hasResourceName()) {
-        hash = (37 * hash) + RESOURCE_NAME_FIELD_NUMBER;
-        hash = (53 * hash) + getResourceName().hashCode();
-      }
-      if (hasVolumeNr()) {
-        hash = (37 * hash) + VOLUME_NR_FIELD_NUMBER;
-        hash = (53 * hash) + getVolumeNr();
-      }
-      if (hasVlm1Uuid()) {
-        hash = (37 * hash) + VLM_1_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getVlm1Uuid().hashCode();
-      }
-      if (hasVlm2Uuid()) {
-        hash = (37 * hash) + VLM_2_UUID_FIELD_NUMBER;
-        hash = (53 * hash) + getVlm2Uuid().hashCode();
-      }
-      if (getVolumeConnPropsCount() > 0) {
-        hash = (37 * hash) + VOLUME_CONN_PROPS_FIELD_NUMBER;
-        hash = (53 * hash) + getVolumeConnPropsList().hashCode();
+      if (hasVlmConn()) {
+        hash = (37 * hash) + VLM_CONN_FIELD_NUMBER;
+        hash = (53 * hash) + getVlmConn().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -1076,31 +326,17 @@ public final class MsgCrtVlmConnOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
-          getVolumeConnPropsFieldBuilder();
+          getVlmConnFieldBuilder();
         }
       }
       public Builder clear() {
         super.clear();
-        vlmConnUuid_ = "";
-        bitField0_ = (bitField0_ & ~0x00000001);
-        nodeName1_ = "";
-        bitField0_ = (bitField0_ & ~0x00000002);
-        nodeName2_ = "";
-        bitField0_ = (bitField0_ & ~0x00000004);
-        resourceName_ = "";
-        bitField0_ = (bitField0_ & ~0x00000008);
-        volumeNr_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000010);
-        vlm1Uuid_ = "";
-        bitField0_ = (bitField0_ & ~0x00000020);
-        vlm2Uuid_ = "";
-        bitField0_ = (bitField0_ & ~0x00000040);
-        if (volumeConnPropsBuilder_ == null) {
-          volumeConnProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000080);
+        if (vlmConnBuilder_ == null) {
+          vlmConn_ = null;
         } else {
-          volumeConnPropsBuilder_.clear();
+          vlmConnBuilder_.clear();
         }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
 
@@ -1128,39 +364,10 @@ public final class MsgCrtVlmConnOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.vlmConnUuid_ = vlmConnUuid_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.nodeName1_ = nodeName1_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.nodeName2_ = nodeName2_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.resourceName_ = resourceName_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
-        }
-        result.volumeNr_ = volumeNr_;
-        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
-          to_bitField0_ |= 0x00000020;
-        }
-        result.vlm1Uuid_ = vlm1Uuid_;
-        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
-          to_bitField0_ |= 0x00000040;
-        }
-        result.vlm2Uuid_ = vlm2Uuid_;
-        if (volumeConnPropsBuilder_ == null) {
-          if (((bitField0_ & 0x00000080) == 0x00000080)) {
-            volumeConnProps_ = java.util.Collections.unmodifiableList(volumeConnProps_);
-            bitField0_ = (bitField0_ & ~0x00000080);
-          }
-          result.volumeConnProps_ = volumeConnProps_;
+        if (vlmConnBuilder_ == null) {
+          result.vlmConn_ = vlmConn_;
         } else {
-          result.volumeConnProps_ = volumeConnPropsBuilder_.build();
+          result.vlmConn_ = vlmConnBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -1204,64 +411,8 @@ public final class MsgCrtVlmConnOuterClass {
 
       public Builder mergeFrom(com.linbit.linstor.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn other) {
         if (other == com.linbit.linstor.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn.getDefaultInstance()) return this;
-        if (other.hasVlmConnUuid()) {
-          bitField0_ |= 0x00000001;
-          vlmConnUuid_ = other.vlmConnUuid_;
-          onChanged();
-        }
-        if (other.hasNodeName1()) {
-          bitField0_ |= 0x00000002;
-          nodeName1_ = other.nodeName1_;
-          onChanged();
-        }
-        if (other.hasNodeName2()) {
-          bitField0_ |= 0x00000004;
-          nodeName2_ = other.nodeName2_;
-          onChanged();
-        }
-        if (other.hasResourceName()) {
-          bitField0_ |= 0x00000008;
-          resourceName_ = other.resourceName_;
-          onChanged();
-        }
-        if (other.hasVolumeNr()) {
-          setVolumeNr(other.getVolumeNr());
-        }
-        if (other.hasVlm1Uuid()) {
-          bitField0_ |= 0x00000020;
-          vlm1Uuid_ = other.vlm1Uuid_;
-          onChanged();
-        }
-        if (other.hasVlm2Uuid()) {
-          bitField0_ |= 0x00000040;
-          vlm2Uuid_ = other.vlm2Uuid_;
-          onChanged();
-        }
-        if (volumeConnPropsBuilder_ == null) {
-          if (!other.volumeConnProps_.isEmpty()) {
-            if (volumeConnProps_.isEmpty()) {
-              volumeConnProps_ = other.volumeConnProps_;
-              bitField0_ = (bitField0_ & ~0x00000080);
-            } else {
-              ensureVolumeConnPropsIsMutable();
-              volumeConnProps_.addAll(other.volumeConnProps_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.volumeConnProps_.isEmpty()) {
-            if (volumeConnPropsBuilder_.isEmpty()) {
-              volumeConnPropsBuilder_.dispose();
-              volumeConnPropsBuilder_ = null;
-              volumeConnProps_ = other.volumeConnProps_;
-              bitField0_ = (bitField0_ & ~0x00000080);
-              volumeConnPropsBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getVolumeConnPropsFieldBuilder() : null;
-            } else {
-              volumeConnPropsBuilder_.addAllMessages(other.volumeConnProps_);
-            }
-          }
+        if (other.hasVlmConn()) {
+          mergeVlmConn(other.getVlmConn());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -1269,22 +420,11 @@ public final class MsgCrtVlmConnOuterClass {
       }
 
       public final boolean isInitialized() {
-        if (!hasNodeName1()) {
+        if (!hasVlmConn()) {
           return false;
         }
-        if (!hasNodeName2()) {
+        if (!getVlmConn().isInitialized()) {
           return false;
-        }
-        if (!hasResourceName()) {
-          return false;
-        }
-        if (!hasVolumeNr()) {
-          return false;
-        }
-        for (int i = 0; i < getVolumeConnPropsCount(); i++) {
-          if (!getVolumeConnProps(i).isInitialized()) {
-            return false;
-          }
         }
         return true;
       }
@@ -1308,964 +448,122 @@ public final class MsgCrtVlmConnOuterClass {
       }
       private int bitField0_;
 
-      private java.lang.Object vlmConnUuid_ = "";
+      private com.linbit.linstor.proto.VlmConnOuterClass.VlmConn vlmConn_ = null;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.linbit.linstor.proto.VlmConnOuterClass.VlmConn, com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.Builder, com.linbit.linstor.proto.VlmConnOuterClass.VlmConnOrBuilder> vlmConnBuilder_;
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string vlm_conn_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
        */
-      public boolean hasVlmConnUuid() {
+      public boolean hasVlmConn() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string vlm_conn_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
        */
-      public java.lang.String getVlmConnUuid() {
-        java.lang.Object ref = vlmConnUuid_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            vlmConnUuid_ = s;
+      public com.linbit.linstor.proto.VlmConnOuterClass.VlmConn getVlmConn() {
+        if (vlmConnBuilder_ == null) {
+          return vlmConn_ == null ? com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.getDefaultInstance() : vlmConn_;
+        } else {
+          return vlmConnBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
+       */
+      public Builder setVlmConn(com.linbit.linstor.proto.VlmConnOuterClass.VlmConn value) {
+        if (vlmConnBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
           }
-          return s;
+          vlmConn_ = value;
+          onChanged();
         } else {
-          return (java.lang.String) ref;
+          vlmConnBuilder_.setMessage(value);
         }
-      }
-      /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string vlm_conn_uuid = 1;</code>
-       */
-      public com.google.protobuf.ByteString
-          getVlmConnUuidBytes() {
-        java.lang.Object ref = vlmConnUuid_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          vlmConnUuid_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string vlm_conn_uuid = 1;</code>
-       */
-      public Builder setVlmConnUuid(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        vlmConnUuid_ = value;
-        onChanged();
+        bitField0_ |= 0x00000001;
         return this;
       }
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string vlm_conn_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
        */
-      public Builder clearVlmConnUuid() {
+      public Builder setVlmConn(
+          com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.Builder builderForValue) {
+        if (vlmConnBuilder_ == null) {
+          vlmConn_ = builderForValue.build();
+          onChanged();
+        } else {
+          vlmConnBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
+       */
+      public Builder mergeVlmConn(com.linbit.linstor.proto.VlmConnOuterClass.VlmConn value) {
+        if (vlmConnBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              vlmConn_ != null &&
+              vlmConn_ != com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.getDefaultInstance()) {
+            vlmConn_ =
+              com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.newBuilder(vlmConn_).mergeFrom(value).buildPartial();
+          } else {
+            vlmConn_ = value;
+          }
+          onChanged();
+        } else {
+          vlmConnBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
+       */
+      public Builder clearVlmConn() {
+        if (vlmConnBuilder_ == null) {
+          vlmConn_ = null;
+          onChanged();
+        } else {
+          vlmConnBuilder_.clear();
+        }
         bitField0_ = (bitField0_ & ~0x00000001);
-        vlmConnUuid_ = getDefaultInstance().getVlmConnUuid();
+        return this;
+      }
+      /**
+       * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
+       */
+      public com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.Builder getVlmConnBuilder() {
+        bitField0_ |= 0x00000001;
         onChanged();
-        return this;
+        return getVlmConnFieldBuilder().getBuilder();
       }
       /**
-       * <pre>
-       * UUID
-       * </pre>
-       *
-       * <code>optional string vlm_conn_uuid = 1;</code>
+       * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
        */
-      public Builder setVlmConnUuidBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        vlmConnUuid_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object nodeName1_ = "";
-      /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 2;</code>
-       */
-      public boolean hasNodeName1() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 2;</code>
-       */
-      public java.lang.String getNodeName1() {
-        java.lang.Object ref = nodeName1_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            nodeName1_ = s;
-          }
-          return s;
+      public com.linbit.linstor.proto.VlmConnOuterClass.VlmConnOrBuilder getVlmConnOrBuilder() {
+        if (vlmConnBuilder_ != null) {
+          return vlmConnBuilder_.getMessageOrBuilder();
         } else {
-          return (java.lang.String) ref;
+          return vlmConn_ == null ?
+              com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.getDefaultInstance() : vlmConn_;
         }
       }
       /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 2;</code>
+       * <code>required .com.linbit.linstor.proto.VlmConn vlm_conn = 1;</code>
        */
-      public com.google.protobuf.ByteString
-          getNodeName1Bytes() {
-        java.lang.Object ref = nodeName1_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          nodeName1_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 2;</code>
-       */
-      public Builder setNodeName1(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        nodeName1_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 2;</code>
-       */
-      public Builder clearNodeName1() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        nodeName1_ = getDefaultInstance().getNodeName1();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 1 name
-       * </pre>
-       *
-       * <code>required string node_name_1 = 2;</code>
-       */
-      public Builder setNodeName1Bytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        nodeName1_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object nodeName2_ = "";
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 3;</code>
-       */
-      public boolean hasNodeName2() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 3;</code>
-       */
-      public java.lang.String getNodeName2() {
-        java.lang.Object ref = nodeName2_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            nodeName2_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 3;</code>
-       */
-      public com.google.protobuf.ByteString
-          getNodeName2Bytes() {
-        java.lang.Object ref = nodeName2_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          nodeName2_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 3;</code>
-       */
-      public Builder setNodeName2(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000004;
-        nodeName2_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 3;</code>
-       */
-      public Builder clearNodeName2() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        nodeName2_ = getDefaultInstance().getNodeName2();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Node 2 name
-       * </pre>
-       *
-       * <code>required string node_name_2 = 3;</code>
-       */
-      public Builder setNodeName2Bytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000004;
-        nodeName2_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object resourceName_ = "";
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string resource_name = 4;</code>
-       */
-      public boolean hasResourceName() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
-      }
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string resource_name = 4;</code>
-       */
-      public java.lang.String getResourceName() {
-        java.lang.Object ref = resourceName_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            resourceName_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string resource_name = 4;</code>
-       */
-      public com.google.protobuf.ByteString
-          getResourceNameBytes() {
-        java.lang.Object ref = resourceName_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          resourceName_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string resource_name = 4;</code>
-       */
-      public Builder setResourceName(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        resourceName_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string resource_name = 4;</code>
-       */
-      public Builder clearResourceName() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        resourceName_ = getDefaultInstance().getResourceName();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Resource name
-       * </pre>
-       *
-       * <code>required string resource_name = 4;</code>
-       */
-      public Builder setResourceNameBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        resourceName_ = value;
-        onChanged();
-        return this;
-      }
-
-      private int volumeNr_ ;
-      /**
-       * <pre>
-       * Volume number
-       * </pre>
-       *
-       * <code>required sint32 volume_nr = 5;</code>
-       */
-      public boolean hasVolumeNr() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
-      }
-      /**
-       * <pre>
-       * Volume number
-       * </pre>
-       *
-       * <code>required sint32 volume_nr = 5;</code>
-       */
-      public int getVolumeNr() {
-        return volumeNr_;
-      }
-      /**
-       * <pre>
-       * Volume number
-       * </pre>
-       *
-       * <code>required sint32 volume_nr = 5;</code>
-       */
-      public Builder setVolumeNr(int value) {
-        bitField0_ |= 0x00000010;
-        volumeNr_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume number
-       * </pre>
-       *
-       * <code>required sint32 volume_nr = 5;</code>
-       */
-      public Builder clearVolumeNr() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        volumeNr_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object vlm1Uuid_ = "";
-      /**
-       * <pre>
-       * Volume 1 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_1_uuid = 6;</code>
-       */
-      public boolean hasVlm1Uuid() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
-      }
-      /**
-       * <pre>
-       * Volume 1 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_1_uuid = 6;</code>
-       */
-      public java.lang.String getVlm1Uuid() {
-        java.lang.Object ref = vlm1Uuid_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            vlm1Uuid_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Volume 1 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_1_uuid = 6;</code>
-       */
-      public com.google.protobuf.ByteString
-          getVlm1UuidBytes() {
-        java.lang.Object ref = vlm1Uuid_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          vlm1Uuid_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Volume 1 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_1_uuid = 6;</code>
-       */
-      public Builder setVlm1Uuid(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000020;
-        vlm1Uuid_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume 1 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_1_uuid = 6;</code>
-       */
-      public Builder clearVlm1Uuid() {
-        bitField0_ = (bitField0_ & ~0x00000020);
-        vlm1Uuid_ = getDefaultInstance().getVlm1Uuid();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume 1 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_1_uuid = 6;</code>
-       */
-      public Builder setVlm1UuidBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000020;
-        vlm1Uuid_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object vlm2Uuid_ = "";
-      /**
-       * <pre>
-       * Volume 2 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_2_uuid = 7;</code>
-       */
-      public boolean hasVlm2Uuid() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
-      }
-      /**
-       * <pre>
-       * Volume 2 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_2_uuid = 7;</code>
-       */
-      public java.lang.String getVlm2Uuid() {
-        java.lang.Object ref = vlm2Uuid_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            vlm2Uuid_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Volume 2 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_2_uuid = 7;</code>
-       */
-      public com.google.protobuf.ByteString
-          getVlm2UuidBytes() {
-        java.lang.Object ref = vlm2Uuid_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          vlm2Uuid_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Volume 2 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_2_uuid = 7;</code>
-       */
-      public Builder setVlm2Uuid(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000040;
-        vlm2Uuid_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume 2 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_2_uuid = 7;</code>
-       */
-      public Builder clearVlm2Uuid() {
-        bitField0_ = (bitField0_ & ~0x00000040);
-        vlm2Uuid_ = getDefaultInstance().getVlm2Uuid();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume 2 uuid
-       * </pre>
-       *
-       * <code>optional string vlm_2_uuid = 7;</code>
-       */
-      public Builder setVlm2UuidBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000040;
-        vlm2Uuid_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> volumeConnProps_ =
-        java.util.Collections.emptyList();
-      private void ensureVolumeConnPropsIsMutable() {
-        if (!((bitField0_ & 0x00000080) == 0x00000080)) {
-          volumeConnProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(volumeConnProps_);
-          bitField0_ |= 0x00000080;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> volumeConnPropsBuilder_;
-
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getVolumeConnPropsList() {
-        if (volumeConnPropsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(volumeConnProps_);
-        } else {
-          return volumeConnPropsBuilder_.getMessageList();
-        }
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public int getVolumeConnPropsCount() {
-        if (volumeConnPropsBuilder_ == null) {
-          return volumeConnProps_.size();
-        } else {
-          return volumeConnPropsBuilder_.getCount();
-        }
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getVolumeConnProps(int index) {
-        if (volumeConnPropsBuilder_ == null) {
-          return volumeConnProps_.get(index);
-        } else {
-          return volumeConnPropsBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public Builder setVolumeConnProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (volumeConnPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVolumeConnPropsIsMutable();
-          volumeConnProps_.set(index, value);
-          onChanged();
-        } else {
-          volumeConnPropsBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public Builder setVolumeConnProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (volumeConnPropsBuilder_ == null) {
-          ensureVolumeConnPropsIsMutable();
-          volumeConnProps_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          volumeConnPropsBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public Builder addVolumeConnProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (volumeConnPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVolumeConnPropsIsMutable();
-          volumeConnProps_.add(value);
-          onChanged();
-        } else {
-          volumeConnPropsBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public Builder addVolumeConnProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (volumeConnPropsBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVolumeConnPropsIsMutable();
-          volumeConnProps_.add(index, value);
-          onChanged();
-        } else {
-          volumeConnPropsBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public Builder addVolumeConnProps(
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (volumeConnPropsBuilder_ == null) {
-          ensureVolumeConnPropsIsMutable();
-          volumeConnProps_.add(builderForValue.build());
-          onChanged();
-        } else {
-          volumeConnPropsBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public Builder addVolumeConnProps(
-          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (volumeConnPropsBuilder_ == null) {
-          ensureVolumeConnPropsIsMutable();
-          volumeConnProps_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          volumeConnPropsBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public Builder addAllVolumeConnProps(
-          java.lang.Iterable<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
-        if (volumeConnPropsBuilder_ == null) {
-          ensureVolumeConnPropsIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, volumeConnProps_);
-          onChanged();
-        } else {
-          volumeConnPropsBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public Builder clearVolumeConnProps() {
-        if (volumeConnPropsBuilder_ == null) {
-          volumeConnProps_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000080);
-          onChanged();
-        } else {
-          volumeConnPropsBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public Builder removeVolumeConnProps(int index) {
-        if (volumeConnPropsBuilder_ == null) {
-          ensureVolumeConnPropsIsMutable();
-          volumeConnProps_.remove(index);
-          onChanged();
-        } else {
-          volumeConnPropsBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getVolumeConnPropsBuilder(
-          int index) {
-        return getVolumeConnPropsFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getVolumeConnPropsOrBuilder(
-          int index) {
-        if (volumeConnPropsBuilder_ == null) {
-          return volumeConnProps_.get(index);  } else {
-          return volumeConnPropsBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-           getVolumeConnPropsOrBuilderList() {
-        if (volumeConnPropsBuilder_ != null) {
-          return volumeConnPropsBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(volumeConnProps_);
-        }
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addVolumeConnPropsBuilder() {
-        return getVolumeConnPropsFieldBuilder().addBuilder(
-            com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addVolumeConnPropsBuilder(
-          int index) {
-        return getVolumeConnPropsFieldBuilder().addBuilder(
-            index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
-      }
-      /**
-       * <pre>
-       * Volume connection properties map
-       * </pre>
-       *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry volume_conn_props = 8;</code>
-       */
-      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
-           getVolumeConnPropsBuilderList() {
-        return getVolumeConnPropsFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-          getVolumeConnPropsFieldBuilder() {
-        if (volumeConnPropsBuilder_ == null) {
-          volumeConnPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
-                  volumeConnProps_,
-                  ((bitField0_ & 0x00000080) == 0x00000080),
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.linbit.linstor.proto.VlmConnOuterClass.VlmConn, com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.Builder, com.linbit.linstor.proto.VlmConnOuterClass.VlmConnOrBuilder> 
+          getVlmConnFieldBuilder() {
+        if (vlmConnBuilder_ == null) {
+          vlmConnBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              com.linbit.linstor.proto.VlmConnOuterClass.VlmConn, com.linbit.linstor.proto.VlmConnOuterClass.VlmConn.Builder, com.linbit.linstor.proto.VlmConnOuterClass.VlmConnOrBuilder>(
+                  getVlmConn(),
                   getParentForChildren(),
                   isClean());
-          volumeConnProps_ = null;
+          vlmConn_ = null;
         }
-        return volumeConnPropsBuilder_;
+        return vlmConnBuilder_;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -2331,13 +629,9 @@ public final class MsgCrtVlmConnOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\031proto/MsgCrtVlmConn.proto\022\030com.linbit." +
-      "linstor.proto\032\033proto/LinStorMapEntry.pro" +
-      "to\"\350\001\n\rMsgCrtVlmConn\022\025\n\rvlm_conn_uuid\030\001 " +
-      "\001(\t\022\023\n\013node_name_1\030\002 \002(\t\022\023\n\013node_name_2\030" +
-      "\003 \002(\t\022\025\n\rresource_name\030\004 \002(\t\022\021\n\tvolume_n" +
-      "r\030\005 \002(\021\022\022\n\nvlm_1_uuid\030\006 \001(\t\022\022\n\nvlm_2_uui" +
-      "d\030\007 \001(\t\022D\n\021volume_conn_props\030\010 \003(\0132).com" +
-      ".linbit.linstor.proto.LinStorMapEntryP\000"
+      "linstor.proto\032\023proto/VlmConn.proto\"D\n\rMs" +
+      "gCrtVlmConn\0223\n\010vlm_conn\030\001 \002(\0132!.com.linb" +
+      "it.linstor.proto.VlmConnP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2350,15 +644,15 @@ public final class MsgCrtVlmConnOuterClass {
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor(),
+          com.linbit.linstor.proto.VlmConnOuterClass.getDescriptor(),
         }, assigner);
     internal_static_com_linbit_linstor_proto_MsgCrtVlmConn_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_com_linbit_linstor_proto_MsgCrtVlmConn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgCrtVlmConn_descriptor,
-        new java.lang.String[] { "VlmConnUuid", "NodeName1", "NodeName2", "ResourceName", "VolumeNr", "Vlm1Uuid", "Vlm2Uuid", "VolumeConnProps", });
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
+        new java.lang.String[] { "VlmConn", });
+    com.linbit.linstor.proto.VlmConnOuterClass.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)

@@ -14,6 +14,7 @@ import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgCrtRscDfnOuterClass.MsgCrtRscDfn;
+import com.linbit.linstor.proto.RscDfnOuterClass.RscDfn;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.apidata.VlmDfnApiData;
 import com.linbit.linstor.security.AccessContext;
@@ -52,9 +53,10 @@ public class CreateResourceDefinition extends BaseProtoApiCall
         throws IOException
     {
         MsgCrtRscDfn msgCreateRscDfn = MsgCrtRscDfn.parseDelimitedFrom(msgDataIn);
+        RscDfn rscDfn = msgCreateRscDfn.getRscDfn();
 
         List<VlmDfnApi> vlmDfnApiList = new ArrayList<>();
-        for (final VlmDfn vlmDfn : msgCreateRscDfn.getVlmDfnsList())
+        for (final VlmDfn vlmDfn : rscDfn.getVlmDfnsList())
         {
             vlmDfnApiList.add(new VlmDfnApiData(vlmDfn));
         }
@@ -62,11 +64,11 @@ public class CreateResourceDefinition extends BaseProtoApiCall
         ApiCallRc apiCallRc = controller.getApiCallHandler().createResourceDefinition(
             accCtx,
             client,
-            msgCreateRscDfn.getRscName(),
-            msgCreateRscDfn.hasRscPort() ? msgCreateRscDfn.getRscPort() : null,
-            msgCreateRscDfn.getRscSecret(),
-            msgCreateRscDfn.getRscTransportType(),
-            asMap(msgCreateRscDfn.getRscPropsList()),
+            rscDfn.getRscName(),
+            rscDfn.hasRscDfnPort() ? rscDfn.getRscDfnPort() : null,
+            rscDfn.getRscDfnSecret(),
+            rscDfn.getRscDfnTransportType(),
+            asMap(rscDfn.getRscDfnPropsList()),
             vlmDfnApiList
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);

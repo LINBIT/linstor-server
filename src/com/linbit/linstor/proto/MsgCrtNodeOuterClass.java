@@ -1179,12 +1179,11 @@ public final class MsgCrtNodeOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\026proto/MsgCrtNode.proto\022\030com.linbit.lin" +
-      "stor.proto\032\033proto/LinStorMapEntry.proto\032" +
-      "\020proto/Node.proto\032\037proto/SatelliteConnec" +
-      "tion.proto\"\210\001\n\nMsgCrtNode\022,\n\004node\030\001 \002(\0132" +
-      "\036.com.linbit.linstor.proto.Node\022L\n\025satel" +
-      "lite_connections\030\002 \003(\0132-.com.linbit.lins" +
-      "tor.proto.SatelliteConnectionP\000"
+      "stor.proto\032\020proto/Node.proto\032\037proto/Sate" +
+      "lliteConnection.proto\"\210\001\n\nMsgCrtNode\022,\n\004" +
+      "node\030\001 \002(\0132\036.com.linbit.linstor.proto.No" +
+      "de\022L\n\025satellite_connections\030\002 \003(\0132-.com." +
+      "linbit.linstor.proto.SatelliteConnection"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1197,7 +1196,6 @@ public final class MsgCrtNodeOuterClass {
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor(),
           com.linbit.linstor.proto.NodeOuterClass.getDescriptor(),
           com.linbit.linstor.proto.SatelliteConnectionOuterClass.getDescriptor(),
         }, assigner);
@@ -1207,7 +1205,6 @@ public final class MsgCrtNodeOuterClass {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgCrtNode_descriptor,
         new java.lang.String[] { "Node", "SatelliteConnections", });
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.linstor.proto.NodeOuterClass.getDescriptor();
     com.linbit.linstor.proto.SatelliteConnectionOuterClass.getDescriptor();
   }

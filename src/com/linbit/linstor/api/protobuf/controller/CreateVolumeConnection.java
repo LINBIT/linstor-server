@@ -11,6 +11,7 @@ import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgCrtVlmConnOuterClass.MsgCrtVlmConn;
+import com.linbit.linstor.proto.VlmConnOuterClass.VlmConn;
 import com.linbit.linstor.security.AccessContext;
 
 @ProtobufApiCall
@@ -47,14 +48,16 @@ public class CreateVolumeConnection extends BaseProtoApiCall
         throws IOException
     {
         MsgCrtVlmConn msgCreateVlmConn = MsgCrtVlmConn.parseDelimitedFrom(msgDataIn);
+        VlmConn vlmConn = msgCreateVlmConn.getVlmConn();
+
         ApiCallRc apiCallRc = controller.getApiCallHandler().createVolumeConnection(
             accCtx,
             client,
-            msgCreateVlmConn.getNodeName1(),
-            msgCreateVlmConn.getNodeName2(),
-            msgCreateVlmConn.getResourceName(),
-            msgCreateVlmConn.getVolumeNr(),
-            asMap(msgCreateVlmConn.getVolumeConnPropsList())
+            vlmConn.getNodeName1(),
+            vlmConn.getNodeName2(),
+            vlmConn.getResourceName(),
+            vlmConn.getVolumeNr(),
+            asMap(vlmConn.getVolumeConnPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

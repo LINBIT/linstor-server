@@ -61,9 +61,16 @@ import com.linbit.linstor.proto.MsgModStorPoolDfnOuterClass.MsgModStorPoolDfn;
 import com.linbit.linstor.proto.MsgModStorPoolOuterClass.MsgModStorPool;
 import com.linbit.linstor.proto.MsgModVlmConnOuterClass.MsgModVlmConn;
 import com.linbit.linstor.proto.MsgModVlmDfnOuterClass.MsgModVlmDfn;
+import com.linbit.linstor.proto.RscDfnOuterClass.RscDfn;
+import com.linbit.linstor.proto.RscOuterClass.Rsc;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
+import com.linbit.linstor.proto.NodeConnOuterClass.NodeConn;
 import com.linbit.linstor.proto.NodeOuterClass;
+import com.linbit.linstor.proto.RscConnOuterClass.RscConn;
 import com.linbit.linstor.proto.SatelliteConnectionOuterClass;
+import com.linbit.linstor.proto.StorPoolDfnOuterClass.StorPoolDfn;
+import com.linbit.linstor.proto.StorPoolOuterClass.StorPool;
+import com.linbit.linstor.proto.VlmConnOuterClass.VlmConn;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
 
@@ -705,24 +712,26 @@ public class ClientProtobuf implements Runnable
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        MsgCrtRscDfn.Builder msgBuilder = MsgCrtRscDfn.newBuilder().
+        RscDfn.Builder rscDfnBuilder = RscDfn.newBuilder().
             setRscName(resName);
         if (port != null)
         {
-            msgBuilder.setRscPort(port);
+            rscDfnBuilder.setRscDfnPort(port);
         }
         if (resDfnProps != null)
         {
-            msgBuilder.addAllRscProps(asLinStorMapEntryList(resDfnProps));
+            rscDfnBuilder.addAllRscDfnProps(asLinStorMapEntryList(resDfnProps));
         }
         if (vlmDfn != null)
         {
-            msgBuilder.addAllVlmDfns(vlmDfn);
+            rscDfnBuilder.addAllVlmDfns(vlmDfn);
         }
         send(
             msgId,
             API_CRT_RSC_DFN,
-            msgBuilder.build()
+            MsgCrtRscDfn.newBuilder().setRscDfn(
+                rscDfnBuilder.build()
+            ).build()
         );
         return msgId;
     }
@@ -785,9 +794,13 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             API_CRT_STOR_POOL_DFN,
-            MsgCrtStorPoolDfn.newBuilder().
-                setStorPoolName(storPoolName).
-                build()
+            MsgCrtStorPoolDfn.newBuilder()
+                .setStorPoolDfn(
+                    StorPoolDfn.newBuilder()
+                        .setStorPoolName(storPoolName)
+                        .build()
+                )
+                .build()
         );
         return msgId;
     }
@@ -847,10 +860,14 @@ public class ClientProtobuf implements Runnable
             msgId,
             API_CRT_STOR_POOL,
             MsgCrtStorPool.newBuilder().
-                setNodeName(nodeName).
-                setStorPoolName(storPoolName).
-                setDriver(driver).
-                build()
+                setStorPool(
+                    StorPool.newBuilder()
+                        .setNodeName(nodeName)
+                        .setStorPoolName(storPoolName)
+                        .setDriver(driver)
+                        .build()
+                )
+                .build()
         );
         return msgId;
     }
@@ -919,21 +936,25 @@ public class ClientProtobuf implements Runnable
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        MsgCrtRsc.Builder msgBuilder = MsgCrtRsc.newBuilder().
+        Rsc.Builder rscBuilder = Rsc.newBuilder().
             setNodeName(nodeName).
-            setRscName(resName);
+            setName(resName);
         if (resProps != null)
         {
-            msgBuilder.addAllRscProps(asLinStorMapEntryList(resProps));
+            rscBuilder.addAllProps(asLinStorMapEntryList(resProps));
         }
         if (vlms != null)
         {
-            msgBuilder.addAllVlms(vlms);
+            rscBuilder.addAllVlms(vlms);
         }
         send(
             msgId,
             API_CRT_RSC,
-            msgBuilder.build()
+            MsgCrtRsc.newBuilder()
+                .setRsc(
+                    rscBuilder.build()
+                )
+                .build()
         );
         return msgId;
     }
@@ -1083,9 +1104,9 @@ public class ClientProtobuf implements Runnable
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        MsgCrtNodeConn.Builder msgBuilder = MsgCrtNodeConn.newBuilder().
-            setNodeName1(nodeName1).
-            setNodeName2(nodeName2);
+        NodeConn.Builder msgBuilder = NodeConn.newBuilder()
+            .setNodeName1(nodeName1)
+            .setNodeName2(nodeName2);
         if (props != null)
         {
             msgBuilder.addAllNodeConnProps(asLinStorMapEntryList(props));
@@ -1093,7 +1114,11 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             API_CRT_NODE_CONN,
-            msgBuilder.build()
+            MsgCrtNodeConn.newBuilder()
+                .setNodeConn(
+                    msgBuilder.build()
+                )
+                .build()
         );
         return msgId;
     }
@@ -1156,7 +1181,7 @@ public class ClientProtobuf implements Runnable
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        MsgCrtRscConn.Builder msgBuilder = MsgCrtRscConn.newBuilder().
+        RscConn.Builder msgBuilder = RscConn.newBuilder().
             setNodeName1(nodeName1).
             setNodeName2(NodeName2).
             setRscName(rscName);
@@ -1167,7 +1192,11 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             API_CRT_RSC_CONN,
-            msgBuilder.build()
+            MsgCrtRscConn.newBuilder()
+                .setRscConn(
+                    msgBuilder.build()
+                )
+                .build()
         );
         return msgId;
     }
@@ -1239,7 +1268,7 @@ public class ClientProtobuf implements Runnable
         throws IOException
     {
         int msgId = this.msgId.incrementAndGet();
-        MsgCrtVlmConn.Builder msgBuilder = MsgCrtVlmConn.newBuilder().
+        VlmConn.Builder msgBuilder = VlmConn.newBuilder().
             setNodeName1(nodeName1).
             setNodeName2(NodeName2).
             setResourceName(rscName).
@@ -1251,7 +1280,11 @@ public class ClientProtobuf implements Runnable
         send(
             msgId,
             API_CRT_VLM_CONN,
-            msgBuilder.build()
+            MsgCrtVlmConn.newBuilder()
+                .setVlmConn(
+                    msgBuilder.build()
+                )
+                .build()
         );
         return msgId;
     }

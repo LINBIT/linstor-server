@@ -11,6 +11,7 @@ import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn;
+import com.linbit.linstor.proto.NodeConnOuterClass.NodeConn;
 import com.linbit.linstor.security.AccessContext;
 
 @ProtobufApiCall
@@ -47,13 +48,14 @@ public class CreateNodeConnection extends BaseProtoApiCall
         throws IOException
     {
         MsgCrtNodeConn msgCreateNodeConn = MsgCrtNodeConn.parseDelimitedFrom(msgDataIn);
+        NodeConn nodeConn = msgCreateNodeConn.getNodeConn();
         ApiCallRc apiCallRc = controller.getApiCallHandler().createNodeConnection(
             accCtx,
             client,
             // ignore nodeConnUuid
-            msgCreateNodeConn.getNodeName1(),
-            msgCreateNodeConn.getNodeName2(),
-            asMap(msgCreateNodeConn.getNodeConnPropsList())
+            nodeConn.getNodeName1(),
+            nodeConn.getNodeName2(),
+            asMap(nodeConn.getNodeConnPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }

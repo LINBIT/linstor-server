@@ -11,6 +11,7 @@ import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.MsgCrtStorPoolDfnOuterClass.MsgCrtStorPoolDfn;
+import com.linbit.linstor.proto.StorPoolDfnOuterClass.StorPoolDfn;
 import com.linbit.linstor.security.AccessContext;
 
 @ProtobufApiCall
@@ -48,12 +49,13 @@ public class CreateStorPoolDfn extends BaseProtoApiCall
         throws IOException
     {
         MsgCrtStorPoolDfn msgCreateStorPoolDfn = MsgCrtStorPoolDfn.parseDelimitedFrom(msgDataIn);
+        StorPoolDfn storPoolDfn = msgCreateStorPoolDfn.getStorPoolDfn();
 
         ApiCallRc apiCallRc = controller.getApiCallHandler().createStoragePoolDefinition(
             accCtx,
             client,
-            msgCreateStorPoolDfn.getStorPoolName(),
-            asMap(msgCreateStorPoolDfn.getStorPoolDfnPropsList())
+            storPoolDfn.getStorPoolName(),
+            asMap(storPoolDfn.getPropsList())
         );
         super.answerApiCallRc(accCtx, client, msgId, apiCallRc);
     }
