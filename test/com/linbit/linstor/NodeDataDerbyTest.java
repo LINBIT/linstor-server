@@ -80,11 +80,13 @@ public class NodeDataDerbyTest extends DerbyBase
         initialFlags = NodeFlag.QIGNORE.flagValue;
         initialType = NodeType.AUXILIARY;
         node = new NodeData(
+            SYS_CTX,
             uuid,
             objProt,
             nodeName,
             initialType,
             initialFlags,
+            randomUUID(),
             transMgr
         );
     }

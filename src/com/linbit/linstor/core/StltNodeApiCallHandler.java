@@ -79,7 +79,9 @@ class StltNodeApiCallHandler
                 new NodeName(nodePojo.getName()),
                 NodeType.valueOf(nodePojo.getType()),
                 nodeFlags,
-                transMgr
+                nodePojo.getDisklessStorPoolUuid(),
+                transMgr,
+                satellite
             );
             checkUuid(node, nodePojo);
 
@@ -97,7 +99,9 @@ class StltNodeApiCallHandler
                     new NodeName(nodeConn.getOtherNodeName()),
                     NodeType.valueOf(nodeConn.getOtherNodeType()),
                     NodeFlag.restoreFlags(nodeConn.getOtherNodeFlags()),
-                    transMgr
+                    nodeConn.getOtherNodeDisklessStorPoolUuid(),
+                    transMgr,
+                    satellite
                 );
                 NodeConnectionData nodeCon = NodeConnectionData.getInstanceSatellite(
                     apiCtx,

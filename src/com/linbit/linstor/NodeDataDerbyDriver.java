@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -211,28 +212,30 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
         {
             ObjectProtection objProt = getObjectProtection(nodeName, transMgr);
 
-            node = new NodeData(
-                UuidUtils.asUuid(resultSet.getBytes(NODE_UUID)),
-                objProt,
-                nodeName,
-                Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
-                resultSet.getLong(NODE_FLAGS),
-                transMgr
-            );
-
-            errorReporter.logTrace("Node instance created %s", getId(node));
-
-            // (-> == loads)
-            // node -> resource
-            // resource -> resourceDefinition
-            // resourceDefinition -> resource (other than before)
-            // resource -> node (containing "our" node, but also other nodes)
-            if (!cacheCleared)
-            {
-                nodeCache.put(nodeName, node);
-            }
             try
             {
+                node = new NodeData(
+                    dbCtx,
+                    UuidUtils.asUuid(resultSet.getBytes(NODE_UUID)),
+                    objProt,
+                    nodeName,
+                    Node.NodeType.getByValue(resultSet.getLong(NODE_TYPE)),
+                    resultSet.getLong(NODE_FLAGS),
+                    UUID.randomUUID(), // disklessStorPoolUuid
+                    transMgr
+                );
+
+                errorReporter.logTrace("Node instance created %s", getId(node));
+
+                // (-> == loads)
+                // node -> resource
+                // resource -> resourceDefinition
+                // resourceDefinition -> resource (other than before)
+                // resource -> node (containing "our" node, but also other nodes)
+                if (!cacheCleared)
+                {
+                    nodeCache.put(nodeName, node);
+                }
                 List<NetInterfaceData> netIfaces =
                     netInterfaceDriver.loadNetInterfaceData(node, transMgr);
                 for (NetInterfaceData netIf : netIfaces)

@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import com.google.protobuf.ByteString;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeConnection;
@@ -358,7 +359,12 @@ public class ProtoInterComSerializer implements InterComSerializer
         }
 
         @Override
-        public InterComBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret)
+        public InterComBuilder authMessage(
+            UUID nodeUuid,
+            String nodeName,
+            byte[] sharedSecret,
+            UUID nodeDisklessStorPoolUuid
+        )
         {
             try
             {
@@ -366,6 +372,7 @@ public class ProtoInterComSerializer implements InterComSerializer
                     .setNodeUuid(nodeUuid.toString())
                     .setNodeName(nodeName)
                     .setSharedSecret(ByteString.copyFrom(sharedSecret))
+                    .setNodeDisklessStorPoolUuid(nodeDisklessStorPoolUuid.toString())
                     .build()
                     .writeDelimitedTo(baos);
             }
@@ -450,6 +457,16 @@ public class ProtoInterComSerializer implements InterComSerializer
             catch (IOException ioExc)
             {
                 errReporter.reportError(ioExc);
+                exceptionOccured = true;
+            }
+            catch (InvalidNameException invalidNameExc)
+            {
+                errReporter.reportError(
+                    new ImplementationError(
+                        "Invalid name: " + invalidNameExc.invalidName,
+                        invalidNameExc
+                    )
+                );
                 exceptionOccured = true;
             }
             return this;
@@ -558,6 +575,16 @@ public class ProtoInterComSerializer implements InterComSerializer
                 errReporter.reportError(ioExc);
                 exceptionOccured = true;
             }
+            catch (InvalidNameException invalidNameExc)
+            {
+                errReporter.reportError(
+                    new ImplementationError(
+                        "Invalid name: " + invalidNameExc.invalidName,
+                        invalidNameExc
+                    )
+                );
+                exceptionOccured = true;
+            }
             return this;
         }
 
@@ -606,7 +633,7 @@ public class ProtoInterComSerializer implements InterComSerializer
 
     private class NodeSerializerHelper
     {
-        private MsgIntNodeData buildNodeDataMsg(Node node, Collection<Node> relatedNodes) throws AccessDeniedException
+        private MsgIntNodeData buildNodeDataMsg(Node node, Collection<Node> relatedNodes) throws AccessDeniedException, InvalidNameException
         {
             return MsgIntNodeData.newBuilder()
                 .setNodeUuid(node.getUuid().toString())
@@ -621,6 +648,9 @@ public class ProtoInterComSerializer implements InterComSerializer
                 )
                 .addAllNodeProps(
                     BaseProtoApiCall.fromMap(node.getProps(serializerCtx).map())
+                )
+                .setNodeDisklessStorPoolUuid(
+                    node.getDisklessStorPool(serializerCtx).getUuid().toString()
                 )
                 .build();
         }
@@ -830,6 +860,7 @@ public class ProtoInterComSerializer implements InterComSerializer
                 .setUuid(node.getUuid().toString())
                 .setName(node.getName().displayValue)
                 .setType(node.getNodeType(serializerCtx).name())
+                .setDisklessStorPoolUuid(node.getDisklessStorPool(serializerCtx).getUuid().toString())
                 .addAllProps(BaseProtoApiCall.fromMap(nodeProps))
                 .addAllNetInterfaces(buildNodeNetInterfaces(node))
                 .build();

@@ -235,6 +235,32 @@ public final class NodeOuterClass {
      * <code>optional bool connected = 7;</code>
      */
     boolean getConnected();
+
+    /**
+     * <pre>
+     * Node's diskless stor pool uuid
+     * </pre>
+     *
+     * <code>optional string diskless_stor_pool_uuid = 8;</code>
+     */
+    boolean hasDisklessStorPoolUuid();
+    /**
+     * <pre>
+     * Node's diskless stor pool uuid
+     * </pre>
+     *
+     * <code>optional string diskless_stor_pool_uuid = 8;</code>
+     */
+    java.lang.String getDisklessStorPoolUuid();
+    /**
+     * <pre>
+     * Node's diskless stor pool uuid
+     * </pre>
+     *
+     * <code>optional string diskless_stor_pool_uuid = 8;</code>
+     */
+    com.google.protobuf.ByteString
+        getDisklessStorPoolUuidBytes();
   }
   /**
    * Protobuf type {@code com.linbit.linstor.proto.Node}
@@ -255,6 +281,7 @@ public final class NodeOuterClass {
       flags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       netInterfaces_ = java.util.Collections.emptyList();
       connected_ = false;
+      disklessStorPoolUuid_ = "";
     }
 
     @java.lang.Override
@@ -333,6 +360,12 @@ public final class NodeOuterClass {
             case 56: {
               bitField0_ |= 0x00000008;
               connected_ = input.readBool();
+              break;
+            }
+            case 66: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000010;
+              disklessStorPoolUuid_ = bs;
               break;
             }
           }
@@ -709,6 +742,60 @@ public final class NodeOuterClass {
       return connected_;
     }
 
+    public static final int DISKLESS_STOR_POOL_UUID_FIELD_NUMBER = 8;
+    private volatile java.lang.Object disklessStorPoolUuid_;
+    /**
+     * <pre>
+     * Node's diskless stor pool uuid
+     * </pre>
+     *
+     * <code>optional string diskless_stor_pool_uuid = 8;</code>
+     */
+    public boolean hasDisklessStorPoolUuid() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <pre>
+     * Node's diskless stor pool uuid
+     * </pre>
+     *
+     * <code>optional string diskless_stor_pool_uuid = 8;</code>
+     */
+    public java.lang.String getDisklessStorPoolUuid() {
+      java.lang.Object ref = disklessStorPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          disklessStorPoolUuid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Node's diskless stor pool uuid
+     * </pre>
+     *
+     * <code>optional string diskless_stor_pool_uuid = 8;</code>
+     */
+    public com.google.protobuf.ByteString
+        getDisklessStorPoolUuidBytes() {
+      java.lang.Object ref = disklessStorPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        disklessStorPoolUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -762,6 +849,9 @@ public final class NodeOuterClass {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         output.writeBool(7, connected_);
       }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 8, disklessStorPoolUuid_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -798,6 +888,9 @@ public final class NodeOuterClass {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(7, connected_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, disklessStorPoolUuid_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -842,6 +935,11 @@ public final class NodeOuterClass {
         result = result && (getConnected()
             == other.getConnected());
       }
+      result = result && (hasDisklessStorPoolUuid() == other.hasDisklessStorPoolUuid());
+      if (hasDisklessStorPoolUuid()) {
+        result = result && getDisklessStorPoolUuid()
+            .equals(other.getDisklessStorPoolUuid());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -881,6 +979,10 @@ public final class NodeOuterClass {
         hash = (37 * hash) + CONNECTED_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
             getConnected());
+      }
+      if (hasDisklessStorPoolUuid()) {
+        hash = (37 * hash) + DISKLESS_STOR_POOL_UUID_FIELD_NUMBER;
+        hash = (53 * hash) + getDisklessStorPoolUuid().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -1024,6 +1126,8 @@ public final class NodeOuterClass {
         }
         connected_ = false;
         bitField0_ = (bitField0_ & ~0x00000040);
+        disklessStorPoolUuid_ = "";
+        bitField0_ = (bitField0_ & ~0x00000080);
         return this;
       }
 
@@ -1087,6 +1191,10 @@ public final class NodeOuterClass {
           to_bitField0_ |= 0x00000008;
         }
         result.connected_ = connected_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.disklessStorPoolUuid_ = disklessStorPoolUuid_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1208,6 +1316,11 @@ public final class NodeOuterClass {
         }
         if (other.hasConnected()) {
           setConnected(other.getConnected());
+        }
+        if (other.hasDisklessStorPoolUuid()) {
+          bitField0_ |= 0x00000080;
+          disklessStorPoolUuid_ = other.disklessStorPoolUuid_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -2353,6 +2466,106 @@ public final class NodeOuterClass {
         onChanged();
         return this;
       }
+
+      private java.lang.Object disklessStorPoolUuid_ = "";
+      /**
+       * <pre>
+       * Node's diskless stor pool uuid
+       * </pre>
+       *
+       * <code>optional string diskless_stor_pool_uuid = 8;</code>
+       */
+      public boolean hasDisklessStorPoolUuid() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <pre>
+       * Node's diskless stor pool uuid
+       * </pre>
+       *
+       * <code>optional string diskless_stor_pool_uuid = 8;</code>
+       */
+      public java.lang.String getDisklessStorPoolUuid() {
+        java.lang.Object ref = disklessStorPoolUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            disklessStorPoolUuid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Node's diskless stor pool uuid
+       * </pre>
+       *
+       * <code>optional string diskless_stor_pool_uuid = 8;</code>
+       */
+      public com.google.protobuf.ByteString
+          getDisklessStorPoolUuidBytes() {
+        java.lang.Object ref = disklessStorPoolUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          disklessStorPoolUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Node's diskless stor pool uuid
+       * </pre>
+       *
+       * <code>optional string diskless_stor_pool_uuid = 8;</code>
+       */
+      public Builder setDisklessStorPoolUuid(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000080;
+        disklessStorPoolUuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node's diskless stor pool uuid
+       * </pre>
+       *
+       * <code>optional string diskless_stor_pool_uuid = 8;</code>
+       */
+      public Builder clearDisklessStorPoolUuid() {
+        bitField0_ = (bitField0_ & ~0x00000080);
+        disklessStorPoolUuid_ = getDefaultInstance().getDisklessStorPoolUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node's diskless stor pool uuid
+       * </pre>
+       *
+       * <code>optional string diskless_stor_pool_uuid = 8;</code>
+       */
+      public Builder setDisklessStorPoolUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000080;
+        disklessStorPoolUuid_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -2418,12 +2631,13 @@ public final class NodeOuterClass {
     java.lang.String[] descriptorData = {
       "\n\020proto/Node.proto\022\030com.linbit.linstor.p" +
       "roto\032\033proto/LinStorMapEntry.proto\032\030proto" +
-      "/NetInterface.proto\"\314\001\n\004Node\022\014\n\004uuid\030\001 \001" +
+      "/NetInterface.proto\"\355\001\n\004Node\022\014\n\004uuid\030\001 \001" +
       "(\t\022\014\n\004name\030\002 \002(\t\022\014\n\004type\030\003 \002(\t\0228\n\005props\030" +
       "\004 \003(\0132).com.linbit.linstor.proto.LinStor" +
       "MapEntry\022\r\n\005flags\030\005 \003(\t\022>\n\016net_interface" +
       "s\030\006 \003(\0132&.com.linbit.linstor.proto.NetIn" +
-      "terface\022\021\n\tconnected\030\007 \001(\010P\000P\001"
+      "terface\022\021\n\tconnected\030\007 \001(\010\022\037\n\027diskless_s" +
+      "tor_pool_uuid\030\010 \001(\tP\000P\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2444,7 +2658,7 @@ public final class NodeOuterClass {
     internal_static_com_linbit_linstor_proto_Node_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_Node_descriptor,
-        new java.lang.String[] { "Uuid", "Name", "Type", "Props", "Flags", "NetInterfaces", "Connected", });
+        new java.lang.String[] { "Uuid", "Name", "Type", "Props", "Flags", "NetInterfaces", "Connected", "DisklessStorPoolUuid", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.linstor.proto.NetInterfaceOuterClass.getDescriptor();
   }

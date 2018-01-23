@@ -4048,7 +4048,7 @@ public final class MsgIntRscDataOuterClass {
 
     /**
      * <pre>
-     * Node (except flags)
+     * Node
      * </pre>
      *
      * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -4056,7 +4056,7 @@ public final class MsgIntRscDataOuterClass {
     boolean hasNode();
     /**
      * <pre>
-     * Node (except flags)
+     * Node
      * </pre>
      *
      * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -4064,7 +4064,7 @@ public final class MsgIntRscDataOuterClass {
     com.linbit.linstor.proto.NodeOuterClass.Node getNode();
     /**
      * <pre>
-     * Node (except flags)
+     * Node
      * </pre>
      *
      * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -4335,7 +4335,7 @@ public final class MsgIntRscDataOuterClass {
     private com.linbit.linstor.proto.NodeOuterClass.Node node_;
     /**
      * <pre>
-     * Node (except flags)
+     * Node
      * </pre>
      *
      * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -4345,7 +4345,7 @@ public final class MsgIntRscDataOuterClass {
     }
     /**
      * <pre>
-     * Node (except flags)
+     * Node
      * </pre>
      *
      * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -4355,7 +4355,7 @@ public final class MsgIntRscDataOuterClass {
     }
     /**
      * <pre>
-     * Node (except flags)
+     * Node
      * </pre>
      *
      * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -5059,7 +5059,7 @@ public final class MsgIntRscDataOuterClass {
           com.linbit.linstor.proto.NodeOuterClass.Node, com.linbit.linstor.proto.NodeOuterClass.Node.Builder, com.linbit.linstor.proto.NodeOuterClass.NodeOrBuilder> nodeBuilder_;
       /**
        * <pre>
-       * Node (except flags)
+       * Node
        * </pre>
        *
        * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -5069,7 +5069,7 @@ public final class MsgIntRscDataOuterClass {
       }
       /**
        * <pre>
-       * Node (except flags)
+       * Node
        * </pre>
        *
        * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -5083,7 +5083,7 @@ public final class MsgIntRscDataOuterClass {
       }
       /**
        * <pre>
-       * Node (except flags)
+       * Node
        * </pre>
        *
        * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -5103,7 +5103,7 @@ public final class MsgIntRscDataOuterClass {
       }
       /**
        * <pre>
-       * Node (except flags)
+       * Node
        * </pre>
        *
        * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -5121,7 +5121,7 @@ public final class MsgIntRscDataOuterClass {
       }
       /**
        * <pre>
-       * Node (except flags)
+       * Node
        * </pre>
        *
        * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -5143,7 +5143,7 @@ public final class MsgIntRscDataOuterClass {
       }
       /**
        * <pre>
-       * Node (except flags)
+       * Node
        * </pre>
        *
        * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -5161,7 +5161,7 @@ public final class MsgIntRscDataOuterClass {
       }
       /**
        * <pre>
-       * Node (except flags)
+       * Node
        * </pre>
        *
        * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -5173,7 +5173,7 @@ public final class MsgIntRscDataOuterClass {
       }
       /**
        * <pre>
-       * Node (except flags)
+       * Node
        * </pre>
        *
        * <code>.com.linbit.linstor.proto.Node node = 1;</code>
@@ -5188,7 +5188,7 @@ public final class MsgIntRscDataOuterClass {
       }
       /**
        * <pre>
-       * Node (except flags)
+       * Node
        * </pre>
        *
        * <code>.com.linbit.linstor.proto.Node node = 1;</code>

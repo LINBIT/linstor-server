@@ -28,6 +28,8 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.storage.DisklessDriver;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,6 +80,8 @@ public class NodeData extends BaseTransactionObject implements Node
 
     private TransactionSimpleObject<NodeData, Boolean> deleted;
 
+    private transient StorPoolData disklessStorPool;
+
     /*
      * Only used by getInstance method
      */
@@ -91,6 +95,7 @@ public class NodeData extends BaseTransactionObject implements Node
         throws SQLException, AccessDeniedException
     {
         this(
+            accCtx,
             UUID.randomUUID(),
             ObjectProtection.getInstance(
                 accCtx,
@@ -101,6 +106,7 @@ public class NodeData extends BaseTransactionObject implements Node
             nameRef,
             type,
             initialFlags,
+            UUID.randomUUID(),
             transMgr
         );
     }
@@ -109,14 +115,16 @@ public class NodeData extends BaseTransactionObject implements Node
      * Used by dbDrivers and tests
      */
     NodeData(
+        AccessContext accCtx,
         UUID uuidRef,
         ObjectProtection objProtRef,
         NodeName nameRef,
         NodeType type,
         long initialFlags,
+        UUID disklessStorPoolUuid,
         TransactionMgr transMgr
     )
-        throws SQLException
+        throws SQLException, AccessDeniedException
     {
         ErrorCheck.ctorNotNull(NodeData.class, NodeName.class, nameRef);
 
@@ -189,6 +197,17 @@ public class NodeData extends BaseTransactionObject implements Node
                 transMgr
             );
             dbDriver.create(nodeData, transMgr);
+
+            nodeData.disklessStorPool = StorPoolData.getInstance(
+                accCtx,
+                nodeData,
+                LinStor.getDisklessStorPoolDfn(),
+                DisklessDriver.class.getSimpleName(),
+                transMgr,
+                createIfNotExists,
+                failIfExists
+            );
+
         }
         if (nodeData != null)
         {
@@ -204,7 +223,9 @@ public class NodeData extends BaseTransactionObject implements Node
         NodeName nameRef,
         NodeType typeRef,
         NodeFlag[] flags,
-        SatelliteTransactionMgr transMgr
+        UUID disklessStorPoolUuid,
+        SatelliteTransactionMgr transMgr,
+        SatelliteCoreServices stltCoreSvcs
     )
         throws ImplementationError
     {
@@ -216,6 +237,7 @@ public class NodeData extends BaseTransactionObject implements Node
             if (nodeData == null)
             {
                 nodeData = new NodeData(
+                    accCtx,
                     uuid,
                     ObjectProtection.getInstance(
                         accCtx,
@@ -226,7 +248,18 @@ public class NodeData extends BaseTransactionObject implements Node
                     nameRef,
                     typeRef,
                     StateFlagsBits.getMask(flags),
+                    disklessStorPoolUuid,
                     transMgr
+                );
+
+                nodeData.disklessStorPool = StorPoolData.getInstanceSatellite(
+                    accCtx,
+                    disklessStorPoolUuid,
+                    nodeData,
+                    LinStor.getDisklessStorPoolDfn(),
+                    DisklessDriver.class.getSimpleName(),
+                    transMgr,
+                    stltCoreSvcs
                 );
             }
             nodeData.initialized();
@@ -412,6 +445,15 @@ public class NodeData extends BaseTransactionObject implements Node
         return storPoolMap.get(poolName);
     }
 
+    @Override
+    public StorPool getDisklessStorPool(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return disklessStorPool;
+    }
+
     void addStorPool(AccessContext accCtx, StorPool pool)
         throws AccessDeniedException
     {
@@ -565,7 +607,8 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
-    public NodeApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+    public NodeApi getApiData(AccessContext accCtx) throws AccessDeniedException
+    {
         List<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
         Iterator<NetInterface> itNetInterfaces = iterateNetInterfaces(accCtx);
         while (itNetInterfaces.hasNext())
@@ -580,7 +623,8 @@ public class NodeData extends BaseTransactionObject implements Node
             getFlags().getFlagsBits(accCtx),
             netInterfaces,
             getProps(accCtx).map(),
-            getPeer(accCtx).isConnected()
+            getPeer(accCtx).isConnected(),
+            disklessStorPool.getUuid()
         );
     }
 

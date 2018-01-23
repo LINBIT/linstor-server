@@ -5,7 +5,6 @@ import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass;
 import com.linbit.linstor.proto.NodeOuterClass;
 import com.linbit.linstor.NetInterface;
-import com.linbit.linstor.Resource;
 import com.linbit.linstor.proto.NetInterfaceOuterClass;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -93,6 +92,12 @@ public class NodeApiData implements Node.NodeApi {
         bld.setConnected(nodeApi.isConnected());
 
         return bld.build();
+    }
+
+    @Override
+    public UUID getDisklessStorPoolUuid()
+    {
+        return UUID.fromString(node.getDisklessStorPoolUuid());
     }
 
 }

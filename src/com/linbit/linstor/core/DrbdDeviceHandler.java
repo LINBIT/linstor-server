@@ -10,7 +10,6 @@ import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.ConfFileBuilder;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.PriorityProps;
@@ -822,6 +821,10 @@ class DrbdDeviceHandler implements DeviceHandler
                         // Set block device paths
                         if (vlmState.hasDisk())
                         {
+System.out.println("vlmState: " + vlmState);
+System.out.println("driver: " + vlmState.getDriver());
+System.out.println("storVlmName: " + vlmState.getStorVlmName());
+System.out.println("all: " + vlmState.getDriver().getVolumePath(vlmState.getStorVlmName()));
                             String bdPath = vlmState.getDriver().getVolumePath(vlmState.getStorVlmName());
                             vlm.setBlockDevicePath(wrkCtx, bdPath);
                             vlm.setMetaDiskPath(wrkCtx, "internal");

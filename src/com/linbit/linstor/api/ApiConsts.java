@@ -331,6 +331,7 @@ public class ApiConsts
     public static final String KEY_STOR_POOL_VOLUME_GROUP = "LvmVg";
     public static final String KEY_STOR_POOL_THIN_POOL = "ThinPool";
     public static final String KEY_STOR_POOL_ZPOOL = "ZPool";
+    public static final String KEY_STOR_POOL_DISKLESS = "Diskless";
 
     /*
      * Property keys

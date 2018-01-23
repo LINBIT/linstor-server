@@ -21,6 +21,7 @@ import com.linbit.linstor.SatelliteDbDriver;
 import com.linbit.linstor.SatelliteDummyStorPoolData;
 import com.linbit.linstor.SatellitePeerCtx;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
@@ -347,6 +348,8 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                 // Initialize system services
                 startSystemServices(systemServicesMap.values());
 
+                initDfltDisklessStorPoolDfn(initCtx);
+
                 // Initialize the network communications service
                 errorLogRef.logInfo("Initializing main network communications service");
                 initMainNetComService(initCtx);
@@ -365,6 +368,33 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         finally
         {
             reconfigurationLock.writeLock().unlock();
+        }
+    }
+
+    private void initDfltDisklessStorPoolDfn(AccessContext initCtx)
+    {
+        try
+        {
+            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+
+            disklessStorPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
+                initCtx,
+                UUID.randomUUID(),
+                new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME),
+                transMgr
+            );
+            transMgr.commit();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new ImplementationError(sqlExc);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new ImplementationError(
+                "Invalid name for default diskless stor pool: " + invalidNameExc.invalidName,
+                invalidNameExc
+            );
         }
     }
 
@@ -785,7 +815,12 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         return controllerPeer;
     }
 
-    public void setControllerPeer(Peer controllerPeerRef, UUID nodeUuid, String nodeName)
+    public void setControllerPeer(
+        Peer controllerPeerRef,
+        UUID nodeUuid,
+        String nodeName,
+        UUID disklessStorPoolUuid
+    )
     {
         try
         {
@@ -809,7 +844,9 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                     localNodeName,
                     NodeType.SATELLITE,
                     new NodeFlag[] {},
-                    transMgr
+                    disklessStorPoolUuid,
+                    transMgr,
+                    this
                 );
                 transMgr.commit();
 

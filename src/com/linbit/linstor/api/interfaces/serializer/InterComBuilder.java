@@ -21,7 +21,12 @@ public interface InterComBuilder {
 
     InterComBuilder primaryRequest(String rscName, String rscUuid);
 
-    InterComBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret);
+    InterComBuilder authMessage(
+        UUID nodeUuid,
+        String nodeName,
+        byte[] sharedSecret,
+        UUID nodeDisklessStorPoolUuid
+    );
 
     InterComBuilder nodeList(List<Node.NodeApi> nodes);
     InterComBuilder storPoolDfnList(List<StorPoolDefinition.StorPoolDfnApi> storPoolDfns);

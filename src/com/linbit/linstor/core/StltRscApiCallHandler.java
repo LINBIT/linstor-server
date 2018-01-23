@@ -243,7 +243,9 @@ class StltRscApiCallHandler
                     new NodeName(otherRscRaw.getNodeName()),
                     NodeType.valueOf(otherRscRaw.getNodeType()),
                     NodeFlag.restoreFlags(otherRscRaw.getNodeFlags()),
-                    transMgr
+                    otherRscRaw.getNodeDisklessStorPoolUuid(),
+                    transMgr,
+                    satellite
                 );
                 checkUuid(remoteNode, otherRscRaw);
 
@@ -390,7 +392,9 @@ class StltRscApiCallHandler
                             nodeName,
                             NodeType.valueOf(otherRsc.getNodeType()),
                             NodeFlag.restoreFlags(otherRsc.getNodeFlags()),
-                            transMgr
+                            otherRsc.getNodeDisklessStorPoolUuid(),
+                            transMgr,
+                            satellite
                         );
 
                         // set node's netinterfaces

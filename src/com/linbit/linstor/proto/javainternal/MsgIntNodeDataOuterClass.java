@@ -212,6 +212,24 @@ public final class MsgIntNodeDataOuterClass {
      */
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodePropsOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * Node's diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string node_diskless_stor_pool_uuid = 8;</code>
+     */
+    java.lang.String getNodeDisklessStorPoolUuid();
+    /**
+     * <pre>
+     * Node's diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string node_diskless_stor_pool_uuid = 8;</code>
+     */
+    com.google.protobuf.ByteString
+        getNodeDisklessStorPoolUuidBytes();
   }
   /**
    * <pre>
@@ -236,6 +254,7 @@ public final class MsgIntNodeDataOuterClass {
       nodeNetIfs_ = java.util.Collections.emptyList();
       nodeConns_ = java.util.Collections.emptyList();
       nodeProps_ = java.util.Collections.emptyList();
+      nodeDisklessStorPoolUuid_ = "";
     }
 
     @java.lang.Override
@@ -311,6 +330,12 @@ public final class MsgIntNodeDataOuterClass {
               }
               nodeProps_.add(
                   input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              break;
+            }
+            case 66: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              nodeDisklessStorPoolUuid_ = s;
               break;
             }
           }
@@ -650,6 +675,48 @@ public final class MsgIntNodeDataOuterClass {
       return nodeProps_.get(index);
     }
 
+    public static final int NODE_DISKLESS_STOR_POOL_UUID_FIELD_NUMBER = 8;
+    private volatile java.lang.Object nodeDisklessStorPoolUuid_;
+    /**
+     * <pre>
+     * Node's diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string node_diskless_stor_pool_uuid = 8;</code>
+     */
+    public java.lang.String getNodeDisklessStorPoolUuid() {
+      java.lang.Object ref = nodeDisklessStorPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        nodeDisklessStorPoolUuid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Node's diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string node_diskless_stor_pool_uuid = 8;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNodeDisklessStorPoolUuidBytes() {
+      java.lang.Object ref = nodeDisklessStorPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        nodeDisklessStorPoolUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -695,6 +762,9 @@ public final class MsgIntNodeDataOuterClass {
       for (int i = 0; i < nodeProps_.size(); i++) {
         output.writeMessage(7, nodeProps_.get(i));
       }
+      if (!getNodeDisklessStorPoolUuidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 8, nodeDisklessStorPoolUuid_);
+      }
     }
 
     public int getSerializedSize() {
@@ -727,6 +797,9 @@ public final class MsgIntNodeDataOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(7, nodeProps_.get(i));
       }
+      if (!getNodeDisklessStorPoolUuidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, nodeDisklessStorPoolUuid_);
+      }
       memoizedSize = size;
       return size;
     }
@@ -757,6 +830,8 @@ public final class MsgIntNodeDataOuterClass {
           .equals(other.getNodeConnsList());
       result = result && getNodePropsList()
           .equals(other.getNodePropsList());
+      result = result && getNodeDisklessStorPoolUuid()
+          .equals(other.getNodeDisklessStorPoolUuid());
       return result;
     }
 
@@ -788,6 +863,8 @@ public final class MsgIntNodeDataOuterClass {
         hash = (37 * hash) + NODE_PROPS_FIELD_NUMBER;
         hash = (53 * hash) + getNodePropsList().hashCode();
       }
+      hash = (37 * hash) + NODE_DISKLESS_STOR_POOL_UUID_FIELD_NUMBER;
+      hash = (53 * hash) + getNodeDisklessStorPoolUuid().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -939,6 +1016,8 @@ public final class MsgIntNodeDataOuterClass {
         } else {
           nodePropsBuilder_.clear();
         }
+        nodeDisklessStorPoolUuid_ = "";
+
         return this;
       }
 
@@ -994,6 +1073,7 @@ public final class MsgIntNodeDataOuterClass {
         } else {
           result.nodeProps_ = nodePropsBuilder_.build();
         }
+        result.nodeDisklessStorPoolUuid_ = nodeDisklessStorPoolUuid_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1128,6 +1208,10 @@ public final class MsgIntNodeDataOuterClass {
               nodePropsBuilder_.addAllMessages(other.nodeProps_);
             }
           }
+        }
+        if (!other.getNodeDisklessStorPoolUuid().isEmpty()) {
+          nodeDisklessStorPoolUuid_ = other.nodeDisklessStorPoolUuid_;
+          onChanged();
         }
         onChanged();
         return this;
@@ -2405,6 +2489,95 @@ public final class MsgIntNodeDataOuterClass {
           nodeProps_ = null;
         }
         return nodePropsBuilder_;
+      }
+
+      private java.lang.Object nodeDisklessStorPoolUuid_ = "";
+      /**
+       * <pre>
+       * Node's diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string node_diskless_stor_pool_uuid = 8;</code>
+       */
+      public java.lang.String getNodeDisklessStorPoolUuid() {
+        java.lang.Object ref = nodeDisklessStorPoolUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          nodeDisklessStorPoolUuid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Node's diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string node_diskless_stor_pool_uuid = 8;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNodeDisklessStorPoolUuidBytes() {
+        java.lang.Object ref = nodeDisklessStorPoolUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          nodeDisklessStorPoolUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Node's diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string node_diskless_stor_pool_uuid = 8;</code>
+       */
+      public Builder setNodeDisklessStorPoolUuid(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        nodeDisklessStorPoolUuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node's diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string node_diskless_stor_pool_uuid = 8;</code>
+       */
+      public Builder clearNodeDisklessStorPoolUuid() {
+        
+        nodeDisklessStorPoolUuid_ = getDefaultInstance().getNodeDisklessStorPoolUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Node's diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string node_diskless_stor_pool_uuid = 8;</code>
+       */
+      public Builder setNodeDisklessStorPoolUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        nodeDisklessStorPoolUuid_ = value;
+        onChanged();
+        return this;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -3724,6 +3897,24 @@ public final class MsgIntNodeDataOuterClass {
      */
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getNodeConnPropsOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * Other node's diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string other_node_diskless_stor_pool_uuid = 7;</code>
+     */
+    java.lang.String getOtherNodeDisklessStorPoolUuid();
+    /**
+     * <pre>
+     * Other node's diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string other_node_diskless_stor_pool_uuid = 7;</code>
+     */
+    com.google.protobuf.ByteString
+        getOtherNodeDisklessStorPoolUuidBytes();
   }
   /**
    * Protobuf type {@code com.linbit.linstor.proto.javainternal.NodeConn}
@@ -3743,6 +3934,7 @@ public final class MsgIntNodeDataOuterClass {
       otherNodeFlags_ = 0L;
       nodeConnUuid_ = "";
       nodeConnProps_ = java.util.Collections.emptyList();
+      otherNodeDisklessStorPoolUuid_ = "";
     }
 
     @java.lang.Override
@@ -3806,6 +3998,12 @@ public final class MsgIntNodeDataOuterClass {
               }
               nodeConnProps_.add(
                   input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              break;
+            }
+            case 58: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              otherNodeDisklessStorPoolUuid_ = s;
               break;
             }
           }
@@ -4071,6 +4269,48 @@ public final class MsgIntNodeDataOuterClass {
       return nodeConnProps_.get(index);
     }
 
+    public static final int OTHER_NODE_DISKLESS_STOR_POOL_UUID_FIELD_NUMBER = 7;
+    private volatile java.lang.Object otherNodeDisklessStorPoolUuid_;
+    /**
+     * <pre>
+     * Other node's diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string other_node_diskless_stor_pool_uuid = 7;</code>
+     */
+    public java.lang.String getOtherNodeDisklessStorPoolUuid() {
+      java.lang.Object ref = otherNodeDisklessStorPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        otherNodeDisklessStorPoolUuid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Other node's diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string other_node_diskless_stor_pool_uuid = 7;</code>
+     */
+    public com.google.protobuf.ByteString
+        getOtherNodeDisklessStorPoolUuidBytes() {
+      java.lang.Object ref = otherNodeDisklessStorPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        otherNodeDisklessStorPoolUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -4107,6 +4347,9 @@ public final class MsgIntNodeDataOuterClass {
       for (int i = 0; i < nodeConnProps_.size(); i++) {
         output.writeMessage(6, nodeConnProps_.get(i));
       }
+      if (!getOtherNodeDisklessStorPoolUuidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 7, otherNodeDisklessStorPoolUuid_);
+      }
     }
 
     public int getSerializedSize() {
@@ -4133,6 +4376,9 @@ public final class MsgIntNodeDataOuterClass {
       for (int i = 0; i < nodeConnProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(6, nodeConnProps_.get(i));
+      }
+      if (!getOtherNodeDisklessStorPoolUuidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, otherNodeDisklessStorPoolUuid_);
       }
       memoizedSize = size;
       return size;
@@ -4162,6 +4408,8 @@ public final class MsgIntNodeDataOuterClass {
           .equals(other.getNodeConnUuid());
       result = result && getNodeConnPropsList()
           .equals(other.getNodeConnPropsList());
+      result = result && getOtherNodeDisklessStorPoolUuid()
+          .equals(other.getOtherNodeDisklessStorPoolUuid());
       return result;
     }
 
@@ -4187,6 +4435,8 @@ public final class MsgIntNodeDataOuterClass {
         hash = (37 * hash) + NODE_CONN_PROPS_FIELD_NUMBER;
         hash = (53 * hash) + getNodeConnPropsList().hashCode();
       }
+      hash = (37 * hash) + OTHER_NODE_DISKLESS_STOR_POOL_UUID_FIELD_NUMBER;
+      hash = (53 * hash) + getOtherNodeDisklessStorPoolUuid().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -4322,6 +4572,8 @@ public final class MsgIntNodeDataOuterClass {
         } else {
           nodeConnPropsBuilder_.clear();
         }
+        otherNodeDisklessStorPoolUuid_ = "";
+
         return this;
       }
 
@@ -4360,6 +4612,7 @@ public final class MsgIntNodeDataOuterClass {
         } else {
           result.nodeConnProps_ = nodeConnPropsBuilder_.build();
         }
+        result.otherNodeDisklessStorPoolUuid_ = otherNodeDisklessStorPoolUuid_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -4446,6 +4699,10 @@ public final class MsgIntNodeDataOuterClass {
               nodeConnPropsBuilder_.addAllMessages(other.nodeConnProps_);
             }
           }
+        }
+        if (!other.getOtherNodeDisklessStorPoolUuid().isEmpty()) {
+          otherNodeDisklessStorPoolUuid_ = other.otherNodeDisklessStorPoolUuid_;
+          onChanged();
         }
         onChanged();
         return this;
@@ -5184,6 +5441,95 @@ public final class MsgIntNodeDataOuterClass {
         }
         return nodeConnPropsBuilder_;
       }
+
+      private java.lang.Object otherNodeDisklessStorPoolUuid_ = "";
+      /**
+       * <pre>
+       * Other node's diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string other_node_diskless_stor_pool_uuid = 7;</code>
+       */
+      public java.lang.String getOtherNodeDisklessStorPoolUuid() {
+        java.lang.Object ref = otherNodeDisklessStorPoolUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          otherNodeDisklessStorPoolUuid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Other node's diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string other_node_diskless_stor_pool_uuid = 7;</code>
+       */
+      public com.google.protobuf.ByteString
+          getOtherNodeDisklessStorPoolUuidBytes() {
+        java.lang.Object ref = otherNodeDisklessStorPoolUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          otherNodeDisklessStorPoolUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Other node's diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string other_node_diskless_stor_pool_uuid = 7;</code>
+       */
+      public Builder setOtherNodeDisklessStorPoolUuid(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        otherNodeDisklessStorPoolUuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Other node's diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string other_node_diskless_stor_pool_uuid = 7;</code>
+       */
+      public Builder clearOtherNodeDisklessStorPoolUuid() {
+        
+        otherNodeDisklessStorPoolUuid_ = getDefaultInstance().getOtherNodeDisklessStorPoolUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Other node's diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string other_node_diskless_stor_pool_uuid = 7;</code>
+       */
+      public Builder setOtherNodeDisklessStorPoolUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        otherNodeDisklessStorPoolUuid_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -5259,7 +5605,7 @@ public final class MsgIntNodeDataOuterClass {
     java.lang.String[] descriptorData = {
       "\n\'proto/javainternal/MsgIntNodeData.prot" +
       "o\022%com.linbit.linstor.proto.javainternal" +
-      "\032\033proto/LinStorMapEntry.proto\"\245\002\n\016MsgInt" +
+      "\032\033proto/LinStorMapEntry.proto\"\313\002\n\016MsgInt" +
       "NodeData\022\021\n\tnode_uuid\030\001 \001(\t\022\021\n\tnode_name" +
       "\030\002 \001(\t\022\022\n\nnode_flags\030\003 \001(\022\022\021\n\tnode_type\030" +
       "\004 \001(\t\022B\n\014node_net_ifs\030\005 \003(\0132,.com.linbit" +
@@ -5267,15 +5613,17 @@ public final class MsgIntNodeDataOuterClass {
       "e_conns\030\006 \003(\0132/.com.linbit.linstor.proto" +
       ".javainternal.NodeConn\022=\n\nnode_props\030\007 \003" +
       "(\0132).com.linbit.linstor.proto.LinStorMap",
-      "Entry\"p\n\005NetIf\022\023\n\013net_if_uuid\030\001 \001(\t\022\023\n\013n" +
-      "et_if_name\030\002 \001(\t\022\023\n\013net_if_addr\030\003 \001(\t\022\023\n" +
-      "\013net_if_type\030\004 \001(\t\022\023\n\013net_if_port\030\005 \001(\021\"" +
-      "\313\001\n\010NodeConn\022\027\n\017other_node_uuid\030\001 \001(\t\022\027\n" +
-      "\017other_node_name\030\002 \001(\t\022\027\n\017other_node_typ" +
-      "e\030\003 \001(\t\022\030\n\020other_node_flags\030\004 \001(\022\022\026\n\016nod" +
-      "e_conn_uuid\030\005 \001(\t\022B\n\017node_conn_props\030\006 \003" +
-      "(\0132).com.linbit.linstor.proto.LinStorMap" +
-      "EntryP\000b\006proto3"
+      "Entry\022$\n\034node_diskless_stor_pool_uuid\030\010 " +
+      "\001(\t\"p\n\005NetIf\022\023\n\013net_if_uuid\030\001 \001(\t\022\023\n\013net" +
+      "_if_name\030\002 \001(\t\022\023\n\013net_if_addr\030\003 \001(\t\022\023\n\013n" +
+      "et_if_type\030\004 \001(\t\022\023\n\013net_if_port\030\005 \001(\021\"\367\001" +
+      "\n\010NodeConn\022\027\n\017other_node_uuid\030\001 \001(\t\022\027\n\017o" +
+      "ther_node_name\030\002 \001(\t\022\027\n\017other_node_type\030" +
+      "\003 \001(\t\022\030\n\020other_node_flags\030\004 \001(\022\022\026\n\016node_" +
+      "conn_uuid\030\005 \001(\t\022B\n\017node_conn_props\030\006 \003(\013" +
+      "2).com.linbit.linstor.proto.LinStorMapEn" +
+      "try\022*\n\"other_node_diskless_stor_pool_uui",
+      "d\030\007 \001(\tP\000b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -5295,7 +5643,7 @@ public final class MsgIntNodeDataOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntNodeData_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntNodeData_descriptor,
-        new java.lang.String[] { "NodeUuid", "NodeName", "NodeFlags", "NodeType", "NodeNetIfs", "NodeConns", "NodeProps", });
+        new java.lang.String[] { "NodeUuid", "NodeName", "NodeFlags", "NodeType", "NodeNetIfs", "NodeConns", "NodeProps", "NodeDisklessStorPoolUuid", });
     internal_static_com_linbit_linstor_proto_javainternal_NetIf_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_com_linbit_linstor_proto_javainternal_NetIf_fieldAccessorTable = new
@@ -5307,7 +5655,7 @@ public final class MsgIntNodeDataOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_NodeConn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_NodeConn_descriptor,
-        new java.lang.String[] { "OtherNodeUuid", "OtherNodeName", "OtherNodeType", "OtherNodeFlags", "NodeConnUuid", "NodeConnProps", });
+        new java.lang.String[] { "OtherNodeUuid", "OtherNodeName", "OtherNodeType", "OtherNodeFlags", "NodeConnUuid", "NodeConnProps", "OtherNodeDisklessStorPoolUuid", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 

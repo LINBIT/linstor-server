@@ -66,6 +66,7 @@ public class CreateResource extends BaseProtoApiCall
             client,
             rsc.getNodeName(),
             rsc.getName(),
+            rsc.getRscFlagsList(),
             asMap(rsc.getPropsList()),
             vlmApiDataList
         );

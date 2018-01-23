@@ -6,6 +6,8 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.CommonPeerCtx;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.StorPoolData;
+import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.BaseApiCall;
@@ -86,6 +88,8 @@ public abstract class LinStor
     // a service thread to end
     public static final long SHUTDOWN_THR_JOIN_WAIT = 3000L;
 
+    public static final String DISKLESS_STOR_POOL_NAME = "DfltDisklessStorPool";
+
     // Queue slots per worker thread
     private int workerQueueFactor = 4;
     private int workerQueueSize = MIN_WORKER_QUEUE_SIZE;
@@ -102,6 +106,9 @@ public abstract class LinStor
     // Database drivers
     protected static DbAccessor securityDbDriver;
     protected static DatabaseDriver persistenceDbDriver;
+
+    protected static StorPoolDefinition disklessStorPoolDfn;
+    protected static StorPoolData disklessStorPool;
 
     // Error & exception logging facility
     private ErrorReporter errorLog;
@@ -882,6 +889,11 @@ public abstract class LinStor
     public static VolumeConnectionDataDatabaseDriver getVolumeConnectionDatabaseDriver()
     {
         return persistenceDbDriver.getVolumeConnectionDataDatabaseDriver();
+    }
+
+    public static StorPoolDefinition getDisklessStorPoolDfn()
+    {
+        return disklessStorPoolDfn;
     }
 
     public abstract void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)

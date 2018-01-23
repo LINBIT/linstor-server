@@ -52,6 +52,7 @@ public class CtrlAuth extends BaseProtoApiCall
         MsgIntAuth auth = MsgIntAuth.parseDelimitedFrom(msgDataIn);
         String nodeName = auth.getNodeName();
         UUID nodeUuid = UUID.fromString(auth.getNodeUuid());
+        UUID disklessStorPoolUuid = UUID.fromString(auth.getNodeDisklessStorPoolUuid());
         boolean authSuccess = true;
         ApiCallRcImpl apicallrc = new ApiCallRcImpl();
 
@@ -89,7 +90,12 @@ public class CtrlAuth extends BaseProtoApiCall
         {
             // client auth was successful send API_AUTH_ACCEPT
             satellite.getErrorReporter().logInfo("Controller connected and authenticated");
-            satellite.setControllerPeer(controllerPeer, nodeUuid, nodeName);
+            satellite.setControllerPeer(
+                controllerPeer,
+                nodeUuid,
+                nodeName,
+                disklessStorPoolUuid
+            );
 
             byte[] msgAuthAccept = prepareMessage(
                 accCtx,

@@ -29,6 +29,7 @@ import com.linbit.linstor.NodeId;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.ResourceData;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceDefinition.RscDfnFlags;
@@ -56,6 +57,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.stateflags.FlagsHelper;
 
 class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
@@ -85,6 +87,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         Peer client,
         String nodeNameStr,
         String rscNameStr,
+        List<String> flagList,
         Map<String, String> rscPropsMap,
         List<VlmApi> vlmApiList
     )
@@ -109,9 +112,16 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
             NodeId nodeId = getNextFreeNodeId(rscDfn);
 
-            ResourceData rsc = createResource(rscDfn, node, nodeId);
+            ResourceData rsc = createResource(rscDfn, node, nodeId, flagList);
             Props rscProps = getProps(rsc);
             rscProps.map().putAll(rscPropsMap);
+
+            boolean isRscDiskless = isDiskless(rsc);
+
+            if (isRscDiskless)
+            {
+                rscProps.setProp(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
+            }
 
             Props rscDfnProps = getProps(rscDfn);
             Props nodeProps = getProps(node);
@@ -121,24 +131,32 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             {
                 VolumeDefinitionData vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
 
-                String storPoolNameStr = vlmApi.getStorPoolName();
-                if (storPoolNameStr == null || "".equals(storPoolNameStr))
+                StorPoolData storPool;
+                if (isRscDiskless)
                 {
-                    PriorityProps prioProps = new PriorityProps(
-                        rscProps,
-                        getProps(vlmDfn),
-                        rscDfnProps,
-                        nodeProps
-                    );
-                    storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
+                    storPool = (StorPoolData) node.getDisklessStorPool(accCtx);
                 }
-                if (storPoolNameStr == null || "".equals(storPoolNameStr))
+                else
                 {
-                    storPoolNameStr = apiCtrlAccessors.getDefaultStorPoolName();
+                    String storPoolNameStr;
+                    storPoolNameStr = vlmApi.getStorPoolName();
+                    if (storPoolNameStr == null || "".equals(storPoolNameStr))
+                    {
+                        PriorityProps prioProps = new PriorityProps(
+                            rscProps,
+                            getProps(vlmDfn),
+                            rscDfnProps,
+                            nodeProps
+                        );
+                        storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
+                    }
+                    if (storPoolNameStr == null || "".equals(storPoolNameStr))
+                    {
+                        storPoolNameStr = apiCtrlAccessors.getDefaultStorPoolName();
+                    }
+                    StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
+                    storPool = loadStorPool(storPoolDfn, node, true);
                 }
-
-                StorPoolDefinitionData storPoolDfn = loadStorPoolDfn(storPoolNameStr, true);
-                StorPoolData storPool = loadStorPool(storPoolDfn, node, true);
 
                 VolumeData vlmData = createVolume(rsc, vlmDfn, storPool, vlmApi);
 
@@ -166,18 +184,28 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                         rscProps,
                         nodeProps
                     );
-                    String storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
-                    if (storPoolNameStr == null || "".equals(storPoolNameStr))
+
+                    String storPoolNameStr;
+                    StorPool storPool;
+                    if (isRscDiskless)
                     {
-                        storPoolNameStr = apiCtrlAccessors.getDefaultStorPoolName();
+                        storPool = rsc.getAssignedNode().getDisklessStorPool(apiCtx);
+                        storPoolNameStr = LinStor.DISKLESS_STOR_POOL_NAME;
+                    }
+                    else
+                    {
+                        storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
+                        if (storPoolNameStr == null || "".equals(storPoolNameStr))
+                        {
+                            storPoolNameStr = apiCtrlAccessors.getDefaultStorPoolName();
+                        }
+                        storPool = rsc.getAssignedNode().getStorPool(
+                            apiCtx,
+                            asStorPoolName(storPoolNameStr)
+                        );
                     }
 
-                    StorPool dfltStorPool = rsc.getAssignedNode().getStorPool(
-                        apiCtx,
-                        asStorPoolName(storPoolNameStr)
-                    );
-
-                    if (dfltStorPool == null)
+                    if (storPool == null)
                     {
                         throw asExc(
                             new LinStorException("Dependency not found"),
@@ -200,7 +228,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                     else
                     {
                         // create missing vlm with default values
-                        VolumeData vlm = createVolume(rsc, vlmDfn, dfltStorPool, null);
+                        VolumeData vlm = createVolume(rsc, vlmDfn, storPool, null);
                         vlmMap.put(vlmDfn.getVolumeNumber().value, vlm);
                     }
                 }
@@ -261,6 +289,18 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         }
 
         return apiCallRc;
+    }
+
+    private boolean isDiskless(ResourceData rsc)
+    {
+        try
+        {
+            return rsc.getStateFlags().isSet(apiCtx, RscFlags.DISKLESS);
+        }
+        catch (AccessDeniedException implError)
+        {
+            throw asImplError(implError);
+        }
     }
 
     private NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
@@ -793,8 +833,19 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
         return map;
     }
 
-    private ResourceData createResource(ResourceDefinitionData rscDfn, NodeData node, NodeId nodeId)
+    private ResourceData createResource(
+        ResourceDefinitionData rscDfn,
+        NodeData node,
+        NodeId nodeId,
+        List<String> flagList
+    )
     {
+        RscFlags[] flags = RscFlags.restoreFlags(
+            FlagsHelper.fromStringList(
+                RscFlags.class,
+                flagList
+            )
+        );
         try
         {
             return ResourceData.getInstance(
@@ -802,7 +853,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 rscDfn,
                 node,
                 nodeId,
-                null, // flags
+                flags,
                 currentTransMgr.get(),
                 true, // persist this entry
                 true // throw exception if the entry exists

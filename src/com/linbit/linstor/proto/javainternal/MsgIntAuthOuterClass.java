@@ -62,6 +62,24 @@ public final class MsgIntAuthOuterClass {
      * <code>bytes shared_secret = 3;</code>
      */
     com.google.protobuf.ByteString getSharedSecret();
+
+    /**
+     * <pre>
+     * Satellite node diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string node_diskless_stor_pool_uuid = 4;</code>
+     */
+    java.lang.String getNodeDisklessStorPoolUuid();
+    /**
+     * <pre>
+     * Satellite node diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string node_diskless_stor_pool_uuid = 4;</code>
+     */
+    com.google.protobuf.ByteString
+        getNodeDisklessStorPoolUuidBytes();
   }
   /**
    * <pre>
@@ -82,6 +100,7 @@ public final class MsgIntAuthOuterClass {
       nodeUuid_ = "";
       nodeName_ = "";
       sharedSecret_ = com.google.protobuf.ByteString.EMPTY;
+      nodeDisklessStorPoolUuid_ = "";
     }
 
     @java.lang.Override
@@ -124,6 +143,12 @@ public final class MsgIntAuthOuterClass {
             case 26: {
 
               sharedSecret_ = input.readBytes();
+              break;
+            }
+            case 34: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              nodeDisklessStorPoolUuid_ = s;
               break;
             }
           }
@@ -246,6 +271,48 @@ public final class MsgIntAuthOuterClass {
       return sharedSecret_;
     }
 
+    public static final int NODE_DISKLESS_STOR_POOL_UUID_FIELD_NUMBER = 4;
+    private volatile java.lang.Object nodeDisklessStorPoolUuid_;
+    /**
+     * <pre>
+     * Satellite node diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string node_diskless_stor_pool_uuid = 4;</code>
+     */
+    public java.lang.String getNodeDisklessStorPoolUuid() {
+      java.lang.Object ref = nodeDisklessStorPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        nodeDisklessStorPoolUuid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * Satellite node diskless stor pool's uuid
+     * </pre>
+     *
+     * <code>string node_diskless_stor_pool_uuid = 4;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNodeDisklessStorPoolUuidBytes() {
+      java.lang.Object ref = nodeDisklessStorPoolUuid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        nodeDisklessStorPoolUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -267,6 +334,9 @@ public final class MsgIntAuthOuterClass {
       if (!sharedSecret_.isEmpty()) {
         output.writeBytes(3, sharedSecret_);
       }
+      if (!getNodeDisklessStorPoolUuidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, nodeDisklessStorPoolUuid_);
+      }
     }
 
     public int getSerializedSize() {
@@ -283,6 +353,9 @@ public final class MsgIntAuthOuterClass {
       if (!sharedSecret_.isEmpty()) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(3, sharedSecret_);
+      }
+      if (!getNodeDisklessStorPoolUuidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, nodeDisklessStorPoolUuid_);
       }
       memoizedSize = size;
       return size;
@@ -306,6 +379,8 @@ public final class MsgIntAuthOuterClass {
           .equals(other.getNodeName());
       result = result && getSharedSecret()
           .equals(other.getSharedSecret());
+      result = result && getNodeDisklessStorPoolUuid()
+          .equals(other.getNodeDisklessStorPoolUuid());
       return result;
     }
 
@@ -322,6 +397,8 @@ public final class MsgIntAuthOuterClass {
       hash = (53 * hash) + getNodeName().hashCode();
       hash = (37 * hash) + SHARED_SECRET_FIELD_NUMBER;
       hash = (53 * hash) + getSharedSecret().hashCode();
+      hash = (37 * hash) + NODE_DISKLESS_STOR_POOL_UUID_FIELD_NUMBER;
+      hash = (53 * hash) + getNodeDisklessStorPoolUuid().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -450,6 +527,8 @@ public final class MsgIntAuthOuterClass {
 
         sharedSecret_ = com.google.protobuf.ByteString.EMPTY;
 
+        nodeDisklessStorPoolUuid_ = "";
+
         return this;
       }
 
@@ -475,6 +554,7 @@ public final class MsgIntAuthOuterClass {
         result.nodeUuid_ = nodeUuid_;
         result.nodeName_ = nodeName_;
         result.sharedSecret_ = sharedSecret_;
+        result.nodeDisklessStorPoolUuid_ = nodeDisklessStorPoolUuid_;
         onBuilt();
         return result;
       }
@@ -526,6 +606,10 @@ public final class MsgIntAuthOuterClass {
         }
         if (other.getSharedSecret() != com.google.protobuf.ByteString.EMPTY) {
           setSharedSecret(other.getSharedSecret());
+        }
+        if (!other.getNodeDisklessStorPoolUuid().isEmpty()) {
+          nodeDisklessStorPoolUuid_ = other.nodeDisklessStorPoolUuid_;
+          onChanged();
         }
         onChanged();
         return this;
@@ -771,6 +855,95 @@ public final class MsgIntAuthOuterClass {
         onChanged();
         return this;
       }
+
+      private java.lang.Object nodeDisklessStorPoolUuid_ = "";
+      /**
+       * <pre>
+       * Satellite node diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string node_diskless_stor_pool_uuid = 4;</code>
+       */
+      public java.lang.String getNodeDisklessStorPoolUuid() {
+        java.lang.Object ref = nodeDisklessStorPoolUuid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          nodeDisklessStorPoolUuid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Satellite node diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string node_diskless_stor_pool_uuid = 4;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNodeDisklessStorPoolUuidBytes() {
+        java.lang.Object ref = nodeDisklessStorPoolUuid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          nodeDisklessStorPoolUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * Satellite node diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string node_diskless_stor_pool_uuid = 4;</code>
+       */
+      public Builder setNodeDisklessStorPoolUuid(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        nodeDisklessStorPoolUuid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Satellite node diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string node_diskless_stor_pool_uuid = 4;</code>
+       */
+      public Builder clearNodeDisklessStorPoolUuid() {
+        
+        nodeDisklessStorPoolUuid_ = getDefaultInstance().getNodeDisklessStorPoolUuid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Satellite node diskless stor pool's uuid
+       * </pre>
+       *
+       * <code>string node_diskless_stor_pool_uuid = 4;</code>
+       */
+      public Builder setNodeDisklessStorPoolUuidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        nodeDisklessStorPoolUuid_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -835,9 +1008,10 @@ public final class MsgIntAuthOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n#proto/javainternal/MsgIntAuth.proto\022%c" +
-      "om.linbit.linstor.proto.javainternal\"I\n\n" +
+      "om.linbit.linstor.proto.javainternal\"o\n\n" +
       "MsgIntAuth\022\021\n\tnode_uuid\030\001 \001(\t\022\021\n\tnode_na" +
-      "me\030\002 \001(\t\022\025\n\rshared_secret\030\003 \001(\014b\006proto3"
+      "me\030\002 \001(\t\022\025\n\rshared_secret\030\003 \001(\014\022$\n\034node_" +
+      "diskless_stor_pool_uuid\030\004 \001(\tb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -856,7 +1030,7 @@ public final class MsgIntAuthOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntAuth_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntAuth_descriptor,
-        new java.lang.String[] { "NodeUuid", "NodeName", "SharedSecret", });
+        new java.lang.String[] { "NodeUuid", "NodeName", "SharedSecret", "NodeDisklessStorPoolUuid", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

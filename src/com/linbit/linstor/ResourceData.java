@@ -396,21 +396,31 @@ public class ResourceData extends BaseTransactionObject implements Resource
                 if (!volumeMap.containsKey(vlmDfn.getVolumeNumber()))
                 {
                     // if vlm not yet deployed
-                    String storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
-                    if (storPoolNameStr == null || "".equals(storPoolNameStr))
-                    {
-                        storPoolNameStr = defaultStorPoolName;
-                    }
-                    StorPool storPool = assgNode.getStorPool(
-                        apiCtx,
-                        new StorPoolName(storPoolNameStr)
-                    );
 
-                    if (storPool == null)
+                    StorPool storPool;
+                    if (flags.isSet(apiCtx, RscFlags.DISKLESS))
                     {
-                        throw new LinStorException(
-                            "The configured storage pool '" + storPoolNameStr + "' could not be found."
+                        storPool = assgNode.getDisklessStorPool(apiCtx);
+                    }
+                    else
+                    {
+                        String storPoolNameStr;
+                        storPoolNameStr = LinStor.DISKLESS_STOR_POOL_NAME;
+                        storPoolNameStr = prioProps.getProp(KEY_STOR_POOL_NAME);
+                        if (storPoolNameStr == null || "".equals(storPoolNameStr))
+                        {
+                            storPoolNameStr = defaultStorPoolName;
+                        }
+                        storPool = assgNode.getStorPool(
+                            apiCtx,
+                            new StorPoolName(storPoolNameStr)
                         );
+                        if (storPool == null)
+                        {
+                            throw new LinStorException(
+                                "The configured storage pool '" + storPoolNameStr + "' could not be found."
+                            );
+                        }
                     }
 
                     VolumeData.getInstance(

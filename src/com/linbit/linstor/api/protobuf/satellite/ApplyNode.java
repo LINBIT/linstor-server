@@ -62,7 +62,8 @@ public class ApplyNode extends BaseProtoApiCall
             nodeData.getNodeFlags(),
             extractNetIfs(nodeData.getNodeNetIfsList()),
             extractNodeConns(nodeData.getNodeConnsList()),
-            BaseProtoApiCall.asMap(nodeData.getNodePropsList())
+            BaseProtoApiCall.asMap(nodeData.getNodePropsList()),
+            UUID.fromString(nodeData.getNodeDisklessStorPoolUuid())
         );
     }
 
@@ -94,7 +95,8 @@ public class ApplyNode extends BaseProtoApiCall
                     nodeConn.getOtherNodeName(),
                     nodeConn.getOtherNodeType(),
                     nodeConn.getOtherNodeFlags(),
-                    BaseProtoApiCall.asMap(nodeConn.getNodeConnPropsList())
+                    BaseProtoApiCall.asMap(nodeConn.getNodeConnPropsList()),
+                    UUID.fromString(nodeConn.getOtherNodeDisklessStorPoolUuid())
                 )
             );
         }

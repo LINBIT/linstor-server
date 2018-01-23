@@ -4,7 +4,6 @@ import static com.linbit.linstor.api.ApiConsts.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,7 +12,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -27,10 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.google.protobuf.Message;
 import com.linbit.linstor.NetInterface;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.Resource.RscFlags;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.pojo.NetInterfacePojo;
-import com.linbit.linstor.api.pojo.SatelliteConnectionPojo;
 import com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry;
 import com.linbit.linstor.proto.MsgApiCallResponseOuterClass.MsgApiCallResponse;
 import com.linbit.linstor.proto.MsgCrtNodeConnOuterClass.MsgCrtNodeConn;
@@ -73,6 +70,7 @@ import com.linbit.linstor.proto.StorPoolOuterClass.StorPool;
 import com.linbit.linstor.proto.VlmConnOuterClass.VlmConn;
 import com.linbit.linstor.proto.VlmDfnOuterClass.VlmDfn;
 import com.linbit.linstor.proto.VlmOuterClass.Vlm;
+import com.linbit.linstor.stateflags.FlagsHelper;
 
 public class ClientProtobuf implements Runnable
 {
@@ -930,6 +928,7 @@ public class ClientProtobuf implements Runnable
     public int sendCreateRsc(
         String nodeName,
         String resName,
+        RscFlags[] flags,
         Map<String, String> resProps,
         Iterable<? extends Vlm> vlms
     )
@@ -946,6 +945,20 @@ public class ClientProtobuf implements Runnable
         if (vlms != null)
         {
             rscBuilder.addAllVlms(vlms);
+        }
+        if (flags != null)
+        {
+            long flagMask = 0;
+            for (RscFlags flag : flags)
+            {
+                flagMask |= flag.flagValue;
+            }
+            rscBuilder.addAllRscFlags(
+                FlagsHelper.toStringList(
+                    RscFlags.class,
+                    flagMask
+                )
+            );
         }
         send(
             msgId,
@@ -1404,229 +1417,6 @@ public class ClientProtobuf implements Runnable
                 setBlockDevice(blockDevice).
                 setMetaDisk(metaDisk).
                 build();
-    }
-
-    public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException
-    {
-        ClientProtobuf client = new ClientProtobuf(9500);
-//         creaeNodeRscVlmDelete(client);
-        createNodeConnRscConnVlmConnDelete(client);
-    }
-
-    private static void createNodeConnRscConnVlmConnDelete(ClientProtobuf client)
-        throws IOException, InterruptedException
-    {
-        String nodeName1 = "TestNode1";
-        String nodeName2 = "TestNode2";
-        String rscName = "TestRes";
-        String storPoolName = "TestStorPool";
-        int vlmNr = 13;
-
-        String nodeConnTestKey = "TestKeyNodeConn";
-        String nodeconnTestValue = "TestValueNodeConn";
-        String rscConnTestKey = "TestKeyRscConn";
-        String rscConnTestValue = "TestValueRscConn";
-        String vlmConnTestKey = "TestKeyVlmConn";
-        String vlmConnTestValue = "TestValueVlmConn";
-
-        int msgId = 0;
-
-        msgId = client.sendCreateNode(nodeName1, "satellite", null,
-            Arrays.asList(
-                new NetInterfacePojo(null, "tcp0", "10.0.0.1")
-            ),
-            Arrays.asList(
-                new SatelliteConnectionPojo(
-                    "tcp0",
-                    ApiConsts.DFLT_STLT_PORT_PLAIN,
-                    ApiConsts.VAL_NETCOM_TYPE_PLAIN
-                )
-            )
-        );
-        client.println(msgId + " create first node");
-        Thread.sleep(500);
-
-        msgId = client.sendCreateNode(nodeName2, "satellite", null,
-            Arrays.asList(
-                new NetInterfacePojo(null, "tcp0", "10.0.0.2")
-            ),
-            Arrays.asList(
-                new SatelliteConnectionPojo(
-                    "tcp0",
-                    ApiConsts.DFLT_STLT_PORT_PLAIN,
-                    ApiConsts.VAL_NETCOM_TYPE_PLAIN
-                )
-            )
-        );
-        client.println(msgId + " create second node");
-        Thread.sleep(500);
-
-        List<VlmDfn> vlmDfns = new ArrayList<>();
-        vlmDfns.add(client.createVlmDfn(vlmNr, 1, 1_000_000));
-        msgId = client.sendCreateRscDfn(rscName, 9001, null, vlmDfns);
-        client.println(msgId + " create rscDfn");
-        Thread.sleep(500);
-
-        msgId = client.sendCreateStorPoolDfn(storPoolName);
-        client.println(msgId + " create storPoolDfn");
-        Thread.sleep(500);
-
-        msgId = client.sendCreateStorPool(nodeName1, storPoolName, "LvmDriver");
-        client.println(msgId + " create first storPool");
-        Thread.sleep(500);
-
-        msgId = client.sendCreateStorPool(nodeName2, storPoolName, "LvmDriver");
-        client.println(msgId + " create second storPool");
-        Thread.sleep(500);
-
-        List<Vlm> vlms = new ArrayList<>();
-        vlms.add(client.createVlm(vlmNr, storPoolName, "blockDevice", "internal"));
-        msgId = client.sendCreateRsc(nodeName1, rscName, null, vlms);
-        client.println(msgId + " create first rsc");
-        Thread.sleep(500);
-
-        msgId = client.sendCreateRsc(nodeName2, rscName, null, vlms);
-        client.println(msgId + " create second rsc");
-        Thread.sleep(500);
-
-
-
-        Map<String, String> nodeConnProps = new HashMap<>();
-        nodeConnProps.put(nodeConnTestKey, nodeconnTestValue);
-        msgId = client.sendCreateNodeConn(nodeName1, nodeName2, nodeConnProps);
-        client.println(msgId + " create node connection");
-        Thread.sleep(500);
-
-        Map<String, String> rscConnProps = new HashMap<>();
-        rscConnProps.put(rscConnTestKey, rscConnTestValue);
-        msgId = client.sendCreateRscConn(nodeName1, nodeName2, rscName, rscConnProps);
-        client.println(msgId + " create rsc connection");
-        Thread.sleep(500);
-
-        Map<String, String> vlmConnProps = new HashMap<>();
-        vlmConnProps.put(vlmConnTestKey, vlmConnTestValue);
-        msgId = client.sendCreateVlmConn(nodeName1, nodeName2, rscName, vlmNr, vlmConnProps);
-        client.println(msgId + " create vlm connection");
-        Thread.sleep(500);
-
-
-
-
-
-        msgId = client.sendDeleteVlmConn(nodeName1, nodeName2, rscName, vlmNr);
-        client.println(msgId + " delete vlm connection");
-        Thread.sleep(500);
-
-        msgId = client.sendDeleteRscConn(nodeName1, nodeName2, rscName);
-        client.println(msgId + " delete rsc connection");
-        Thread.sleep(500);
-
-        msgId = client.sendDeleteNodeConn(nodeName1, nodeName2);
-        client.println(msgId + " delete node connection");
-        Thread.sleep(500);
-
-
-
-        msgId = client.sendDeleteNode(nodeName1);
-        client.println(msgId + " delete first node");
-        Thread.sleep(500);
-
-        msgId = client.sendDeleteNode(nodeName2);
-        client.println(msgId + " delete second node");
-
-        client.outputStream.flush();
-        Thread.sleep(1000);
-        client.shutdown();
-    }
-
-    private static void createNodeRscVlmDelete(ClientProtobuf client)
-        throws UnknownHostException, IOException, InterruptedException
-    {
-        String nodePropsTestKey = "TestNodeKey";
-        String nodePropsTestValue = "TestNodeValue";
-        String nodeName = "TestNode";
-
-        String resName = "TestRes";
-        String resPropsTestKey = "TestResKey";
-        String resPropsTestValue = "TestResValue";
-
-        String storPoolName = "TestStorPool";
-
-        Map<String, String> nodeProps = new HashMap<>();
-        nodeProps.put(nodePropsTestKey, nodePropsTestValue);
-
-        int msgId = 0;
-
-        msgId = client.sendCreateNode(nodeName, "satellite", nodeProps,
-            Arrays.asList(
-                new NetInterfacePojo(null, "tcp0", "10.0.0.1")
-            ),
-            Arrays.asList(
-                new SatelliteConnectionPojo(
-                    "tcp0",
-                    ApiConsts.DFLT_STLT_PORT_PLAIN,
-                    ApiConsts.VAL_NETCOM_TYPE_PLAIN
-                )
-            )
-        );
-        client.println(msgId + " create node");
-        Thread.sleep(500);
-
-
-        Map<String, String> resDfnProps = new HashMap<>();
-        resDfnProps.put(resPropsTestKey, resPropsTestValue);
-        List<VlmDfn> vlmDfn = new ArrayList<>();
-        vlmDfn.add(client.createVlmDfn(1, 1, 1_000_000));
-        msgId = client.sendCreateRscDfn(resName, 9001, resDfnProps, vlmDfn);
-        client.println(msgId + " create rscDfn");
-        Thread.sleep(500);
-
-
-        msgId = client.sendCreateStorPoolDfn(storPoolName);
-        client.println(msgId + " create storPoolDfn");
-        Thread.sleep(500);
-
-
-        msgId = client.sendCreateStorPool(nodeName, storPoolName, "LvmDriver");
-        client.println(msgId + " create storPool");
-        Thread.sleep(500);
-
-
-        Map<String, String> resProps = new HashMap<>();
-        List<Vlm> vlms = new ArrayList<>();
-        vlms.add(client.createVlm(1, storPoolName, "blockDevice", "internal"));
-        msgId = client.sendCreateRsc(nodeName, resName, resProps, vlms);
-        client.println(msgId + " create rsc");
-        Thread.sleep(500);
-
-
-        msgId = client.sendDeleteRsc(nodeName, resName);
-        client.println(msgId + " delete rsc");
-        Thread.sleep(500);
-
-
-        msgId = client.sendDeleteStorPool(nodeName, storPoolName);
-        client.println(msgId + " delete storPool");
-        Thread.sleep(500);
-
-
-        msgId = client.sendDeleteStorPoolDfn(storPoolName);
-        client.println(msgId + " delete storPoolDfn");
-        Thread.sleep(500);
-
-
-        msgId = client.sendDeleteRscDfn(resName);
-        client.println(msgId + " delete rscDfn");
-        Thread.sleep(500);
-
-
-        msgId = client.sendDeleteNode(nodeName);
-        client.println(msgId + " delete node");
-
-
-        client.outputStream.flush();
-        Thread.sleep(1000);
-        client.shutdown();
     }
 
     private Iterable<LinStorMapEntry> asLinStorMapEntryList(Map<String, String> map)

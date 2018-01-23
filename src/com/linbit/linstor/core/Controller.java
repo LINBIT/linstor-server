@@ -45,12 +45,14 @@ import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -393,6 +395,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
 
             initializeObjectProtection(initCtx);
 
+            initializeDisklessStorPoolDfn(errorLogRef, initCtx);
+
             // Initialize tasks
             reconnectorTask = new ReconnectorTask(this);
             pingTask = new PingTask(this, reconnectorTask);
@@ -433,6 +437,41 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         finally
         {
             reconfigurationLock.writeLock().unlock();
+        }
+    }
+
+    private void initializeDisklessStorPoolDfn(ErrorReporter errorLogRef, AccessContext initCtx)
+        throws AccessDeniedException
+    {
+        try
+        {
+            TransactionMgr transMgr = new TransactionMgr(dbConnPool);
+
+            disklessStorPoolDfn = StorPoolDefinitionData.getInstance(
+                initCtx,
+                new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME),
+                transMgr,
+                true,
+                false
+            );
+
+            transMgr.commit();
+            dbConnPool.returnConnection(transMgr);
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ImplementationError(dataAlreadyExistsExc);
+        }
+        catch (SQLException sqlExc)
+        {
+            errorLogRef.reportError(sqlExc);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new ImplementationError(
+                "Invalid name for default diskless stor pool: " + invalidNameExc.invalidName,
+                invalidNameExc
+            );
         }
     }
 

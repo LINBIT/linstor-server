@@ -148,6 +148,7 @@ public class ApplyRsc extends BaseProtoApiCall
                     UUID.fromString(protoNode.getUuid()),
                     protoNode.getType(),
                     otherRsc.getNodeFlags(),
+                    UUID.fromString(protoNode.getDisklessStorPoolUuid()),
                     asMap(protoNode.getPropsList()),
                     extractNetIfs(protoNode),
                     UUID.fromString(otherRsc.getRscUuid()),

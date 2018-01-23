@@ -51,7 +51,7 @@ public class CtrlApiCallHandler
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
         }
-        authApiCallHandler = new CtrlAuthenticationApiCallHandler(apiCtrlAccessors, interComSrzl);
+        authApiCallHandler = new CtrlAuthenticationApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
         fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(apiCtrlAccessors, apiCtx, interComSrzl);
         nodeApiCallHandler = new CtrlNodeApiCallHandler(apiCtrlAccessors, apiCtx, interComSrzl);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(
@@ -523,6 +523,7 @@ public class CtrlApiCallHandler
         Peer client,
         String nodeName,
         String rscName,
+        List<String> flagList,
         Map<String, String> rscPropsMap,
         List<Volume.VlmApi> vlmApiDataList
     )
@@ -546,6 +547,7 @@ public class CtrlApiCallHandler
                 client,
                 nodeName,
                 rscName,
+                flagList,
                 rscPropsMap,
                 vlmApiDataList
             );
