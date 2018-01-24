@@ -445,6 +445,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     {
         try
         {
+            storPoolDfnMapLock.writeLock().lock();
             TransactionMgr transMgr = new TransactionMgr(dbConnPool);
 
             disklessStorPoolDfn = StorPoolDefinitionData.getInstance(
@@ -456,6 +457,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
             );
 
             transMgr.commit();
+
+            storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
             dbConnPool.returnConnection(transMgr);
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
@@ -472,6 +475,9 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 "Invalid name for default diskless stor pool: " + invalidNameExc.invalidName,
                 invalidNameExc
             );
+        }
+        finally {
+            storPoolDfnMapLock.writeLock().unlock();
         }
     }
 
