@@ -25,6 +25,7 @@ public interface InterComBuilder {
         UUID nodeUuid,
         String nodeName,
         byte[] sharedSecret,
+        UUID nodeDisklessStorPoolDfnUuid,
         UUID nodeDisklessStorPoolUuid
     );
 

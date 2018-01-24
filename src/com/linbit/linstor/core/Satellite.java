@@ -348,8 +348,6 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                 // Initialize system services
                 startSystemServices(systemServicesMap.values());
 
-                initDfltDisklessStorPoolDfn(initCtx);
-
                 // Initialize the network communications service
                 errorLogRef.logInfo("Initializing main network communications service");
                 initMainNetComService(initCtx);
@@ -368,33 +366,6 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         finally
         {
             reconfigurationLock.writeLock().unlock();
-        }
-    }
-
-    private void initDfltDisklessStorPoolDfn(AccessContext initCtx)
-    {
-        try
-        {
-            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-
-            disklessStorPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
-                initCtx,
-                UUID.randomUUID(),
-                new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME),
-                transMgr
-            );
-            transMgr.commit();
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new ImplementationError(sqlExc);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new ImplementationError(
-                "Invalid name for default diskless stor pool: " + invalidNameExc.invalidName,
-                invalidNameExc
-            );
         }
     }
 
@@ -819,6 +790,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         Peer controllerPeerRef,
         UUID nodeUuid,
         String nodeName,
+        UUID disklessStorPoolDfnUuid,
         UUID disklessStorPoolUuid
     )
     {
@@ -826,6 +798,8 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         {
             reconfigurationLock.writeLock().lock();
             nodesMapLock.writeLock().lock();
+            rscDfnMapLock.writeLock().lock();
+            storPoolDfnMapLock.writeLock().lock();
 
             controllerPeer = controllerPeerRef;
 
@@ -836,6 +810,13 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
             NodeData localNode;
             try
             {
+                disklessStorPoolDfn = StorPoolDefinitionData.getInstanceSatellite(
+                    tmpCtx,
+                    disklessStorPoolDfnUuid,
+                    new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME),
+                    transMgr
+                );
+
                 localNodeName = new NodeName(nodeName);
 
                 localNode = NodeData.getInstanceSatellite(
@@ -856,6 +837,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                 // TODO: make sure everything is cleared
 
                 nodesMap.put(localNode.getName(), localNode);
+                storPoolDfnMap.put(disklessStorPoolDfn.getName(), disklessStorPoolDfn);
                 setControllerPeerToCurrentLocalNode();
             }
             catch (ImplementationError | SQLException | InvalidNameException exc)
@@ -872,6 +854,8 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         }
         finally
         {
+            storPoolDfnMapLock.writeLock().unlock();
+            rscDfnMapLock.writeLock().unlock();
             nodesMapLock.writeLock().unlock();
             reconfigurationLock.writeLock().unlock();
         }

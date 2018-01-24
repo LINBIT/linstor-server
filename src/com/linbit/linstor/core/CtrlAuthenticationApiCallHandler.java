@@ -41,6 +41,7 @@ class CtrlAuthenticationApiCallHandler
                         peerNode.getUuid(),
                         peerNode.getName().getDisplayName(),
                         "Hello, LinStor!".getBytes(),
+                        peerNode.getDisklessStorPool(apiCtx).getDefinition(apiCtx).getUuid(),
                         peerNode.getDisklessStorPool(apiCtx).getUuid()
                     )
                     .build()

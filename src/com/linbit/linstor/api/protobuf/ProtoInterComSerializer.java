@@ -363,6 +363,7 @@ public class ProtoInterComSerializer implements InterComSerializer
             UUID nodeUuid,
             String nodeName,
             byte[] sharedSecret,
+            UUID nodeDisklessStorPoolDfnUuid,
             UUID nodeDisklessStorPoolUuid
         )
         {
@@ -372,6 +373,7 @@ public class ProtoInterComSerializer implements InterComSerializer
                     .setNodeUuid(nodeUuid.toString())
                     .setNodeName(nodeName)
                     .setSharedSecret(ByteString.copyFrom(sharedSecret))
+                    .setNodeDisklessStorPoolDfnUuid(nodeDisklessStorPoolDfnUuid.toString())
                     .setNodeDisklessStorPoolUuid(nodeDisklessStorPoolUuid.toString())
                     .build()
                     .writeDelimitedTo(baos);

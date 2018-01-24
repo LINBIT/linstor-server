@@ -52,6 +52,7 @@ public class CtrlAuth extends BaseProtoApiCall
         MsgIntAuth auth = MsgIntAuth.parseDelimitedFrom(msgDataIn);
         String nodeName = auth.getNodeName();
         UUID nodeUuid = UUID.fromString(auth.getNodeUuid());
+        UUID disklessStorPoolDfnUuid = UUID.fromString(auth.getNodeDisklessStorPoolDfnUuid());
         UUID disklessStorPoolUuid = UUID.fromString(auth.getNodeDisklessStorPoolUuid());
         boolean authSuccess = true;
         ApiCallRcImpl apicallrc = new ApiCallRcImpl();
@@ -94,6 +95,7 @@ public class CtrlAuth extends BaseProtoApiCall
                 controllerPeer,
                 nodeUuid,
                 nodeName,
+                disklessStorPoolDfnUuid,
                 disklessStorPoolUuid
             );
 
