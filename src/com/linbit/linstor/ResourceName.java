@@ -12,7 +12,7 @@ import com.linbit.Checks;
  */
 public class ResourceName extends GenericName
 {
-    public static final int MIN_LENGTH = 3;
+    public static final int MIN_LENGTH = 2;
     public static final int MAX_LENGTH = 48;
 
     public static final byte[] VALID_CHARS = { '_' };
