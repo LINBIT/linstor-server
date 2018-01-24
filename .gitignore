@@ -15,6 +15,7 @@ nbproject/project.xml
 !test-data
 !scripts/
 !Makefile
+!Jenkinsfile
 !README.md
 test-data/*
 test-support/TestProcess
