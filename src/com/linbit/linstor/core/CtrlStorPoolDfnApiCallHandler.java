@@ -70,6 +70,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             getProps(storPoolDfn).map().putAll(storPoolDfnProps);
             commit();
 
+            apiCtrlAccessors.getStorPoolDfnMap().put(storPoolDfn.getName(), storPoolDfn);
             reportSuccess(storPoolDfn.getUuid());
         }
         catch (ApiCallHandlerFailedException ignore)
