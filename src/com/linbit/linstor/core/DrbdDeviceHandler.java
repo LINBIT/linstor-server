@@ -50,7 +50,9 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.slf4j.event.Level;
@@ -821,10 +823,6 @@ class DrbdDeviceHandler implements DeviceHandler
                         // Set block device paths
                         if (vlmState.hasDisk())
                         {
-System.out.println("vlmState: " + vlmState);
-System.out.println("driver: " + vlmState.getDriver());
-System.out.println("storVlmName: " + vlmState.getStorVlmName());
-System.out.println("all: " + vlmState.getDriver().getVolumePath(vlmState.getStorVlmName()));
                             String bdPath = vlmState.getDriver().getVolumePath(vlmState.getStorVlmName());
                             vlm.setBlockDevicePath(wrkCtx, bdPath);
                             vlm.setMetaDiskPath(wrkCtx, "internal");
@@ -1008,7 +1006,7 @@ System.out.println("all: " + vlmState.getDriver().getVolumePath(vlmState.getStor
         throws AccessDeniedException, ResourceException
     {
         ResourceName rscName = rscDfn.getName();
-        Map<ResourceName, Resource> peerResources = new TreeMap<>();
+        List<Resource> peerResources = new ArrayList<>();
         {
             Iterator<Resource> peerRscIter = rscDfn.iterateResource(wrkCtx);
             while (peerRscIter.hasNext())
@@ -1016,7 +1014,7 @@ System.out.println("all: " + vlmState.getDriver().getVolumePath(vlmState.getStor
                 Resource peerRsc = peerRscIter.next();
                 if (peerRsc != rsc)
                 {
-                    peerResources.put(peerRsc.getDefinition().getName(), peerRsc);
+                    peerResources.add(peerRsc);
                 }
             }
         }
@@ -1027,7 +1025,7 @@ System.out.println("all: " + vlmState.getDriver().getVolumePath(vlmState.getStor
             )
         )
         {
-            String content = new ConfFileBuilder(wrkCtx, rsc, peerResources.values()).build();
+            String content = new ConfFileBuilder(wrkCtx, rsc, peerResources).build();
             resFileOut.write(content.getBytes());
         }
         catch (IOException ioExc)
