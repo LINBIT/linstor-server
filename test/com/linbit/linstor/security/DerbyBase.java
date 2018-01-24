@@ -101,7 +101,6 @@ public abstract class DerbyBase implements DerbyTestConstants
                 throw new RuntimeException(exc);
             }
 
-
             initialized = true;
         }
     }
@@ -156,13 +155,18 @@ public abstract class DerbyBase implements DerbyTestConstants
         insertDefaults();
 
         Connection tmpCon = dbConnPool.getConnection();
+
+        TransactionMgr transMgr = new TransactionMgr(tmpCon);
         // make sure to seal the internal caches
         CoreUtils.setDatabaseClasses(
             secureDbDriver,
             persistenceDbDriver
         );
-        persistenceDbDriver.loadAll(new TransactionMgr(tmpCon));
-        tmpCon.close();
+        persistenceDbDriver.loadAll(transMgr);
+        CoreUtils.loadDisklessStorPoolDfn(storPoolDfnMap);
+
+        transMgr.commit();
+        dbConnPool.returnConnection(transMgr);
 
         clearCaches();
 

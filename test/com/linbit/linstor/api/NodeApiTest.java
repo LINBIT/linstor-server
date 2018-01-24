@@ -48,7 +48,7 @@ public class NodeApiTest extends ApiTestBase
         RcEntry rcEntry = rc.getEntries().get(0);
         Assert.assertEquals(
             rcEntry.getReturnCode(),
-            ApiConsts.MASK_NODE | ApiConsts.MASK_CRT | ApiConsts.CREATED
+            ApiConsts.MASK_NODE /*| ApiConsts.MASK_CRT */| ApiConsts.CREATED
         );
 
         Assert.assertTrue(nodesMap.size() == 1);
@@ -123,7 +123,7 @@ public class NodeApiTest extends ApiTestBase
         RcEntry rcEntry = rc.getEntries().get(0);
         Assert.assertEquals(
             rcEntry.getReturnCode(),
-            ApiConsts.MASK_NODE | ApiConsts.MASK_CRT | ApiConsts.CREATED
+            ApiConsts.MASK_NODE /*| ApiConsts.MASK_CRT*/ | ApiConsts.CREATED
         );
 
         rc = apiCallHandler.createNode(

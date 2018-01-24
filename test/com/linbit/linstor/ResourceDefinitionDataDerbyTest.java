@@ -102,7 +102,6 @@ public class ResourceDefinitionDataDerbyTest extends DerbyBase
             transMgr
         );
 
-
         driver = (ResourceDefinitionDataDerbyDriver) LinStor.getResourceDefinitionDataDatabaseDriver();
     }
 

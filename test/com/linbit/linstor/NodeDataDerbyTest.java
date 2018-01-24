@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
 import static org.junit.Assert.*;
 
 import java.sql.PreparedStatement;
@@ -45,7 +44,8 @@ public class NodeDataDerbyTest extends DerbyBase
         " FROM " + TBL_STOR_POOL_DEFINITIONS + " AS SPD" +
         " RIGHT JOIN " + TBL_NODE_STOR_POOL + " AS NSP ON " +
         "     NSP." + POOL_NAME + " = SPD." + POOL_NAME +
-        " WHERE " + NODE_NAME + " = ?";
+        " WHERE " + NODE_NAME + " = ? AND " +
+                    "SPD." + POOL_DSP_NAME + " <> '" + LinStor.DISKLESS_STOR_POOL_NAME + "'";
     private static final String SELECT_ALL_PROPS_FOR_NODE =
         " SELECT " + PROP_KEY + ", " + PROP_VALUE +
         " FROM " + TBL_PROPS_CONTAINERS +
@@ -155,7 +155,7 @@ public class NodeDataDerbyTest extends DerbyBase
         stmt = transMgr.dbCon.prepareStatement(SELECT_ALL_STOR_POOLS_FOR_NODE);
         stmt.setString(1, nodeName.value);
         resultSet = stmt.executeQuery();
-        assertFalse("Database persisted non existent net interface", resultSet.next());
+        assertFalse("Database persisted non existent stor pool", resultSet.next());
         resultSet.close();
         stmt.close();
 

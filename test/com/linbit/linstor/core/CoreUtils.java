@@ -1,7 +1,9 @@
 package com.linbit.linstor.core;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -38,7 +40,21 @@ public class CoreUtils
         );
     }
 
+    public static void loadDisklessStorPoolDfn(HashMap<StorPoolName, StorPoolDefinition> storPoolDfnMap)
+    {
+        try
+        {
+            LinStor.disklessStorPoolDfn = storPoolDfnMap.get(new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME));
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new RuntimeException(exc);
+        }
+    }
+
     private CoreUtils()
     {
     }
+
+
 }

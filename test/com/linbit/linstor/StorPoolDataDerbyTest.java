@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -31,7 +30,8 @@ public class StorPoolDataDerbyTest extends DerbyBase
 {
     private static final String SELECT_ALL_STOR_POOLS =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + POOL_NAME + ", " + DRIVER_NAME +
-        " FROM " + TBL_NODE_STOR_POOL;
+        " FROM " + TBL_NODE_STOR_POOL +
+        " WHERE " + POOL_NAME + " <> '" + LinStor.DISKLESS_STOR_POOL_NAME.toUpperCase() + "'";
 
     private final NodeName nodeName;
     private final StorPoolName spName;
@@ -141,8 +141,8 @@ public class StorPoolDataDerbyTest extends DerbyBase
         List<StorPoolData> storPools = driver.loadStorPools(node, transMgr);
 
         assertNotNull(storPools);
-        assertEquals(1, storPools.size());
-        StorPoolData storPoolData = storPools.get(0);
+        assertEquals(2, storPools.size());
+        StorPoolData storPoolData = storPools.get(1); // the [0] should be the default diskless stor pool, we just skip that
         assertNotNull(storPoolData);
         assertNotNull(storPoolData.getProps(SYS_CTX));
         StorPoolDefinition spDfn = storPoolData.getDefinition(SYS_CTX);

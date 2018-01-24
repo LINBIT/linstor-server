@@ -1,6 +1,5 @@
 package com.linbit.linstor;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.*;
 import static org.junit.Assert.*;
 
 import java.sql.PreparedStatement;
@@ -8,6 +7,7 @@ import java.sql.ResultSet;
 import org.junit.Test;
 
 import com.linbit.TransactionMgr;
+import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.security.DerbyBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.utils.UuidUtils;
@@ -233,7 +233,7 @@ public class StorPoolDefinitionDataDerbyTest extends DerbyBase
 
         List<StorPoolDefinitionData> storpools = driver.loadAll(transMgr);
 
-        assertNotNull(findStorPoolDefinitionDatabyName(storpools, new StorPoolName("DEFAULT")));
+        assertNotNull(findStorPoolDefinitionDatabyName(storpools, new StorPoolName(Controller.DEFAULT_STOR_POOL_NAME)));
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName));
         assertNotNull(findStorPoolDefinitionDatabyName(storpools, spName2));
         assertNotEquals(
