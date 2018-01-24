@@ -289,6 +289,16 @@ public class NodeDataDerbyDriver implements NodeDataDatabaseDriver
                     nodeConDfnList.size()
                 );
 
+                node.setDisklessStorPool(
+                    storPoolDriver.load(
+                        node,
+                        LinStor.getDisklessStorPoolDfn(),
+                        true,
+                        transMgr
+                    )
+                );
+                errorReporter.logTrace("Node's diskless storPool restored %s", getId(node));
+
                 errorReporter.logTrace("Node loaded from DB %s", getId(node));
             }
             catch (AccessDeniedException accessDeniedExc)

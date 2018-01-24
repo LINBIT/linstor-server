@@ -472,6 +472,12 @@ public class NodeData extends BaseTransactionObject implements Node
         storPoolMap.remove(pool.getName());
     }
 
+
+    void setDisklessStorPool(StorPoolData disklessStorPool)
+    {
+        this.disklessStorPool = disklessStorPool;
+    }
+
     @Override
     public int getStorPoolCount()
     {
