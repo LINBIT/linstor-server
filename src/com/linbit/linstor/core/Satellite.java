@@ -329,7 +329,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
                     drbdEventPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
 
                     StateTracker stateTracker = new StateTracker();
-                    drbdEventSvc = new DrbdEventService(stateTracker);
+                    drbdEventSvc = new DrbdEventService(this, stateTracker);
 
                     systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
                 }

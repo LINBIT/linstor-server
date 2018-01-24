@@ -9,12 +9,15 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.SystemServiceStartException;
 import com.linbit.extproc.DaemonHandler;
 import com.linbit.extproc.OutputProxy.Event;
 import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
+import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.core.DrbdStateChange;
+import org.slf4j.event.Level;
 
 public class DrbdEventService implements SystemService, Runnable, DrbdStateTracker
 {
@@ -22,6 +25,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
     public static final String INSTANCE_PREFIX = "DrbdEventService-";
     public static final String SERVICE_INFO = "DrbdEventService";
     private static final AtomicInteger INSTANCE_COUNT = new AtomicInteger(0);
+    public static final String DRBDSETUP_COMMAND = "drbdsetup";
 
     private ServiceName instanceName;
     private boolean started = false;
@@ -34,7 +38,8 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
     private boolean needsReinitialize = false;
 
     private DaemonHandler demonHandler;
-    private StateTracker tracker;
+    private final CoreServices coreSvcs;
+    private final StateTracker tracker;
 
     static
     {
@@ -48,14 +53,18 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
         }
     }
 
-    public DrbdEventService(final StateTracker trackerRef)
+    public DrbdEventService(
+        final CoreServices coreSvcsRef,
+        final StateTracker trackerRef
+    )
     {
         try
         {
             instanceName = new ServiceName(INSTANCE_PREFIX + INSTANCE_COUNT.incrementAndGet());
             eventDeque = new LinkedBlockingDeque<>(10_000);
-            demonHandler = new DaemonHandler(eventDeque, "drbdsetup", "events2", "all");
+            demonHandler = new DaemonHandler(eventDeque, DRBDSETUP_COMMAND, "events2", "all");
             running = false;
+            coreSvcs = coreSvcsRef;
             tracker = trackerRef;
             eventsTracker = new EventsTracker(trackerRef);
         }
@@ -99,14 +108,15 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
             {
                 if (running)
                 {
-                    // FIXME: Error reporting required
-                    exc.printStackTrace();
+                    coreSvcs.getErrorReporter().reportError(new ImplementationError(exc));
                 }
             }
             catch (EventsSourceException exc)
             {
-                // FIXME: Error reporting required
-                exc.printStackTrace();
+                coreSvcs.getErrorReporter().reportError(new ImplementationError(
+                    "Unable to process event line from DRBD",
+                    exc
+                ));
             }
         }
     }
@@ -158,8 +168,14 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateTrack
         }
         catch (IOException exc)
         {
-            // FIXME: Error reporting required
-            exc.printStackTrace();
+            coreSvcs.getErrorReporter().reportError(new SystemServiceStartException(
+                "Unable to listen for DRBD events",
+                "I/O error attempting to start '" + DRBDSETUP_COMMAND + "'",
+                exc.getMessage(),
+                "Ensure that '" + DRBDSETUP_COMMAND + "' is installed",
+                null,
+                exc
+            ));
         }
         synchronized (this)
         {
