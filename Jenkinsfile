@@ -1,12 +1,18 @@
 node {
+    def GRADLE_HOME = tool name: 'gradle', type: 'hudson.plugins.gradle.GradleInstallation'
+
     stage('Checkout')
 
     checkout scm
 
-    stage('Build')
+    stage('Assemble')
 
-    def GRADLE_HOME = tool name: 'gradle', type: 'hudson.plugins.gradle.GradleInstallation'
-    sh "${GRADLE_HOME}/bin/gradle clean build"
+    sh "${GRADLE_HOME}/bin/gradle clean assemble"
+
+    stage('Check')
+
+    // Continue on non-zero exit code from gradle
+    sh "${GRADLE_HOME}/bin/gradle check || true"
 
     stage('JUnit Report')
 
