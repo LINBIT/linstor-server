@@ -156,9 +156,23 @@ public class DerbyDriver implements DatabaseDriver
     @Override
     public void loadAll(TransactionMgr transMgr) throws SQLException
     {
-        List<NodeData> nodeList = nodeDriver.loadAll(transMgr);
-        List<ResourceDefinitionData> rscDfnList = resesourceDefinitionDriver.loadAll(transMgr);
+        // order is somewhat important here, storage pool definitions should be loaded first
+        // and added to the storPoolDfnMap, otherwise the later node loading will not correctly
+        // link its storage pools with the definitions.
+
         List<StorPoolDefinitionData> storPoolDfnList = storPoolDefinitionDriver.loadAll(transMgr);
+        for (StorPoolDefinition curStorPoolDfn : storPoolDfnList)
+        {
+            storPoolDfnMap.put(curStorPoolDfn.getName(), curStorPoolDfn);
+        }
+
+        List<NodeData> nodeList = nodeDriver.loadAll(transMgr);
+        for (Node curNode : nodeList)
+        {
+            nodesMap.put(curNode.getName(), curNode);
+        }
+
+        List<ResourceDefinitionData> rscDfnList = resesourceDefinitionDriver.loadAll(transMgr);
 
         nodeDriver.clearCache();
         resesourceDefinitionDriver.clearCache();
@@ -166,17 +180,9 @@ public class DerbyDriver implements DatabaseDriver
         volumeDriver.clearCache();
         storPoolDriver.clearCache();
 
-        for (Node curNode : nodeList)
-        {
-            nodesMap.put(curNode.getName(), curNode);
-        }
         for (ResourceDefinition curRscDfn : rscDfnList)
         {
             rscDfnMap.put(curRscDfn.getName(), curRscDfn);
-        }
-        for (StorPoolDefinition curStorPoolDfn : storPoolDfnList)
-        {
-            storPoolDfnMap.put(curStorPoolDfn.getName(), curStorPoolDfn);
         }
     }
 
