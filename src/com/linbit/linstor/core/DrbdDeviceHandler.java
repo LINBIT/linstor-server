@@ -177,7 +177,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     createResource(localNode, localNodeName, rscName, rsc, rscDfn, rscState);
 
-                    if (rscDfn.getProps(wrkCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null)
+                    if (rscDfn.getProps(wrkCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null
+                        && rsc.getStateFlags().isUnset(wrkCtx, Resource.RscFlags.DISKLESS))
                     {
                         errLog.logTrace("Requesting primary on %s", rscName.getDisplayName());
                         sendRequestPrimaryResource(
