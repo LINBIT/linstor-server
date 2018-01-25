@@ -16,7 +16,7 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -30,7 +30,7 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
 
     CtrlRscConnectionApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        InterComSerializer interComSerializer,
+        CtrlStltSerializer interComSerializer,
         AccessContext apiCtxRef
     )
     {

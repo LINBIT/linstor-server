@@ -10,7 +10,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -21,12 +21,12 @@ class CtrlFullSyncApiCallHandler
 {
     private ApiCtrlAccessors apiCtrlAccessors;
     private AccessContext apiCtx;
-    private InterComSerializer interComSerializer;
+    private CtrlStltSerializer interComSerializer;
 
     CtrlFullSyncApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef,
-        InterComSerializer interComSerializerRef
+        CtrlStltSerializer interComSerializerRef
     )
     {
         apiCtrlAccessors = apiCtrlAccessorsRef;

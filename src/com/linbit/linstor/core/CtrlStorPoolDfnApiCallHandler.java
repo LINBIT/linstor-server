@@ -2,6 +2,8 @@ package com.linbit.linstor.core;
 
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -11,27 +13,28 @@ import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolDefinition;
+import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentStorPoolNameStr = new ThreadLocal<>();
+    private final CtrlClientSerializer clientComSerializer;
 
     CtrlStorPoolDfnApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        InterComSerializer interComSerializer,
+        CtrlStltSerializer interComSerializer,
+        CtrlClientSerializer clientComSerializerRef,
         AccessContext apiCtxRef
     )
     {
@@ -42,6 +45,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             interComSerializer
         );
         super.setNullOnAutoClose(currentStorPoolNameStr);
+        clientComSerializer = clientComSerializerRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -290,7 +294,7 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        return serializer
+        return clientComSerializer
             .builder(ApiConsts.API_LST_STOR_POOL_DFN, msgId)
             .storPoolDfnList(storPoolDfns)
             .build();

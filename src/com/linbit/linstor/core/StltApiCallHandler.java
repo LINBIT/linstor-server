@@ -15,11 +15,11 @@ import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
-import com.linbit.linstor.api.protobuf.ProtoInterComSerializer;
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -38,7 +38,7 @@ public class StltApiCallHandler
 
     private final AccessContext apiCtx;
 
-    private final InterComSerializer interComSerializer;
+    private final CtrlStltSerializer interComSerializer;
 
     public StltApiCallHandler(Satellite satelliteRef, ApiType apiType, AccessContext apiCtxRef)
     {
@@ -48,7 +48,7 @@ public class StltApiCallHandler
         switch (apiType)
         {
             case PROTOBUF:
-                interComSerializer = new ProtoInterComSerializer(errorReporter, apiCtxRef);
+                interComSerializer = new ProtoCtrlStltSerializer(errorReporter, apiCtxRef);
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + apiType, null);
@@ -60,7 +60,7 @@ public class StltApiCallHandler
         storPoolHandler = new StltStorPoolApiCallHandler(satelliteRef, apiCtx);
     }
 
-    public InterComSerializer getInterComSerializer() {
+    public CtrlStltSerializer getInterComSerializer() {
         return interComSerializer;
     }
 

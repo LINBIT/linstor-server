@@ -3,7 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
@@ -13,12 +13,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 class CtrlAuthenticationApiCallHandler
 {
     private ApiCtrlAccessors apiCtrlAccessors;
-    private InterComSerializer serializer;
+    private CtrlStltSerializer serializer;
     private AccessContext apiCtx;
 
     public CtrlAuthenticationApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        InterComSerializer serializerRef,
+        CtrlStltSerializer serializerRef,
         AccessContext apiCtxRef
     )
     {

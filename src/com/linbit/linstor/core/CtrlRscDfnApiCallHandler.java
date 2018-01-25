@@ -41,17 +41,21 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 
 class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
     private static final AtomicInteger MINOR_GEN = new AtomicInteger(1000); // FIXME use poolAllocator instead
 
+    private final CtrlClientSerializer clientComSerializer;
+
     private final ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
 
     CtrlRscDfnApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        InterComSerializer interComSerializer,
+        CtrlStltSerializer interComSerializer,
+        CtrlClientSerializer clientComSerializerRef,
         AccessContext apiCtxRef
     )
     {
@@ -62,6 +66,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             interComSerializer
         );
         super.setNullOnAutoClose(currentRscNameStr);
+        clientComSerializer = clientComSerializerRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -404,7 +409,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 updateSatellites(resDfn);
 
 
-                byte[] data = serializer
+                byte[] data = internalComSerializer
                     .builder(InternalApiConsts.API_PRIMARY_RSC, msgId)
                     .primaryRequest(rscNameStr, res.getUuid().toString())
                     .build();
@@ -463,7 +468,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        return serializer
+        return clientComSerializer
             .builder(ApiConsts.API_LST_RSC_DFN, msgId)
             .resourceDfnList(rscdfns)
             .build();

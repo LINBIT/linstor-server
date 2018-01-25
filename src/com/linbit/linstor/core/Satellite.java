@@ -24,7 +24,7 @@ import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiType;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.drbdstate.DrbdStateTracker;
@@ -170,7 +170,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     // Lock for major global changes
     public final ReadWriteLock stltConfLock;
 
-    private InterComSerializer interComSerializer;
+    private CtrlStltSerializer interComSerializer;
 
     public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
         throws IOException

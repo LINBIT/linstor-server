@@ -7,8 +7,10 @@ import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiType;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
-import com.linbit.linstor.api.protobuf.ProtoInterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlClientSerializer;
+import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -41,32 +43,45 @@ public class CtrlApiCallHandler
 
         apiCtrlAccessors = apiCtrlAccessorsRef;
         final ErrorReporter errorReporter = apiCtrlAccessors.getErrorReporter();
-        final InterComSerializer interComSrzl;
+        final CtrlStltSerializer ctrlStltComSrzl;
+        final CtrlClientSerializer ctrlClientcomSrzl;
 
         switch (type)
         {
             case PROTOBUF:
-                interComSrzl = new ProtoInterComSerializer(errorReporter, apiCtx);
+                ctrlStltComSrzl = new ProtoCtrlStltSerializer(errorReporter, apiCtx);
+                ctrlClientcomSrzl = new ProtoCtrlClientSerializer(errorReporter, apiCtx);
                 break;
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
         }
-        authApiCallHandler = new CtrlAuthenticationApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
-        fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(apiCtrlAccessors, apiCtx, interComSrzl);
-        nodeApiCallHandler = new CtrlNodeApiCallHandler(apiCtrlAccessors, apiCtx, interComSrzl);
+        authApiCallHandler = new CtrlAuthenticationApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, apiCtx);
+        fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(apiCtrlAccessors, apiCtx, ctrlStltComSrzl);
+        nodeApiCallHandler = new CtrlNodeApiCallHandler(apiCtrlAccessors, apiCtx, ctrlStltComSrzl, ctrlClientcomSrzl);
         rscDfnApiCallHandler = new CtrlRscDfnApiCallHandler(
             apiCtrlAccessors,
-            interComSrzl,
+            ctrlStltComSrzl,
+            ctrlClientcomSrzl,
             apiCtx
         );
-        vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
-        rscApiCallHandler = new CtrlRscApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
+        vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, apiCtx);
+        rscApiCallHandler = new CtrlRscApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, ctrlClientcomSrzl, apiCtx);
         vlmApiCallHandler = new CtrlVlmApiCallHandler(apiCtrlAccessors, apiCtx);
-        storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
-        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
-        nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
-        rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
-        vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(apiCtrlAccessors, interComSrzl, apiCtx);
+        storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(
+            apiCtrlAccessors,
+            ctrlStltComSrzl,
+            ctrlClientcomSrzl,
+            apiCtx
+        );
+        storPoolApiCallHandler = new CtrlStorPoolApiCallHandler(
+            apiCtrlAccessors,
+            ctrlStltComSrzl,
+            ctrlClientcomSrzl,
+            apiCtx
+        );
+        nodeConnApiCallHandler = new CtrlNodeConnectionApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, apiCtx);
+        rscConnApiCallHandler = new CtrlRscConnectionApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, apiCtx);
+        vlmConnApiCallHandler = new CtrlVlmConnectionApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, apiCtx);
     }
 
     public void completeSatelliteAuthentication(Peer peer)

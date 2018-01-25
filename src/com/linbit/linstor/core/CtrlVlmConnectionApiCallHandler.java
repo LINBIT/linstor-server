@@ -16,7 +16,7 @@ import com.linbit.linstor.VolumeConnectionData;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -31,7 +31,7 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
 
     CtrlVlmConnectionApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        InterComSerializer interComSerializer,
+        CtrlStltSerializer interComSerializer,
         AccessContext apiCtxRef
     )
     {

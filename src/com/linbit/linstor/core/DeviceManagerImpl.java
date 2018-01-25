@@ -725,7 +725,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
             byte[] data = stltInstance.getApiCallHandler().getInterComSerializer()
                 .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
-                .notifyResourceDeleted(msgNodeName, msgRscName, rscUuid.toString())
+                .notifyResourceDeleted(msgNodeName, msgRscName, rscUuid)
                 .build();
 
             if (data != null)
@@ -765,7 +765,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
             byte[] data = stltInstance.getApiCallHandler().getInterComSerializer()
                     .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
-                    .notifyVolumeDeleted(msgNodeName, msgRscName, vlm.getVolumeDefinition().getVolumeNumber().value)
+                    .notifyVolumeDeleted(
+                        msgNodeName,
+                        msgRscName,
+                        vlm.getVolumeDefinition().getVolumeNumber().value,
+                        vlm.getUuid()
+                    )
                     .build();
 
             if (data != null)

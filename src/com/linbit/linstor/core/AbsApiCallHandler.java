@@ -30,8 +30,8 @@ import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -68,7 +68,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     protected final ApiCtrlAccessors apiCtrlAccessors;
     protected final AccessContext apiCtx;
-    protected final InterComSerializer serializer;
+    protected final CtrlStltSerializer internalComSerializer;
 
     private ThreadLocal<?>[] customThreadLocals;
 
@@ -77,13 +77,13 @@ abstract class AbsApiCallHandler implements AutoCloseable
         ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef,
         long objMaskRef,
-        InterComSerializer serializerRef
+        CtrlStltSerializer serializerRef
     )
     {
         apiCtrlAccessors = apiCtrlAccessorsRef;
         apiCtx = apiCtxRef;
         objMask = objMaskRef;
-        serializer = serializerRef;
+        internalComSerializer = serializerRef;
     }
 
     public void setNullOnAutoClose(ThreadLocal<?>... customThreadLocals)
@@ -1296,7 +1296,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final void updateSatellites(Node node)
     {
-        if (serializer == null)
+        if (internalComSerializer == null)
         {
             throw new ImplementationError(
                 "UpdateSatellites(Node) was called without providing a valid node serializer",
@@ -1320,7 +1320,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 }
             }
 
-            byte[] changedMessage = serializer
+            byte[] changedMessage = internalComSerializer
                 .builder(InternalApiConsts.API_CHANGED_NODE, 0)
                 .changedNode(
                     node.getUuid(),
@@ -1361,7 +1361,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final void updateSatellites(ResourceDefinition rscDfn)
     {
-        if (serializer == null)
+        if (internalComSerializer == null)
         {
             throw new ImplementationError(
                 "UpdateSatellites(ResourceDefinition) was called without providing a valid resource serializer",
@@ -1381,7 +1381,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 if (connected)
                 {
                     Message rscChangedMsg = peer.createMessage();
-                    byte[] data = serializer
+                    byte[] data = internalComSerializer
                         .builder(InternalApiConsts.API_CHANGED_RSC, 0)
                         .changedResource(
                             currentRsc.getUuid(),
@@ -1423,7 +1423,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final void updateSatellite(StorPool storPool)
     {
-        if (serializer == null)
+        if (internalComSerializer == null)
         {
             throw new ImplementationError(
                 "UpdateSatellites(StorPool) was called without providing a valid StorPool serializer",
@@ -1437,7 +1437,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             if (connected)
             {
                 Message msg = satellitePeer.createMessage();
-                byte[] data = serializer
+                byte[] data = internalComSerializer
                     .builder(InternalApiConsts.API_CHANGED_STOR_POOL, 0)
                     .changedStorPool(
                         storPool.getUuid(),

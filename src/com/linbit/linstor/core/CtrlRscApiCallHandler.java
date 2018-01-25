@@ -48,7 +48,8 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -63,10 +64,12 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentRscName = new ThreadLocal<>();
+    private final CtrlClientSerializer clientComSerializer;
 
     CtrlRscApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
-        InterComSerializer interComSerializer,
+        CtrlStltSerializer interComSerializer,
+        CtrlClientSerializer clientComSerializerRef,
         AccessContext apiCtxRef
     )
     {
@@ -80,6 +83,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             currentNodeName,
             currentRscName
         );
+        clientComSerializer = clientComSerializerRef;
     }
 
     public ApiCallRc createResource(
@@ -680,7 +684,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
             apiCtrlAccessors.getErrorReporter().reportError(accDeniedExc);
         }
 
-        return serializer
+        return clientComSerializer
                 .builder(API_LST_RSC, msgId)
                 .resourceList(rscs, rscStates)
                 .build();
@@ -707,7 +711,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 // TODO: check if the localResource has the same uuid as rscUuid
                 if (rsc != null)
                 {
-                    byte[] data = serializer
+                    byte[] data = internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_RSC, msgId)
                         .resourceData(rsc)
                         .build();

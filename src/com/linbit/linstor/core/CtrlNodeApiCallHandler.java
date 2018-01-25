@@ -40,7 +40,8 @@ import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.interfaces.serializer.InterComSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
@@ -54,14 +55,17 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
 {
     private final ThreadLocal<String> currentNodeName = new ThreadLocal<>();
     private final ThreadLocal<String> currentNodeType = new ThreadLocal<>();
+    private final CtrlClientSerializer clientComSerializer;
 
     CtrlNodeApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
         AccessContext apiCtxRef,
-        InterComSerializer interComSerializer
+        CtrlStltSerializer interComSerializer,
+        CtrlClientSerializer clientComSerializer
     )
     {
         super(apiCtrlAccessorsRef, apiCtxRef, ApiConsts.MASK_NODE, interComSerializer);
+        this.clientComSerializer = clientComSerializer;
     }
 
     ApiCallRc createNode(
@@ -381,7 +385,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             // for now return an empty list.
         }
 
-        return serializer.builder(ApiConsts.API_LST_NODE, msgId).nodeList(nodes).build();
+        return clientComSerializer.builder(ApiConsts.API_LST_NODE, msgId).nodeList(nodes).build();
     }
 
     void respondNode(int msgId, Peer satellite, UUID nodeUuid, String nodeNameStr)
@@ -413,7 +417,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                             }
                         }
                     }
-                    byte[] data = serializer
+                    byte[] data = internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_NODE, msgId)
                         .nodeData(node, otherNodes)
                         .build();
