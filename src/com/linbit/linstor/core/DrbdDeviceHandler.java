@@ -170,8 +170,8 @@ class DrbdDeviceHandler implements DeviceHandler
                 {
                     // set primary
                     errLog.logTrace("Setting resource primary on %s", rscName.getDisplayName());
-                    setResourcePrimary(rsc);
                     ((ResourceData)rsc).unsetCreatePrimary();
+                    setResourcePrimary(rsc);
                 }
                 else
                 {
