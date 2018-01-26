@@ -64,6 +64,20 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         );
     }
 
+    private void updateCurrentKeyNumber(final String key, Integer number)
+    {
+        String intStringOrNull = null;
+        if (number != null)
+        {
+            intStringOrNull = number.toString();
+            currentVariables.get().put(key, intStringOrNull);
+        }
+        else
+        {
+            currentVariables.get().remove(key);
+        }
+    }
+
     ApiCallRc createVolumeDefinitions(
         AccessContext accCtx,
         Peer client,
@@ -112,29 +126,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 {
                     currentVlmDfnApi.set(vlmDfnApi);
 
-                    String intStringOrNull = null;
-                    if (vlmDfnApi.getVolumeNr() != null)
-                    {
-                        intStringOrNull = vlmDfnApi.getVolumeNr().toString();
-                        currentObjRefs.get().put(ApiConsts.KEY_VLM_NR, intStringOrNull);
-                        currentVariables.get().put(ApiConsts.KEY_VLM_NR, intStringOrNull);
-                    }
-                    else
-                    {
-                        currentObjRefs.get().remove(ApiConsts.KEY_VLM_NR);
-                        currentVariables.get().put(ApiConsts.KEY_VLM_NR, intStringOrNull);
-                    }
-
-                    intStringOrNull = null;
-                    if (vlmDfnApi.getMinorNr() != null)
-                    {
-                        intStringOrNull = vlmDfnApi.getMinorNr().toString();
-                        currentVariables.get().put(ApiConsts.KEY_MINOR_NR, intStringOrNull);
-                    }
-                    else
-                    {
-                        currentVariables.get().remove(ApiConsts.KEY_MINOR_NR);
-                    }
+                    updateCurrentKeyNumber(ApiConsts.KEY_VLM_NR, vlmDfnApi.getVolumeNr());
+                    updateCurrentKeyNumber(ApiConsts.KEY_MINOR_NR, vlmDfnApi.getMinorNr());
                 }
                 VolumeNumber volNr = null;
                 MinorNumber minorNr = null;
@@ -144,9 +137,11 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                     rscDfn,
                     apiCtx
                 );
+                updateCurrentKeyNumber(ApiConsts.KEY_VLM_NR, volNr.value);
                 currentVlmNr.set(volNr.value); // set currentVlmNr for exception error reporting
 
                 minorNr = getOrGenerateMinorNr(vlmDfnApi);
+                updateCurrentKeyNumber(ApiConsts.KEY_MINOR_NR, minorNr.value);
 
                 long size = vlmDfnApi.getSize();
 
