@@ -82,7 +82,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 null, // create new transMgr
                 rscNameStr,
                 null // no vlmNr
-            );
+            )
         )
         {
             if (vlmDfnApiList.isEmpty())
@@ -144,6 +144,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                     rscDfn,
                     apiCtx
                 );
+                currentVlmNr.set(volNr.value); // set currentVlmNr for exception error reporting
+
                 minorNr = getOrGenerateMinorNr(vlmDfnApi);
 
                 long size = vlmDfnApi.getSize();
@@ -557,7 +559,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             throw asExc(
                 dataAlreadyExistsExc,
                 String.format(
-                    "A volume definition with the numer %d already exists in resource definition '%s'.",
+                    "A volume definition with the number %d already exists in resource definition '%s'.",
                         currentVlmDfnApi.get().getVolumeNr(),
                         currentRscNameStr.get()
                 ),
