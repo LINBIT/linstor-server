@@ -52,6 +52,7 @@ dependencies
 
     // A higher version could be used with Java 8
     testCompile group: 'org.assertj', name: 'assertj-core', version: '2.9.0'
+    testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
 }
 
 processResources {

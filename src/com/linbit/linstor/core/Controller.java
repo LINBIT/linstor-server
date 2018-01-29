@@ -47,6 +47,7 @@ import com.linbit.linstor.CoreServices;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.ResourceDefinition;
@@ -54,6 +55,8 @@ import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
 import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbdrivers.DerbyDriver;
@@ -90,6 +93,8 @@ import com.linbit.utils.Base64;
 import com.linbit.utils.MathUtils;
 
 import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_CONFIGURATION;
+import com.linbit.linstor.numberpool.BitmapPool;
+import com.linbit.linstor.numberpool.NumberPool;
 
 /**
  * linstor controller prototype
@@ -211,6 +216,9 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     Map<StorPoolName, StorPoolDefinition> storPoolDfnMap;
     ObjectProtection storPoolDfnMapProt;
 
+    final NumberPool tcpPortNrPool;
+    final NumberPool minorNrPool;
+
     private ApiCtrlAccessorImpl apiCtrlAccessors;
 
     private short defaultPeerCount = DEFAULT_PEER_COUNT;
@@ -271,6 +279,10 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         storPoolDfnMap = new TreeMap<>();
         // the corresponding protectionObjects will be initialized in the initialize method
         // after the initialization of the database
+
+        // Initialize the number caches
+        tcpPortNrPool = new BitmapPool(TcpPortNumber.PORT_NR_MAX + 1);
+        minorNrPool = new BitmapPool(MinorNumber.MINOR_NR_MAX + 1);
 
         apiCtrlAccessors = new ApiCtrlAccessorImpl(this);
 
@@ -405,6 +417,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
 
             errorLogRef.logInfo("Core objects load from database is in progress");
             loadCoreObjects(initCtx);
+            initNumberPools(initCtx);
             errorLogRef.logInfo("Core objects load from database completed");
 
             taskScheduleService.addTask(new GarbageCollectorTask());
@@ -1130,6 +1143,38 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 }
                 dbConnPool.returnConnection(transMgr);
             }
+        }
+    }
+
+    /**
+     * Initializes the number allocation caches
+     *
+     * Caller must have write-locked the reconfigurationLock
+     */
+    private void initNumberPools(AccessContext initCtx)
+    {
+        try
+        {
+            for (ResourceDefinition curRscDfn : rscDfnMap.values())
+            {
+                TcpPortNumber portNr = curRscDfn.getPort(initCtx);
+                tcpPortNrPool.allocate(portNr.value);
+                Iterator<VolumeDefinition> vlmIter = curRscDfn.iterateVolumeDfn(initCtx);
+                while (vlmIter.hasNext())
+                {
+                    VolumeDefinition curVlmDfn = vlmIter.next();
+                    MinorNumber minorNr = curVlmDfn.getMinorNr(initCtx);
+                    minorNrPool.allocate(minorNr.value);
+                }
+            }
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ImplementationError(
+                "An " + accExc.getClass().getSimpleName() + " exception was generated " +
+                "during number allocation cache initialization",
+                accExc
+            );
         }
     }
 
