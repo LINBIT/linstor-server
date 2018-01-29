@@ -164,6 +164,8 @@ public abstract class ApiTestBase extends DerbyBase
         nodesMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
         rscDfnMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
         storPoolDfnMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
+
+        LinStor.disklessStorPoolDfn.getObjProt().addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
     }
 
     protected static NetInterfaceApi createNetInterfaceApi(String name, String address)
@@ -251,7 +253,6 @@ public abstract class ApiTestBase extends DerbyBase
         }
 
         assertThat(currentCall.expectedConnectingAttempts)
-            .hasSameSizeAs(testApiCtrlAccessors.stltConnectingAttempts)
-        ;
+            .hasSameSizeAs(testApiCtrlAccessors.stltConnectingAttempts);
     }
 }

@@ -112,7 +112,7 @@ public class RscApiTest extends ApiTestBase
     public void createRscSuccess() throws Exception
     {
         evaluateTest(
-            new CrtRscCall(ApiConsts.CREATED, ApiConsts.WARN_NOT_CONNECTED)
+            new CrtRscCall(ApiConsts.CREATED)
         );
     }
 
