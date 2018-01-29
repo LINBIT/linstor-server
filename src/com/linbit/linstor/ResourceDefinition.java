@@ -32,6 +32,9 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid
 
     public void setPort(AccessContext accCtx, TcpPortNumber port) throws AccessDeniedException, SQLException;
 
+    public int getVolumeDfnCount(AccessContext accCtx)
+        throws AccessDeniedException;
+
     public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
         throws AccessDeniedException;
 

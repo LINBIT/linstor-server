@@ -1,22 +1,13 @@
 package com.linbit.linstor.core;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.ResourceDefinition;
@@ -28,34 +19,48 @@ import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.VolumeDefinition.VlmDfnApi;
 import com.linbit.linstor.VolumeDefinitionData;
 import com.linbit.linstor.VolumeNumber;
+import com.linbit.linstor.VolumeNumberAlloc;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.NumberPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
 
 class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 {
-    private static final AtomicInteger MINOR_GEN = new AtomicInteger(1000); // FIXME use poolAllocator instead
-
     private final CtrlClientSerializer clientComSerializer;
-
     private final ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
+
+    private final NumberPool tcpPortNrPool;
+    private final NumberPool minorNrPool;
 
     CtrlRscDfnApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
+        NumberPool tcpPortNrPoolRef,
+        NumberPool minorNrPoolRef,
         AccessContext apiCtxRef
     )
     {
@@ -67,13 +72,15 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         );
         super.setNullOnAutoClose(currentRscNameStr);
         clientComSerializer = clientComSerializerRef;
+        tcpPortNrPool = tcpPortNrPoolRef;
+        minorNrPool = minorNrPoolRef;
     }
 
     public ApiCallRc createResourceDefinition(
         AccessContext accCtx,
         Peer client,
         String rscNameStr,
-        int portInt,
+        Integer portInt,
         String secret,
         String transportTypeStr,
         Map<String, String> props,
@@ -178,16 +185,30 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         return apiCallRc;
     }
 
-    static MinorNumber getMinor(VlmDfnApi vlmDfnApi) throws ValueOutOfRangeException
+    private MinorNumber getMinor(VlmDfnApi vlmDfnApi) throws ValueOutOfRangeException, LinStorException
     {
-        Integer minor = vlmDfnApi.getMinorNr();
         MinorNumber minorNr;
+        int minorNrInt;
+        Integer minor = vlmDfnApi.getMinorNr();
         if (minor == null)
         {
-            minor = MINOR_GEN.incrementAndGet(); // FIXME: instead of atomicInt use the poolAllocator
+            synchronized (minorNrPool)
+            {
+                try
+                {
+                    minorNrInt = minorNrPool.autoAllocate(
+                        MinorNumber.MINOR_NR_MIN,
+                        MinorNumber.MINOR_NR_MAX
+                    );
+                }
+                catch (ExhaustedPoolException exc)
+                {
+                    throw new LinStorException("Could not found free minor number", exc);
+                }
+            }
             try
             {
-                minorNr = new MinorNumber(minor);
+                minorNr = new MinorNumber(minorNrInt);
             }
             catch (ValueOutOfRangeException valueOutOfRangExc)
             {
@@ -574,7 +595,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private ResourceDefinitionData createRscDfn(
         String rscNameStr,
         String transportTypeStr,
-        int portInt,
+        Integer portInt,
         String secret
     )
     {
@@ -599,6 +620,27 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             }
         }
         ResourceName rscName = asRscName(rscNameStr);
+
+        if (portInt == null)
+        {
+            try
+            {
+                portInt = tcpPortNrPool.autoAllocate(
+                    TcpPortNumber.PORT_NR_MIN,
+                    TcpPortNumber.PORT_NR_MAX
+                );
+            }
+            catch (ExhaustedPoolException exc)
+            {
+                throw asExc(
+                    exc,
+                    "Could not find free tcp port in range " +
+                        TcpPortNumber.PORT_NR_MIN+ " - " + TcpPortNumber.PORT_NR_MAX,
+                    ApiConsts.FAIL_INVLD_RSC_PORT // TODO create new RC for this case
+                );
+            }
+        }
+
         try
         {
             return ResourceDefinitionData.getInstance(
@@ -814,7 +856,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         }
     }
 
-    static VolumeNumber getVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx) throws ValueOutOfRangeException
+    static VolumeNumber getVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
+        throws ValueOutOfRangeException, LinStorException
     {
         Integer vlmNrRaw = vlmDfnApi.getVolumeNr();
         VolumeNumber vlmNr;
@@ -822,27 +865,17 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         {
             try
             {
+                int[] occupiedVlmNrs = new int[rscDfn.getVolumeDfnCount(accCtx)];
                 Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(accCtx);
-                TreeSet<Integer> occupiedVlmNrs = new TreeSet<>();
+                int idx = 0;
                 while (vlmDfnIt.hasNext())
                 {
                     VolumeDefinition vlmDfn = vlmDfnIt.next();
-                    occupiedVlmNrs.add(vlmDfn.getVolumeNumber().value);
+                    occupiedVlmNrs[idx++] = vlmDfn.getVolumeNumber().value;
                 }
-                for (int idx = 0; idx < occupiedVlmNrs.size(); ++idx)
-                {
-                    if (!occupiedVlmNrs.contains(idx))
-                    {
-                        vlmNrRaw = idx;
-                        break;
-                    }
-                }
-                if (vlmNrRaw == null)
-                {
-                    vlmNrRaw = occupiedVlmNrs.size();
-                }
+                Arrays.sort(occupiedVlmNrs);
 
-                vlmNr = new VolumeNumber(vlmNrRaw);
+                return VolumeNumberAlloc.getFreeVolumeNumber(occupiedVlmNrs);
             }
             catch (AccessDeniedException accDeniedExc)
             {
@@ -851,11 +884,12 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     accDeniedExc
                 );
             }
-            catch (ValueOutOfRangeException valueOutOfrangeExc)
+            catch (ExhaustedPoolException exhausedPoolExc)
             {
-                throw new ImplementationError(
-                    "Failed to find an unused valid volume number. Tried: '" + vlmNrRaw + "'",
-                    valueOutOfrangeExc
+                throw new LinStorException(
+                    "No more free volume numbers left in range " + VolumeNumber.VOLUME_NR_MIN + " - " +
+                        VolumeNumber.VOLUME_NR_MAX,
+                    exhausedPoolExc
                 );
             }
         }

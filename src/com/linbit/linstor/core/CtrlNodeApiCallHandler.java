@@ -19,6 +19,7 @@ import com.linbit.ServiceName;
 import com.linbit.TransactionMgr;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.LsIpAddress;
 import com.linbit.linstor.NetInterface;
@@ -39,6 +40,7 @@ import com.linbit.linstor.StorPool;
 import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -68,6 +70,38 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         this.clientComSerializer = clientComSerializer;
     }
 
+    /**
+     * Attempts to create a node by the given parameters. <br />
+     * <br />
+     * In any case an {@link ApiCallRc} is returned. The list of {@link ApiCallRcEntry}s describe the success
+     * or failure of the operation. <br />
+     * <br />
+     * All return codes from this method are masked with {@link ApiConsts#MASK_NODE} and {@link ApiConsts#MASK_CRT}.<br />
+     * <br />
+     * Following return codes can be returned:
+     * <ul>
+     *  <li>
+     *      {@link ApiConsts#FAIL_ACC_DENIED_NODE} when the current access context does have enough privileges to
+     *      change any nodes at all (controller.nodesMapLockProt)
+     *  </li>
+     *  <li>{@link ApiConsts#FAIL_MISSING_NETCOM} when the list of network interface apis is empty</li>
+     *  <li>{@link ApiConsts#FAIL_INVLD_NET_NAME} when the list of network interface apis contains an invalid {@link NetInterfaceName}</li>
+     *  <li>{@link ApiConsts#FAIL_INVLD_NET_ADDR} when the list of network interface apis contains an invalid {@link LsIpAddress}</li>
+     *  <li>{@link ApiConsts#FAIL_MISSING_STLT_CONN} when the list of satellite connection apis is empty</li>
+     *  <li>{@link ApiConsts#FAIL_INVLD_NODE_NAME} when the {@link NodeName} is invalid</li>
+     *  <li>{@link ApiConsts#FAIL_INVLD_NODE_TYPE} when the {@link NodeType} is invalid</li>
+     *  <li>{@link ApiConsts#CREATED} when the node was created successfully </li>
+     * </ul>
+     *
+     * @param accCtx
+     * @param client
+     * @param nodeNameStr
+     * @param nodeTypeStr
+     * @param netIfs
+     * @param satelliteConnectionApis
+     * @param propsMap
+     * @return
+     */
     ApiCallRc createNode(
         AccessContext accCtx,
         Peer client,
@@ -586,9 +620,18 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "create the node '" + nodeName + "'.",
+            // accDeniedExc during creation means that an objectProtection already exists
+            // and gives no permission to the currentAccCtx to access it.
+            // This means we have an existing objProt without corresponding Node --> exception
+            throw asExc(
+                new LinStorException(
+                    "An accessDeniedException occured during creation of a node. That means the " +
+                        "ObjectProtection (of the non-existing Node) denied access to the node. " +
+                        "It is possible that someone has modified the database accordingly. Please " +
+                        "file a bug report otherwise.",
+                    accDeniedExc
+                ),
+                "ObjProt of non-existing Node denies access of creating the Node in question.",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }

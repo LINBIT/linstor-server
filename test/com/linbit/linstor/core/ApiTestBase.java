@@ -1,46 +1,52 @@
 package com.linbit.linstor.core;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.security.SecureRandom;
-import java.util.Map;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.junit.Assert;
 import org.junit.Before;
-import com.linbit.ServiceName;
-import com.linbit.SystemServiceStartException;
 import com.linbit.TransactionMgr;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
+import com.linbit.linstor.MinorNumber;
 import com.linbit.linstor.NetInterface.NetInterfaceApi;
-import com.linbit.linstor.Node;
-import com.linbit.linstor.NodeName;
-import com.linbit.linstor.ResourceDefinition;
-import com.linbit.linstor.ResourceName;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
-import com.linbit.linstor.StorPoolDefinition;
-import com.linbit.linstor.StorPoolName;
+import com.linbit.linstor.TcpPortNumber;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiType;
-import com.linbit.linstor.dbcp.DbConnectionPool;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.api.utils.NetInterfaceApiTestImpl;
+import com.linbit.linstor.api.utils.SatelliteConnectionApiTestImpl;
+import com.linbit.linstor.api.utils.AbsApiCallTester;
+import com.linbit.linstor.api.utils.ApiCtrlAccessorTestImpl;
+import com.linbit.linstor.api.utils.DummyTcpConnector;
 import com.linbit.linstor.netcom.TcpConnector;
-import com.linbit.linstor.netcom.TcpConnectorPeer;
+import com.linbit.linstor.numberpool.BitmapPool;
+import com.linbit.linstor.numberpool.NumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.DerbyBase;
+import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.Role;
+import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.security.TestAccessContextProvider;
 import com.linbit.linstor.testclient.ClientProtobuf;
-import com.linbit.utils.Base64;
 
-public class ApiTestBase extends DerbyBase
+public abstract class ApiTestBase extends DerbyBase
 {
+    protected final static long CRT = ApiConsts.MASK_CRT;
+    protected final static long DEL = ApiConsts.MASK_DEL;
+    protected final static long MOD = ApiConsts.MASK_MOD;
+
     protected static final AccessContext ALICE_ACC_CTX;
     protected static final AccessContext BOB_ACC_CTX;
 
@@ -53,30 +59,30 @@ public class ApiTestBase extends DerbyBase
     /*
      * Controller fields START
      */
-    protected MetaDataApi metaData;
-    protected ObjectProtection nodesMapProt;
-    protected ObjectProtection rscDfnMapProt;
-    protected ObjectProtection storPoolDfnMapProt;
-    protected ReadWriteLock nodesMapLock;
-    protected ReadWriteLock rscDfnMapLock;
-    protected ReadWriteLock storPoolDfnMapLock;
-    protected ReadWriteLock ctrlConfLock;
-    protected Props ctrlConf;
-    protected ObjectProtection ctrlConfProt;
+    protected static MetaDataApi metaData;
+    protected static ObjectProtection nodesMapProt;
+    protected static ObjectProtection rscDfnMapProt;
+    protected static ObjectProtection storPoolDfnMapProt;
+    protected static ReadWriteLock nodesMapLock;
+    protected static ReadWriteLock rscDfnMapLock;
+    protected static ReadWriteLock storPoolDfnMapLock;
+    protected static ReadWriteLock ctrlConfLock;
+    protected static Props ctrlConf;
+    protected static ObjectProtection ctrlConfProt;
     /*
      * Controller fields END
      */
-    private TcpConnector tcpConnector;
+    private static TcpConnector tcpConnector;
+    private static NumberPool minorNrPool = new BitmapPool(MinorNumber.MINOR_NR_MAX + 1);
+    private static NumberPool tcpPortNrPool = new BitmapPool(TcpPortNumber.PORT_NR_MAX + 1);
 
 
-    private ApiCtrlAccessors testApiCtrlAccessors;
-    protected CtrlApiCallHandler apiCallHandler;
+    private static ApiCtrlAccessorTestImpl testApiCtrlAccessors;
+    protected static CtrlApiCallHandler apiCallHandler;
 
     public ApiTestBase()
     {
-        testApiCtrlAccessors = new TestApiCtrlAccessorImpl();
-
-        tcpConnector = new TestTcpConnector();
+        tcpConnector = new DummyTcpConnector();
     }
 
     @Before
@@ -103,87 +109,97 @@ public class ApiTestBase extends DerbyBase
         ctrlConf.setProp(Controller.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, "ignore");
         ctrlConf.setProp(Controller.PROPSCON_KEY_DEFAULT_SSL_CON_SVC, "ignore");
 
-        transMgr.commit();
+        create(transMgr, ALICE_ACC_CTX);
+        create(transMgr, BOB_ACC_CTX);
 
-        apiCallHandler = new CtrlApiCallHandler(testApiCtrlAccessors, ApiType.PROTOBUF, SYS_CTX);
+        transMgr.commit();
+        dbConnPool.returnConnection(transMgr);
+
+        testApiCtrlAccessors = new ApiCtrlAccessorTestImpl(
+            ctrlConfLock,
+            ctrlConf,
+            nodesMap,
+            nodesMapProt,
+            nodesMapLock,
+            rscDfnMap,
+            rscDfnMapProt,
+            rscDfnMapLock,
+            storPoolDfnMap,
+            storPoolDfnMapProt,
+            storPoolDfnMapLock,
+            errorReporter,
+            dbConnPool,
+            tcpConnector,
+            metaData
+        );
+
+        apiCallHandler = new CtrlApiCallHandler(
+            testApiCtrlAccessors,
+            ApiType.PROTOBUF,
+            minorNrPool,
+            tcpPortNrPool,
+            SYS_CTX
+        );
     }
 
-    protected NetInterfaceApi createNetInterfaceApi(String name, String address)
+    private void create(TransactionMgr transMgr, AccessContext accCtx) throws AccessDeniedException, SQLException
+    {
+        Identity.create(SYS_CTX, accCtx.subjectId.name);
+        SecurityType.create(SYS_CTX, accCtx.subjectDomain.name);
+        Role.create(SYS_CTX, accCtx.subjectRole.name);
+
+        {
+            // TODO each line in this block should be called in the corresponding .create method from the lines above
+            insertIdentity(transMgr, accCtx.subjectId.name);
+            insertSecType(transMgr, accCtx.subjectDomain.name);
+            insertRole(transMgr, accCtx.subjectRole.name, accCtx.subjectDomain.name);
+        }
+
+        nodesMapProt.getSecurityType().addRule(SYS_CTX, accCtx.subjectDomain, AccessType.CHANGE);
+        rscDfnMapProt.getSecurityType().addRule(SYS_CTX, accCtx.subjectDomain, AccessType.CHANGE);
+        storPoolDfnMapProt.getSecurityType().addRule(SYS_CTX, accCtx.subjectDomain, AccessType.CHANGE);
+
+        accCtx.subjectDomain.addRule(SYS_CTX, accCtx.subjectDomain, AccessType.CONTROL);
+
+        nodesMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
+        rscDfnMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
+        storPoolDfnMapProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
+    }
+
+    protected static NetInterfaceApi createNetInterfaceApi(String name, String address)
     {
         return createNetInterfaceApi(java.util.UUID.randomUUID(), name, address);
     }
 
-    protected NetInterfaceApi createNetInterfaceApi(final java.util.UUID uuid, final String name, final String address)
+    protected static NetInterfaceApi createNetInterfaceApi(java.util.UUID uuid, String name, String address)
     {
-        return new NetInterfaceApi()
-        {
-            @Override
-            public java.util.UUID getUuid()
-            {
-                return uuid;
-            }
-
-            @Override
-            public String getName()
-            {
-                return name;
-            }
-
-            @Override
-            public String getAddress()
-            {
-                return address;
-            }
-        };
+        return new NetInterfaceApiTestImpl(uuid, name, address);
     }
 
-    protected SatelliteConnectionApi createStltConnApi(String netIfName)
+    protected static SatelliteConnectionApi createStltConnApi(String netIfName)
     {
         return createStltConnApi(netIfName, ApiConsts.DFLT_STLT_PORT_PLAIN, ApiConsts.VAL_NETCOM_TYPE_PLAIN);
     }
 
-    protected SatelliteConnectionApi createStltConnApi(
-        final String netIfName,
-        final Integer port,
-        final String encryptionType
+    protected static SatelliteConnectionApi createStltConnApi(
+        String netIfName,
+        Integer port,
+        String encryptionType
     )
     {
-        return new SatelliteConnectionApi()
-        {
-
-            @Override
-            public String getNetInterfaceName()
-            {
-                return netIfName;
-            }
-
-            @Override
-            public int getPort()
-            {
-                return port;
-            }
-
-            @Override
-            public String getEncryptionType()
-            {
-                return encryptionType;
-            }
-        };
+        return new SatelliteConnectionApiTestImpl(netIfName, port, encryptionType);
     }
 
     public String generateSharedSecret()
     {
-        byte[] randomBytes = new byte[15];
-        new SecureRandom().nextBytes(randomBytes);
-        String secret = Base64.encode(randomBytes);
-        return secret;
+        return testApiCtrlAccessors.generateSharedSecret();
     }
 
-    protected void expectRc(RcEntry rcEntry, long expectedRc)
+    protected void expectRc(long index, long expectedRc, RcEntry rcEntry)
     {
         if (rcEntry.getReturnCode() != expectedRc)
         {
-            Assert.fail("Expected RC " + resolveRC(expectedRc) + " but got " + resolveRC(rcEntry.getReturnCode()));
+            Assert.fail("Expected [" + index + "] RC to be " + resolveRC(expectedRc) + " but got " + resolveRC(rcEntry.getReturnCode()));
         }
     }
 
@@ -196,203 +212,46 @@ public class ApiTestBase extends DerbyBase
         return sb.toString();
     }
 
-    private class TestApiCtrlAccessorImpl implements ApiCtrlAccessors
+    protected RcEntry checkedGet(ApiCallRc rc, int idx)
     {
-        @Override
-        public ReadWriteLock getCtrlConfigLock()
-        {
-            return ctrlConfLock;
-        }
+        assertThat(rc.getEntries().size()).isGreaterThanOrEqualTo(idx + 1);
 
-        @Override
-        public Props getCtrlConf()
-        {
-            return ctrlConf;
-        }
+        return rc.getEntries().get(idx);
+    }
 
-        @Override
-        public Map<NodeName, Node> getNodesMap()
-        {
-            return nodesMap;
-        }
+    protected RcEntry checkedGet(ApiCallRc rc, int idx, int expectedSize)
+    {
+        assertThat(expectedSize).isGreaterThan(idx);
+        assertThat(rc.getEntries()).hasSize(expectedSize);
 
-        @Override
-        public ObjectProtection getNodesMapProtection()
-        {
-            return nodesMapProt;
-        }
+        return rc.getEntries().get(idx);
+    }
 
-        @Override
-        public ReadWriteLock getNodesMapLock()
+    protected void evaluateTestSequence(AbsApiCallTester... callSequence)
+    {
+        for (AbsApiCallTester currentCall : callSequence)
         {
-            return nodesMapLock;
-        }
-
-        @Override
-        public Map<ResourceName, ResourceDefinition> getRscDfnMap()
-        {
-            return rscDfnMap;
-        }
-
-        @Override
-        public ObjectProtection getRscDfnMapProtection()
-        {
-            return rscDfnMapProt;
-        }
-
-        @Override
-        public ReadWriteLock getRscDfnMapLock()
-        {
-            return rscDfnMapLock;
-        }
-
-        @Override
-        public String generateSharedSecret()
-        {
-            return ApiTestBase.this.generateSharedSecret();
-        }
-
-        @Override
-        public short getDefaultPeerCount()
-        {
-            return Controller.DEFAULT_PEER_COUNT;
-        }
-
-        @Override
-        public int getDefaultAlStripes()
-        {
-            return Controller.DEFAULT_AL_STRIPES;
-        }
-
-        @Override
-        public Map<StorPoolName, StorPoolDefinition> getStorPoolDfnMap()
-        {
-            return storPoolDfnMap;
-        }
-
-        @Override
-        public ObjectProtection getStorPoolDfnMapProtection()
-        {
-            return storPoolDfnMapProt;
-        }
-
-        @Override
-        public ReadWriteLock getStorPoolDfnMapLock()
-        {
-            return storPoolDfnMapLock;
-        }
-
-        @Override
-        public String getDefaultStorPoolName()
-        {
-            return Controller.DEFAULT_STOR_POOL_NAME;
-        }
-
-        @Override
-        public ErrorReporter getErrorReporter()
-        {
-            return errorReporter;
-        }
-
-        @Override
-        public DbConnectionPool getDbConnPool()
-        {
-            return dbConnPool;
-        }
-
-        @Override
-        public TcpConnector getNetComConnector(ServiceName dfltConSvcName)
-        {
-            return tcpConnector;
-        }
-
-        @Override
-        public void connectSatellite(InetSocketAddress inetSocketAddress, TcpConnector tcpConnector, Node node)
-        {
-            // sure!   ....  ignore
-        }
-
-        @Override
-        public MetaDataApi getMetaDataApi()
-        {
-            return metaData;
+            evaluateTest(currentCall);
         }
     }
 
-    private class TestTcpConnector implements TcpConnector
+    protected void evaluateTest(AbsApiCallTester currentCall)
     {
-        @Override
-        public void setServiceInstanceName(ServiceName instanceName)
+        testApiCtrlAccessors.stltConnectingAttempts.clear();
+
+        ApiCallRc rc = currentCall.executeApiCall();
+
+        List<Long> expectedRetCodes = currentCall.retCodes;
+        List<RcEntry> actualRetCodes = rc.getEntries();
+
+        assertThat(expectedRetCodes).hasSameSizeAs(actualRetCodes);
+        for (int idx = 0; idx < expectedRetCodes.size(); idx++)
         {
-            // no-op
+            expectRc(idx, expectedRetCodes.get(idx), actualRetCodes.get(idx));
         }
 
-        @Override
-        public void start() throws SystemServiceStartException
-        {
-            // no-op
-        }
-
-        @Override
-        public void shutdown()
-        {
-            // no-op
-        }
-
-        @Override
-        public void awaitShutdown(long timeout) throws InterruptedException
-        {
-            // no-op
-        }
-
-        @Override
-        public ServiceName getServiceName()
-        {
-            return null;
-        }
-
-        @Override
-        public String getServiceInfo()
-        {
-            return null;
-        }
-
-        @Override
-        public ServiceName getInstanceName()
-        {
-            return null;
-        }
-
-        @Override
-        public boolean isStarted()
-        {
-            return false;
-        }
-
-        @Override
-        public Peer connect(InetSocketAddress address, Node node) throws IOException
-        {
-            // no-op
-            return null;
-        }
-
-        @Override
-        public Peer reconnect(Peer peer) throws IOException
-        {
-            // no-op
-            return null;
-        }
-
-        @Override
-        public void closeConnection(TcpConnectorPeer peerObj)
-        {
-            // no-op
-        }
-
-        @Override
-        public void wakeup()
-        {
-            // no-op
-        }
+        assertThat(currentCall.expectedConnectingAttempts)
+            .hasSameSizeAs(testApiCtrlAccessors.stltConnectingAttempts)
+        ;
     }
 }

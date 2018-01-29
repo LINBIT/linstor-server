@@ -14,10 +14,10 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -26,6 +26,7 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Node.NodeFlag;
 import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeId;
+import com.linbit.linstor.NodeIdAlloc;
 import com.linbit.linstor.NodeName;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.Resource;
@@ -309,79 +310,38 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
     private NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
     {
-        // TODO: maybe use the poolAllocator for nodeId
-
-        Iterator<Resource>  rscIterator;
-
         try
         {
-            rscIterator = rscDfn.iterateResource(currentAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw asAccDeniedExc(
-                accDeniedExc,
-                "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-
-        NodeId nodeId = null;
-        Node[] idsInUse = new Node[NodeId.NODE_ID_MAX + 1];
-        int id = -1;
-        while (rscIterator.hasNext())
-        {
-            Resource rsc = rscIterator.next();
-            int val = rsc.getNodeId().value;
-            if (idsInUse[val] != null)
+            Iterator<Resource>  rscIterator;
+            try
             {
-                apiCtrlAccessors.getErrorReporter().reportError(
-                    new ImplementationError(
-                        String.format(
-                            "NodeId '%d' is used for resource '%s' on node '%s' AND '%s'",
-                            val,
-                            rsc.getDefinition().getName().value,
-                            idsInUse[val].getName().value,
-                            rsc.getAssignedNode().getName().value
-                            ),
-                        null
-                    )
+                rscIterator = rscDfn.iterateResource(currentAccCtx.get());
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw asAccDeniedExc(
+                    accDeniedExc,
+                    "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
+                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN
                 );
             }
-            idsInUse[val] = rsc.getAssignedNode();
-        }
+            int[] occupiedIds = new int[rscDfn.getResourceCount()];
+            int idx = 0;
+            while (rscIterator.hasNext())
+            {
+                occupiedIds[idx++] = rscIterator.next().getNodeId().value;
+            }
 
-        for (int idx = 0; idx < idsInUse.length; idx++)
-        {
-            if (idsInUse[idx] == null)
-            {
-                id = idx;
-                break;
-            }
+            return NodeIdAlloc.getFreeNodeId(occupiedIds);
         }
-        try
+        catch (ExhaustedPoolException exhaustedPoolExc)
         {
-            if (id == -1)
-            {
-                apiCtrlAccessors.getErrorReporter().reportError(
-                    new LinStorException(
-                        String.format(
-                            "Could not find valid nodeId. Most likely because the maximum count (%d)" +
-                                " is already reached",
-                            NodeId.NODE_ID_MAX + 1
-                        )
-                    )
-                );
-            }
-            nodeId = new NodeId(id);
-        }
-        catch (ValueOutOfRangeException valueOutOfRangeExc)
-        {
-            apiCtrlAccessors.getErrorReporter().reportError(
-                new ImplementationError("Found nodeId was invalid", valueOutOfRangeExc)
+            throw asExc(
+                exhaustedPoolExc,
+                "An exception occured during generation of a node id.",
+                ApiConsts.FAIL_POOL_EXHAUSTED_NODE_ID
             );
         }
-        return nodeId;
     }
 
     public ApiCallRc modifyResource(

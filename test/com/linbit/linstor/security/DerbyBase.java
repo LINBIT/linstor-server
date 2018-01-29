@@ -1,9 +1,8 @@
 package com.linbit.linstor.security;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_PROPS_CONTAINERS;
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.PROPS_INSTANCE;
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.PROP_KEY;
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.PROP_VALUE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
@@ -27,12 +26,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.utils.UuidUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.rules.TestName;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,8 +39,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 
 public abstract class DerbyBase implements DerbyTestConstants
 {
@@ -85,7 +82,7 @@ public abstract class DerbyBase implements DerbyTestConstants
 
     public DerbyBase()
     {
-        if (!initialized)
+        if (!initialized && dbConnPool != null)
         {
             try
             {
@@ -199,9 +196,14 @@ public abstract class DerbyBase implements DerbyTestConstants
         }
         for (Connection connection : connections)
         {
-            connection.close();
+            dbConnPool.returnConnection(connection);
         }
         connections.clear();
+
+        if (dbConnPool.closeAllThreadLocalConnections(con))
+        {
+            fail("Unclosed database connection");
+        }
     }
 
     protected static Connection getConnection() throws SQLException
@@ -361,6 +363,46 @@ public abstract class DerbyBase implements DerbyTestConstants
         assertTrue(map.isEmpty());
 
         resultSet.close();
+        stmt.close();
+    }
+
+    public static void insertIdentity(TransactionMgr transMgr, IdentityName name) throws SQLException
+    {
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(
+            "INSERT INTO " + TBL_SEC_IDENTITIES +
+            " (" + IDENTITY_NAME + ", " + IDENTITY_DSP_NAME + ") " +
+            " VALUES (?, ?)"
+        );
+        stmt.setString(1, name.value);
+        stmt.setString(2, name.displayValue);
+        stmt.executeUpdate();
+        stmt.close();
+    }
+
+    public static void insertSecType(TransactionMgr transMgr, SecTypeName name) throws SQLException
+    {
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(
+            "INSERT INTO " + TBL_SEC_TYPES +
+            " (" + TYPE_NAME + ", " + TYPE_DSP_NAME + ") " +
+            " VALUES (?, ?)"
+        );
+        stmt.setString(1, name.value);
+        stmt.setString(2, name.displayValue);
+        stmt.executeUpdate();
+        stmt.close();
+    }
+
+    public static void insertRole(TransactionMgr transMgr, RoleName name, SecTypeName domain) throws SQLException
+    {
+        PreparedStatement stmt = transMgr.dbCon.prepareStatement(
+            "INSERT INTO " + TBL_SEC_ROLES +
+            " (" + ROLE_NAME + ", " + ROLE_DSP_NAME + ", " + DOMAIN_NAME + ") " +
+            " VALUES (?, ?, ?)"
+        );
+        stmt.setString(1, name.value);
+        stmt.setString(2, name.displayValue);
+        stmt.setString(3, domain.value);
+        stmt.executeUpdate();
         stmt.close();
     }
 
@@ -613,6 +655,4 @@ public abstract class DerbyBase implements DerbyTestConstants
         stmt.executeUpdate();
         stmt.close();
     }
-
-
 }

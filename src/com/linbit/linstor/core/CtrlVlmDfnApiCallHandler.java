@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TransactionMgr;
@@ -33,6 +34,7 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.NumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -44,9 +46,12 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<VlmDfnApi> currentVlmDfnApi = new ThreadLocal<>();
     private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
 
+    private NumberPool minorNrPool;
+
     CtrlVlmDfnApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessors,
         CtrlStltSerializer interComSerializer,
+        NumberPool minorNrPoolRef,
         AccessContext apiCtx
     )
     {
@@ -62,6 +67,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             currentVlmDfnApi,
             currentVlmNr
         );
+        minorNrPool = minorNrPoolRef;
     }
 
     private void updateCurrentKeyNumber(final String key, Integer number)
@@ -449,34 +455,24 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
         }
         catch (ValueOutOfRangeException valOORangeExc)
         {
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            String errorMessage = String.format(
-                "The specified volume number '%d' is invalid. Volume numbers have to be in range of %d - %d.",
-                vlmDfnApi.getVolumeNr(),
-                VolumeNumber.VOLUME_NR_MIN,
-                VolumeNumber.VOLUME_NR_MAX
-            );
-            entry.setReturnCodeBit(
-                ApiConsts.MASK_VLM_DFN | ApiConsts.MASK_CRT | ApiConsts.FAIL_INVLD_VLM_NR
-            );
-
-            apiCtrlAccessors.getErrorReporter().reportError(
+            throw asExc(
                 valOORangeExc,
-                accCtx,
-                currentClient.get(),
-                errorMessage
+                String.format(
+                    "The specified volume number '%d' is invalid. Volume numbers have to be in range of %d - %d.",
+                    vlmDfnApi.getVolumeNr(),
+                    VolumeNumber.VOLUME_NR_MIN,
+                    VolumeNumber.VOLUME_NR_MAX
+                ),
+                ApiConsts.FAIL_INVLD_VLM_NR
             );
-            entry.setMessageFormat(errorMessage);
-            String vlmNrStr = vlmDfnApi.getVolumeNr() + "";// nullable, DO NOT change to Integer.toString
-            String rscNameStr = rscDfn.getName().displayValue;
-            entry.putVariable(ApiConsts.KEY_VLM_NR, vlmNrStr);
-            entry.putVariable(ApiConsts.KEY_RSC_DFN, rscNameStr);
-            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
-            entry.putObjRef(ApiConsts.KEY_VLM_NR, vlmNrStr);
-
-            currentApiCallRc.get().addEntry(entry);
-
-            throw new ApiCallHandlerFailedException();
+        }
+        catch (LinStorException linStorExc)
+        {
+            throw asExc(
+                linStorExc,
+                "An exception occured during generation of a volume number.",
+                ApiConsts.FAIL_POOL_EXHAUSTED_VLM_NR
+            );
         }
     }
 
@@ -484,37 +480,44 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     {
         try
         {
-            return CtrlRscDfnApiCallHandler.getMinor(vlmDfnApi);
+            Integer minorNrInt = vlmDfnApi.getMinorNr();
+            if (minorNrInt == null)
+            {
+                synchronized (minorNrPool)
+                {
+                    minorNrInt = minorNrPool.autoAllocate(
+                        MinorNumber.MINOR_NR_MIN,
+                        MinorNumber.MINOR_NR_MAX
+                    );
+                }
+            }
+
+            return new MinorNumber(minorNrInt);
         }
         catch (ValueOutOfRangeException valOORangeExc)
         {
-            ApiCallRcEntry entry = new ApiCallRcEntry();
-            String errorMessage = String.format(
-                "The specified minor number '%d' is invalid. Minor numbers have to be in range of %d - %d.",
-                vlmDfnApi.getMinorNr(),
-                MinorNumber.MINOR_NR_MIN,
-                MinorNumber.MINOR_NR_MAX
-            );
-            entry.setReturnCodeBit(
-                ApiConsts.MASK_VLM_DFN | ApiConsts.MASK_CRT | ApiConsts.FAIL_INVLD_MINOR_NR
-            );
-
-            apiCtrlAccessors.getErrorReporter().reportError(
+            throw asExc(
                 valOORangeExc,
-                currentAccCtx.get(),
-                currentClient.get(),
-                errorMessage
+                String.format(
+                    "The specified minor number '%d' is invalid. Minor numbers have to be in range of %d - %d.",
+                    vlmDfnApi.getMinorNr(),
+                    MinorNumber.MINOR_NR_MIN,
+                    MinorNumber.MINOR_NR_MAX
+                ),
+                ApiConsts.FAIL_INVLD_MINOR_NR
             );
-            entry.setMessageFormat(errorMessage);
-            String vlmNrStr = vlmDfnApi.getVolumeNr() + "";// nullable, DO NOT change to Integer.toString
-            String rscNameStr = currentRscNameStr.get();
-            entry.putVariable(ApiConsts.KEY_VLM_NR, vlmNrStr);
-            entry.putVariable(ApiConsts.KEY_RSC_DFN, rscNameStr);
-            entry.putObjRef(ApiConsts.KEY_RSC_DFN, rscNameStr);
-            entry.putObjRef(ApiConsts.KEY_VLM_NR, vlmNrStr);
-
-            currentApiCallRc.get().addEntry(entry);
-            throw new ApiCallHandlerFailedException();
+        }
+        catch (ExhaustedPoolException exhaustedPoolExc)
+        {
+            throw asExc(
+                exhaustedPoolExc,
+                String.format(
+                    "Could not find free minor number in range %d - %d.",
+                    MinorNumber.MINOR_NR_MIN,
+                    MinorNumber.MINOR_NR_MAX
+                ),
+                ApiConsts.FAIL_POOL_EXHAUSTED_MINOR_NR
+            );
         }
     }
 
@@ -575,9 +578,9 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 String.format(
                     "The " + getObjectDescriptionInline() +" has an invalid size of '%d'. " +
                         "Valid sizes range from %d to %d.",
-                        size,
-                        MetaData.DRBD_MIN_NET_kiB,
-                        MetaData.DRBD_MAX_kiB
+                    size,
+                    MetaData.DRBD_MIN_NET_kiB,
+                    MetaData.DRBD_MAX_kiB
                 ),
                 ApiConsts.FAIL_INVLD_VLM_SIZE
             );

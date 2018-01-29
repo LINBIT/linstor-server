@@ -123,9 +123,9 @@ public class ClientProtobuf implements Runnable
         RET_CODES_OBJ = Collections.unmodifiableMap(tmpMap);
 
         tmpMap = new HashMap<>();
-        tmpMap.put(CREATED, "created" );
-        tmpMap.put(DELETED, "deleted");
-        tmpMap.put(MODIFIED, "modified");
+        tmpMap.put(CREATED, "Created" );
+        tmpMap.put(DELETED, "Deleted");
+        tmpMap.put(MODIFIED, "Modified");
 
         tmpMap.put(FAIL_SQL, "FAIL_SQL");
         tmpMap.put(FAIL_SQL_ROLLBACK, "FAIL_SQL_ROLLBACK");

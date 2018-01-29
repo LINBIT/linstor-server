@@ -13,6 +13,7 @@ import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlClientSerializer;
 import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.NumberPool;
 import com.linbit.linstor.security.AccessContext;
 
 import java.util.Collections;
@@ -38,7 +39,13 @@ public class CtrlApiCallHandler
 
     private ApiCtrlAccessors apiCtrlAccessors;
 
-    CtrlApiCallHandler(ApiCtrlAccessors apiCtrlAccessorsRef, ApiType type, AccessContext apiCtx)
+    CtrlApiCallHandler(
+        ApiCtrlAccessors apiCtrlAccessorsRef,
+        ApiType type,
+        NumberPool minorNrPoolRef,
+        NumberPool tcpPortNrPoolRef,
+        AccessContext apiCtx
+    )
     {
 
         apiCtrlAccessors = apiCtrlAccessorsRef;
@@ -62,9 +69,11 @@ public class CtrlApiCallHandler
             apiCtrlAccessors,
             ctrlStltComSrzl,
             ctrlClientcomSrzl,
+            tcpPortNrPoolRef,
+            minorNrPoolRef,
             apiCtx
         );
-        vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, apiCtx);
+        vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, minorNrPoolRef, apiCtx);
         rscApiCallHandler = new CtrlRscApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, ctrlClientcomSrzl, apiCtx);
         vlmApiCallHandler = new CtrlVlmApiCallHandler(apiCtrlAccessors, apiCtx);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(
@@ -263,10 +272,6 @@ public class CtrlApiCallHandler
     )
     {
         ApiCallRc apiCallRc;
-        if (port == null)
-        {
-            port = 8042; // FIXME find free port with poolAllocator
-        }
         if (secret == null || secret.trim().isEmpty())
         {
             secret = apiCtrlAccessors.generateSharedSecret();

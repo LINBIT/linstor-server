@@ -1,151 +1,345 @@
 package com.linbit.linstor.api;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.testng.Assert;
 
-import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.TransactionMgr;
+import com.linbit.linstor.NodeData;
 import com.linbit.linstor.NodeName;
+import com.linbit.linstor.NetInterface.NetInterfaceApi;
+import com.linbit.linstor.Node.NodeType;
 import com.linbit.linstor.SatelliteConnection.SatelliteConnectionApi;
-import com.linbit.linstor.api.ApiCallRc.RcEntry;
+import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
-import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.security.AccessType;
+import junitparams.JUnitParamsRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(Controller.class)
-@PowerMockIgnore({"javax.*", "com.sun.*"})
+@RunWith(JUnitParamsRunner.class)
 public class NodeApiTest extends ApiTestBase
 {
-    public NodeApiTest()
+    private NodeName testNodeName;
+    private NodeType testNodeType;
+    private NodeData testNode;
+
+    public NodeApiTest() throws Exception
     {
         super();
+        testNodeName = new NodeName("TestController");
+        testNodeType = NodeType.CONTROLLER;
+    }
+
+    @Before
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        TransactionMgr transMgr = new TransactionMgr(dbConnPool);
+        testNode = NodeData.getInstance(
+            BOB_ACC_CTX,
+            testNodeName,
+            testNodeType,
+            null,
+            transMgr,
+            true,
+            true
+        );
+        nodesMap.put(testNodeName, testNode);
+        transMgr.commit();
+
+        dbConnPool.returnConnection(transMgr);
     }
 
     @Test
-    public void createSuccessTest() throws Exception
+    public void crtSuccess() throws Exception
     {
-        String nodeName = "TestNode";
-        ApiCallRc rc = apiCallHandler.createNode(
-            PUBLIC_CTX,
-            null, // peer
-            nodeName,
-            ApiConsts.VAL_NODE_TYPE_STLT,
-            Arrays.asList(
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.CREATED)
+                .expectStltConnectingAttempt()
+        );
+    }
+
+    @Test
+    public void crtSecondAccDenied() throws Exception
+    {
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.CREATED)
+                .expectStltConnectingAttempt()
+        );
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.FAIL_EXISTS_NODE)
+        );
+    }
+
+    @Test
+    public void crtFailNodesMapViewAccDenied() throws Exception
+    {
+        TransactionMgr transMgr = new TransactionMgr(getConnection());
+        nodesMapProt.setConnection(transMgr);
+        nodesMapProt.delAclEntry(SYS_CTX, PUBLIC_CTX.subjectRole);
+        nodesMapProt.addAclEntry(SYS_CTX, PUBLIC_CTX.subjectRole, AccessType.VIEW);
+        transMgr.commit();
+        dbConnPool.returnConnection(transMgr);
+
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.FAIL_ACC_DENIED_NODE)
+        );
+    }
+
+    @Test
+    public void crtMissingNetcom() throws Exception
+    {
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.FAIL_MISSING_NETCOM)
+                .clearNetIfApis()
+        );
+    }
+
+    @Test
+    public void crtMissingStltConn() throws Exception
+    {
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.FAIL_MISSING_STLT_CONN)
+                .clearStltApis()
+        );
+    }
+
+    @Test
+    public void crtInvalidNodeName() throws Exception
+    {
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.FAIL_INVLD_NODE_NAME)
+                .setNodeName("Test Node") // blank is not allowed
+        );
+    }
+
+    @Test
+    public void crtInvalidNodeType() throws Exception
+    {
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.FAIL_INVLD_NODE_TYPE)
+                .setNodeType("special satellite")
+        );
+    }
+
+    @Test
+    public void crtInvalidNetIfName() throws Exception
+    {
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.FAIL_INVLD_NET_NAME)
+                .clearNetIfApis()
+                .clearStltApis()
+                .addNetIfApis("invalid net if name", "127.0.0.1")
+                .addStltApis("invalid net if name")
+        );
+    }
+
+    @Test
+    public void crtInvalidNetAddr() throws Exception
+    {
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.FAIL_INVLD_NET_ADDR)
+                .clearNetIfApis()
+                .clearStltApis()
+                .addNetIfApis("net0", "127.0.0.1.42")
+                .addStltApis("net0")
+        );
+        evaluateTest(
+            new CreateNodeCall(ApiConsts.FAIL_INVLD_NET_ADDR)
+                .clearNetIfApis()
+                .clearStltApis()
+                .addNetIfApis("net0", "0::0::0")
+                .addStltApis("net0")
+        );
+    }
+
+    @Test
+    public void modSuccess() throws Exception
+    {
+        evaluateTest(
+            new ModifyNodeCall(ApiConsts.MODIFIED) // nothing to do
+        );
+    }
+
+    @Test
+    public void modDifferentUserAccDenied() throws Exception
+    {
+        evaluateTest(
+            new ModifyNodeCall(ApiConsts.FAIL_ACC_DENIED_NODE)
+                .accCtx(ALICE_ACC_CTX)
+        );
+    }
+
+    private class CreateNodeCall extends AbsApiCallTester
+    {
+        String nodeName;
+        String nodeType;
+        List<NetInterfaceApi> netIfApis;
+        List<SatelliteConnectionApi> stltApis;
+        Map<String, String> props;
+
+        public CreateNodeCall(long expectedRc)
+        {
+            super(
+                PUBLIC_CTX,
+                null, // peer
+                ApiConsts.MASK_NODE,
+                ApiConsts.MASK_CRT,
+                expectedRc
+            );
+
+            nodeName = "TestNode";
+            nodeType = ApiConsts.VAL_NODE_TYPE_STLT;
+            netIfApis = new ArrayList<>();
+            netIfApis.add(
                 createNetInterfaceApi("tcp0", "127.0.0.1")
-            ),
-            Arrays.asList(
+            );
+            stltApis = new ArrayList<>();
+            stltApis.add(
                 createStltConnApi("tcp0")
-            ),
-            null // props
-        );
+            );
+            props = new TreeMap<>();
+        }
 
-        Assert.assertTrue(rc.getEntries().size() == 1);
+        @Override
+        public ApiCallRc executeApiCall()
+        {
+            return apiCallHandler.createNode(
+                accCtx,
+                peer,
+                nodeName,
+                nodeType,
+                netIfApis,
+                stltApis,
+                props
+            );
+        }
 
-        RcEntry rcEntry = rc.getEntries().get(0);
-        Assert.assertEquals(
-            rcEntry.getReturnCode(),
-            ApiConsts.MASK_NODE /*| ApiConsts.MASK_CRT */| ApiConsts.CREATED
-        );
+        public AbsApiCallTester setNodeName(String nodeName)
+        {
+            this.nodeName = nodeName;
+            return this;
+        }
 
-        Assert.assertTrue(nodesMap.size() == 1);
-        Assert.assertNotNull(nodesMap.get(new NodeName(nodeName)));
+        public AbsApiCallTester setNodeType(String nodeType)
+        {
+            this.nodeType = nodeType;
+            return this;
+        }
+
+        public CreateNodeCall clearNetIfApis()
+        {
+            this.netIfApis.clear();
+            return this;
+        }
+
+        public CreateNodeCall addNetIfApis(String name, String address)
+        {
+            this.netIfApis.add(createNetInterfaceApi(name, address));
+            return this;
+        }
+
+        public CreateNodeCall clearStltApis()
+        {
+            this.stltApis.clear();
+            return this;
+        }
+
+        public AbsApiCallTester addStltApis(String name)
+        {
+            this.stltApis.add(createStltConnApi(name));
+            return this;
+        }
+
+        public AbsApiCallTester clearProps()
+        {
+            this.props.clear();
+            return this;
+        }
+
+        public AbsApiCallTester setProps(String key, String value)
+        {
+            this.props.put(key, value);
+            return this;
+        }
     }
 
-    @Test
-    public void createFailMissingNetComTest() throws Exception
+    private class ModifyNodeCall extends AbsApiCallTester
     {
-        ApiCallRc rc = apiCallHandler.createNode(
-            PUBLIC_CTX,
-            null, // peer
-            "TestNode",
-            ApiConsts.VAL_NODE_TYPE_STLT,
-            Arrays.<NetInterfaceApi>asList(), // no netIf
-            Arrays.<SatelliteConnectionApi>asList(), // no satellite connections
-            null // props
-        );
 
-        Assert.assertTrue(rc.getEntries().size() == 1);
+        private java.util.UUID nodeUuid;
+        private String nodeName;
+        private String nodeType;
+        private Map<String, String> overrideProps;
+        private Set<String> deletePropKeys;
 
-        RcEntry rcEntry = rc.getEntries().get(0);
-        expectRc(
-            rcEntry,
-            ApiConsts.MASK_NODE | ApiConsts.MASK_CRT | ApiConsts.FAIL_MISSING_NETCOM
-        );
-    }
+        public ModifyNodeCall(long retCode)
+        {
+            super(
+                BOB_ACC_CTX,
+                null, // peer
+                ApiConsts.MASK_NODE,
+                ApiConsts.MASK_MOD,
+                retCode
+            );
 
-    @Test
-    public void createFailMissingSatelliteConnectionTest() throws Exception
-    {
-        ApiCallRc rc = apiCallHandler.createNode(
-            PUBLIC_CTX,
-            null, // peer
-            "TestNode",
-            ApiConsts.VAL_NODE_TYPE_STLT,
-            Arrays.asList(
-                createNetInterfaceApi("tcp0", "127.0.0.1")
-            ),
-            Arrays.<SatelliteConnectionApi>asList(), // no satellite connections
-            null // props
-        );
+            nodeUuid = null; // default: do not check against uuid
+            nodeName = testNodeName.displayValue;
+            nodeType = null; // default: do not update nodeType
+            overrideProps = new TreeMap<>();
+            deletePropKeys = new TreeSet<>();
+        }
 
-        Assert.assertTrue(rc.getEntries().size() == 1);
+        public AbsApiCallTester nodeUuid(java.util.UUID uuid)
+        {
+            this.nodeUuid = uuid;
+            return this;
+        }
 
-        RcEntry rcEntry = rc.getEntries().get(0);
-        expectRc(
-            rcEntry,
-            ApiConsts.MASK_NODE | ApiConsts.MASK_CRT | ApiConsts.FAIL_MISSING_STLT_CONN
-        );
-    }
+        public AbsApiCallTester nodeName(String nodeName)
+        {
+            this.nodeName = nodeName;
+            return this;
+        }
 
-    @Test
-    public void createFailAlreadyExists() throws Exception
-    {
-        ApiCallRc rc = apiCallHandler.createNode(
-            PUBLIC_CTX,
-            null, // peer
-            "TestNode",
-            ApiConsts.VAL_NODE_TYPE_STLT,
-            Arrays.asList(
-                createNetInterfaceApi("tcp0", "127.0.0.1")
-            ),
-            Arrays.asList(
-                createStltConnApi("tcp0")
-            ),
-            null // props
-        );
+        public AbsApiCallTester nodeType(String nodeType)
+        {
+            this.nodeType = nodeType;
+            return this;
+        }
 
-        Assert.assertTrue(rc.getEntries().size() == 1);
+        public AbsApiCallTester overrideProps(String key, String value)
+        {
+            overrideProps.put(key, value);
+            return this;
+        }
 
-        RcEntry rcEntry = rc.getEntries().get(0);
-        Assert.assertEquals(
-            rcEntry.getReturnCode(),
-            ApiConsts.MASK_NODE /*| ApiConsts.MASK_CRT*/ | ApiConsts.CREATED
-        );
+        public AbsApiCallTester deleteProp(String key)
+        {
+            deletePropKeys.add(key);
+            return this;
+        }
 
-        rc = apiCallHandler.createNode(
-            PUBLIC_CTX,
-            null, // peer
-            "TestNode",
-            ApiConsts.VAL_NODE_TYPE_STLT,
-            Arrays.asList(
-                createNetInterfaceApi("tcp0", "127.0.0.1")
-            ),
-            Arrays.asList(
-                createStltConnApi("tcp0")
-            ),
-            null // props
-        );
+        @Override
+        public ApiCallRc executeApiCall()
+        {
+            return apiCallHandler.modifyNode(
+                accCtx,
+                peer,
+                nodeUuid,
+                nodeName,
+                nodeType,
+                overrideProps,
+                deletePropKeys
+            );
+        }
 
-        Assert.assertTrue(rc.getEntries().size() == 1);
-
-        rcEntry = rc.getEntries().get(0);
-        Assert.assertEquals(
-            rcEntry.getReturnCode(),
-            ApiConsts.MASK_NODE | ApiConsts.MASK_CRT | ApiConsts.FAIL_EXISTS_NODE
-        );
     }
 }

@@ -1094,14 +1094,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
 
     /**
      * Adds a success {@link ApiCallRcEntry} to the current {@link ApiCallRc} and reports
-     * to the controller's {@link ErrorReporter}. <br />
-     * <br />
-     * This method uses a special masking. Instead of using the MASK_CRT, MASK_MOD or MASK_DEL
-     * from {@link ApiConsts}, it uses the special {@link ApiConsts#CREATED}, {@link ApiConsts#MODIFIED}
-     * and {@link ApiConsts#DELETED} combined with the object mask (Node, RscDfn, ...) <br />
-     * This combination is the same as stated in the {@link ApiConsts#RC_NODE_CREATED} for example.
-     *
-     *
+     * to the controller's {@link ErrorReporter}.
      * @param msg
      */
     protected final void reportSuccess(String msg, String details)
@@ -1114,13 +1107,13 @@ abstract class AbsApiCallHandler implements AutoCloseable
             switch (currentApiCallType.get())
             {
                 case CREATE:
-                    baseRetCode = ApiConsts.CREATED;
+                    baseRetCode = ApiConsts.MASK_CRT | ApiConsts.CREATED;
                     break;
                 case DELETE:
-                    baseRetCode = ApiConsts.DELETED;
+                    baseRetCode = ApiConsts.MASK_DEL | ApiConsts.DELETED;
                     break;
                 case MODIFY:
-                    baseRetCode = ApiConsts.MODIFIED;
+                    baseRetCode = ApiConsts.MASK_MOD | ApiConsts.MODIFIED;
                     break;
                 default:
                     throw new ImplementationError(

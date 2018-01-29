@@ -297,7 +297,13 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                     Privilege.PRIV_OBJ_CONTROL,
                     Privilege.PRIV_MAC_OVRD
                 );
-                apiCallHandler = new CtrlApiCallHandler(apiCtrlAccessors, apiType, apiCtx);
+                apiCallHandler = new CtrlApiCallHandler(
+                    apiCtrlAccessors,
+                    apiType,
+                    minorNrPool,
+                    tcpPortNrPool,
+                    apiCtx
+                );
             }
             catch (AccessDeniedException accDeniedExc)
             {

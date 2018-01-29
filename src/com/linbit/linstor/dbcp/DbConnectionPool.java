@@ -12,6 +12,7 @@ import com.linbit.linstor.ControllerDatabase;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import org.apache.commons.dbcp2.ConnectionFactory;
@@ -163,23 +164,29 @@ public class DbConnectionPool implements ControllerDatabase
 
     /**
      * Closes all db connections the calling thread had not closed yet.
+     *
+     * @param skipConnections These connections will not be closed. Mainly used for cleaning up after tests
      * @return True if there was at least one open connection, false otherwise.
      */
-    public boolean closeAllThreadLocalConnections()
+    public boolean closeAllThreadLocalConnections(Connection... skipConnections)
     {
+        List<Connection> skipConnList = Arrays.asList(skipConnections);
         boolean ret = false;
         List<Connection> list = threadLocalConnections.get();
         if (list != null)
         {
             for (Connection conn : list)
             {
-                ret = true;
-                try
+                if (!skipConnList.contains(conn))
                 {
-                    conn.close();
-                }
-                catch (SQLException e)
-                {
+                    try
+                    {
+                        ret |= !conn.isClosed();
+                        conn.close();
+                    }
+                    catch (SQLException e)
+                    {
+                    }
                 }
             }
             list.clear();

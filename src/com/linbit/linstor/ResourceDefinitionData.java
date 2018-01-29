@@ -276,6 +276,14 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
+    public int getVolumeDfnCount(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return volumeMap.size();
+    }
+
+    @Override
     public VolumeDefinition getVolumeDfn(AccessContext accCtx, VolumeNumber volNr)
         throws AccessDeniedException
     {
