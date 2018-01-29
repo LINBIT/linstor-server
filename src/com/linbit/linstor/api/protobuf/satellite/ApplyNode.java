@@ -63,7 +63,10 @@ public class ApplyNode extends BaseProtoApiCall
             extractNetIfs(nodeData.getNodeNetIfsList()),
             extractNodeConns(nodeData.getNodeConnsList()),
             BaseProtoApiCall.asMap(nodeData.getNodePropsList()),
-            UUID.fromString(nodeData.getNodeDisklessStorPoolUuid())
+            true, // we just assume that we are connected to the other satellite / controller
+            UUID.fromString(nodeData.getNodeDisklessStorPoolUuid()),
+            nodeData.getFullSyncId(),
+            nodeData.getUpdateId()
         );
     }
 

@@ -9,6 +9,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.proto.javainternal.MsgIntExpectedFullSyncIdOuterClass.MsgIntExpectedFullSyncId;
 import com.linbit.linstor.security.AccessContext;
 
 @ProtobufApiCall
@@ -44,9 +45,11 @@ public class IntAuthAccept extends BaseProtoApiCall
     )
         throws IOException
     {
+        MsgIntExpectedFullSyncId msgIntExpectedFullSyncId = MsgIntExpectedFullSyncId.parseDelimitedFrom(msgDataIn);
+        long expectedFullSyncId = msgIntExpectedFullSyncId.getExpectedFullSyncId();
         client.setAuthenticated(true);
         errorReporter.logDebug("Satellite '" + client.getNode().getName() + "' authenticated");
 
-        controller.getApiCallHandler().sendFullSync(client);
+        controller.getApiCallHandler().sendFullSync(client, expectedFullSyncId);
     }
 }

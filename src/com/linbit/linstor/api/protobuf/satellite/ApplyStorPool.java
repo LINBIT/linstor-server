@@ -43,20 +43,27 @@ public class ApplyStorPool extends BaseProtoApiCall
     {
         MsgIntStorPoolData storPoolData = MsgIntStorPoolData.parseDelimitedFrom(msgDataIn);
 
-        StorPoolPojo storPoolRaw = asStorPoolPojo(storPoolData);
-        satellite.getApiCallHandler().deployStorPool(storPoolRaw);
+        StorPoolPojo storPoolRaw = asStorPoolPojo(
+            storPoolData,
+            satellite.getLocalNode().getName().displayValue
+        );
+        satellite.getApiCallHandler().applyStorPoolChanges(storPoolRaw);
     }
 
-    static StorPoolPojo asStorPoolPojo(MsgIntStorPoolData storPoolData)
+    static StorPoolPojo asStorPoolPojo(MsgIntStorPoolData storPoolData, String nodeName)
     {
         StorPoolPojo storPoolRaw = new StorPoolPojo(
             UUID.fromString(storPoolData.getStorPoolUuid()),
             UUID.fromString(storPoolData.getNodeUuid()),
+            nodeName,
             storPoolData.getStorPoolName(),
             UUID.fromString(storPoolData.getStorPoolDfnUuid()),
             storPoolData.getDriver(),
             asMap(storPoolData.getStorPoolPropsList()),
-            asMap(storPoolData.getStorPoolDfnPropsList())
+            asMap(storPoolData.getStorPoolDfnPropsList()),
+            null,
+            storPoolData.getFullSyncId(),
+            storPoolData.getUpdateId()
         );
         return storPoolRaw;
     }

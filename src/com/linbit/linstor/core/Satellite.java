@@ -67,6 +67,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -172,6 +173,11 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
 
     private CtrlStltSerializer interComSerializer;
 
+    private final AtomicLong fullSyncId;
+    private boolean currentFullSyncApplied = false;
+
+    private final AtomicLong awaitedUpdateId;
+
     public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
         throws IOException
     {
@@ -210,6 +216,10 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         // initialize noop databases drivers (needed for shutdownProt)
         securityDbDriver = new EmptySecurityDbDriver(sysCtx);
         persistenceDbDriver = new SatelliteDbDriver(sysCtx, nodesMap, rscDfnMap, storPoolDfnMap);
+
+        fullSyncId = new AtomicLong(2); // just don't start with 0 making sure the controller
+                                        // mirrors our fullSyncId
+        awaitedUpdateId = new AtomicLong(0);
 
         try
         {
@@ -878,5 +888,55 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
             nodesMapLock.readLock().unlock();
             reconfigurationLock.readLock().unlock();
         }
+    }
+
+    public long getCurrentFullSyncId()
+    {
+        return fullSyncId.get();
+    }
+
+    public long getCurrentAwaitedUpdateId()
+    {
+        return awaitedUpdateId.get();
+    }
+
+    public void awaitedUpdateApplied()
+    {
+        awaitedUpdateId.incrementAndGet();
+    }
+
+    public long getNextFullSyncId()
+    {
+        long fullSyncId;
+        try
+        {
+            reconfigurationLock.writeLock().lock();
+            nodesMapLock.writeLock().lock();
+            rscDfnMapLock.writeLock().lock();
+            storPoolDfnMapLock.writeLock().lock();
+
+            fullSyncId = this.fullSyncId.incrementAndGet();
+
+            awaitedUpdateId.set(0);
+            currentFullSyncApplied = false;
+        }
+        finally
+        {
+            storPoolDfnMapLock.writeLock().unlock();
+            rscDfnMapLock.writeLock().unlock();
+            nodesMapLock.writeLock().unlock();
+            reconfigurationLock.writeLock().unlock();
+        }
+        return fullSyncId;
+    }
+
+    public void setFullSyncApplied()
+    {
+        currentFullSyncApplied = true;
+    }
+
+    public boolean isCurrentFullSyncApplied()
+    {
+        return currentFullSyncApplied;
     }
 }

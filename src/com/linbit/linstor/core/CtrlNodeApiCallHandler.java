@@ -405,8 +405,11 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             apiCtrlAccessors.getNodesMapProtection().requireAccess(accCtx, AccessType.VIEW);// accDeniedExc1
             for (Node n : apiCtrlAccessors.getNodesMap().values())
             {
-                try {
-                    nodes.add(n.getApiData(accCtx));
+                try
+                {
+                    nodes.add(n.getApiData(accCtx, null, null));
+                    // fullSyncId and updateId null, as they are not going to be serialized by
+                    // .nodeList anyways
                 }
                 catch (AccessDeniedException accDeniedExc)
                 {
@@ -451,9 +454,11 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                             }
                         }
                     }
+                    long fullSyncTimestamp = satellite.getFullSyncTimestamp();
+                    long serializerId = satellite.getNextSerializerId();
                     byte[] data = internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_NODE, msgId)
-                        .nodeData(node, otherNodes)
+                        .nodeData(node, otherNodes, fullSyncTimestamp, serializerId)
                         .build();
                     Message message = satellite.createMessage();
                     message.setData(data);

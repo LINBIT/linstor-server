@@ -358,22 +358,26 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public StorPoolApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+    public StorPoolApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+        throws AccessDeniedException
+    {
         ArrayList<Volume.VlmApi> vlms = new ArrayList<>();
         for (Volume vlm : getVolumes(accCtx))
         {
             vlms.add(vlm.getApiData(accCtx));
         }
         return new StorPoolPojo(
-                getUuid(),
-                getNode().getUuid(),
-                node.getName().getDisplayName(),
-                getName().getDisplayName(),
-                getDefinition(accCtx).getUuid(),
-                getDriverName(),
-                getProps(accCtx).map(),
-                getDefinition(accCtx).getProps(accCtx).map(),
-                vlms
+            getUuid(),
+            getNode().getUuid(),
+            node.getName().getDisplayName(),
+            getName().getDisplayName(),
+            getDefinition(accCtx).getUuid(),
+            getDriverName(),
+            getProps(accCtx).map(),
+            getDefinition(accCtx).getProps(accCtx).map(),
+            vlms,
+            fullSyncId,
+            updateId
         );
     }
 

@@ -20,18 +20,22 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     private final Map<String, String> localRscProps;
     private final List<Volume.VlmApi> localVlms;
     private final List<OtherRscPojo> otherRscs;
+    private final Long fullSyncId;
+    private final Long updateId;
 
     public RscPojo(
-        String rscName,
-        String nodeName,
-        UUID nodeUuid,
-        ResourceDefinition.RscDfnApi rscDefinition,
-        UUID localRscUuid,
-        long localRscFlags,
-        int localRscNodeId,
-        Map<String, String> localRscProps,
-        List<Volume.VlmApi> localVlms,
-        List<OtherRscPojo> otherRscList
+        final String rscName,
+        final String nodeName,
+        final UUID nodeUuid,
+        final ResourceDefinition.RscDfnApi rscDefinition,
+        final UUID localRscUuid,
+        final long localRscFlags,
+        final int localRscNodeId,
+        final Map<String, String> localRscProps,
+        final List<Volume.VlmApi> localVlms,
+        final List<OtherRscPojo> otherRscList,
+        final Long fullSyncId,
+        final Long updateId
     )
     {
         this.rscName = rscName;
@@ -44,6 +48,8 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
         this.localRscProps = localRscProps;
         this.localVlms = localVlms;
         this.otherRscs = otherRscList;
+        this.fullSyncId = fullSyncId;
+        this.updateId = updateId;
     }
 
     @Override
@@ -150,6 +156,16 @@ public class RscPojo implements Comparable<RscPojo>, Resource.RscApi
     public List<OtherRscPojo> getOtherRscList()
     {
         return otherRscs;
+    }
+
+    public long getFullSyncId()
+    {
+        return fullSyncId;
+    }
+
+    public long getUpdateId()
+    {
+        return updateId;
     }
 
     @Override

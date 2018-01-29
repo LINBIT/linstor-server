@@ -99,7 +99,7 @@ public class CtrlApiCallHandler
         authApiCallHandler.completeAuthentication(peer);
     }
 
-    public void sendFullSync(Peer client)
+    public void sendFullSync(Peer client, long expectedFullSyncId)
     {
         try
         {
@@ -107,10 +107,14 @@ public class CtrlApiCallHandler
             apiCtrlAccessors.getRscDfnMapLock().readLock().lock();
             apiCtrlAccessors.getStorPoolDfnMapLock().readLock().lock();
 
-            fullSyncApiCallHandler.sendFullSync(client);
+            client.getSerializerLock().writeLock().lock();
+
+            fullSyncApiCallHandler.sendFullSync(client, expectedFullSyncId);
         }
         finally
         {
+            client.getSerializerLock().writeLock().unlock();
+
             apiCtrlAccessors.getNodesMapLock().readLock().unlock();
             apiCtrlAccessors.getRscDfnMapLock().readLock().unlock();
             apiCtrlAccessors.getStorPoolDfnMapLock().readLock().unlock();

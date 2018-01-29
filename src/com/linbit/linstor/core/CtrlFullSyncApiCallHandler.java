@@ -34,7 +34,7 @@ class CtrlFullSyncApiCallHandler
         interComSerializer = interComSerializerRef;
     }
 
-    void sendFullSync(Peer satellite)
+    void sendFullSync(Peer satellite, long expectedFullSyncId)
     {
         try
         {
@@ -67,9 +67,11 @@ class CtrlFullSyncApiCallHandler
                 }
             }
 
+            satellite.setFullSyncTimestamp(expectedFullSyncId);
+
             byte[] data = interComSerializer
                 .builder(InternalApiConsts.API_FULL_SYNC_DATA, 0)
-                .fullSync(nodes, storPools, rscs)
+                .fullSync(nodes, storPools, rscs, expectedFullSyncId, -1) // fullSync has -1 as updateId
                 .build();
             apiCtrlAccessors.getErrorReporter().logTrace("Sending full sync to satellite '" + satellite.getId() + "'.");
             Message msg = satellite.createMessage();

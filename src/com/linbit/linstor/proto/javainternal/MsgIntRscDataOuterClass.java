@@ -363,6 +363,24 @@ public final class MsgIntRscDataOuterClass {
      */
     com.google.protobuf.ByteString
         getRscDfnTransportTypeBytes();
+
+    /**
+     * <pre>
+     * FullSync id
+     * </pre>
+     *
+     * <code>sint64 full_sync_id = 15;</code>
+     */
+    long getFullSyncId();
+
+    /**
+     * <pre>
+     * Update id
+     * </pre>
+     *
+     * <code>sint64 update_id = 16;</code>
+     */
+    long getUpdateId();
   }
   /**
    * <pre>
@@ -394,6 +412,8 @@ public final class MsgIntRscDataOuterClass {
       localVolumes_ = java.util.Collections.emptyList();
       otherResources_ = java.util.Collections.emptyList();
       rscDfnTransportType_ = "";
+      fullSyncId_ = 0L;
+      updateId_ = 0L;
     }
 
     @java.lang.Override
@@ -514,6 +534,16 @@ public final class MsgIntRscDataOuterClass {
               java.lang.String s = input.readStringRequireUtf8();
 
               rscDfnTransportType_ = s;
+              break;
+            }
+            case 120: {
+
+              fullSyncId_ = input.readSInt64();
+              break;
+            }
+            case 128: {
+
+              updateId_ = input.readSInt64();
               break;
             }
           }
@@ -1092,6 +1122,32 @@ public final class MsgIntRscDataOuterClass {
       }
     }
 
+    public static final int FULL_SYNC_ID_FIELD_NUMBER = 15;
+    private long fullSyncId_;
+    /**
+     * <pre>
+     * FullSync id
+     * </pre>
+     *
+     * <code>sint64 full_sync_id = 15;</code>
+     */
+    public long getFullSyncId() {
+      return fullSyncId_;
+    }
+
+    public static final int UPDATE_ID_FIELD_NUMBER = 16;
+    private long updateId_;
+    /**
+     * <pre>
+     * Update id
+     * </pre>
+     *
+     * <code>sint64 update_id = 16;</code>
+     */
+    public long getUpdateId() {
+      return updateId_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -1176,6 +1232,12 @@ public final class MsgIntRscDataOuterClass {
       if (!getRscDfnTransportTypeBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 14, rscDfnTransportType_);
       }
+      if (fullSyncId_ != 0L) {
+        output.writeSInt64(15, fullSyncId_);
+      }
+      if (updateId_ != 0L) {
+        output.writeSInt64(16, updateId_);
+      }
     }
 
     public int getSerializedSize() {
@@ -1234,6 +1296,14 @@ public final class MsgIntRscDataOuterClass {
       if (!getRscDfnTransportTypeBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(14, rscDfnTransportType_);
       }
+      if (fullSyncId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(15, fullSyncId_);
+      }
+      if (updateId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(16, updateId_);
+      }
       memoizedSize = size;
       return size;
     }
@@ -1278,6 +1348,10 @@ public final class MsgIntRscDataOuterClass {
           .equals(other.getOtherResourcesList());
       result = result && getRscDfnTransportType()
           .equals(other.getRscDfnTransportType());
+      result = result && (getFullSyncId()
+          == other.getFullSyncId());
+      result = result && (getUpdateId()
+          == other.getUpdateId());
       return result;
     }
 
@@ -1328,6 +1402,12 @@ public final class MsgIntRscDataOuterClass {
       }
       hash = (37 * hash) + RSC_DFN_TRANSPORT_TYPE_FIELD_NUMBER;
       hash = (53 * hash) + getRscDfnTransportType().hashCode();
+      hash = (37 * hash) + FULL_SYNC_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getFullSyncId());
+      hash = (37 * hash) + UPDATE_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getUpdateId());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -1503,6 +1583,10 @@ public final class MsgIntRscDataOuterClass {
         }
         rscDfnTransportType_ = "";
 
+        fullSyncId_ = 0L;
+
+        updateId_ = 0L;
+
         return this;
       }
 
@@ -1581,6 +1665,8 @@ public final class MsgIntRscDataOuterClass {
           result.otherResources_ = otherResourcesBuilder_.build();
         }
         result.rscDfnTransportType_ = rscDfnTransportType_;
+        result.fullSyncId_ = fullSyncId_;
+        result.updateId_ = updateId_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1784,6 +1870,12 @@ public final class MsgIntRscDataOuterClass {
         if (!other.getRscDfnTransportType().isEmpty()) {
           rscDfnTransportType_ = other.rscDfnTransportType_;
           onChanged();
+        }
+        if (other.getFullSyncId() != 0L) {
+          setFullSyncId(other.getFullSyncId());
+        }
+        if (other.getUpdateId() != 0L) {
+          setUpdateId(other.getUpdateId());
         }
         onChanged();
         return this;
@@ -3993,6 +4085,82 @@ public final class MsgIntRscDataOuterClass {
         onChanged();
         return this;
       }
+
+      private long fullSyncId_ ;
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 15;</code>
+       */
+      public long getFullSyncId() {
+        return fullSyncId_;
+      }
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 15;</code>
+       */
+      public Builder setFullSyncId(long value) {
+        
+        fullSyncId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 15;</code>
+       */
+      public Builder clearFullSyncId() {
+        
+        fullSyncId_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long updateId_ ;
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 16;</code>
+       */
+      public long getUpdateId() {
+        return updateId_;
+      }
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 16;</code>
+       */
+      public Builder setUpdateId(long value) {
+        
+        updateId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 16;</code>
+       */
+      public Builder clearUpdateId() {
+        
+        updateId_ = 0L;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -6105,7 +6273,7 @@ public final class MsgIntRscDataOuterClass {
       "\022%com.linbit.linstor.proto.javainternal\032" +
       "\033proto/LinStorMapEntry.proto\032\020proto/Node" +
       ".proto\032\022proto/VlmDfn.proto\032\017proto/Vlm.pr" +
-      "oto\"\254\004\n\rMsgIntRscData\022\020\n\010rsc_name\030\001 \001(\t\022" +
+      "oto\"\325\004\n\rMsgIntRscData\022\020\n\010rsc_name\030\001 \001(\t\022" +
       "\024\n\014rsc_dfn_uuid\030\002 \001(\t\022\024\n\014rsc_dfn_port\030\003 " +
       "\001(\021\022\025\n\rrsc_dfn_flags\030\004 \001(\022\022\026\n\016rsc_dfn_se" +
       "cret\030\005 \001(\t\022@\n\rrsc_dfn_props\030\006 \003(\0132).com." +
@@ -6119,13 +6287,14 @@ public final class MsgIntRscDataOuterClass {
       "to.Vlm\022R\n\017other_resources\030\r \003(\01329.com.li" +
       "nbit.linstor.proto.javainternal.MsgIntOt" +
       "herRscData\022\036\n\026rsc_dfn_transport_type\030\016 \001" +
-      "(\t\"\201\002\n\022MsgIntOtherRscData\022,\n\004node\030\001 \001(\0132" +
-      "\036.com.linbit.linstor.proto.Node\022\022\n\nnode_",
-      "flags\030\004 \001(\022\022\020\n\010rsc_uuid\030\006 \001(\t\022\023\n\013rsc_nod" +
-      "e_id\030\007 \001(\021\022\021\n\trsc_flags\030\010 \001(\022\022<\n\trsc_pro" +
-      "ps\030\t \003(\0132).com.linbit.linstor.proto.LinS" +
-      "torMapEntry\0221\n\nlocal_vlms\030\n \003(\0132\035.com.li" +
-      "nbit.linstor.proto.Vlmb\006proto3"
+      "(\t\022\024\n\014full_sync_id\030\017 \001(\022\022\021\n\tupdate_id\030\020 " +
+      "\001(\022\"\201\002\n\022MsgIntOtherRscData\022,\n\004node\030\001 \001(\013",
+      "2\036.com.linbit.linstor.proto.Node\022\022\n\nnode" +
+      "_flags\030\004 \001(\022\022\020\n\010rsc_uuid\030\006 \001(\t\022\023\n\013rsc_no" +
+      "de_id\030\007 \001(\021\022\021\n\trsc_flags\030\010 \001(\022\022<\n\trsc_pr" +
+      "ops\030\t \003(\0132).com.linbit.linstor.proto.Lin" +
+      "StorMapEntry\0221\n\nlocal_vlms\030\n \003(\0132\035.com.l" +
+      "inbit.linstor.proto.Vlmb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -6148,7 +6317,7 @@ public final class MsgIntRscDataOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntRscData_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntRscData_descriptor,
-        new java.lang.String[] { "RscName", "RscDfnUuid", "RscDfnPort", "RscDfnFlags", "RscDfnSecret", "RscDfnProps", "LocalRscUuid", "LocalRscFlags", "LocalRscNodeId", "LocalRscProps", "VlmDfns", "LocalVolumes", "OtherResources", "RscDfnTransportType", });
+        new java.lang.String[] { "RscName", "RscDfnUuid", "RscDfnPort", "RscDfnFlags", "RscDfnSecret", "RscDfnProps", "LocalRscUuid", "LocalRscFlags", "LocalRscNodeId", "LocalRscProps", "VlmDfns", "LocalVolumes", "OtherResources", "RscDfnTransportType", "FullSyncId", "UpdateId", });
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntOtherRscData_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntOtherRscData_fieldAccessorTable = new

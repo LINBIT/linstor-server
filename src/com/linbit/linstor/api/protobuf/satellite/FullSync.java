@@ -55,7 +55,12 @@ public class FullSync extends BaseProtoApiCall
         Set<StorPoolPojo> storPools = new TreeSet<>(asStorPool(fullSync.getStorPoolsList()));
         Set<RscPojo> resources = new TreeSet<>(asResources(fullSync.getRscsList()));
 
-        satellite.getApiCallHandler().applyFullSync(nodes, storPools, resources);
+        satellite.getApiCallHandler().applyFullSync(
+            nodes,
+            storPools,
+            resources,
+            fullSync.getFullSyncTimestamp()
+        );
     }
 
     private ArrayList<NodePojo> asNodes(List<MsgIntNodeData> nodesList)
@@ -72,9 +77,10 @@ public class FullSync extends BaseProtoApiCall
     private ArrayList<StorPoolPojo> asStorPool(List<MsgIntStorPoolData> storPoolsList)
     {
         ArrayList<StorPoolPojo> storPools = new ArrayList<>(storPoolsList.size());
+        String nodeName = satellite.getLocalNode().getName().displayValue;
         for (MsgIntStorPoolData storPoolData : storPoolsList)
         {
-            storPools.add(ApplyStorPool.asStorPoolPojo(storPoolData));
+            storPools.add(ApplyStorPool.asStorPoolPojo(storPoolData, nodeName));
         }
         return storPools;
     }

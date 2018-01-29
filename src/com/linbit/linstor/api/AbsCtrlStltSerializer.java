@@ -149,11 +149,16 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
-        public Builder nodeData(Node node, Collection<Node> relatedNodes)
+        public Builder nodeData(
+            Node node,
+            Collection<Node> relatedNodes,
+            long fullSyncTimestamp,
+            long serializerId
+        )
         {
             try
             {
-                writeNodeData(node, relatedNodes, baos);
+                writeNodeData(node, relatedNodes, fullSyncTimestamp, serializerId, baos);
             }
             catch (AccessDeniedException accDeniedExc)
             {
@@ -184,11 +189,15 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
-        public Builder resourceData(Resource localResource)
+        public Builder resourceData(
+            Resource localResource,
+            long fullSyncTimestamp,
+            long updateId
+        )
         {
             try
             {
-                writeResourceData(localResource, baos);
+                writeResourceData(localResource, fullSyncTimestamp, updateId, baos);
             }
             catch (IOException ioExc)
             {
@@ -209,11 +218,15 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
-        public Builder storPoolData(StorPool storPool)
+        public Builder storPoolData(
+            StorPool storPool,
+            long fullSyncTimestamp,
+            long updateId
+        )
         {
             try
             {
-                writeStorPoolData(storPool, baos);
+                writeStorPoolData(storPool, fullSyncTimestamp, updateId, baos);
             }
             catch (IOException ioExc)
             {
@@ -237,12 +250,14 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         public Builder fullSync(
             Set<Node> nodeSet,
             Set<StorPool> storPools,
-            Set<Resource> resources
+            Set<Resource> resources,
+            long timestamp,
+            long updateId
         )
         {
             try
             {
-                writeFullSync(nodeSet, storPools, resources, baos);
+                writeFullSync(nodeSet, storPools, resources, timestamp, updateId, baos);
             }
             catch (AccessDeniedException accDeniedExc)
             {
@@ -422,19 +437,37 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
     public abstract void writeChangedStorPool(UUID nodeUuid, String nodeName, ByteArrayOutputStream baos)
         throws IOException;
 
-    public abstract void writeNodeData(Node node, Collection<Node> relatedNodes, ByteArrayOutputStream baos)
+    public abstract void writeNodeData(
+        Node node,
+        Collection<Node> relatedNodes,
+        long fullSyncTimestamp,
+        long serializerId,
+        ByteArrayOutputStream baos
+    )
         throws IOException, AccessDeniedException, InvalidNameException;
 
-    public abstract void writeResourceData(Resource localResource, ByteArrayOutputStream baos)
+    public abstract void writeResourceData(
+        Resource localResource,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
         throws IOException, AccessDeniedException;
 
-    public abstract void writeStorPoolData(StorPool storPool, ByteArrayOutputStream baos)
+    public abstract void writeStorPoolData(
+        StorPool storPool,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
         throws IOException, AccessDeniedException;
 
     public abstract void writeFullSync(
         Set<Node> nodeSet,
         Set<StorPool> storPools,
         Set<Resource> resources,
+        long timestamp,
+        long updateId,
         ByteArrayOutputStream baos
     )
         throws IOException, AccessDeniedException, InvalidNameException;

@@ -90,7 +90,8 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public StorPoolApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    public StorPoolApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+        throws AccessDeniedException;
 
     public interface StorPoolApi
     {

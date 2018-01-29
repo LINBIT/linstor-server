@@ -15,6 +15,7 @@ import com.linbit.TransactionMgr;
 import com.linbit.TransactionObject;
 import com.linbit.TransactionSimpleObject;
 import com.linbit.linstor.api.pojo.NodePojo;
+import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDataDatabaseDriver;
 import com.linbit.linstor.netcom.Peer;
@@ -613,7 +614,12 @@ public class NodeData extends BaseTransactionObject implements Node
     }
 
     @Override
-    public NodeApi getApiData(AccessContext accCtx) throws AccessDeniedException
+    public NodeApi getApiData(
+        AccessContext accCtx,
+        Long fullSyncId,
+        Long updateId
+    )
+        throws AccessDeniedException
     {
         List<NetInterface.NetInterfaceApi> netInterfaces = new ArrayList<>();
         Iterator<NetInterface> itNetInterfaces = iterateNetInterfaces(accCtx);
@@ -622,15 +628,44 @@ public class NodeData extends BaseTransactionObject implements Node
             NetInterface ni = itNetInterfaces.next();
             netInterfaces.add(ni.getApiData(accCtx));
         }
+        List<NodeConnPojo> nodeConns = new ArrayList<>();
+        for (NodeConnection nodeConn : nodeConnections.values())
+        {
+            Node otherNode;
+
+            Node sourceNode = nodeConn.getSourceNode(accCtx);
+            if (this.equals(sourceNode))
+            {
+                otherNode = nodeConn.getTargetNode(accCtx);
+            }
+            else
+            {
+                otherNode = sourceNode;
+            }
+            nodeConns.add(
+                new NodeConnPojo(
+                    nodeConn.getUuid(),
+                    otherNode.getUuid(),
+                    otherNode.getName().displayValue,
+                    otherNode.getNodeType(accCtx).name(),
+                    otherNode.getFlags().getFlagsBits(accCtx),
+                    nodeConn.getProps(accCtx).map(),
+                    otherNode.getDisklessStorPool(accCtx).getUuid()
+                )
+            );
+        }
         return new NodePojo(
-            getName().getDisplayName(),
             getUuid(),
+            getName().getDisplayName(),
             getNodeType(accCtx).name(),
             getFlags().getFlagsBits(accCtx),
             netInterfaces,
+            nodeConns,
             getProps(accCtx).map(),
             getPeer(accCtx).isConnected(),
-            disklessStorPool.getUuid()
+            disklessStorPool.getUuid(),
+            fullSyncId,
+            updateId
         );
     }
 

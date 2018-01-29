@@ -195,6 +195,24 @@ public final class MsgIntStorPoolDataOuterClass {
      */
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStorPoolDfnPropsOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * FullSync id
+     * </pre>
+     *
+     * <code>sint64 full_sync_id = 9;</code>
+     */
+    long getFullSyncId();
+
+    /**
+     * <pre>
+     * Update id
+     * </pre>
+     *
+     * <code>sint64 update_id = 10;</code>
+     */
+    long getUpdateId();
   }
   /**
    * <pre>
@@ -219,6 +237,8 @@ public final class MsgIntStorPoolDataOuterClass {
       driver_ = "";
       storPoolProps_ = java.util.Collections.emptyList();
       storPoolDfnProps_ = java.util.Collections.emptyList();
+      fullSyncId_ = 0L;
+      updateId_ = 0L;
     }
 
     @java.lang.Override
@@ -292,6 +312,16 @@ public final class MsgIntStorPoolDataOuterClass {
               }
               storPoolDfnProps_.add(
                   input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              break;
+            }
+            case 72: {
+
+              fullSyncId_ = input.readSInt64();
+              break;
+            }
+            case 80: {
+
+              updateId_ = input.readSInt64();
               break;
             }
           }
@@ -644,6 +674,32 @@ public final class MsgIntStorPoolDataOuterClass {
       return storPoolDfnProps_.get(index);
     }
 
+    public static final int FULL_SYNC_ID_FIELD_NUMBER = 9;
+    private long fullSyncId_;
+    /**
+     * <pre>
+     * FullSync id
+     * </pre>
+     *
+     * <code>sint64 full_sync_id = 9;</code>
+     */
+    public long getFullSyncId() {
+      return fullSyncId_;
+    }
+
+    public static final int UPDATE_ID_FIELD_NUMBER = 10;
+    private long updateId_;
+    /**
+     * <pre>
+     * Update id
+     * </pre>
+     *
+     * <code>sint64 update_id = 10;</code>
+     */
+    public long getUpdateId() {
+      return updateId_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -689,6 +745,12 @@ public final class MsgIntStorPoolDataOuterClass {
       for (int i = 0; i < storPoolDfnProps_.size(); i++) {
         output.writeMessage(8, storPoolDfnProps_.get(i));
       }
+      if (fullSyncId_ != 0L) {
+        output.writeSInt64(9, fullSyncId_);
+      }
+      if (updateId_ != 0L) {
+        output.writeSInt64(10, updateId_);
+      }
     }
 
     public int getSerializedSize() {
@@ -718,6 +780,14 @@ public final class MsgIntStorPoolDataOuterClass {
       for (int i = 0; i < storPoolDfnProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(8, storPoolDfnProps_.get(i));
+      }
+      if (fullSyncId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(9, fullSyncId_);
+      }
+      if (updateId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(10, updateId_);
       }
       memoizedSize = size;
       return size;
@@ -749,6 +819,10 @@ public final class MsgIntStorPoolDataOuterClass {
           .equals(other.getStorPoolPropsList());
       result = result && getStorPoolDfnPropsList()
           .equals(other.getStorPoolDfnPropsList());
+      result = result && (getFullSyncId()
+          == other.getFullSyncId());
+      result = result && (getUpdateId()
+          == other.getUpdateId());
       return result;
     }
 
@@ -777,6 +851,12 @@ public final class MsgIntStorPoolDataOuterClass {
         hash = (37 * hash) + STOR_POOL_DFN_PROPS_FIELD_NUMBER;
         hash = (53 * hash) + getStorPoolDfnPropsList().hashCode();
       }
+      hash = (37 * hash) + FULL_SYNC_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getFullSyncId());
+      hash = (37 * hash) + UPDATE_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getUpdateId());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -923,6 +1003,10 @@ public final class MsgIntStorPoolDataOuterClass {
         } else {
           storPoolDfnPropsBuilder_.clear();
         }
+        fullSyncId_ = 0L;
+
+        updateId_ = 0L;
+
         return this;
       }
 
@@ -970,6 +1054,8 @@ public final class MsgIntStorPoolDataOuterClass {
         } else {
           result.storPoolDfnProps_ = storPoolDfnPropsBuilder_.build();
         }
+        result.fullSyncId_ = fullSyncId_;
+        result.updateId_ = updateId_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1083,6 +1169,12 @@ public final class MsgIntStorPoolDataOuterClass {
               storPoolDfnPropsBuilder_.addAllMessages(other.storPoolDfnProps_);
             }
           }
+        }
+        if (other.getFullSyncId() != 0L) {
+          setFullSyncId(other.getFullSyncId());
+        }
+        if (other.getUpdateId() != 0L) {
+          setUpdateId(other.getUpdateId());
         }
         onChanged();
         return this;
@@ -2189,6 +2281,82 @@ public final class MsgIntStorPoolDataOuterClass {
         }
         return storPoolDfnPropsBuilder_;
       }
+
+      private long fullSyncId_ ;
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 9;</code>
+       */
+      public long getFullSyncId() {
+        return fullSyncId_;
+      }
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 9;</code>
+       */
+      public Builder setFullSyncId(long value) {
+        
+        fullSyncId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * FullSync id
+       * </pre>
+       *
+       * <code>sint64 full_sync_id = 9;</code>
+       */
+      public Builder clearFullSyncId() {
+        
+        fullSyncId_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long updateId_ ;
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 10;</code>
+       */
+      public long getUpdateId() {
+        return updateId_;
+      }
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 10;</code>
+       */
+      public Builder setUpdateId(long value) {
+        
+        updateId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Update id
+       * </pre>
+       *
+       * <code>sint64 update_id = 10;</code>
+       */
+      public Builder clearUpdateId() {
+        
+        updateId_ = 0L;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -2254,14 +2422,15 @@ public final class MsgIntStorPoolDataOuterClass {
     java.lang.String[] descriptorData = {
       "\n+proto/javainternal/MsgIntStorPoolData." +
       "proto\022%com.linbit.linstor.proto.javainte" +
-      "rnal\032\033proto/LinStorMapEntry.proto\"\217\002\n\022Ms" +
+      "rnal\032\033proto/LinStorMapEntry.proto\"\270\002\n\022Ms" +
       "gIntStorPoolData\022\026\n\016stor_pool_uuid\030\001 \001(\t" +
       "\022\021\n\tnode_uuid\030\002 \001(\t\022\032\n\022stor_pool_dfn_uui" +
       "d\030\004 \001(\t\022\026\n\016stor_pool_name\030\005 \001(\t\022\016\n\006drive" +
       "r\030\006 \001(\t\022B\n\017stor_pool_props\030\007 \003(\0132).com.l" +
       "inbit.linstor.proto.LinStorMapEntry\022F\n\023s" +
       "tor_pool_dfn_props\030\010 \003(\0132).com.linbit.li" +
-      "nstor.proto.LinStorMapEntryP\000b\006proto3"
+      "nstor.proto.LinStorMapEntry\022\024\n\014full_sync",
+      "_id\030\t \001(\022\022\021\n\tupdate_id\030\n \001(\022P\000b\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2281,7 +2450,7 @@ public final class MsgIntStorPoolDataOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntStorPoolData_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntStorPoolData_descriptor,
-        new java.lang.String[] { "StorPoolUuid", "NodeUuid", "StorPoolDfnUuid", "StorPoolName", "Driver", "StorPoolProps", "StorPoolDfnProps", });
+        new java.lang.String[] { "StorPoolUuid", "NodeUuid", "StorPoolDfnUuid", "StorPoolName", "Driver", "StorPoolProps", "StorPoolDfnProps", "FullSyncId", "UpdateId", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 

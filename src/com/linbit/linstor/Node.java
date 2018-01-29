@@ -93,7 +93,8 @@ public interface Node extends TransactionObject, DbgInstanceUuid
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public NodeApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    public NodeApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+        throws AccessDeniedException;
 
     public enum NodeType implements Flags
     {

@@ -611,7 +611,9 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                     while (itResources.hasNext())
                     {
                         Resource rsc = itResources.next();
-                        rscs.add(rsc.getApiData(accCtx));
+                        rscs.add(rsc.getApiData(accCtx, null, null));
+                        // fullSyncId and updateId null, as they are not going to be serialized anyways
+
                     }
                 }
                 catch (AccessDeniedException accDeniedExc)
@@ -671,9 +673,12 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 // TODO: check if the localResource has the same uuid as rscUuid
                 if (rsc != null)
                 {
+                    long fullSyncTimestamp = satellitePeer.getFullSyncTimestamp();
+                    long updateId = satellitePeer.getNextSerializerId();
+
                     byte[] data = internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_RSC, msgId)
-                        .resourceData(rsc)
+                        .resourceData(rsc, fullSyncTimestamp, updateId)
                         .build();
 
                     Message response = satellitePeer.createMessage();

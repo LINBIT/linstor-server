@@ -62,7 +62,7 @@ public class ApplyRsc extends BaseProtoApiCall
         MsgIntRscData rscData = MsgIntRscData.parseDelimitedFrom(msgDataIn);
 
         RscPojo rscRawData = asRscPojo(rscData);
-        satellite.getApiCallHandler().deployResource(rscRawData);
+        satellite.getApiCallHandler().applyResourceChanges(rscRawData);
     }
 
     static RscPojo asRscPojo(MsgIntRscData rscData)
@@ -89,7 +89,9 @@ public class ApplyRsc extends BaseProtoApiCall
             rscData.getLocalRscNodeId(),
             asMap(rscData.getLocalRscPropsList()),
             localVlms,
-            otherRscList
+            otherRscList,
+            rscData.getFullSyncId(),
+            rscData.getUpdateId()
         );
         return rscRawData;
     }

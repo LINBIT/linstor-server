@@ -12,7 +12,6 @@ import com.linbit.linstor.security.Privilege;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectableChannel;
 
 import java.nio.channels.SelectionKey;
@@ -25,6 +24,9 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Tracks the status of the communication with a peer
@@ -74,6 +76,10 @@ public class TcpConnectorPeer implements Peer
 
     private Map<ResourceName, ResourceState> resourceStateMap;
 
+    private long fullSyncTimestamp;
+    private final AtomicLong serializerId;
+    private final ReadWriteLock serializerLock;
+
     protected TcpConnectorPeer(
         String peerIdRef,
         TcpConnector connectorRef,
@@ -100,6 +106,9 @@ public class TcpConnectorPeer implements Peer
 
         internalPingMsg = new TcpHeaderOnlyMessage(MessageTypes.PING);
         internalPongMsg = new TcpHeaderOnlyMessage(MessageTypes.PONG);
+
+        serializerId = new AtomicLong(0);
+        serializerLock = new ReentrantReadWriteLock(true);
     }
 
     @Override
@@ -445,4 +454,26 @@ public class TcpConnectorPeer implements Peer
     public Map<ResourceName, ResourceState> getResourceStates() {
         return resourceStateMap;
     }
+
+    @Override
+    public void setFullSyncTimestamp(long timestamp)
+    {
+        fullSyncTimestamp = timestamp;
+    }
+    @Override
+    public long getFullSyncTimestamp()
+    {
+        return fullSyncTimestamp;
+    }
+    @Override
+    public long getNextSerializerId()
+    {
+        return serializerId.getAndIncrement();
+    }
+    @Override
+    public ReadWriteLock getSerializerLock()
+    {
+        return serializerLock;
+    }
+
 }

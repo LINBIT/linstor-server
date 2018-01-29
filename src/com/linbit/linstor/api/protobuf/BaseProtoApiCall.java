@@ -81,6 +81,7 @@ public abstract class BaseProtoApiCall extends BaseApiCall
         return ByteString.copyFrom(UuidUtils.asByteArray(uuid));
     }
 
+    @Override
     protected byte[] createApiCallResponse(
         AccessContext accCtx,
         ApiCallRc apiCallRc,

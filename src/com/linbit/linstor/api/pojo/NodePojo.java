@@ -18,59 +18,21 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final List<NodeConnPojo> nodeConns;
     private final Map<String, String> nodeProps;
     private final UUID disklessStorPoolUuid;
+    private final Long fullSyncId;
+    private final Long updateId;
 
     public NodePojo(
-        final String name,
-        final UUID uuid,
-        final String type,
+        final UUID nodeUuid,
+        final String nodeName,
+        final String nodeType,
         final long nodeFlags,
         final List<NetInterface.NetInterfaceApi> nodeNetInterfaces,
-        final Map<String, String> nodeProps,
-        final UUID disklessStorPoolUuid
-    )
-    {
-        this.nodeName = name;
-        this.nodeUuid = uuid;
-        this.nodeType = type;
-        this.nodeFlags = nodeFlags;
-        this.nodeNetInterfaces = nodeNetInterfaces;
-        this.disklessStorPoolUuid = disklessStorPoolUuid;
-        this.nodeConns = null;
-        this.nodeProps = nodeProps;
-        this.isConnected = null;
-    }
-
-    public NodePojo(
-        final String name,
-        final UUID uuid,
-        final String type,
-        final long nodeFlags,
-        final List<NetInterface.NetInterfaceApi> nodeNetInterfaces,
+        final List<NodeConnPojo> nodeConns,
         final Map<String, String> nodeProps,
         final boolean connected,
-        final UUID disklessStorPoolUuid
-    )
-    {
-        this.nodeName = name;
-        this.nodeUuid = uuid;
-        this.nodeType = type;
-        this.nodeFlags = nodeFlags;
-        this.nodeNetInterfaces = nodeNetInterfaces;
-        this.disklessStorPoolUuid = disklessStorPoolUuid;
-        this.nodeConns = null;
-        this.nodeProps = nodeProps;
-        this.isConnected = connected;
-    }
-
-    public NodePojo(
-        UUID nodeUuid,
-        String nodeName,
-        String nodeType,
-        long nodeFlags,
-        List<NetInterface.NetInterfaceApi> nodeNetInterfaces,
-        List<NodeConnPojo> nodeConns,
-        Map<String, String> nodeProps,
-        UUID disklessStorPoolUuid
+        final UUID disklessStorPoolUuid,
+        final Long fullSyncId,
+        final Long updateId
     )
     {
         this.nodeUuid = nodeUuid;
@@ -81,7 +43,9 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         this.nodeConns = nodeConns;
         this.nodeProps = nodeProps;
         this.disklessStorPoolUuid = disklessStorPoolUuid;
-        this.isConnected = null;
+        this.isConnected = connected;
+        this.fullSyncId = fullSyncId;
+        this.updateId = updateId;
     }
 
     @Override
@@ -145,6 +109,16 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     public UUID getDisklessStorPoolUuid()
     {
         return disklessStorPoolUuid;
+    }
+
+    public long getFullSyncId()
+    {
+        return fullSyncId;
+    }
+
+    public long getUpdateId()
+    {
+        return updateId;
     }
 
     public static class NodeConnPojo

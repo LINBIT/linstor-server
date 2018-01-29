@@ -34,13 +34,15 @@ public interface CtrlStltSerializer
         Builder changedResource(UUID rscUuid, String rscName);
         Builder changedStorPool(UUID storPoolUuid, String storPoolName);
 
-        Builder nodeData(Node node, Collection<Node> relatedNodes);
-        Builder resourceData(Resource localResource);
-        Builder storPoolData(StorPool storPool);
+        Builder nodeData(Node node, Collection<Node> relatedNodes, long fullSyncTimestamp, long updateId);
+        Builder resourceData(Resource localResource, long fullSyncTimestamp, long updateId);
+        Builder storPoolData(StorPool storPool, long fullSyncTimestamp, long updateId);
         Builder fullSync(
             Set<Node> nodeSet,
             Set<StorPool> storPools,
-            Set<Resource> resources
+            Set<Resource> resources,
+            long timestamp,
+            long updateId
         );
 
         /*
@@ -55,6 +57,5 @@ public interface CtrlStltSerializer
         Builder requestResourceDfnUpdate(UUID rscDfnUuid, String rscName);
         Builder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);
         Builder requestStoragePoolUpdate(UUID storPoolUuid, String storPoolName);
-
     }
 }

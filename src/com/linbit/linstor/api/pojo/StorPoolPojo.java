@@ -17,17 +17,21 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     private final Map<String, String> storPoolProps;
     private final Map<String, String> storPoolDfnProps;
     private final List<Volume.VlmApi> vlms;
+    private final Long fullSyncId;
+    private final Long updateId;
 
     public StorPoolPojo(
-        UUID storPoolUuid,
-        UUID nodeUuid,
-        String nodeName,
-        String storPoolName,
-        UUID storPoolDfnUuid,
-        String driver,
-        Map<String, String> storPoolProps,
-        Map<String, String> storPoolDfnProps,
-        List<Volume.VlmApi> vlms
+        final UUID storPoolUuid,
+        final UUID nodeUuid,
+        final String nodeName,
+        final String storPoolName,
+        final UUID storPoolDfnUuid,
+        final String driver,
+        final Map<String, String> storPoolProps,
+        final Map<String, String> storPoolDfnProps,
+        final List<Volume.VlmApi> vlms,
+        final Long fullSyncId,
+        final Long updateId
     )
     {
         this.storPoolUuid = storPoolUuid;
@@ -39,27 +43,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         this.storPoolProps = storPoolProps;
         this.storPoolDfnProps = storPoolDfnProps;
         this.vlms = vlms;
-    }
-
-    public StorPoolPojo(
-        UUID storPoolUuid,
-        UUID nodeUuid,
-        String storPoolName,
-        UUID storPoolDfnUuid,
-        String driver,
-        Map<String, String> storPoolProps,
-        Map<String, String> storPoolDfnProps
-    )
-    {
-        this.storPoolUuid = storPoolUuid;
-        this.nodeUuid = nodeUuid;
-        this.nodeName = null;
-        this.storPoolName = storPoolName;
-        this.storPoolDfnUuid = storPoolDfnUuid;
-        this.driver = driver;
-        this.storPoolProps = storPoolProps;
-        this.storPoolDfnProps = storPoolDfnProps;
-        this.vlms = null;
+        this.fullSyncId = fullSyncId;
+        this.updateId = updateId;
     }
 
     @Override
@@ -118,5 +103,15 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     public int compareTo(StorPoolPojo otherStorPoolPojo)
     {
         return storPoolName.compareTo(otherStorPoolPojo.storPoolName);
+    }
+
+    public long getFullSyncId()
+    {
+        return fullSyncId;
+    }
+
+    public long getUpdateId()
+    {
+        return updateId;
     }
 }

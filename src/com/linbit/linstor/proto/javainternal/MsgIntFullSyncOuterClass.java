@@ -149,6 +149,15 @@ public final class MsgIntFullSyncOuterClass {
      */
     com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscDataOrBuilder getRscsOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * FullSync timestamp
+     * </pre>
+     *
+     * <code>sint64 full_sync_timestamp = 4;</code>
+     */
+    long getFullSyncTimestamp();
   }
   /**
    * <pre>
@@ -169,6 +178,7 @@ public final class MsgIntFullSyncOuterClass {
       nodes_ = java.util.Collections.emptyList();
       storPools_ = java.util.Collections.emptyList();
       rscs_ = java.util.Collections.emptyList();
+      fullSyncTimestamp_ = 0L;
     }
 
     @java.lang.Override
@@ -223,6 +233,11 @@ public final class MsgIntFullSyncOuterClass {
                   input.readMessage(com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData.parser(), extensionRegistry));
               break;
             }
+            case 32: {
+
+              fullSyncTimestamp_ = input.readSInt64();
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -255,6 +270,7 @@ public final class MsgIntFullSyncOuterClass {
               com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync.class, com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync.Builder.class);
     }
 
+    private int bitField0_;
     public static final int NODES_FIELD_NUMBER = 1;
     private java.util.List<com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData> nodes_;
     /**
@@ -420,6 +436,19 @@ public final class MsgIntFullSyncOuterClass {
       return rscs_.get(index);
     }
 
+    public static final int FULL_SYNC_TIMESTAMP_FIELD_NUMBER = 4;
+    private long fullSyncTimestamp_;
+    /**
+     * <pre>
+     * FullSync timestamp
+     * </pre>
+     *
+     * <code>sint64 full_sync_timestamp = 4;</code>
+     */
+    public long getFullSyncTimestamp() {
+      return fullSyncTimestamp_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -459,6 +488,9 @@ public final class MsgIntFullSyncOuterClass {
       for (int i = 0; i < rscs_.size(); i++) {
         output.writeMessage(3, rscs_.get(i));
       }
+      if (fullSyncTimestamp_ != 0L) {
+        output.writeSInt64(4, fullSyncTimestamp_);
+      }
     }
 
     public int getSerializedSize() {
@@ -477,6 +509,10 @@ public final class MsgIntFullSyncOuterClass {
       for (int i = 0; i < rscs_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(3, rscs_.get(i));
+      }
+      if (fullSyncTimestamp_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeSInt64Size(4, fullSyncTimestamp_);
       }
       memoizedSize = size;
       return size;
@@ -500,6 +536,8 @@ public final class MsgIntFullSyncOuterClass {
           .equals(other.getStorPoolsList());
       result = result && getRscsList()
           .equals(other.getRscsList());
+      result = result && (getFullSyncTimestamp()
+          == other.getFullSyncTimestamp());
       return result;
     }
 
@@ -522,6 +560,9 @@ public final class MsgIntFullSyncOuterClass {
         hash = (37 * hash) + RSCS_FIELD_NUMBER;
         hash = (53 * hash) + getRscsList().hashCode();
       }
+      hash = (37 * hash) + FULL_SYNC_TIMESTAMP_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getFullSyncTimestamp());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -665,6 +706,8 @@ public final class MsgIntFullSyncOuterClass {
         } else {
           rscsBuilder_.clear();
         }
+        fullSyncTimestamp_ = 0L;
+
         return this;
       }
 
@@ -688,6 +731,7 @@ public final class MsgIntFullSyncOuterClass {
       public com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync buildPartial() {
         com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync result = new com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFullSync(this);
         int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
         if (nodesBuilder_ == null) {
           if (((bitField0_ & 0x00000001) == 0x00000001)) {
             nodes_ = java.util.Collections.unmodifiableList(nodes_);
@@ -715,6 +759,8 @@ public final class MsgIntFullSyncOuterClass {
         } else {
           result.rscs_ = rscsBuilder_.build();
         }
+        result.fullSyncTimestamp_ = fullSyncTimestamp_;
+        result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
@@ -833,6 +879,9 @@ public final class MsgIntFullSyncOuterClass {
               rscsBuilder_.addAllMessages(other.rscs_);
             }
           }
+        }
+        if (other.getFullSyncTimestamp() != 0L) {
+          setFullSyncTimestamp(other.getFullSyncTimestamp());
         }
         onChanged();
         return this;
@@ -1811,6 +1860,44 @@ public final class MsgIntFullSyncOuterClass {
         }
         return rscsBuilder_;
       }
+
+      private long fullSyncTimestamp_ ;
+      /**
+       * <pre>
+       * FullSync timestamp
+       * </pre>
+       *
+       * <code>sint64 full_sync_timestamp = 4;</code>
+       */
+      public long getFullSyncTimestamp() {
+        return fullSyncTimestamp_;
+      }
+      /**
+       * <pre>
+       * FullSync timestamp
+       * </pre>
+       *
+       * <code>sint64 full_sync_timestamp = 4;</code>
+       */
+      public Builder setFullSyncTimestamp(long value) {
+        
+        fullSyncTimestamp_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * FullSync timestamp
+       * </pre>
+       *
+       * <code>sint64 full_sync_timestamp = 4;</code>
+       */
+      public Builder clearFullSyncTimestamp() {
+        
+        fullSyncTimestamp_ = 0L;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -1879,13 +1966,14 @@ public final class MsgIntFullSyncOuterClass {
       "\032\'proto/javainternal/MsgIntNodeData.prot" +
       "o\032+proto/javainternal/MsgIntStorPoolData" +
       ".proto\032&proto/javainternal/MsgIntRscData" +
-      ".proto\"\351\001\n\016MsgIntFullSync\022D\n\005nodes\030\001 \003(\013" +
+      ".proto\"\206\002\n\016MsgIntFullSync\022D\n\005nodes\030\001 \003(\013" +
       "25.com.linbit.linstor.proto.javainternal" +
       ".MsgIntNodeData\022M\n\nstor_pools\030\002 \003(\01329.co" +
       "m.linbit.linstor.proto.javainternal.MsgI" +
       "ntStorPoolData\022B\n\004rscs\030\003 \003(\01324.com.linbi",
       "t.linstor.proto.javainternal.MsgIntRscDa" +
-      "taP\000P\001P\002b\006proto3"
+      "ta\022\033\n\023full_sync_timestamp\030\004 \001(\022P\000P\001P\002b\006p" +
+      "roto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1907,7 +1995,7 @@ public final class MsgIntFullSyncOuterClass {
     internal_static_com_linbit_linstor_proto_javainternal_MsgIntFullSync_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_javainternal_MsgIntFullSync_descriptor,
-        new java.lang.String[] { "Nodes", "StorPools", "Rscs", });
+        new java.lang.String[] { "Nodes", "StorPools", "Rscs", "FullSyncTimestamp", });
     com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.getDescriptor();
     com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.getDescriptor();
     com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.getDescriptor();

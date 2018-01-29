@@ -96,18 +96,21 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
             .writeDelimitedTo(baos);
     }
 
+    // no fullSync- or update-id needed
     @Override
     public void writeChangedNode(UUID nodeUuid, String nodeName, ByteArrayOutputStream baos) throws IOException
     {
         appendObjectId(nodeUuid, nodeName, baos);
     }
 
+    // no fullSync- or update-id needed
     @Override
     public void writeChangedResource(UUID rscUuid, String rscName, ByteArrayOutputStream baos) throws IOException
     {
         appendObjectId(rscUuid, rscName, baos);
     }
 
+    // no fullSync- or update-id needed
     @Override
     public void writeChangedStorPool(UUID storPoolUuid, String storPoolName, ByteArrayOutputStream baos) throws IOException
     {
@@ -115,28 +118,44 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     }
 
     @Override
-    public void writeNodeData(Node node, Collection<Node> relatedNodes, ByteArrayOutputStream baos)
+    public void writeNodeData(
+        Node node,
+        Collection<Node> relatedNodes,
+        long fullSyncTimestamp,
+        long serializerId,
+        ByteArrayOutputStream baos
+    )
         throws IOException, AccessDeniedException, InvalidNameException
     {
         nodeSerializerHelper
-            .buildNodeDataMsg(node, relatedNodes)
+            .buildNodeDataMsg(node, relatedNodes, fullSyncTimestamp, serializerId)
             .writeDelimitedTo(baos);
     }
 
     @Override
-    public void writeResourceData(Resource localResource, ByteArrayOutputStream baos)
+    public void writeResourceData(
+        Resource localResource,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
         throws IOException, AccessDeniedException
     {
         rscSerializerHelper
-            .buildResourceDataMsg(localResource)
+            .buildResourceDataMsg(localResource, fullSyncTimestamp, updateId)
             .writeDelimitedTo(baos);
     }
 
     @Override
-    public void writeStorPoolData(StorPool storPool, ByteArrayOutputStream baos)
+    public void writeStorPoolData(
+        StorPool storPool,
+        long fullSyncTimestamp,
+        long updateId,
+        ByteArrayOutputStream baos
+    )
         throws IOException, AccessDeniedException
     {
-        buildStorPoolDataMsg(storPool)
+        buildStorPoolDataMsg(storPool, fullSyncTimestamp, updateId)
             .writeDelimitedTo(baos);
     }
 
@@ -145,6 +164,8 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         Set<Node> nodeSet,
         Set<StorPool> storPools,
         Set<Resource> resources,
+        long fullSyncTimestamp,
+        long updateId,
         ByteArrayOutputStream baos
     )
         throws IOException, AccessDeniedException, InvalidNameException
@@ -157,21 +178,41 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         while (!nodes.isEmpty())
         {
             Node node = nodes.removeFirst();
-            serializedNodes.add(nodeSerializerHelper.buildNodeDataMsg(node, nodes));
+            serializedNodes.add(
+                nodeSerializerHelper.buildNodeDataMsg(
+                    node,
+                    nodes,
+                    fullSyncTimestamp,
+                    updateId
+                )
+            );
         }
         for (StorPool storPool : storPools)
         {
-            serializedStorPools.add(buildStorPoolDataMsg(storPool));
+            serializedStorPools.add(
+                buildStorPoolDataMsg(
+                    storPool,
+                    fullSyncTimestamp,
+                    updateId
+                )
+            );
         }
         for (Resource rsc : resources)
         {
-            serializedRscs.add(rscSerializerHelper.buildResourceDataMsg(rsc));
+            serializedRscs.add(
+                rscSerializerHelper.buildResourceDataMsg(
+                    rsc,
+                    fullSyncTimestamp,
+                    updateId
+                )
+            );
         }
 
         MsgIntFullSync.newBuilder()
             .addAllNodes(serializedNodes)
             .addAllStorPools(serializedStorPools)
             .addAllRscs(serializedRscs)
+            .setFullSyncTimestamp(fullSyncTimestamp)
             .build()
             .writeDelimitedTo(baos);
     }
@@ -277,7 +318,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
             .writeDelimitedTo(baos);
     }
 
-    private MsgIntStorPoolData buildStorPoolDataMsg(StorPool storPool) throws AccessDeniedException
+    private MsgIntStorPoolData buildStorPoolDataMsg(StorPool storPool, long fullSyncTimestamp, long updateId) throws AccessDeniedException
     {
         StorPoolDefinition storPoolDfn = storPool.getDefinition(serializerCtx);
         MsgIntStorPoolData message = MsgIntStorPoolData.newBuilder()
@@ -288,6 +329,8 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
             .setDriver(storPool.getDriverName())
             .addAllStorPoolProps(asLinStorList(storPool.getProps(serializerCtx)))
             .addAllStorPoolDfnProps(asLinStorList(storPoolDfn.getProps(serializerCtx)))
+            .setFullSyncId(fullSyncTimestamp)
+            .setUpdateId(updateId)
             .build();
         return message;
     }
@@ -301,7 +344,9 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     {
         private MsgIntNodeData buildNodeDataMsg(
             Node node,
-            Collection<Node> relatedNodes
+            Collection<Node> relatedNodes,
+            long fullSyncTimestamp,
+            long updateId
         )
             throws AccessDeniedException
         {
@@ -322,6 +367,8 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
                 .setNodeDisklessStorPoolUuid(
                     node.getDisklessStorPool(serializerCtx).getUuid().toString()
                 )
+                .setFullSyncId(fullSyncTimestamp)
+                .setUpdateId(updateId)
                 .build();
         }
 
@@ -386,7 +433,7 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     private class ResourceSerializerHelper
     {
 
-        private MsgIntRscData buildResourceDataMsg(Resource localResource) throws AccessDeniedException
+        private MsgIntRscData buildResourceDataMsg(Resource localResource, long fullSyncTimestamp, long updateId) throws AccessDeniedException
         {
             List<Resource> otherResources = new ArrayList<>();
             Iterator<Resource> rscIterator = localResource.getDefinition().iterateResource(serializerCtx);
@@ -425,6 +472,8 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
                     buildOtherResources(otherResources)
                 )
                 .setRscDfnTransportType(rscDfn.getTransportType(serializerCtx).name())
+                .setFullSyncId(fullSyncTimestamp)
+                .setUpdateId(updateId)
                 .build();
             return message;
         }

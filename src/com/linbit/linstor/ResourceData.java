@@ -548,7 +548,9 @@ public class ResourceData extends BaseTransactionObject implements Resource
     }
 
     @Override
-    public RscApi getApiData(AccessContext accCtx) throws AccessDeniedException {
+    public RscApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+        throws AccessDeniedException
+    {
         List<Volume.VlmApi> volumes = new ArrayList<>();
         Iterator<Volume> itVolumes = iterateVolumes();
         while (itVolumes.hasNext())
@@ -556,16 +558,18 @@ public class ResourceData extends BaseTransactionObject implements Resource
             volumes.add(itVolumes.next().getApiData(accCtx));
         }
         return new RscPojo(
-                getDefinition().getName().getDisplayName(),
-                getAssignedNode().getName().getDisplayName(),
-                getAssignedNode().getUuid(),
-                getDefinition().getApiData(accCtx),
-                getUuid(),
-                getStateFlags().getFlagsBits(accCtx),
-                getNodeId().value,
-                getProps(accCtx).map(),
-                volumes,
-                null
+            getDefinition().getName().getDisplayName(),
+            getAssignedNode().getName().getDisplayName(),
+            getAssignedNode().getUuid(),
+            getDefinition().getApiData(accCtx),
+            getUuid(),
+            getStateFlags().getFlagsBits(accCtx),
+            getNodeId().value,
+            getProps(accCtx).map(),
+            volumes,
+            null, // otherRscList
+            fullSyncId,
+            updateId
         );
     }
 

@@ -65,7 +65,8 @@ public interface Resource extends TransactionObject, DbgInstanceUuid
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
 
-    public RscApi getApiData(AccessContext accCtx) throws AccessDeniedException;
+    public RscApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+        throws AccessDeniedException;
 
     public boolean isCreatePrimary();
 

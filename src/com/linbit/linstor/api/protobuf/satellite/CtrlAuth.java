@@ -1,10 +1,9 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import com.linbit.ChildProcessTimeoutException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
-import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
@@ -13,6 +12,7 @@ import com.linbit.linstor.core.Satellite;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntAuthOuterClass.MsgIntAuth;
+import com.linbit.linstor.proto.javainternal.MsgIntExpectedFullSyncIdOuterClass.MsgIntExpectedFullSyncId;
 import com.linbit.linstor.security.AccessContext;
 
 @ProtobufApiCall
@@ -54,54 +54,22 @@ public class CtrlAuth extends BaseProtoApiCall
         UUID nodeUuid = UUID.fromString(auth.getNodeUuid());
         UUID disklessStorPoolDfnUuid = UUID.fromString(auth.getNodeDisklessStorPoolDfnUuid());
         UUID disklessStorPoolUuid = UUID.fromString(auth.getNodeDisklessStorPoolUuid());
-        boolean authSuccess = true;
-        ApiCallRcImpl apicallrc = new ApiCallRcImpl();
 
-        // get satellites current hostname
-        final ExtCmd extCommand = new ExtCmd(satellite.getTimer(), satellite.getErrorReporter());
-        String hostname = "";
-        try {
-            final ExtCmd.OutputData output = extCommand.exec("uname", "-n");
-            final String stdOut = new String(output.stdoutData);
-            hostname = stdOut.trim();
-        } catch (ChildProcessTimeoutException ex) {
-            satellite.getErrorReporter().reportError(ex);
-            authSuccess = false;
-        }
 
-        // Check if satellite hostname is equal to the given nodename
-        if (!hostname.toLowerCase().equals(nodeName))
+        ApiCallRcImpl apiCallRc = satellite.getApiCallHandler().authenticate(
+            nodeUuid,
+            nodeName,
+            disklessStorPoolDfnUuid,
+            disklessStorPoolUuid,
+            controllerPeer
+        );
+
+        if (apiCallRc == null)
         {
-            ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
-            entry.setReturnCode(InternalApiConsts.API_AUTH_ERROR_HOST_MISMATCH);
-            entry.setMessageFormat("Satellite node name doesn't match hostname.");
-            String cause = String.format(
-                    "Satellite node name '%s' doesn't match nodes hostname '%s'.",
-                    nodeName,
-                    hostname);
-            entry.setCauseFormat(cause);
-            apicallrc.addEntry(entry);
-
-            satellite.getErrorReporter().logError(cause);
-            authSuccess = false;
-        }
-
-
-        if (authSuccess)
-        {
-            // client auth was successful send API_AUTH_ACCEPT
-            satellite.getErrorReporter().logInfo("Controller connected and authenticated");
-            satellite.setControllerPeer(
-                controllerPeer,
-                nodeUuid,
-                nodeName,
-                disklessStorPoolDfnUuid,
-                disklessStorPoolUuid
-            );
-
+            // all ok, send the new fullSyncId with the AUTH_ACCEPT msg
             byte[] msgAuthAccept = prepareMessage(
                 accCtx,
-                new byte[0],
+                buildExpectedFullSyncIdMessage(satellite.getNextFullSyncId()),
                 controllerPeer,
                 msgId,
                 InternalApiConsts.API_AUTH_ACCEPT
@@ -110,15 +78,25 @@ public class CtrlAuth extends BaseProtoApiCall
         }
         else
         {
-            // some auth error happend, send error response
+            // whatever happened should be in the apiCallRc
             byte[] msgData = prepareMessage(
                 accCtx,
-                createApiCallResponse(accCtx, apicallrc, controllerPeer),
+                createApiCallResponse(accCtx, apiCallRc, controllerPeer),
                 controllerPeer,
                 msgId,
                 InternalApiConsts.API_AUTH_ERROR
             );
             sendAnswer(controllerPeer, msgData);
         }
+    }
+
+    private byte[] buildExpectedFullSyncIdMessage(long nextFullSyncId) throws IOException
+    {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        MsgIntExpectedFullSyncId.newBuilder()
+            .setExpectedFullSyncId(nextFullSyncId)
+            .build()
+            .writeDelimitedTo(baos);
+        return baos.toByteArray();
     }
 }

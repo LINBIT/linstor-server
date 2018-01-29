@@ -10,6 +10,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import javax.net.ssl.SSLException;
 
@@ -205,4 +206,40 @@ public interface Peer
      * @return A map containing the currently known resource states
      */
     Map<ResourceName, ResourceState> getResourceStates();
+
+    /**
+     * Whenever a FullSync or a LinStor object gets serialized, the FullSync timestamp
+     * and / or the serializer-ID might change. Use this lock for (possibly) concurrent
+     * modification for those.
+     * @return
+     */
+    ReadWriteLock getSerializerLock();
+
+    /**
+     * Sets the timestamp when a new FullSync is serialized.
+     *
+     * It is advised to grab the write lock of {@link #getSerializerLock()} prior this call
+     *
+     * @param timestamp
+     */
+    void setFullSyncTimestamp(long timestamp);
+
+    /**
+     * Returns the timestamp of the last FullSync serialization
+     *
+     * It is advised to grab the read lock of {@link #getSerializerLock()} prior this call
+     *
+     * @return
+     */
+    long getFullSyncTimestamp();
+
+    /**
+     * Returns the next serializer Id. This method should be called when serializing
+     * any LinStor object for the satellite
+     *
+     * It is advised to grab the read lock of {@link #getSerializerLock()} prior this call.
+     *
+     * @return
+     */
+    long getNextSerializerId();
 }
