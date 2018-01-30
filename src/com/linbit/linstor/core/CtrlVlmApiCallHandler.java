@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import com.linbit.ImplementationError;
 import com.linbit.TransactionMgr;
@@ -71,12 +72,13 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
             VolumeNumber volumeNumber = asVlmNr(volumeNr);
 
             Volume vlm = rscData.getVolume(volumeNumber);
-            markClean(vlm);
+            UUID vlmUuid = vlm.getUuid(); // prevent access to deleted object
 
-            commit();
+            markClean(vlm);
 
             boolean allVlmsClean = true;
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+            UUID vlmDfnUuid = vlmDfn.getUuid();
             Iterator<Volume> vlmIterator = getVolumeIterator(vlmDfn);
             while (vlmIterator.hasNext())
             {
@@ -87,12 +89,25 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
                     break;
                 }
             }
+            boolean vlmDfnDeleted = false;
             if (allVlmsClean && isMarkedForDeletion(vlmDfn))
             {
                 delete(vlmDfn); // also deletes all of its volumes
+                vlmDfnDeleted = true;
             }
 
-            reportSuccess(vlm.getUuid());
+            commit();
+
+            reportSuccess(vlmUuid);
+            if (vlmDfnDeleted)
+            {
+                reportSuccess(
+                    "Volume definition with number '" + volumeNumber.value + "' of resource definition '" +
+                        rscData.getDefinition().getName().displayValue + "' deleted.",
+                        "Volume definition's UUID was: " + vlmDfnUuid.toString(),
+                        ApiConsts.MASK_DEL | ApiConsts.MASK_VLM_DFN | ApiConsts.DELETED
+                );
+            }
         }
         catch (ApiCallHandlerFailedException ignore)
         {
@@ -152,12 +167,12 @@ public class CtrlVlmApiCallHandler extends AbsApiCallHandler
     @Override
     protected String getObjectDescriptionInline()
     {
-        return getObjectDescriptionInline(currentRscName.get(), currentNodeName.get(), currentVlmNr.get());
+        return getObjectDescriptionInline(currentNodeName.get(), currentRscName.get(), currentVlmNr.get());
     }
 
     private String getObjectDescriptionInline(String nodeNameStr, String rscNameStr, Integer vlmNr)
     {
-        return "resource '" + rscNameStr + "' with volume number '" + vlmNr + "' on node '" + nodeNameStr + "'";
+        return "volume with volume number '" + vlmNr + "' on resource '" + rscNameStr + "' on node '" + nodeNameStr + "'";
     }
 
     private Map<String, String> getObjRefs(String nodeNameStr, String rscNameStr, Integer vlmNr)

@@ -694,6 +694,12 @@ class DrbdDeviceHandler implements DeviceHandler
             try
             {
                 vlmState.getDriver().deleteVolume(vlmState.getStorVlmName());
+
+                // Notify the controller of successful deletion of the resource
+                stlt.getDeviceManager().notifyVolumeDeleted(
+                    rscDfn.getResource(wrkCtx, stlt.getLocalNode().getName())
+                        .getVolume(vlmState.getVlmNr())
+                );
             }
             catch (StorageException storExc)
             {
@@ -705,6 +711,13 @@ class DrbdDeviceHandler implements DeviceHandler
                     "- Check whether the storage pool is operating flawlessly\n",
                     null,
                     storExc
+                );
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(
+                    "Worker access context has not enough privileges to access resource on satellite.",
+                    exc
                 );
             }
         }

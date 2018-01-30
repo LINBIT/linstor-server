@@ -50,11 +50,11 @@ public class NotifyVolumeDeleted extends BaseProtoApiCall {
     {
         MsgIntDelVlmOuterClass.MsgIntDelVlm msgDelVlm = MsgIntDelVlmOuterClass.MsgIntDelVlm.parseDelimitedFrom(msgDataIn);
         controller.getApiCallHandler().volumeDeleted(
-                accCtx,
-                client,
-                msgDelVlm.getNodeName(),
-                msgDelVlm.getRscName(),
-                msgDelVlm.getVlmNr()
+            accCtx,
+            client,
+            msgDelVlm.getNodeName(),
+            msgDelVlm.getRscName(),
+            msgDelVlm.getVlmNr()
         );
     }
 }

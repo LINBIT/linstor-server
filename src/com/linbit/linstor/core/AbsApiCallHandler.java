@@ -1099,29 +1099,36 @@ abstract class AbsApiCallHandler implements AutoCloseable
      */
     protected final void reportSuccess(String msg, String details)
     {
+        long baseRetCode;
+        switch (currentApiCallType.get())
+        {
+            case CREATE:
+                baseRetCode = ApiConsts.MASK_CRT | ApiConsts.CREATED;
+                break;
+            case DELETE:
+                baseRetCode = ApiConsts.MASK_DEL | ApiConsts.DELETED;
+                break;
+            case MODIFY:
+                baseRetCode = ApiConsts.MASK_MOD | ApiConsts.MODIFIED;
+                break;
+            default:
+                throw new ImplementationError(
+                    "Unknown api call type: " + currentApiCallType.get(),
+                    null
+                );
+        }
+        reportSuccess(msg, details, baseRetCode | objMask);
+    }
+
+
+    protected void reportSuccess(String msg, String details, long retCode)
+    {
         ApiCallRcImpl apiCallRc = currentApiCallRc.get();
         if (apiCallRc != null)
         {
             ApiCallRcEntry entry = new ApiCallRcEntry();
-            long baseRetCode;
-            switch (currentApiCallType.get())
-            {
-                case CREATE:
-                    baseRetCode = ApiConsts.MASK_CRT | ApiConsts.CREATED;
-                    break;
-                case DELETE:
-                    baseRetCode = ApiConsts.MASK_DEL | ApiConsts.DELETED;
-                    break;
-                case MODIFY:
-                    baseRetCode = ApiConsts.MASK_MOD | ApiConsts.MODIFIED;
-                    break;
-                default:
-                    throw new ImplementationError(
-                        "Unknown api call type: " + currentApiCallType.get(),
-                        null
-                    );
-            }
-            entry.setReturnCodeBit(baseRetCode | objMask);
+
+            entry.setReturnCodeBit(retCode);
             entry.setMessageFormat(msg);
             entry.setDetailsFormat(details);
 
@@ -1135,12 +1142,10 @@ abstract class AbsApiCallHandler implements AutoCloseable
             {
                 entry.putAllVariables(variables);
             }
-
             apiCallRc.addEntry(entry);
         }
         apiCtrlAccessors.getErrorReporter().logInfo(msg);
     }
-
 
     /**
      * Basically the same as {@link #asExc(Throwable, String, long)}, but with a

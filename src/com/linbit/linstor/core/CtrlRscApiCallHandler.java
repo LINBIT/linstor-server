@@ -533,7 +533,6 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
             delete(rscData); // also deletes all of its volumes
 
-
             UUID rscDfnUuid = null;
             ResourceName deletedRscDfnName = null;
             UUID nodeUuid = null;

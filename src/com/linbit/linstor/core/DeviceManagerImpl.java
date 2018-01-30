@@ -764,14 +764,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             String msgRscName = vlm.getResource().getDefinition().getName().displayValue;
 
             byte[] data = stltInstance.getApiCallHandler().getInterComSerializer()
-                    .builder(InternalApiConsts.API_NOTIFY_RSC_DEL, 1)
-                    .notifyVolumeDeleted(
-                        msgNodeName,
-                        msgRscName,
-                        vlm.getVolumeDefinition().getVolumeNumber().value,
-                        vlm.getUuid()
-                    )
-                    .build();
+                .builder(InternalApiConsts.API_NOTIFY_VLM_DEL, 1)
+                .notifyVolumeDeleted(
+                    msgNodeName,
+                    msgRscName,
+                    vlm.getVolumeDefinition().getVolumeNumber().value,
+                    vlm.getUuid()
+                )
+                .build();
 
             if (data != null)
             {
@@ -784,8 +784,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 catch (IllegalMessageStateException illStateExc)
                 {
                     throw new ImplementationError(
-                            "Attempt to send a NetCom message that has an illegal state",
-                            illStateExc
+                        "Attempt to send a NetCom message that has an illegal state",
+                        illStateExc
                     );
                 }
             }
