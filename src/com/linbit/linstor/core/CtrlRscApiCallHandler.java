@@ -673,7 +673,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 // TODO: check if the localResource has the same uuid as rscUuid
                 if (rsc != null)
                 {
-                    long fullSyncTimestamp = satellitePeer.getFullSyncTimestamp();
+                    long fullSyncTimestamp = satellitePeer.getFullSyncId();
                     long updateId = satellitePeer.getNextSerializerId();
 
                     byte[] data = internalComSerializer

@@ -285,7 +285,7 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             // TODO: check if the storPool has the same uuid as storPoolUuid
             if (storPool != null)
             {
-                long fullSyncTimestamp = satellitePeer.getFullSyncTimestamp();
+                long fullSyncTimestamp = satellitePeer.getFullSyncId();
                 long updateId = satellitePeer.getNextSerializerId();
                 byte[] data = internalComSerializer
                     .builder(InternalApiConsts.API_APPLY_STOR_POOL, msgId)

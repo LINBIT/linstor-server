@@ -1323,7 +1323,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
             for (Node nodeToContact : nodesToContact.values())
             {
                 Peer peer = nodeToContact.getPeer(apiCtx);
-                if (peer.isConnected())
+                if (peer.isConnected() && !fullSyncFailed(peer))
                 {
                     Message msg = peer.createMessage();
                     msg.setData(changedMessage);
@@ -1373,16 +1373,19 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 boolean connected = peer.isConnected();
                 if (connected)
                 {
-                    Message rscChangedMsg = peer.createMessage();
-                    byte[] data = internalComSerializer
-                        .builder(InternalApiConsts.API_CHANGED_RSC, 0)
-                        .changedResource(
-                            currentRsc.getUuid(),
-                            currentRsc.getDefinition().getName().displayValue
-                        )
-                        .build();
-                    rscChangedMsg.setData(data);
-                    connected = peer.sendMessage(rscChangedMsg);
+                    if (!fullSyncFailed(peer))
+                    {
+                        Message rscChangedMsg = peer.createMessage();
+                        byte[] data = internalComSerializer
+                            .builder(InternalApiConsts.API_CHANGED_RSC, 0)
+                            .changedResource(
+                                currentRsc.getUuid(),
+                                currentRsc.getDefinition().getName().displayValue
+                            )
+                            .build();
+                        rscChangedMsg.setData(data);
+                        connected = peer.sendMessage(rscChangedMsg);
+                    }
                 }
                 if (!connected)
                 {
@@ -1429,16 +1432,19 @@ abstract class AbsApiCallHandler implements AutoCloseable
             boolean connected = satellitePeer.isConnected();
             if (connected)
             {
-                Message msg = satellitePeer.createMessage();
-                byte[] data = internalComSerializer
-                    .builder(InternalApiConsts.API_CHANGED_STOR_POOL, 0)
-                    .changedStorPool(
-                        storPool.getUuid(),
-                        storPool.getName().displayValue
-                    )
-                    .build();
-                msg.setData(data);
-                connected = satellitePeer.sendMessage(msg);
+                if (!fullSyncFailed(satellitePeer))
+                {
+                    Message msg = satellitePeer.createMessage();
+                    byte[] data = internalComSerializer
+                        .builder(InternalApiConsts.API_CHANGED_STOR_POOL, 0)
+                        .changedStorPool(
+                            storPool.getUuid(),
+                            storPool.getName().displayValue
+                        )
+                        .build();
+                    msg.setData(data);
+                    connected = satellitePeer.sendMessage(msg);
+                }
             }
             if (!connected)
             {
@@ -1457,6 +1463,29 @@ abstract class AbsApiCallHandler implements AutoCloseable
         {
             throw asImplError(implError);
         }
+    }
+
+    /**
+     * Checks and returns if the satellite reported a fullSyncFail.
+     * If true, an answer is added to report the client about the issue
+     *
+     * @param satellite
+     * @return The result of <code>satellite.hasFullSyncFailed();</code>
+     */
+    private boolean fullSyncFailed(Peer satellite)
+    {
+        boolean ret = satellite.hasFullSyncFailed();
+        if (ret)
+        {
+            addAnswer(
+                "Satellite reported an error during fullSync. This change will NOT be " +
+                    "delivered to satellte '" + satellite.getNode().getName().displayValue +
+                    "' until the error is resolved. Reconnect the satellite to the controller " +
+                    "to remove this blockade.",
+                ApiConsts.WARN_STLT_NOT_UPDATED
+            );
+        }
+        return ret;
     }
 
     protected String getObjectDescriptionInlineFirstLetterCaps()

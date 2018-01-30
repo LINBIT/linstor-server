@@ -454,7 +454,7 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                             }
                         }
                     }
-                    long fullSyncTimestamp = satellite.getFullSyncTimestamp();
+                    long fullSyncTimestamp = satellite.getFullSyncId();
                     long serializerId = satellite.getNextSerializerId();
                     byte[] data = internalComSerializer
                         .builder(InternalApiConsts.API_APPLY_NODE, msgId)

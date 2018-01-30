@@ -216,22 +216,22 @@ public interface Peer
     ReadWriteLock getSerializerLock();
 
     /**
-     * Sets the timestamp when a new FullSync is serialized.
+     * Sets the fullSyncId for serialization.
      *
      * It is advised to grab the write lock of {@link #getSerializerLock()} prior this call
      *
      * @param timestamp
      */
-    void setFullSyncTimestamp(long timestamp);
+    void setFullSyncId(long timestamp);
 
     /**
-     * Returns the timestamp of the last FullSync serialization
+     * Returns the current fullSyncId.
      *
      * It is advised to grab the read lock of {@link #getSerializerLock()} prior this call
      *
      * @return
      */
-    long getFullSyncTimestamp();
+    long getFullSyncId();
 
     /**
      * Returns the next serializer Id. This method should be called when serializing
@@ -242,4 +242,20 @@ public interface Peer
      * @return
      */
     long getNextSerializerId();
+
+    /**
+     * The satellite failed to apply our fullSync. This method should set internal flags
+     * to prevent sending any further updates or fullSyncs to the satellite, as those will most
+     * likely also cause the same exception on the satellite.
+     *
+     * However, not all communication should be prevented to the satellite.
+     * E.g. Ping/Pong and client-proxy messages should still work / forwarded.
+     */
+    void fullSyncFailed();
+
+    /**
+     * Returns true if the method {@link #fullSyncFailed()} was already called, false otherwise.
+     * @return
+     */
+    boolean hasFullSyncFailed();
 }

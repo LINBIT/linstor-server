@@ -232,8 +232,38 @@ public class StltApiCallHandler
         catch (Exception | ImplementationError exc)
         {
             satellite.getErrorReporter().reportError(exc);
-            // TODO: answer controller that fullSync failed
-            // that should tell the controller to not send us new messages until the bug is resolved
+
+            Peer controllerPeer = satellite.getControllerPeer();
+            Message message = controllerPeer.createMessage();
+            try
+            {
+                message.setData(
+                    interComSerializer.builder(InternalApiConsts.API_FULL_SYNC_FAILED, 0)
+                        .build()
+                );
+                controllerPeer.sendMessage(message);
+
+                // sending this message should tell the controller to not send us any further data, as
+                // updates would be based on an invalid fullSync, and receiving this fullSync again
+                // would most likely cause the same exception as now.
+
+                // however, in order to avoid implementation errors of the controller, we additionally
+                // increase the fullSyncId but not telling the controller about it.
+                // even if the controller still sends us data, we will ignore them as they will look like
+                // "out-dated" data.
+                // when recreating the connection, and the controller is positive to send us an authentication
+                // message, we will again increase the fullSyncId and expect the fullSync from the controller.
+
+                // in other words: if this exception happens, either the controller or this satellite has
+                // to drop the connection (e.g. restart) in order to re-enable applying fullSyncs.
+                satellite.getNextFullSyncId();
+
+
+            }
+            catch (IllegalMessageStateException implError)
+            {
+                satellite.getErrorReporter().reportError(implError);
+            }
         }
         finally
         {

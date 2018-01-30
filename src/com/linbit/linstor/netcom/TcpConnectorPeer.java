@@ -59,6 +59,7 @@ public class TcpConnectorPeer implements Peer
 
     protected boolean connected = false;
     protected boolean authenticated = false;
+    protected boolean fullSyncFailed = false;
 
     // Volatile guarantees atomic read and write
     //
@@ -76,7 +77,7 @@ public class TcpConnectorPeer implements Peer
 
     private Map<ResourceName, ResourceState> resourceStateMap;
 
-    private long fullSyncTimestamp;
+    private long fullSyncId;
     private final AtomicLong serializerId;
     private final ReadWriteLock serializerLock;
 
@@ -456,14 +457,14 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public void setFullSyncTimestamp(long timestamp)
+    public void setFullSyncId(long id)
     {
-        fullSyncTimestamp = timestamp;
+        fullSyncId = id;
     }
     @Override
-    public long getFullSyncTimestamp()
+    public long getFullSyncId()
     {
-        return fullSyncTimestamp;
+        return fullSyncId;
     }
     @Override
     public long getNextSerializerId()
@@ -476,4 +477,17 @@ public class TcpConnectorPeer implements Peer
         return serializerLock;
     }
 
+    @Override
+    public void fullSyncFailed()
+    {
+        fullSyncFailed = true;
+        // just to be sure, that even if some component still sends an update, it should be
+        // an invalid one. -1 will make it look like an out-dated update for the satellite.
+        fullSyncId = -1;
+    }
+
+    public boolean hasFullSyncFailed()
+    {
+        return fullSyncFailed;
+    }
 }

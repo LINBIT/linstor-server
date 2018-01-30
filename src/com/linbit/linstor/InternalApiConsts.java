@@ -9,6 +9,7 @@ public class InternalApiConsts
 
     public static final String API_FULL_SYNC_DATA    = "FullSyncData";
     public static final String API_UPDATE_STATES     = "UpdateStates";
+    public static final String API_FULL_SYNC_FAILED  = "FullSyncFailed";
 
     public static final String API_CHANGED_NODE      = "ChangedNode";
     public static final String API_REQUEST_NODE      = "RequestNode";

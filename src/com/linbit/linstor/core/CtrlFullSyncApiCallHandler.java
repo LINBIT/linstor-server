@@ -67,7 +67,7 @@ class CtrlFullSyncApiCallHandler
                 }
             }
 
-            satellite.setFullSyncTimestamp(expectedFullSyncId);
+            satellite.setFullSyncId(expectedFullSyncId);
 
             byte[] data = interComSerializer
                 .builder(InternalApiConsts.API_FULL_SYNC_DATA, 0)
