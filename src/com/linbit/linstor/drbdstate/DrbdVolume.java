@@ -19,6 +19,7 @@ public class DrbdVolume
     public static final String PROP_KEY_DISK         = "disk";
     public static final String PROP_KEY_PEER_DISK    = "peer-disk";
     public static final String PROP_KEY_REPLICATION  = "replication";
+    public static final String PROP_KEY_CLIENT       = "client";
 
     public static final String DS_LABEL_DISKLESS     = "Diskless";
     public static final String DS_LABEL_ATTACHING    = "Attaching";
@@ -215,6 +216,7 @@ public class DrbdVolume
     protected ReplState volReplState;
     protected DrbdResource resRef;
     protected DrbdConnection connRef;
+    protected Boolean client;
 
     protected DrbdVolume(DrbdResource resource, VolumeNumber volNr)
         throws ValueOutOfRangeException
@@ -232,6 +234,7 @@ public class DrbdVolume
         volReplState = ReplState.UNKNOWN;
         resRef = resource;
         connRef = peerConn;
+        client = null;
     }
 
     public VolumeNumber getVolNr()
@@ -242,6 +245,14 @@ public class DrbdVolume
     public MinorNumber getMinorNr()
     {
         return volMinorNr;
+    }
+
+    public boolean isClient() {
+        return client != null && client;
+    }
+
+    public Boolean getClient() {
+        return client;
     }
 
     public DiskState getDiskState()
@@ -315,9 +326,24 @@ public class DrbdVolume
         String minorNrStr = props.get(PROP_KEY_MINOR);
         String replLabel = props.get(PROP_KEY_REPLICATION);
         String diskLabel = props.get(PROP_KEY_DISK);
+        String clientLabel = props.get(PROP_KEY_CLIENT);
+
         if (diskLabel == null)
         {
             diskLabel = props.get(PROP_KEY_PEER_DISK);
+        }
+
+        if (clientLabel != null)
+        {
+            client = null;
+            if (clientLabel.equals("yes"))
+            {
+                client = true;
+            }
+            else if(clientLabel.equals("no"))
+            {
+                client = false;
+            }
         }
 
         if (minorNrStr != null)

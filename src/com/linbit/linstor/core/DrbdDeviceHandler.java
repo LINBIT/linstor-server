@@ -444,8 +444,11 @@ class DrbdDeviceHandler implements DeviceHandler
                 switch (diskState)
                 {
                     case DISKLESS:
-                        // TODO: Volume may be a client volume
-                        // fall-through
+                        if(!drbdVlm.isClient())
+                        {
+                            vlmState.setDiskFailed(true);
+                        }
+                        break;
                     case DETACHING:
                         // TODO: May be a transition from storage to client
                         // fall-through
