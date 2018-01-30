@@ -96,6 +96,12 @@ public class StorPoolApiData implements StorPool.StorPoolApi
         return VlmApiData.toApiList(storPool.getVlmsList());
     }
 
+    @Override
+    public Map<String, String> getStorPoolStaticTraits()
+    {
+        return BaseProtoApiCall.asMap(storPool.getStaticTraitsList());
+    }
+
     public static StorPoolOuterClass.StorPool toStorPoolProto(final StorPool.StorPoolApi apiStorPool)
     {
         StorPoolOuterClass.StorPool.Builder storPoolBld = StorPoolOuterClass.StorPool.newBuilder();
@@ -107,6 +113,7 @@ public class StorPoolApiData implements StorPool.StorPoolApi
         storPoolBld.setDriver(apiStorPool.getDriver());
         storPoolBld.addAllProps(BaseProtoApiCall.fromMap(apiStorPool.getStorPoolProps()));
         storPoolBld.addAllVlms(VlmApiData.toVlmProtoList(apiStorPool.getVlmList()));
+        storPoolBld.addAllStaticTraits(BaseProtoApiCall.fromMap(apiStorPool.getStorPoolStaticTraits()));
 
         return storPoolBld.build();
     }

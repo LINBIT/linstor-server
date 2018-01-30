@@ -5,7 +5,6 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.SatelliteCoreServices;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Handles allocation and deallocation of backing storage for DRBD devices
@@ -15,12 +14,19 @@ import java.util.Set;
 public interface StorageDriver
 {
     /**
+     * Get the object representing this type of storage driver.
+     *
+     * @return The kind of this driver
+     */
+    StorageDriverKind getKind();
+
+    /**
      * Initializes the driver
      *
      * @param coreSvc
      * @throws StorageException
      */
-    void initialize(SatelliteCoreServices coreSvc) throws StorageException;
+    void initialize(SatelliteCoreServices coreSvc);
 
     /**
      * Makes a volume ready for access
@@ -101,14 +107,6 @@ public interface StorageDriver
     Map<String, String> getTraits() throws StorageException;
 
     /**
-     * Returns a set of this driver's configuration keys
-     *
-     * @return Set of key strings describing the configuration keys accepted by the
-     *     setConfiguration() method
-     */
-    Set<String> getConfigurationKeys();
-
-    /**
      * Sets the driver's configuration options
      *
      * @param config Map of key/value strings to import into the driver's configuration
@@ -116,14 +114,6 @@ public interface StorageDriver
      *     that are not valid for the driver
      */
     void setConfiguration(Map<String, String> config) throws StorageException;
-
-    /**
-     * If this method returns false, every snapshot method is expected to throw an
-     * {@link UnsupportedOperationException}
-     *
-     * @return true if and only if snapshots are supported by the driver
-     */
-    boolean isSnapshotSupported();
 
     /**
      * Creates a snapshot with the name of the {@code snapshotName} argument for the volume

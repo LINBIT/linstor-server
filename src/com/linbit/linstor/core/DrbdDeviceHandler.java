@@ -531,7 +531,7 @@ class DrbdDeviceHandler implements DeviceHandler
             StorPool storagePool = localNode.getStorPool(wrkCtx, spName);
             if (storagePool != null)
             {
-                driver = storagePool.getDriver(wrkCtx);
+                driver = storagePool.createDriver(wrkCtx, coreSvcs);
                 if (driver != null)
                 {
                     vlmState.setDriver(driver);
@@ -1327,20 +1327,13 @@ class DrbdDeviceHandler implements DeviceHandler
                 Iterator<StorPool> storPoolIter = localNode.iterateStorPools(wrkCtx);
                 while (storPoolIter.hasNext())
                 {
-                    try
-                    {
-                        StorPool curStorPool = storPoolIter.next();
-                        StorageDriver driver = curStorPool.getDriver(wrkCtx);
-                        String driverClassName = driver != null ? driver.getClass().getName() : "null";
-                        System.out.printf(
-                            "Storage pool %-24s Driver %s\n",
-                            curStorPool.getName().displayValue,
-                            driverClassName
-                        );
-                    }
-                    catch (AccessDeniedException ignored)
-                    {
-                    }
+                    StorPool curStorPool = storPoolIter.next();
+                    String driverClassName = curStorPool.getDriverName();
+                    System.out.printf(
+                        "Storage pool %-24s Driver %s\n",
+                        curStorPool.getName().displayValue,
+                        driverClassName
+                    );
                 }
             }
             catch (AccessDeniedException ignored)

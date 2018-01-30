@@ -8,6 +8,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
+import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageException;
 
 public class SatelliteDummyStorPoolData extends StorPoolData
@@ -46,7 +47,15 @@ public class SatelliteDummyStorPoolData extends StorPoolData
     }
 
     @Override
-    public StorageDriver getDriver(AccessContext accCtx) throws AccessDeniedException
+    public StorageDriver createDriver(AccessContext accCtx, SatelliteCoreServices coreSvc)
+        throws AccessDeniedException
+    {
+        throw new UnsupportedOperationException(EXC_MSG);
+    }
+
+    @Override
+    public StorageDriverKind getDriverKind(AccessContext accCtx)
+        throws AccessDeniedException
     {
         throw new UnsupportedOperationException(EXC_MSG);
     }
@@ -82,7 +91,7 @@ public class SatelliteDummyStorPoolData extends StorPoolData
     }
 
     @Override
-    public void reconfigureStorageDriver() throws StorageException
+    public void reconfigureStorageDriver(StorageDriver storageDriver) throws StorageException
     {
         // no-op
     }

@@ -231,8 +231,9 @@ public class StorPoolDataDerbyDriver implements StorPoolDataDatabaseDriver
                         dbCtx,
                         node,
                         storPoolDef,
-                        null, // controller should not have an instance of storage driver.
                         resultSet.getString(SP_DRIVER),
+                        // controller should not have an instance of storage driver.
+                        false,
                         transMgr
                     );
                 }

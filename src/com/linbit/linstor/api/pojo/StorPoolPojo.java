@@ -2,6 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.Volume;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,6 +18,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     private final Map<String, String> storPoolProps;
     private final Map<String, String> storPoolDfnProps;
     private final List<Volume.VlmApi> vlms;
+    private final Map<String, String> storPoolStaticTraits;
     private final Long fullSyncId;
     private final Long updateId;
 
@@ -30,6 +32,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         final Map<String, String> storPoolProps,
         final Map<String, String> storPoolDfnProps,
         final List<Volume.VlmApi> vlms,
+        final Map<String, String> storPoolStaticTraits,
         final Long fullSyncId,
         final Long updateId
     )
@@ -43,6 +46,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
         this.storPoolProps = storPoolProps;
         this.storPoolDfnProps = storPoolDfnProps;
         this.vlms = vlms;
+        this.storPoolStaticTraits = storPoolStaticTraits;
         this.fullSyncId = fullSyncId;
         this.updateId = updateId;
     }
@@ -97,6 +101,12 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPool.StorPool
     @Override
     public List<Volume.VlmApi> getVlmList() {
         return vlms;
+    }
+
+    @Override
+    public Map<String, String> getStorPoolStaticTraits()
+    {
+        return storPoolStaticTraits;
     }
 
     @Override

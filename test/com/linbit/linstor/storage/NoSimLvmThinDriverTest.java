@@ -28,7 +28,7 @@ public class NoSimLvmThinDriverTest extends NoSimLvmDriverTest
 
     public NoSimLvmThinDriverTest() throws IOException, StorageException
     {
-        super(new LvmThinDriver());
+        super(new LvmThinDriverKind().makeStorageDriver());
     }
 
     public NoSimLvmThinDriverTest(StorageDriver driver) throws IOException, StorageException

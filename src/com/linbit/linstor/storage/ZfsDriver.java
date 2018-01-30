@@ -3,9 +3,7 @@ package com.linbit.linstor.storage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
@@ -22,31 +20,19 @@ public class ZfsDriver extends AbsStorageDriver
 
     protected String pool = ZFS_POOL_DEFAULT;
 
-    public ZfsDriver()
+    public ZfsDriver(StorageDriverKind storageDriverKind)
     {
+        super(storageDriverKind);
     }
 
     @Override
     public Map<String, String> getTraits() throws StorageException
     {
         final HashMap<String, String> traits = new HashMap<>();
-        traits.put(DriverTraits.KEY_PROV, DriverTraits.PROV_FAT);
+
         traits.put(DriverTraits.KEY_ALLOC_UNIT, String.valueOf(getExtentSize()));
 
         return traits;
-    }
-
-    @Override
-    public Set<String> getConfigurationKeys()
-    {
-        HashSet<String> keys = new HashSet<>();
-        keys.add(StorageConstants.CONFIG_ZFS_POOL_KEY);
-        keys.add(StorageConstants.CONFIG_ZFS_COMMAND_KEY);
-        keys.add(StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY);
-
-        //TODO zfs offers a lot of editable properties, for example recordsize..
-
-        return keys;
     }
 
     @Override
@@ -168,12 +154,6 @@ public class ZfsDriver extends AbsStorageDriver
             "-r",  // also delete snapshots of this volume
             pool + File.separator + identifier
         };
-    }
-
-    @Override
-    public boolean isSnapshotSupported()
-    {
-        return true;
     }
 
     @Override

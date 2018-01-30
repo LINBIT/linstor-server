@@ -12,6 +12,8 @@ import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
 import com.linbit.linstor.security.AccessContext;
+
+import java.util.Collections;
 import java.util.UUID;
 
 @ProtobufApiCall
@@ -62,6 +64,7 @@ public class ApplyStorPool extends BaseProtoApiCall
             asMap(storPoolData.getStorPoolPropsList()),
             asMap(storPoolData.getStorPoolDfnPropsList()),
             null,
+            Collections.<String, String>emptyMap(),
             storPoolData.getFullSyncId(),
             storPoolData.getUpdateId()
         );

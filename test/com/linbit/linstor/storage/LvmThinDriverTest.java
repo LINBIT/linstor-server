@@ -33,7 +33,7 @@ public class LvmThinDriverTest extends LvmDriverTest
             @Override
             public StorageDriver createDriver() throws StorageException
             {
-                return new LvmThinDriver();
+                return new LvmThinDriverKind().makeStorageDriver();
             }
         });
     }
@@ -84,7 +84,7 @@ public class LvmThinDriverTest extends LvmDriverTest
     @Test
     public void testConfigurationKeys()
     {
-        final HashSet<String> keys = new HashSet<>(driver.getConfigurationKeys());
+        final HashSet<String> keys = new HashSet<>(driver.getKind().getConfigurationKeys());
 
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY));
         assertTrue(keys.remove(StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY));
@@ -106,13 +106,18 @@ public class LvmThinDriverTest extends LvmDriverTest
         expectVgsExtentCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, 4096);
         Map<String, String> traits = driver.getTraits();
 
-        final String traitProv = traits.get(DriverTraits.KEY_PROV);
-        assertEquals(DriverTraits.PROV_THIN, traitProv);
-
         final String size = traits.get(DriverTraits.KEY_ALLOC_UNIT);
         assertEquals("4096", size);
     }
 
+    @Test
+    public void testStaticTraits()
+    {
+        Map<String, String> traits = driver.getKind().getStaticTraits();
+
+        final String traitProv = traits.get(DriverTraits.KEY_PROV);
+        assertEquals(DriverTraits.PROV_THIN, traitProv);
+    }
 
     @Override
     protected void expectLvmCreateVolumeBehavior(

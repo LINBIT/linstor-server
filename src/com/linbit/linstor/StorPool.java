@@ -11,6 +11,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageDriver;
+import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageException;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,10 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
      * Returns the {@link StorageDriver}.
      * Will return null on {@link Controller}, and non-null on {@link Satellite}.
      */
-    public StorageDriver getDriver(AccessContext accCtx)
+    public StorageDriver createDriver(AccessContext accCtx, SatelliteCoreServices coreSvc)
+        throws AccessDeniedException;
+
+    public StorageDriverKind getDriverKind(AccessContext accCtx)
         throws AccessDeniedException;
 
     /**
@@ -85,7 +89,7 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
      * {@link StorageDriver#setConfiguration(java.util.Map)}
      * @throws StorageException
      */
-    public void reconfigureStorageDriver() throws StorageException;
+    public void reconfigureStorageDriver(StorageDriver storageDriver) throws StorageException;
 
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException;
@@ -104,5 +108,6 @@ public interface StorPool extends TransactionObject, DbgInstanceUuid
 
         Map<String, String> getStorPoolProps();
         List<Volume.VlmApi> getVlmList();
+        Map<String, String> getStorPoolStaticTraits();
     }
 }

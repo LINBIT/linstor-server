@@ -46,7 +46,7 @@ public class ZfsDriverTest extends StorageTestUtils
             @Override
             public StorageDriver createDriver() throws StorageException
             {
-                return new ZfsDriver();
+                return new ZfsDriverKind().makeStorageDriver();
             }
         });
     }
@@ -456,17 +456,23 @@ public class ZfsDriverTest extends StorageTestUtils
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, 128);
         Map<String, String> traits = driver.getTraits();
 
-        final String traitProv = traits.get(DriverTraits.KEY_PROV);
-        assertEquals(DriverTraits.PROV_FAT, traitProv);
-
         final String size = traits.get(DriverTraits.KEY_ALLOC_UNIT);
         assertEquals("128", size);
     }
 
     @Test
+    public void testStaticTraits()
+    {
+        Map<String, String> traits = driver.getKind().getStaticTraits();
+
+        final String traitProv = traits.get(DriverTraits.KEY_PROV);
+        assertEquals(DriverTraits.PROV_FAT, traitProv);
+    }
+
+    @Test
     public void testConfigurationKeys()
     {
-        final HashSet<String> keys = new HashSet<>(driver.getConfigurationKeys());
+        final HashSet<String> keys = new HashSet<>(driver.getKind().getConfigurationKeys());
 
         assertTrue(keys.remove(StorageConstants.CONFIG_ZFS_COMMAND_KEY));
         assertTrue(keys.remove(StorageConstants.CONFIG_ZFS_POOL_KEY));

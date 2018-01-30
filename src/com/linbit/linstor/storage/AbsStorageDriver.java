@@ -34,6 +34,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     public static final byte[] VALID_CHARS = { '_' };
     public static final byte[] VALID_INNER_CHARS = { '-' };
 
+    protected StorageDriverKind storageDriverKind;
     protected FileSystemWatch fileSystemWatch;
     protected ErrorReporter errorReporter;
     protected SatelliteCoreServices coreSvcs;
@@ -41,8 +42,19 @@ public abstract class AbsStorageDriver implements StorageDriver
 
     protected int sizeAlignmentToleranceFactor = EXTENT_SIZE_ALIGN_TOLERANCE_DEFAULT;
 
+    public AbsStorageDriver(StorageDriverKind storageDriverKind)
+    {
+        this.storageDriverKind = storageDriverKind;
+    }
+
     @Override
-    public void initialize(final SatelliteCoreServices coreSvcsRef) throws StorageException
+    public StorageDriverKind getKind()
+    {
+        return storageDriverKind;
+    }
+
+    @Override
+    public void initialize(final SatelliteCoreServices coreSvcsRef)
     {
         coreSvcs = coreSvcsRef;
         fileSystemWatch = coreSvcs.getFsWatch();
@@ -375,7 +387,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     @Override
     public void createSnapshot(String identifier, String snapshotName) throws StorageException
     {
-        if (!isSnapshotSupported())
+        if (!storageDriverKind.isSnapshotSupported())
         {
             throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }
@@ -406,7 +418,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     public void restoreSnapshot(String sourceIdentifier, String snapshotName, String targetIdentifier)
         throws StorageException
     {
-        if (!isSnapshotSupported())
+        if (!storageDriverKind.isSnapshotSupported())
         {
             throw new UnsupportedOperationException("Snapshots are not supported by "+ getClass());
         }
@@ -448,7 +460,7 @@ public abstract class AbsStorageDriver implements StorageDriver
     @Override
     public void deleteSnapshot(String identifier, String snapshotName) throws StorageException
     {
-        if (!isSnapshotSupported())
+        if (!storageDriverKind.isSnapshotSupported())
         {
             throw new UnsupportedOperationException("Snapshots are not supported by " + getClass());
         }

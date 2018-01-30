@@ -2,12 +2,24 @@ package com.linbit.linstor.storage;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 import com.linbit.linstor.SatelliteCoreServices;
 
 public class DisklessDriver implements StorageDriver
 {
+    private final StorageDriverKind storageDriverKind;
+
+    public DisklessDriver(StorageDriverKind storageDriverKind)
+    {
+        this.storageDriverKind = storageDriverKind;
+    }
+
+    @Override
+    public StorageDriverKind getKind()
+    {
+        return storageDriverKind;
+    }
+
     @Override
     public void initialize(SatelliteCoreServices coreSvc)
     {
@@ -63,21 +75,9 @@ public class DisklessDriver implements StorageDriver
     }
 
     @Override
-    public Set<String> getConfigurationKeys()
-    {
-        return Collections.emptySet();
-    }
-
-    @Override
     public void setConfiguration(Map<String, String> config)
     {
         // no-op
-    }
-
-    @Override
-    public boolean isSnapshotSupported()
-    {
-        return false; // tempting... :)
     }
 
     @Override

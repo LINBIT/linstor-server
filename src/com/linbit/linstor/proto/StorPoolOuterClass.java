@@ -261,6 +261,50 @@ public final class StorPoolOuterClass {
      */
     com.linbit.linstor.proto.VlmOuterClass.VlmOrBuilder getVlmsOrBuilder(
         int index);
+
+    /**
+     * <pre>
+     * Storage pool traits map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+     */
+    java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
+        getStaticTraitsList();
+    /**
+     * <pre>
+     * Storage pool traits map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+     */
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStaticTraits(int index);
+    /**
+     * <pre>
+     * Storage pool traits map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+     */
+    int getStaticTraitsCount();
+    /**
+     * <pre>
+     * Storage pool traits map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+     */
+    java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getStaticTraitsOrBuilderList();
+    /**
+     * <pre>
+     * Storage pool traits map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+     */
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStaticTraitsOrBuilder(
+        int index);
   }
   /**
    * <pre>
@@ -286,6 +330,7 @@ public final class StorPoolOuterClass {
       driver_ = "";
       props_ = java.util.Collections.emptyList();
       vlms_ = java.util.Collections.emptyList();
+      staticTraits_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -370,6 +415,15 @@ public final class StorPoolOuterClass {
                   input.readMessage(com.linbit.linstor.proto.VlmOuterClass.Vlm.PARSER, extensionRegistry));
               break;
             }
+            case 74: {
+              if (!((mutable_bitField0_ & 0x00000100) == 0x00000100)) {
+                staticTraits_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
+                mutable_bitField0_ |= 0x00000100;
+              }
+              staticTraits_.add(
+                  input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -383,6 +437,9 @@ public final class StorPoolOuterClass {
         }
         if (((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
           vlms_ = java.util.Collections.unmodifiableList(vlms_);
+        }
+        if (((mutable_bitField0_ & 0x00000100) == 0x00000100)) {
+          staticTraits_ = java.util.Collections.unmodifiableList(staticTraits_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -835,6 +892,61 @@ public final class StorPoolOuterClass {
       return vlms_.get(index);
     }
 
+    public static final int STATIC_TRAITS_FIELD_NUMBER = 9;
+    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> staticTraits_;
+    /**
+     * <pre>
+     * Storage pool traits map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+     */
+    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getStaticTraitsList() {
+      return staticTraits_;
+    }
+    /**
+     * <pre>
+     * Storage pool traits map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+     */
+    public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+        getStaticTraitsOrBuilderList() {
+      return staticTraits_;
+    }
+    /**
+     * <pre>
+     * Storage pool traits map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+     */
+    public int getStaticTraitsCount() {
+      return staticTraits_.size();
+    }
+    /**
+     * <pre>
+     * Storage pool traits map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+     */
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStaticTraits(int index) {
+      return staticTraits_.get(index);
+    }
+    /**
+     * <pre>
+     * Storage pool traits map
+     * </pre>
+     *
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+     */
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStaticTraitsOrBuilder(
+        int index) {
+      return staticTraits_.get(index);
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -861,6 +973,12 @@ public final class StorPoolOuterClass {
       }
       for (int i = 0; i < getVlmsCount(); i++) {
         if (!getVlms(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      for (int i = 0; i < getStaticTraitsCount(); i++) {
+        if (!getStaticTraits(i).isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -895,6 +1013,9 @@ public final class StorPoolOuterClass {
       for (int i = 0; i < vlms_.size(); i++) {
         output.writeMessage(8, vlms_.get(i));
       }
+      for (int i = 0; i < staticTraits_.size(); i++) {
+        output.writeMessage(9, staticTraits_.get(i));
+      }
       unknownFields.writeTo(output);
     }
 
@@ -928,6 +1049,10 @@ public final class StorPoolOuterClass {
       for (int i = 0; i < vlms_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(8, vlms_.get(i));
+      }
+      for (int i = 0; i < staticTraits_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(9, staticTraits_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -980,6 +1105,8 @@ public final class StorPoolOuterClass {
           .equals(other.getPropsList());
       result = result && getVlmsList()
           .equals(other.getVlmsList());
+      result = result && getStaticTraitsList()
+          .equals(other.getStaticTraitsList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -1022,6 +1149,10 @@ public final class StorPoolOuterClass {
       if (getVlmsCount() > 0) {
         hash = (37 * hash) + VLMS_FIELD_NUMBER;
         hash = (53 * hash) + getVlmsList().hashCode();
+      }
+      if (getStaticTraitsCount() > 0) {
+        hash = (37 * hash) + STATIC_TRAITS_FIELD_NUMBER;
+        hash = (53 * hash) + getStaticTraitsList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -1143,6 +1274,7 @@ public final class StorPoolOuterClass {
                 .alwaysUseFieldBuilders) {
           getPropsFieldBuilder();
           getVlmsFieldBuilder();
+          getStaticTraitsFieldBuilder();
         }
       }
       public Builder clear() {
@@ -1170,6 +1302,12 @@ public final class StorPoolOuterClass {
           bitField0_ = (bitField0_ & ~0x00000080);
         } else {
           vlmsBuilder_.clear();
+        }
+        if (staticTraitsBuilder_ == null) {
+          staticTraits_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000100);
+        } else {
+          staticTraitsBuilder_.clear();
         }
         return this;
       }
@@ -1236,6 +1374,15 @@ public final class StorPoolOuterClass {
           result.vlms_ = vlms_;
         } else {
           result.vlms_ = vlmsBuilder_.build();
+        }
+        if (staticTraitsBuilder_ == null) {
+          if (((bitField0_ & 0x00000100) == 0x00000100)) {
+            staticTraits_ = java.util.Collections.unmodifiableList(staticTraits_);
+            bitField0_ = (bitField0_ & ~0x00000100);
+          }
+          result.staticTraits_ = staticTraits_;
+        } else {
+          result.staticTraits_ = staticTraitsBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -1361,6 +1508,32 @@ public final class StorPoolOuterClass {
             }
           }
         }
+        if (staticTraitsBuilder_ == null) {
+          if (!other.staticTraits_.isEmpty()) {
+            if (staticTraits_.isEmpty()) {
+              staticTraits_ = other.staticTraits_;
+              bitField0_ = (bitField0_ & ~0x00000100);
+            } else {
+              ensureStaticTraitsIsMutable();
+              staticTraits_.addAll(other.staticTraits_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.staticTraits_.isEmpty()) {
+            if (staticTraitsBuilder_.isEmpty()) {
+              staticTraitsBuilder_.dispose();
+              staticTraitsBuilder_ = null;
+              staticTraits_ = other.staticTraits_;
+              bitField0_ = (bitField0_ & ~0x00000100);
+              staticTraitsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getStaticTraitsFieldBuilder() : null;
+            } else {
+              staticTraitsBuilder_.addAllMessages(other.staticTraits_);
+            }
+          }
+        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
@@ -1383,6 +1556,11 @@ public final class StorPoolOuterClass {
         }
         for (int i = 0; i < getVlmsCount(); i++) {
           if (!getVlms(i).isInitialized()) {
+            return false;
+          }
+        }
+        for (int i = 0; i < getStaticTraitsCount(); i++) {
+          if (!getStaticTraits(i).isInitialized()) {
             return false;
           }
         }
@@ -2631,6 +2809,318 @@ public final class StorPoolOuterClass {
         }
         return vlmsBuilder_;
       }
+
+      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> staticTraits_ =
+        java.util.Collections.emptyList();
+      private void ensureStaticTraitsIsMutable() {
+        if (!((bitField0_ & 0x00000100) == 0x00000100)) {
+          staticTraits_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(staticTraits_);
+          bitField0_ |= 0x00000100;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> staticTraitsBuilder_;
+
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getStaticTraitsList() {
+        if (staticTraitsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(staticTraits_);
+        } else {
+          return staticTraitsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public int getStaticTraitsCount() {
+        if (staticTraitsBuilder_ == null) {
+          return staticTraits_.size();
+        } else {
+          return staticTraitsBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getStaticTraits(int index) {
+        if (staticTraitsBuilder_ == null) {
+          return staticTraits_.get(index);
+        } else {
+          return staticTraitsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public Builder setStaticTraits(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (staticTraitsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStaticTraitsIsMutable();
+          staticTraits_.set(index, value);
+          onChanged();
+        } else {
+          staticTraitsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public Builder setStaticTraits(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (staticTraitsBuilder_ == null) {
+          ensureStaticTraitsIsMutable();
+          staticTraits_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          staticTraitsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public Builder addStaticTraits(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (staticTraitsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStaticTraitsIsMutable();
+          staticTraits_.add(value);
+          onChanged();
+        } else {
+          staticTraitsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public Builder addStaticTraits(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (staticTraitsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStaticTraitsIsMutable();
+          staticTraits_.add(index, value);
+          onChanged();
+        } else {
+          staticTraitsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public Builder addStaticTraits(
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (staticTraitsBuilder_ == null) {
+          ensureStaticTraitsIsMutable();
+          staticTraits_.add(builderForValue.build());
+          onChanged();
+        } else {
+          staticTraitsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public Builder addStaticTraits(
+          int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
+        if (staticTraitsBuilder_ == null) {
+          ensureStaticTraitsIsMutable();
+          staticTraits_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          staticTraitsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public Builder addAllStaticTraits(
+          java.lang.Iterable<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
+        if (staticTraitsBuilder_ == null) {
+          ensureStaticTraitsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, staticTraits_);
+          onChanged();
+        } else {
+          staticTraitsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public Builder clearStaticTraits() {
+        if (staticTraitsBuilder_ == null) {
+          staticTraits_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000100);
+          onChanged();
+        } else {
+          staticTraitsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public Builder removeStaticTraits(int index) {
+        if (staticTraitsBuilder_ == null) {
+          ensureStaticTraitsIsMutable();
+          staticTraits_.remove(index);
+          onChanged();
+        } else {
+          staticTraitsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getStaticTraitsBuilder(
+          int index) {
+        return getStaticTraitsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getStaticTraitsOrBuilder(
+          int index) {
+        if (staticTraitsBuilder_ == null) {
+          return staticTraits_.get(index);  } else {
+          return staticTraitsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+           getStaticTraitsOrBuilderList() {
+        if (staticTraitsBuilder_ != null) {
+          return staticTraitsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(staticTraits_);
+        }
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addStaticTraitsBuilder() {
+        return getStaticTraitsFieldBuilder().addBuilder(
+            com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addStaticTraitsBuilder(
+          int index) {
+        return getStaticTraitsFieldBuilder().addBuilder(
+            index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * Storage pool traits map
+       * </pre>
+       *
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry static_traits = 9;</code>
+       */
+      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
+           getStaticTraitsBuilderList() {
+        return getStaticTraitsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
+          getStaticTraitsFieldBuilder() {
+        if (staticTraitsBuilder_ == null) {
+          staticTraitsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
+                  staticTraits_,
+                  ((bitField0_ & 0x00000100) == 0x00000100),
+                  getParentForChildren(),
+                  isClean());
+          staticTraits_ = null;
+        }
+        return staticTraitsBuilder_;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -2696,13 +3186,15 @@ public final class StorPoolOuterClass {
     java.lang.String[] descriptorData = {
       "\n\024proto/StorPool.proto\022\030com.linbit.linst" +
       "or.proto\032\033proto/LinStorMapEntry.proto\032\017p" +
-      "roto/Vlm.proto\"\363\001\n\010StorPool\022\026\n\016stor_pool" +
+      "roto/Vlm.proto\"\265\002\n\010StorPool\022\026\n\016stor_pool" +
       "_uuid\030\001 \001(\t\022\021\n\tnode_uuid\030\002 \001(\t\022\021\n\tnode_n" +
       "ame\030\003 \002(\t\022\032\n\022stor_pool_dfn_uuid\030\004 \001(\t\022\026\n" +
       "\016stor_pool_name\030\005 \002(\t\022\016\n\006driver\030\006 \002(\t\0228\n" +
       "\005props\030\007 \003(\0132).com.linbit.linstor.proto." +
       "LinStorMapEntry\022+\n\004vlms\030\010 \003(\0132\035.com.linb" +
-      "it.linstor.proto.VlmP\000P\001"
+      "it.linstor.proto.Vlm\022@\n\rstatic_traits\030\t " +
+      "\003(\0132).com.linbit.linstor.proto.LinStorMa",
+      "pEntryP\000P\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2723,7 +3215,7 @@ public final class StorPoolOuterClass {
     internal_static_com_linbit_linstor_proto_StorPool_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_StorPool_descriptor,
-        new java.lang.String[] { "StorPoolUuid", "NodeUuid", "NodeName", "StorPoolDfnUuid", "StorPoolName", "Driver", "Props", "Vlms", });
+        new java.lang.String[] { "StorPoolUuid", "NodeUuid", "NodeName", "StorPoolDfnUuid", "StorPoolName", "Driver", "Props", "Vlms", "StaticTraits", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.linstor.proto.VlmOuterClass.getDescriptor();
   }

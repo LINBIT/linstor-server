@@ -181,7 +181,7 @@ public abstract class NoSimDriverTest
             startVolume(identifier, "   starting volume [%s]...");
         }
 
-        if (driver.isSnapshotSupported())
+        if (driver.getKind().isSnapshotSupported())
         {
             log("testing snapshot create   %n");
 

@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -25,9 +26,12 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.StorageDriver;
-import com.linbit.linstor.storage.StorageDriverUtils;
+import com.linbit.linstor.storage.StorageDriverKind;
+import com.linbit.linstor.storage.StorageDriverLoader;
 import com.linbit.linstor.storage.StorageException;
 import java.util.ArrayList;
+
+import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 
 public class StorPoolData extends BaseTransactionObject implements StorPool
 {
@@ -37,8 +41,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     private final transient UUID dbgInstanceId;
 
     private final StorPoolDefinition storPoolDef;
-    private final StorageDriver storDriver;
-    private final String storDriverSimpleClassName;
+    private final StorageDriverKind storageDriverKind;
+    private final boolean allowStorageDriverCreation;
     private final Props props;
     private final Node node;
     private final StorPoolDataDatabaseDriver dbDriver;
@@ -54,8 +58,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         AccessContext accCtx,
         Node nodeRef,
         StorPoolDefinition storPoolDef,
-        StorageDriver storDriver,
-        String storDriverSimpleClassName,
+        String storageDriverName,
+        boolean allowStorageDriverCreation,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -65,8 +69,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             accCtx,
             nodeRef,
             storPoolDef,
-            storDriver,
-            storDriverSimpleClassName,
+            storageDriverName,
+            allowStorageDriverCreation,
             transMgr
         );
     }
@@ -79,8 +83,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         AccessContext accCtx,
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
-        StorageDriver storDriverRef,
-        String storDriverSimpleClassNameRef,
+        String storageDriverName,
+        boolean allowStorageDriverCreationRef,
         TransactionMgr transMgr
     )
         throws SQLException, AccessDeniedException
@@ -88,8 +92,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         uuid = id;
         dbgInstanceId = UUID.randomUUID();
         storPoolDef = storPoolDefRef;
-        storDriver = storDriverRef;
-        storDriverSimpleClassName = storDriverSimpleClassNameRef;
+        storageDriverKind = StorageDriverLoader.getKind(storageDriverName);
+        allowStorageDriverCreation = allowStorageDriverCreationRef;
         node = nodeRef;
         volumeMap = new TransactionMap<>(new TreeMap<String, Volume>(), null);
 
@@ -119,8 +123,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         uuid = null;
         dbgInstanceId = UUID.randomUUID();
         storPoolDef = null;
-        storDriver = null;
-        storDriverSimpleClassName = null;
+        storageDriverKind = null;
+        allowStorageDriverCreation = false;
         props = null;
         node = null;
         dbDriver = null;
@@ -162,13 +166,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
 
         if (storPoolData == null && createIfNotExists)
         {
-            StorageDriver storDriver = null;
             storPoolData = new StorPoolData(
                 accCtx,
                 nodeRef,
                 storPoolDefRef,
-                storDriver,
                 storDriverSimpleClassNameRef,
+                false,
                 transMgr
             );
             driver.create(storPoolData, transMgr);
@@ -200,13 +203,19 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             storPoolData = driver.load(nodeRef, storPoolDefRef, false, transMgr);
             if (storPoolData == null)
             {
+                StorageDriverKind storageDriverKind =
+                    StorageDriverLoader.getKind(storDriverSimpleClassNameRef);
+
+                StorageDriver storageDriver = storageDriverKind.makeStorageDriver();
+                storageDriver.initialize(stltCoreSvcs);
+
                 storPoolData = new StorPoolData(
                     uuid,
                     accCtx,
                     nodeRef,
                     storPoolDefRef,
-                    StorageDriverUtils.createInstance(storDriverSimpleClassNameRef, stltCoreSvcs),
                     storDriverSimpleClassNameRef,
+                    true,
                     transMgr
                 );
             }
@@ -255,11 +264,25 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public StorageDriver getDriver(AccessContext accCtx) throws AccessDeniedException
+    public StorageDriver createDriver(AccessContext accCtx, SatelliteCoreServices coreSvc)
+        throws AccessDeniedException
     {
-        checkDeleted();
-        node.getObjProt().requireAccess(accCtx, AccessType.USE);
-        return storDriver;
+        StorageDriver storageDriver = null;
+        if (allowStorageDriverCreation)
+        {
+            checkDeleted();
+            node.getObjProt().requireAccess(accCtx, AccessType.USE);
+            storageDriver = storageDriverKind.makeStorageDriver();
+            storageDriver.initialize(coreSvc);
+        }
+        return storageDriver;
+    }
+
+    @Override
+    public StorageDriverKind getDriverKind(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        return storageDriverKind;
     }
 
     @Override
@@ -270,7 +293,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     }
 
     @Override
-    public void reconfigureStorageDriver() throws StorageException
+    public void reconfigureStorageDriver(StorageDriver storageDriver) throws StorageException
     {
         checkDeleted();
         try
@@ -278,7 +301,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             Map<String, String> map = props.getNamespace(STORAGE_DRIVER_PROP_NAMESPACE).map();
             // we could check storDriver for null here, but if it is null, we would throw an implExc anyways
             // so just let java throw the nullpointer exception
-            storDriver.setConfiguration(map);
+            storageDriver.setConfiguration(map);
         }
         catch (InvalidKeyException invalidKeyExc)
         {
@@ -290,7 +313,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     public String getDriverName()
     {
         checkDeleted();
-        return storDriverSimpleClassName;
+        return storageDriverKind.getDriverName();
     }
 
     @Override
@@ -350,6 +373,19 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         }
     }
 
+    private Map<String, String> getTraits(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        Map<String, String> traits = new HashMap<>(storageDriverKind.getStaticTraits());
+
+        traits.put(
+            KEY_STOR_POOL_SUPPORTS_SNAPSHOTS,
+            String.valueOf(storageDriverKind.isSnapshotSupported())
+        );
+
+        return traits;
+    }
+
     @Override
     public String toString()
     {
@@ -376,6 +412,7 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             getProps(accCtx).map(),
             getDefinition(accCtx).getProps(accCtx).map(),
             vlms,
+            getTraits(accCtx),
             fullSyncId,
             updateId
         );

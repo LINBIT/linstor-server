@@ -23,7 +23,7 @@ public class NoSimLvmDriverTest extends NoSimDriverTest
 {
     public NoSimLvmDriverTest() throws IOException, StorageException
     {
-        this(new LvmDriver());
+        this(new LvmDriverKind().makeStorageDriver());
     }
 
     public NoSimLvmDriverTest(StorageDriver driver) throws IOException, StorageException

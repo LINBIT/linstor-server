@@ -3,9 +3,7 @@ package com.linbit.linstor.storage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import com.linbit.Checks;
 import com.linbit.ChildProcessTimeoutException;
@@ -32,8 +30,9 @@ public class LvmThinDriver extends LvmDriver
     protected String baseVolumeGroup = LVM_VOLUME_GROUP_DEFAULT;
     protected String thinPoolName = LVM_THIN_POOL_DEFAULT;
 
-    public LvmThinDriver()
+    public LvmThinDriver(StorageDriverKind storageDriverKind)
     {
+        super(storageDriverKind);
     }
 
     @Override
@@ -107,30 +106,11 @@ public class LvmThinDriver extends LvmDriver
         final long extentSize = getExtentSize();
 
         final HashMap<String, String> traits = new HashMap<>();
-        traits.put(DriverTraits.KEY_PROV, DriverTraits.PROV_THIN);
 
         final String size = Long.toString(extentSize);
         traits.put(DriverTraits.KEY_ALLOC_UNIT, size);
 
         return traits;
-    }
-
-    @Override
-    public Set<String> getConfigurationKeys()
-    {
-        final HashSet<String> keySet = new HashSet<>();
-
-        keySet.add(StorageConstants.CONFIG_LVM_CREATE_COMMAND_KEY);
-        keySet.add(StorageConstants.CONFIG_LVM_REMOVE_COMMAND_KEY);
-        keySet.add(StorageConstants.CONFIG_LVM_CHANGE_COMMAND_KEY);
-        keySet.add(StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY);
-        keySet.add(StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY);
-        keySet.add(StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY);
-        keySet.add(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
-        keySet.add(StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY);
-        keySet.add(StorageConstants.CONFIG_LVM_THIN_POOL_KEY);
-
-        return keySet;
     }
 
     @Override
@@ -161,12 +141,6 @@ public class LvmThinDriver extends LvmDriver
         thinPoolName = getAsString(config, StorageConstants.CONFIG_LVM_THIN_POOL_KEY, thinPoolName);
         volumeGroup = getAsString(config, StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY, baseVolumeGroup);
         lvmConvertCommand = getAsString(config, StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY, lvmConvertCommand);
-    }
-
-    @Override
-    public boolean isSnapshotSupported()
-    {
-        return true;
     }
 
     @Override

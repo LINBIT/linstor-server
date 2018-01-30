@@ -23,7 +23,7 @@ public class NoSimZfsDriverTest extends NoSimDriverTest
 {
     public NoSimZfsDriverTest() throws IOException, StorageException
     {
-        this(new ZfsDriver());
+        this(new ZfsDriverKind().makeStorageDriver());
     }
 
     public NoSimZfsDriverTest(ZfsDriver driver) throws IOException, StorageException
