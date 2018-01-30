@@ -497,7 +497,7 @@ public class LvmDriverTest extends StorageTestUtils
         if (volumeExists)
         {
             outData = new TestOutputData(
-                "Logical volume \"" + identifier + "\" successuflly removed",
+                "Logical volume \"" + identifier + "\" successfully removed",
                 "",
                 0);
         }
