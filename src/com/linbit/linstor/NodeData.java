@@ -654,6 +654,9 @@ public class NodeData extends BaseTransactionObject implements Node
                 )
             );
         }
+
+        Peer peer = getPeer(accCtx);
+
         return new NodePojo(
             getUuid(),
             getName().getDisplayName(),
@@ -662,7 +665,7 @@ public class NodeData extends BaseTransactionObject implements Node
             netInterfaces,
             nodeConns,
             getProps(accCtx).map(),
-            getPeer(accCtx).isConnected(),
+            peer != null && peer.isConnected(),
             disklessStorPool.getUuid(),
             fullSyncId,
             updateId
