@@ -97,4 +97,9 @@ public class DisklessDriver implements StorageDriver
     {
         // no-op
     }
+
+    @Override
+    public long getFreeSize() {
+        return 0;
+    }
 }

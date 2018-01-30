@@ -180,7 +180,8 @@ public class LvmDriver extends AbsStorageDriver
                 volumeGroup,
                 "-o", "vg_extent_size",
                 "--units", "k",
-                "--noheadings"
+                "--noheadings",
+                "--nosuffix"
             };
         try
         {
@@ -370,5 +371,51 @@ public class LvmDriver extends AbsStorageDriver
     public String getVolumePath(String identifier) throws StorageException
     {
         return "/dev/" + volumeGroup + "/" + identifier;
+    }
+
+    @Override
+    public long getFreeSize() throws StorageException {
+        long freeSize;
+        final String[] command = new String[]
+            {
+                lvmVgsCommand,
+                volumeGroup,
+                "-o", "vg_free",
+                "--units", "k",
+                "--noheadings",
+                "--nosuffix"
+            };
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            final OutputData output = extCommand.exec(command);
+
+            checkExitCode(output, command);
+
+            String rawOut = new String(output.stdoutData);
+            // cut everything after the decimal dot
+            int indexOf = rawOut.indexOf('.');
+            if (indexOf == -1)
+            {
+                indexOf = rawOut.indexOf(',');
+            }
+            rawOut = rawOut.substring(0, indexOf);
+            freeSize = Long.parseLong(rawOut.trim());
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to query volume group free size",
+                String.format("Failed to query the free size of volume group: %s", volumeGroup),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
+            );
+        }
+
+        return freeSize;
     }
 }

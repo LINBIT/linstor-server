@@ -290,4 +290,36 @@ public class ZfsDriver extends AbsStorageDriver
     {
         return pool + File.separator + identifier + "@" + snapshotName;
     }
+
+    @Override
+    public long getFreeSize() throws StorageException {
+        final String[] command = new String[]
+            {
+                zfsCommand, "get", "available", "-o", "value", "-Hp", pool
+            };
+
+        try
+        {
+            final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
+            OutputData outputData = extCommand.exec(command);
+
+            checkExitCode(outputData, command);
+
+            String strFreeSize = new String(outputData.stdoutData);
+            return Long.parseLong(strFreeSize.trim()) >> 10; // we have to return free size in KiB
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException(
+                "Failed to get the free size (zfs 'available')",
+                String.format("Failed to get the free size for pool: %s", pool),
+                (exc instanceof ChildProcessTimeoutException) ?
+                    "External command timed out" :
+                    "External command threw an IOException",
+                null,
+                String.format("External command: %s", glue(command, " ")),
+                exc
+            );
+        }
+    }
 }

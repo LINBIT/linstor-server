@@ -442,6 +442,15 @@ public class ZfsDriverTest extends StorageTestUtils
     }
 
     @Test
+    public void testFreeSize() throws StorageException
+    {
+        final long size = 1 * 1024 * 1024 * 1024; // 1TB
+        expectZfsFreeSizeCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, size, true);
+
+        assertEquals(size, driver.getFreeSize());
+    }
+
+    @Test
     public void testTraits() throws StorageException
     {
         expectZfsExtentCommand(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, 128);
@@ -564,9 +573,30 @@ public class ZfsDriverTest extends StorageTestUtils
         boolean poolExists
     )
     {
+        expectZfsSizeCommand(zfsCommand, "recordsize", pool, size, poolExists);
+    }
+
+    protected void expectZfsFreeSizeCommand(
+        String zfsCommand,
+        String pool,
+        long size,
+        boolean poolExists
+    )
+    {
+        expectZfsSizeCommand(zfsCommand, "available", pool, size, poolExists);
+    }
+
+    protected void expectZfsSizeCommand(
+        final String zfsCommand,
+        final String property,
+        final String pool,
+        long size,
+        boolean poolExists
+    )
+    {
         Command command = new Command(
             zfsCommand,
-            "get", "recordsize",
+            "get", property,
             "-o", "value",
             "-Hp",
             pool

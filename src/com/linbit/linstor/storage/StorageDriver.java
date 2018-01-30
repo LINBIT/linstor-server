@@ -80,10 +80,15 @@ public interface StorageDriver
      * Returns the size of a volume
      *
      * @param identifier Unique name of the volume
-     * @return Path of the volume's block device file
+     * @return Size of the volume.
      * @throws StorageException If determining the size of the volume fails
      */
     long getSize(String identifier) throws StorageException;
+
+    /**
+     * Returns the free size of the pool.
+     */
+    long getFreeSize() throws StorageException;
 
     /**
      * Returns a map of this driver's characteristics, such as what minimum unit of allocation

@@ -389,6 +389,15 @@ public class LvmDriverTest extends StorageTestUtils
         assertEquals(volumeSize, size);
     }
 
+    @Test
+    public void testFreeSize() throws StorageException
+    {
+        final long size = 1 * 1024 * 1024 * 1024;
+        expectVgsFreeSizeCommand(LVM_VGS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, size);
+
+        assertEquals(size, driver.getFreeSize());
+    }
+
     @Test(expected = StorageException.class)
     public void testSizeUnknownVolume() throws StorageException
     {
@@ -611,7 +620,7 @@ public class LvmDriverTest extends StorageTestUtils
 
     protected void expectVgsExtentCommand(final String vgsCommand, final String volumeGroup, final long extentSize)
     {
-        expectVgsExtentCommand(vgsCommand, volumeGroup, Long.toString(extentSize) + ".00k");
+        expectVgsExtentCommand(vgsCommand, volumeGroup, Long.toString(extentSize) + ".00");
     }
 
     protected void expectVgsExtentCommand(
@@ -619,12 +628,27 @@ public class LvmDriverTest extends StorageTestUtils
         final String volumeGroup,
         final String extentSize)
     {
+        expectVgsPropCommand(vgsCommand, "vg_extent_size", volumeGroup, extentSize);
+    }
+
+    protected void expectVgsFreeSizeCommand(final String vgsCommand, final String volumeGroup, final long freeSize)
+    {
+        expectVgsPropCommand(vgsCommand, "vg_free", volumeGroup, Long.toString(freeSize) + ".00");
+    }
+
+    protected void expectVgsPropCommand(
+        final String vgsCommand,
+        final String property,
+        final String volumeGroup,
+        final String extentSize)
+    {
         Command command = new Command(
             vgsCommand,
             volumeGroup,
-            "-o", "vg_extent_size",
+            "-o", property,
             "--units", "k",
-            "--noheadings");
+            "--noheadings",
+            "--nosuffix");
         OutputData outData = new TestOutputData("   "+extentSize, "", 0);
         ec.setExpectedBehavior(command, outData);
     }
