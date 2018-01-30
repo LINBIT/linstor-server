@@ -3,11 +3,15 @@ package com.linbit.extproc;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
+import com.linbit.utils.StringUtils;
 
 /**
  * Runs an external command, logs and saves its output
@@ -16,6 +20,8 @@ import com.linbit.timer.Timer;
  */
 public class ExtCmd extends ChildProcessHandler
 {
+    private static final Pattern SPACE_PATTERN = Pattern.compile(" ");
+
     private OutputReceiver  outReceiver;
     private OutputReceiver  errReceiver;
     private ErrorReporter   errLog;
@@ -57,6 +63,8 @@ public class ExtCmd extends ChildProcessHandler
     private void exec(ProcessBuilder.Redirect stdinRedirect, String... command)
         throws IOException
     {
+        logCommandExecution(command);
+
         ProcessBuilder pBuilder = new ProcessBuilder();
         pBuilder.command(command);
         pBuilder.redirectError(ProcessBuilder.Redirect.PIPE);
@@ -68,6 +76,18 @@ public class ExtCmd extends ChildProcessHandler
         errReceiver = new OutputReceiver(child.getErrorStream(), errLog);
         new Thread(outReceiver).start();
         new Thread(errReceiver).start();
+    }
+
+    private void logCommandExecution(String... command)
+    {
+        List<String> commandElements = new ArrayList<>();
+
+        for (String commandElement : command)
+        {
+            commandElements.add(SPACE_PATTERN.matcher(commandElement).replaceAll("\\\\ "));
+        }
+
+        errLog.logDebug("Executing command: " + StringUtils.join(commandElements, " "));
     }
 
     public OutputData syncProcess() throws IOException, ChildProcessTimeoutException
