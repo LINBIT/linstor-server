@@ -13,7 +13,6 @@ import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlClientSerializer;
 import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.numberpool.NumberPool;
 import com.linbit.linstor.security.AccessContext;
 
 import java.util.Collections;
@@ -24,6 +23,7 @@ import java.util.UUID;
 
 public class CtrlApiCallHandler
 {
+    private final CtrlConfApiCallHandler ctrlConfApiCallHandler;
     private final CtrlAuthenticationApiCallHandler authApiCallHandler;
     private final CtrlFullSyncApiCallHandler fullSyncApiCallHandler;
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
@@ -59,6 +59,7 @@ public class CtrlApiCallHandler
             default:
                 throw new ImplementationError("Unknown ApiType: " + type, null);
         }
+        ctrlConfApiCallHandler = new CtrlConfApiCallHandler(apiCtrlAccessors, ctrlClientcomSrzl);
         authApiCallHandler = new CtrlAuthenticationApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, apiCtx);
         fullSyncApiCallHandler = new CtrlFullSyncApiCallHandler(apiCtrlAccessors, apiCtx, ctrlStltComSrzl);
         nodeApiCallHandler = new CtrlNodeApiCallHandler(apiCtrlAccessors, apiCtx, ctrlStltComSrzl, ctrlClientcomSrzl);
@@ -1593,7 +1594,53 @@ public class CtrlApiCallHandler
         }
     }
 
-    public CtrlClientSerializer getCtrlClientcomSrzl() {
+    public CtrlClientSerializer getCtrlClientcomSrzl()
+    {
         return ctrlClientcomSrzl;
+    }
+
+    public ApiCallRc setCtrlCfgProp(AccessContext accCtx, String key, String namespace, String value)
+    {
+        ApiCallRc apiCallRc;
+        try
+        {
+            apiCtrlAccessors.getCtrlConfigLock().writeLock().lock();
+            apiCallRc  = ctrlConfApiCallHandler.setProp(accCtx, key, namespace, value);
+        }
+        finally
+        {
+            apiCtrlAccessors.getCtrlConfigLock().writeLock().unlock();
+        }
+        return apiCallRc;
+    }
+
+    public byte[] listCtrlCfg(AccessContext accCtx, String key, String namespace, int msgId)
+    {
+        byte[] data;
+        try
+        {
+            apiCtrlAccessors.getCtrlConfigLock().readLock().lock();
+            data  = ctrlConfApiCallHandler.listProps(accCtx, key, namespace, msgId);
+        }
+        finally
+        {
+            apiCtrlAccessors.getCtrlConfigLock().readLock().unlock();
+        }
+        return data;
+    }
+
+    public ApiCallRc deleteCtrlCfgProp(AccessContext accCtx, String key, String namespace)
+    {
+        ApiCallRc apiCallRc;
+        try
+        {
+            apiCtrlAccessors.getCtrlConfigLock().writeLock().lock();
+            apiCallRc  = ctrlConfApiCallHandler.deleteProp(accCtx, key, namespace);
+        }
+        finally
+        {
+            apiCtrlAccessors.getCtrlConfigLock().writeLock().unlock();
+        }
+        return apiCallRc;
     }
 }

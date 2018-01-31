@@ -14,6 +14,15 @@ public class ApiCallRcImpl implements ApiCallRc
         entries.add(entry);
     }
 
+    public void addEntry(String message, long returnCode)
+    {
+        ApiCallRcEntry entry = new ApiCallRcEntry();
+        entry.setMessageFormat(message);
+        entry.setReturnCode(returnCode);
+
+        addEntry(entry);
+    }
+
     @Override
     public List<RcEntry> getEntries()
     {

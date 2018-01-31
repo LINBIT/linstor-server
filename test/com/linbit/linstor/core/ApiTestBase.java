@@ -116,6 +116,7 @@ public abstract class ApiTestBase extends DerbyBase
         dbConnPool.returnConnection(transMgr);
 
         testApiCtrlAccessors = new ApiCtrlAccessorTestImpl(
+            ctrlConfProt,
             ctrlConfLock,
             ctrlConf,
             nodesMap,

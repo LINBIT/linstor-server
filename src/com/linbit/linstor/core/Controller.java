@@ -157,7 +157,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     private static final int DEFAULT_TCP_PORT_MAX = 7999;
     private static final int DEFAULT_MINOR_NR_MIN = 1000;
     private static final int DEFAULT_MINOR_NR_MAX = 49999;
-    private static final Pattern RANGE_PATTERN = Pattern.compile("(?<min>\\d+) ?- ?(?<max>\\d+)");
+    public static final Pattern RANGE_PATTERN = Pattern.compile("(?<min>\\d+) ?- ?(?<max>\\d+)");
 
     private static final String DERBY_CONNECTION_TEST_SQL =
         "SELECT 1 FROM " + TBL_SEC_CONFIGURATION;
@@ -1204,7 +1204,81 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     {
         try
         {
-            String strRange = ctrlConf.getProp(PROPSCON_KEY_MINOR_NR_RANGE);
+            reloadMinorNrRange();
+            reloadTcpPortRange();
+
+            for (ResourceDefinition curRscDfn : rscDfnMap.values())
+            {
+                TcpPortNumber portNr = curRscDfn.getPort(initCtx);
+                tcpPortNrPool.allocate(portNr.value);
+                Iterator<VolumeDefinition> vlmIter = curRscDfn.iterateVolumeDfn(initCtx);
+                while (vlmIter.hasNext())
+                {
+                    VolumeDefinition curVlmDfn = vlmIter.next();
+                    MinorNumber minorNr = curVlmDfn.getMinorNr(initCtx);
+                    minorNrPool.allocate(minorNr.value);
+                }
+            }
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ImplementationError(
+                "An " + accExc.getClass().getSimpleName() + " exception was generated " +
+                "during number allocation cache initialization",
+                accExc
+            );
+        }
+    }
+
+    public void reloadTcpPortRange()
+    {
+        String strRange;
+        Matcher matcher;
+        boolean useDefaults;
+        try
+        {
+            strRange = ctrlConf.getProp(PROPSCON_KEY_TCP_PORT_RANGE);
+            useDefaults = true;
+            if (strRange != null)
+            {
+                matcher = RANGE_PATTERN.matcher(strRange);
+                if (matcher.find())
+                {
+                    try
+                    {
+                        tcpPortRangeMin= Integer.parseInt(matcher.group("min"));
+                        tcpPortRangeMax = Integer.parseInt(matcher.group("max"));
+
+                        TcpPortNumber.tcpPortNrCheck(tcpPortRangeMin);
+                        TcpPortNumber.tcpPortNrCheck(tcpPortRangeMax);
+                        useDefaults = false;
+                    }
+                    catch (ValueOutOfRangeException | NumberFormatException exc)
+                    {
+                    }
+                }
+            }
+            if (useDefaults)
+            {
+                tcpPortRangeMin = DEFAULT_TCP_PORT_MIN;
+                tcpPortRangeMax = DEFAULT_TCP_PORT_MAX;
+            }
+        }
+        catch (InvalidKeyException invldKeyExc)
+        {
+            throw new ImplementationError(
+                "Controller configuration key was invalid: " + invldKeyExc.invalidKey,
+                invldKeyExc
+            );
+        }
+    }
+
+    public void reloadMinorNrRange()
+    {
+        String strRange;
+        try
+        {
+            strRange = ctrlConf.getProp(PROPSCON_KEY_MINOR_NR_RANGE);
             Matcher matcher;
             boolean useDefaults = true;
 
@@ -1232,55 +1306,6 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 minorNrRangeMin = DEFAULT_MINOR_NR_MIN;
                 minorNrRangeMax = DEFAULT_MINOR_NR_MAX;
             }
-
-            strRange = ctrlConf.getProp(PROPSCON_KEY_TCP_PORT_RANGE);
-            useDefaults = true;
-            if (strRange != null)
-            {
-                matcher = RANGE_PATTERN.matcher(strRange);
-                if (matcher.find())
-                {
-                    try
-                    {
-                        tcpPortRangeMin= Integer.parseInt(matcher.group("min"));
-                        tcpPortRangeMax = Integer.parseInt(matcher.group("max"));
-
-                        TcpPortNumber.tcpPortNrCheck(tcpPortRangeMin);
-                        TcpPortNumber.tcpPortNrCheck(tcpPortRangeMax);
-                        useDefaults = false;
-                    }
-                    catch (ValueOutOfRangeException | NumberFormatException exc)
-                    {
-                    }
-                }
-            }
-            if (useDefaults)
-            {
-                tcpPortRangeMin = DEFAULT_TCP_PORT_MIN;
-                tcpPortRangeMax = DEFAULT_TCP_PORT_MAX;
-            }
-
-
-            for (ResourceDefinition curRscDfn : rscDfnMap.values())
-            {
-                TcpPortNumber portNr = curRscDfn.getPort(initCtx);
-                tcpPortNrPool.allocate(portNr.value);
-                Iterator<VolumeDefinition> vlmIter = curRscDfn.iterateVolumeDfn(initCtx);
-                while (vlmIter.hasNext())
-                {
-                    VolumeDefinition curVlmDfn = vlmIter.next();
-                    MinorNumber minorNr = curVlmDfn.getMinorNr(initCtx);
-                    minorNrPool.allocate(minorNr.value);
-                }
-            }
-        }
-        catch (AccessDeniedException accExc)
-        {
-            throw new ImplementationError(
-                "An " + accExc.getClass().getSimpleName() + " exception was generated " +
-                "during number allocation cache initialization",
-                accExc
-            );
         }
         catch (InvalidKeyException invldKeyExc)
         {

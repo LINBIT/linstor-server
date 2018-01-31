@@ -2,6 +2,7 @@ package com.linbit.linstor.api.interfaces.serializer;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
@@ -29,5 +30,7 @@ public interface CtrlClientSerializer
 
         Builder apiVersion(final long features, final String controllerInfo);
 
+        Builder ctrlCfgSingleProp(String namespace, String key, String value);
+        Builder ctrlCfgProps(Map<String, String> map);
     }
 }

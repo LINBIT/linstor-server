@@ -41,6 +41,18 @@ class ApiCtrlAccessorImpl implements ApiCtrlAccessors
     }
 
     @Override
+    public ObjectProtection getCtrlConfProtection()
+    {
+        return controller.ctrlConfProt;
+    }
+
+    @Override
+    public Props getCtrlConf()
+    {
+        return controller.ctrlConf;
+    }
+
+    @Override
     public Map<NodeName, Node> getNodesMap()
     {
         return controller.nodesMap;
@@ -113,12 +125,6 @@ class ApiCtrlAccessorImpl implements ApiCtrlAccessors
     }
 
     @Override
-    public Props getCtrlConf()
-    {
-        return controller.ctrlConf;
-    }
-
-    @Override
     public void connectSatellite(InetSocketAddress inetSocketAddress, TcpConnector tcpConnector, Node node)
     {
         controller.connectSatellite(inetSocketAddress, tcpConnector, node);
@@ -164,5 +170,17 @@ class ApiCtrlAccessorImpl implements ApiCtrlAccessors
     public int getFreeMinorNr() throws ExhaustedPoolException
     {
         return controller.getFreeMinorNr();
+    }
+
+    @Override
+    public void reloadTcpPortRange()
+    {
+        controller.reloadTcpPortRange();
+    }
+
+    @Override
+    public void reloadMinorNrRange()
+    {
+        controller.reloadMinorNrRange();
     }
 }

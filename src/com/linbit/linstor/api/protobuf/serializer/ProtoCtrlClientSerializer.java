@@ -3,7 +3,9 @@ package com.linbit.linstor.api.protobuf.serializer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
@@ -18,6 +20,7 @@ import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 import com.linbit.linstor.api.AbsCtrlClientSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.api.protobuf.BaseProtoApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgApiVersionOuterClass;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
@@ -26,6 +29,7 @@ import com.linbit.linstor.proto.MsgLstRscDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstRscOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolDfnOuterClass;
 import com.linbit.linstor.proto.MsgLstStorPoolOuterClass;
+import com.linbit.linstor.proto.MsgLstCtrlCfgPropsOuterClass.MsgLstCtrlCfgProps;
 import com.linbit.linstor.proto.apidata.NodeApiData;
 import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.RscDfnApiData;
@@ -145,5 +149,39 @@ public class ProtoCtrlClientSerializer extends AbsCtrlClientSerializer
         msgApiVersion.setFeatures(features);
         msgApiVersion.setControlerInfo(controllerInfo);
         msgApiVersion.build().writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeCtrlCfgSingleProp(String namespace, String key, String value, ByteArrayOutputStream baos)
+        throws IOException
+    {
+        Map<String, String> map = new HashMap<>();
+        map.put(getFullKey(namespace, key), value);
+        writeCtrlCfgProps(map, baos);
+    }
+
+    @Override
+    public void writeCtrlCfgProps(Map<String, String> map, ByteArrayOutputStream baos) throws IOException
+    {
+        MsgLstCtrlCfgProps.newBuilder()
+            .addAllProps(
+                BaseProtoApiCall.fromMap(map)
+            )
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
+    private String getFullKey(String namespace, String key)
+    {
+        String fullKey;
+        if (namespace != null && !namespace.trim().equals(""))
+        {
+            fullKey = namespace + "/" + key;
+        }
+        else
+        {
+            fullKey = key;
+        }
+        return fullKey;
     }
 }

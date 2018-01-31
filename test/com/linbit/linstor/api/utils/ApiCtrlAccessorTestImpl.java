@@ -62,8 +62,10 @@ public class ApiCtrlAccessorTestImpl implements ApiCtrlAccessors
     private AtomicInteger minorNrGen = new AtomicInteger(10000);
 
     public List<StltConnectingAttempt> stltConnectingAttempts;
+    private ObjectProtection ctrlCfgProt;
 
     public ApiCtrlAccessorTestImpl(
+        ObjectProtection ctrlCfgProt,
         ReadWriteLock ctrlConfLock,
         Props ctrlConf,
         Map<NodeName, Node> nodesMap,
@@ -82,6 +84,7 @@ public class ApiCtrlAccessorTestImpl implements ApiCtrlAccessors
     )
     {
         super();
+        this.ctrlCfgProt = ctrlCfgProt;
         this.ctrlConfLock = ctrlConfLock;
         this.ctrlConf = ctrlConf;
         this.nodesMap = nodesMap;
@@ -240,5 +243,23 @@ public class ApiCtrlAccessorTestImpl implements ApiCtrlAccessors
     public int getFreeMinorNr() throws ExhaustedPoolException
     {
         return minorNrGen.getAndIncrement();
+    }
+
+    @Override
+    public ObjectProtection getCtrlConfProtection()
+    {
+        return ctrlCfgProt;
+    }
+
+    @Override
+    public void reloadTcpPortRange()
+    {
+        // ignore
+    }
+
+    @Override
+    public void reloadMinorNrRange()
+    {
+        // ignore
     }
 }

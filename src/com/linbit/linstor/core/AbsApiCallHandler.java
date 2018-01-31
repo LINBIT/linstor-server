@@ -1161,12 +1161,17 @@ abstract class AbsApiCallHandler implements AutoCloseable
         AccessContext accCtx = currentAccCtx.get();
         return asExc(
             accDeniedExc,
-            String.format("Identity '%s' using role: '%s' is not authorized to %s.",
-                accCtx.subjectId.name.displayValue,
-                accCtx.subjectRole.name.displayValue,
-                action
-            ),
+            getAccDeniedMsg(accCtx, action),
             retCode
+        );
+    }
+
+    public static String getAccDeniedMsg(AccessContext accCtx, String action)
+    {
+        return String.format("Identity '%s' using role: '%s' is not authorized to %s.",
+            accCtx.subjectId.name.displayValue,
+            accCtx.subjectRole.name.displayValue,
+            action
         );
     }
 
@@ -1183,11 +1188,16 @@ abstract class AbsApiCallHandler implements AutoCloseable
     {
         return asExc(
             sqlExc,
-            String.format(
-                "A database error occured while %s.",
-                action
-            ),
+            getSqlMsg(action),
             ApiConsts.FAIL_SQL
+        );
+    }
+
+    public static String getSqlMsg(String action)
+    {
+        return String.format(
+            "A database error occured while %s.",
+            action
         );
     }
 
@@ -1204,10 +1214,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     {
         return asExc(
             sqlExc,
-            String.format(
-                "A database error occured while %s.",
-                action
-            ),
+            getSqlMsg(action),
             ApiConsts.FAIL_SQL_ROLLBACK
         );
     }

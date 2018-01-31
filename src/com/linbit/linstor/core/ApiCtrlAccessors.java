@@ -25,6 +25,7 @@ public interface ApiCtrlAccessors
      * Global config accessor
      */
     public ReadWriteLock getCtrlConfigLock();
+    public ObjectProtection getCtrlConfProtection();
     public Props getCtrlConf();
 
     /*
@@ -65,4 +66,7 @@ public interface ApiCtrlAccessors
 
     public int getFreeTcpPort() throws ExhaustedPoolException;
     public int getFreeMinorNr() throws ExhaustedPoolException;
+
+    public void reloadTcpPortRange();
+    public void reloadMinorNrRange();
 }
