@@ -423,6 +423,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
             throw accDeniedExc;
         }
         ((ResourceData) resource).removeVolume(accCtx, this);
+        storPool.removeVolume(accCtx, this);
+        ((VolumeDefinitionData) volumeDfn).removeVolume(accCtx, this);
         dbDriver.delete(this, transMgr);
         deleted.set(true);
     }
