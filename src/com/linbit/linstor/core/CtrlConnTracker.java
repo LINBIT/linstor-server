@@ -52,11 +52,9 @@ class CtrlConnTracker implements ConnectionObserver
         StringBuilder controllerInfo = new StringBuilder();
         controllerInfo.append(LinStor.PROGRAM).append(',')
             .append("Controller").append(',')
-            .append(LinStor.VERSION).append(',');
-        if (BaseErrorReporter.CURRENT_GIT_HASH != null)
-        {
-            controllerInfo.append(BaseErrorReporter.CURRENT_GIT_HASH.trim());
-        }
+            .append(LinStor.VERSION_INFO_PROVIDER.getVersion()).append(',')
+            .append(LinStor.VERSION_INFO_PROVIDER.getGitCommitId()).append(',')
+            .append(LinStor.VERSION_INFO_PROVIDER.getBuildTime());
 
         connPeer.sendMessage(
             controller.getApiCallHandler().getCtrlClientcomSrzl()

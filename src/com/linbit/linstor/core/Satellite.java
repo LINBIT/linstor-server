@@ -773,8 +773,8 @@ public final class Satellite extends LinStor implements SatelliteCoreServices
         LinStorArguments cArgs = LinStorArgumentParser.parseCommandLine(args);
 
         System.out.printf(
-            "%s, Module %s, Release %s\n",
-            Satellite.PROGRAM, Satellite.MODULE, Satellite.VERSION
+            "%s, Module %s\n",
+            Satellite.PROGRAM, Satellite.MODULE
         );
         printStartupInfo();
 

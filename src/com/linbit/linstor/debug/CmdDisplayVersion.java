@@ -3,6 +3,7 @@ package com.linbit.linstor.debug;
 import java.io.PrintStream;
 import java.util.Map;
 
+import com.linbit.linstor.core.VersionInfoProvider;
 import com.linbit.linstor.security.AccessContext;
 
 /**
@@ -36,9 +37,13 @@ public class CmdDisplayVersion extends BaseDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
+        VersionInfoProvider versionInfoProvider = cmnDebugCtl.getVersionInfoProvider();
+
         debugOut.printf(
-            "VERSION:   %s\n",
-            cmnDebugCtl.getVersion()
+            "VERSION:        %s (%s)\n" +
+            "BUILD TIME:     %s\n",
+            versionInfoProvider.getVersion(), versionInfoProvider.getGitCommitId(),
+            versionInfoProvider.getBuildTime()
         );
     }
 }

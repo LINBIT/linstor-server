@@ -5,6 +5,7 @@
 !sql-src/
 !build.xml
 !build.gradle
+!version-info.gradle
 !nbproject/
 nbproject/genfiles.properties
 nbproject/private/

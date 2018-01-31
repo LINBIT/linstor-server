@@ -6,15 +6,14 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 public abstract class BaseErrorReporter
 {
@@ -23,8 +22,6 @@ public abstract class BaseErrorReporter
     static final String ERROR_FIELD_FORMAT = "%-32s    %s\n";
     static final String SECTION_SEPARATOR;
     static final int SEPARATOR_WIDTH = 60;
-
-    public static final String CURRENT_GIT_HASH;
 
     final String dmModule;
     final Calendar cal;
@@ -42,21 +39,6 @@ public abstract class BaseErrorReporter
         char[] separator = new char[SEPARATOR_WIDTH];
         Arrays.fill(separator, '=');
         SECTION_SEPARATOR = new String(separator);
-
-        Path hashFile = Paths.get("logs", "git-hash");
-        String currentGitHash = null;
-        if (Files.exists(hashFile))
-        {
-            try
-            {
-                currentGitHash = new String(Files.readAllBytes(hashFile));
-            }
-            catch (IOException ignore)
-            {
-                // ignore
-            }
-        }
-        CURRENT_GIT_HASH = currentGitHash;
     }
 
     BaseErrorReporter(String moduleName)
@@ -140,40 +122,17 @@ public abstract class BaseErrorReporter
 
     void reportHeader(PrintStream output, long reportNr)
     {
+        SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+
         output.print(String.format("ERROR REPORT %s-%06d\n\n", instanceId, reportNr));
         output.println(SECTION_SEPARATOR);
         output.println();
         output.printf(ERROR_FIELD_FORMAT, "Application:", LinStor.SOFTWARE_CREATOR + " " + LinStor.PROGRAM);
         output.printf(ERROR_FIELD_FORMAT, "Module:", dmModule);
-        output.printf(ERROR_FIELD_FORMAT, "Version:", LinStor.VERSION);
-
-        int year;
-        int month;
-        int day;
-        int hour;
-        int minute;
-        int second;
-
-        synchronized (cal)
-        {
-            cal.setTimeInMillis(System.currentTimeMillis());
-            year    = cal.get(Calendar.YEAR);
-            month   = cal.get(Calendar.MONTH) + 1;
-            day     = cal.get(Calendar.DAY_OF_MONTH);
-
-            hour    = cal.get(Calendar.HOUR_OF_DAY);
-            minute  = cal.get(Calendar.MINUTE);
-            second  = cal.get(Calendar.SECOND);
-        }
-
-        output.printf(ERROR_FIELD_FORMAT, "Date:", String.format("%04d-%02d-%02d", year, month, day));
-        output.printf(ERROR_FIELD_FORMAT, "Time:", String.format("%02d:%02d:%02d", hour, minute, second));
-
-        if (CURRENT_GIT_HASH != null)
-        {
-            output.printf(ERROR_FIELD_FORMAT, "Git-Hash:", CURRENT_GIT_HASH);
-        }
-
+        output.printf(ERROR_FIELD_FORMAT, "Version:", LinStor.VERSION_INFO_PROVIDER.getVersion());
+        output.printf(ERROR_FIELD_FORMAT, "Build ID:", LinStor.VERSION_INFO_PROVIDER.getGitCommitId());
+        output.printf(ERROR_FIELD_FORMAT, "Build time:", LinStor.VERSION_INFO_PROVIDER.getBuildTime());
+        output.printf(ERROR_FIELD_FORMAT, "Error time:", timestampFormat.format(new Date()));
         output.println();
         output.println(SECTION_SEPARATOR);
         output.println();

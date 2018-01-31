@@ -6,6 +6,7 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
 apply plugin: 'nebula.ospackage-base'
+apply from: 'version-info.gradle'
 
 sourceCompatibility = 1.7
 version = '0.1'
@@ -14,6 +15,9 @@ sourceSets {
     main {
         java {
             srcDirs = ["src"]
+        }
+        resources {
+            srcDirs = ["generated-resources"]
         }
     }
     test {
@@ -146,6 +150,7 @@ compileTestJava {
 
 clean {
   dependsOn cleanTestCommands
+  delete += 'generated-resources'
 }
 
 ospackage {

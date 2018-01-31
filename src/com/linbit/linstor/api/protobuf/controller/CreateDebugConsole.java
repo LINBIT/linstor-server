@@ -79,7 +79,12 @@ public class CreateDebugConsole extends BaseProtoApiCall
                 }
 
                 msgDbgReplyBld.addDebugOut(
-                    LinStor.PROGRAM + ", Module " + Controller.MODULE + ", Release " + LinStor.VERSION
+                    LinStor.PROGRAM + ", Module " + Controller.MODULE
+                );
+                msgDbgReplyBld.addDebugOut(
+                    "Version: " + LinStor.VERSION_INFO_PROVIDER.getVersion() + " " +
+                    "(" + LinStor.VERSION_INFO_PROVIDER.getGitCommitId() + ")" + " - " +
+                    LinStor.VERSION_INFO_PROVIDER.getBuildTime()
                 );
                 msgDbgReplyBld.addDebugOut("Debug console attached to peer connection");
             }

@@ -66,9 +66,9 @@ class StltDebugControlImpl implements StltDebugControl
     }
 
     @Override
-    public String getVersion()
+    public VersionInfoProvider getVersionInfoProvider()
     {
-        return Satellite.VERSION;
+        return Satellite.VERSION_INFO_PROVIDER;
     }
 
     @Override

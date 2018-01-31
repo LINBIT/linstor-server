@@ -66,9 +66,9 @@ class CtrlDebugControlImpl implements CtrlDebugControl
     }
 
     @Override
-    public String getVersion()
+    public VersionInfoProvider getVersionInfoProvider()
     {
-        return Controller.VERSION;
+        return Controller.VERSION_INFO_PROVIDER;
     }
 
     @Override

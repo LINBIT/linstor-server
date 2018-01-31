@@ -75,7 +75,7 @@ public abstract class LinStor
     public static final String SOFTWARE_CREATOR = "LINBIT\u00AE";
 
     public static final String PROGRAM = "LINSTOR";
-    public static final String VERSION = "0.1.0-experimental [2018-02-01_005]";
+    public static final VersionInfoProvider VERSION_INFO_PROVIDER = new VersionInfoProviderImpl();
 
     // ============================================================
     // Worker thread pool defaults
@@ -805,10 +805,14 @@ public abstract class LinStor
         long availMem = rt.maxMemory() / 1048576;
 
         System.out.printf(
+            "Version:            %s (%s)\n" +
+            "Build time:         %s\n" +
             "Java Version:       %s\n" +
             "Java VM:            %s, Version %s\n" +
             "Operating system:   %s, Version %s\n" +
             "Environment:        %s, %d processors, %d MiB memory reserved for allocations\n",
+            VERSION_INFO_PROVIDER.getVersion(), VERSION_INFO_PROVIDER.getGitCommitId(),
+            VERSION_INFO_PROVIDER.getBuildTime(),
             jvmSpecVersion,
             jvmVendor, jvmVersion,
             osName, osVersion,

@@ -3,6 +3,7 @@ package com.linbit.linstor.debug;
 import java.io.PrintStream;
 import java.util.Map;
 
+import com.linbit.linstor.core.VersionInfoProvider;
 import com.linbit.linstor.security.AccessContext;
 
 /**
@@ -42,12 +43,17 @@ public class CmdDisplayModuleInfo extends BaseDebugCmd
         Map<String, String> parameters
     ) throws Exception
     {
+        VersionInfoProvider versionInfoProvider = cmnDebugCtl.getVersionInfoProvider();
+
         debugOut.printf(
             "PROGRAM:        %s\n" +
             "MODULE:         %s\n" +
-            "VERSION:        %s\n" +
+            "VERSION:        %s (%s)\n" +
+            "BUILD TIME:     %s\n" +
             "INSTANCE ID:    %s\n",
-            cmnDebugCtl.getProgramName(), cmnDebugCtl.getModuleType(), cmnDebugCtl.getVersion(),
+            cmnDebugCtl.getProgramName(), cmnDebugCtl.getModuleType(),
+            versionInfoProvider.getVersion(), versionInfoProvider.getGitCommitId(),
+            versionInfoProvider.getBuildTime(),
             coreSvcs.getErrorReporter().getInstanceId()
         );
     }

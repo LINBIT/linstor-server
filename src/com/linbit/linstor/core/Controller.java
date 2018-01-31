@@ -336,8 +336,8 @@ public final class Controller extends LinStor implements CoreServices
         LinStorArguments cArgs = LinStorArgumentParser.parseCommandLine(args);
 
         System.out.printf(
-            "%s, Module %s, Release %s\n",
-            Controller.PROGRAM, Controller.MODULE, Controller.VERSION
+            "%s, Module %s\n",
+            Controller.PROGRAM, Controller.MODULE
         );
         printStartupInfo();
 

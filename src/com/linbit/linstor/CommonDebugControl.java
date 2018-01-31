@@ -4,6 +4,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.VersionInfoProvider;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -23,7 +24,7 @@ public interface CommonDebugControl
     LinStor getInstance();
     String getProgramName();
     String getModuleType();
-    String getVersion();
+    VersionInfoProvider getVersionInfoProvider();
     Map<ServiceName, SystemService> getSystemServiceMap();
     Peer getPeer(String peerId);
     Map<String, Peer> getAllPeers();
