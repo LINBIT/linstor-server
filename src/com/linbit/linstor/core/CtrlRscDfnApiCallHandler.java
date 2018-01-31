@@ -29,7 +29,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.numberpool.NumberPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -52,15 +51,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     private final CtrlClientSerializer clientComSerializer;
     private final ThreadLocal<String> currentRscNameStr = new ThreadLocal<>();
 
-    private final NumberPool tcpPortNrPool;
-    private final NumberPool minorNrPool;
-
     CtrlRscDfnApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
         CtrlStltSerializer interComSerializer,
         CtrlClientSerializer clientComSerializerRef,
-        NumberPool tcpPortNrPoolRef,
-        NumberPool minorNrPoolRef,
         AccessContext apiCtxRef
     )
     {
@@ -72,8 +66,6 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         );
         super.setNullOnAutoClose(currentRscNameStr);
         clientComSerializer = clientComSerializerRef;
-        tcpPortNrPool = tcpPortNrPoolRef;
-        minorNrPool = minorNrPoolRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -191,18 +183,9 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         Integer apiMinor = vlmDfnApi.getMinorNr();
         if (apiMinor == null)
         {
-            int allocMinor;
             try
             {
-                allocMinor = minorNrPool.autoAllocate(
-                    MinorNumber.MINOR_NR_MIN,
-                    MinorNumber.MINOR_NR_MAX
-                );
-                freeMinorNr = new MinorNumber(allocMinor);
-            }
-            catch (ExhaustedPoolException exc)
-            {
-                throw new LinStorException("Could not found free minor number", exc);
+                freeMinorNr = new MinorNumber(apiCtrlAccessors.getFreeMinorNr());
             }
             catch (ValueOutOfRangeException valueOutOfRangExc)
             {
@@ -210,6 +193,10 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     "Failed to generate a valid minor number. Tried: '" + apiMinor + "'",
                     valueOutOfRangExc
                 );
+            }
+            catch (ExhaustedPoolException exc)
+            {
+                throw new LinStorException("Could not found free minor number", exc);
             }
         }
         else
@@ -619,10 +606,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
         {
             try
             {
-                portInt = tcpPortNrPool.autoAllocate(
-                    TcpPortNumber.PORT_NR_MIN,
-                    TcpPortNumber.PORT_NR_MAX
-                );
+                portInt = apiCtrlAccessors.getFreeTcpPort();
             }
             catch (ExhaustedPoolException exc)
             {

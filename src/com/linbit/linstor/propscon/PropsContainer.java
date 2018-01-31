@@ -614,7 +614,7 @@ public class PropsContainer implements Props
         int pathLength = path.length();
         if (pathLength > PATH_MAX_LENGTH)
         {
-            throw new InvalidKeyException();
+            throw new InvalidKeyException(path);
         }
 
         StringBuilder sanitizedPath = new StringBuilder();
@@ -646,7 +646,7 @@ public class PropsContainer implements Props
     {
         if (path == null)
         {
-            throw new InvalidKeyException();
+            throw new InvalidKeyException(path);
         }
 
         String safePath;
@@ -689,7 +689,7 @@ public class PropsContainer implements Props
         }
         if (pathLength > PATH_MAX_LENGTH)
         {
-            throw new InvalidKeyException();
+            throw new InvalidKeyException(path);
         }
         return pathElements;
     }
@@ -847,7 +847,7 @@ public class PropsContainer implements Props
     {
         if (key.contains(PATH_SEPARATOR))
         {
-            throw new InvalidKeyException();
+            throw new InvalidKeyException(key);
         }
     }
 

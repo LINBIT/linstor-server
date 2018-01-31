@@ -22,6 +22,8 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -39,6 +41,7 @@ import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.SystemServiceStopException;
 import com.linbit.TransactionMgr;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.WorkerPool;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MetaDataApi;
@@ -93,6 +96,8 @@ import com.linbit.utils.Base64;
 import com.linbit.utils.MathUtils;
 
 import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_CONFIGURATION;
+
+import com.linbit.ExhaustedPoolException;
 import com.linbit.linstor.numberpool.BitmapPool;
 import com.linbit.linstor.numberpool.NumberPool;
 
@@ -136,11 +141,21 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     private static final String PROPSCON_NETCOM_TYPE_SSL = "ssl";
     static final String PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC = "defaultPlainConSvc";
     static final String PROPSCON_KEY_DEFAULT_SSL_CON_SVC = "defaultSslConSvc";
+    static final String PROPSCON_KEY_TCP_PORT_RANGE = "tcpPortRange";
+    static final String PROPSCON_KEY_MINOR_NR_RANGE = "minorNrRange";
 
     public static final short DEFAULT_PEER_COUNT = 31;
     public static final long DEFAULT_AL_SIZE = 32;
     public static final int DEFAULT_AL_STRIPES = 1;
     public static final String DEFAULT_STOR_POOL_NAME = "DfltStorPool";
+
+    // we will load the ranges from the database, but if the database contains
+    // invalid ranges (e.g. -1 for port), we will fall back to these defaults
+    private static final int DEFAULT_TCP_PORT_MIN = 7000;
+    private static final int DEFAULT_TCP_PORT_MAX = 7999;
+    private static final int DEFAULT_MINOR_NR_MIN = 1000;
+    private static final int DEFAULT_MINOR_NR_MAX = 49999;
+    private static final Pattern RANGE_PATTERN = Pattern.compile("(?<min>\\d+) ?- ?(?<max>\\d+)");
 
     private static final String DERBY_CONNECTION_TEST_SQL =
         "SELECT 1 FROM " + TBL_SEC_CONFIGURATION;
@@ -218,6 +233,11 @@ public final class Controller extends LinStor implements Runnable, CoreServices
 
     final NumberPool tcpPortNrPool;
     final NumberPool minorNrPool;
+
+    private int tcpPortRangeMin;
+    private int tcpPortRangeMax;
+    private int minorNrRangeMin;
+    private int minorNrRangeMax;
 
     private ApiCtrlAccessorImpl apiCtrlAccessors;
 
@@ -300,8 +320,6 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 apiCallHandler = new CtrlApiCallHandler(
                     apiCtrlAccessors,
                     apiType,
-                    minorNrPool,
-                    tcpPortNrPool,
                     apiCtx
                 );
             }
@@ -886,6 +904,29 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         return apiCallHandler;
     }
 
+    public int getFreeTcpPort() throws ExhaustedPoolException
+    {
+        synchronized (tcpPortNrPool)
+        {
+            return tcpPortNrPool.autoAllocate(
+                tcpPortRangeMin,
+                tcpPortRangeMax
+            );
+        }
+    }
+
+
+    public int getFreeMinorNr() throws ExhaustedPoolException
+    {
+        synchronized (minorNrPool)
+        {
+            return minorNrPool.autoAllocate(
+                minorNrRangeMin,
+                minorNrRangeMax
+            );
+        }
+    }
+
     private Properties loadDatabaseConfiguration(final ErrorReporter errorLogRef)
         throws InitializationException
     {
@@ -1161,6 +1202,63 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     {
         try
         {
+            String strRange = ctrlConf.getProp(PROPSCON_KEY_MINOR_NR_RANGE);
+            Matcher matcher;
+            boolean useDefaults = true;
+
+            if (strRange != null)
+            {
+                matcher = RANGE_PATTERN.matcher(strRange);
+                if (matcher.find())
+                {
+                    try
+                    {
+                        minorNrRangeMin = Integer.parseInt(matcher.group("min"));
+                        minorNrRangeMax = Integer.parseInt(matcher.group("max"));
+
+                        MinorNumber.minorNrCheck(minorNrRangeMin);
+                        MinorNumber.minorNrCheck(minorNrRangeMax);
+                        useDefaults = false;
+                    }
+                    catch (ValueOutOfRangeException | NumberFormatException exc)
+                    {
+                    }
+                }
+            }
+            if (useDefaults)
+            {
+                minorNrRangeMin = DEFAULT_MINOR_NR_MIN;
+                minorNrRangeMax = DEFAULT_MINOR_NR_MAX;
+            }
+
+            strRange = ctrlConf.getProp(PROPSCON_KEY_TCP_PORT_RANGE);
+            useDefaults = true;
+            if (strRange != null)
+            {
+                matcher = RANGE_PATTERN.matcher(strRange);
+                if (matcher.find())
+                {
+                    try
+                    {
+                        tcpPortRangeMin= Integer.parseInt(matcher.group("min"));
+                        tcpPortRangeMax = Integer.parseInt(matcher.group("max"));
+
+                        TcpPortNumber.tcpPortNrCheck(tcpPortRangeMin);
+                        TcpPortNumber.tcpPortNrCheck(tcpPortRangeMax);
+                        useDefaults = false;
+                    }
+                    catch (ValueOutOfRangeException | NumberFormatException exc)
+                    {
+                    }
+                }
+            }
+            if (useDefaults)
+            {
+                tcpPortRangeMin = DEFAULT_TCP_PORT_MIN;
+                tcpPortRangeMax = DEFAULT_TCP_PORT_MAX;
+            }
+
+
             for (ResourceDefinition curRscDfn : rscDfnMap.values())
             {
                 TcpPortNumber portNr = curRscDfn.getPort(initCtx);
@@ -1180,6 +1278,13 @@ public final class Controller extends LinStor implements Runnable, CoreServices
                 "An " + accExc.getClass().getSimpleName() + " exception was generated " +
                 "during number allocation cache initialization",
                 accExc
+            );
+        }
+        catch (InvalidKeyException invldKeyExc)
+        {
+            throw new ImplementationError(
+                "Controller configuration key was invalid: " + invldKeyExc.invalidKey,
+                invldKeyExc
             );
         }
     }

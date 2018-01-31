@@ -5,8 +5,10 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ServiceName;
 import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.Node;
@@ -55,6 +57,9 @@ public class ApiCtrlAccessorTestImpl implements ApiCtrlAccessors
     private DbConnectionPool dbConnPool;
     private TcpConnector tcpConnector;
     private MetaDataApi metaData;
+
+    private AtomicInteger tcpPortGen = new AtomicInteger(7000);
+    private AtomicInteger minorNrGen = new AtomicInteger(10000);
 
     public List<StltConnectingAttempt> stltConnectingAttempts;
 
@@ -223,5 +228,17 @@ public class ApiCtrlAccessorTestImpl implements ApiCtrlAccessors
     public MetaDataApi getMetaDataApi()
     {
         return metaData;
+    }
+
+    @Override
+    public int getFreeTcpPort() throws ExhaustedPoolException
+    {
+        return tcpPortGen.getAndIncrement();
+    }
+
+    @Override
+    public int getFreeMinorNr() throws ExhaustedPoolException
+    {
+        return minorNrGen.getAndIncrement();
     }
 }

@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ServiceName;
 import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.Node;
@@ -151,5 +152,17 @@ class ApiCtrlAccessorImpl implements ApiCtrlAccessors
     public short getDefaultPeerCount()
     {
         return controller.getDefaultPeerCount();
+    }
+
+    @Override
+    public int getFreeTcpPort() throws ExhaustedPoolException
+    {
+        return controller.getFreeTcpPort();
+    }
+
+    @Override
+    public int getFreeMinorNr() throws ExhaustedPoolException
+    {
+        return controller.getFreeMinorNr();
     }
 }

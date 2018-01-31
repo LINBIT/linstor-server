@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ServiceName;
 import com.linbit.drbd.md.MetaDataApi;
 import com.linbit.linstor.Node;
@@ -61,4 +62,7 @@ public interface ApiCtrlAccessors
     public TcpConnector getNetComConnector(ServiceName dfltConSvcName);
     public void connectSatellite(InetSocketAddress inetSocketAddress, TcpConnector tcpConnector, Node node);
     public MetaDataApi getMetaDataApi();
+
+    public int getFreeTcpPort() throws ExhaustedPoolException;
+    public int getFreeMinorNr() throws ExhaustedPoolException;
 }

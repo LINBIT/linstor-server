@@ -136,8 +136,6 @@ public abstract class ApiTestBase extends DerbyBase
         apiCallHandler = new CtrlApiCallHandler(
             testApiCtrlAccessors,
             ApiType.PROTOBUF,
-            minorNrPool,
-            tcpPortNrPool,
             SYS_CTX
         );
     }

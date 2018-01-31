@@ -42,12 +42,9 @@ public class CtrlApiCallHandler
     CtrlApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessorsRef,
         ApiType type,
-        NumberPool minorNrPoolRef,
-        NumberPool tcpPortNrPoolRef,
         AccessContext apiCtx
     )
     {
-
         apiCtrlAccessors = apiCtrlAccessorsRef;
         final ErrorReporter errorReporter = apiCtrlAccessors.getErrorReporter();
         final CtrlStltSerializer ctrlStltComSrzl;
@@ -69,11 +66,9 @@ public class CtrlApiCallHandler
             apiCtrlAccessors,
             ctrlStltComSrzl,
             ctrlClientcomSrzl,
-            tcpPortNrPoolRef,
-            minorNrPoolRef,
             apiCtx
         );
-        vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, minorNrPoolRef, apiCtx);
+        vlmDfnApiCallHandler = new CtrlVlmDfnApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, apiCtx);
         rscApiCallHandler = new CtrlRscApiCallHandler(apiCtrlAccessors, ctrlStltComSrzl, ctrlClientcomSrzl, apiCtx);
         vlmApiCallHandler = new CtrlVlmApiCallHandler(apiCtrlAccessors, apiCtx);
         storPoolDfnApiCallHandler = new CtrlStorPoolDfnApiCallHandler(

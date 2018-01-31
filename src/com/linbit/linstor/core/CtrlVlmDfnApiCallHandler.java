@@ -34,7 +34,6 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.numberpool.NumberPool;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -46,12 +45,9 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
     private final ThreadLocal<VlmDfnApi> currentVlmDfnApi = new ThreadLocal<>();
     private final ThreadLocal<Integer> currentVlmNr = new ThreadLocal<>();
 
-    private NumberPool minorNrPool;
-
     CtrlVlmDfnApiCallHandler(
         ApiCtrlAccessors apiCtrlAccessors,
         CtrlStltSerializer interComSerializer,
-        NumberPool minorNrPoolRef,
         AccessContext apiCtx
     )
     {
@@ -67,7 +63,6 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             currentVlmDfnApi,
             currentVlmNr
         );
-        minorNrPool = minorNrPoolRef;
     }
 
     private void updateCurrentKeyNumber(final String key, Integer number)
@@ -484,12 +479,8 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
             Integer minorNrInt = vlmDfnApi.getMinorNr();
             if (minorNrInt == null)
             {
-                minorNrInt = minorNrPool.autoAllocate(
-                    MinorNumber.MINOR_NR_MIN,
-                    MinorNumber.MINOR_NR_MAX
-                );
+                minorNrInt = apiCtrlAccessors.getFreeMinorNr();
             }
-
             freeMinorNr = new MinorNumber(minorNrInt);
         }
         catch (ValueOutOfRangeException valOORangeExc)
