@@ -6,14 +6,11 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.InvalidPropertiesFormatException;
 import java.util.Properties;
-
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -98,7 +95,6 @@ public class RecreateDb
 
     private static void runSql(Connection con, String sqlFilePath, BufferedReader br) throws IOException, SQLException
     {
-        PreparedStatement stmt;
         System.out.println("running sql file: " + sqlFilePath);
         StringBuilder cmdBuilder = new StringBuilder();
         for (String line; (line = br.readLine()) != null;)
@@ -112,10 +108,15 @@ public class RecreateDb
                     cmdBuilder.setLength(cmdBuilder.length()-1); // cut the ;
                     String cmd = cmdBuilder.toString();
                     cmdBuilder.setLength(0);
-                    stmt = con.prepareStatement(cmd);
-//                    System.out.println("\t" + cmd);
-                    stmt.executeUpdate();
-                    stmt.close();
+                    try (PreparedStatement stmt = con.prepareStatement(cmd))
+                    {
+                        stmt.executeUpdate();
+                    }
+                    catch (Throwable t)
+                    {
+                        System.err.println(cmd);
+                        throw t;
+                    }
                 }
             }
         }
