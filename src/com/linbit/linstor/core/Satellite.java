@@ -36,6 +36,7 @@ import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.netcom.TcpConnectorService;
 import com.linbit.linstor.netcom.ssl.SslTcpConnectorService;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -85,7 +86,6 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     public static final String NET_COM_DEFAULT_ADDR = "::0";
     public static final int NET_COM_DEFAULT_PORT = 3366;
 
-
     // TCP Service configuration file
     public static final String NET_COM_CONF_FILE = "satellite_netcom.cfg";
     // Plain TCP Service configuration keys
@@ -103,6 +103,8 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     public static final String NET_COM_CONF_SSL_PROTOCOL_KEY = "ssl-protocol";
 
     public static final SatelliteDummyStorPoolData DUMMY_REMOTE_STOR_POOL = new SatelliteDummyStorPoolData();
+
+    private static final String SATELLTE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
     // System security context
     private AccessContext sysCtx;
@@ -136,7 +138,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     // The current API type (e.g ProtoBuf)
     private final ApiType apiType;
 
-    // Controller configuration properties
+    // Satellite configuration properties
     Props stltConf;
     ObjectProtection stltConfProt;
 
@@ -200,6 +202,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         fsWatchSvc = new FileSystemWatch();
         systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
 
+
         // Initialize LinStor objects maps
         nodesMap = new TreeMap<>();
         rscDfnMap = new TreeMap<>();
@@ -220,6 +223,19 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         fullSyncId = new AtomicLong(2); // just don't start with 0 making sure the controller
                                         // mirrors our fullSyncId
         awaitedUpdateId = new AtomicLong(0);
+
+        // Initialize conf props
+        try
+        {
+            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+            stltConf = PropsContainer.getInstance(SATELLTE_PROPSCON_INSTANCE_NAME, transMgr);
+            transMgr.commit();
+        }
+        catch (SQLException exc)
+        {
+            // not possible
+            throw new ImplementationError(exc);
+        }
 
         try
         {

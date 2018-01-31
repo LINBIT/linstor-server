@@ -336,15 +336,22 @@ public class ClientProtobuf implements Runnable
 
                 sb.setLength(0);
                 int responseIdx = 1;
+
+                String apiCall = protoHeader.getApiCall();
                 if (bais.available() == 0)
                 {
                     // maybe a pong or a header-only answer
                     sb.append("MsgId: ")
                         .append(protoHeader.getMsgId())
                         .append("\n")
-                        .append(protoHeader.getApiCall())
+                        .append(apiCall)
                         .append("\n");
                 }
+                if (apiCall.equals(ApiConsts.API_VERSION))
+                {
+                    continue; // we are using the most current version :)
+                }
+
                 while (bais.available() > 0)
                 {
                     MsgApiCallResponse response = MsgApiCallResponse.parseDelimitedFrom(bais);

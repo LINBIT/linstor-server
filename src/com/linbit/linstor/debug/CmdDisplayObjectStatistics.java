@@ -151,14 +151,7 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
                     {
                         confRdLock.lock();
                         Props conf = cmnDebugCtl.getConf();
-                        // Currently, the satellite's configuration may not exist
-                        // FIXME: This should possibly be fixed in the satellite at some point,
-                        //        so that the satellite always has a configuration, even if it's
-                        //        an empty one
-                        if (conf != null)
-                        {
-                            count = conf.size();
-                        }
+                        count = conf.size();
                     }
                     finally
                     {
