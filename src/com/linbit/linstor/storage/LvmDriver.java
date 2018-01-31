@@ -86,6 +86,7 @@ public class LvmDriver extends AbsStorageDriver
             lvmCreateCommand,
             "--size", size + "k",
             "-n", identifier,
+            "-y", // force, skip "wipe signature question"
             volumeGroup
         };
     }

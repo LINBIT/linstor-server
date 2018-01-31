@@ -531,6 +531,7 @@ public class LvmDriverTest extends StorageTestUtils
             lvmCreateCommand,
             "--size", volumeSize + "k",
             "-n", identifier,
+            "-y",
             volumeGroup
             );
 
