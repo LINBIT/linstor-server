@@ -191,7 +191,7 @@ ospackage {
 
 // we might even split these to generate separate controller/satellite packages
 buildRpm {
-    requires('java-1.7.0-openjdk')
+    requires('jre', "1.7.0", GREATER | EQUAL)
     requires('lvm2')
 }
 
