@@ -60,6 +60,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.FlagsHelper;
+import java.util.Arrays;
 
 class CtrlRscApiCallHandler extends AbsApiCallHandler
 {
@@ -310,29 +311,28 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
 
     private NodeId getNextFreeNodeId(ResourceDefinitionData rscDfn)
     {
+        NodeId freeNodeId;
         try
         {
-            Iterator<Resource>  rscIterator;
-            try
-            {
-                rscIterator = rscDfn.iterateResource(currentAccCtx.get());
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                throw asAccDeniedExc(
-                    accDeniedExc,
-                    "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
-                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-                );
-            }
+            Iterator<Resource> rscIterator = rscDfn.iterateResource(currentAccCtx.get());
             int[] occupiedIds = new int[rscDfn.getResourceCount()];
             int idx = 0;
             while (rscIterator.hasNext())
             {
-                occupiedIds[idx++] = rscIterator.next().getNodeId().value;
+                occupiedIds[idx] = rscIterator.next().getNodeId().value;
+                ++idx;
             }
+            Arrays.sort(occupiedIds);
 
-            return NodeIdAlloc.getFreeNodeId(occupiedIds);
+            freeNodeId = NodeIdAlloc.getFreeNodeId(occupiedIds);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw asAccDeniedExc(
+                accDeniedExc,
+                "iterate the resources of resource definition '" + rscDfn.getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
         }
         catch (ExhaustedPoolException exhaustedPoolExc)
         {
@@ -342,6 +342,7 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_POOL_EXHAUSTED_NODE_ID
             );
         }
+        return freeNodeId;
     }
 
     public ApiCallRc modifyResource(
