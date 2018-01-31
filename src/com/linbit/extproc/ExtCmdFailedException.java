@@ -1,10 +1,12 @@
 package com.linbit.extproc;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.LinStorException;
+import com.linbit.utils.StringUtils;
 
 public class ExtCmdFailedException extends LinStorException
 {
@@ -67,13 +69,6 @@ public class ExtCmdFailedException extends LinStorException
 
     private static String glue(String... strings)
     {
-        StringBuilder sb = new StringBuilder();
-        for (String cmd : strings)
-        {
-            sb.append(cmd).append(" ");
-        }
-        sb.setLength(sb.length() - 1);
-
-        return sb.toString();
+        return StringUtils.join(Arrays.asList(strings), " ");
     }
 }
