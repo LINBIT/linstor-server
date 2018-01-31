@@ -19,45 +19,36 @@ public final class MsgApiVersionOuterClass {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>required uint64 min = 1;</code>
+     * <code>required uint32 version = 1;</code>
      */
-    boolean hasMin();
+    boolean hasVersion();
     /**
-     * <code>required uint64 min = 1;</code>
+     * <code>required uint32 version = 1;</code>
      */
-    long getMin();
+    int getVersion();
 
     /**
-     * <code>required uint64 max = 2;</code>
-     */
-    boolean hasMax();
-    /**
-     * <code>required uint64 max = 2;</code>
-     */
-    long getMax();
-
-    /**
-     * <code>required uint64 features = 3;</code>
+     * <code>required uint64 features = 20;</code>
      */
     boolean hasFeatures();
     /**
-     * <code>required uint64 features = 3;</code>
+     * <code>required uint64 features = 20;</code>
      */
     long getFeatures();
 
     /**
-     * <code>optional string current_controller = 4;</code>
+     * <code>optional string controler_info = 30;</code>
      */
-    boolean hasCurrentController();
+    boolean hasControlerInfo();
     /**
-     * <code>optional string current_controller = 4;</code>
+     * <code>optional string controler_info = 30;</code>
      */
-    java.lang.String getCurrentController();
+    java.lang.String getControlerInfo();
     /**
-     * <code>optional string current_controller = 4;</code>
+     * <code>optional string controler_info = 30;</code>
      */
     com.google.protobuf.ByteString
-        getCurrentControllerBytes();
+        getControlerInfoBytes();
   }
   /**
    * <pre>
@@ -75,10 +66,9 @@ public final class MsgApiVersionOuterClass {
       super(builder);
     }
     private MsgApiVersion() {
-      min_ = 0L;
-      max_ = 0L;
+      version_ = 0;
       features_ = 0L;
-      currentController_ = "";
+      controlerInfo_ = "";
     }
 
     @java.lang.Override
@@ -111,23 +101,18 @@ public final class MsgApiVersionOuterClass {
             }
             case 8: {
               bitField0_ |= 0x00000001;
-              min_ = input.readUInt64();
+              version_ = input.readUInt32();
               break;
             }
-            case 16: {
+            case 160: {
               bitField0_ |= 0x00000002;
-              max_ = input.readUInt64();
-              break;
-            }
-            case 24: {
-              bitField0_ |= 0x00000004;
               features_ = input.readUInt64();
               break;
             }
-            case 34: {
+            case 242: {
               com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000008;
-              currentController_ = bs;
+              bitField0_ |= 0x00000004;
+              controlerInfo_ = bs;
               break;
             }
           }
@@ -155,64 +140,49 @@ public final class MsgApiVersionOuterClass {
     }
 
     private int bitField0_;
-    public static final int MIN_FIELD_NUMBER = 1;
-    private long min_;
+    public static final int VERSION_FIELD_NUMBER = 1;
+    private int version_;
     /**
-     * <code>required uint64 min = 1;</code>
+     * <code>required uint32 version = 1;</code>
      */
-    public boolean hasMin() {
+    public boolean hasVersion() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>required uint64 min = 1;</code>
+     * <code>required uint32 version = 1;</code>
      */
-    public long getMin() {
-      return min_;
+    public int getVersion() {
+      return version_;
     }
 
-    public static final int MAX_FIELD_NUMBER = 2;
-    private long max_;
+    public static final int FEATURES_FIELD_NUMBER = 20;
+    private long features_;
     /**
-     * <code>required uint64 max = 2;</code>
+     * <code>required uint64 features = 20;</code>
      */
-    public boolean hasMax() {
+    public boolean hasFeatures() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>required uint64 max = 2;</code>
-     */
-    public long getMax() {
-      return max_;
-    }
-
-    public static final int FEATURES_FIELD_NUMBER = 3;
-    private long features_;
-    /**
-     * <code>required uint64 features = 3;</code>
-     */
-    public boolean hasFeatures() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <code>required uint64 features = 3;</code>
+     * <code>required uint64 features = 20;</code>
      */
     public long getFeatures() {
       return features_;
     }
 
-    public static final int CURRENT_CONTROLLER_FIELD_NUMBER = 4;
-    private volatile java.lang.Object currentController_;
+    public static final int CONTROLER_INFO_FIELD_NUMBER = 30;
+    private volatile java.lang.Object controlerInfo_;
     /**
-     * <code>optional string current_controller = 4;</code>
+     * <code>optional string controler_info = 30;</code>
      */
-    public boolean hasCurrentController() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
+    public boolean hasControlerInfo() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
-     * <code>optional string current_controller = 4;</code>
+     * <code>optional string controler_info = 30;</code>
      */
-    public java.lang.String getCurrentController() {
-      java.lang.Object ref = currentController_;
+    public java.lang.String getControlerInfo() {
+      java.lang.Object ref = controlerInfo_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -220,22 +190,22 @@ public final class MsgApiVersionOuterClass {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          currentController_ = s;
+          controlerInfo_ = s;
         }
         return s;
       }
     }
     /**
-     * <code>optional string current_controller = 4;</code>
+     * <code>optional string controler_info = 30;</code>
      */
     public com.google.protobuf.ByteString
-        getCurrentControllerBytes() {
-      java.lang.Object ref = currentController_;
+        getControlerInfoBytes() {
+      java.lang.Object ref = controlerInfo_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        currentController_ = b;
+        controlerInfo_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
@@ -248,11 +218,7 @@ public final class MsgApiVersionOuterClass {
       if (isInitialized == 1) return true;
       if (isInitialized == 0) return false;
 
-      if (!hasMin()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasMax()) {
+      if (!hasVersion()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -267,16 +233,13 @@ public final class MsgApiVersionOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeUInt64(1, min_);
+        output.writeUInt32(1, version_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeUInt64(2, max_);
+        output.writeUInt64(20, features_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeUInt64(3, features_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, currentController_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 30, controlerInfo_);
       }
       unknownFields.writeTo(output);
     }
@@ -288,18 +251,14 @@ public final class MsgApiVersionOuterClass {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(1, min_);
+          .computeUInt32Size(1, version_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(2, max_);
+          .computeUInt64Size(20, features_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(3, features_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, currentController_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(30, controlerInfo_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -318,25 +277,20 @@ public final class MsgApiVersionOuterClass {
       com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion other = (com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion) obj;
 
       boolean result = true;
-      result = result && (hasMin() == other.hasMin());
-      if (hasMin()) {
-        result = result && (getMin()
-            == other.getMin());
-      }
-      result = result && (hasMax() == other.hasMax());
-      if (hasMax()) {
-        result = result && (getMax()
-            == other.getMax());
+      result = result && (hasVersion() == other.hasVersion());
+      if (hasVersion()) {
+        result = result && (getVersion()
+            == other.getVersion());
       }
       result = result && (hasFeatures() == other.hasFeatures());
       if (hasFeatures()) {
         result = result && (getFeatures()
             == other.getFeatures());
       }
-      result = result && (hasCurrentController() == other.hasCurrentController());
-      if (hasCurrentController()) {
-        result = result && getCurrentController()
-            .equals(other.getCurrentController());
+      result = result && (hasControlerInfo() == other.hasControlerInfo());
+      if (hasControlerInfo()) {
+        result = result && getControlerInfo()
+            .equals(other.getControlerInfo());
       }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
@@ -349,24 +303,18 @@ public final class MsgApiVersionOuterClass {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasMin()) {
-        hash = (37 * hash) + MIN_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getMin());
-      }
-      if (hasMax()) {
-        hash = (37 * hash) + MAX_FIELD_NUMBER;
-        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-            getMax());
+      if (hasVersion()) {
+        hash = (37 * hash) + VERSION_FIELD_NUMBER;
+        hash = (53 * hash) + getVersion();
       }
       if (hasFeatures()) {
         hash = (37 * hash) + FEATURES_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
             getFeatures());
       }
-      if (hasCurrentController()) {
-        hash = (37 * hash) + CURRENT_CONTROLLER_FIELD_NUMBER;
-        hash = (53 * hash) + getCurrentController().hashCode();
+      if (hasControlerInfo()) {
+        hash = (37 * hash) + CONTROLER_INFO_FIELD_NUMBER;
+        hash = (53 * hash) + getControlerInfo().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -490,14 +438,12 @@ public final class MsgApiVersionOuterClass {
       }
       public Builder clear() {
         super.clear();
-        min_ = 0L;
+        version_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        max_ = 0L;
-        bitField0_ = (bitField0_ & ~0x00000002);
         features_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        controlerInfo_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
-        currentController_ = "";
-        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -525,19 +471,15 @@ public final class MsgApiVersionOuterClass {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.min_ = min_;
+        result.version_ = version_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.max_ = max_;
+        result.features_ = features_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
         }
-        result.features_ = features_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.currentController_ = currentController_;
+        result.controlerInfo_ = controlerInfo_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -580,18 +522,15 @@ public final class MsgApiVersionOuterClass {
 
       public Builder mergeFrom(com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion other) {
         if (other == com.linbit.linstor.proto.MsgApiVersionOuterClass.MsgApiVersion.getDefaultInstance()) return this;
-        if (other.hasMin()) {
-          setMin(other.getMin());
-        }
-        if (other.hasMax()) {
-          setMax(other.getMax());
+        if (other.hasVersion()) {
+          setVersion(other.getVersion());
         }
         if (other.hasFeatures()) {
           setFeatures(other.getFeatures());
         }
-        if (other.hasCurrentController()) {
-          bitField0_ |= 0x00000008;
-          currentController_ = other.currentController_;
+        if (other.hasControlerInfo()) {
+          bitField0_ |= 0x00000004;
+          controlerInfo_ = other.controlerInfo_;
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -600,10 +539,7 @@ public final class MsgApiVersionOuterClass {
       }
 
       public final boolean isInitialized() {
-        if (!hasMin()) {
-          return false;
-        }
-        if (!hasMax()) {
+        if (!hasVersion()) {
           return false;
         }
         if (!hasFeatures()) {
@@ -631,120 +567,88 @@ public final class MsgApiVersionOuterClass {
       }
       private int bitField0_;
 
-      private long min_ ;
+      private int version_ ;
       /**
-       * <code>required uint64 min = 1;</code>
+       * <code>required uint32 version = 1;</code>
        */
-      public boolean hasMin() {
+      public boolean hasVersion() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>required uint64 min = 1;</code>
+       * <code>required uint32 version = 1;</code>
        */
-      public long getMin() {
-        return min_;
+      public int getVersion() {
+        return version_;
       }
       /**
-       * <code>required uint64 min = 1;</code>
+       * <code>required uint32 version = 1;</code>
        */
-      public Builder setMin(long value) {
+      public Builder setVersion(int value) {
         bitField0_ |= 0x00000001;
-        min_ = value;
+        version_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>required uint64 min = 1;</code>
+       * <code>required uint32 version = 1;</code>
        */
-      public Builder clearMin() {
+      public Builder clearVersion() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        min_ = 0L;
-        onChanged();
-        return this;
-      }
-
-      private long max_ ;
-      /**
-       * <code>required uint64 max = 2;</code>
-       */
-      public boolean hasMax() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <code>required uint64 max = 2;</code>
-       */
-      public long getMax() {
-        return max_;
-      }
-      /**
-       * <code>required uint64 max = 2;</code>
-       */
-      public Builder setMax(long value) {
-        bitField0_ |= 0x00000002;
-        max_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required uint64 max = 2;</code>
-       */
-      public Builder clearMax() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        max_ = 0L;
+        version_ = 0;
         onChanged();
         return this;
       }
 
       private long features_ ;
       /**
-       * <code>required uint64 features = 3;</code>
+       * <code>required uint64 features = 20;</code>
        */
       public boolean hasFeatures() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>required uint64 features = 3;</code>
+       * <code>required uint64 features = 20;</code>
        */
       public long getFeatures() {
         return features_;
       }
       /**
-       * <code>required uint64 features = 3;</code>
+       * <code>required uint64 features = 20;</code>
        */
       public Builder setFeatures(long value) {
-        bitField0_ |= 0x00000004;
+        bitField0_ |= 0x00000002;
         features_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>required uint64 features = 3;</code>
+       * <code>required uint64 features = 20;</code>
        */
       public Builder clearFeatures() {
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000002);
         features_ = 0L;
         onChanged();
         return this;
       }
 
-      private java.lang.Object currentController_ = "";
+      private java.lang.Object controlerInfo_ = "";
       /**
-       * <code>optional string current_controller = 4;</code>
+       * <code>optional string controler_info = 30;</code>
        */
-      public boolean hasCurrentController() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
+      public boolean hasControlerInfo() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
-       * <code>optional string current_controller = 4;</code>
+       * <code>optional string controler_info = 30;</code>
        */
-      public java.lang.String getCurrentController() {
-        java.lang.Object ref = currentController_;
+      public java.lang.String getControlerInfo() {
+        java.lang.Object ref = controlerInfo_;
         if (!(ref instanceof java.lang.String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
-            currentController_ = s;
+            controlerInfo_ = s;
           }
           return s;
         } else {
@@ -752,53 +656,53 @@ public final class MsgApiVersionOuterClass {
         }
       }
       /**
-       * <code>optional string current_controller = 4;</code>
+       * <code>optional string controler_info = 30;</code>
        */
       public com.google.protobuf.ByteString
-          getCurrentControllerBytes() {
-        java.lang.Object ref = currentController_;
+          getControlerInfoBytes() {
+        java.lang.Object ref = controlerInfo_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          currentController_ = b;
+          controlerInfo_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>optional string current_controller = 4;</code>
+       * <code>optional string controler_info = 30;</code>
        */
-      public Builder setCurrentController(
+      public Builder setControlerInfo(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000008;
-        currentController_ = value;
+  bitField0_ |= 0x00000004;
+        controlerInfo_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string current_controller = 4;</code>
+       * <code>optional string controler_info = 30;</code>
        */
-      public Builder clearCurrentController() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        currentController_ = getDefaultInstance().getCurrentController();
+      public Builder clearControlerInfo() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        controlerInfo_ = getDefaultInstance().getControlerInfo();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string current_controller = 4;</code>
+       * <code>optional string controler_info = 30;</code>
        */
-      public Builder setCurrentControllerBytes(
+      public Builder setControlerInfoBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000008;
-        currentController_ = value;
+  bitField0_ |= 0x00000004;
+        controlerInfo_ = value;
         onChanged();
         return this;
       }
@@ -866,9 +770,9 @@ public final class MsgApiVersionOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n\031proto/MsgApiVersion.proto\022\030com.linbit." +
-      "linstor.proto\"W\n\rMsgApiVersion\022\013\n\003min\030\001 " +
-      "\002(\004\022\013\n\003max\030\002 \002(\004\022\020\n\010features\030\003 \002(\004\022\032\n\022cu" +
-      "rrent_controller\030\004 \001(\t"
+      "linstor.proto\"J\n\rMsgApiVersion\022\017\n\007versio" +
+      "n\030\001 \002(\r\022\020\n\010features\030\024 \002(\004\022\026\n\016controler_i" +
+      "nfo\030\036 \001(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -887,7 +791,7 @@ public final class MsgApiVersionOuterClass {
     internal_static_com_linbit_linstor_proto_MsgApiVersion_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgApiVersion_descriptor,
-        new java.lang.String[] { "Min", "Max", "Features", "CurrentController", });
+        new java.lang.String[] { "Version", "Features", "ControlerInfo", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

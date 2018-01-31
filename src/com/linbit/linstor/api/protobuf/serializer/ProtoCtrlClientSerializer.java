@@ -17,7 +17,9 @@ import com.linbit.linstor.StorPool.StorPoolApi;
 import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 import com.linbit.linstor.api.AbsCtrlClientSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
+import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.MsgApiVersionOuterClass;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.MsgLstNodeOuterClass;
 import com.linbit.linstor.proto.MsgLstRscDfnOuterClass;
@@ -128,5 +130,20 @@ public class ProtoCtrlClientSerializer extends AbsCtrlClientSerializer
         }
 
         msgListRscsBuilder.build().writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeApiVersion(
+        final long features,
+        final String controllerInfo,
+        ByteArrayOutputStream baos) throws IOException
+    {
+        MsgApiVersionOuterClass.MsgApiVersion.Builder msgApiVersion = MsgApiVersionOuterClass.MsgApiVersion.newBuilder();
+
+        // set features
+        msgApiVersion.setVersion(Controller.API_VERSION);
+        msgApiVersion.setFeatures(features);
+        msgApiVersion.setControlerInfo(controllerInfo);
+        msgApiVersion.build().writeDelimitedTo(baos);
     }
 }

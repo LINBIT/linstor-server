@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Calendar;
 
-abstract class BaseErrorReporter
+public abstract class BaseErrorReporter
 {
     static final String UNKNOWN_LABEL = "<UNKNOWN>";
 
@@ -24,7 +24,7 @@ abstract class BaseErrorReporter
     static final String SECTION_SEPARATOR;
     static final int SEPARATOR_WIDTH = 60;
 
-    static final String CURRENT_GIT_HASH;
+    public static final String CURRENT_GIT_HASH;
 
     final String dmModule;
     final Calendar cal;

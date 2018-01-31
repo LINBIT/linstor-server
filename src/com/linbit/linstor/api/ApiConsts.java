@@ -252,6 +252,7 @@ public class ApiConsts
      * Authentication APIs
      */
     public static final String API_SIGN_IN = "SignIn";
+    public static final String API_VERSION = "Version";
 
     /*
      * Debug APIs

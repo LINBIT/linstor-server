@@ -13,6 +13,7 @@ import com.linbit.linstor.StorPoolDefinition.StorPoolDfnApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.MsgApiVersionOuterClass;
 import com.linbit.linstor.security.AccessContext;
 
 public abstract class AbsCtrlClientSerializer implements CtrlClientSerializer
@@ -144,6 +145,21 @@ public abstract class AbsCtrlClientSerializer implements CtrlClientSerializer
             }
             return this;
         }
+
+        @Override
+        public Builder apiVersion(final long features, final String controllerInfo)
+        {
+            try
+            {
+                writeApiVersion(features, controllerInfo, baos);
+            }
+            catch (IOException ioExc)
+            {
+                errorReporter.reportError(ioExc);
+                exceptionOccured = true;
+            }
+            return this;
+        }
     }
 
     public abstract void writeHeader(String apiCall, int msgId, ByteArrayOutputStream baos)
@@ -162,5 +178,8 @@ public abstract class AbsCtrlClientSerializer implements CtrlClientSerializer
         throws IOException;
 
     public abstract void writeRscList(List<RscApi> rscs, Collection<ResourceState> rscStates, ByteArrayOutputStream baos)
+        throws IOException;
+
+    public abstract void writeApiVersion(final long features, final String controllerInfo, ByteArrayOutputStream baos)
         throws IOException;
 }

@@ -144,6 +144,8 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     static final String PROPSCON_KEY_TCP_PORT_RANGE = "tcpPortRange";
     static final String PROPSCON_KEY_MINOR_NR_RANGE = "minorNrRange";
 
+    public static final int API_VERSION = 0;
+
     public static final short DEFAULT_PEER_COUNT = 31;
     public static final long DEFAULT_AL_SIZE = 32;
     public static final int DEFAULT_AL_STRIPES = 1;

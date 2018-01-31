@@ -27,5 +27,7 @@ public interface CtrlClientSerializer
         Builder resourceDfnList(List<ResourceDefinition.RscDfnApi> rscDfns);
         Builder resourceList(final List<Resource.RscApi> rscs, final Collection<ResourceState> rscStates);
 
+        Builder apiVersion(final long features, final String controllerInfo);
+
     }
 }

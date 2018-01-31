@@ -36,6 +36,7 @@ public class CtrlApiCallHandler
     private final CtrlNodeConnectionApiCallHandler nodeConnApiCallHandler;
     private final CtrlRscConnectionApiCallHandler rscConnApiCallHandler;
     private final CtrlVlmConnectionApiCallHandler vlmConnApiCallHandler;
+    private final CtrlClientSerializer ctrlClientcomSrzl;
 
     private ApiCtrlAccessors apiCtrlAccessors;
 
@@ -48,7 +49,6 @@ public class CtrlApiCallHandler
         apiCtrlAccessors = apiCtrlAccessorsRef;
         final ErrorReporter errorReporter = apiCtrlAccessors.getErrorReporter();
         final CtrlStltSerializer ctrlStltComSrzl;
-        final CtrlClientSerializer ctrlClientcomSrzl;
 
         switch (type)
         {
@@ -1591,5 +1591,9 @@ public class CtrlApiCallHandler
         {
             apiCtrlAccessors.getRscDfnMapLock().writeLock().unlock();
         }
+    }
+
+    public CtrlClientSerializer getCtrlClientcomSrzl() {
+        return ctrlClientcomSrzl;
     }
 }
