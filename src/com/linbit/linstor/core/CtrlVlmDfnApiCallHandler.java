@@ -478,21 +478,19 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
 
     private MinorNumber getOrGenerateMinorNr(VlmDfnApi vlmDfnApi)
     {
+        MinorNumber freeMinorNr;
         try
         {
             Integer minorNrInt = vlmDfnApi.getMinorNr();
             if (minorNrInt == null)
             {
-                synchronized (minorNrPool)
-                {
-                    minorNrInt = minorNrPool.autoAllocate(
-                        MinorNumber.MINOR_NR_MIN,
-                        MinorNumber.MINOR_NR_MAX
-                    );
-                }
+                minorNrInt = minorNrPool.autoAllocate(
+                    MinorNumber.MINOR_NR_MIN,
+                    MinorNumber.MINOR_NR_MAX
+                );
             }
 
-            return new MinorNumber(minorNrInt);
+            freeMinorNr = new MinorNumber(minorNrInt);
         }
         catch (ValueOutOfRangeException valOORangeExc)
         {
@@ -519,6 +517,7 @@ class CtrlVlmDfnApiCallHandler extends AbsApiCallHandler
                 ApiConsts.FAIL_POOL_EXHAUSTED_MINOR_NR
             );
         }
+        return freeMinorNr;
     }
 
     private VolumeDefinitionData createVlmDfnData(

@@ -187,42 +187,36 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
     private MinorNumber getMinor(VlmDfnApi vlmDfnApi) throws ValueOutOfRangeException, LinStorException
     {
-        MinorNumber minorNr;
-        int minorNrInt;
-        Integer minor = vlmDfnApi.getMinorNr();
-        if (minor == null)
+        MinorNumber freeMinorNr;
+        Integer apiMinor = vlmDfnApi.getMinorNr();
+        if (apiMinor == null)
         {
-            synchronized (minorNrPool)
-            {
-                try
-                {
-                    minorNrInt = minorNrPool.autoAllocate(
-                        MinorNumber.MINOR_NR_MIN,
-                        MinorNumber.MINOR_NR_MAX
-                    );
-                }
-                catch (ExhaustedPoolException exc)
-                {
-                    throw new LinStorException("Could not found free minor number", exc);
-                }
-            }
+            int allocMinor;
             try
             {
-                minorNr = new MinorNumber(minorNrInt);
+                allocMinor = minorNrPool.autoAllocate(
+                    MinorNumber.MINOR_NR_MIN,
+                    MinorNumber.MINOR_NR_MAX
+                );
+                freeMinorNr = new MinorNumber(allocMinor);
+            }
+            catch (ExhaustedPoolException exc)
+            {
+                throw new LinStorException("Could not found free minor number", exc);
             }
             catch (ValueOutOfRangeException valueOutOfRangExc)
             {
                 throw new ImplementationError(
-                    "Failed to generate a valid minor number. Tried: '" + minor + "'",
+                    "Failed to generate a valid minor number. Tried: '" + apiMinor + "'",
                     valueOutOfRangExc
                 );
             }
         }
         else
         {
-            minorNr = new MinorNumber(minor);
+            freeMinorNr = new MinorNumber(apiMinor);
         }
-        return minorNr;
+        return freeMinorNr;
     }
 
     public ApiCallRc modifyRscDfn(
@@ -635,7 +629,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 throw asExc(
                     exc,
                     "Could not find free tcp port in range " +
-                        TcpPortNumber.PORT_NR_MIN+ " - " + TcpPortNumber.PORT_NR_MAX,
+                    TcpPortNumber.PORT_NR_MIN+ " - " + TcpPortNumber.PORT_NR_MAX,
                     ApiConsts.FAIL_INVLD_RSC_PORT // TODO create new RC for this case
                 );
             }
@@ -859,8 +853,8 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
     static VolumeNumber getVlmNr(VlmDfnApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
         throws ValueOutOfRangeException, LinStorException
     {
-        Integer vlmNrRaw = vlmDfnApi.getVolumeNr();
         VolumeNumber vlmNr;
+        Integer vlmNrRaw = vlmDfnApi.getVolumeNr();
         if (vlmNrRaw == null)
         {
             try
@@ -871,11 +865,12 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 while (vlmDfnIt.hasNext())
                 {
                     VolumeDefinition vlmDfn = vlmDfnIt.next();
-                    occupiedVlmNrs[idx++] = vlmDfn.getVolumeNumber().value;
+                    occupiedVlmNrs[idx] = vlmDfn.getVolumeNumber().value;
+                    ++idx;
                 }
                 Arrays.sort(occupiedVlmNrs);
 
-                return VolumeNumberAlloc.getFreeVolumeNumber(occupiedVlmNrs);
+                vlmNr = VolumeNumberAlloc.getFreeVolumeNumber(occupiedVlmNrs);
             }
             catch (AccessDeniedException accDeniedExc)
             {
@@ -888,7 +883,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
             {
                 throw new LinStorException(
                     "No more free volume numbers left in range " + VolumeNumber.VOLUME_NR_MIN + " - " +
-                        VolumeNumber.VOLUME_NR_MAX,
+                    VolumeNumber.VOLUME_NR_MAX,
                     exhausedPoolExc
                 );
             }
