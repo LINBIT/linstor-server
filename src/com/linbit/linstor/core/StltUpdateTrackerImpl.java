@@ -85,7 +85,7 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
             sched.notify();
         }
     }
-    
+
     @Override
     public void checkMultipleResources(Map<ResourceName, UUID> rscMap)
     {
@@ -96,14 +96,12 @@ class StltUpdateTrackerImpl implements StltUpdateTracker
         }
     }
 
-    void collectUpdateNotifications(UpdateBundle updates, AtomicBoolean shutdownFlag)
+    void collectUpdateNotifications(UpdateBundle updates, AtomicBoolean condFlag, boolean block)
     {
-        updates.clear();
-
         synchronized (sched)
         {
             // If no updates are queued, wait for updates
-            while (cachedUpdates.isEmpty() && !shutdownFlag.get())
+            while (cachedUpdates.isEmpty() && !condFlag.get() && block)
             {
                 try
                 {

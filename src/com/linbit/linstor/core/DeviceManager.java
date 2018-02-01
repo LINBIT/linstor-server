@@ -24,5 +24,7 @@ public interface DeviceManager extends DrbdStateChange
     void notifyResourceDeleted(Resource rsc);
     void notifyVolumeDeleted(Volume vlm);
 
+    void fullSyncApplied();
+
     StltUpdateTracker getUpdateTracker();
 }

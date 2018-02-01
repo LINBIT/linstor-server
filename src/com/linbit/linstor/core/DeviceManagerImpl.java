@@ -55,12 +55,20 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private final ErrorReporter errLog;
 
     private StltUpdateTrackerImpl updTracker;
-    private StltUpdateTrackerImpl.UpdateBundle rcvPendingBundle;
+
+    // Tracks objects that require requesting updates from the controller
+    private final StltUpdateTrackerImpl.UpdateBundle updPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
+
+    // Tracks objects that are waiting to be updated with data received from the controller
+    private final StltUpdateTrackerImpl.UpdateBundle rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
 
     private Thread svcThr;
 
-    private final AtomicBoolean runningFlag = new AtomicBoolean(false);
-    private final AtomicBoolean shutdownFlag = new AtomicBoolean(false);
+    private final AtomicBoolean runningFlag     = new AtomicBoolean(false);
+    private final AtomicBoolean svcCondFlag     = new AtomicBoolean(false);
+    private final AtomicBoolean waitUpdFlag     = new AtomicBoolean(true);
+    private final AtomicBoolean fullSyncFlag    = new AtomicBoolean(false);
+    private final AtomicBoolean shutdownFlag    = new AtomicBoolean(false);
 
     private final Set<ResourceName> deletedRscSet = new TreeSet<>();
     private final Set<VolumeDefinition.Key> deletedVlmSet = new TreeSet<>();
@@ -92,6 +100,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
     private WorkQueue workQ;
 
+    private long cycleNr = 0;
+
     DeviceManagerImpl(
         Satellite stltRef,
         AccessContext wrkCtxRef,
@@ -106,7 +116,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         errLog = coreSvcsRef.getErrorReporter();
         drbdEvent = drbdEventRef;
         updTracker = new StltUpdateTrackerImpl(sched);
-        rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
         svcThr = null;
         devMgrInstName = DEV_MGR_SVC_NAME;
         drbdHnd = new DrbdDeviceHandler(stltInstance, wrkCtx, coreSvcs);
@@ -169,6 +178,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         synchronized (sched)
         {
             shutdownFlag.set(true);
+            svcCondFlag.set(true);
             sched.notify();
         }
     }
@@ -191,6 +201,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         synchronized (sched)
         {
             stateAvailable = true;
+            // Do not wait with running the device handerls until new update notifications arrive,
+            // instead, apply all pending changes and then run the device handlers immediately
+            waitUpdFlag.set(false);
+            svcCondFlag.set(true);
             sched.notify();
         }
     }
@@ -305,6 +319,20 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         }
     }
 
+    public void fullSyncApplied()
+    {
+        synchronized (sched)
+        {
+            // Clear any previously valid state
+            updPendingBundle.clear();
+            rcvPendingBundle.clear();
+
+            fullSyncFlag.set(true);
+            svcCondFlag.set(true);
+            sched.notify();
+        }
+    }
+
     @Override
     public StltUpdateTracker getUpdateTracker()
     {
@@ -337,205 +365,285 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     @Override
     public void run()
     {
-        // BEGIN DEBUG
         errLog.logTrace("DeviceManager service started");
-        // END DEBUG
-        SyncPoint phaseLock = new AtomicSyncPoint();
-        StltUpdateTrackerImpl.UpdateBundle chgPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
         try
         {
-            // BEGIN DEBUG
-            errLog.logTrace("Enabling wrkCtx privileges");
-            // END DEBUG
-            wrkCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_OBJ_USE, Privilege.PRIV_MAC_OVRD);
+            devMgrLoop();
+        }
+        finally
+        {
+            runningFlag.set(false);
+            errLog.logTrace("DeviceManager service stopped");
+        }
+    }
 
-            // TODO: Initial startup of all devices
+    private void devMgrLoop()
+    {
 
-            // TODO: Initial changes to reach the target state
+        SyncPoint phaseLock = new AtomicSyncPoint();
 
-            final Set<ResourceName> dispatchRscSet = new TreeSet<>();
-            final Set<NodeName> localDelNodeSet = new TreeSet<>();
-            final Set<ResourceName> localDelRscSet = new TreeSet<>();
-            final Set<VolumeDefinition.Key> localDelVlmSet = new TreeSet<>();
-            long cycleNr = 0;
-            do
+        // Tracks objects that need to be dispatched to a device handler
+        final Set<ResourceName> dispatchRscSet = new TreeSet<>();
+
+        while (!shutdownFlag.get())
+        {
+            errLog.logTrace("Begin DeviceManager cycle %d", cycleNr);
+
+            try
             {
-                // BEGIN DEBUG
-                errLog.logTrace("Begin DeviceManager cycle %d", cycleNr);
-                // END DEBUG
-                // Wait until resource updates are pending
-                synchronized (sched)
+                boolean fullSyncApplied = fullSyncFlag.getAndSet(false);
+                if (fullSyncApplied)
                 {
-                    // BEGIN DEBUG
-                    errLog.logTrace("Collecting update notifications");
-                    // END DEBUG
-                    updTracker.collectUpdateNotifications(chgPendingBundle, shutdownFlag);
-                    if (shutdownFlag.get())
+                    errLog.logTrace("DeviceManager: Executing device handlers after full sync");
+
+                    // Clear the previous state
+                    dispatchRscSet.clear();
+
+                    Lock rcfgRdLock = stltInstance.reconfigurationLock.readLock();
+                    Lock rscDfnMapRdLock = stltInstance.rscDfnMapLock.readLock();
+
+                    // Schedule all known resources for dispatching to the device handlers
+                    try
                     {
-                        break;
+                        rcfgRdLock.lock();
+                        rscDfnMapRdLock.lock();
+                        dispatchRscSet.addAll(stltInstance.rscDfnMap.keySet());
                     }
-
-                    chgPendingBundle.copyUpdateRequestsTo(rcvPendingBundle);
-
-                    // BEGIN DEBUG
-                    errLog.logTrace("Requesting object updates from the controller");
-                    // END DEBUG
-                    // Request updates from the controller
-                    requestNodeUpdates(chgPendingBundle.updNodeMap);
-                    requestRscDfnUpdates(chgPendingBundle.updRscDfnMap);
-                    requestRscUpdates(chgPendingBundle.updRscMap);
-                    requestStorPoolUpdates(chgPendingBundle.updStorPoolMap);
-
-                    // BEGIN DEBUG
-                    errLog.logTrace("Waiting for object updates to arrive");
-                    // END DEBUG
-                    // Wait for the notification that all requested updates
-                    // have been received and applied
-                    while (!shutdownFlag.get() && !rcvPendingBundle.isEmpty())
+                    finally
                     {
-                        try
-                        {
-                            sched.wait();
-                        }
-                        catch (InterruptedException ignored)
-                        {
-                        }
-                    }
-                    if (shutdownFlag.get())
-                    {
-                        break;
-                    }
-                    // BEGIN DEBUG
-                    errLog.logTrace("All object updates were received");
-                    // END DEBUG
-
-                    // Merge check requests into update requests and clear the check requests
-                    chgPendingBundle.updRscDfnMap.putAll(chgPendingBundle.chkRscMap);
-                    chgPendingBundle.chkRscMap.clear();
-                    // BEGIN DEBUG
-                    errLog.logTrace("All object updates were received");
-                    // END DEBUG
-                }
-
-                // TODO: if !stateAvailable try to collect additional updates (without losing the current)
-                synchronized (sched)
-                {
-                    // BEGIN DEBUG
-                    errLog.logTrace("Waiting for a valid DrbdEventsService state");
-                    // END DEBUG
-                    while (!shutdownFlag.get() && !stateAvailable)
-                    {
-                        try
-                        {
-                            sched.wait();
-                        }
-                        catch (InterruptedException ignored)
-                        {
-                        }
+                        rscDfnMapRdLock.unlock();
+                        rcfgRdLock.unlock();
                     }
                 }
+                else
+                {
+                    // Collects update notifications
+                    // Blocks if waitUpdFlag is set
+                    phaseCollectUpdateNotifications();
 
-                // Collect the names of all resources that must be dispatched for checking / adjusting
-                dispatchRscSet.addAll(chgPendingBundle.chkRscMap.keySet());
-                dispatchRscSet.addAll(chgPendingBundle.updRscDfnMap.keySet());
-                dispatchRscSet.addAll(chgPendingBundle.updRscMap.keySet());
+                    // Set nonblocking collection of update notifications, so that if the
+                    // device manager service restarts, and updates are pending receipt
+                    // from the controller, collection of further update notifications
+                    // will be nonblocking
+                    waitUpdFlag.set(false);
 
-                ((DrbdDeviceHandler) drbdHnd).debugListSatelliteObjects();
+                    // Requests updates from the controller
+                    phaseRequestUpdateData(dispatchRscSet);
 
-                stltInstance.reconfigurationLock.readLock().lock();
+                    // Blocks until all updates have been received from the controller
+                    phaseCollectUpdateData();
+                }
+
+                // Cancel nonblocking collection of update notifications
+                waitUpdFlag.set(true);
+
+                if (stateAvailable)
+                {
+                    phaseDispatchDeviceHandlers(phaseLock, dispatchRscSet);
+                }
+                else
+                {
+                    errLog.logTrace(
+                        "Execution of device handlers skipped, because DRBD state tracking is currently inoperative."
+                    );
+                }
+            }
+            catch (SvcCondException scExc)
+            {
+                // Cancel service condition
+                svcCondFlag.set(false);
+
+                boolean shutdownRequested = shutdownFlag.getAndSet(false);
+                if (shutdownRequested)
+                {
+                    break;
+                }
+            }
+            catch (AccessDeniedException accExc)
+            {
+                errLog.reportError(
+                    Level.ERROR,
+                    new ImplementationError(
+                        "The DeviceManager was started with an access context that does not have sufficient " +
+                        "privileges to access all required information",
+                        accExc
+                    )
+                );
+                break;
+            }
+            finally
+            {
+                errLog.logTrace("End DeviceManager cycle %d", cycleNr);
+                ++cycleNr;
+            }
+        }
+    }
+
+    private void phaseCollectUpdateNotifications()
+        throws SvcCondException
+    {
+        synchronized (sched)
+        {
+            if (updPendingBundle.isEmpty())
+            {
+                errLog.logTrace("Collecting update notifications");
+                // Do not block in this phase if updates have been requested from the controller
+                // and are pending receipt
+                updTracker.collectUpdateNotifications(updPendingBundle, svcCondFlag, waitUpdFlag.get());
+                if (svcCondFlag.get())
+                {
+                    throw new SvcCondException();
+                }
+            }
+        }
+    }
+
+    private void phaseRequestUpdateData(Set<ResourceName> dispatchRscSet)
+        throws SvcCondException
+    {
+        errLog.logTrace("Requesting object updates from the controller");
+
+        synchronized (sched)
+        {
+            // The set of objects that are pending receipt must be initialized before
+            // sending the requests for updates, because receipt of updates races
+            // with sending update requests.
+            // Therefore, rcvPendingBundle must be prepared in the request phase
+            // before requesting the updates instead of in the collect phase.
+            updPendingBundle.copyUpdateRequestsTo(rcvPendingBundle);
+
+            // Schedule all objects that will be updated for a device handler run
+            dispatchRscSet.addAll(updPendingBundle.chkRscMap.keySet());
+            dispatchRscSet.addAll(updPendingBundle.updRscDfnMap.keySet());
+            dispatchRscSet.addAll(updPendingBundle.updRscMap.keySet());
+
+            // Request updates from the controller
+            requestNodeUpdates(updPendingBundle.updNodeMap);
+            requestRscDfnUpdates(updPendingBundle.updRscDfnMap);
+            requestRscUpdates(updPendingBundle.updRscMap);
+            requestStorPoolUpdates(updPendingBundle.updStorPoolMap);
+
+            updPendingBundle.clear();
+        }
+    }
+
+    private void phaseCollectUpdateData()
+        throws SvcCondException
+    {
+        boolean waitMsg = true;
+
+        synchronized (sched)
+        {
+            // Wait until all requested updates are applied
+            while (!svcCondFlag.get() && !rcvPendingBundle.isEmpty())
+            {
+                if (waitMsg)
+                {
+                    errLog.logTrace("Waiting for object updates to be received and applied");
+                    waitMsg = false;
+                }
                 try
                 {
-                    // BEGIN DEBUG
-                    errLog.logTrace("Scheduling resource handlers");
-                    // END DEBUG
+                    sched.wait();
+                }
+                catch (InterruptedException ignored)
+                {
+                }
+            }
+            if (svcCondFlag.get())
+            {
+                throw new SvcCondException();
+            }
+        }
 
-                    NodeData localNode = stltInstance.getLocalNode();
-                    for (ResourceName rscName : dispatchRscSet)
+        errLog.logTrace("All object updates were received");
+    }
+
+    private void phaseDispatchDeviceHandlers(SyncPoint phaseLock, Set<ResourceName> dispatchRscSet)
+        throws SvcCondException, AccessDeniedException
+    {
+        errLog.logTrace("Dispatching resources to device handlers");
+
+        synchronized (sched)
+        {
+            // Add any check requests that were received in the meantime
+            // into the dispatch set and clear the check requests
+            dispatchRscSet.addAll(updPendingBundle.chkRscMap.keySet());
+            updPendingBundle.chkRscMap.clear();
+        }
+
+        // BEGIN DEBUG
+        // ((DrbdDeviceHandler) drbdHnd).debugListSatelliteObjects();
+        // END DEBUG
+
+        if (!dispatchRscSet.isEmpty())
+        {
+            stltInstance.reconfigurationLock.readLock().lock();
+            try
+            {
+                NodeData localNode = stltInstance.getLocalNode();
+                for (ResourceName rscName : dispatchRscSet)
+                {
+                    // Dispatch resources that were affected by changes to worker threads
+                    // and to the resource's respective handler
+                    ResourceDefinition rscDfn = stltInstance.rscDfnMap.get(rscName);
+                    if (rscDfn != null)
                     {
-                        // Dispatch resources that were affected by changes to worker threads
-                        // and to the resource's respective handler
-                        ResourceDefinition rscDfn = stltInstance.rscDfnMap.get(rscName);
-                        if (rscDfn != null)
+                        Resource rsc = rscDfn.getResource(wrkCtx, localNode.getName());
+                        if (rsc != null)
                         {
-                            Resource rsc = rscDfn.getResource(wrkCtx, localNode.getName());
-                            if (rsc != null)
-                            {
-                                dispatchResource(wrkCtx, rsc, phaseLock);
-                            }
-                            else
-                            {
-                                errLog.logWarning(
-                                    "Dispatch request for resource definition '" + rscName.displayValue +
-                                    "' which has no corresponding resource object on this satellite"
-                                );
-                            }
+                            dispatchResource(wrkCtx, rsc, phaseLock);
                         }
                         else
                         {
                             errLog.logWarning(
                                 "Dispatch request for resource definition '" + rscName.displayValue +
-                                "' which is unknown to this satellite"
+                                "' which has no corresponding resource object on this satellite"
                             );
                         }
                     }
-                    dispatchRscSet.clear();
-                    // BEGIN DEBUG
-                    errLog.logTrace("Waiting for resource handlers to finish");
-                    // END DEBUG
-                    // Wait until the phase advances from the current phase number after all
-                    // device handlers have finished
-                    phaseLock.await();
-                    // BEGIN DEBUG
-                    errLog.logTrace("All resource handlers finished");
-
-                    // Cleanup deleted objects
-                    deletedObjectsCleanup(wrkCtx, localDelNodeSet, localDelRscSet, localDelVlmSet);
-
-                    errLog.logTrace("End DeviceManager cycle %d", cycleNr);
-                    // END DEBUG
+                    else
+                    {
+                        errLog.logWarning(
+                            "Dispatch request for resource definition '" + rscName.displayValue +
+                            "' which is unknown to this satellite"
+                        );
+                    }
                 }
-                finally
-                {
-                    stltInstance.reconfigurationLock.readLock().unlock();
-                    ++cycleNr;
-                }
+                dispatchRscSet.clear();
+
+                errLog.logTrace("Waiting for resource handlers to finish");
+                // Wait until the phase advances from the current phase number after all
+                // device handlers have finished
+                phaseLock.await();
+                errLog.logTrace("All resource handlers finished");
+
+                // Cleanup deleted objects
+                deletedObjectsCleanup();
             }
-            while (!shutdownFlag.get());
-            errLog.logTrace("DeviceManager service stopped");
-        }
-        catch (AccessDeniedException accExc)
-        {
-            shutdownFlag.set(true);
-            errLog.reportError(
-                Level.ERROR,
-                new ImplementationError(
-                    "The DeviceManager was started with an access context that does not have sufficient " +
-                    "privileges to access all required information",
-                    accExc
-                )
-            );
-        }
-        finally
-        {
-            runningFlag.set(false);
+            finally
+            {
+                stltInstance.reconfigurationLock.readLock().unlock();
+            }
         }
     }
 
-    private void deletedObjectsCleanup(
-        final AccessContext wrkCtxRef,
-        final Set<NodeName> localDelNodeSet,
-        final Set<ResourceName> localDelRscSet,
-        final Set<VolumeDefinition.Key> localDelVlmSet
-    )
+    private void deletedObjectsCleanup()
         throws AccessDeniedException
     {
+        final Set<NodeName> localDelNodeSet = new TreeSet<>();
+        final Set<ResourceName> localDelRscSet  = new TreeSet<>();
+
         // Shallow-copy the sets to avoid having to mix locking the sched lock and
         // the satellite's reconfigurationLock, rscDfnMapLock
         synchronized (sched)
         {
             localDelRscSet.addAll(deletedRscSet);
-            localDelVlmSet.addAll(deletedVlmSet);
             deletedRscSet.clear();
+            // FIXME: All functionality for deleting volumes can probably be removed.
+            //        Volumes are only deleted when a volume definition is deleted, which happens
+            //        only on the controller. An update would then be received for the resource
+            //        that contained the volume.
             deletedVlmSet.clear();
         }
 
@@ -557,12 +665,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                     {
                         // Delete the resource from all nodes
                         Map<NodeName, Resource> rscMap = new TreeMap<>();
-                        curRscDfn.copyResourceMap(wrkCtxRef, rscMap);
+                        curRscDfn.copyResourceMap(wrkCtx, rscMap);
                         for (Resource delRsc : rscMap.values())
                         {
                             Node peerNode = delRsc.getAssignedNode();
                             delRsc.setConnection(transMgr);
-                            delRsc.delete(wrkCtxRef);
+                            delRsc.delete(wrkCtx);
                             if (peerNode != stltInstance.getLocalNode())
                             {
                                 if (!(peerNode.getResourceCount() >= 1))
@@ -582,18 +690,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         stltInstance.rscDfnMap.remove(curRscName);
                     }
                 }
-
-                // No-op; this can probably be removed, because volume entries are only removed
-                // when volume definition entries are removed from the resource definition,
-                // which can only be done by the controller.
-                // Such a change would then be received as an update from the controller.
-                //
-                // Maybe the satellite could set the "CLEAN" flag on the volume locally until then,
-                // to indicate that the volume deletion does not need to be repeated, but that is
-                // an optional optimization.
-                // for (Volume.Key vlmKey : localDelVlmSet)
-                // {
-                // }
             }
             finally
             {
@@ -612,7 +708,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
             {
                 nodeMapWrLock.unlock();
             }
-
         }
         catch (SQLException ignored)
         {
@@ -623,11 +718,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         {
             rcfgRdLock.unlock();
         }
-
-        // Cleanup the temporary sets
-        localDelNodeSet.clear();
-        localDelRscSet.clear();
-        localDelVlmSet.clear();
     }
 
     private void requestNodeUpdates(Map<NodeName, UUID> nodesMap)
@@ -800,5 +890,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 phaseLock.arrive();
             }
         }
+    }
+
+    class SvcCondException extends Exception
+    {
     }
 }
