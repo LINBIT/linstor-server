@@ -324,6 +324,7 @@ public class LvmDriverTest extends StorageTestUtils
         final String volumeName = "testVolume";
 
         expectLvmDeleteVolumeBehavior(LVM_REMOVE_DEFAULT, volumeName, LVM_VOLUME_GROUP_DEFAULT, false);
+        expectLvsInfoBehavior(LVM_LVS_DEFAULT, LVM_VOLUME_GROUP_DEFAULT, volumeName, 0);
 
         driver.deleteVolume(volumeName);
     }
@@ -603,7 +604,19 @@ public class LvmDriverTest extends StorageTestUtils
         final String lvsCommand,
         final String volumeGroup,
         final String identifier,
-        final String volumeSize)
+        final String volumeSize
+    )
+    {
+        expectLvsInfoBehavior(lvsCommand, volumeGroup, identifier, volumeSize, true);
+    }
+
+    protected void expectLvsInfoBehavior(
+        final String lvsCommand,
+        final String volumeGroup,
+        final String identifier,
+        final String volumeSize,
+        final boolean exists
+    )
     {
         Command command = new Command(
             lvsCommand,
@@ -613,13 +626,22 @@ public class LvmDriverTest extends StorageTestUtils
             "--units", "k",
             volumeGroup);
         StringBuilder sb = new StringBuilder();
-        OutputData outData = new TestOutputData(
-            sb
-            .append(identifier).append(EXT_COMMAND_SEPARATOR)
-            .append("/dev/").append(LVM_VOLUME_GROUP_DEFAULT).append("/").append(identifier).append(EXT_COMMAND_SEPARATOR)
-            .append(volumeSize).toString(),
-            "",
-            0);
+        OutputData outData;
+        if (exists)
+        {
+            outData = new TestOutputData(
+                sb
+                .append(identifier).append(EXT_COMMAND_SEPARATOR)
+                .append("/dev/").append(LVM_VOLUME_GROUP_DEFAULT).append("/").append(identifier).append(EXT_COMMAND_SEPARATOR)
+                .append(volumeSize).toString(),
+                "",
+                0
+            );
+        }
+        else
+        {
+            outData = new TestOutputData("", "", 0);
+        }
 
         ec.setExpectedBehavior(command, outData);
 
