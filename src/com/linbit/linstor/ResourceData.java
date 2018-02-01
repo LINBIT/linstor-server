@@ -501,7 +501,6 @@ public class ResourceData extends BaseTransactionObject implements Resource
         if (!deleted.get())
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
-            deleted.set(true);
 
             ((NodeData) assgNode).removeResource(accCtx, this);
             ((ResourceDefinitionData) resourceDfn).removeResource(accCtx, this);
@@ -522,6 +521,8 @@ public class ResourceData extends BaseTransactionObject implements Resource
 
             objProt.delete(accCtx);
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 

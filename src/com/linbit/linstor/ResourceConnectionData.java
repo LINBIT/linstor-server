@@ -297,12 +297,12 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
             sourceResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
             targetResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-            deleted.set(true);
-
             sourceResource.removeResourceConnection(accCtx, this);
             targetResource.removeResourceConnection(accCtx, this);
 
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 

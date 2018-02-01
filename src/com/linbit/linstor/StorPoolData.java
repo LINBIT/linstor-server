@@ -360,12 +360,12 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
             node.getObjProt().requireAccess(accCtx, AccessType.USE);
             storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-            deleted.set(true);
-
             ((NodeData) node).removeStorPool(accCtx, this);
             ((StorPoolDefinitionData) storPoolDef).removeStorPool(accCtx, this);
 
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 

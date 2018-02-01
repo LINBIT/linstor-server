@@ -391,8 +391,6 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
         {
             resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
-            deleted.set(true);
-
             ((ResourceDefinitionData) resourceDfn).removeVolumeDefinition(accCtx, this);
 
             for (Volume vlm : volumes.values())
@@ -401,6 +399,8 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
             }
 
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 

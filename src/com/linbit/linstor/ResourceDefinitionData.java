@@ -419,7 +419,6 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     {
         if (!deleted.get())
         {
-            deleted.set(true);
             objProt.requireAccess(accCtx, AccessType.CONTROL);
 
             // preventing ConcurrentModificationException
@@ -431,6 +430,8 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
 
             objProt.delete(accCtx);
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 

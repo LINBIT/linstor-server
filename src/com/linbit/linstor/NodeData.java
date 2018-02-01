@@ -577,8 +577,6 @@ public class NodeData extends BaseTransactionObject implements Node
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
 
-            deleted.set(true);
-
             // preventing ConcurrentModificationException
             ArrayList<NodeConnection> values = new ArrayList<>(nodeConnections.values());
             for (NodeConnection nodeConn : values)
@@ -588,6 +586,8 @@ public class NodeData extends BaseTransactionObject implements Node
 
             objProt.delete(accCtx);
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 

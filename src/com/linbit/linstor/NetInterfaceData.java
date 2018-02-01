@@ -216,10 +216,10 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
         {
             niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-            deleted.set(true);
-
             ((NodeData) niNode).removeNetInterface(accCtx, this);
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 

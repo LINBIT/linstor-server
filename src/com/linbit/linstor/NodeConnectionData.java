@@ -270,12 +270,12 @@ public class NodeConnectionData extends BaseTransactionObject implements NodeCon
             sourceNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
             targetNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-            deleted.set(true);
-
             sourceNode.removeNodeConnection(accCtx, this);
             targetNode.removeNodeConnection(accCtx, this);
 
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 

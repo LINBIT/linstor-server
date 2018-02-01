@@ -405,7 +405,6 @@ public class VolumeData extends BaseTransactionObject implements Volume
         if (!deleted.get())
         {
             resource.getObjProt().requireAccess(accCtx, AccessType.USE);
-            deleted.set(true);
 
             // preventing ConcurrentModificationException
             Collection<VolumeConnection> values = new ArrayList<>(volumeConnections.values());
@@ -419,6 +418,8 @@ public class VolumeData extends BaseTransactionObject implements Volume
             ((VolumeDefinitionData) volumeDfn).removeVolume(accCtx, this);
 
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 

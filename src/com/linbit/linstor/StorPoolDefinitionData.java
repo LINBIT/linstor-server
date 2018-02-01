@@ -246,7 +246,6 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
         if (!deleted.get())
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
-            deleted.set(true);
 
             Collection<StorPool> values = new ArrayList<>(storPools.values());
             for(StorPool storPool : values)
@@ -256,6 +255,8 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
 
             objProt.delete(accCtx);
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 
