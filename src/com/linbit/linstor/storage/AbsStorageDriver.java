@@ -221,7 +221,18 @@ public abstract class AbsStorageDriver implements StorageDriver
                 );
             }
 
-            checkExitCode(output, command);
+            if (output.exitCode != 0)
+            {
+                // before shouting loud that the command failed,
+                // we will just verify if the volume is still available.
+                // if it is, we shout, if not, we say everything is fine
+
+                VolumeInfo volumeInfo = getVolumeInfo(identifier, false);
+                if (volumeInfo != null)
+                {
+                    checkExitCode(output, command); // will throw the usual message
+                }
+            }
 
             FileEntryGroupBuilder groupBuilder = new FileSystemWatch.FileEntryGroupBuilder();
             groupBuilder.newEntry(getExpectedVolumePath(identifier), Event.DELETE);
@@ -532,7 +543,15 @@ public abstract class AbsStorageDriver implements StorageDriver
             {
                 sb.append(String.format(format, args));
             }
-            sb.append(String.format("Command '%s' returned with exitcode %d. Error message: %s",
+            sb.append(
+                String.format(
+                    "Command '%s' returned with exitcode %d. %n%n"+
+                        "Standard out: %n" +
+                        "%s" +
+                        "%n%n" +
+                        "Error message: %n" +
+                        "%s" +
+                        "%n",
                     gluedCommand,
                     output.exitCode,
                     new String(output.stderrData)
@@ -796,9 +815,14 @@ public abstract class AbsStorageDriver implements StorageDriver
         }
     }
 
+    protected VolumeInfo getVolumeInfo(String identifier) throws StorageException
+    {
+        return getVolumeInfo(identifier, true);
+    }
+
     protected abstract String getExpectedVolumePath(String identifier);
 
-    protected abstract VolumeInfo getVolumeInfo(String identifier) throws StorageException;
+    protected abstract VolumeInfo getVolumeInfo(String identifier, boolean failIfNull) throws StorageException;
 
     protected abstract long getExtentSize() throws StorageException;
 

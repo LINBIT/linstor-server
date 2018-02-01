@@ -45,7 +45,7 @@ public class ZfsDriver extends AbsStorageDriver
     }
 
     @Override
-    protected VolumeInfo getVolumeInfo(String identifier) throws StorageException
+    protected VolumeInfo getVolumeInfo(String identifier, boolean failIfNull) throws StorageException
     {
         final ExtCmd extCommand = new ExtCmd(coreSvcs.getTimer(), coreSvcs.getErrorReporter());
         try

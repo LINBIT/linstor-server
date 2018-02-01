@@ -95,7 +95,7 @@ public class LvmDriver extends AbsStorageDriver
      * @return non-null {@link LvsInfo} of the requested identifier
      * @throws StorageException
      */
-    protected LvsInfo getLvsInfoByIdentifier(String identifier)
+    protected LvsInfo getLvsInfoByIdentifier(String identifier, boolean failIfNull)
         throws StorageException
     {
         LvsInfo info = null;
@@ -107,7 +107,7 @@ public class LvmDriver extends AbsStorageDriver
             infoMap = LvsInfo.getAllInfo(extCommand, lvmLvsCommand, volumeGroup);
             info = infoMap.get(identifier);
 
-            if (info == null)
+            if (info == null && failIfNull)
             {
                 throw new StorageException(
                     "Volume not found",
@@ -210,9 +210,9 @@ public class LvmDriver extends AbsStorageDriver
     }
 
     @Override
-    protected VolumeInfo getVolumeInfo(String identifier) throws StorageException
+    protected VolumeInfo getVolumeInfo(String identifier, boolean failIfNull) throws StorageException
     {
-        return getLvsInfoByIdentifier(identifier);
+        return getLvsInfoByIdentifier(identifier, failIfNull);
     }
 
     @Override
