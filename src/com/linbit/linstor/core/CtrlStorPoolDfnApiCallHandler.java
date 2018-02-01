@@ -15,6 +15,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.StorPoolDefinition;
 import com.linbit.linstor.StorPoolDefinitionData;
+import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -210,9 +211,14 @@ class CtrlStorPoolDfnApiCallHandler extends AbsApiCallHandler
             }
             else
             {
+                UUID storPoolDfnUuid = storPoolDfn.getUuid();
+                StorPoolName storPoolName = storPoolDfn.getName();
                 delete(storPoolDfn);
                 commit();
-                reportSuccess(storPoolDfn.getUuid());
+
+                apiCtrlAccessors.getStorPoolDfnMap().remove(storPoolName);
+
+                reportSuccess(storPoolDfnUuid);
             }
         }
         catch (ApiCallHandlerFailedException ignore)

@@ -196,12 +196,13 @@ class CtrlRscConnectionApiCallHandler extends AbsApiCallHandler
         )
         {
             ResourceConnectionData rscConn = loadRscConn(nodeName1Str, nodeName2Str, rscNameStr);
+            UUID rscConnUuid = rscConn.getUuid();
             delete(rscConn);
 
             commit();
 
             updateSatellites(rscConn);
-            reportSuccess(rscConn.getUuid());
+            reportSuccess(rscConnUuid);
         }
         catch (ApiCallHandlerFailedException ignore)
         {

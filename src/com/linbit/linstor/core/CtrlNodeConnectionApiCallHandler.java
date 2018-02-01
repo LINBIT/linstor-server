@@ -203,11 +203,12 @@ class CtrlNodeConnectionApiCallHandler extends AbsApiCallHandler
             }
             else
             {
+                UUID nodeConnUuid = nodeConn.getUuid();
                 nodeConn.delete(accCtx); // accDeniedExc4
 
                 commit();
 
-                reportSuccess(nodeConn.getUuid());
+                reportSuccess(nodeConnUuid);
 
                 updateSatellites(nodeConn);
             }

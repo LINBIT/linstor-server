@@ -208,10 +208,11 @@ class CtrlVlmConnectionApiCallHandler extends AbsApiCallHandler
             }
             else
             {
+                UUID vlmConnUuid = vlmConn.getUuid();
                 delete(vlmConn);
                 commit();
 
-                reportSuccess(vlmConn.getUuid());
+                reportSuccess(vlmConnUuid);
             }
         }
         catch (ApiCallHandlerFailedException ignore)

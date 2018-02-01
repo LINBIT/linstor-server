@@ -316,6 +316,7 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                 Iterator<Resource> rscIterator = getPrivilegedRscIterator(rscDfn);
                 String successMsg;
                 String details;
+                UUID rscDfnUuid = rscDfn.getUuid();
                 if (rscIterator.hasNext())
                 {
                     markDeleted(rscDfn);
@@ -332,15 +333,18 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
                     updateSatellites(rscDfn);
 
                     successMsg = getObjectDescriptionInlineFirstLetterCaps() + " marked for deletion.";
-                    details = getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + rscDfn.getUuid();
+                    details = getObjectDescriptionInlineFirstLetterCaps() + " UUID is: " + rscDfnUuid;
                 }
                 else
                 {
+                    ResourceName rscName = rscDfn.getName();
                     delete(rscDfn);
                     commit();
 
+                    apiCtrlAccessors.getRscDfnMap().remove(rscName);
+
                     successMsg = getObjectDescriptionInlineFirstLetterCaps() + " deleted.";
-                    details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscDfn.getUuid();
+                    details = getObjectDescriptionInlineFirstLetterCaps() + " UUID was: " + rscDfnUuid;
                 }
                 reportSuccess(successMsg, details);
             }

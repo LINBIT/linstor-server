@@ -301,12 +301,12 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
             sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
             targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-            deleted.set(true);
-
             sourceVolume.removeVolumeConnection(accCtx, this);
             targetVolume.removeVolumeConnection(accCtx, this);
 
             dbDriver.delete(this, transMgr);
+
+            deleted.set(true);
         }
     }
 

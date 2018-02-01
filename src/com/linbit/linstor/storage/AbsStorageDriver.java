@@ -554,6 +554,7 @@ public abstract class AbsStorageDriver implements StorageDriver
                         "%n",
                     gluedCommand,
                     output.exitCode,
+                    new String(output.stdoutData),
                     new String(output.stderrData)
                 )
             );

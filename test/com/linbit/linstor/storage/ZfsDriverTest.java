@@ -351,6 +351,7 @@ public class ZfsDriverTest extends StorageTestUtils
         String identifier = "testVolume";
 
         expectZfsDeleteVolumeBehavior(ZFS_COMMAND_DEFAULT, identifier, ZFS_POOL_DEFAULT, false);
+        expectZfsVolumeInfoBehavior(ZFS_COMMAND_DEFAULT, ZFS_POOL_DEFAULT, identifier, 0, false);
 
         driver.deleteVolume(identifier);
     }
