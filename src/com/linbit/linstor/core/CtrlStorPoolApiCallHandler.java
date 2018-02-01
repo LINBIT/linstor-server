@@ -26,8 +26,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -287,27 +285,20 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
             {
                 long fullSyncTimestamp = satellitePeer.getFullSyncId();
                 long updateId = satellitePeer.getNextSerializerId();
-                byte[] data = internalComSerializer
-                    .builder(InternalApiConsts.API_APPLY_STOR_POOL, msgId)
-                    .storPoolData(storPool, fullSyncTimestamp, updateId)
-                    .build();
-
-                Message response = satellitePeer.createMessage();
-                response.setData(data);
-                satellitePeer.sendMessage(response);
+                satellitePeer.sendMessage(
+                    internalComSerializer
+                        .builder(InternalApiConsts.API_APPLY_STOR_POOL, msgId)
+                        .storPoolData(storPool, fullSyncTimestamp, updateId)
+                        .build()
+                );
             }
             else
             {
-                apiCtrlAccessors.getErrorReporter().reportError(
-                    new ImplementationError(
-                        String.format(
-                            "A requested storpool name '%s' with the uuid '%s' was not found "+
-                                "in the controllers list of stor pools",
-                                storPoolName,
-                                storPoolUuid.toString()
-                            ),
-                        null
-                    )
+                satellitePeer.sendMessage(
+                    internalComSerializer
+                        .builder(InternalApiConsts.API_APPLY_STOR_POOL_DELETED, msgId)
+                        .deletedStorPoolData(storPoolNameStr)
+                        .build()
                 );
             }
         }
@@ -326,15 +317,6 @@ class CtrlStorPoolApiCallHandler extends AbsApiCallHandler
                 new ImplementationError(
                     "Controller's api context has not enough privileges to gather requested storpool data.",
                     accDeniedExc
-                )
-            );
-        }
-        catch (IllegalMessageStateException illegalMessageStateExc)
-        {
-            apiCtrlAccessors.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Failed to respond to storpool data request",
-                    illegalMessageStateExc
                 )
             );
         }

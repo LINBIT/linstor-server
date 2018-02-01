@@ -52,8 +52,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ResourceState;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -676,32 +674,21 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                     long fullSyncTimestamp = satellitePeer.getFullSyncId();
                     long updateId = satellitePeer.getNextSerializerId();
 
-                    byte[] data = internalComSerializer
-                        .builder(InternalApiConsts.API_APPLY_RSC, msgId)
-                        .resourceData(rsc, fullSyncTimestamp, updateId)
-                        .build();
-
-                    Message response = satellitePeer.createMessage();
-                    response.setData(data);
-                    satellitePeer.sendMessage(response);
+                    satellitePeer.sendMessage(
+                        internalComSerializer
+                            .builder(InternalApiConsts.API_APPLY_RSC, msgId)
+                            .resourceData(rsc, fullSyncTimestamp, updateId)
+                            .build()
+                    );
                 }
                 else
                 {
-                    apiCtrlAccessors.getErrorReporter().reportError(
-                        new ImplementationError(
-                            String.format(
-                                "A requested resource name '%s' with the uuid '%s' was not found "+
-                                    "in the controller's list of resources",
-                                    rscName,
-                                    rscUuid.toString()
-                                ),
-                            null
-                        )
+                    satellitePeer.sendMessage(
+                        internalComSerializer
+                        .builder(InternalApiConsts.API_APPLY_RSC_DELETED, msgId)
+                        .deletedResourceData(rscNameStr)
+                        .build()
                     );
-
-                    // satellite has divergent data. cut the connection, let reconnector task
-                    // establish new connection and satellite will ask for a full resync.
-                    satellitePeer.closeConnection();
                 }
             }
             else
@@ -731,15 +718,6 @@ class CtrlRscApiCallHandler extends AbsApiCallHandler
                 new ImplementationError(
                     "Controller's api context has not enough privileges to gather requested resource data.",
                     accDeniedExc
-                )
-            );
-        }
-        catch (IllegalMessageStateException illegalMessageStateExc)
-        {
-            apiCtrlAccessors.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Failed to respond to resource data request",
-                    illegalMessageStateExc
                 )
             );
         }

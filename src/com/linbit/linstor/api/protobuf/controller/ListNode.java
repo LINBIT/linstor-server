@@ -46,8 +46,9 @@ public class ListNode extends BaseProtoApiCall {
     )
         throws IOException
     {
-
-        byte[] listNodesResultMsg = controller.getApiCallHandler().listNode(msgId, accCtx, client);
-        sendAnswer(client, listNodesResultMsg);
+        client.sendMessage(
+            controller.getApiCallHandler()
+                .listNode(msgId, accCtx, client)
+        );
     }
 }

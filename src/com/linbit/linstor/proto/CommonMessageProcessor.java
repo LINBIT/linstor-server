@@ -269,9 +269,7 @@ public class CommonMessageProcessor implements MessageProcessor
                             .build()
                             .writeDelimitedTo(baos);
 
-                        Message message = client.createMessage();
-                        message.setData(baos.toByteArray());
-                        client.sendMessage(message);
+                        client.sendMessage(baos.toByteArray());
                     }
                     else
                     {

@@ -26,8 +26,6 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -410,24 +408,12 @@ class CtrlRscDfnApiCallHandler extends AbsApiCallHandler
 
                 updateSatellites(resDfn);
 
-
-                byte[] data = internalComSerializer
-                    .builder(InternalApiConsts.API_PRIMARY_RSC, msgId)
-                    .primaryRequest(rscNameStr, res.getUuid().toString())
-                    .build();
-                try
-                {
-                    Message netComMsg = satellite.createMessage();
-                    netComMsg.setData(data);
-                    satellite.sendMessage(netComMsg);
-                }
-                catch (IllegalMessageStateException illStateExc)
-                {
-                    throw new ImplementationError(
-                        "Attempt to send a NetCom message that has an illegal state",
-                        illStateExc
-                    );
-                }
+                satellite.sendMessage(
+                    internalComSerializer
+                        .builder(InternalApiConsts.API_PRIMARY_RSC, msgId)
+                        .primaryRequest(rscNameStr, res.getUuid().toString())
+                        .build()
+                );
             }
         }
         catch (InvalidKeyException | InvalidValueException | AccessDeniedException _ignore)  { }

@@ -1,8 +1,6 @@
 package com.linbit.linstor.api;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -69,43 +67,7 @@ public abstract class BaseApiCall implements ApiCall
         byte[] apiCallMsgData = createApiCallResponse(accCtx, apiCallRc, peer);
         byte[] apiCallData = prepareMessage(accCtx, apiCallMsgData, peer, msgId, ApiConsts.API_REPLY);
 
-        sendAnswer(peer, apiCallData);
-    }
-
-    protected void sendAnswer(
-        Peer peer,
-        byte[] preparedMsgData
-    )
-    {
-        Message apiCallAnswer = peer.createMessage();
-
-        try
-        {
-            apiCallAnswer.setData(preparedMsgData);
-        }
-        catch (IllegalMessageStateException illegalMsgStateExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Setting the byte[] data for a new message failed",
-                    illegalMsgStateExc
-                )
-            );
-        }
-
-        try
-        {
-            peer.sendMessage(apiCallAnswer);
-        }
-        catch (IllegalMessageStateException illegalMsgStateExc)
-        {
-            errorReporter.reportError(
-                new ImplementationError(
-                    "Sending a new message failed",
-                    illegalMsgStateExc
-                )
-            );
-        }
+        peer.sendMessage(apiCallData);
     }
 
     protected abstract byte[] createApiCallResponse(

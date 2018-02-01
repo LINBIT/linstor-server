@@ -20,8 +20,6 @@ import com.linbit.linstor.Volume;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -730,19 +728,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
             if (data != null)
             {
-                try
-                {
-                    Message netComMsg = ctrlPeer.createMessage();
-                    netComMsg.setData(data);
-                    ctrlPeer.sendMessage(netComMsg);
-                }
-                catch (IllegalMessageStateException illStateExc)
-                {
-                    throw new ImplementationError(
-                        "Attempt to send a NetCom message that has an illegal state",
-                        illStateExc
-                    );
-                }
+                ctrlPeer.sendMessage(data);
             }
         }
 
@@ -775,19 +761,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
 
             if (data != null)
             {
-                try
-                {
-                    Message netComMsg = ctrlPeer.createMessage();
-                    netComMsg.setData(data);
-                    ctrlPeer.sendMessage(netComMsg);
-                }
-                catch (IllegalMessageStateException illStateExc)
-                {
-                    throw new ImplementationError(
-                        "Attempt to send a NetCom message that has an illegal state",
-                        illStateExc
-                    );
-                }
+                ctrlPeer.sendMessage(data);
             }
         }
 

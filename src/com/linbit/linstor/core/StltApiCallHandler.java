@@ -26,8 +26,6 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -234,36 +232,26 @@ public class StltApiCallHandler
             satellite.getErrorReporter().reportError(exc);
 
             Peer controllerPeer = satellite.getControllerPeer();
-            Message message = controllerPeer.createMessage();
-            try
-            {
-                message.setData(
-                    interComSerializer.builder(InternalApiConsts.API_FULL_SYNC_FAILED, 0)
-                        .build()
-                );
-                controllerPeer.sendMessage(message);
+            controllerPeer.sendMessage(
+                interComSerializer.builder(InternalApiConsts.API_FULL_SYNC_FAILED, 0)
+                    .build()
+            );
 
-                // sending this message should tell the controller to not send us any further data, as
-                // updates would be based on an invalid fullSync, and receiving this fullSync again
-                // would most likely cause the same exception as now.
+            // sending this message should tell the controller to not send us any further data, as
+            // updates would be based on an invalid fullSync, and receiving this fullSync again
+            // would most likely cause the same exception as now.
 
-                // however, in order to avoid implementation errors of the controller, we additionally
-                // increase the fullSyncId but not telling the controller about it.
-                // even if the controller still sends us data, we will ignore them as they will look like
-                // "out-dated" data.
-                // when recreating the connection, and the controller is positive to send us an authentication
-                // message, we will again increase the fullSyncId and expect the fullSync from the controller.
+            // however, in order to avoid implementation errors of the controller, we additionally
+            // increase the fullSyncId but not telling the controller about it.
+            // even if the controller still sends us data, we will ignore them as they will look like
+            // "out-dated" data.
+            // when recreating the connection, and the controller is positive to send us an authentication
+            // message, we will again increase the fullSyncId and expect the fullSync from the controller.
 
-                // in other words: if this exception happens, either the controller or this satellite has
-                // to drop the connection (e.g. restart) in order to re-enable applying fullSyncs.
-                satellite.getNextFullSyncId();
+            // in other words: if this exception happens, either the controller or this satellite has
+            // to drop the connection (e.g. restart) in order to re-enable applying fullSyncs.
+            satellite.getNextFullSyncId();
 
-
-            }
-            catch (IllegalMessageStateException implError)
-            {
-                satellite.getErrorReporter().reportError(implError);
-            }
         }
         finally
         {
@@ -475,9 +463,7 @@ public class StltApiCallHandler
             if (requestData != null && requestData.length > 0)
             {
                 Peer controllerPeer = satellite.getLocalNode().getPeer(apiCtx);
-                Message message = controllerPeer.createMessage();
-                message.setData(requestData);
-                controllerPeer.sendMessage(message);
+                controllerPeer.sendMessage(requestData);
             }
             else
             {

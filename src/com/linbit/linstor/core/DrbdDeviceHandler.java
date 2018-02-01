@@ -33,8 +33,6 @@ import com.linbit.linstor.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.drbdstate.DrbdVolume;
 import com.linbit.linstor.drbdstate.NoInitialStateException;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -256,19 +254,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
         if (data != null)
         {
-            try
-            {
-                Message netComMsg = ctrlPeer.createMessage();
-                netComMsg.setData(data);
-                ctrlPeer.sendMessage(netComMsg);
-            }
-            catch (IllegalMessageStateException illStateExc)
-            {
-                throw new ImplementationError(
-                    "Attempt to send a NetCom message that has an illegal state",
-                    illStateExc
-                );
-            }
+            ctrlPeer.sendMessage(data);
         }
     }
 
@@ -284,19 +270,7 @@ class DrbdDeviceHandler implements DeviceHandler
 
         if (data != null)
         {
-            try
-            {
-                Message netComMsg = ctrlPeer.createMessage();
-                netComMsg.setData(data);
-                ctrlPeer.sendMessage(netComMsg);
-            }
-            catch (IllegalMessageStateException illStateExc)
-            {
-                throw new ImplementationError(
-                    "Attempt to send a NetCom message that has an illegal state",
-                    illStateExc
-                );
-            }
+            ctrlPeer.sendMessage(data);
         }
     }
 

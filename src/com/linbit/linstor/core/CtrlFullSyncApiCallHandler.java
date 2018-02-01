@@ -10,8 +10,6 @@ import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -70,14 +68,13 @@ class CtrlFullSyncApiCallHandler
 
             satellite.setFullSyncId(expectedFullSyncId);
 
-            byte[] data = interComSerializer
-                .builder(InternalApiConsts.API_FULL_SYNC_DATA, 0)
-                .fullSync(nodes, storPools, rscs, expectedFullSyncId, -1) // fullSync has -1 as updateId
-                .build();
             apiCtrlAccessors.getErrorReporter().logTrace("Sending full sync to satellite '" + satellite.getId() + "'.");
-            Message msg = satellite.createMessage();
-            msg.setData(data);
-            satellite.sendMessage(msg);
+            satellite.sendMessage(
+                interComSerializer
+                    .builder(InternalApiConsts.API_FULL_SYNC_DATA, 0)
+                    .fullSync(nodes, storPools, rscs, expectedFullSyncId, -1) // fullSync has -1 as updateId
+                    .build()
+            );
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -89,15 +86,5 @@ class CtrlFullSyncApiCallHandler
             );
 
         }
-        catch (IllegalMessageStateException illegalMessageStateExc)
-        {
-            apiCtrlAccessors.getErrorReporter().reportError(
-                new ImplementationError(
-                    "Failed to send a full sync to the satellite " + satellite.getId(),
-                    illegalMessageStateExc
-                )
-            );
-        }
-
     }
 }

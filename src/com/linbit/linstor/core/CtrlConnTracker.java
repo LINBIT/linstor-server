@@ -7,8 +7,6 @@ import com.linbit.linstor.ControllerPeerCtx;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.BaseErrorReporter;
 import com.linbit.linstor.netcom.ConnectionObserver;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.tasks.ReconnectorTask;
 
@@ -56,21 +54,16 @@ class CtrlConnTracker implements ConnectionObserver
             .append("Controller").append(',')
             .append(LinStor.VERSION).append(',');
         if (BaseErrorReporter.CURRENT_GIT_HASH != null)
+        {
             controllerInfo.append(BaseErrorReporter.CURRENT_GIT_HASH.trim());
-
-        byte[] data = controller.getApiCallHandler().getCtrlClientcomSrzl()
-            .builder(ApiConsts.API_VERSION, 0)
-            .apiVersion(0, controllerInfo.toString())
-            .build();
-
-        Message msg = connPeer.createMessage();
-        try {
-            msg.setData(data);
-            connPeer.sendMessage(msg);
         }
-        catch (IllegalMessageStateException illState) {
-            controller.getErrorReporter().reportError(illState);
-        }
+
+        connPeer.sendMessage(
+            controller.getApiCallHandler().getCtrlClientcomSrzl()
+                .builder(ApiConsts.API_VERSION, 0)
+                .apiVersion(0, controllerInfo.toString())
+                .build()
+        );
     }
 
     @Override

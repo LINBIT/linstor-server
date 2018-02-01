@@ -219,6 +219,26 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
+    public boolean sendMessage(byte[] data)
+    {
+        boolean connected = false;
+        try
+        {
+            Message msg = createMessage();
+            msg.setData(data);
+            connected = sendMessage(msg);
+        }
+        catch (IllegalMessageStateException exc)
+        {
+            throw new ImplementationError(
+                "Creating an outgoing message caused an IllegalMessageStateException",
+                exc
+            );
+        }
+        return connected;
+    }
+
+    @Override
     public TcpConnector getConnector()
     {
         return connector;
@@ -486,6 +506,7 @@ public class TcpConnectorPeer implements Peer
         fullSyncId = -1;
     }
 
+    @Override
     public boolean hasFullSyncFailed()
     {
         return fullSyncFailed;

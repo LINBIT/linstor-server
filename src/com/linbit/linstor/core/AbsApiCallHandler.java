@@ -33,8 +33,6 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.IllegalMessageStateException;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -1337,13 +1335,11 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 Peer peer = nodeToContact.getPeer(apiCtx);
                 if (peer.isConnected() && !fullSyncFailed(peer))
                 {
-                    Message msg = peer.createMessage();
-                    msg.setData(changedMessage);
-                    peer.sendMessage(msg);
+                    peer.sendMessage(changedMessage);
                 }
             }
         }
-        catch (AccessDeniedException | IllegalMessageStateException implError)
+        catch (AccessDeniedException implError)
         {
             throw asImplError(implError);
         }
@@ -1387,16 +1383,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 {
                     if (!fullSyncFailed(peer))
                     {
-                        Message rscChangedMsg = peer.createMessage();
-                        byte[] data = internalComSerializer
+                        connected = peer.sendMessage(
+                            internalComSerializer
                             .builder(InternalApiConsts.API_CHANGED_RSC, 0)
                             .changedResource(
                                 currentRsc.getUuid(),
                                 currentRsc.getDefinition().getName().displayValue
                             )
-                            .build();
-                        rscChangedMsg.setData(data);
-                        connected = peer.sendMessage(rscChangedMsg);
+                            .build()
+                        );
                     }
                 }
                 if (!connected)
@@ -1418,7 +1413,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 }
             }
         }
-        catch (AccessDeniedException | IllegalMessageStateException implError)
+        catch (AccessDeniedException implError)
         {
             throw asImplError(implError);
         }
@@ -1446,16 +1441,15 @@ abstract class AbsApiCallHandler implements AutoCloseable
             {
                 if (!fullSyncFailed(satellitePeer))
                 {
-                    Message msg = satellitePeer.createMessage();
-                    byte[] data = internalComSerializer
+                    connected = satellitePeer.sendMessage(
+                        internalComSerializer
                         .builder(InternalApiConsts.API_CHANGED_STOR_POOL, 0)
                         .changedStorPool(
                             storPool.getUuid(),
                             storPool.getName().displayValue
                         )
-                        .build();
-                    msg.setData(data);
-                    connected = satellitePeer.sendMessage(msg);
+                        .build()
+                    );
                 }
             }
             if (!connected)
@@ -1471,7 +1465,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
                 );
             }
         }
-        catch (AccessDeniedException | IllegalMessageStateException implError)
+        catch (AccessDeniedException implError)
         {
             throw asImplError(implError);
         }
@@ -1509,6 +1503,7 @@ abstract class AbsApiCallHandler implements AutoCloseable
     protected abstract String getObjectDescription();
 
     protected abstract String getObjectDescriptionInline();
+
 
     protected static class ApiCallHandlerFailedException extends RuntimeException
     {

@@ -40,13 +40,15 @@ public class ListCtrlCfgProps extends BaseProtoApiCall
         throws IOException
     {
         MsgReqCtrlCfgProps protoMsg = MsgReqCtrlCfgProps.parseDelimitedFrom(msgDataIn);
-        byte[] data = controller.getApiCallHandler().listCtrlCfg(
-            accCtx,
-            protoMsg.getKey(),
-            protoMsg.getNamespace(),
-            msgId
+
+        client.sendMessage(
+            controller.getApiCallHandler().listCtrlCfg(
+                accCtx,
+                protoMsg.getKey(),
+                protoMsg.getNamespace(),
+                msgId
+            )
         );
-        sendAnswer(client, data);
     }
 
 }

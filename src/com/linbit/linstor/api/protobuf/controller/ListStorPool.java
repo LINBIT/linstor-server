@@ -46,8 +46,9 @@ public class ListStorPool extends BaseProtoApiCall {
     )
         throws IOException
     {
-
-        byte[] listResultMsg = controller.getApiCallHandler().listStorPool(msgId, accCtx, client);
-        sendAnswer(client, listResultMsg);
+        client.sendMessage(
+            controller.getApiCallHandler()
+                .listStorPool(msgId, accCtx, client)
+        );
     }
 }

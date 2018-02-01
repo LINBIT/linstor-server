@@ -44,7 +44,6 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlClientSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -456,13 +455,12 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
                     }
                     long fullSyncTimestamp = satellite.getFullSyncId();
                     long serializerId = satellite.getNextSerializerId();
-                    byte[] data = internalComSerializer
-                        .builder(InternalApiConsts.API_APPLY_NODE, msgId)
-                        .nodeData(node, otherNodes, fullSyncTimestamp, serializerId)
-                        .build();
-                    Message message = satellite.createMessage();
-                    message.setData(data);
-                    satellite.sendMessage(message);
+                    satellite.sendMessage(
+                        internalComSerializer
+                            .builder(InternalApiConsts.API_APPLY_NODE, msgId)
+                            .nodeData(node, otherNodes, fullSyncTimestamp, serializerId)
+                            .build()
+                    );
                 }
                 else
                 {
@@ -478,11 +476,10 @@ class CtrlNodeApiCallHandler extends AbsApiCallHandler
             }
             else
             {
-                apiCtrlAccessors.getErrorReporter().reportError(
-                    new ImplementationError(
-                        "A requested node '" + nodeNameStr + "' was not found in controllers nodesMap",
-                        null
-                    )
+                satellite.sendMessage(
+                    internalComSerializer.builder(InternalApiConsts.API_APPLY_NODE_DELETED, msgId)
+                        .deletedNodeData(nodeNameStr)
+                        .build()
                 );
             }
         }

@@ -88,6 +88,15 @@ public interface Peer
     boolean sendMessage(Message msg) throws IllegalMessageStateException;
 
     /**
+     * Wraps the parameter into a {@link Message} which is created by {@link #createMessage()} and
+     * calls {@link #sendMessage(Message)}.
+     *
+     * @param data
+     * @return
+     */
+    boolean sendMessage(byte[] data);
+
+    /**
      * Closes the connection to the peer
      *
      * FIXME: This said "throws SSLException", but JavaDoc complains. Check whether it actually throw SSLException
@@ -258,4 +267,5 @@ public interface Peer
      * @return
      */
     boolean hasFullSyncFailed();
+
 }

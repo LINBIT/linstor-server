@@ -67,26 +67,28 @@ public class CtrlAuth extends BaseProtoApiCall
         if (apiCallRc == null)
         {
             // all ok, send the new fullSyncId with the AUTH_ACCEPT msg
-            byte[] msgAuthAccept = prepareMessage(
-                accCtx,
-                buildExpectedFullSyncIdMessage(satellite.getNextFullSyncId()),
-                controllerPeer,
-                msgId,
-                InternalApiConsts.API_AUTH_ACCEPT
+            controllerPeer.sendMessage(
+                prepareMessage(
+                    accCtx,
+                    buildExpectedFullSyncIdMessage(satellite.getNextFullSyncId()),
+                    controllerPeer,
+                    msgId,
+                    InternalApiConsts.API_AUTH_ACCEPT
+                )
             );
-            sendAnswer(controllerPeer, msgAuthAccept);
         }
         else
         {
             // whatever happened should be in the apiCallRc
-            byte[] msgData = prepareMessage(
-                accCtx,
-                createApiCallResponse(accCtx, apiCallRc, controllerPeer),
-                controllerPeer,
-                msgId,
-                InternalApiConsts.API_AUTH_ERROR
+            controllerPeer.sendMessage(
+                prepareMessage(
+                    accCtx,
+                    createApiCallResponse(accCtx, apiCallRc, controllerPeer),
+                    controllerPeer,
+                    msgId,
+                    InternalApiConsts.API_AUTH_ERROR
+                )
             );
-            sendAnswer(controllerPeer, msgData);
         }
     }
 

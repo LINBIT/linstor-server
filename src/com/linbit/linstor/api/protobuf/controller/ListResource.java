@@ -47,7 +47,9 @@ public class ListResource extends BaseProtoApiCall {
         throws IOException
     {
 
-        byte[] listResultMsg = controller.getApiCallHandler().listResource(msgId, accCtx, client);
-        sendAnswer(client, listResultMsg);
+        client.sendMessage(
+            controller.getApiCallHandler()
+                .listResource(msgId, accCtx, client)
+        );
     }
 }
