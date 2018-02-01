@@ -19,7 +19,6 @@ public class BitmapPoolTest
     @Test
     @Parameters(method = "poolConfigurations")
     public void testAllocate(PoolConfiguration poolConfiguration)
-        throws Exception
     {
         BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
 
@@ -33,7 +32,6 @@ public class BitmapPoolTest
     @Test
     @Parameters(method = "poolConfigurations")
     public void testDoubleAllocate(PoolConfiguration poolConfiguration)
-        throws Exception
     {
         BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
 
@@ -46,7 +44,6 @@ public class BitmapPoolTest
     @Test
     @Parameters(method = "poolConfigurations")
     public void testDeallocate(PoolConfiguration poolConfiguration)
-        throws Exception
     {
         BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
 
@@ -64,7 +61,6 @@ public class BitmapPoolTest
     @Test
     @Parameters(method = "poolConfigurations")
     public void testAllocateAll(PoolConfiguration poolConfiguration)
-        throws Exception
     {
         BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
 
@@ -93,7 +89,6 @@ public class BitmapPoolTest
     @Test
     @Parameters(method = "poolConfigurations")
     public void testDeallocateAll(PoolConfiguration poolConfiguration)
-        throws Exception
     {
         BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
 
@@ -112,7 +107,6 @@ public class BitmapPoolTest
     @Test
     @Parameters(method = "poolConfigurations")
     public void testMultiAllocate(PoolConfiguration poolConfiguration)
-        throws Exception
     {
         BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
 
@@ -137,23 +131,16 @@ public class BitmapPoolTest
     }
 
     @Test
-    @Parameters(method = "poolConfigurations")
+    @Parameters(method = "poolConfigurationsNonTrivial")
     public void testFindUnallocated(PoolConfiguration poolConfiguration)
         throws Exception
     {
         BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
-        if (poolConfiguration.getRangeStart() == poolConfiguration.getRangeEnd())
-        {
-            assertThat(bitmapPool.findUnallocated(poolConfiguration.getRangeStart(), poolConfiguration.getRangeEnd()))
-                .isEqualTo(poolConfiguration.getRangeStart());
-        }
-        else
-        {
-            bitmapPool.allocate(poolConfiguration.getRangeStart());
 
-            assertThat(bitmapPool.findUnallocated(poolConfiguration.getRangeStart(), poolConfiguration.getRangeEnd()))
-                .isEqualTo(poolConfiguration.getRangeStart() + 1);
-        }
+        bitmapPool.allocate(poolConfiguration.getRangeStart());
+
+        assertThat(bitmapPool.findUnallocated(poolConfiguration.getRangeStart(), poolConfiguration.getRangeEnd()))
+            .isEqualTo(poolConfiguration.getRangeStart() + 1);
     }
 
     @Test(expected = ExhaustedPoolException.class)
@@ -169,7 +156,82 @@ public class BitmapPoolTest
         bitmapPool.findUnallocated(poolConfiguration.getRangeStart(), poolConfiguration.getRangeEnd());
     }
 
-    @SuppressWarnings("unused")
+    @Test
+    @Parameters(method = "poolConfigurationsNonTrivial")
+    public void testFindUnallocatedFromOffset(PoolConfiguration poolConfiguration)
+        throws Exception
+    {
+        BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
+
+        bitmapPool.allocate(poolConfiguration.getOffset());
+
+        assertThat(bitmapPool.findUnallocatedFromOffset(
+            poolConfiguration.getRangeStart(),
+            poolConfiguration.getRangeEnd(),
+            poolConfiguration.getOffset())
+        ).isEqualTo(poolConfiguration.getOffset() + 1);
+    }
+
+    @Test
+    @Parameters(method = "poolConfigurationsNonTrivial")
+    public void testAutoAllocate(PoolConfiguration poolConfiguration)
+        throws Exception
+    {
+        BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
+
+        bitmapPool.allocate(poolConfiguration.getRangeStart());
+
+        int expected = poolConfiguration.getRangeStart() + 1;
+        assertThat(bitmapPool.isAllocated(expected)).as("isAllocated before").isFalse();
+
+        int allocated = bitmapPool.autoAllocate(
+            poolConfiguration.getRangeStart(), poolConfiguration.getRangeEnd());
+
+        assertThat(allocated).isEqualTo(expected);
+        assertThat(bitmapPool.isAllocated(expected)).as("isAllocated after").isTrue();
+    }
+
+    @Test
+    @Parameters(method = "poolConfigurationsNonTrivial")
+    public void testAutoAllocateFromOffset(PoolConfiguration poolConfiguration)
+        throws Exception
+    {
+        BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
+
+        bitmapPool.allocate(poolConfiguration.getOffset());
+
+        int expected = poolConfiguration.getOffset() + 1;
+        assertThat(bitmapPool.isAllocated(expected)).as("isAllocated before").isFalse();
+
+        int allocated = bitmapPool.autoAllocateFromOffset(
+            poolConfiguration.getRangeStart(),
+            poolConfiguration.getRangeEnd(),
+            poolConfiguration.getOffset()
+        );
+
+        assertThat(allocated).isEqualTo(expected);
+        assertThat(bitmapPool.isAllocated(expected)).as("isAllocated after").isTrue();
+    }
+
+
+    @Test
+    @Parameters(method = "poolConfigurations")
+    public void testClear(PoolConfiguration poolConfiguration)
+    {
+        BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
+
+        bitmapPool.allocateAll(
+            generateNumberRange(poolConfiguration.getRangeStart(), poolConfiguration.getRangeEnd()));
+
+        bitmapPool.clear();
+
+        for (int nr = poolConfiguration.getRangeStart(); nr <= poolConfiguration.getRangeEnd(); nr++)
+        {
+            assertThat(bitmapPool.isAllocated(nr))
+                .as("isAllocated 0x%x", nr).isFalse();
+        }
+    }
+
     private List<PoolConfiguration> poolConfigurations()
     {
         return Arrays.asList(
@@ -201,6 +263,22 @@ public class BitmapPoolTest
             // Size like the minor numbers pool
             new PoolConfiguration(0x100000, 0x80000, 0x81000 - 1, 0x80982)
         );
+    }
+
+    @SuppressWarnings("unused")
+    private List<PoolConfiguration> poolConfigurationsNonTrivial()
+    {
+        List<PoolConfiguration> poolConfigurations = new ArrayList<>();
+
+        for (PoolConfiguration poolConfiguration : poolConfigurations())
+        {
+            if (poolConfiguration.getRangeEnd() != poolConfiguration.getRangeStart())
+            {
+                poolConfigurations.add(poolConfiguration);
+            }
+        }
+
+        return poolConfigurations;
     }
 
     private int[] generateNumberRange(int rangeStart, int rangeEndInclusive)
