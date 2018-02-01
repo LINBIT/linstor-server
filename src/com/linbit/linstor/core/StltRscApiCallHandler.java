@@ -63,6 +63,47 @@ class StltRscApiCallHandler
         apiCtx = apiCtxRef;
     }
 
+    /**
+     * We requested an update to a resource and the controller is telling us that the requested resource
+     * does no longer exist.
+     * Basically we now just mark the update as received and applied to prevent the
+     * {@link DeviceManager} from waiting for the update.
+     *
+     * @param rscNameStr
+     */
+    public void applyDeletedRsc(String rscNameStr)
+    {
+        try
+        {
+            ResourceName rscName = new ResourceName(rscNameStr);
+
+            ResourceDefinition removedRscDfn = satellite.rscDfnMap.remove(rscName); // just to be sure
+            if (removedRscDfn != null)
+            {
+                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+                removedRscDfn.setConnection(transMgr);
+                removedRscDfn.delete(apiCtx);
+                transMgr.commit();
+            }
+
+            satellite.getErrorReporter().logInfo("Resource definition '" + rscNameStr + "' and the corresponding resource"
+                + " removed by Controller.");
+
+            Map<ResourceName, Set<NodeName>> updatedRscs = new TreeMap<>();
+            updatedRscs.put(rscName, new TreeSet<NodeName>());
+            satellite.getDeviceManager().rscUpdateApplied(updatedRscs);
+
+            Set<ResourceName> rscDfnSet = new TreeSet<>();
+            rscDfnSet.add(rscName);
+            satellite.getDeviceManager().rscDefUpdateApplied(rscDfnSet);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            // TODO: kill connection?
+            satellite.getErrorReporter().reportError(exc);
+        }
+    }
+
     public void applyChanges(RscPojo rscRawData)
     {
         try

@@ -307,14 +307,29 @@ public class StltApiCallHandler
         applyChangedData(new ApplyNodeData(nodePojo));
     }
 
+    public void applyDeletedNodeChange(String nodeName)
+    {
+        applyChangedData(new ApplyNodeData(nodeName));
+    }
+
     public void applyResourceChanges(RscPojo rscRawData)
     {
         applyChangedData(new ApplyRscData(rscRawData));
     }
 
+    public void applyDeletedResourceChange(String rscNameStr)
+    {
+        applyChangedData(new ApplyRscData(rscNameStr));
+    }
+
     public void applyStorPoolChanges(StorPoolPojo storPoolRaw)
     {
         applyChangedData(new ApplyStorPoolData(storPoolRaw));
+    }
+
+    public void applyDeletedStorPoolChange(String storPoolNameStr)
+    {
+        applyChangedData(new ApplyStorPoolData(storPoolNameStr));
     }
 
     private void applyChangedData(ApplyData data)
@@ -345,8 +360,9 @@ public class StltApiCallHandler
                         nextEntry.getKey() == satellite.getCurrentAwaitedUpdateId()
                     )
                     {
-                        applyChangeDataImpl(nextEntry.getValue());
+                        nextEntry.getValue().applyChange();
                         dataToApply.remove(nextEntry.getKey());
+                        satellite.awaitedUpdateApplied();
 
                         nextEntry = dataToApply.firstEntry();
                     }
@@ -377,64 +393,6 @@ public class StltApiCallHandler
                 satellite.getErrorReporter().logWarning("Ignoring received outdated update. ");
             }
         }
-    }
-
-    private void applyChangeDataImpl(ApplyData data)
-    {
-        if (data instanceof ApplyNodeData)
-        {
-            try
-            {
-                satellite.nodesMapLock.writeLock().lock();
-
-                nodeHandler.applyChanges(((ApplyNodeData) data).nodePojo);
-            }
-            finally
-            {
-                satellite.reconfigurationLock.writeLock().unlock();
-            }
-        }
-        else
-        if (data instanceof ApplyRscData)
-        {
-            try
-            {
-                satellite.nodesMapLock.writeLock().lock();
-                satellite.rscDfnMapLock.writeLock().lock();
-
-                rscHandler.applyChanges(((ApplyRscData) data).rscPojo);
-            }
-            finally
-            {
-                satellite.rscDfnMapLock.writeLock().unlock();
-                satellite.nodesMapLock.writeLock().unlock();
-            }
-        }
-        else
-        if (data instanceof ApplyStorPoolData)
-        {
-            try
-            {
-                satellite.nodesMapLock.writeLock().lock();
-                satellite.storPoolDfnMapLock.writeLock().lock();
-
-                storPoolHandler.applyChanges(((ApplyStorPoolData) data).storPoolPojo);
-            }
-            finally
-            {
-                satellite.nodesMapLock.writeLock().unlock();
-                satellite.storPoolDfnMapLock.writeLock().unlock();
-            }
-        }
-        else
-        {
-            throw new ImplementationError(
-                "Unknown ApplyChange packet received",
-                null
-            );
-        }
-
-        satellite.awaitedUpdateApplied();
     }
 
     public void handlePrimaryResource(
@@ -484,30 +442,31 @@ public class StltApiCallHandler
                 )
             );
         }
-        catch (IllegalMessageStateException illegaMessageStateExc)
-        {
-            satellite.getErrorReporter().reportError(
-                new ImplementationError(
-                    "StltApi was not able to send a message to controller due to an implementation error",
-                    illegaMessageStateExc
-                )
-            );
-        }
     }
 
-    private static interface ApplyData
+    private interface ApplyData
     {
         long getFullSyncId();
         long getUpdateId();
+
+        void applyChange();
     }
 
-    private static class ApplyNodeData implements ApplyData
+    private class ApplyNodeData implements ApplyData
     {
         private NodePojo nodePojo;
+        private String deletedNodeName;
 
         public ApplyNodeData(NodePojo nodePojo)
         {
             this.nodePojo = nodePojo;
+            this.deletedNodeName = null;
+        }
+
+        public ApplyNodeData(String nodeName)
+        {
+            this.nodePojo = null;
+            this.deletedNodeName = nodeName;
         }
 
         @Override
@@ -521,15 +480,43 @@ public class StltApiCallHandler
         {
             return nodePojo.getUpdateId();
         }
+
+        @Override
+        public void applyChange()
+        {
+            try
+            {
+                satellite.nodesMapLock.writeLock().lock();
+
+                if (nodePojo != null)
+                {
+                    nodeHandler.applyChanges(nodePojo);
+                }
+                else
+                {
+                    nodeHandler.applyDeletedNode(deletedNodeName);
+                }
+            }
+            finally
+            {
+                satellite.reconfigurationLock.writeLock().unlock();
+            }
+        }
     }
 
-    private static class ApplyRscData implements ApplyData
+    private class ApplyRscData implements ApplyData
     {
         private RscPojo rscPojo;
+        private String deletedRscName;
 
         public ApplyRscData(RscPojo rscPojo)
         {
             this.rscPojo = rscPojo;
+        }
+
+        public ApplyRscData(String rscName)
+        {
+            this.deletedRscName = rscName;
         }
 
         @Override
@@ -543,15 +530,45 @@ public class StltApiCallHandler
         {
             return rscPojo.getUpdateId();
         }
+
+        @Override
+        public void applyChange()
+        {
+            try
+            {
+                satellite.nodesMapLock.writeLock().lock();
+                satellite.rscDfnMapLock.writeLock().lock();
+
+                if (rscPojo != null)
+                {
+                    rscHandler.applyChanges(rscPojo);
+                }
+                else
+                {
+                    rscHandler.applyDeletedRsc(deletedRscName);
+                }
+            }
+            finally
+            {
+                satellite.rscDfnMapLock.writeLock().unlock();
+                satellite.nodesMapLock.writeLock().unlock();
+            }
+        }
     }
 
-    private static class ApplyStorPoolData implements ApplyData
+    private class ApplyStorPoolData implements ApplyData
     {
         private StorPoolPojo storPoolPojo;
+        private String deletedStorPoolName;
 
         public ApplyStorPoolData(StorPoolPojo storPoolPojo)
         {
             this.storPoolPojo = storPoolPojo;
+        }
+
+        public ApplyStorPoolData(String storPoolName)
+        {
+            this.deletedStorPoolName = storPoolName;
         }
 
         @Override
@@ -564,6 +581,30 @@ public class StltApiCallHandler
         public long getUpdateId()
         {
             return storPoolPojo.getUpdateId();
+        }
+
+        @Override
+        public void applyChange()
+        {
+            try
+            {
+                satellite.nodesMapLock.writeLock().lock();
+                satellite.storPoolDfnMapLock.writeLock().lock();
+
+                if (storPoolPojo != null)
+                {
+                    storPoolHandler.applyChanges(storPoolPojo);
+                }
+                else
+                {
+                    storPoolHandler.applyDeletedStorPool(deletedStorPoolName);
+                }
+            }
+            finally
+            {
+                satellite.nodesMapLock.writeLock().unlock();
+                satellite.storPoolDfnMapLock.writeLock().unlock();
+            }
         }
     }
 }

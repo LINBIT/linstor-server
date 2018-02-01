@@ -37,6 +37,42 @@ class StltNodeApiCallHandler
         apiCtx = apiCtxRef;
     }
 
+    /**
+     * We requested an update to a node and the controller is telling us that the requested node
+     * does no longer exist.
+     * Basically we now just mark the update as received and applied to prevent the
+     * {@link DeviceManager} from waiting for that update.
+     *
+     * @param nodeNameStr
+     */
+    public void applyDeletedNode(String nodeNameStr)
+    {
+        try
+        {
+            NodeName nodeName = new NodeName(nodeNameStr);
+
+            Node removedNode = satellite.nodesMap.remove(nodeName); // just to be sure
+            if (removedNode != null)
+            {
+                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+                removedNode.setConnection(transMgr);
+                removedNode.delete(apiCtx);
+                transMgr.commit();
+            }
+
+            satellite.getErrorReporter().logInfo("Node '" + nodeNameStr + "' removed by Controller.");
+
+            Set<NodeName> updatedNodes = new TreeSet<>();
+            updatedNodes.add(nodeName);
+            satellite.getDeviceManager().nodeUpdateApplied(updatedNodes);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            // TODO: kill connection?
+            satellite.getErrorReporter().reportError(exc);
+        }
+    }
+
     public void applyChanges(NodePojo nodePojo)
     {
         try

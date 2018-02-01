@@ -42,9 +42,12 @@ import com.linbit.linstor.proto.javainternal.MsgIntFullSyncOuterClass.MsgIntFull
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.MsgIntNodeData;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NetIf;
 import com.linbit.linstor.proto.javainternal.MsgIntNodeDataOuterClass.NodeConn;
+import com.linbit.linstor.proto.javainternal.MsgIntNodeDeletedDataOuterClass.MsgIntNodeDeletedData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntOtherRscData;
 import com.linbit.linstor.proto.javainternal.MsgIntRscDataOuterClass.MsgIntRscData;
+import com.linbit.linstor.proto.javainternal.MsgIntRscDeletedDataOuterClass.MsgIntRscDeletedData;
 import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDataOuterClass.MsgIntStorPoolData;
+import com.linbit.linstor.proto.javainternal.MsgIntStorPoolDeletedDataOuterClass.MsgIntStorPoolDeletedData;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -133,6 +136,15 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     }
 
     @Override
+    public void writeDeletedNodeData(String nodeNameStr, ByteArrayOutputStream baos) throws IOException
+    {
+        MsgIntNodeDeletedData.newBuilder()
+            .setNodeName(nodeNameStr)
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
+    @Override
     public void writeResourceData(
         Resource localResource,
         long fullSyncTimestamp,
@@ -147,6 +159,15 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
     }
 
     @Override
+    public void writeDeletedResourceData(String rscNameStr, ByteArrayOutputStream baos) throws IOException
+    {
+        MsgIntRscDeletedData.newBuilder()
+            .setRscName(rscNameStr)
+            .build()
+            .writeDelimitedTo(baos);
+    }
+
+    @Override
     public void writeStorPoolData(
         StorPool storPool,
         long fullSyncTimestamp,
@@ -156,6 +177,15 @@ public class ProtoCtrlStltSerializer extends AbsCtrlStltSerializer
         throws IOException, AccessDeniedException
     {
         buildStorPoolDataMsg(storPool, fullSyncTimestamp, updateId)
+            .writeDelimitedTo(baos);
+    }
+
+    @Override
+    public void writeDeletedStorPoolData(String storPoolNameStr, ByteArrayOutputStream baos) throws IOException
+    {
+        MsgIntStorPoolDeletedData.newBuilder()
+            .setStorPoolName(storPoolNameStr)
+            .build()
             .writeDelimitedTo(baos);
     }
 

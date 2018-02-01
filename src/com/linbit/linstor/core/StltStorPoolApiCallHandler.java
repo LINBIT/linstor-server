@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -27,6 +28,42 @@ class StltStorPoolApiCallHandler
     {
         this.satellite = satellite;
         this.apiCtx = apiCtx;
+    }
+    /**
+     * We requested an update to a storPool and the controller is telling us that the requested storPool
+     * does no longer exist.
+     * Basically we now just mark the update as received and applied to prevent the
+     * {@link DeviceManager} from waiting for the update.
+     *
+     * @param storPoolNameStr
+     */
+    public void applyDeletedStorPool(String storPoolNameStr)
+    {
+        try
+        {
+            StorPoolName storPoolName = new StorPoolName(storPoolNameStr);
+
+            StorPoolDefinition removedStorPoolDfn = satellite.storPoolDfnMap.remove(storPoolName); // just to be sure
+            if (removedStorPoolDfn != null)
+            {
+                SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
+                removedStorPoolDfn.setConnection(transMgr);
+                removedStorPoolDfn.delete(apiCtx);
+                transMgr.commit();
+            }
+
+            satellite.getErrorReporter().logInfo("Storage pool definition '" + storPoolNameStr + "' and the "+
+                "corresponding storage pool was removed by Controller.");
+
+            Set<StorPoolName> storPoolSet = new TreeSet<>();
+            storPoolSet.add(storPoolName);
+            satellite.getDeviceManager().storPoolUpdateApplied(storPoolSet);
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            // TODO: kill connection?
+            satellite.getErrorReporter().reportError(exc);
+        }
     }
 
     public void applyChanges(StorPoolPojo storPoolRaw)

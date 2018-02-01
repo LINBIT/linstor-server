@@ -9,6 +9,7 @@ import java.util.UUID;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.Node;
+import com.linbit.linstor.NodeName;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -189,6 +190,21 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
+        public Builder deletedNodeData(String nodeNameStr)
+        {
+            try
+            {
+                writeDeletedNodeData(nodeNameStr, baos);
+            }
+            catch (IOException ioExc)
+            {
+                errorReporter.reportError(ioExc);
+                exceptionOccured = true;
+            }
+            return this;
+        }
+
+        @Override
         public Builder resourceData(
             Resource localResource,
             long fullSyncTimestamp,
@@ -218,6 +234,21 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         }
 
         @Override
+        public Builder deletedResourceData(String rscNameStr)
+        {
+            try
+            {
+                writeDeletedResourceData(rscNameStr, baos);
+            }
+            catch (IOException ioExc)
+            {
+                errorReporter.reportError(ioExc);
+                exceptionOccured = true;
+            }
+            return this;
+        }
+
+        @Override
         public Builder storPoolData(
             StorPool storPool,
             long fullSyncTimestamp,
@@ -241,6 +272,21 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
                         accDeniedExc
                     )
                 );
+                exceptionOccured = true;
+            }
+            return this;
+        }
+
+        @Override
+        public Builder deletedStorPoolData(String storPoolNameStr)
+        {
+            try
+            {
+                writeDeletedStorPoolData(storPoolNameStr, baos);
+            }
+            catch (IOException ioExc)
+            {
+                errorReporter.reportError(ioExc);
                 exceptionOccured = true;
             }
             return this;
@@ -446,6 +492,9 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
     )
         throws IOException, AccessDeniedException, InvalidNameException;
 
+    public abstract void writeDeletedNodeData(String nodeNameStr, ByteArrayOutputStream baos)
+        throws IOException;
+
     public abstract void writeResourceData(
         Resource localResource,
         long fullSyncTimestamp,
@@ -454,6 +503,9 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
     )
         throws IOException, AccessDeniedException;
 
+    public abstract void writeDeletedResourceData(String rscNameStr, ByteArrayOutputStream baos)
+        throws IOException;
+
     public abstract void writeStorPoolData(
         StorPool storPool,
         long fullSyncTimestamp,
@@ -461,6 +513,9 @@ public abstract class AbsCtrlStltSerializer implements CtrlStltSerializer
         ByteArrayOutputStream baos
     )
         throws IOException, AccessDeniedException;
+
+    public abstract void writeDeletedStorPoolData(String storPoolNameStr, ByteArrayOutputStream baos)
+        throws IOException;
 
     public abstract void writeFullSync(
         Set<Node> nodeSet,
