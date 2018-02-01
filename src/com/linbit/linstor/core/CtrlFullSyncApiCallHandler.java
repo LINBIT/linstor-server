@@ -9,7 +9,6 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.Node;
 import com.linbit.linstor.Resource;
 import com.linbit.linstor.StorPool;
-import com.linbit.linstor.Volume;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.Message;
@@ -43,19 +42,14 @@ class CtrlFullSyncApiCallHandler
             Set<Node> nodes = new LinkedHashSet<>();
             Set<StorPool> storPools = new LinkedHashSet<>();
             Set<Resource> rscs = new LinkedHashSet<>();
-            nodes.add(localNode);
+
+            nodes.add(localNode); // always add the localNode
 
             Iterator<Resource> rscIterator = localNode.iterateResources(apiCtx);
             while (rscIterator.hasNext())
             {
                 Resource rsc = rscIterator.next();
                 rscs.add(rsc);
-                Iterator<Volume> vlmIterator = rsc.iterateVolumes();
-                while (vlmIterator.hasNext())
-                {
-                    Volume vlm = vlmIterator.next();
-                    storPools.add(vlm.getStorPool(apiCtx));
-                }
                 Iterator<Resource> otherRscIterator = rsc.getDefinition().iterateResource(apiCtx);
                 while (otherRscIterator.hasNext())
                 {
@@ -65,6 +59,13 @@ class CtrlFullSyncApiCallHandler
                         nodes.add(otherRsc.getAssignedNode());
                     }
                 }
+            }
+            // some storPools might have been created on the satellite, but are not used by resources / volumes
+            // however, when a rsc / vlm is created, they already assume the referenced storPool already exists
+            Iterator<StorPool> storPoolIterator = localNode.iterateStorPools(apiCtx);
+            while (storPoolIterator.hasNext())
+            {
+                storPools.add(storPoolIterator.next());
             }
 
             satellite.setFullSyncId(expectedFullSyncId);

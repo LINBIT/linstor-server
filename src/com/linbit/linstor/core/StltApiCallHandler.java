@@ -123,7 +123,6 @@ public class StltApiCallHandler
                 // that means, everything in this map is out-dated data + we should receive a full sync next.
             }
 
-            satellite.getErrorReporter().logInfo("Controller connected and authenticated");
             satellite.setControllerPeer(
                 controllerPeer,
                 nodeUuid,
@@ -131,6 +130,7 @@ public class StltApiCallHandler
                 disklessStorPoolDfnUuid,
                 disklessStorPoolUuid
             );
+            satellite.getErrorReporter().logInfo("Controller connected and authenticated");
         }
 
         return apiCallRc;
