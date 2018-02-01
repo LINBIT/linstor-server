@@ -1,7 +1,9 @@
 package com.linbit.linstor;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -241,12 +243,20 @@ public class StorPoolDefinitionData extends BaseTransactionObject implements Sto
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CONTROL);
+        if (!deleted.get())
+        {
+            objProt.requireAccess(accCtx, AccessType.CONTROL);
+            deleted.set(true);
 
-        objProt.delete(accCtx);
-        dbDriver.delete(this, transMgr);
-        deleted.set(true);
+            Collection<StorPool> values = new ArrayList<>(storPools.values());
+            for(StorPool storPool : values)
+            {
+                storPool.delete(accCtx);;
+            }
+
+            objProt.delete(accCtx);
+            dbDriver.delete(this, transMgr);
+        }
     }
 
     @Override

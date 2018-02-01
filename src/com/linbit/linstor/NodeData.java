@@ -573,31 +573,22 @@ public class NodeData extends BaseTransactionObject implements Node
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CONTROL);
-
-        List<NodeConnection> deletedNodeConns = new ArrayList<>();
-        try
+        if (!deleted.get())
         {
-            for (NodeConnection nodeConn : nodeConnections.values())
+            objProt.requireAccess(accCtx, AccessType.CONTROL);
+
+            deleted.set(true);
+
+            // preventing ConcurrentModificationException
+            ArrayList<NodeConnection> values = new ArrayList<>(nodeConnections.values());
+            for (NodeConnection nodeConn : values)
             {
                 nodeConn.delete(accCtx);
-                deletedNodeConns.add(nodeConn);
             }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            for (NodeConnection deletedNodeConn : deletedNodeConns)
-            {
-                setNodeConnection(accCtx, deletedNodeConn);
-            }
-            throw accDeniedExc;
-        }
 
-        objProt.delete(accCtx);
-        dbDriver.delete(this, transMgr);
-
-        deleted.set(true);
+            objProt.delete(accCtx);
+            dbDriver.delete(this, transMgr);
+        }
     }
 
     public boolean isDeleted()

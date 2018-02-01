@@ -212,12 +212,15 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
-        checkDeleted();
-        niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        if (!deleted.get())
+        {
+            niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        ((NodeData) niNode).removeNetInterface(accCtx, this);
-        dbDriver.delete(this, transMgr);
-        deleted.set(true);
+            deleted.set(true);
+
+            ((NodeData) niNode).removeNetInterface(accCtx, this);
+            dbDriver.delete(this, transMgr);
+        }
     }
 
     private void checkDeleted()

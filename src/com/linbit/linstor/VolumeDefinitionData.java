@@ -387,18 +387,21 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
-        checkDeleted();
-        resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
-
-        ((ResourceDefinitionData) resourceDfn).removeVolumeDefinition(accCtx, this);
-
-        for (Volume vlm : volumes.values())
+        if (!deleted.get())
         {
-            vlm.delete(accCtx);
-        }
+            resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
-        dbDriver.delete(this, transMgr);
-        deleted.set(true);
+            deleted.set(true);
+
+            ((ResourceDefinitionData) resourceDfn).removeVolumeDefinition(accCtx, this);
+
+            for (Volume vlm : volumes.values())
+            {
+                vlm.delete(accCtx);
+            }
+
+            dbDriver.delete(this, transMgr);
+        }
     }
 
     private void checkDeleted()

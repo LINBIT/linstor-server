@@ -4,6 +4,7 @@ import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -497,30 +498,31 @@ public class ResourceData extends BaseTransactionObject implements Resource
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CONTROL);
-
-        synchronized (assgNode)
+        if (!deleted.get())
         {
+            objProt.requireAccess(accCtx, AccessType.CONTROL);
+            deleted.set(true);
+
             ((NodeData) assgNode).removeResource(accCtx, this);
-            synchronized (resourceDfn)
+            ((ResourceDefinitionData) resourceDfn).removeResource(accCtx, this);
+
+            // preventing ConcurrentModificationException
+            Collection<ResourceConnection> rscConnValues = new ArrayList<>(resourceConnections.values());
+            for (ResourceConnection rscConn : rscConnValues)
             {
-                ((ResourceDefinitionData) resourceDfn).removeResource(accCtx, this);
-
-                for (ResourceConnection rscConn : resourceConnections.values())
-                {
-                    rscConn.delete(accCtx);
-                }
-
-                for (Volume vlm : volumeMap.values())
-                {
-                    vlm.delete(accCtx);
-                }
+                rscConn.delete(accCtx);
             }
+
+            // preventing ConcurrentModificationException
+            Collection<Volume> vlmValues = new ArrayList<>(volumeMap.values());
+            for (Volume vlm : vlmValues)
+            {
+                vlm.delete(accCtx);
+            }
+
+            objProt.delete(accCtx);
+            dbDriver.delete(this, transMgr);
         }
-        objProt.delete(accCtx);
-        dbDriver.delete(this, transMgr);
-        deleted.set(true);
     }
 
     private void checkDeleted()

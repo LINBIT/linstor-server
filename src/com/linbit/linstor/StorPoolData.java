@@ -355,14 +355,18 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
-        checkDeleted();
-        node.getObjProt().requireAccess(accCtx, AccessType.USE);
-        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
+        if (!deleted.get())
+        {
+            node.getObjProt().requireAccess(accCtx, AccessType.USE);
+            storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        ((NodeData) node).removeStorPool(accCtx, this);
-        ((StorPoolDefinitionData) storPoolDef).removeStorPool(accCtx, this);
-        dbDriver.delete(this, transMgr);
-        deleted.set(true);
+            deleted.set(true);
+
+            ((NodeData) node).removeStorPool(accCtx, this);
+            ((StorPoolDefinitionData) storPoolDef).removeStorPool(accCtx, this);
+
+            dbDriver.delete(this, transMgr);
+        }
     }
 
     private void checkDeleted()

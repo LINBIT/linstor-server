@@ -296,15 +296,18 @@ public class VolumeConnectionData extends BaseTransactionObject implements Volum
     @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
-        checkDeleted();
-        sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        if (!deleted.get())
+        {
+            sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+            targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        sourceVolume.removeVolumeConnection(accCtx, this);
-        targetVolume.removeVolumeConnection(accCtx, this);
+            deleted.set(true);
 
-        dbDriver.delete(this, transMgr);
-        deleted.set(true);
+            sourceVolume.removeVolumeConnection(accCtx, this);
+            targetVolume.removeVolumeConnection(accCtx, this);
+
+            dbDriver.delete(this, transMgr);
+        }
     }
 
     private void checkDeleted()

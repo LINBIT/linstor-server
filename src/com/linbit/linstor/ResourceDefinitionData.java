@@ -2,6 +2,7 @@ package com.linbit.linstor;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -416,12 +417,21 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CONTROL);
+        if (!deleted.get())
+        {
+            deleted.set(true);
+            objProt.requireAccess(accCtx, AccessType.CONTROL);
 
-        objProt.delete(accCtx);
-        dbDriver.delete(this, transMgr);
-        deleted.set(true);
+            // preventing ConcurrentModificationException
+            Collection<Resource> values = new ArrayList<>(resourceMap.values());
+            for (Resource rsc : values)
+            {
+                rsc.delete(accCtx);
+            }
+
+            objProt.delete(accCtx);
+            dbDriver.delete(this, transMgr);
+        }
     }
 
     private void checkDeleted()

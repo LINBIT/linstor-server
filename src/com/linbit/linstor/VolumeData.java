@@ -3,8 +3,8 @@ package com.linbit.linstor;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.UUID;
 
 import com.linbit.ImplementationError;
@@ -402,31 +402,24 @@ public class VolumeData extends BaseTransactionObject implements Volume
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, SQLException
     {
-        checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.USE);
-
-        List<VolumeConnection> deletedVlmConns = new ArrayList<>();
-        try
+        if (!deleted.get())
         {
-            for (VolumeConnection vlmConn : volumeConnections.values())
+            resource.getObjProt().requireAccess(accCtx, AccessType.USE);
+            deleted.set(true);
+
+            // preventing ConcurrentModificationException
+            Collection<VolumeConnection> values = new ArrayList<>(volumeConnections.values());
+            for (VolumeConnection vlmConn : values)
             {
                 vlmConn.delete(accCtx);
-                deletedVlmConns.add(vlmConn);
             }
+
+            ((ResourceData) resource).removeVolume(accCtx, this);
+            storPool.removeVolume(accCtx, this);
+            ((VolumeDefinitionData) volumeDfn).removeVolume(accCtx, this);
+
+            dbDriver.delete(this, transMgr);
         }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            for (VolumeConnection deletedVlmConn : deletedVlmConns)
-            {
-                setVolumeConnection(accCtx, deletedVlmConn);
-            }
-            throw accDeniedExc;
-        }
-        ((ResourceData) resource).removeVolume(accCtx, this);
-        storPool.removeVolume(accCtx, this);
-        ((VolumeDefinitionData) volumeDfn).removeVolume(accCtx, this);
-        dbDriver.delete(this, transMgr);
-        deleted.set(true);
     }
 
     private void checkDeleted()

@@ -292,15 +292,18 @@ public class ResourceConnectionData extends BaseTransactionObject implements Res
     @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, SQLException
     {
-        checkDeleted();
-        sourceResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        targetResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        if (!deleted.get())
+        {
+            sourceResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+            targetResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        sourceResource.removeResourceConnection(accCtx, this);
-        targetResource.removeResourceConnection(accCtx, this);
+            deleted.set(true);
 
-        dbDriver.delete(this, transMgr);
-        deleted.set(true);
+            sourceResource.removeResourceConnection(accCtx, this);
+            targetResource.removeResourceConnection(accCtx, this);
+
+            dbDriver.delete(this, transMgr);
+        }
     }
 
     @Override
