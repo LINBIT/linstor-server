@@ -201,16 +201,11 @@ public class StltApiCallHandler
                 Node localNode = satellite.getLocalNode();
                 if (localNode != null)
                 {
-                    Map<ResourceName, UUID> updatedResources = new TreeMap<>();
-                    Iterator<Resource> rscIter = localNode.iterateResources(apiCtx);
-                    while (rscIter.hasNext())
+                    DeviceManager devMgr = satellite.getDeviceManager();
+                    if (devMgr != null)
                     {
-                        Resource curRsc = rscIter.next();
-                        updatedResources.put(curRsc.getDefinition().getName(), curRsc.getUuid());
+                        devMgr.fullSyncApplied();
                     }
-                    DeviceManager deviceManager = satellite.getDeviceManager();
-                    StltUpdateTracker updTracker = deviceManager.getUpdateTracker();
-                    updTracker.checkMultipleResources(updatedResources);
                 }
                 else
                 {
