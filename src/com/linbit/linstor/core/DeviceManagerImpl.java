@@ -471,6 +471,24 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                 );
                 break;
             }
+            catch (Exception exc)
+            {
+                errLog.reportError(
+                    Level.ERROR,
+                    new ImplementationError(
+                        "The DeviceManager service caught an unhandled exception of type " +
+                        exc.getClass().getSimpleName() + ".\n",
+                        exc
+                    )
+                );
+            }
+            catch (ImplementationError implErr)
+            {
+                errLog.reportError(
+                    Level.ERROR,
+                    implErr
+                );
+            }
             finally
             {
                 errLog.logTrace("End DeviceManager cycle %d", cycleNr);
