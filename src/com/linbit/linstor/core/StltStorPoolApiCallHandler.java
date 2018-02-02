@@ -149,6 +149,7 @@ class StltStorPoolApiCallHandler
                 transMgr,
                 satellite
             );
+            storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
         }
         return storPoolDfnToRegister;
     }
