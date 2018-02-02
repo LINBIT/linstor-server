@@ -77,7 +77,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class Satellite extends LinStor implements Runnable, SatelliteCoreServices
+public final class Satellite extends LinStor implements SatelliteCoreServices
 {
     // System module information
     public static final String MODULE = "Satellite";
@@ -113,7 +113,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
     private AccessContext publicCtx;
 
     // Command line arguments
-    private String[] args;
+    private LinStorArguments args;
 
     private final StltApiCallHandler apiCallHandler;
 
@@ -180,7 +180,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
 
     private final AtomicLong awaitedUpdateId;
 
-    public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, String[] argsRef)
+    public Satellite(AccessContext sysCtxRef, AccessContext publicCtxRef, LinStorArguments cArgsRef)
         throws IOException
     {
         // Initialize synchronization
@@ -191,7 +191,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         publicCtx = publicCtxRef;
 
         // Initialize command line arguments
-        args = argsRef;
+        args = cArgsRef;
 
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
@@ -402,8 +402,7 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         SecurityLevel.set(accCtx, newLevel, null, null);
     }
 
-    @Override
-    public void run()
+    public void enterDebugConsole()
     {
         ErrorReporter errLog = getErrorReporter();
         try
@@ -447,6 +446,11 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
 
     public void shutdown(AccessContext accCtx) throws AccessDeniedException
     {
+        shutdown(accCtx, true);
+    }
+
+    public void shutdown(AccessContext accCtx, boolean sysExit) throws AccessDeniedException
+    {
         shutdownProt.requireAccess(accCtx, AccessType.USE);
 
         ErrorReporter errLog = getErrorReporter();
@@ -482,6 +486,10 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
         finally
         {
             reconfigurationLock.writeLock().unlock();
+        }
+        if (sysExit)
+        {
+            System.exit(0);
         }
     }
 
@@ -762,6 +770,8 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
 
     public static void main(String[] args)
     {
+        LinStorArguments cArgs = LinStorArgumentParser.parseCommandLine(args);
+
         System.out.printf(
             "%s, Module %s, Release %s\n",
             Satellite.PROGRAM, Satellite.MODULE, Satellite.VERSION
@@ -776,10 +786,13 @@ public final class Satellite extends LinStor implements Runnable, SatelliteCoreS
 
             // Initialize the Satellite module with the SYSTEM security context
             Initializer sysInit = new Initializer();
-            Satellite instance = sysInit.initSatellite(args);
+            Satellite instance = sysInit.initSatellite(cArgs);
 
             instance.initialize(errorLog);
-            instance.run();
+            if (cArgs.startDebugConsole())
+            {
+                instance.enterDebugConsole();
+            }
         }
         catch (ImplementationError implError)
         {

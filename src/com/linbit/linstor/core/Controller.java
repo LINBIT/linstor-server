@@ -1,6 +1,5 @@
 package com.linbit.linstor.core;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,13 +24,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.slf4j.event.Level;
 
 import com.linbit.ImplementationError;
@@ -106,7 +98,7 @@ import com.linbit.linstor.numberpool.NumberPool;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class Controller extends LinStor implements Runnable, CoreServices
+public final class Controller extends LinStor implements CoreServices
 {
     // System module information
     public static final String MODULE = "Controller";
@@ -169,7 +161,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     private AccessContext publicCtx;
 
     // Command line arguments
-    private ControllerArguments args;
+    private LinStorArguments args;
 
     // TODO
     final MetaDataApi metaData;
@@ -254,7 +246,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
     // Control objects used and set by tests
     private static DbConnectionPool testDbPool = null;
 
-    public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, ControllerArguments cArgsRef)
+    public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, LinStorArguments cArgsRef)
     {
         // Initialize synchronization
         ctrlConfLock        = new ReentrantReadWriteLock(true);
@@ -341,7 +333,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
 
     public static void main(String[] args)
     {
-        ControllerArguments cArgs = parseCommandLine(args);
+        LinStorArguments cArgs = LinStorArgumentParser.parseCommandLine(args);
 
         System.out.printf(
             "%s, Module %s, Release %s\n",
@@ -360,7 +352,10 @@ public final class Controller extends LinStor implements Runnable, CoreServices
             Controller instance = sysInit.initController(cArgs);
 
             instance.initialize(errorLog);
-            instance.run();
+            if (cArgs.startDebugConsole())
+            {
+                instance.enterDebugConsole();
+            }
         }
         catch (Throwable error)
         {
@@ -368,42 +363,6 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         }
 
         System.out.println();
-    }
-
-    private static ControllerArguments parseCommandLine(String[] args)
-    {
-        final String CONTROLLER_DIRECTORY = "controller_directory";
-        Options opts = new Options();
-        opts.addOption(Option.builder("h").longOpt("help").required(false).build());
-        opts.addOption(Option.builder("c").longOpt(CONTROLLER_DIRECTORY).hasArg().required(false).build());
-
-        CommandLineParser parser = new DefaultParser();
-        ControllerArguments cArgs = new ControllerArguments();
-        try {
-            CommandLine cmd = parser.parse(opts, args);
-
-            if (cmd.hasOption("help")) {
-                HelpFormatter helpFrmt = new HelpFormatter();
-                helpFrmt.printHelp("Controller", opts);
-                System.exit(0);
-            }
-
-            if (cmd.hasOption(CONTROLLER_DIRECTORY)) {
-                cArgs.setWorkingDirectory(cmd.getOptionValue(CONTROLLER_DIRECTORY) + "/");
-                File f = new File(cArgs.getWorkingDirectory());
-                if(!f.exists() || !f.isDirectory())
-                {
-                    System.err.println("Error: Given controller runtime directory does not exist or is no directory");
-                    System.exit(2);
-                }
-            }
-        }
-        catch (ParseException pExc) {
-            System.err.println("Command line parse error: " + pExc.getMessage());
-            System.exit(1);
-        }
-
-        return cArgs;
     }
 
     public void initialize(ErrorReporter errorLogRef)
@@ -529,8 +488,7 @@ public final class Controller extends LinStor implements Runnable, CoreServices
         );
     }
 
-    @Override
-    public void run()
+    public void enterDebugConsole()
     {
         ErrorReporter errLog = getErrorReporter();
         try

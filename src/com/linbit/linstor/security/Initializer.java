@@ -4,7 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.core.ControllerArguments;
+import com.linbit.linstor.core.LinStorArguments;
 import com.linbit.linstor.core.Satellite;
 
 import java.io.IOException;
@@ -62,15 +62,15 @@ public final class Initializer
         }
     }
 
-    public Controller initController(ControllerArguments cArgs)
+    public Controller initController(LinStorArguments cArgs)
     {
         return new Controller(SYSTEM_CTX, PUBLIC_CTX, cArgs);
     }
 
-    public Satellite initSatellite(String[] args)
+    public Satellite initSatellite(LinStorArguments cArgs)
         throws IOException
     {
-        return new Satellite(SYSTEM_CTX, PUBLIC_CTX, args);
+        return new Satellite(SYSTEM_CTX, PUBLIC_CTX, cArgs);
     }
 
     public static void load(AccessContext accCtx, ControllerDatabase ctrlDb, DbAccessor driver)
