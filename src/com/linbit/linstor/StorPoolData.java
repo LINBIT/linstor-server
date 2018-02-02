@@ -296,10 +296,13 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         checkDeleted();
         try
         {
-            Map<String, String> map = props.getNamespace(NAMESPC_STORAGE_DRIVER).map();
-            // we could check NAMESPC_STORAGE_DRIVER for null here, but if it is null, we would throw an implExc anyways
-            // so just let java throw the nullpointer exception
-            storageDriver.setConfiguration(map);
+            // TODO better check to decide if diskless
+            if (!getDriverName().equals("DisklessDriver")) {
+                Map<String, String> map = props.getNamespace(NAMESPC_STORAGE_DRIVER).map();
+                // we could check NAMESPC_STORAGE_DRIVER for null here, but if it is null, we would throw an implExc anyways
+                // so just let java throw the nullpointer exception
+                storageDriver.setConfiguration(map);
+            }
         }
         catch (InvalidKeyException invalidKeyExc)
         {
