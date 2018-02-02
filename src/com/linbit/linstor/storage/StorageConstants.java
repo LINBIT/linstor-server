@@ -3,6 +3,8 @@ package com.linbit.linstor.storage;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.linbit.linstor.api.ApiConsts;
+
 /**
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
@@ -12,8 +14,8 @@ public class StorageConstants
     /*
      * LVM stuff
      */
-    public static final String CONFIG_LVM_VOLUME_GROUP_KEY = "volumeGroup";
-    public static final String CONFIG_LVM_THIN_POOL_KEY = "thinPool";
+    public static final String CONFIG_LVM_VOLUME_GROUP_KEY = ApiConsts.KEY_STOR_POOL_VOLUME_GROUP;
+    public static final String CONFIG_LVM_THIN_POOL_KEY = ApiConsts.KEY_STOR_POOL_THIN_POOL;
 
     public static final String CONFIG_LVM_CREATE_COMMAND_KEY = "lvmCreate";
     public static final String CONFIG_LVM_REMOVE_COMMAND_KEY = "lvmRemove";
@@ -28,7 +30,7 @@ public class StorageConstants
     /*
      * ZFS stuff
      */
-    public static final String CONFIG_ZFS_POOL_KEY = "zfsPool";
+    public static final String CONFIG_ZFS_POOL_KEY = ApiConsts.KEY_STOR_POOL_ZPOOL;
     public static final String CONFIG_ZFS_COMMAND_KEY = "zfs";
 
     public static final Map<String, String> KEY_DESCRIPTION = new HashMap<>();

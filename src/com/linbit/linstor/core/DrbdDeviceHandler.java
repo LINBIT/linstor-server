@@ -506,6 +506,7 @@ class DrbdDeviceHandler implements DeviceHandler
             if (storagePool != null)
             {
                 driver = storagePool.createDriver(wrkCtx, coreSvcs);
+                storagePool.reconfigureStorageDriver(driver);
                 if (driver != null)
                 {
                     vlmState.setDriver(driver);
@@ -526,6 +527,13 @@ class DrbdDeviceHandler implements DeviceHandler
             throw new ImplementationError(
                 "The builtin name constant for storage pools contains an invalid string",
                 keyExc
+            );
+        }
+        catch (StorageException storExc)
+        {
+            throw new ImplementationError(
+                "Storage configuration exception",
+                storExc
             );
         }
         catch (InvalidNameException nameExc)

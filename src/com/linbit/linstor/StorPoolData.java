@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,9 +30,9 @@ import com.linbit.linstor.storage.StorageDriver;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.StorageDriverLoader;
 import com.linbit.linstor.storage.StorageException;
-import java.util.ArrayList;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
+import static com.linbit.linstor.api.ApiConsts.NAMESPC_STORAGE_DRIVER;
 
 public class StorPoolData extends BaseTransactionObject implements StorPool
 {
@@ -206,9 +207,6 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
                 StorageDriverKind storageDriverKind =
                     StorageDriverLoader.getKind(storDriverSimpleClassNameRef);
 
-                StorageDriver storageDriver = storageDriverKind.makeStorageDriver();
-                storageDriver.initialize(stltCoreSvcs);
-
                 storPoolData = new StorPoolData(
                     uuid,
                     accCtx,
@@ -298,8 +296,8 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         checkDeleted();
         try
         {
-            Map<String, String> map = props.getNamespace(STORAGE_DRIVER_PROP_NAMESPACE).map();
-            // we could check storDriver for null here, but if it is null, we would throw an implExc anyways
+            Map<String, String> map = props.getNamespace(NAMESPC_STORAGE_DRIVER).map();
+            // we could check NAMESPC_STORAGE_DRIVER for null here, but if it is null, we would throw an implExc anyways
             // so just let java throw the nullpointer exception
             storageDriver.setConfiguration(map);
         }

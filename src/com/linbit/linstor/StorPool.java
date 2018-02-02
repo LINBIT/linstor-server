@@ -21,8 +21,6 @@ import java.util.Map;
  */
 public interface StorPool extends TransactionObject, DbgInstanceUuid
 {
-    public static final String STORAGE_DRIVER_PROP_NAMESPACE = "storDriver";
-
     /**
      * Returns the {@link UUID} of this object.
      */

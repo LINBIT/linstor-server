@@ -328,6 +328,7 @@ public class ApiConsts
     public static final String NAMESPC_ALLOC = "Allocation";
     public static final String NAMESPC_NETIF = "NetIf";
     public static final String NAMESPC_STLT = "Satellite";
+    public static final String NAMESPC_STORAGE_DRIVER = "StorDriver";
 
     /*
      * Storage pool property keys
