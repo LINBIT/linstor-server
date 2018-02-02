@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,6 +34,7 @@ import com.linbit.linstor.StorPoolName;
 import com.linbit.linstor.VolumeNumber;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.utils.StringUtils;
 
 /**
  * Hierarchical properties container
@@ -2659,5 +2661,20 @@ public class PropsContainer implements Props
             PATH_SEPARATOR + targetName.value +
             PATH_SEPARATOR + resName.value +
             PATH_SEPARATOR + volNr.value;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n");
+        ArrayList<String> pairs = new ArrayList<>();
+        for ( Map.Entry<String, String> entry : this.map().entrySet() ) {
+            StringBuilder sbPair = new StringBuilder();
+            sbPair.append("  \"").append(entry.getKey()).append("\": \"").append(entry.getValue()).append('"');
+            pairs.add(sbPair.toString());
+        }
+        sb.append(StringUtils.join(pairs, ",\n"));
+        sb.append("\n}\n");
+        return sb.toString();
     }
 }
