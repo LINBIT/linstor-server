@@ -336,61 +336,64 @@ public class StltApiCallHandler
     {
         synchronized (dataToApply)
         {
-            satellite.reconfigurationLock.writeLock().lock();
-            if (data.getFullSyncId() == satellite.getCurrentFullSyncId())
+            try
             {
-                try
+                satellite.reconfigurationLock.writeLock().lock();
+                if (data.getFullSyncId() == satellite.getCurrentFullSyncId())
                 {
-                    ApplyData overriddenData = dataToApply.put(data.getUpdateId(), data);
-                    if (overriddenData != null)
-                    {
-                        satellite.getErrorReporter().reportError(
-                            new ImplementationError(
-                                "We have overridden data which we did not update yet.",
-                                null
-                                )
-                            );
-                        satellite.shutdown(apiCtx); // critical error. shutdown and fix this implementation error
-                    }
-
-                    Entry<Long, ApplyData> nextEntry;
-                    nextEntry = dataToApply.firstEntry();
-                    while (
-                        nextEntry != null &&
-                        nextEntry.getKey() == satellite.getCurrentAwaitedUpdateId()
-                    )
-                    {
-                        nextEntry.getValue().applyChange();
-                        dataToApply.remove(nextEntry.getKey());
-                        satellite.awaitedUpdateApplied();
-
-                        nextEntry = dataToApply.firstEntry();
-                    }
-                }
-                catch (ImplementationError | Exception exc)
-                {
-                    satellite.getErrorReporter().reportError(exc);
                     try
                     {
-                        satellite.getLocalNode().getPeer(apiCtx).closeConnection();
-                        // there is nothing else we can safely do.
-                        // skipping the update might cause data-corruption
-                        // not skipping will queue the new data packets but will not apply those as the
-                        // awaitedUpdateId will never increment.
+                        ApplyData overriddenData = dataToApply.put(data.getUpdateId(), data);
+                        if (overriddenData != null)
+                        {
+                            satellite.getErrorReporter().reportError(
+                                new ImplementationError(
+                                    "We have overridden data which we did not update yet.",
+                                    null
+                                    )
+                                );
+                            satellite.shutdown(apiCtx); // critical error. shutdown and fix this implementation error
+                        }
+
+                        Entry<Long, ApplyData> nextEntry;
+                        nextEntry = dataToApply.firstEntry();
+                        while (
+                            nextEntry != null &&
+                            nextEntry.getKey() == satellite.getCurrentAwaitedUpdateId()
+                        )
+                        {
+                            nextEntry.getValue().applyChange();
+                            dataToApply.remove(nextEntry.getKey());
+                            satellite.awaitedUpdateApplied();
+
+                            nextEntry = dataToApply.firstEntry();
+                        }
                     }
-                    catch (AccessDeniedException exc1)
+                    catch (ImplementationError | Exception exc)
                     {
-                        satellite.getErrorReporter().reportError(new ImplementationError(exc));
+                        satellite.getErrorReporter().reportError(exc);
+                        try
+                        {
+                            satellite.getLocalNode().getPeer(apiCtx).closeConnection();
+                            // there is nothing else we can safely do.
+                            // skipping the update might cause data-corruption
+                            // not skipping will queue the new data packets but will not apply those as the
+                            // awaitedUpdateId will never increment.
+                        }
+                        catch (AccessDeniedException exc1)
+                        {
+                            satellite.getErrorReporter().reportError(new ImplementationError(exc));
+                        }
                     }
                 }
-                finally
+                else
                 {
-                    satellite.reconfigurationLock.writeLock().unlock();
+                    satellite.getErrorReporter().logWarning("Ignoring received outdated update. ");
                 }
             }
-            else
+            finally
             {
-                satellite.getErrorReporter().logWarning("Ignoring received outdated update. ");
+                satellite.reconfigurationLock.writeLock().unlock();
             }
         }
     }
