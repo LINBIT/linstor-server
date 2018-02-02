@@ -8,6 +8,10 @@ class VersionInfoTask extends DefaultTask {
     @OutputDirectory
     File outputDir
 
+    VersionInfoTask() {
+        outputs.upToDateWhen { false }
+    }
+
     def getGitHash() {
         def stdOut = new ByteArrayOutputStream()
         project.exec {
