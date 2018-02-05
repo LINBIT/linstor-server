@@ -50,7 +50,8 @@ check-all-committed:
 
 .PHONY: check_changelogs_up2date
 check_changelogs_up2date:
-	grep "^version" build.gradle | grep $(VERSION)
+	v=$$(grep "^version" build.gradle | grep -o "'.*'"| sed "s/'//g"); \
+	echo $(VERSION) | grep $$v
 
 tarball: check-all-committed check_changelogs_up2date check-submods .filelist
 	$(MAKE) tgz
