@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -156,6 +157,33 @@ public class FileSystemWatchTest
     {
         String testFile = testFilePath("testfile.txt");
         deleteFile(testFile);
+
+        FileEventReceiver rec = new FileEventReceiver();
+        rec.addExpected(testFile);
+
+        FileEntry entry = fsw.newFileEntry(testFile, FileSystemWatch.Event.CREATE, rec);
+
+        // Create the file; should trigger the FileEventReceiver
+        createFile(testFile);
+        // Delete file; should not trigger the FileEventReceiver
+        deleteFile(testFile);
+
+        Delay.sleep(TEST_DELAY);
+
+        fileEventCheck(rec);
+    }
+
+    /**
+     * Waits for a single file to be created in a folder that doesn't exist yet.
+     */
+    @Ignore
+    @Test
+    public void singleFileCreateWithoutParentTest() throws Exception
+    {
+        String testFile = testFilePath("nonexisting/testfile.txt");
+        deleteFile(testFile);
+        String folderPath = testFilePath("nonexisting");
+        deleteFile(folderPath);
 
         FileEventReceiver rec = new FileEventReceiver();
         rec.addExpected(testFile);
