@@ -16,16 +16,19 @@ public class VersionInfoProviderImpl implements VersionInfoProvider
     {
         Properties props = new Properties();
         try
-        {
+        (
             InputStream is = getClass().getClassLoader().getResourceAsStream("version-info.properties");
+        )
+        {
             if (is != null)
             {
                 props.load(is);
             }
         }
-        catch (IOException e)
+        catch (IOException | IllegalArgumentException ignored)
         {
-            // Ignore
+            // IllegalArgumentException can be thrown if the input stream contains
+            // a malformed unicode escape sequence
         }
 
         version = props.getProperty("version", UNKNOWN_PLACEHOLDER);
