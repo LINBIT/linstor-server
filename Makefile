@@ -2,7 +2,7 @@ GIT = git
 MAKE = make
 
 # echo v0.1 to get it started
-VERSION := $(shell git describe --tags || echo "v0.1" | sed -e 's/^v//;s/^[^0-9]*//;s/-/./;s/\(.*\)-g/\1-/')
+VERSION := $(shell echo $(shell git describe --tags || echo "v0.1") | sed -e 's/^v//;s/^[^0-9]*//;s/-/./;s/\(.*\)-g/\1-/')
 
 .PHONY: .filelist
 .filelist:
@@ -54,5 +54,3 @@ check_changelogs_up2date:
 
 tarball: check-all-committed check_changelogs_up2date check-submods .filelist
 	$(MAKE) tgz
-
-
