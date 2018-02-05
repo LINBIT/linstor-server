@@ -76,22 +76,22 @@ class DrbdDeviceHandler implements DeviceHandler
 
     // Number of peer slots for DRBD meta data; this should be replaced with a property of the
     // resource definition or otherwise a system-wide default
-    private final short FIXME_PEERS = 7;
+    private static final short FIXME_PEERS = 7;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
-    private final int FIXME_STRIPES = 1;
+    private static final int FIXME_STRIPES = 1;
 
     // Number of activity log stripes; this should be replaced with a property of the resource definition,
     // a property of the volume definition, or or otherwise a system-wide default
-    private final long FIXME_STRIPE_SIZE = 32;
+    private static final long FIXME_STRIPE_SIZE = 32;
 
     // Path to the DRBD configuration files; this should be replaced by some meaningful constant or possibly
     // a value configurable in the cluster configuration
-    private final String FIXME_CONFIG_PATH = "/etc/drbd.d";
+    private static final String FIXME_CONFIG_PATH = "/etc/drbd.d";
 
     // DRBD configuration file suffix; this should be replaced by a meaningful constant
-    private final String DRBD_CONFIG_SUFFIX = ".res";
+    private static final String DRBD_CONFIG_SUFFIX = ".res";
 
     DrbdDeviceHandler(Satellite stltRef, AccessContext wrkCtxRef, SatelliteCoreServices coreSvcsRef)
     {
@@ -548,7 +548,7 @@ class DrbdDeviceHandler implements DeviceHandler
             }
             throw new VolumeException(
                 "An invalid storage pool name is specified for volume " + vlmState.getVlmNr().value +
-                    " of resource '" + rscName.displayValue,
+                " of resource '" + rscName.displayValue,
                 getAbortMsg(rscName, vlmState.getVlmNr()),
                 "An invalid storage pool name was specified for the volume",
                 "Correct the property that selects the storage pool for this volume.\n" +

@@ -73,12 +73,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     private final Set<ResourceName> deletedRscSet = new TreeSet<>();
     private final Set<VolumeDefinition.Key> deletedVlmSet = new TreeSet<>();
 
-    private static final ServiceName DEV_MGR_SVC_NAME;
+    private static final ServiceName DEV_MGR_NAME;
     static
     {
         try
         {
-            DEV_MGR_SVC_NAME = new ServiceName("DeviceManager");
+            DEV_MGR_NAME = new ServiceName("DeviceManager");
         }
         catch (InvalidNameException invName)
         {
@@ -117,7 +117,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
         drbdEvent = drbdEventRef;
         updTracker = new StltUpdateTrackerImpl(sched);
         svcThr = null;
-        devMgrInstName = DEV_MGR_SVC_NAME;
+        devMgrInstName = DEV_MGR_NAME;
         drbdHnd = new DrbdDeviceHandler(stltInstance, wrkCtx, coreSvcs);
         workQ = workQRef;
 
@@ -128,7 +128,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     /**
      * Dispatch resource to a specific handler depending on type
      */
-    void dispatchResource(AccessContext wrkCtxRef, Resource rsc, SyncPoint phaseLockRef)
+    void dispatchResource(Resource rsc, SyncPoint phaseLockRef)
     {
         // Select the resource handler for the resource depeding on resource type
         // Currently, the DRBD resource handler is used for all resources
@@ -610,7 +610,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
                         Resource rsc = rscDfn.getResource(wrkCtx, localNode.getName());
                         if (rsc != null)
                         {
-                            dispatchResource(wrkCtx, rsc, phaseLock);
+                            dispatchResource(rsc, phaseLock);
                         }
                         else
                         {
@@ -799,7 +799,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager
     @Override
     public ServiceName getServiceName()
     {
-        return DEV_MGR_SVC_NAME;
+        return DEV_MGR_NAME;
     }
 
     @Override
