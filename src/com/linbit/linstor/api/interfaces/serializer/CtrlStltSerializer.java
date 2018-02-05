@@ -39,7 +39,7 @@ public interface CtrlStltSerializer
         Builder resourceData(Resource localResource, long fullSyncTimestamp, long updateId);
         Builder deletedResourceData(String rscNameStr);
         Builder storPoolData(StorPool storPool, long fullSyncTimestamp, long updateId);
-        Builder deletedStorPoolData(String nodeNameStr);
+        Builder deletedStorPoolData(String storPoolName);
         Builder fullSync(
             Set<Node> nodeSet,
             Set<StorPool> storPools,

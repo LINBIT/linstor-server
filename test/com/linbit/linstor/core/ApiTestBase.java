@@ -39,7 +39,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.security.TestAccessContextProvider;
-import com.linbit.linstor.testclient.ClientProtobuf;
+import com.linbit.linstor.testclient.ApiRCUtils;
 
 public abstract class ApiTestBase extends DerbyBase
 {
@@ -208,7 +208,7 @@ public abstract class ApiTestBase extends DerbyBase
     {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
-        ClientProtobuf.appendReadableRetCode(sb, expectedRc);
+        ApiRCUtils.appendReadableRetCode(sb, expectedRc);
         sb.append("]");
         return sb.toString();
     }

@@ -7,7 +7,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.utils.ApiCtrlAccessorTestImpl.StltConnectingAttempt;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.testclient.ClientProtobuf;
+import com.linbit.linstor.testclient.ApiRCUtils;
 
 public abstract class AbsApiCallTester
 {
@@ -74,7 +74,7 @@ public abstract class AbsApiCallTester
         StringBuilder sb = new StringBuilder();
         for (long rc : retCodes)
         {
-            ClientProtobuf.appendReadableRetCode(sb, rc);
+            ApiRCUtils.appendReadableRetCode(sb, rc);
             sb.append(", ");
         }
         sb.setLength(sb.length() - 2);
