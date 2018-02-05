@@ -51,4 +51,10 @@ public class LvmDriverKind implements StorageDriverKind
     {
         return false;
     }
+
+    @Override
+    public boolean hasBackingStorage()
+    {
+        return true;
+    }
 }

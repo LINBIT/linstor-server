@@ -35,4 +35,10 @@ public class DisklessDriverKind implements StorageDriverKind
     {
         return false;
     }
+
+    @Override
+    public boolean hasBackingStorage()
+    {
+        return false;
+    }
 }

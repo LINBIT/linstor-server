@@ -47,4 +47,10 @@ public class ZfsDriverKind implements StorageDriverKind
     {
         return true;
     }
+
+    @Override
+    public boolean hasBackingStorage()
+    {
+        return true;
+    }
 }

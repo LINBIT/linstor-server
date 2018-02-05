@@ -296,11 +296,17 @@ public class StorPoolData extends BaseTransactionObject implements StorPool
         checkDeleted();
         try
         {
-            // TODO better check to decide if diskless
-            if (!getDriverName().equals("DisklessDriver")) {
-                Map<String, String> map = props.getNamespace(NAMESPC_STORAGE_DRIVER).map();
-                // we could check NAMESPC_STORAGE_DRIVER for null here, but if it is null, we would throw an implExc anyways
-                // so just let java throw the nullpointer exception
+            if (storageDriver.getKind().hasBackingStorage())
+            {
+                Props namespace = props.getNamespace(NAMESPC_STORAGE_DRIVER);
+                if (namespace == null)
+                {
+                    throw new ImplementationError(
+                        "Missing required namespace for backing storage",
+                        null
+                    );
+                }
+                Map<String, String> map = namespace.map();
                 storageDriver.setConfiguration(map);
             }
         }

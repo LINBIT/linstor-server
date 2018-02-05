@@ -43,4 +43,12 @@ public interface StorageDriverKind
      * @return true if and only if snapshots are supported by the driver
      */
     boolean isSnapshotSupported();
+
+    /**
+     * Returns whether this driver has a backing storage. If it has, the storPool has
+     * to have a non-empty NAMESPC_STORAGE_DRIVER namespace.
+     *
+     * @return true if and only if this driver has a backing storage.
+     */
+    boolean hasBackingStorage();
 }
