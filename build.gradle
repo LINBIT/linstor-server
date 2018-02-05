@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 plugins {
     id "nebula.ospackage" version "4.6.0"
 }
@@ -6,7 +8,6 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
 apply plugin: 'nebula.ospackage-base'
-apply from: 'version-info.gradle'
 
 sourceCompatibility = 1.7
 version = '0.1'
@@ -72,6 +73,41 @@ jar {
   }
 }
 
+/////////////////////////// Version Info ///////////////////////////
+task versionInfo(type: VersionInfoTask) {
+    outputDir = file("$projectDir/generated-resources")
+}
+
+class VersionInfoTask extends DefaultTask {
+    @OutputDirectory
+    File outputDir
+
+    VersionInfoTask() {
+        outputs.upToDateWhen { false }
+    }
+
+    def getGitHash() {
+        def stdOut = new ByteArrayOutputStream()
+        project.exec {
+            commandLine 'git', 'rev-parse', 'HEAD'
+            standardOutput = stdOut
+        }
+        return stdOut.toString().trim()
+    }
+
+    @TaskAction
+    def generateVersionInfo() {
+        File file = new File(outputDir, "version-info.properties")
+        file.delete()
+        file << "version=${project.version}\n"
+        file << "git.commit.id=${getGitHash()}\n"
+        file << "build.time=${new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())}\n"
+    }
+}
+
+processResources.dependsOn versionInfo
+
+/////////////////////////// Start scripts ///////////////////////////
 startScripts.enabled = false
 
 task ControllerStartup(type: CreateStartScripts) {
@@ -116,6 +152,7 @@ task showMeCache << {
   configurations.compile.each { println it }
 }
 
+/////////////////////////// Test commands ///////////////////////////
 task buildTestCommands(type:Exec) {
   workingDir 'test-support'
 
@@ -153,6 +190,7 @@ clean {
   delete += 'generated-resources'
 }
 
+/////////////////////////// Packaging ///////////////////////////
 ospackage {
     packageName 'linstor-server'
     release '1'
