@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+          "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+          "http://checkstyle.sourceforge.net/dtds/configuration_1_3.dtd">
+<!--
+LINSTOR Project - Configuration of the checkstyle utility for code optimization
+
+Author: Robert Altnoeder <robert.altnoeder@linbit.com>
+Version: 2018-02-06_001
+
+Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/checkstyle
+-->
+
+<module name="Checker">
+    <property name="fileExtensions" value="java"/>
+    <property name="charset" value="UTF-8"/>
+
+    <module name="BeforeExecutionExclusionFileFilter">
+        <property name="fileNamePattern" value="^Msg.*OuterClass\.java$"/>
+    </module>
+
+    <module name="TreeWalker">
+        <module name="MultipleStringLiterals"/>
+
+        <module name="NestedForDepth">
+            <property name="max" value="4"/>
+        </module>
+
+        <module name="NestedIfDepth">
+            <property name="max" value="6"/>
+        </module>
+
+        <module name="NestedTryDepth">
+            <property name="max" value="4"/>
+        </module>
+
+        <module name="NPathComplexity">
+            <property name="max" value="2000"/>
+        </module>
+
+        <!-- Modules suggested for possible future use
+        <module name="FinalLocalVariable">
+            <property name="tokens" value="VARIABLE_DEF,PARAMETER_DEF"/>
+        </module>
+        -->
+    </module>
+</module>
+

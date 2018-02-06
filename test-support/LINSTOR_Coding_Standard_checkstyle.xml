@@ -1,0 +1,366 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+          "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+          "http://checkstyle.sourceforge.net/dtds/configuration_1_3.dtd">
+
+<!--
+LINSTOR Project - Configuration of the checkstyle utility for the LINSTOR Coding Standard
+
+Author: Robert Altnoeder <robert.altnoeder@linbit.com>
+Version: 2018-02-06_001
+
+Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/checkstyle
+-->
+
+<module name="Checker">
+    <property name="fileExtensions" value="java"/>
+    <property name="charset" value="UTF-8"/>
+
+    <!-- Exclude auto-generated protobufs classes -->
+    <module name="BeforeExecutionExclusionFileFilter">
+        <property name="fileNamePattern" value="^Msg.*OuterClass\.java$"/>
+    </module>
+
+    <!-- Checks whether files end with a new line -->
+    <module name="NewlineAtEndOfFile"/>
+
+    <!-- Check that spaces are used for indentation, not tabs -->
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true"/>
+    </module>
+
+    <module name="TreeWalker">
+
+        <!--
+        ================================================================================
+        Quality standards, avoidance of common sources of errors
+        ================================================================================
+        -->
+
+        <module name="EmptyBlock">
+            <property name="tokens" value="LITERAL_CASE,LITERAL_DEFAULT"/>
+        </module>
+
+        <module name="EmptyCatchBlock">
+            <property name="exceptionVariableName" value="ignored"/>
+        </module>
+
+        <module name="EmptyStatement"/>
+
+        <module name="OneStatementPerLine"/>
+
+        <module name="MagicNumber">
+            <property name="ignoreNumbers" value="-2,-1,0,1,2"/>
+            <property name="ignoreHashCodeMethod" value="true"/>
+            <property name="ignoreFieldDeclaration" value="true"/>
+        </module>
+
+        <module name="ModifiedControlVariable"/>
+
+        <module name="InnerAssignment"/>
+
+        <module name="HiddenField"/>
+
+        <module name="IllegalToken">
+            <property name="tokens" value="LITERAL_CONTINUE"/>
+        </module>
+
+        <module name="FallThrough">
+            <property name="checkLastCaseGroup" value="true"/>
+            <property name="reliefPattern" value="fall-through"/>
+        </module>
+
+        <module name="MissingSwitchDefault"/>
+
+        <module name="ParameterAssignment"/>
+
+        <module name="RequireThis">
+            <property name="checkMethods" value="false"/>
+            <property name="checkFields" value="true"/>
+            <property name="validateOnlyOverlapping" value="true"/>
+        </module>
+
+        <module name="ReturnCount">
+            <property name="max" value="1"/>
+            <property name="maxForVoid" value="0"/>
+            <property name="tokens" value="CTOR_DEF,METHOD_DEF,LAMBDA"/>
+        </module>
+
+        <module name="DescendantToken">
+            <property name="tokens" value="LITERAL_SWITCH"/>
+            <property name="limitedTokens" value="LITERAL_DEFAULT"/>
+            <property name="minimumNumber" value="1"/>
+            <property name="maximumNumber" value="1"/>
+        </module>
+
+        <module name="DescendantToken">
+            <property name="tokens" value="FOR_INIT"/>
+            <property name="limitedTokens" value="EXPR"/>
+            <property name="minimumNumber" value="1"/>
+        </module>
+
+        <module name="DescendantToken">
+            <property name="tokens" value="FOR_CONDITION"/>
+            <property name="limitedTokens" value="EXPR"/>
+            <property name="minimumNumber" value="1"/>
+        </module>
+
+        <module name="DescendantToken">
+            <property name="tokens" value="FOR_ITERATOR"/>
+            <property name="limitedTokens" value="EXPR"/>
+            <property name="minimumNumber" value="1"/>
+        </module>
+
+        <module name="DescendantToken">
+            <property name="tokens" value="LITERAL_IF,LITERAL_FOR,LITERAL_DO,LITERAL_WHILE,LITERAL_SWITCH,LITERAL_TRY,LITERAL_CATCH,LITERAL_FINALLY"/>
+            <property name="limitedTokens" value="LITERAL_RETURN"/>
+            <property name="maximumNumber" value="0"/>
+        </module>
+
+        <module name="DescendantToken">
+            <property name="tokens" value="LITERAL_FINALLY"/>
+            <property name="limitedTokens" value="LITERAL_THROWS"/>
+            <property name="maximumNumber" value="0"/>
+        </module>
+
+
+        <!--
+        ================================================================================
+        Imports
+        ================================================================================
+        -->
+
+        <module name="AvoidStarImport"/>
+
+        <module name="RedundantImport"/>
+
+        <module name="UnusedImports"/>
+
+        <!--
+        ================================================================================
+        Package declarations
+        ================================================================================
+        -->
+
+        <module name="PackageDeclaration">
+            <property name="matchDirectoryStructure" value="true"/>
+        </module>
+
+        <!--
+        ================================================================================
+        Java-specific OOP rules
+        ================================================================================
+        -->
+
+        <module name="CovariantEquals"/>
+
+        <module name="EqualsHashCode"/>
+
+        <module name="StringLiteralEquality"/>
+
+        <!--
+        ================================================================================
+        Code simplification, avoidance of unnecessarily complex code
+        ================================================================================
+        -->
+
+        <module name="SimplifyBooleanExpression"/>
+
+        <module name="SimplifyBooleanReturn"/>
+
+        <!--
+        ================================================================================
+        Object construction & destruction, variable initialization checks
+        ================================================================================
+        -->
+
+        <module name="SuperClone"/>
+
+        <module name="SuperFinalize"/>
+
+        <module name="VariableDeclarationUsageDistance">
+            <property name="allowedDistance" value="7"/>
+            <property name="validateBetweenScopes" value="true"/>
+        </module>
+
+        <module name="TodoComment">
+            <property name="format" value="([Tt][Oo][Dd][Oo]|[Ff][Ii][Xx][Mm][Ee]|[Xx][Xx][Xx])"/>
+        </module>
+
+        <!--
+        ================================================================================
+        Naming conventions
+
+        Should comply with the naming conventions used in the Java class library in
+        general.
+        Minimum length of 2.
+        ================================================================================
+        -->
+
+        <module name="ConstantName">
+            <property name="format" value="^([A-Z][A-Z0-9]|[A-Z][A-Z0-9]*(_[A-Z0-9]+)*)$"/>
+        </module>
+
+        <module name="MemberName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+        </module>
+
+        <module name="StaticVariableName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+        </module>
+
+        <module name="LocalFinalVariableName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+        </module>
+
+        <module name="LocalVariableName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+        </module>
+
+        <module name="CatchParameterName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+        </module>
+
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+        </module>
+
+        <module name="MethodTypeParameterName">
+            <property name="format" value="^([A-Z]|[A-Z][a-zA-Z0-9]+)$"/>
+        </module>
+
+        <module name="ParameterName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+        </module>
+
+        <module name="TypeName">
+            <property name="format" value="^[A-Z][a-zA-Z0-9]+$"/>
+        </module>
+
+        <!--
+        ================================================================================
+        Coding style, code layout
+        ================================================================================
+        -->
+
+        <module name="LineLength">
+            <property name="max" value="120"/>
+        </module>
+
+        <module name="LeftCurly">
+            <property name="option" value="nl"/>
+            <property name="ignoreEnums" value="false"/>
+        </module>
+
+        <module name="RightCurly">
+            <property name="option" value="alone"/>
+            <property name="shouldStartLine" value="true"/>
+            <property name="tokens" value="LITERAL_TRY,LITERAL_CATCH,LITERAL_FINALLY,LITERAL_IF,LITERAL_ELSE,CLASS_DEF,METHOD_DEF,CTOR_DEF,LITERAL_FOR,LITERAL_WHILE,LITERAL_DO,STATIC_INIT,INSTANCE_INIT,LAMBDA"/>
+        </module>
+
+        <module name="NeedBraces">
+            <property name="allowSingleLineStatement" value="false"/>
+            <property name="allowEmptyLoopBody" value="false"/>
+        </module>
+
+        <module name="EmptyLineSeparator">
+            <property name="tokens" value="PACKAGE_DEF,IMPORT,CLASS_DEF,INTERFACE_DEF,ENUM_DEF,STATIC_INIT"/>
+        </module>
+
+        <module name="MethodParamPad">
+            <property name="allowLineBreaks" value="false"/>
+            <property name="option" value="nospace"/>
+            <property name="tokens" value="CTOR_DEF,LITERAL_NEW,METHOD_CALL,METHOD_DEF,SUPER_CTOR_CALL,ENUM_CONSTANT_DEF"/>
+        </module>
+
+        <module name="WhitespaceAfter">
+            <property name="tokens" value="COMMA,SEMI,TYPECAST,LITERAL_IF,LITERAL_WHILE,LITERAL_FOR,DO_WHILE"/>
+        </module>
+
+        <module name="WhitespaceAround">
+            <property name="tokens" value="ASSIGN,BAND,BAND_ASSIGN,BOR,BOR_ASSIGN,BSR,BSR_ASSIGN,BXOR,BXOR_ASSIGN,COLON,DIV,DIV_ASSIGN,DO_WHILE,EQUAL,GE,GT,LAMBDA,LAND,LCURLY,LE,LITERAL_CATCH,LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_FOR,LITERAL_IF,LITERAL_RETURN,LITERAL_SWITCH,LITERAL_SYNCHRONIZED,LITERAL_TRY,LITERAL_WHILE,LOR,LT,MINUS,MINUS_ASSIGN,MOD,MOD_ASSIGN,NOT_EQUAL,PLUS,PLUS_ASSIGN,QUESTION,RCURLY,SL,SLIST,SL_ASSIGN,SR,SR_ASSIGN,STAR,STAR_ASSIGN,LITERAL_ASSERT,TYPE_EXTENSION_AND"/>
+        </module>
+
+        <module name="NoWhitespaceAfter">
+            <property name="tokens" value="UNARY_MINUS,INC,DEC,AT,BNOT,LNOT,ARRAY_INIT,ARRAY_DECLARATOR,INDEX_OP"/>
+        </module>
+
+        <module name="NoWhitespaceBefore">
+            <property name="tokens" value="COMMA,SEMI,POST_INC,POST_DEC,GENERIC_END,ELLIPSIS"/>
+            <property name="allowLineBreaks" value="false"/>
+        </module>
+
+        <module name="NoWhitespaceBefore">
+            <property name="tokens" value="DOT"/>
+            <property name="allowLineBreaks" value="true"/>
+        </module>
+
+        <module name="ParenPad">
+            <property name="option" value="nospace"/>
+            <property name="tokens" value=""/>
+        </module>
+
+        <module name="TypecastParenPad">
+            <property name="option" value="nospace"/>
+        </module>
+
+        <module name="GenericWhitespace"/>
+
+        <module name="OperatorWrap">
+            <property name="option" value="eol"/>
+            <property name="tokens" value="QUESTION,COLON,EQUAL,NOT_EQUAL,DIV,PLUS,MINUS,STAR,MOD,SR,BSR,GE,GT,SL,LE,LT,BXOR,BOR,LOR,BAND,LAND,LITERAL_INSTANCEOF,TYPE_EXTENSION_AND,ASSIGN,DIV_ASSIGN,PLUS_ASSIGN,MINUS_ASSIGN,STAR_ASSIGN,MOD_ASSIGN,SR_ASSIGN,BSR_ASSIGN,SL_ASSIGN,BXOR_ASSIGN,BOR_ASSIGN,BAND_ASSIGN,METHOD_REF"/>
+        </module>
+
+        <module name="SeparatorWrap">
+            <property name="option" value="nl"/>
+            <property name="tokens" value="DOT,AT"/>
+        </module>
+
+        <module name="SeparatorWrap">
+            <property name="option" value="eol"/>
+            <property name="tokens" value="COMMA,SEMI,ELLIPSIS"/>
+        </module>
+
+        <module name="ArrayTypeStyle">
+            <property name="javaStyle" value="true"/>
+        </module>
+
+        <module name="ModifierOrder"/>
+
+        <module name="RedundantModifier"/>
+
+        <module name="DefaultComesLast"/>
+
+        <module name="CommentsIndentation"/>
+
+        <!-- Disabled; this module does not handle the else - if case correctly
+        <module name="Indentation">
+            <property name="basicOffset" value="4"/>
+            <property name="braceAdjustment" value="0"/>
+            <property name="caseIndent" value="4"/>
+        </module>
+        -->
+
+        <!-- Disabled; module suggested for future use
+        <module name="FinalLocalVariable">
+            <property name="tokens" value="VARIABLE_DEF,PARAMETER_DEF"/>
+        </module>
+        -->
+
+        <!--
+        ================================================================================
+        Suppression of violation alerts for marking exceptions to the coding standard
+        in the code
+        ================================================================================
+        -->
+
+        <module name="SuppressWarningsHolder"/>
+
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="// Generated by the protocol buffer compiler."/>
+            <property name="onCommentFormat" value="END GENERATED CODE"/>
+        </module>
+
+    </module>
+</module>
+
