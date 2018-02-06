@@ -1,6 +1,7 @@
 package com.linbit.linstor.numberpool;
 
-// TODO: Replace IllegalArgumentException
+// TODO: It may make sense to replace IllegalArgumentException with ImplementationError or some kind of
+//       RangeException depending on where it occurs (constructor, method, ...)
 
 import com.linbit.ExhaustedPoolException;
 import java.io.PrintStream;
@@ -22,6 +23,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class BitmapPool implements NumberPool
 {
+    // BEGIN Bitmap & level shift constants
+    // These constants are tightly linked to the fact that the implementation uses values of type long
+    // as bitmap elements. Changing any of these values requires changing the implementation as well,
+    // for this reason, do not change any of these values.
+    private static final int ELEM_BITS      = 64;
+    private static final int MASK_ELEM      = 0x3F;
+    private static final int BITMAP_BITS    = 4096;
+    private static final int MASK_BITMAP    = 0xFFF;
+    private static final int SH_LVL         = 6;
+    // END Bitmap & level shift constants
+
     // power(2, 30) numbers
     private static final int MAX_CAPACITY = 0x40000000;
 
@@ -64,12 +76,12 @@ public class BitmapPool implements NumberPool
             poolWrLock = poolLock.writeLock();
 
             poolSize = size;
-            bitmapAligned = (poolSize & 0xFFF) == 0;
+            bitmapAligned = (poolSize & MASK_BITMAP) == 0;
 
             // Determine the number of required levels
             {
                 int lvlCtr = 0;
-                for (int levelCap = 4096; levelCap < size; levelCap <<= 6)
+                for (int levelCap = BITMAP_BITS; levelCap < size; levelCap <<= SH_LVL)
                 {
                     ++lvlCtr;
                 }
@@ -78,12 +90,12 @@ public class BitmapPool implements NumberPool
 
             // Initialize the levelShift table
             {
-                int shift = (levels + 1) * 6;
+                int shift = (levels + 1) * SH_LVL;
                 levelShift = new int[levels];
                 for (int curLevel = 0; curLevel < levels; ++curLevel)
                 {
                     levelShift[curLevel] = shift;
-                    shift -= 6;
+                    shift -= SH_LVL;
                 }
             }
 
@@ -94,10 +106,10 @@ public class BitmapPool implements NumberPool
                 levelAligned = new boolean[levels];
                 for (int curLevel = 0; curLevel < levels; ++curLevel)
                 {
-                    int alignBase = 4096 << ((levels - curLevel - 1) * 6);
-                    levelSubElem[curLevel] = (ceilAlign2(poolSize, alignBase) >>> levelShift[curLevel]) & 0x3F;
-                    levelSubElem[curLevel] = levelSubElem[curLevel] > 0 ? levelSubElem[curLevel] : 64;
-                    levelAligned[curLevel] = levelSubElem[curLevel] == 64;
+                    int alignBase = BITMAP_BITS << ((levels - curLevel - 1) * SH_LVL);
+                    levelSubElem[curLevel] = (ceilAlign2(poolSize, alignBase) >>> levelShift[curLevel]) & MASK_ELEM;
+                    levelSubElem[curLevel] = levelSubElem[curLevel] > 0 ? levelSubElem[curLevel] : ELEM_BITS;
+                    levelAligned[curLevel] = levelSubElem[curLevel] == ELEM_BITS;
                     if (curLevel > 0 && !levelAligned[curLevel])
                     {
                         curUnalignedLevel = curLevel;
@@ -113,12 +125,12 @@ public class BitmapPool implements NumberPool
 
             // Initialize the levelDivisor table
             {
-                int divisor = 1 << ((levels + 1) * 6);
+                int divisor = 1 << ((levels + 1) * SH_LVL);
                 levelDivisor = new int[levels];
                 for (int curLevel = 0; curLevel < levels; ++curLevel)
                 {
                     levelDivisor[curLevel] = divisor;
-                    divisor >>>= 6;
+                    divisor >>>= SH_LVL;
                 }
             }
 
@@ -186,7 +198,7 @@ public class BitmapPool implements NumberPool
                 IntermediateBitmap curImBm = (IntermediateBitmap) rootLevel;
                 do
                 {
-                    int subIdx = (nr & (int) ((1L << (levelShift[curLevel] + 6)) - 1)) >>> levelShift[curLevel];
+                    int subIdx = (nr & (int) ((1L << (levelShift[curLevel] + SH_LVL)) - 1)) >>> levelShift[curLevel];
                     long subBitMask = 1L << subIdx;
                     if ((curImBm.subFullBits & subBitMask) != 0)
                     {
@@ -210,7 +222,7 @@ public class BitmapPool implements NumberPool
                             // because there were no allocated numbers in the bitmap
                             if (curBm != null)
                             {
-                                subIdx = (nr & 0xFFF) >>> 6;
+                                subIdx = (nr & MASK_BITMAP) >>> SH_LVL;
                                 subBitMask = 1L << subIdx;
                                 if ((curBm.subFullBits & subBitMask) != 0)
                                 {
@@ -220,7 +232,7 @@ public class BitmapPool implements NumberPool
                                 else
                                 {
                                     // Determine the number's allocation status from its allocation bit
-                                    long nrBitMask = 1L << (nr & 0x3F);
+                                    long nrBitMask = 1L << (nr & MASK_ELEM);
                                     result = (curBm.numbers[subIdx] & nrBitMask) != 0;
                                 }
                             }
@@ -233,7 +245,7 @@ public class BitmapPool implements NumberPool
             else
             {
                 Bitmap curBm = (Bitmap) rootLevel;
-                int subIdx = (nr & 0xFFF) >>> 6;
+                int subIdx = (nr & MASK_BITMAP) >>> SH_LVL;
                 long subBitMask = 1L << subIdx;
                 if ((curBm.subFullBits & subBitMask) != 0)
                 {
@@ -243,7 +255,7 @@ public class BitmapPool implements NumberPool
                 else
                 {
                     // Determine the number's allocation status from its allocation bit
-                    long nrBitMask = 1L << (nr & 0x3F);
+                    long nrBitMask = 1L << (nr & MASK_ELEM);
                     result = (curBm.numbers[subIdx] & nrBitMask) != 0;
                 }
             }
@@ -593,7 +605,7 @@ public class BitmapPool implements NumberPool
             int curLevel = 0;
             do
             {
-                int subIdx = (nr & (int) ((1L << (levelShift[curLevel] + 6)) - 1)) >>> levelShift[curLevel];
+                int subIdx = (nr & (int) ((1L << (levelShift[curLevel] + SH_LVL)) - 1)) >>> levelShift[curLevel];
                 long subBitMask = 1L << subIdx;
                 lastElem &= subIdx == curImBm.subElem.length - 1;
                 if ((curImBm.subFullBits & subBitMask) == 0L)
@@ -612,7 +624,7 @@ public class BitmapPool implements NumberPool
                         if (nextImBm == null)
                         {
                             allocated = true;
-                            quickAllocEmpty(levelStack, curLevel, nr, lastElem);
+                            quickAllocEmpty(curLevel, nr, lastElem);
                             break;
                         }
                         // Traverse further by selecting the child element as the current level
@@ -629,16 +641,16 @@ public class BitmapPool implements NumberPool
                         if (curBm == null)
                         {
                             allocated = true;
-                            quickAllocEmpty(levelStack, curLevel, nr, lastElem);
+                            quickAllocEmpty(curLevel, nr, lastElem);
                         }
                         else
                         {
-                            subIdx = (nr & 0xFFF) >>> 6;
+                            subIdx = (nr & MASK_BITMAP) >>> SH_LVL;
                             subBitMask = 1L << subIdx;
                             // If the number bitmap is exhausted, then the number is already allocated
                             if ((curBm.subFullBits & subBitMask) == 0L)
                             {
-                                int nrIdx = nr & 0x3F;
+                                int nrIdx = nr & MASK_ELEM;
                                 long nrBitMask = 1L << nrIdx;
                                 // If the number is not allocated yet, it is being allocated now
                                 allocated = (curBm.numbers[subIdx] & nrBitMask) == 0;
@@ -653,7 +665,7 @@ public class BitmapPool implements NumberPool
                                 // Update the pool used / pool full bits on intermediate elements
                                 // on the path to the number bitmap and deallocate any elements
                                 // that have an exhausted number pool
-                                allocUpdateLevels(levelStack, curBm);
+                                allocUpdateLevels(curBm);
                             }
                         }
                         break;
@@ -671,12 +683,12 @@ public class BitmapPool implements NumberPool
         else
         {
             Bitmap curBm = (Bitmap) rootLevel;
-            int subIdx = nr >>> 6;
+            int subIdx = nr >>> SH_LVL;
             long subBitMask = 1L << subIdx;
             // If the number bitmap is exhausted, then the number is already allocated
             if ((curBm.subFullBits & subBitMask) == 0L)
             {
-                int nrIdx = nr & 0x3F;
+                int nrIdx = nr & MASK_ELEM;
                 long nrBitMask = 1L << nrIdx;
                 // If the number is not allocated yet, it is being allocated now
                 allocated = (curBm.numbers[subIdx] & nrBitMask) == 0;
@@ -719,7 +731,7 @@ public class BitmapPool implements NumberPool
             boolean lastElem = true;
             do
             {
-                int subIdx = (nr & (int) ((1L << (levelShift[curLevel] + 6)) - 1)) >>> levelShift[curLevel];
+                int subIdx = (nr & (int) ((1L << (levelShift[curLevel] + SH_LVL)) - 1)) >>> levelShift[curLevel];
                 long subBitMask = 1L << subIdx;
                 lastElem &= subIdx == curImBm.subElem.length - 1;
                 // Save the path for updating the pool used / pool full bits in case that they have
@@ -744,7 +756,7 @@ public class BitmapPool implements NumberPool
                         {
                             // Child element was deallocated because its pool was exhausted, and
                             // the entire hierarchy can be allocated immediately
-                            quickAllocFull(levelStack, curLevel, nr, lastElem);
+                            quickAllocFull(curLevel, nr, lastElem);
                         }
                         break;
                     }
@@ -770,15 +782,15 @@ public class BitmapPool implements NumberPool
                         {
                             // Number bitmap has been deallocated because it was exhausted, and
                             // the number bitmap can be allocated immediately
-                            quickAllocFull(levelStack, curLevel, nr, lastElem);
+                            quickAllocFull(curLevel, nr, lastElem);
                         }
                     }
                     else
                     {
-                        subIdx = (nr & 0xFFF) >>> 6;
+                        subIdx = (nr & MASK_BITMAP) >>> SH_LVL;
                         subBitMask = 1L << subIdx;
                         // Deallocate the number
-                        curBm.numbers[subIdx] &= ~(1L << (nr & 0x3F));
+                        curBm.numbers[subIdx] &= ~(1L << (nr & MASK_ELEM));
                         // Update the pool used / pool full bits
                         curBm.subFullBits  &= ~subBitMask;
                         if (curBm.numbers[subIdx] == SUBELEMS_EMPTY)
@@ -788,7 +800,7 @@ public class BitmapPool implements NumberPool
                         // Update the pool used / pool full bits on intermediate elements
                         // on the path to the number bitmap and deallocate any elements
                         // that have an empty number pool
-                        deallocUpdateLevels(levelStack, curBm);
+                        deallocUpdateLevels(curBm);
                     }
                 }
                 ++curLevel;
@@ -798,9 +810,9 @@ public class BitmapPool implements NumberPool
         else
         {
             Bitmap curBm = (Bitmap) rootLevel;
-            int subIdx = nr >>> 6;
+            int subIdx = nr >>> SH_LVL;
             long subBitMask = 1L << subIdx;
-            int nrIdx = nr & 0x3F;
+            int nrIdx = nr & MASK_ELEM;
             long nrBitMask = 1L << nrIdx;
             // Deallocate the number
             curBm.numbers[subIdx] &= ~nrBitMask;
@@ -847,7 +859,7 @@ public class BitmapPool implements NumberPool
             {
                 do
                 {
-                    int subIdx = (nr & (int) ((1L << (levelShift[curLevel] + 6)) - 1)) >>> levelShift[curLevel];
+                    int subIdx = (nr & (int) ((1L << (levelShift[curLevel] + SH_LVL)) - 1)) >>> levelShift[curLevel];
                     long subBitMask = 1L << subIdx;
                     if ((curImBm.subFullBits & subBitMask) == 0)
                     {
@@ -880,7 +892,7 @@ public class BitmapPool implements NumberPool
                                             lastElem = false;
                                         }
                                     }
-                                    quickAllocEmpty(levelStack, curLevel, nr, lastElem);
+                                    quickAllocEmpty(curLevel, nr, lastElem);
                                 }
                             }
                             else
@@ -912,12 +924,12 @@ public class BitmapPool implements NumberPool
                                             lastElem = false;
                                         }
                                     }
-                                    quickAllocEmpty(levelStack, curLevel, nr, lastElem);
+                                    quickAllocEmpty(curLevel, nr, lastElem);
                                 }
                             }
                             else
                             {
-                                subIdx = (nr & 0xFFF) >>> 6;
+                                subIdx = (nr & MASK_BITMAP) >>> SH_LVL;
                                 subBitMask = 1L << subIdx;
                                 // Iterate over the number bitmap's element to find an element
                                 // that has unallocated numbers in its pool
@@ -925,7 +937,7 @@ public class BitmapPool implements NumberPool
                                 {
                                     if ((curBm.subFullBits & subBitMask) == 0)
                                     {
-                                        int nrIdx = nr & 0x3F;
+                                        int nrIdx = nr & MASK_ELEM;
                                         long nrBitMask = 1L << nrIdx;
                                         // Iterate over the number bitmap element's numbers allocation
                                         // bits to find an unallocated number
@@ -943,7 +955,7 @@ public class BitmapPool implements NumberPool
                                                         // All numbers in the current cell are allocated
                                                         curBm.subFullBits |= subBitMask;
                                                     }
-                                                    allocUpdateLevels(levelStack, curBm);
+                                                    allocUpdateLevels(curBm);
                                                 }
                                             }
                                             else
@@ -970,7 +982,7 @@ public class BitmapPool implements NumberPool
                                         // candidate number to the next element's first number's value
                                         ++subIdx;
                                         subBitMask <<= 1;
-                                        nr = (nr + 64) & ~0x3F;
+                                        nr = (nr + ELEM_BITS) & ~MASK_ELEM;
                                     }
                                 }
                                 while (result == POOL_EXHAUSTED && subBitMask != 0L && nr <= rangeEnd);
@@ -1012,7 +1024,7 @@ public class BitmapPool implements NumberPool
             Bitmap curBm = (Bitmap) rootLevel;
             if (curBm.subFullBits != SUBELEMS_EXHAUSTED)
             {
-                int subIdx = (nr & 0xFFF) >>> 6;
+                int subIdx = (nr & MASK_BITMAP) >>> SH_LVL;
                 long subBitMask = 1L << subIdx;
                 // Iterate over the number bitmap element's numbers allocation
                 // bits to find an unallocated number
@@ -1020,7 +1032,7 @@ public class BitmapPool implements NumberPool
                 {
                     if ((curBm.subFullBits & subBitMask) == 0)
                     {
-                        int nrIdx = nr & 0x3F;
+                        int nrIdx = nr & MASK_ELEM;
                         long nrBitMask = 1L << nrIdx;
                         // Iterate over the number bitmap element's numbers allocation
                         // bits to find an unallocated number
@@ -1063,7 +1075,7 @@ public class BitmapPool implements NumberPool
                         // candidate number to the next element's first number's value
                         ++subIdx;
                         subBitMask <<= 1;
-                        nr = (nr + 64) & ~0x3F;
+                        nr = (nr + ELEM_BITS) & ~MASK_ELEM;
                     }
                 }
                 while (result == POOL_EXHAUSTED && subBitMask != 0L && nr <= rangeEnd);
@@ -1098,12 +1110,12 @@ public class BitmapPool implements NumberPool
      * New empty intermediate bitmaps & new empty bitmap - quick number allocation
      */
     private void quickAllocEmpty(
-        LevelDataItem[] levelStack,
         final int curLevel,
         final int nr,
-        boolean lastElem
+        boolean lastElemInit
     )
     {
+        boolean lastElem = lastElemInit;
         // Update the pool used bits from the root level to the level where
         // the allocation of child elements starts
         for (int idx = 0; idx <= curLevel; ++idx)
@@ -1132,7 +1144,7 @@ public class BitmapPool implements NumberPool
                 );
             }
             curImBm.subElem[subIdx] = nextImBm;
-            subIdx = (nr & (int) ((1L << (levelShift[qAllocLevel] + 6)) - 1)) >>> levelShift[qAllocLevel];
+            subIdx = (nr & (int) ((1L << (levelShift[qAllocLevel] + SH_LVL)) - 1)) >>> levelShift[qAllocLevel];
             nextImBm.subUsedBits |= 1L << subIdx;
             curImBm = nextImBm;
             lastElem &= subIdx == curImBm.subElem.length - 1;
@@ -1146,14 +1158,14 @@ public class BitmapPool implements NumberPool
         }
         else
         {
-            int lastBmBits = poolSize & 0xFFF;
+            int lastBmBits = poolSize & MASK_BITMAP;
             curBm = new Bitmap(lastBmBits, false);
         }
         // Link the number bitmap in the intermediate level
         curImBm.subElem[subIdx] = curBm;
         // Allocate the number in the number bitmap
-        subIdx = (nr & 0xFFF) >>> 6;
-        curBm.numbers[subIdx] |= 1L << (nr & 0x3F);
+        subIdx = (nr & MASK_BITMAP) >>> SH_LVL;
+        curBm.numbers[subIdx] |= 1L << (nr & MASK_ELEM);
         // Update the pool used bit on the number bitmap's element that contains the
         // number allocation flag
         curBm.subUsedBits |= 1L << subIdx;
@@ -1163,12 +1175,12 @@ public class BitmapPool implements NumberPool
      * New full intermediate bitmaps & new full bitmap - quick number allocation
      */
     private void quickAllocFull(
-        LevelDataItem[] levelStack,
         final int curLevel,
         final int nr,
-        boolean lastElem
+        boolean lastElemInit
     )
     {
+        boolean lastElem = lastElemInit;
         // Update the pool full bits from the root level to the level where
         // the allocation of child elements starts
         for (int idx = 0; idx <= curLevel; ++idx)
@@ -1198,7 +1210,7 @@ public class BitmapPool implements NumberPool
                 );
             }
             curImBm.subElem[subIdx] = nextImBm;
-            subIdx = (nr & (int) ((1L << (levelShift[qAllocLevel] + 6)) - 1)) >>> levelShift[qAllocLevel];
+            subIdx = (nr & (int) ((1L << (levelShift[qAllocLevel] + SH_LVL)) - 1)) >>> levelShift[qAllocLevel];
             nextImBm.subFullBits &= ~(1L << subIdx);
             curImBm = nextImBm;
             lastElem &= subIdx == curImBm.subElem.length - 1;
@@ -1212,20 +1224,20 @@ public class BitmapPool implements NumberPool
         }
         else
         {
-            int lastBmBits = poolSize & 0xFFF;
+            int lastBmBits = poolSize & MASK_BITMAP;
             curBm = new Bitmap(lastBmBits, true);
         }
         // Link the number bitmap in the intermediate level
         curImBm.subElem[subIdx] = curBm;
         // Deallocate the number in the number bitmap
-        subIdx = (nr & 0xFFF) >>> 6;
-        curBm.numbers[subIdx] &= ~(1L << (nr & 0x3F));
+        subIdx = (nr & MASK_BITMAP) >>> SH_LVL;
+        curBm.numbers[subIdx] &= ~(1L << (nr & MASK_ELEM));
         // Update the pool full bit on the number bitmap's element that contains the
         // number allocation flag
         curBm.subFullBits &= ~(1L << subIdx);
     }
 
-    private void allocUpdateLevels(LevelDataItem[] levelStack, Bitmap curBm)
+    private void allocUpdateLevels(Bitmap curBm)
     {
         boolean full = curBm.subFullBits == SUBELEMS_EXHAUSTED;
         // Update the full and used bits in upper levels of the tree
@@ -1253,7 +1265,7 @@ public class BitmapPool implements NumberPool
         }
     }
 
-    private void deallocUpdateLevels(LevelDataItem[] levelStack, Bitmap curBm)
+    private void deallocUpdateLevels(Bitmap curBm)
     {
         boolean empty = curBm.subUsedBits == SUBELEMS_EMPTY;
         // Update the full and used bits in uppper levels of the tree
@@ -1285,7 +1297,7 @@ public class BitmapPool implements NumberPool
     {
         if (levels > 0)
         {
-            if (levelSubElem[0] == 64)
+            if (levelSubElem[0] == ELEM_BITS)
             {
                 rootLevel = new IntermediateBitmap(false, subLevelsAligned);
             }
@@ -1302,7 +1314,7 @@ public class BitmapPool implements NumberPool
                 {
                     int prevLevelLastElem = levelSubElem[curLevel - 1] - 1;
                     IntermediateBitmap subImBm;
-                    if (levelSubElem[curLevel] == 64)
+                    if (levelSubElem[curLevel] == ELEM_BITS)
                     {
                         subImBm = new IntermediateBitmap(false, false);
                         curImBm.subElem[prevLevelLastElem] = subImBm;
@@ -1316,7 +1328,7 @@ public class BitmapPool implements NumberPool
                 }
                 if (!bitmapAligned)
                 {
-                    int lastBmBits = poolSize & 0xFFF;
+                    int lastBmBits = poolSize & MASK_BITMAP;
                     curImBm.subElem[levelSubElem[levels - 1] - 1] = new Bitmap(lastBmBits, false);
                 }
             }
@@ -1341,7 +1353,7 @@ public class BitmapPool implements NumberPool
         IntermediateBitmap imBitmap = null;
     }
 
-    private static abstract class BitmapBase
+    private abstract static class BitmapBase
     {
         long subFullBits;
         long subUsedBits;
@@ -1353,7 +1365,7 @@ public class BitmapPool implements NumberPool
 
         Bitmap(boolean exhausted)
         {
-            numbers = new long[64];
+            numbers = new long[ELEM_BITS];
             if (exhausted)
             {
                 subFullBits = SUBELEMS_EXHAUSTED;
@@ -1369,9 +1381,9 @@ public class BitmapPool implements NumberPool
 
         Bitmap(int bits, boolean exhausted)
         {
-            if (bits >= 1 && bits < 4096)
+            if (bits >= 1 && bits < BITMAP_BITS)
             {
-                int elemCount = ceilAlign2(bits, 64) >>> 6;
+                int elemCount = ceilAlign2(bits, ELEM_BITS) >>> SH_LVL;
                 numbers = new long[elemCount];
                 if (exhausted)
                 {
@@ -1382,12 +1394,12 @@ public class BitmapPool implements NumberPool
                 }
                 else
                 {
-                    if (elemCount <= 63)
+                    if (elemCount < ELEM_BITS)
                     {
                         subFullBits = ~((1L << elemCount) - 1);
                     }
 
-                    int lastElemBits = bits & 0x3F;
+                    int lastElemBits = bits & MASK_ELEM;
                     if (lastElemBits != 0)
                     {
                         // Mark all nonexistent numbers exhausted
@@ -1395,7 +1407,7 @@ public class BitmapPool implements NumberPool
                     }
 
                     int subUsedElems = lastElemBits == 0 ? elemCount : elemCount - 1;
-                    subUsedBits = ~((1L << subUsedElems) -1);
+                    subUsedBits = ~((1L << subUsedElems) - 1);
                 }
             }
             else
@@ -1411,7 +1423,7 @@ public class BitmapPool implements NumberPool
 
         IntermediateBitmap(boolean exhausted, boolean subElemsAligned)
         {
-            subElem = new BitmapBase[64];
+            subElem = new BitmapBase[ELEM_BITS];
             if (exhausted)
             {
                 subFullBits = SUBELEMS_EXHAUSTED;
@@ -1420,13 +1432,13 @@ public class BitmapPool implements NumberPool
             else
             {
                 subFullBits = 0L;
-                subUsedBits = subElemsAligned ? 0L : ~(1L << 63);
+                subUsedBits = subElemsAligned ? 0L : ~(1L << (ELEM_BITS - 1));
             }
         }
 
         IntermediateBitmap(int subElemCount, boolean exhausted, boolean subElemsAligned)
         {
-            if (!(subElemCount >= 1) && subElemCount <= 63)
+            if (!(subElemCount >= 1) && subElemCount < ELEM_BITS)
             {
                 throw new IllegalArgumentException();
             }
@@ -1467,15 +1479,15 @@ public class BitmapPool implements NumberPool
                     "    Level %d: IntermediateBitmap elements = %2d\n" +
                     "             [levelShift = %2d, levelDivisor = %9d]\n",
                     curLevel,
-                    bmPool.levelSubElem[curLevel] > 0 ? bmPool.levelSubElem[curLevel] : 64,
+                    bmPool.levelSubElem[curLevel] > 0 ? bmPool.levelSubElem[curLevel] : ELEM_BITS,
                     bmPool.levelShift[curLevel],
                     bmPool.levelDivisor[curLevel]
                 );
             }
-            int nrBitElems = (ceilAlign2(bmPool.poolSize, 64) >>> 6) & 0x3F;
-            nrBitElems = nrBitElems > 0 ? nrBitElems : 64;
-            int nrBitmapBits = bmPool.poolSize & 0x3F;
-            nrBitmapBits = nrBitmapBits > 0 ? nrBitmapBits : 64;
+            int nrBitElems = (ceilAlign2(bmPool.poolSize, ELEM_BITS) >>> SH_LVL) & MASK_ELEM;
+            nrBitElems = nrBitElems > 0 ? nrBitElems : ELEM_BITS;
+            int nrBitmapBits = bmPool.poolSize & MASK_ELEM;
+            nrBitmapBits = nrBitmapBits > 0 ? nrBitmapBits : ELEM_BITS;
             output.printf(
                 "    Bitmap:  Last bitmap number bit elements = %2d\n",
                 nrBitElems
@@ -1540,7 +1552,7 @@ public class BitmapPool implements NumberPool
                 if (curImBm.subElem[index] != null)
                 {
                     subElemsAllocated = true;
-                    int subNrOffset = nrOffset + (4096 << ((bmPool.levels - curLevel - 1) * 6)) * index;
+                    int subNrOffset = nrOffset + (BITMAP_BITS << ((bmPool.levels - curLevel - 1) * SH_LVL)) * index;
                     debugPrintIndent(output, curLevel + 1);
                     output.printf("subElem %2d:\n", index);
                     if (curLevel < bmPool.levels - 1)
@@ -1599,9 +1611,9 @@ public class BitmapPool implements NumberPool
                 long numberBits = curBm.numbers[index];
                 if (numberBits != 0)
                 {
-                    int subNrOffset = nrOffset + (64 * index);
+                    int subNrOffset = nrOffset + (ELEM_BITS * index);
                     long bitMask = 1L;
-                    for (int bitIndex = 0; bitIndex < 64; ++bitIndex)
+                    for (int bitIndex = 0; bitIndex < ELEM_BITS; ++bitIndex)
                     {
                         if ((numberBits & bitMask) == 0)
                         {
@@ -1625,7 +1637,7 @@ public class BitmapPool implements NumberPool
             }
             if (rangeStart != -1)
             {
-                int rangeEnd = nrOffset + curBm.numbers.length * 64 - 1;
+                int rangeEnd = nrOffset + curBm.numbers.length * ELEM_BITS - 1;
                 debugPrintAllocatedRange(output, curLevel + 1, rangeStart, rangeEnd);
             }
         }
@@ -1650,12 +1662,12 @@ public class BitmapPool implements NumberPool
 
         public static String debugGetBinary(long value)
         {
-            byte[] digits = new byte[64];
+            byte[] digits = new byte[ELEM_BITS];
             Arrays.fill(digits, (byte) '0');
             long bitMask = 1L;
-            for (int index = 0; index < 64; ++index)
+            for (int index = 1; index <= ELEM_BITS; ++index)
             {
-                digits[63 - index] = (byte) ((value & bitMask) == 0 ? '0' : '1');
+                digits[ELEM_BITS - index] = (byte) ((value & bitMask) == 0 ? '0' : '1');
                 bitMask <<= 1;
             }
             return new String(digits);
@@ -1675,12 +1687,12 @@ public class BitmapPool implements NumberPool
             output.printf("Search path for number %d\n", nr);
             for (int curLevel = 0; curLevel < bmPool.levels; ++curLevel)
             {
-                selectedElem[curLevel] = (nr & (int) ((1L << (bmPool.levelShift[curLevel] + 6)) - 1)) >>>
+                selectedElem[curLevel] = (nr & (int) ((1L << (bmPool.levelShift[curLevel] + SH_LVL)) - 1)) >>>
                     bmPool.levelShift[curLevel];
                 output.printf("Level %d: Select sub element %d\n", curLevel, selectedElem[curLevel]);
             }
-            int bmSubIdx = (nr & 0xFFF) >>> 6;
-            int bmBitIdx = nr & 0x3F;
+            int bmSubIdx = (nr & MASK_BITMAP) >>> SH_LVL;
+            int bmBitIdx = nr & MASK_ELEM;
             output.printf("Bitmap element %d, number bit %d\n", bmSubIdx, bmBitIdx);
 
             output.println("Reconstruction");
@@ -1694,10 +1706,10 @@ public class BitmapPool implements NumberPool
                 );
                 sum += curSummand;
             }
-            int bmElemSummand = bmSubIdx * 64;
+            int bmElemSummand = bmSubIdx * ELEM_BITS;
             output.printf(
                 "%2d x %8d = %10d\n",
-                bmSubIdx, 64, bmElemSummand
+                bmSubIdx, ELEM_BITS, bmElemSummand
             );
             output.printf(
                 "              + %10d\n", bmBitIdx
@@ -1715,9 +1727,9 @@ public class BitmapPool implements NumberPool
                 boolean lastElem = true;
                 for (int curLevel = 0; curLevel < bmPool.levels; ++curLevel)
                 {
-                    int subIdx = (nr & (int) ((1L << (bmPool.levelShift[curLevel] + 6)) - 1)) >>>
+                    int subIdx = (nr & (int) ((1L << (bmPool.levelShift[curLevel] + SH_LVL)) - 1)) >>>
                         bmPool.levelShift[curLevel];
-                    int maxSubIdx = lastElem ? bmPool.levelSubElem[curLevel] - 1 : 63;
+                    int maxSubIdx = lastElem ? bmPool.levelSubElem[curLevel] - 1 : ELEM_BITS - 1;
                     if (subIdx > maxSubIdx)
                     {
                         output.printf(
@@ -1731,8 +1743,10 @@ public class BitmapPool implements NumberPool
                         lastElem = false;
                     }
                 }
-                int maxSubIdx = lastElem ? (BitmapPool.ceilAlign2(bmPool.poolSize & 0xFFF, 64) >>> 6) - 1: 63;
-                int bmSubIdx = (nr & 0xFFF) >>> 6;
+                int maxSubIdx = lastElem ?
+                                (BitmapPool.ceilAlign2(bmPool.poolSize & MASK_BITMAP, ELEM_BITS) >>> SH_LVL) - 1 :
+                                ELEM_BITS - 1;
+                int bmSubIdx = (nr & MASK_BITMAP) >>> SH_LVL;
                 if (bmSubIdx > maxSubIdx)
                 {
                     output.printf(
@@ -1745,8 +1759,10 @@ public class BitmapPool implements NumberPool
                 {
                     lastElem = false;
                 }
-                int maxBitIdx = lastElem ? ((bmPool.poolSize & 0x3F) == 0 ? 64 : bmPool.poolSize & 0x3F) - 1 : 63;
-                int bmBitIdx = nr & 0x3F;
+                int maxBitIdx = lastElem ?
+                                ((bmPool.poolSize & MASK_ELEM) == 0 ? ELEM_BITS : bmPool.poolSize & MASK_ELEM) - 1 :
+                                ELEM_BITS - 1;
+                int bmBitIdx = nr & MASK_ELEM;
                 if (bmBitIdx > maxBitIdx)
                 {
                     output.printf(
@@ -1781,13 +1797,13 @@ public class BitmapPool implements NumberPool
         private void debugGetAllocatedSetImpl(
             TreeSet<Integer> allocatedSet,
             IntermediateBitmap curImBm,
-            int nr,
+            int startNr,
             int curLevel
         )
         {
+            int nr = startNr;
             if (curLevel < bmPool.levels - 1)
             {
-                int idx = 0;
                 for (BitmapBase bmBase : curImBm.subElem)
                 {
                     IntermediateBitmap nextImBm = (IntermediateBitmap) bmBase;
@@ -1796,12 +1812,10 @@ public class BitmapPool implements NumberPool
                         debugGetAllocatedSetImpl(allocatedSet, nextImBm, nr, curLevel + 1);
                     }
                     nr += bmPool.levelDivisor[curLevel];
-                    ++idx;
                 }
             }
             else
             {
-                int idx = 0;
                 for (BitmapBase bmBase : curImBm.subElem)
                 {
 
@@ -1810,14 +1824,14 @@ public class BitmapPool implements NumberPool
                     {
                         debugGetAllocatedSetImpl(allocatedSet, nextBm, nr);
                     }
-                    nr += 4096;
-                    ++idx;
+                    nr += BITMAP_BITS;
                 }
             }
         }
 
-        private void debugGetAllocatedSetImpl(TreeSet<Integer> allocatedSet, Bitmap curBm, int nr)
+        private void debugGetAllocatedSetImpl(TreeSet<Integer> allocatedSet, Bitmap curBm, int startNr)
         {
+            int nr = startNr;
             for (long numberBits : curBm.numbers)
             {
                 long mask = 1L;

@@ -55,7 +55,7 @@ public interface NumberPool
      * @param nrList list of numbers to allocate
      * @return Map of number to allocation status
      */
-    Map<Integer, Boolean> multiAllocate(final List<Integer> nrList);
+    Map<Integer, Boolean> multiAllocate(List<Integer> nrList);
 
     /**
      * Finds the first unallocated number within the range rangeStart - rangeEnd (inclusively)
