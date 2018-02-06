@@ -68,9 +68,17 @@ public class SslTcpCommons
         final String trustStoreType,
         final String trustManagerFactoryAlgorithm
     )
-        throws KeyStoreException, FileNotFoundException, IOException, NoSuchAlgorithmException, CertificateException
+        throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException
     {
-        KeyStore trustStore = loadStore(file, trustStoreType, trustStorePasswd);
+        KeyStore trustStore;
+        try
+        {
+            trustStore = loadStore(file, trustStoreType, trustStorePasswd);
+        }
+        catch (FileNotFoundException fileNotFoundExc)
+        {
+            trustStore = null; // no trustStore given. SslEngine can handle null here
+        }
         TrustManagerFactory trustMgrFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
         trustMgrFactory.init(trustStore);
         return trustMgrFactory.getTrustManagers();
