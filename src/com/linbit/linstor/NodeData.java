@@ -276,6 +276,10 @@ public class NodeData extends BaseTransactionObject implements Node
         return nodeData;
     }
 
+    @Override
+    public int compareTo(Node node) {
+        return this.getName().compareTo(node.getName());
+    }
 
     @Override
     public UUID getUuid()
