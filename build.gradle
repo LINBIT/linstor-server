@@ -10,7 +10,7 @@ apply plugin: 'application'
 apply plugin: 'nebula.ospackage-base'
 
 sourceCompatibility = 1.7
-version = '0.1'
+
 
 sourceSets {
     main {
@@ -76,6 +76,7 @@ jar {
 /////////////////////////// Version Info ///////////////////////////
 task versionInfo(type: VersionInfoTask) {
     outputDir = file("$projectDir/generated-resources")
+    version = getGitDescribe()
 }
 
 class VersionInfoTask extends DefaultTask {
@@ -95,11 +96,20 @@ class VersionInfoTask extends DefaultTask {
         return stdOut.toString().trim()
     }
 
+    def getGitDescribe() {
+        def stdOut = new ByteArrayOutputStream()
+        project.exec {
+            commandLine 'git', 'describe', '--tags'
+            standardOutput = stdOut
+        }
+        return stdOut.toString().trim()
+    }
+
     @TaskAction
     def generateVersionInfo() {
         File file = new File(outputDir, "version-info.properties")
         file.delete()
-        file << "version=${project.version}\n"
+        file << "version=${getGitDescribe()}\n"
         file << "git.commit.id=${getGitHash()}\n"
         file << "build.time=${new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())}\n"
     }
