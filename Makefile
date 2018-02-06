@@ -48,10 +48,5 @@ check-all-committed:
 		echo >&2 "$$tmp"; echo >&2 "Uncommitted changes"; exit 1; \
 	fi
 
-.PHONY: check_changelogs_up2date
-check_changelogs_up2date:
-	v=$$(grep "^version" build.gradle | grep -o "'.*'"| sed "s/'//g"); \
-	echo $(VERSION) | grep $$v
-
-tarball: check-all-committed check_changelogs_up2date check-submods .filelist
+tarball: check-all-committed check-submods .filelist
 	$(MAKE) tgz
