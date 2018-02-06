@@ -56,8 +56,8 @@ public class ModifyResourceDefinition extends BaseProtoApiCall
         {
             port = modRscDfn.getRscDfnPort();
         }
-        Map<String, String> overrideProps = asMap(modRscDfn.getOverrideRscDfnPropsList());
-        Set<String> delProps = new HashSet<>(modRscDfn.getDeleteRscDfnPropKeysList());
+        Map<String, String> overrideProps = asMap(modRscDfn.getOverridePropsList());
+        Set<String> delProps = new HashSet<>(modRscDfn.getDeletePropKeysList());
         ApiCallRc apiCallRc = controller.getApiCallHandler().modifyRscDfn(
             accCtx,
             client,

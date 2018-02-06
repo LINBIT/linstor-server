@@ -101,43 +101,43 @@ public final class MsgModNodeOuterClass {
      * Node properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
-        getOverrideNodePropsList();
+        getOverridePropsList();
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideNodeProps(int index);
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideProps(int index);
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
-    int getOverrideNodePropsCount();
+    int getOverridePropsCount();
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getOverrideNodePropsOrBuilderList();
+        getOverridePropsOrBuilderList();
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverrideNodePropsOrBuilder(
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverridePropsOrBuilder(
         int index);
 
     /**
@@ -194,7 +194,7 @@ public final class MsgModNodeOuterClass {
       nodeUuid_ = "";
       nodeName_ = "";
       nodeType_ = "";
-      overrideNodeProps_ = java.util.Collections.emptyList();
+      overrideProps_ = java.util.Collections.emptyList();
       deletePropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
     }
 
@@ -246,10 +246,10 @@ public final class MsgModNodeOuterClass {
             }
             case 34: {
               if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-                overrideNodeProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
+                overrideProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
                 mutable_bitField0_ |= 0x00000008;
               }
-              overrideNodeProps_.add(
+              overrideProps_.add(
                   input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
               break;
             }
@@ -271,7 +271,7 @@ public final class MsgModNodeOuterClass {
             e).setUnfinishedMessage(this);
       } finally {
         if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-          overrideNodeProps_ = java.util.Collections.unmodifiableList(overrideNodeProps_);
+          overrideProps_ = java.util.Collections.unmodifiableList(overrideProps_);
         }
         if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
           deletePropKeys_ = deletePropKeys_.getUnmodifiableView();
@@ -455,59 +455,59 @@ public final class MsgModNodeOuterClass {
       }
     }
 
-    public static final int OVERRIDE_NODE_PROPS_FIELD_NUMBER = 4;
-    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> overrideNodeProps_;
+    public static final int OVERRIDE_PROPS_FIELD_NUMBER = 4;
+    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> overrideProps_;
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
-    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getOverrideNodePropsList() {
-      return overrideNodeProps_;
+    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getOverridePropsList() {
+      return overrideProps_;
     }
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getOverrideNodePropsOrBuilderList() {
-      return overrideNodeProps_;
+        getOverridePropsOrBuilderList() {
+      return overrideProps_;
     }
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
-    public int getOverrideNodePropsCount() {
-      return overrideNodeProps_.size();
+    public int getOverridePropsCount() {
+      return overrideProps_.size();
     }
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
-    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideNodeProps(int index) {
-      return overrideNodeProps_.get(index);
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideProps(int index) {
+      return overrideProps_.get(index);
     }
     /**
      * <pre>
      * Node properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
-    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverrideNodePropsOrBuilder(
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverridePropsOrBuilder(
         int index) {
-      return overrideNodeProps_.get(index);
+      return overrideProps_.get(index);
     }
 
     public static final int DELETE_PROP_KEYS_FIELD_NUMBER = 5;
@@ -565,8 +565,8 @@ public final class MsgModNodeOuterClass {
         memoizedIsInitialized = 0;
         return false;
       }
-      for (int i = 0; i < getOverrideNodePropsCount(); i++) {
-        if (!getOverrideNodeProps(i).isInitialized()) {
+      for (int i = 0; i < getOverridePropsCount(); i++) {
+        if (!getOverrideProps(i).isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -586,8 +586,8 @@ public final class MsgModNodeOuterClass {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, nodeType_);
       }
-      for (int i = 0; i < overrideNodeProps_.size(); i++) {
-        output.writeMessage(4, overrideNodeProps_.get(i));
+      for (int i = 0; i < overrideProps_.size(); i++) {
+        output.writeMessage(4, overrideProps_.get(i));
       }
       for (int i = 0; i < deletePropKeys_.size(); i++) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 5, deletePropKeys_.getRaw(i));
@@ -609,9 +609,9 @@ public final class MsgModNodeOuterClass {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, nodeType_);
       }
-      for (int i = 0; i < overrideNodeProps_.size(); i++) {
+      for (int i = 0; i < overrideProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(4, overrideNodeProps_.get(i));
+          .computeMessageSize(4, overrideProps_.get(i));
       }
       {
         int dataSize = 0;
@@ -653,8 +653,8 @@ public final class MsgModNodeOuterClass {
         result = result && getNodeType()
             .equals(other.getNodeType());
       }
-      result = result && getOverrideNodePropsList()
-          .equals(other.getOverrideNodePropsList());
+      result = result && getOverridePropsList()
+          .equals(other.getOverridePropsList());
       result = result && getDeletePropKeysList()
           .equals(other.getDeletePropKeysList());
       result = result && unknownFields.equals(other.unknownFields);
@@ -680,9 +680,9 @@ public final class MsgModNodeOuterClass {
         hash = (37 * hash) + NODE_TYPE_FIELD_NUMBER;
         hash = (53 * hash) + getNodeType().hashCode();
       }
-      if (getOverrideNodePropsCount() > 0) {
-        hash = (37 * hash) + OVERRIDE_NODE_PROPS_FIELD_NUMBER;
-        hash = (53 * hash) + getOverrideNodePropsList().hashCode();
+      if (getOverridePropsCount() > 0) {
+        hash = (37 * hash) + OVERRIDE_PROPS_FIELD_NUMBER;
+        hash = (53 * hash) + getOverridePropsList().hashCode();
       }
       if (getDeletePropKeysCount() > 0) {
         hash = (37 * hash) + DELETE_PROP_KEYS_FIELD_NUMBER;
@@ -806,7 +806,7 @@ public final class MsgModNodeOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
-          getOverrideNodePropsFieldBuilder();
+          getOverridePropsFieldBuilder();
         }
       }
       public Builder clear() {
@@ -817,11 +817,11 @@ public final class MsgModNodeOuterClass {
         bitField0_ = (bitField0_ & ~0x00000002);
         nodeType_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
-        if (overrideNodePropsBuilder_ == null) {
-          overrideNodeProps_ = java.util.Collections.emptyList();
+        if (overridePropsBuilder_ == null) {
+          overrideProps_ = java.util.Collections.emptyList();
           bitField0_ = (bitField0_ & ~0x00000008);
         } else {
-          overrideNodePropsBuilder_.clear();
+          overridePropsBuilder_.clear();
         }
         deletePropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -861,14 +861,14 @@ public final class MsgModNodeOuterClass {
           to_bitField0_ |= 0x00000004;
         }
         result.nodeType_ = nodeType_;
-        if (overrideNodePropsBuilder_ == null) {
+        if (overridePropsBuilder_ == null) {
           if (((bitField0_ & 0x00000008) == 0x00000008)) {
-            overrideNodeProps_ = java.util.Collections.unmodifiableList(overrideNodeProps_);
+            overrideProps_ = java.util.Collections.unmodifiableList(overrideProps_);
             bitField0_ = (bitField0_ & ~0x00000008);
           }
-          result.overrideNodeProps_ = overrideNodeProps_;
+          result.overrideProps_ = overrideProps_;
         } else {
-          result.overrideNodeProps_ = overrideNodePropsBuilder_.build();
+          result.overrideProps_ = overridePropsBuilder_.build();
         }
         if (((bitField0_ & 0x00000010) == 0x00000010)) {
           deletePropKeys_ = deletePropKeys_.getUnmodifiableView();
@@ -932,29 +932,29 @@ public final class MsgModNodeOuterClass {
           nodeType_ = other.nodeType_;
           onChanged();
         }
-        if (overrideNodePropsBuilder_ == null) {
-          if (!other.overrideNodeProps_.isEmpty()) {
-            if (overrideNodeProps_.isEmpty()) {
-              overrideNodeProps_ = other.overrideNodeProps_;
+        if (overridePropsBuilder_ == null) {
+          if (!other.overrideProps_.isEmpty()) {
+            if (overrideProps_.isEmpty()) {
+              overrideProps_ = other.overrideProps_;
               bitField0_ = (bitField0_ & ~0x00000008);
             } else {
-              ensureOverrideNodePropsIsMutable();
-              overrideNodeProps_.addAll(other.overrideNodeProps_);
+              ensureOverridePropsIsMutable();
+              overrideProps_.addAll(other.overrideProps_);
             }
             onChanged();
           }
         } else {
-          if (!other.overrideNodeProps_.isEmpty()) {
-            if (overrideNodePropsBuilder_.isEmpty()) {
-              overrideNodePropsBuilder_.dispose();
-              overrideNodePropsBuilder_ = null;
-              overrideNodeProps_ = other.overrideNodeProps_;
+          if (!other.overrideProps_.isEmpty()) {
+            if (overridePropsBuilder_.isEmpty()) {
+              overridePropsBuilder_.dispose();
+              overridePropsBuilder_ = null;
+              overrideProps_ = other.overrideProps_;
               bitField0_ = (bitField0_ & ~0x00000008);
-              overrideNodePropsBuilder_ = 
+              overridePropsBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getOverrideNodePropsFieldBuilder() : null;
+                   getOverridePropsFieldBuilder() : null;
             } else {
-              overrideNodePropsBuilder_.addAllMessages(other.overrideNodeProps_);
+              overridePropsBuilder_.addAllMessages(other.overrideProps_);
             }
           }
         }
@@ -977,8 +977,8 @@ public final class MsgModNodeOuterClass {
         if (!hasNodeName()) {
           return false;
         }
-        for (int i = 0; i < getOverrideNodePropsCount(); i++) {
-          if (!getOverrideNodeProps(i).isInitialized()) {
+        for (int i = 0; i < getOverridePropsCount(); i++) {
+          if (!getOverrideProps(i).isInitialized()) {
             return false;
           }
         }
@@ -1304,30 +1304,30 @@ public final class MsgModNodeOuterClass {
         return this;
       }
 
-      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> overrideNodeProps_ =
+      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> overrideProps_ =
         java.util.Collections.emptyList();
-      private void ensureOverrideNodePropsIsMutable() {
+      private void ensureOverridePropsIsMutable() {
         if (!((bitField0_ & 0x00000008) == 0x00000008)) {
-          overrideNodeProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(overrideNodeProps_);
+          overrideProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(overrideProps_);
           bitField0_ |= 0x00000008;
          }
       }
 
       private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> overrideNodePropsBuilder_;
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> overridePropsBuilder_;
 
       /**
        * <pre>
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getOverrideNodePropsList() {
-        if (overrideNodePropsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(overrideNodeProps_);
+      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getOverridePropsList() {
+        if (overridePropsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(overrideProps_);
         } else {
-          return overrideNodePropsBuilder_.getMessageList();
+          return overridePropsBuilder_.getMessageList();
         }
       }
       /**
@@ -1335,13 +1335,13 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public int getOverrideNodePropsCount() {
-        if (overrideNodePropsBuilder_ == null) {
-          return overrideNodeProps_.size();
+      public int getOverridePropsCount() {
+        if (overridePropsBuilder_ == null) {
+          return overrideProps_.size();
         } else {
-          return overrideNodePropsBuilder_.getCount();
+          return overridePropsBuilder_.getCount();
         }
       }
       /**
@@ -1349,13 +1349,13 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideNodeProps(int index) {
-        if (overrideNodePropsBuilder_ == null) {
-          return overrideNodeProps_.get(index);
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideProps(int index) {
+        if (overridePropsBuilder_ == null) {
+          return overrideProps_.get(index);
         } else {
-          return overrideNodePropsBuilder_.getMessage(index);
+          return overridePropsBuilder_.getMessage(index);
         }
       }
       /**
@@ -1363,19 +1363,19 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public Builder setOverrideNodeProps(
+      public Builder setOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (overrideNodePropsBuilder_ == null) {
+        if (overridePropsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          ensureOverrideNodePropsIsMutable();
-          overrideNodeProps_.set(index, value);
+          ensureOverridePropsIsMutable();
+          overrideProps_.set(index, value);
           onChanged();
         } else {
-          overrideNodePropsBuilder_.setMessage(index, value);
+          overridePropsBuilder_.setMessage(index, value);
         }
         return this;
       }
@@ -1384,16 +1384,16 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public Builder setOverrideNodeProps(
+      public Builder setOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (overrideNodePropsBuilder_ == null) {
-          ensureOverrideNodePropsIsMutable();
-          overrideNodeProps_.set(index, builderForValue.build());
+        if (overridePropsBuilder_ == null) {
+          ensureOverridePropsIsMutable();
+          overrideProps_.set(index, builderForValue.build());
           onChanged();
         } else {
-          overrideNodePropsBuilder_.setMessage(index, builderForValue.build());
+          overridePropsBuilder_.setMessage(index, builderForValue.build());
         }
         return this;
       }
@@ -1402,18 +1402,18 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public Builder addOverrideNodeProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (overrideNodePropsBuilder_ == null) {
+      public Builder addOverrideProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (overridePropsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          ensureOverrideNodePropsIsMutable();
-          overrideNodeProps_.add(value);
+          ensureOverridePropsIsMutable();
+          overrideProps_.add(value);
           onChanged();
         } else {
-          overrideNodePropsBuilder_.addMessage(value);
+          overridePropsBuilder_.addMessage(value);
         }
         return this;
       }
@@ -1422,19 +1422,19 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public Builder addOverrideNodeProps(
+      public Builder addOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (overrideNodePropsBuilder_ == null) {
+        if (overridePropsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          ensureOverrideNodePropsIsMutable();
-          overrideNodeProps_.add(index, value);
+          ensureOverridePropsIsMutable();
+          overrideProps_.add(index, value);
           onChanged();
         } else {
-          overrideNodePropsBuilder_.addMessage(index, value);
+          overridePropsBuilder_.addMessage(index, value);
         }
         return this;
       }
@@ -1443,16 +1443,16 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public Builder addOverrideNodeProps(
+      public Builder addOverrideProps(
           com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (overrideNodePropsBuilder_ == null) {
-          ensureOverrideNodePropsIsMutable();
-          overrideNodeProps_.add(builderForValue.build());
+        if (overridePropsBuilder_ == null) {
+          ensureOverridePropsIsMutable();
+          overrideProps_.add(builderForValue.build());
           onChanged();
         } else {
-          overrideNodePropsBuilder_.addMessage(builderForValue.build());
+          overridePropsBuilder_.addMessage(builderForValue.build());
         }
         return this;
       }
@@ -1461,16 +1461,16 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public Builder addOverrideNodeProps(
+      public Builder addOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (overrideNodePropsBuilder_ == null) {
-          ensureOverrideNodePropsIsMutable();
-          overrideNodeProps_.add(index, builderForValue.build());
+        if (overridePropsBuilder_ == null) {
+          ensureOverridePropsIsMutable();
+          overrideProps_.add(index, builderForValue.build());
           onChanged();
         } else {
-          overrideNodePropsBuilder_.addMessage(index, builderForValue.build());
+          overridePropsBuilder_.addMessage(index, builderForValue.build());
         }
         return this;
       }
@@ -1479,17 +1479,17 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public Builder addAllOverrideNodeProps(
+      public Builder addAllOverrideProps(
           java.lang.Iterable<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
-        if (overrideNodePropsBuilder_ == null) {
-          ensureOverrideNodePropsIsMutable();
+        if (overridePropsBuilder_ == null) {
+          ensureOverridePropsIsMutable();
           com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, overrideNodeProps_);
+              values, overrideProps_);
           onChanged();
         } else {
-          overrideNodePropsBuilder_.addAllMessages(values);
+          overridePropsBuilder_.addAllMessages(values);
         }
         return this;
       }
@@ -1498,15 +1498,15 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public Builder clearOverrideNodeProps() {
-        if (overrideNodePropsBuilder_ == null) {
-          overrideNodeProps_ = java.util.Collections.emptyList();
+      public Builder clearOverrideProps() {
+        if (overridePropsBuilder_ == null) {
+          overrideProps_ = java.util.Collections.emptyList();
           bitField0_ = (bitField0_ & ~0x00000008);
           onChanged();
         } else {
-          overrideNodePropsBuilder_.clear();
+          overridePropsBuilder_.clear();
         }
         return this;
       }
@@ -1515,15 +1515,15 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public Builder removeOverrideNodeProps(int index) {
-        if (overrideNodePropsBuilder_ == null) {
-          ensureOverrideNodePropsIsMutable();
-          overrideNodeProps_.remove(index);
+      public Builder removeOverrideProps(int index) {
+        if (overridePropsBuilder_ == null) {
+          ensureOverridePropsIsMutable();
+          overrideProps_.remove(index);
           onChanged();
         } else {
-          overrideNodePropsBuilder_.remove(index);
+          overridePropsBuilder_.remove(index);
         }
         return this;
       }
@@ -1532,24 +1532,24 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getOverrideNodePropsBuilder(
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getOverridePropsBuilder(
           int index) {
-        return getOverrideNodePropsFieldBuilder().getBuilder(index);
+        return getOverridePropsFieldBuilder().getBuilder(index);
       }
       /**
        * <pre>
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverrideNodePropsOrBuilder(
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverridePropsOrBuilder(
           int index) {
-        if (overrideNodePropsBuilder_ == null) {
-          return overrideNodeProps_.get(index);  } else {
-          return overrideNodePropsBuilder_.getMessageOrBuilder(index);
+        if (overridePropsBuilder_ == null) {
+          return overrideProps_.get(index);  } else {
+          return overridePropsBuilder_.getMessageOrBuilder(index);
         }
       }
       /**
@@ -1557,14 +1557,14 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-           getOverrideNodePropsOrBuilderList() {
-        if (overrideNodePropsBuilder_ != null) {
-          return overrideNodePropsBuilder_.getMessageOrBuilderList();
+           getOverridePropsOrBuilderList() {
+        if (overridePropsBuilder_ != null) {
+          return overridePropsBuilder_.getMessageOrBuilderList();
         } else {
-          return java.util.Collections.unmodifiableList(overrideNodeProps_);
+          return java.util.Collections.unmodifiableList(overrideProps_);
         }
       }
       /**
@@ -1572,10 +1572,10 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addOverrideNodePropsBuilder() {
-        return getOverrideNodePropsFieldBuilder().addBuilder(
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addOverridePropsBuilder() {
+        return getOverridePropsFieldBuilder().addBuilder(
             com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
       }
       /**
@@ -1583,11 +1583,11 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addOverrideNodePropsBuilder(
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addOverridePropsBuilder(
           int index) {
-        return getOverrideNodePropsFieldBuilder().addBuilder(
+        return getOverridePropsFieldBuilder().addBuilder(
             index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
       }
       /**
@@ -1595,25 +1595,25 @@ public final class MsgModNodeOuterClass {
        * Node properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_node_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
-           getOverrideNodePropsBuilderList() {
-        return getOverrideNodePropsFieldBuilder().getBuilderList();
+           getOverridePropsBuilderList() {
+        return getOverridePropsFieldBuilder().getBuilderList();
       }
       private com.google.protobuf.RepeatedFieldBuilderV3<
           com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-          getOverrideNodePropsFieldBuilder() {
-        if (overrideNodePropsBuilder_ == null) {
-          overrideNodePropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+          getOverridePropsFieldBuilder() {
+        if (overridePropsBuilder_ == null) {
+          overridePropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
-                  overrideNodeProps_,
+                  overrideProps_,
                   ((bitField0_ & 0x00000008) == 0x00000008),
                   getParentForChildren(),
                   isClean());
-          overrideNodeProps_ = null;
+          overrideProps_ = null;
         }
-        return overrideNodePropsBuilder_;
+        return overridePropsBuilder_;
       }
 
       private com.google.protobuf.LazyStringList deletePropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
@@ -1809,11 +1809,11 @@ public final class MsgModNodeOuterClass {
     java.lang.String[] descriptorData = {
       "\n\026proto/MsgModNode.proto\022\030com.linbit.lin" +
       "stor.proto\032\033proto/LinStorMapEntry.proto\032" +
-      "\020proto/Node.proto\"\247\001\n\nMsgModNode\022\021\n\tnode" +
+      "\020proto/Node.proto\"\242\001\n\nMsgModNode\022\021\n\tnode" +
       "_uuid\030\001 \001(\t\022\021\n\tnode_name\030\002 \002(\t\022\021\n\tnode_t" +
-      "ype\030\003 \001(\t\022F\n\023override_node_props\030\004 \003(\0132)" +
-      ".com.linbit.linstor.proto.LinStorMapEntr" +
-      "y\022\030\n\020delete_prop_keys\030\005 \003(\tP\000P\001"
+      "ype\030\003 \001(\t\022A\n\016override_props\030\004 \003(\0132).com." +
+      "linbit.linstor.proto.LinStorMapEntry\022\030\n\020" +
+      "delete_prop_keys\030\005 \003(\tP\000P\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1834,7 +1834,7 @@ public final class MsgModNodeOuterClass {
     internal_static_com_linbit_linstor_proto_MsgModNode_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgModNode_descriptor,
-        new java.lang.String[] { "NodeUuid", "NodeName", "NodeType", "OverrideNodeProps", "DeletePropKeys", });
+        new java.lang.String[] { "NodeUuid", "NodeName", "NodeType", "OverrideProps", "DeletePropKeys", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
     com.linbit.linstor.proto.NodeOuterClass.getDescriptor();
   }

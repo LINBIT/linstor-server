@@ -674,7 +674,7 @@ public class ClientProtobuf implements Runnable
         }
         if (overrideProps != null)
         {
-            msgBuilder.addAllOverrideNodeProps(asLinStorMapEntryList(overrideProps));
+            msgBuilder.addAllOverrideProps(asLinStorMapEntryList(overrideProps));
         }
         if (delProps != null)
         {
@@ -762,11 +762,11 @@ public class ClientProtobuf implements Runnable
         }
         if (overrideProps != null)
         {
-            msgBuilder.addAllOverrideRscDfnProps(asLinStorMapEntryList(overrideProps));
+            msgBuilder.addAllOverrideProps(asLinStorMapEntryList(overrideProps));
         }
         if (delProps != null)
         {
-            msgBuilder.addAllDeleteRscDfnPropKeys(delProps);
+            msgBuilder.addAllDeletePropKeys(delProps);
         }
         send(
             msgId,

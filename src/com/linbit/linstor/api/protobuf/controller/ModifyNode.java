@@ -62,7 +62,7 @@ public class ModifyNode extends BaseProtoApiCall
         {
             nodeType = msgModNode.getNodeType();
         }
-        Map<String, String> overrideProps = asMap(msgModNode.getOverrideNodePropsList());
+        Map<String, String> overrideProps = asMap(msgModNode.getOverridePropsList());
         Set<String> deletePropKeys = new HashSet<>(msgModNode.getDeletePropKeysList());
 
         ApiCallRc apiCallRc = controller.getApiCallHandler().modifyNode(

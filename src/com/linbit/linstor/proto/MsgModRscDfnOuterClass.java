@@ -92,43 +92,43 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
      */
     java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
-        getOverrideRscDfnPropsList();
+        getOverridePropsList();
     /**
      * <pre>
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
      */
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideRscDfnProps(int index);
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideProps(int index);
     /**
      * <pre>
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
      */
-    int getOverrideRscDfnPropsCount();
+    int getOverridePropsCount();
     /**
      * <pre>
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
      */
     java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getOverrideRscDfnPropsOrBuilderList();
+        getOverridePropsOrBuilderList();
     /**
      * <pre>
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
      */
-    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverrideRscDfnPropsOrBuilder(
+    com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverridePropsOrBuilder(
         int index);
 
     /**
@@ -136,35 +136,35 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition property keys to delete
      * </pre>
      *
-     * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+     * <code>repeated string delete_prop_keys = 5;</code>
      */
     java.util.List<java.lang.String>
-        getDeleteRscDfnPropKeysList();
+        getDeletePropKeysList();
     /**
      * <pre>
      * Resource definition property keys to delete
      * </pre>
      *
-     * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+     * <code>repeated string delete_prop_keys = 5;</code>
      */
-    int getDeleteRscDfnPropKeysCount();
+    int getDeletePropKeysCount();
     /**
      * <pre>
      * Resource definition property keys to delete
      * </pre>
      *
-     * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+     * <code>repeated string delete_prop_keys = 5;</code>
      */
-    java.lang.String getDeleteRscDfnPropKeys(int index);
+    java.lang.String getDeletePropKeys(int index);
     /**
      * <pre>
      * Resource definition property keys to delete
      * </pre>
      *
-     * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+     * <code>repeated string delete_prop_keys = 5;</code>
      */
     com.google.protobuf.ByteString
-        getDeleteRscDfnPropKeysBytes(int index);
+        getDeletePropKeysBytes(int index);
   }
   /**
    * <pre>
@@ -185,8 +185,8 @@ public final class MsgModRscDfnOuterClass {
       rscDfnUuid_ = "";
       rscName_ = "";
       rscDfnPort_ = 0;
-      overrideRscDfnProps_ = java.util.Collections.emptyList();
-      deleteRscDfnPropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      overrideProps_ = java.util.Collections.emptyList();
+      deletePropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
     }
 
     @java.lang.Override
@@ -236,20 +236,20 @@ public final class MsgModRscDfnOuterClass {
             }
             case 34: {
               if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-                overrideRscDfnProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
+                overrideProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>();
                 mutable_bitField0_ |= 0x00000008;
               }
-              overrideRscDfnProps_.add(
+              overrideProps_.add(
                   input.readMessage(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.PARSER, extensionRegistry));
               break;
             }
             case 42: {
               com.google.protobuf.ByteString bs = input.readBytes();
               if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-                deleteRscDfnPropKeys_ = new com.google.protobuf.LazyStringArrayList();
+                deletePropKeys_ = new com.google.protobuf.LazyStringArrayList();
                 mutable_bitField0_ |= 0x00000010;
               }
-              deleteRscDfnPropKeys_.add(bs);
+              deletePropKeys_.add(bs);
               break;
             }
           }
@@ -261,10 +261,10 @@ public final class MsgModRscDfnOuterClass {
             e).setUnfinishedMessage(this);
       } finally {
         if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-          overrideRscDfnProps_ = java.util.Collections.unmodifiableList(overrideRscDfnProps_);
+          overrideProps_ = java.util.Collections.unmodifiableList(overrideProps_);
         }
         if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-          deleteRscDfnPropKeys_ = deleteRscDfnPropKeys_.getUnmodifiableView();
+          deletePropKeys_ = deletePropKeys_.getUnmodifiableView();
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -414,104 +414,104 @@ public final class MsgModRscDfnOuterClass {
       return rscDfnPort_;
     }
 
-    public static final int OVERRIDE_RSC_DFN_PROPS_FIELD_NUMBER = 4;
-    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> overrideRscDfnProps_;
+    public static final int OVERRIDE__PROPS_FIELD_NUMBER = 4;
+    private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> overrideProps_;
     /**
      * <pre>
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
      */
-    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getOverrideRscDfnPropsList() {
-      return overrideRscDfnProps_;
+    public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getOverridePropsList() {
+      return overrideProps_;
     }
     /**
      * <pre>
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
      */
     public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-        getOverrideRscDfnPropsOrBuilderList() {
-      return overrideRscDfnProps_;
+        getOverridePropsOrBuilderList() {
+      return overrideProps_;
     }
     /**
      * <pre>
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
      */
-    public int getOverrideRscDfnPropsCount() {
-      return overrideRscDfnProps_.size();
+    public int getOverridePropsCount() {
+      return overrideProps_.size();
     }
     /**
      * <pre>
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
      */
-    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideRscDfnProps(int index) {
-      return overrideRscDfnProps_.get(index);
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideProps(int index) {
+      return overrideProps_.get(index);
     }
     /**
      * <pre>
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
      */
-    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverrideRscDfnPropsOrBuilder(
+    public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverridePropsOrBuilder(
         int index) {
-      return overrideRscDfnProps_.get(index);
+      return overrideProps_.get(index);
     }
 
-    public static final int DELETE_RSC_DFN_PROP_KEYS_FIELD_NUMBER = 5;
-    private com.google.protobuf.LazyStringList deleteRscDfnPropKeys_;
+    public static final int DELETE_PROP_KEYS_FIELD_NUMBER = 5;
+    private com.google.protobuf.LazyStringList deletePropKeys_;
     /**
      * <pre>
      * Resource definition property keys to delete
      * </pre>
      *
-     * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+     * <code>repeated string delete_prop_keys = 5;</code>
      */
     public com.google.protobuf.ProtocolStringList
-        getDeleteRscDfnPropKeysList() {
-      return deleteRscDfnPropKeys_;
+        getDeletePropKeysList() {
+      return deletePropKeys_;
     }
     /**
      * <pre>
      * Resource definition property keys to delete
      * </pre>
      *
-     * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+     * <code>repeated string delete_prop_keys = 5;</code>
      */
-    public int getDeleteRscDfnPropKeysCount() {
-      return deleteRscDfnPropKeys_.size();
+    public int getDeletePropKeysCount() {
+      return deletePropKeys_.size();
     }
     /**
      * <pre>
      * Resource definition property keys to delete
      * </pre>
      *
-     * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+     * <code>repeated string delete_prop_keys = 5;</code>
      */
-    public java.lang.String getDeleteRscDfnPropKeys(int index) {
-      return deleteRscDfnPropKeys_.get(index);
+    public java.lang.String getDeletePropKeys(int index) {
+      return deletePropKeys_.get(index);
     }
     /**
      * <pre>
      * Resource definition property keys to delete
      * </pre>
      *
-     * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+     * <code>repeated string delete_prop_keys = 5;</code>
      */
     public com.google.protobuf.ByteString
-        getDeleteRscDfnPropKeysBytes(int index) {
-      return deleteRscDfnPropKeys_.getByteString(index);
+        getDeletePropKeysBytes(int index) {
+      return deletePropKeys_.getByteString(index);
     }
 
     private byte memoizedIsInitialized = -1;
@@ -524,8 +524,8 @@ public final class MsgModRscDfnOuterClass {
         memoizedIsInitialized = 0;
         return false;
       }
-      for (int i = 0; i < getOverrideRscDfnPropsCount(); i++) {
-        if (!getOverrideRscDfnProps(i).isInitialized()) {
+      for (int i = 0; i < getOverridePropsCount(); i++) {
+        if (!getOverrideProps(i).isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -545,11 +545,11 @@ public final class MsgModRscDfnOuterClass {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeSInt32(3, rscDfnPort_);
       }
-      for (int i = 0; i < overrideRscDfnProps_.size(); i++) {
-        output.writeMessage(4, overrideRscDfnProps_.get(i));
+      for (int i = 0; i < overrideProps_.size(); i++) {
+        output.writeMessage(4, overrideProps_.get(i));
       }
-      for (int i = 0; i < deleteRscDfnPropKeys_.size(); i++) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, deleteRscDfnPropKeys_.getRaw(i));
+      for (int i = 0; i < deletePropKeys_.size(); i++) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, deletePropKeys_.getRaw(i));
       }
       unknownFields.writeTo(output);
     }
@@ -569,17 +569,17 @@ public final class MsgModRscDfnOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeSInt32Size(3, rscDfnPort_);
       }
-      for (int i = 0; i < overrideRscDfnProps_.size(); i++) {
+      for (int i = 0; i < overrideProps_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(4, overrideRscDfnProps_.get(i));
+          .computeMessageSize(4, overrideProps_.get(i));
       }
       {
         int dataSize = 0;
-        for (int i = 0; i < deleteRscDfnPropKeys_.size(); i++) {
-          dataSize += computeStringSizeNoTag(deleteRscDfnPropKeys_.getRaw(i));
+        for (int i = 0; i < deletePropKeys_.size(); i++) {
+          dataSize += computeStringSizeNoTag(deletePropKeys_.getRaw(i));
         }
         size += dataSize;
-        size += 1 * getDeleteRscDfnPropKeysList().size();
+        size += 1 * getDeletePropKeysList().size();
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -613,10 +613,10 @@ public final class MsgModRscDfnOuterClass {
         result = result && (getRscDfnPort()
             == other.getRscDfnPort());
       }
-      result = result && getOverrideRscDfnPropsList()
-          .equals(other.getOverrideRscDfnPropsList());
-      result = result && getDeleteRscDfnPropKeysList()
-          .equals(other.getDeleteRscDfnPropKeysList());
+      result = result && getOverridePropsList()
+          .equals(other.getOverridePropsList());
+      result = result && getDeletePropKeysList()
+          .equals(other.getDeletePropKeysList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -640,13 +640,13 @@ public final class MsgModRscDfnOuterClass {
         hash = (37 * hash) + RSC_DFN_PORT_FIELD_NUMBER;
         hash = (53 * hash) + getRscDfnPort();
       }
-      if (getOverrideRscDfnPropsCount() > 0) {
-        hash = (37 * hash) + OVERRIDE_RSC_DFN_PROPS_FIELD_NUMBER;
-        hash = (53 * hash) + getOverrideRscDfnPropsList().hashCode();
+      if (getOverridePropsCount() > 0) {
+        hash = (37 * hash) + OVERRIDE__PROPS_FIELD_NUMBER;
+        hash = (53 * hash) + getOverridePropsList().hashCode();
       }
-      if (getDeleteRscDfnPropKeysCount() > 0) {
-        hash = (37 * hash) + DELETE_RSC_DFN_PROP_KEYS_FIELD_NUMBER;
-        hash = (53 * hash) + getDeleteRscDfnPropKeysList().hashCode();
+      if (getDeletePropKeysCount() > 0) {
+        hash = (37 * hash) + DELETE_PROP_KEYS_FIELD_NUMBER;
+        hash = (53 * hash) + getDeletePropKeysList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -766,7 +766,7 @@ public final class MsgModRscDfnOuterClass {
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
-          getOverrideRscDfnPropsFieldBuilder();
+          getOverridePropsFieldBuilder();
         }
       }
       public Builder clear() {
@@ -777,13 +777,13 @@ public final class MsgModRscDfnOuterClass {
         bitField0_ = (bitField0_ & ~0x00000002);
         rscDfnPort_ = 0;
         bitField0_ = (bitField0_ & ~0x00000004);
-        if (overrideRscDfnPropsBuilder_ == null) {
-          overrideRscDfnProps_ = java.util.Collections.emptyList();
+        if (overridePropsBuilder_ == null) {
+          overrideProps_ = java.util.Collections.emptyList();
           bitField0_ = (bitField0_ & ~0x00000008);
         } else {
-          overrideRscDfnPropsBuilder_.clear();
+          overridePropsBuilder_.clear();
         }
-        deleteRscDfnPropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        deletePropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
@@ -821,20 +821,20 @@ public final class MsgModRscDfnOuterClass {
           to_bitField0_ |= 0x00000004;
         }
         result.rscDfnPort_ = rscDfnPort_;
-        if (overrideRscDfnPropsBuilder_ == null) {
+        if (overridePropsBuilder_ == null) {
           if (((bitField0_ & 0x00000008) == 0x00000008)) {
-            overrideRscDfnProps_ = java.util.Collections.unmodifiableList(overrideRscDfnProps_);
+            overrideProps_ = java.util.Collections.unmodifiableList(overrideProps_);
             bitField0_ = (bitField0_ & ~0x00000008);
           }
-          result.overrideRscDfnProps_ = overrideRscDfnProps_;
+          result.overrideProps_ = overrideProps_;
         } else {
-          result.overrideRscDfnProps_ = overrideRscDfnPropsBuilder_.build();
+          result.overrideProps_ = overridePropsBuilder_.build();
         }
         if (((bitField0_ & 0x00000010) == 0x00000010)) {
-          deleteRscDfnPropKeys_ = deleteRscDfnPropKeys_.getUnmodifiableView();
+          deletePropKeys_ = deletePropKeys_.getUnmodifiableView();
           bitField0_ = (bitField0_ & ~0x00000010);
         }
-        result.deleteRscDfnPropKeys_ = deleteRscDfnPropKeys_;
+        result.deletePropKeys_ = deletePropKeys_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -890,39 +890,39 @@ public final class MsgModRscDfnOuterClass {
         if (other.hasRscDfnPort()) {
           setRscDfnPort(other.getRscDfnPort());
         }
-        if (overrideRscDfnPropsBuilder_ == null) {
-          if (!other.overrideRscDfnProps_.isEmpty()) {
-            if (overrideRscDfnProps_.isEmpty()) {
-              overrideRscDfnProps_ = other.overrideRscDfnProps_;
+        if (overridePropsBuilder_ == null) {
+          if (!other.overrideProps_.isEmpty()) {
+            if (overrideProps_.isEmpty()) {
+              overrideProps_ = other.overrideProps_;
               bitField0_ = (bitField0_ & ~0x00000008);
             } else {
-              ensureOverrideRscDfnPropsIsMutable();
-              overrideRscDfnProps_.addAll(other.overrideRscDfnProps_);
+              ensureOverridePropsIsMutable();
+              overrideProps_.addAll(other.overrideProps_);
             }
             onChanged();
           }
         } else {
-          if (!other.overrideRscDfnProps_.isEmpty()) {
-            if (overrideRscDfnPropsBuilder_.isEmpty()) {
-              overrideRscDfnPropsBuilder_.dispose();
-              overrideRscDfnPropsBuilder_ = null;
-              overrideRscDfnProps_ = other.overrideRscDfnProps_;
+          if (!other.overrideProps_.isEmpty()) {
+            if (overridePropsBuilder_.isEmpty()) {
+              overridePropsBuilder_.dispose();
+              overridePropsBuilder_ = null;
+              overrideProps_ = other.overrideProps_;
               bitField0_ = (bitField0_ & ~0x00000008);
-              overrideRscDfnPropsBuilder_ = 
+              overridePropsBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getOverrideRscDfnPropsFieldBuilder() : null;
+                   getOverridePropsFieldBuilder() : null;
             } else {
-              overrideRscDfnPropsBuilder_.addAllMessages(other.overrideRscDfnProps_);
+              overridePropsBuilder_.addAllMessages(other.overrideProps_);
             }
           }
         }
-        if (!other.deleteRscDfnPropKeys_.isEmpty()) {
-          if (deleteRscDfnPropKeys_.isEmpty()) {
-            deleteRscDfnPropKeys_ = other.deleteRscDfnPropKeys_;
+        if (!other.deletePropKeys_.isEmpty()) {
+          if (deletePropKeys_.isEmpty()) {
+            deletePropKeys_ = other.deletePropKeys_;
             bitField0_ = (bitField0_ & ~0x00000010);
           } else {
-            ensureDeleteRscDfnPropKeysIsMutable();
-            deleteRscDfnPropKeys_.addAll(other.deleteRscDfnPropKeys_);
+            ensureDeletePropKeysIsMutable();
+            deletePropKeys_.addAll(other.deletePropKeys_);
           }
           onChanged();
         }
@@ -935,8 +935,8 @@ public final class MsgModRscDfnOuterClass {
         if (!hasRscName()) {
           return false;
         }
-        for (int i = 0; i < getOverrideRscDfnPropsCount(); i++) {
-          if (!getOverrideRscDfnProps(i).isInitialized()) {
+        for (int i = 0; i < getOverridePropsCount(); i++) {
+          if (!getOverrideProps(i).isInitialized()) {
             return false;
           }
         }
@@ -1210,30 +1210,30 @@ public final class MsgModRscDfnOuterClass {
         return this;
       }
 
-      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> overrideRscDfnProps_ =
+      private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> overrideProps_ =
         java.util.Collections.emptyList();
-      private void ensureOverrideRscDfnPropsIsMutable() {
+      private void ensureOverridePropsIsMutable() {
         if (!((bitField0_ & 0x00000008) == 0x00000008)) {
-          overrideRscDfnProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(overrideRscDfnProps_);
+          overrideProps_ = new java.util.ArrayList<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry>(overrideProps_);
           bitField0_ |= 0x00000008;
          }
       }
 
       private com.google.protobuf.RepeatedFieldBuilderV3<
-          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> overrideRscDfnPropsBuilder_;
+          com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> overridePropsBuilder_;
 
       /**
        * <pre>
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getOverrideRscDfnPropsList() {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(overrideRscDfnProps_);
+      public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getOverridePropsList() {
+        if (overridePropsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(overrideProps_);
         } else {
-          return overrideRscDfnPropsBuilder_.getMessageList();
+          return overridePropsBuilder_.getMessageList();
         }
       }
       /**
@@ -1241,13 +1241,13 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public int getOverrideRscDfnPropsCount() {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          return overrideRscDfnProps_.size();
+      public int getOverridePropsCount() {
+        if (overridePropsBuilder_ == null) {
+          return overrideProps_.size();
         } else {
-          return overrideRscDfnPropsBuilder_.getCount();
+          return overridePropsBuilder_.getCount();
         }
       }
       /**
@@ -1255,13 +1255,13 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideRscDfnProps(int index) {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          return overrideRscDfnProps_.get(index);
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideProps(int index) {
+        if (overridePropsBuilder_ == null) {
+          return overrideProps_.get(index);
         } else {
-          return overrideRscDfnPropsBuilder_.getMessage(index);
+          return overridePropsBuilder_.getMessage(index);
         }
       }
       /**
@@ -1269,19 +1269,19 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public Builder setOverrideRscDfnProps(
+      public Builder setOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (overrideRscDfnPropsBuilder_ == null) {
+        if (overridePropsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          ensureOverrideRscDfnPropsIsMutable();
-          overrideRscDfnProps_.set(index, value);
+          ensureOverridePropsIsMutable();
+          overrideProps_.set(index, value);
           onChanged();
         } else {
-          overrideRscDfnPropsBuilder_.setMessage(index, value);
+          overridePropsBuilder_.setMessage(index, value);
         }
         return this;
       }
@@ -1290,16 +1290,16 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public Builder setOverrideRscDfnProps(
+      public Builder setOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          ensureOverrideRscDfnPropsIsMutable();
-          overrideRscDfnProps_.set(index, builderForValue.build());
+        if (overridePropsBuilder_ == null) {
+          ensureOverridePropsIsMutable();
+          overrideProps_.set(index, builderForValue.build());
           onChanged();
         } else {
-          overrideRscDfnPropsBuilder_.setMessage(index, builderForValue.build());
+          overridePropsBuilder_.setMessage(index, builderForValue.build());
         }
         return this;
       }
@@ -1308,18 +1308,18 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public Builder addOverrideRscDfnProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (overrideRscDfnPropsBuilder_ == null) {
+      public Builder addOverrideProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
+        if (overridePropsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          ensureOverrideRscDfnPropsIsMutable();
-          overrideRscDfnProps_.add(value);
+          ensureOverridePropsIsMutable();
+          overrideProps_.add(value);
           onChanged();
         } else {
-          overrideRscDfnPropsBuilder_.addMessage(value);
+          overridePropsBuilder_.addMessage(value);
         }
         return this;
       }
@@ -1328,19 +1328,19 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public Builder addOverrideRscDfnProps(
+      public Builder addOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
-        if (overrideRscDfnPropsBuilder_ == null) {
+        if (overridePropsBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          ensureOverrideRscDfnPropsIsMutable();
-          overrideRscDfnProps_.add(index, value);
+          ensureOverridePropsIsMutable();
+          overrideProps_.add(index, value);
           onChanged();
         } else {
-          overrideRscDfnPropsBuilder_.addMessage(index, value);
+          overridePropsBuilder_.addMessage(index, value);
         }
         return this;
       }
@@ -1349,16 +1349,16 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public Builder addOverrideRscDfnProps(
+      public Builder addOverrideProps(
           com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          ensureOverrideRscDfnPropsIsMutable();
-          overrideRscDfnProps_.add(builderForValue.build());
+        if (overridePropsBuilder_ == null) {
+          ensureOverridePropsIsMutable();
+          overrideProps_.add(builderForValue.build());
           onChanged();
         } else {
-          overrideRscDfnPropsBuilder_.addMessage(builderForValue.build());
+          overridePropsBuilder_.addMessage(builderForValue.build());
         }
         return this;
       }
@@ -1367,16 +1367,16 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public Builder addOverrideRscDfnProps(
+      public Builder addOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          ensureOverrideRscDfnPropsIsMutable();
-          overrideRscDfnProps_.add(index, builderForValue.build());
+        if (overridePropsBuilder_ == null) {
+          ensureOverridePropsIsMutable();
+          overrideProps_.add(index, builderForValue.build());
           onChanged();
         } else {
-          overrideRscDfnPropsBuilder_.addMessage(index, builderForValue.build());
+          overridePropsBuilder_.addMessage(index, builderForValue.build());
         }
         return this;
       }
@@ -1385,17 +1385,17 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public Builder addAllOverrideRscDfnProps(
+      public Builder addAllOverrideProps(
           java.lang.Iterable<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          ensureOverrideRscDfnPropsIsMutable();
+        if (overridePropsBuilder_ == null) {
+          ensureOverridePropsIsMutable();
           com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, overrideRscDfnProps_);
+              values, overrideProps_);
           onChanged();
         } else {
-          overrideRscDfnPropsBuilder_.addAllMessages(values);
+          overridePropsBuilder_.addAllMessages(values);
         }
         return this;
       }
@@ -1404,15 +1404,15 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public Builder clearOverrideRscDfnProps() {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          overrideRscDfnProps_ = java.util.Collections.emptyList();
+      public Builder clearOverrideProps() {
+        if (overridePropsBuilder_ == null) {
+          overrideProps_ = java.util.Collections.emptyList();
           bitField0_ = (bitField0_ & ~0x00000008);
           onChanged();
         } else {
-          overrideRscDfnPropsBuilder_.clear();
+          overridePropsBuilder_.clear();
         }
         return this;
       }
@@ -1421,15 +1421,15 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public Builder removeOverrideRscDfnProps(int index) {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          ensureOverrideRscDfnPropsIsMutable();
-          overrideRscDfnProps_.remove(index);
+      public Builder removeOverrideProps(int index) {
+        if (overridePropsBuilder_ == null) {
+          ensureOverridePropsIsMutable();
+          overrideProps_.remove(index);
           onChanged();
         } else {
-          overrideRscDfnPropsBuilder_.remove(index);
+          overridePropsBuilder_.remove(index);
         }
         return this;
       }
@@ -1438,24 +1438,24 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getOverrideRscDfnPropsBuilder(
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getOverridePropsBuilder(
           int index) {
-        return getOverrideRscDfnPropsFieldBuilder().getBuilder(index);
+        return getOverridePropsFieldBuilder().getBuilder(index);
       }
       /**
        * <pre>
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverrideRscDfnPropsOrBuilder(
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverridePropsOrBuilder(
           int index) {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          return overrideRscDfnProps_.get(index);  } else {
-          return overrideRscDfnPropsBuilder_.getMessageOrBuilder(index);
+        if (overridePropsBuilder_ == null) {
+          return overrideProps_.get(index);  } else {
+          return overridePropsBuilder_.getMessageOrBuilder(index);
         }
       }
       /**
@@ -1463,14 +1463,14 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
       public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-           getOverrideRscDfnPropsOrBuilderList() {
-        if (overrideRscDfnPropsBuilder_ != null) {
-          return overrideRscDfnPropsBuilder_.getMessageOrBuilderList();
+           getOverridePropsOrBuilderList() {
+        if (overridePropsBuilder_ != null) {
+          return overridePropsBuilder_.getMessageOrBuilderList();
         } else {
-          return java.util.Collections.unmodifiableList(overrideRscDfnProps_);
+          return java.util.Collections.unmodifiableList(overrideProps_);
         }
       }
       /**
@@ -1478,10 +1478,10 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addOverrideRscDfnPropsBuilder() {
-        return getOverrideRscDfnPropsFieldBuilder().addBuilder(
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addOverridePropsBuilder() {
+        return getOverridePropsFieldBuilder().addBuilder(
             com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
       }
       /**
@@ -1489,11 +1489,11 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
-      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addOverrideRscDfnPropsBuilder(
+      public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addOverridePropsBuilder(
           int index) {
-        return getOverrideRscDfnPropsFieldBuilder().addBuilder(
+        return getOverridePropsFieldBuilder().addBuilder(
             index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.getDefaultInstance());
       }
       /**
@@ -1501,31 +1501,31 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_rsc_dfn_props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
        */
       public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
-           getOverrideRscDfnPropsBuilderList() {
-        return getOverrideRscDfnPropsFieldBuilder().getBuilderList();
+           getOverridePropsBuilderList() {
+        return getOverridePropsFieldBuilder().getBuilderList();
       }
       private com.google.protobuf.RepeatedFieldBuilderV3<
           com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
-          getOverrideRscDfnPropsFieldBuilder() {
-        if (overrideRscDfnPropsBuilder_ == null) {
-          overrideRscDfnPropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+          getOverridePropsFieldBuilder() {
+        if (overridePropsBuilder_ == null) {
+          overridePropsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder>(
-                  overrideRscDfnProps_,
+                  overrideProps_,
                   ((bitField0_ & 0x00000008) == 0x00000008),
                   getParentForChildren(),
                   isClean());
-          overrideRscDfnProps_ = null;
+          overrideProps_ = null;
         }
-        return overrideRscDfnPropsBuilder_;
+        return overridePropsBuilder_;
       }
 
-      private com.google.protobuf.LazyStringList deleteRscDfnPropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      private void ensureDeleteRscDfnPropKeysIsMutable() {
+      private com.google.protobuf.LazyStringList deletePropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureDeletePropKeysIsMutable() {
         if (!((bitField0_ & 0x00000010) == 0x00000010)) {
-          deleteRscDfnPropKeys_ = new com.google.protobuf.LazyStringArrayList(deleteRscDfnPropKeys_);
+          deletePropKeys_ = new com.google.protobuf.LazyStringArrayList(deletePropKeys_);
           bitField0_ |= 0x00000010;
          }
       }
@@ -1534,57 +1534,57 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition property keys to delete
        * </pre>
        *
-       * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+       * <code>repeated string delete_prop_keys = 5;</code>
        */
       public com.google.protobuf.ProtocolStringList
-          getDeleteRscDfnPropKeysList() {
-        return deleteRscDfnPropKeys_.getUnmodifiableView();
+          getDeletePropKeysList() {
+        return deletePropKeys_.getUnmodifiableView();
       }
       /**
        * <pre>
        * Resource definition property keys to delete
        * </pre>
        *
-       * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+       * <code>repeated string delete_prop_keys = 5;</code>
        */
-      public int getDeleteRscDfnPropKeysCount() {
-        return deleteRscDfnPropKeys_.size();
+      public int getDeletePropKeysCount() {
+        return deletePropKeys_.size();
       }
       /**
        * <pre>
        * Resource definition property keys to delete
        * </pre>
        *
-       * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+       * <code>repeated string delete_prop_keys = 5;</code>
        */
-      public java.lang.String getDeleteRscDfnPropKeys(int index) {
-        return deleteRscDfnPropKeys_.get(index);
+      public java.lang.String getDeletePropKeys(int index) {
+        return deletePropKeys_.get(index);
       }
       /**
        * <pre>
        * Resource definition property keys to delete
        * </pre>
        *
-       * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+       * <code>repeated string delete_prop_keys = 5;</code>
        */
       public com.google.protobuf.ByteString
-          getDeleteRscDfnPropKeysBytes(int index) {
-        return deleteRscDfnPropKeys_.getByteString(index);
+          getDeletePropKeysBytes(int index) {
+        return deletePropKeys_.getByteString(index);
       }
       /**
        * <pre>
        * Resource definition property keys to delete
        * </pre>
        *
-       * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+       * <code>repeated string delete_prop_keys = 5;</code>
        */
-      public Builder setDeleteRscDfnPropKeys(
+      public Builder setDeletePropKeys(
           int index, java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  ensureDeleteRscDfnPropKeysIsMutable();
-        deleteRscDfnPropKeys_.set(index, value);
+  ensureDeletePropKeysIsMutable();
+        deletePropKeys_.set(index, value);
         onChanged();
         return this;
       }
@@ -1593,15 +1593,15 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition property keys to delete
        * </pre>
        *
-       * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+       * <code>repeated string delete_prop_keys = 5;</code>
        */
-      public Builder addDeleteRscDfnPropKeys(
+      public Builder addDeletePropKeys(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  ensureDeleteRscDfnPropKeysIsMutable();
-        deleteRscDfnPropKeys_.add(value);
+  ensureDeletePropKeysIsMutable();
+        deletePropKeys_.add(value);
         onChanged();
         return this;
       }
@@ -1610,13 +1610,13 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition property keys to delete
        * </pre>
        *
-       * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+       * <code>repeated string delete_prop_keys = 5;</code>
        */
-      public Builder addAllDeleteRscDfnPropKeys(
+      public Builder addAllDeletePropKeys(
           java.lang.Iterable<java.lang.String> values) {
-        ensureDeleteRscDfnPropKeysIsMutable();
+        ensureDeletePropKeysIsMutable();
         com.google.protobuf.AbstractMessageLite.Builder.addAll(
-            values, deleteRscDfnPropKeys_);
+            values, deletePropKeys_);
         onChanged();
         return this;
       }
@@ -1625,10 +1625,10 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition property keys to delete
        * </pre>
        *
-       * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+       * <code>repeated string delete_prop_keys = 5;</code>
        */
-      public Builder clearDeleteRscDfnPropKeys() {
-        deleteRscDfnPropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      public Builder clearDeletePropKeys() {
+        deletePropKeys_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000010);
         onChanged();
         return this;
@@ -1638,15 +1638,15 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition property keys to delete
        * </pre>
        *
-       * <code>repeated string delete_rsc_dfn_prop_keys = 5;</code>
+       * <code>repeated string delete_prop_keys = 5;</code>
        */
-      public Builder addDeleteRscDfnPropKeysBytes(
+      public Builder addDeletePropKeysBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  ensureDeleteRscDfnPropKeysIsMutable();
-        deleteRscDfnPropKeys_.add(value);
+  ensureDeletePropKeysIsMutable();
+        deletePropKeys_.add(value);
         onChanged();
         return this;
       }
@@ -1715,11 +1715,11 @@ public final class MsgModRscDfnOuterClass {
     java.lang.String[] descriptorData = {
       "\n\030proto/MsgModRscDfn.proto\022\030com.linbit.l" +
       "instor.proto\032\033proto/LinStorMapEntry.prot" +
-      "o\"\271\001\n\014MsgModRscDfn\022\024\n\014rsc_dfn_uuid\030\001 \001(\t" +
+      "o\"\252\001\n\014MsgModRscDfn\022\024\n\014rsc_dfn_uuid\030\001 \001(\t" +
       "\022\020\n\010rsc_name\030\002 \002(\t\022\024\n\014rsc_dfn_port\030\003 \001(\021" +
-      "\022I\n\026override_rsc_dfn_props\030\004 \003(\0132).com.l" +
-      "inbit.linstor.proto.LinStorMapEntry\022 \n\030d" +
-      "elete_rsc_dfn_prop_keys\030\005 \003(\tP\000"
+      "\022B\n\017override__props\030\004 \003(\0132).com.linbit.l" +
+      "instor.proto.LinStorMapEntry\022\030\n\020delete_p" +
+      "rop_keys\030\005 \003(\tP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1739,7 +1739,7 @@ public final class MsgModRscDfnOuterClass {
     internal_static_com_linbit_linstor_proto_MsgModRscDfn_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_linbit_linstor_proto_MsgModRscDfn_descriptor,
-        new java.lang.String[] { "RscDfnUuid", "RscName", "RscDfnPort", "OverrideRscDfnProps", "DeleteRscDfnPropKeys", });
+        new java.lang.String[] { "RscDfnUuid", "RscName", "RscDfnPort", "OverrideProps", "DeletePropKeys", });
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.getDescriptor();
   }
 
