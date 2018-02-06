@@ -421,6 +421,7 @@ class DrbdDeviceHandler implements DeviceHandler
                         if(!drbdVlm.isClient())
                         {
                             vlmState.setDiskFailed(true);
+                            rscState.setRequiresAdjust(true);
                         }
                         break;
                     case DETACHING:
