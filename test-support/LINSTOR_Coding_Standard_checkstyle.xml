@@ -7,7 +7,7 @@
 LINSTOR Project - Configuration of the checkstyle utility for the LINSTOR Coding Standard
 
 Author: Robert Altnoeder <robert.altnoeder@linbit.com>
-Version: 2018-02-06_001
+Version: 2018-02-07_001
 
 Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/checkstyle
 -->
@@ -22,12 +22,17 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
     </module>
 
     <!-- Checks whether files end with a new line -->
-    <module name="NewlineAtEndOfFile"/>
+    <module name="NewlineAtEndOfFile">
+        <property name="severity" value="warning"/>
+    </module>
 
     <!-- Check that spaces are used for indentation, not tabs -->
     <module name="FileTabCharacter">
         <property name="eachLine" value="true"/>
+        <property name="severity" value="error"/>
     </module>
+
+    <module name="SuppressWarningsFilter"/>
 
     <module name="TreeWalker">
 
@@ -39,51 +44,72 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
 
         <module name="EmptyBlock">
             <property name="tokens" value="LITERAL_CASE,LITERAL_DEFAULT"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="EmptyCatchBlock">
             <property name="exceptionVariableName" value="ignored"/>
+            <property name="severity" value="error"/>
         </module>
 
-        <module name="EmptyStatement"/>
+        <module name="EmptyStatement">
+            <property name="severity" value="error"/>
+        </module>
 
-        <module name="OneStatementPerLine"/>
+        <module name="OneStatementPerLine">
+            <property name="severity" value="error"/>
+        </module>
 
         <module name="MagicNumber">
             <property name="ignoreNumbers" value="-2,-1,0,1,2"/>
             <property name="ignoreHashCodeMethod" value="true"/>
             <property name="ignoreFieldDeclaration" value="true"/>
+            <property name="severity" value="warning"/>
         </module>
 
-        <module name="ModifiedControlVariable"/>
+        <module name="ModifiedControlVariable">
+            <property name="severity" value="error"/>
+        </module>
 
-        <module name="InnerAssignment"/>
+        <module name="InnerAssignment">
+            <property name="severity" value="error"/>
+        </module>
 
-        <module name="HiddenField"/>
+        <module name="HiddenField">
+            <property name="severity" value="warning"/>
+        </module>
 
         <module name="IllegalToken">
             <property name="tokens" value="LITERAL_CONTINUE"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="FallThrough">
             <property name="checkLastCaseGroup" value="true"/>
             <property name="reliefPattern" value="fall-through"/>
+            <property name="severity" value="error"/>
         </module>
 
-        <module name="MissingSwitchDefault"/>
+        <module name="MissingSwitchDefault">
+            <property name="severity" value="error"/>
+        </module>
 
-        <module name="ParameterAssignment"/>
+        <module name="ParameterAssignment">
+            <property name="severity" value="warning"/>
+        </module>
 
         <module name="RequireThis">
             <property name="checkMethods" value="false"/>
             <property name="checkFields" value="true"/>
             <property name="validateOnlyOverlapping" value="true"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="ReturnCount">
             <property name="max" value="1"/>
             <property name="maxForVoid" value="0"/>
             <property name="tokens" value="CTOR_DEF,METHOD_DEF,LAMBDA"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="DescendantToken">
@@ -91,36 +117,49 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
             <property name="limitedTokens" value="LITERAL_DEFAULT"/>
             <property name="minimumNumber" value="1"/>
             <property name="maximumNumber" value="1"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="DescendantToken">
             <property name="tokens" value="FOR_INIT"/>
             <property name="limitedTokens" value="EXPR"/>
             <property name="minimumNumber" value="1"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="DescendantToken">
             <property name="tokens" value="FOR_CONDITION"/>
             <property name="limitedTokens" value="EXPR"/>
             <property name="minimumNumber" value="1"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="DescendantToken">
             <property name="tokens" value="FOR_ITERATOR"/>
             <property name="limitedTokens" value="EXPR"/>
             <property name="minimumNumber" value="1"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="DescendantToken">
-            <property name="tokens" value="LITERAL_IF,LITERAL_FOR,LITERAL_DO,LITERAL_WHILE,LITERAL_SWITCH,LITERAL_TRY,LITERAL_CATCH,LITERAL_FINALLY"/>
+            <property name="tokens" value="LITERAL_IF,LITERAL_TRY,LITERAL_CATCH"/>
             <property name="limitedTokens" value="LITERAL_RETURN"/>
             <property name="maximumNumber" value="0"/>
+            <property name="severity" value="warning"/>
+        </module>
+
+        <module name="DescendantToken">
+            <property name="tokens" value="LITERAL_FOR,LITERAL_DO,LITERAL_WHILE,LITERAL_SWITCH,LITERAL_FINALLY"/>
+            <property name="limitedTokens" value="LITERAL_RETURN"/>
+            <property name="maximumNumber" value="0"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="DescendantToken">
             <property name="tokens" value="LITERAL_FINALLY"/>
             <property name="limitedTokens" value="LITERAL_THROWS"/>
             <property name="maximumNumber" value="0"/>
+            <property name="severity" value="error"/>
         </module>
 
 
@@ -130,11 +169,17 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         ================================================================================
         -->
 
-        <module name="AvoidStarImport"/>
+        <module name="AvoidStarImport">
+            <property name="severity" value="warning"/>
+        </module>
 
-        <module name="RedundantImport"/>
+        <module name="RedundantImport">
+            <property name="severity" value="warning"/>
+        </module>
 
-        <module name="UnusedImports"/>
+        <module name="UnusedImports">
+            <property name="severity" value="warning"/>
+        </module>
 
         <!--
         ================================================================================
@@ -152,11 +197,17 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         ================================================================================
         -->
 
-        <module name="CovariantEquals"/>
+        <module name="CovariantEquals">
+            <property name="severity" value="error"/>
+        </module>
 
-        <module name="EqualsHashCode"/>
+        <module name="EqualsHashCode">
+            <property name="severity" value="error"/>
+        </module>
 
-        <module name="StringLiteralEquality"/>
+        <module name="StringLiteralEquality">
+            <property name="severity" value="warning"/>
+        </module>
 
         <!--
         ================================================================================
@@ -164,9 +215,13 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         ================================================================================
         -->
 
-        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanExpression">
+            <property name="severity" value="warning"/>
+        </module>
 
-        <module name="SimplifyBooleanReturn"/>
+        <module name="SimplifyBooleanReturn">
+            <property name="severity" value="warning"/>
+        </module>
 
         <!--
         ================================================================================
@@ -174,17 +229,28 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         ================================================================================
         -->
 
-        <module name="SuperClone"/>
+        <module name="SuperClone">
+            <property name="severity" value="error"/>
+        </module>
 
-        <module name="SuperFinalize"/>
+        <module name="SuperFinalize">
+            <property name="severity" value="error"/>
+        </module>
 
         <module name="VariableDeclarationUsageDistance">
             <property name="allowedDistance" value="7"/>
             <property name="validateBetweenScopes" value="true"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="TodoComment">
-            <property name="format" value="([Tt][Oo][Dd][Oo]|[Ff][Ii][Xx][Mm][Ee]|[Xx][Xx][Xx])"/>
+            <property name="format" value="[Tt][Oo][Dd][Oo]|[Ff][Ii][Xx][Mm][Ee]"/>
+            <property name="severity" value="info"/>
+        </module>
+
+        <module name="TodoComment">
+            <property name="format" value="([Ff][Ii][Xx][Mm][Ee]|[Xx][Xx][Xx]|[Xx][Xx][Xx])"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <!--
@@ -199,42 +265,52 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
 
         <module name="ConstantName">
             <property name="format" value="^([A-Z][A-Z0-9]|[A-Z][A-Z0-9]*(_[A-Z0-9]+)*)$"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="MemberName">
             <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="StaticVariableName">
             <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="LocalFinalVariableName">
             <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="LocalVariableName">
             <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="CatchParameterName">
             <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="MethodName">
             <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="MethodTypeParameterName">
             <property name="format" value="^([A-Z]|[A-Z][a-zA-Z0-9]+)$"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="ParameterName">
             <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="TypeName">
             <property name="format" value="^[A-Z][a-zA-Z0-9]+$"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <!--
@@ -245,93 +321,120 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
 
         <module name="LineLength">
             <property name="max" value="120"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="LeftCurly">
             <property name="option" value="nl"/>
             <property name="ignoreEnums" value="false"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="RightCurly">
             <property name="option" value="alone"/>
             <property name="shouldStartLine" value="true"/>
             <property name="tokens" value="LITERAL_TRY,LITERAL_CATCH,LITERAL_FINALLY,LITERAL_IF,LITERAL_ELSE,CLASS_DEF,METHOD_DEF,CTOR_DEF,LITERAL_FOR,LITERAL_WHILE,LITERAL_DO,STATIC_INIT,INSTANCE_INIT,LAMBDA"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="NeedBraces">
             <property name="allowSingleLineStatement" value="false"/>
             <property name="allowEmptyLoopBody" value="false"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="EmptyLineSeparator">
             <property name="tokens" value="PACKAGE_DEF,IMPORT,CLASS_DEF,INTERFACE_DEF,ENUM_DEF,STATIC_INIT"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="MethodParamPad">
             <property name="allowLineBreaks" value="false"/>
             <property name="option" value="nospace"/>
             <property name="tokens" value="CTOR_DEF,LITERAL_NEW,METHOD_CALL,METHOD_DEF,SUPER_CTOR_CALL,ENUM_CONSTANT_DEF"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="WhitespaceAfter">
             <property name="tokens" value="COMMA,SEMI,TYPECAST,LITERAL_IF,LITERAL_WHILE,LITERAL_FOR,DO_WHILE"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="WhitespaceAround">
             <property name="tokens" value="ASSIGN,BAND,BAND_ASSIGN,BOR,BOR_ASSIGN,BSR,BSR_ASSIGN,BXOR,BXOR_ASSIGN,COLON,DIV,DIV_ASSIGN,DO_WHILE,EQUAL,GE,GT,LAMBDA,LAND,LCURLY,LE,LITERAL_CATCH,LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_FOR,LITERAL_IF,LITERAL_RETURN,LITERAL_SWITCH,LITERAL_SYNCHRONIZED,LITERAL_TRY,LITERAL_WHILE,LOR,LT,MINUS,MINUS_ASSIGN,MOD,MOD_ASSIGN,NOT_EQUAL,PLUS,PLUS_ASSIGN,QUESTION,RCURLY,SL,SLIST,SL_ASSIGN,SR,SR_ASSIGN,STAR,STAR_ASSIGN,LITERAL_ASSERT,TYPE_EXTENSION_AND"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="NoWhitespaceAfter">
             <property name="tokens" value="UNARY_MINUS,INC,DEC,AT,BNOT,LNOT,ARRAY_INIT,ARRAY_DECLARATOR,INDEX_OP"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="NoWhitespaceBefore">
             <property name="tokens" value="COMMA,SEMI,POST_INC,POST_DEC,GENERIC_END,ELLIPSIS"/>
             <property name="allowLineBreaks" value="false"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="NoWhitespaceBefore">
             <property name="tokens" value="DOT"/>
             <property name="allowLineBreaks" value="true"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="ParenPad">
             <property name="option" value="nospace"/>
             <property name="tokens" value=""/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="TypecastParenPad">
             <property name="option" value="nospace"/>
+            <property name="severity" value="warning"/>
         </module>
 
-        <module name="GenericWhitespace"/>
+        <module name="GenericWhitespace">
+            <property name="severity" value="warning"/>
+        </module>
 
         <module name="OperatorWrap">
             <property name="option" value="eol"/>
             <property name="tokens" value="QUESTION,COLON,EQUAL,NOT_EQUAL,DIV,PLUS,MINUS,STAR,MOD,SR,BSR,GE,GT,SL,LE,LT,BXOR,BOR,LOR,BAND,LAND,LITERAL_INSTANCEOF,TYPE_EXTENSION_AND,ASSIGN,DIV_ASSIGN,PLUS_ASSIGN,MINUS_ASSIGN,STAR_ASSIGN,MOD_ASSIGN,SR_ASSIGN,BSR_ASSIGN,SL_ASSIGN,BXOR_ASSIGN,BOR_ASSIGN,BAND_ASSIGN,METHOD_REF"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="SeparatorWrap">
             <property name="option" value="nl"/>
             <property name="tokens" value="DOT,AT"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="SeparatorWrap">
             <property name="option" value="eol"/>
             <property name="tokens" value="COMMA,SEMI,ELLIPSIS"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="ArrayTypeStyle">
             <property name="javaStyle" value="true"/>
+            <property name="severity" value="warning"/>
         </module>
 
-        <module name="ModifierOrder"/>
+        <module name="ModifierOrder">
+            <property name="severity" value="warning"/>
+        </module>
 
-        <module name="RedundantModifier"/>
+        <module name="RedundantModifier">
+            <property name="severity" value="warning"/>
+        </module>
 
-        <module name="DefaultComesLast"/>
+        <module name="DefaultComesLast">
+            <property name="severity" value="warning"/>
+        </module>
 
-        <module name="CommentsIndentation"/>
+        <module name="CommentsIndentation">
+            <property name="severity" value="warning"/>
+        </module>
 
         <!-- Disabled; this module does not handle the else - if case correctly
         <module name="Indentation">
