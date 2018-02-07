@@ -58,20 +58,20 @@ public class TcpConnectorMessage implements Message
             }
             return nextPhase;
         }
-    };
+    }
 
     protected enum ReadState
     {
         UNFINISHED,
         FINISHED,
         END_OF_STREAM
-    };
+    }
 
     protected enum WriteState
     {
         UNFINISHED,
         FINISHED
-    };
+    }
 
     protected Phase currentPhase;
 
