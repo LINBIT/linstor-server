@@ -42,9 +42,8 @@ public class LvmThinDriver extends LvmDriver
         final String[] command = new String[]
         {
             lvmChangeCommand,
-            "-ay",              // activate volume
-            // this should usually be enough
-            "-kn", "-K",        // these parameters are needed to set a
+            "-ay",  // activate volume
+            "-K",   // these parameters are needed to set a
             // snapshot to active and enabled
             qualifiedIdentifier
         };
