@@ -454,7 +454,7 @@ public class LvmDriverTest extends StorageTestUtils
         final Command command = new Command(
             lvmChangeDefault,
             "-ay",
-            "-kn", "-K",
+            "-K",
             lvmVolumeGroupDefault + "/" + identifier);
 
         final OutputData outData;
