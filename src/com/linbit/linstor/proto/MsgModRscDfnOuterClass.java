@@ -92,7 +92,7 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> 
         getOverridePropsList();
@@ -101,7 +101,7 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideProps(int index);
     /**
@@ -109,7 +109,7 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     int getOverridePropsCount();
     /**
@@ -117,7 +117,7 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
         getOverridePropsOrBuilderList();
@@ -126,7 +126,7 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverridePropsOrBuilder(
         int index);
@@ -414,14 +414,14 @@ public final class MsgModRscDfnOuterClass {
       return rscDfnPort_;
     }
 
-    public static final int OVERRIDE__PROPS_FIELD_NUMBER = 4;
+    public static final int OVERRIDE_PROPS_FIELD_NUMBER = 4;
     private java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> overrideProps_;
     /**
      * <pre>
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getOverridePropsList() {
       return overrideProps_;
@@ -431,7 +431,7 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
         getOverridePropsOrBuilderList() {
@@ -442,7 +442,7 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     public int getOverridePropsCount() {
       return overrideProps_.size();
@@ -452,7 +452,7 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideProps(int index) {
       return overrideProps_.get(index);
@@ -462,7 +462,7 @@ public final class MsgModRscDfnOuterClass {
      * Resource definition properties map
      * </pre>
      *
-     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+     * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
      */
     public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverridePropsOrBuilder(
         int index) {
@@ -641,7 +641,7 @@ public final class MsgModRscDfnOuterClass {
         hash = (53 * hash) + getRscDfnPort();
       }
       if (getOverridePropsCount() > 0) {
-        hash = (37 * hash) + OVERRIDE__PROPS_FIELD_NUMBER;
+        hash = (37 * hash) + OVERRIDE_PROPS_FIELD_NUMBER;
         hash = (53 * hash) + getOverridePropsList().hashCode();
       }
       if (getDeletePropKeysCount() > 0) {
@@ -1227,7 +1227,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> getOverridePropsList() {
         if (overridePropsBuilder_ == null) {
@@ -1241,7 +1241,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public int getOverridePropsCount() {
         if (overridePropsBuilder_ == null) {
@@ -1255,7 +1255,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry getOverrideProps(int index) {
         if (overridePropsBuilder_ == null) {
@@ -1269,7 +1269,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public Builder setOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
@@ -1290,7 +1290,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public Builder setOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -1308,7 +1308,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public Builder addOverrideProps(com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
         if (overridePropsBuilder_ == null) {
@@ -1328,7 +1328,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public Builder addOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry value) {
@@ -1349,7 +1349,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public Builder addOverrideProps(
           com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -1367,7 +1367,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public Builder addOverrideProps(
           int index, com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder builderForValue) {
@@ -1385,7 +1385,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public Builder addAllOverrideProps(
           java.lang.Iterable<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry> values) {
@@ -1404,7 +1404,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public Builder clearOverrideProps() {
         if (overridePropsBuilder_ == null) {
@@ -1421,7 +1421,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public Builder removeOverrideProps(int index) {
         if (overridePropsBuilder_ == null) {
@@ -1438,7 +1438,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder getOverridePropsBuilder(
           int index) {
@@ -1449,7 +1449,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder getOverridePropsOrBuilder(
           int index) {
@@ -1463,7 +1463,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public java.util.List<? extends com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntryOrBuilder> 
            getOverridePropsOrBuilderList() {
@@ -1478,7 +1478,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addOverridePropsBuilder() {
         return getOverridePropsFieldBuilder().addBuilder(
@@ -1489,7 +1489,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder addOverridePropsBuilder(
           int index) {
@@ -1501,7 +1501,7 @@ public final class MsgModRscDfnOuterClass {
        * Resource definition properties map
        * </pre>
        *
-       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override__props = 4;</code>
+       * <code>repeated .com.linbit.linstor.proto.LinStorMapEntry override_props = 4;</code>
        */
       public java.util.List<com.linbit.linstor.proto.LinStorMapEntryOuterClass.LinStorMapEntry.Builder> 
            getOverridePropsBuilderList() {
@@ -1715,11 +1715,11 @@ public final class MsgModRscDfnOuterClass {
     java.lang.String[] descriptorData = {
       "\n\030proto/MsgModRscDfn.proto\022\030com.linbit.l" +
       "instor.proto\032\033proto/LinStorMapEntry.prot" +
-      "o\"\252\001\n\014MsgModRscDfn\022\024\n\014rsc_dfn_uuid\030\001 \001(\t" +
+      "o\"\251\001\n\014MsgModRscDfn\022\024\n\014rsc_dfn_uuid\030\001 \001(\t" +
       "\022\020\n\010rsc_name\030\002 \002(\t\022\024\n\014rsc_dfn_port\030\003 \001(\021" +
-      "\022B\n\017override__props\030\004 \003(\0132).com.linbit.l" +
-      "instor.proto.LinStorMapEntry\022\030\n\020delete_p" +
-      "rop_keys\030\005 \003(\tP\000"
+      "\022A\n\016override_props\030\004 \003(\0132).com.linbit.li" +
+      "nstor.proto.LinStorMapEntry\022\030\n\020delete_pr" +
+      "op_keys\030\005 \003(\tP\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
