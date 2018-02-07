@@ -7,7 +7,7 @@
 LINSTOR Project - Configuration of the checkstyle utility for the LINSTOR Coding Standard
 
 Author: Robert Altnoeder <robert.altnoeder@linbit.com>
-Version: 2018-02-07_002
+Version: 2018-02-07_003
 
 Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/checkstyle
 -->
@@ -66,6 +66,11 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
             <property name="ignoreFieldDeclaration" value="true"/>
             <property name="severity" value="warning"/>
             <property name="id" value="checkstyle:magicnumber"/>
+        </module>
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="@checkstyle-suppress:magicnumber"/>
+            <property name="onCommentFormat" value="@checkstyle-cancel-suppress"/>
+            <property name="checkFormat" value="MagicNumberCheck"/>
         </module>
 
         <module name="ModifiedControlVariable">
@@ -331,6 +336,12 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
             <property name="id" value="checkstyle:typename"/>
         </module>
 
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="@checkstyle-suppress:namingconvention"/>
+            <property name="onCommentFormat" value="@checkstyle-cancel-suppress"/>
+            <property name="checkFormat" value="(Constant|Member|StaticVariable|LocalFinalVariable|LocalVariable|CatchParameter|MethodName|MethodTypeParameter|Parameter|Type)NameCheck"/>
+        </module>
+
         <!--
         ================================================================================
         Coding style, code layout
@@ -453,6 +464,11 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         <module name="CommentsIndentation">
             <property name="severity" value="warning"/>
             <property name="id" value="checkstyle:commentsindentation"/>
+        </module>
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="@checkstyle-suppress:commentsindentation"/>
+            <property name="onCommentFormat" value="@checkstyle-cancel-suppress"/>
+            <property name="checkFormat" value="CommentsIndentationCheck"/>
         </module>
 
         <!-- Disabled; this module does not handle the else - if case correctly
