@@ -6,7 +6,7 @@
 LINSTOR Project - Configuration of the checkstyle utility for code optimization
 
 Author: Robert Altnoeder <robert.altnoeder@linbit.com>
-Version: 2018-02-06_001
+Version: 2018-02-07_001
 
 Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/checkstyle
 -->
@@ -20,22 +20,28 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
     </module>
 
     <module name="TreeWalker">
-        <module name="MultipleStringLiterals"/>
+        <module name="MultipleStringLiterals">
+            <property name="severity" value="warning"/>
+        </module>
 
         <module name="NestedForDepth">
             <property name="max" value="4"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="NestedIfDepth">
             <property name="max" value="6"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="NestedTryDepth">
             <property name="max" value="4"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="NPathComplexity">
             <property name="max" value="2000"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <!-- Modules suggested for possible future use
