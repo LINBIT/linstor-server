@@ -352,10 +352,10 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
-    public void setPort(AccessContext accCtx, TcpPortNumber port) throws AccessDeniedException, SQLException
+    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber port) throws AccessDeniedException, SQLException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
-        this.port.set(port);
+        return this.port.set(port);
     }
 
     @Override
@@ -399,12 +399,12 @@ public class ResourceDefinitionData extends BaseTransactionObject implements Res
     }
 
     @Override
-    public void setTransportType(AccessContext accCtx, TransportType type)
+    public TransportType setTransportType(AccessContext accCtx, TransportType type)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        transportType.set(type);
+        return transportType.set(type);
     }
 
     @Override

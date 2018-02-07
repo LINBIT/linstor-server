@@ -177,12 +177,12 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
     }
 
     @Override
-    public void setPort(AccessContext accCtx, TcpPortNumber newPort)
+    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber newPort)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        port.set(newPort);
+        return port.set(newPort);
     }
 
     @Override
@@ -193,12 +193,12 @@ public class SatelliteConnectionData extends BaseTransactionObject implements Sa
     }
 
     @Override
-    public void setEncryptionType(AccessContext accCtx, EncryptionType newEncryptionType)
+    public EncryptionType setEncryptionType(AccessContext accCtx, EncryptionType newEncryptionType)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        encryptionType.set(newEncryptionType);
+        return encryptionType.set(newEncryptionType);
     }
 
     private void checkDeleted()

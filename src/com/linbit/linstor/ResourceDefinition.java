@@ -30,7 +30,7 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid
 
     public TcpPortNumber getPort(AccessContext accCtx) throws AccessDeniedException;
 
-    public void setPort(AccessContext accCtx, TcpPortNumber port) throws AccessDeniedException, SQLException;
+    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber port) throws AccessDeniedException, SQLException;
 
     public int getVolumeDfnCount(AccessContext accCtx)
         throws AccessDeniedException;
@@ -63,7 +63,7 @@ public interface ResourceDefinition extends TransactionObject, DbgInstanceUuid
     public TransportType getTransportType(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public void setTransportType(AccessContext accCtx, TransportType type)
+    public TransportType setTransportType(AccessContext accCtx, TransportType type)
         throws AccessDeniedException, SQLException;
 
     public Props getProps(AccessContext accCtx)

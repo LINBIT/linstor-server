@@ -23,7 +23,7 @@ public interface NetInterface extends TransactionObject, DbgInstanceUuid
     public LsIpAddress getAddress(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public void setAddress(AccessContext accCtx, LsIpAddress newAddress)
+    public LsIpAddress setAddress(AccessContext accCtx, LsIpAddress newAddress)
         throws AccessDeniedException, SQLException;
 
     public void delete(AccessContext accCtx)

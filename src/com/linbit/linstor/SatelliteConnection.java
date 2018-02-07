@@ -28,11 +28,11 @@ public interface SatelliteConnection
 
     public TcpPortNumber getPort();
 
-    public void setPort(AccessContext accCtx, TcpPortNumber newPort) throws AccessDeniedException, SQLException;
+    public TcpPortNumber setPort(AccessContext accCtx, TcpPortNumber newPort) throws AccessDeniedException, SQLException;
 
     public EncryptionType getEncryptionType();
 
-    public void setEncryptionType(AccessContext accCtx, EncryptionType newEncryptionType)
+    public EncryptionType setEncryptionType(AccessContext accCtx, EncryptionType newEncryptionType)
         throws AccessDeniedException, SQLException;
 
     public interface SatelliteConnectionApi

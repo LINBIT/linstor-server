@@ -29,7 +29,7 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
         }
     }
 
-    public void set(ELEMENT obj) throws SQLException
+    public ELEMENT set(ELEMENT obj) throws SQLException
     {
         if (initialized)
         {
@@ -42,7 +42,9 @@ public class TransactionSimpleObject<PARENT, ELEMENT> implements TransactionObje
         {
             cachedObject = obj;
         }
+        ELEMENT oldObj = object;
         object = obj;
+        return oldObj;
     }
 
     public ELEMENT get()

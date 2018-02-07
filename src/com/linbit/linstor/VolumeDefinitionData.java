@@ -316,12 +316,12 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
     @Override
-    public void setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
+    public MinorNumber setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        minorNr.set(newMinorNr);
+        return minorNr.set(newMinorNr);
     }
 
     @Override
@@ -334,12 +334,12 @@ public class VolumeDefinitionData extends BaseTransactionObject implements Volum
     }
 
     @Override
-    public void setVolumeSize(AccessContext accCtx, long newVolumeSize)
+    public Long setVolumeSize(AccessContext accCtx, long newVolumeSize)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        volumeSize.set(newVolumeSize);
+        return volumeSize.set(newVolumeSize);
     }
 
     @Override

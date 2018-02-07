@@ -201,12 +201,12 @@ public class NetInterfaceData extends BaseTransactionObject implements NetInterf
     }
 
     @Override
-    public void setAddress(AccessContext accCtx, LsIpAddress newAddress)
+    public LsIpAddress setAddress(AccessContext accCtx, LsIpAddress newAddress)
         throws AccessDeniedException, SQLException
     {
         checkDeleted();
         niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        niAddress.set(newAddress);
+        return niAddress.set(newAddress);
     }
 
     @Override

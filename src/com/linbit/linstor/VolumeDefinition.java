@@ -29,13 +29,13 @@ public interface VolumeDefinition extends TransactionObject, DbgInstanceUuid
     public MinorNumber getMinorNr(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public void setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
+    public MinorNumber setMinorNr(AccessContext accCtx, MinorNumber newMinorNr)
         throws AccessDeniedException, SQLException;
 
     public long getVolumeSize(AccessContext accCtx)
         throws AccessDeniedException;
 
-    public void setVolumeSize(AccessContext accCtx, long newVolumeSize)
+    public Long setVolumeSize(AccessContext accCtx, long newVolumeSize)
         throws AccessDeniedException, SQLException;
 
     public Props getProps(AccessContext accCtx)
