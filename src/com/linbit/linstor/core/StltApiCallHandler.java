@@ -338,7 +338,7 @@ public class StltApiCallHandler
         {
             try
             {
-                satellite.reconfigurationLock.writeLock().lock();
+                satellite.reconfigurationLock.readLock().lock();
                 if (data.getFullSyncId() == satellite.getCurrentFullSyncId())
                 {
                     try
@@ -393,7 +393,7 @@ public class StltApiCallHandler
             }
             finally
             {
-                satellite.reconfigurationLock.writeLock().unlock();
+                satellite.reconfigurationLock.readLock().unlock();
             }
         }
     }
@@ -502,7 +502,7 @@ public class StltApiCallHandler
             }
             finally
             {
-                satellite.reconfigurationLock.writeLock().unlock();
+                satellite.nodesMapLock.writeLock().unlock();
             }
         }
     }
