@@ -6,8 +6,11 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStorArguments;
 import com.linbit.linstor.core.Satellite;
+import com.linbit.linstor.dbcp.DbConnectionPoolModule;
+import com.linbit.linstor.dbdrivers.DbDriversModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 
@@ -67,9 +70,17 @@ public final class Initializer
     }
 
     public Controller initController(LinStorArguments cArgs, ErrorReporter errorLog)
+        throws AccessDeniedException
     {
+        AccessContext initCtx = SYSTEM_CTX.clone();
+        initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
         Injector injector = Guice.createInjector(
-            new LoggingModule(errorLog)
+            new LoggingModule(errorLog),
+            new SecurityModule(initCtx),
+            new CoreModule(),
+            new DbDriversModule(initCtx),
+            new DbConnectionPoolModule()
         );
 
         return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX, cArgs);

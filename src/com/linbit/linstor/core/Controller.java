@@ -1,8 +1,6 @@
 package com.linbit.linstor.core;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.KeyManagementException;
@@ -11,12 +9,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -25,6 +21,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.inject.Injector;
+import com.linbit.linstor.dbdrivers.DatabaseDriver;
+import com.linbit.linstor.security.DbAccessor;
 import org.slf4j.event.Level;
 
 import com.linbit.ImplementationError;
@@ -55,7 +53,6 @@ import com.linbit.linstor.TcpPortNumber;
 import com.linbit.linstor.VolumeDefinition;
 import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.dbcp.DbConnectionPool;
-import com.linbit.linstor.dbdrivers.DerbyDriver;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -73,7 +70,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Authentication;
 import com.linbit.linstor.security.Authorization;
-import com.linbit.linstor.security.DbDerbyPersistence;
 import com.linbit.linstor.security.IdentityName;
 import com.linbit.linstor.security.Initializer;
 import com.linbit.linstor.security.ObjectProtection;
@@ -88,8 +84,6 @@ import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.utils.Base64;
 import com.linbit.utils.MathUtils;
 
-import static com.linbit.linstor.dbdrivers.derby.DerbyConstants.TBL_SEC_CONFIGURATION;
-
 import com.linbit.ExhaustedPoolException;
 import com.linbit.linstor.numberpool.BitmapPool;
 import com.linbit.linstor.numberpool.NumberPool;
@@ -103,12 +97,6 @@ public final class Controller extends LinStor implements CoreServices
 {
     // System module information
     public static final String MODULE = "Controller";
-
-    // Database configuration file path
-    public static final String DB_CONF_FILE = "database.cfg";
-
-    // Database connection URL configuration key
-    public static final String DB_CONN_URL = "connection-url";
 
     // Random data size for automatic DRBD shared secret generation
     // The random data will be Base64 encoded, so the length of the
@@ -152,9 +140,6 @@ public final class Controller extends LinStor implements CoreServices
     private static final int DEFAULT_MINOR_NR_MAX = 49999;
     public static final Pattern RANGE_PATTERN = Pattern.compile("(?<min>\\d+) ?- ?(?<max>\\d+)");
 
-    private static final String DERBY_CONNECTION_TEST_SQL =
-        "SELECT 1 FROM " + TBL_SEC_CONFIGURATION;
-
     private final Injector injector;
 
     // System security context
@@ -188,7 +173,7 @@ public final class Controller extends LinStor implements CoreServices
     private final Map<ServiceName, SystemService> systemServicesMap;
 
     // Database connection pool service
-    final DbConnectionPool dbConnPool;
+    DbConnectionPool dbConnPool;
 
     // Satellite reconnector service
     private final TaskScheduleService taskScheduleService;
@@ -271,15 +256,6 @@ public final class Controller extends LinStor implements CoreServices
             CoreTimer timer = super.getTimer();
             systemServicesMap.put(timer.getInstanceName(), timer);
         }
-        if (testDbPool != null)
-        {
-            dbConnPool = testDbPool;
-        }
-        else
-        {
-            dbConnPool = new DbConnectionPool();
-        }
-        systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
 
         // Initialize network communications connectors map
         netComConnectors = new TreeMap<>();
@@ -292,10 +268,6 @@ public final class Controller extends LinStor implements CoreServices
         taskScheduleService = new TaskScheduleService(this);
         systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
 
-        // Initialize LinStor objects maps
-        nodesMap = new TreeMap<>();
-        rscDfnMap = new TreeMap<>();
-        storPoolDfnMap = new TreeMap<>();
         // the corresponding protectionObjects will be initialized in the initialize method
         // after the initialization of the database
 
@@ -387,9 +359,16 @@ public final class Controller extends LinStor implements CoreServices
             // Initialize the error & exception reporting facility
             setErrorLog(initCtx, errorLogRef);
 
-            Properties dbProps = loadDatabaseConfiguration(errorLogRef);
+            securityDbDriver = injector.getInstance(DbAccessor.class);
+            persistenceDbDriver = injector.getInstance(DatabaseDriver.class);
 
-            initializeDatabaseConnectionPool(errorLogRef, dbProps);
+            dbConnPool = injector.getInstance(DbConnectionPool.class);
+            systemServicesMap.put(dbConnPool.getInstanceName(), dbConnPool);
+
+            // Initialize LinStor objects maps
+            nodesMap = injector.getInstance(CoreModule.NodesMap.class);
+            rscDfnMap = injector.getInstance(CoreModule.ResourceDefinitionMap.class);
+            storPoolDfnMap = injector.getInstance(CoreModule.StorPoolDefinitionMap.class);
 
             initializeAuthentication(errorLogRef, initCtx);
 
@@ -903,74 +882,6 @@ public final class Controller extends LinStor implements CoreServices
                 minorNrRangeMin,
                 minorNrRangeMax
             );
-        }
-    }
-
-    private Properties loadDatabaseConfiguration(final ErrorReporter errorLogRef)
-        throws InitializationException
-    {
-        Properties dbProps = new Properties();
-        try (InputStream dbPropsIn = new FileInputStream(args.getWorkingDirectory() + DB_CONF_FILE))
-        {
-            dbProps.loadFromXML(dbPropsIn);
-        }
-        catch (IOException ioExc)
-        {
-            throw new InitializationException("Failed to load database configuration", ioExc);
-        }
-        return dbProps;
-    }
-
-    private void initializeDatabaseConnectionPool(final ErrorReporter errorLogRef, final Properties dbProps)
-        throws AccessDeniedException, SQLException, InitializationException
-    {
-        errorLogRef.logInfo("Initializing the database connection pool");
-
-        AccessContext privCtx = sysCtx.clone();
-        privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
-
-        // in case we support other SQL dialects than derby:
-        // TODO: determine which DBDriver to use
-        securityDbDriver = new DbDerbyPersistence(privCtx, errorLogRef);
-        persistenceDbDriver = new DerbyDriver(
-            privCtx,
-            errorLogRef,
-            nodesMap,
-            rscDfnMap,
-            storPoolDfnMap
-        );
-
-        if (testDbPool == null)
-        {
-            String connectionUrl = dbProps.getProperty(
-                DB_CONN_URL,
-                persistenceDbDriver.getDefaultConnectionUrl()
-            );
-
-            // Connect the database connection pool to the database
-            dbConnPool.initializeDataSource(
-                connectionUrl,
-                dbProps
-            );
-        }
-
-        // Test the database connection
-        Connection conn = null;
-        try
-        {
-            conn = dbConnPool.getConnection();
-            conn.createStatement().executeQuery(DERBY_CONNECTION_TEST_SQL);
-        }
-        catch (SQLException exc)
-        {
-            throw new InitializationException("Failed to connect to database", exc);
-        }
-        finally
-        {
-            if (conn != null)
-            {
-                dbConnPool.returnConnection(conn);
-            }
         }
     }
 
