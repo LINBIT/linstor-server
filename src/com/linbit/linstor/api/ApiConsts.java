@@ -124,6 +124,7 @@ public class ApiConsts
     public static final long FAIL_ACC_DENIED_VLM_CONN = 409 | MASK_ERROR;
     public static final long FAIL_ACC_DENIED_STLT_CONN = 410 | MASK_ERROR;
     public static final long FAIL_ACC_DENIED_CTRL_CFG = 411 | MASK_ERROR;
+    public static final long FAIL_ACC_DENIED_COMMAND = 412 | MASK_ERROR;
 
     /*
      * Codes 500-599: data already exists failures
@@ -261,6 +262,12 @@ public class ApiConsts
      */
     public static final String API_CRT_DBG_CNSL = "CrtDbgCnsl";
     public static final String API_DSTR_DBG_CNSL = "DstrDbgCnsl";
+
+    /*
+     * Commands APIs
+     */
+    public static final String API_CONTROL_CTRL = "ControlCtrl";
+    public static final String API_CMD_SHUTDOWN = "shutdown";
 
     /*
      * List object APIs
