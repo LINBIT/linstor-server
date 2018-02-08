@@ -1,11 +1,15 @@
 package com.linbit.linstor.security;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.Controller;
 import com.linbit.linstor.core.LinStorArguments;
 import com.linbit.linstor.core.Satellite;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.LoggingModule;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -62,9 +66,13 @@ public final class Initializer
         }
     }
 
-    public Controller initController(LinStorArguments cArgs)
+    public Controller initController(LinStorArguments cArgs, ErrorReporter errorLog)
     {
-        return new Controller(SYSTEM_CTX, PUBLIC_CTX, cArgs);
+        Injector injector = Guice.createInjector(
+            new LoggingModule(errorLog)
+        );
+
+        return new Controller(injector, SYSTEM_CTX, PUBLIC_CTX, cArgs);
     }
 
     public Satellite initSatellite(LinStorArguments cArgs)

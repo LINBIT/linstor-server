@@ -24,6 +24,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.inject.Injector;
 import org.slf4j.event.Level;
 
 import com.linbit.ImplementationError;
@@ -154,6 +155,8 @@ public final class Controller extends LinStor implements CoreServices
     private static final String DERBY_CONNECTION_TEST_SQL =
         "SELECT 1 FROM " + TBL_SEC_CONFIGURATION;
 
+    private final Injector injector;
+
     // System security context
     private AccessContext sysCtx;
 
@@ -246,8 +249,10 @@ public final class Controller extends LinStor implements CoreServices
     // Control objects used and set by tests
     private static DbConnectionPool testDbPool = null;
 
-    public Controller(AccessContext sysCtxRef, AccessContext publicCtxRef, LinStorArguments cArgsRef)
+    public Controller(Injector injectorRef, AccessContext sysCtxRef, AccessContext publicCtxRef, LinStorArguments cArgsRef)
     {
+        injector = injectorRef;
+
         // Initialize synchronization
         ctrlConfLock        = new ReentrantReadWriteLock(true);
 
@@ -349,9 +354,9 @@ public final class Controller extends LinStor implements CoreServices
 
             // Initialize the Controller module with the SYSTEM security context
             Initializer sysInit = new Initializer();
-            Controller instance = sysInit.initController(cArgs);
+            Controller instance = sysInit.initController(cArgs, errorLog);
 
-            instance.initialize(errorLog);
+            instance.initialize();
             if (cArgs.startDebugConsole())
             {
                 instance.enterDebugConsole();
@@ -365,7 +370,7 @@ public final class Controller extends LinStor implements CoreServices
         System.out.println();
     }
 
-    public void initialize(ErrorReporter errorLogRef)
+    public void initialize()
         throws InitializationException, SQLException, InvalidKeyException
     {
         try
@@ -376,6 +381,8 @@ public final class Controller extends LinStor implements CoreServices
 
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
+
+            ErrorReporter errorLogRef = injector.getInstance(ErrorReporter.class);
 
             // Initialize the error & exception reporting facility
             setErrorLog(initCtx, errorLogRef);

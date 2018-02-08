@@ -42,6 +42,8 @@ repositories
 
 dependencies
 {
+    compile group: 'com.google.inject', name: 'guice', version: '4.1.0'
+
     // compile name: 'protobuf-core'
     compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.2.0'
     compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.1.1'
