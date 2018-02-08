@@ -1,4 +1,7 @@
 import java.text.SimpleDateFormat
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.NoSuchFileException;
 import org.gradle.process.internal.ExecException
 
 plugins {
@@ -11,7 +14,6 @@ apply plugin: 'application'
 apply plugin: 'nebula.ospackage-base'
 
 sourceCompatibility = 1.7
-version = "v0.1.0-experimental-unknown-version"
 
 sourceSets {
     main {
@@ -78,7 +80,7 @@ jar {
 task versionInfo(type: VersionInfoTask) {
     outputDir = file("$projectDir/generated-resources")
     inputProperty = version
-    version = getGitDescribe()
+    version = getVersionString()
 }
 
 class VersionInfoTask extends DefaultTask {
@@ -107,7 +109,7 @@ class VersionInfoTask extends DefaultTask {
         return stdOut.toString().trim()
     }
 
-    def getGitDescribe() {
+    def getVersionString() {
         def stdOut = new ByteArrayOutputStream()
         try {
             project.exec {
@@ -115,16 +117,24 @@ class VersionInfoTask extends DefaultTask {
                 standardOutput = stdOut
             }
         } catch (ExecException exc) {
-            stdOut.write(inputProperty.getBytes())
+            try {
+                stdOut.write(Files.readAllBytes(Paths.get(outputDir.toString(), "fallback-version")))
+            } catch (NoSuchFileException exc2) {
+                throw new RuntimeException("Could not determine version.", exc2);
+            }
         }
-        return stdOut.toString().trim()
+        String out = stdOut.toString()
+        if (out.startsWith("v")) {
+            out = out.substring(1)
+        }
+        return out.trim()
     }
 
     @TaskAction
     def generateVersionInfo() {
         File file = new File(outputDir, "version-info.properties")
         file.delete()
-        file << "version=${getGitDescribe()}\n"
+        file << "version=${getVersionString()}\n"
         file << "git.commit.id=${getGitHash()}\n"
         file << "build.time=${new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())}\n"
     }
