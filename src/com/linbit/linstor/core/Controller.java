@@ -134,7 +134,7 @@ public final class Controller extends LinStor implements CoreServices
     private LinStorArguments args;
 
     // TODO
-    final MetaDataApi metaData;
+    private MetaDataApi metaData;
 
     final CtrlApiCallHandler apiCallHandler;
 
@@ -219,8 +219,6 @@ public final class Controller extends LinStor implements CoreServices
 
         // Initialize command line arguments
         args = cArgsRef;
-
-        metaData = new MetaData();
 
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
@@ -331,6 +329,8 @@ public final class Controller extends LinStor implements CoreServices
                 CoreTimer timer = super.getTimer();
                 systemServicesMap.put(timer.getInstanceName(), timer);
             }
+
+            metaData = injector.getInstance(MetaDataApi.class);
 
             securityDbDriver = injector.getInstance(DbAccessor.class);
             persistenceDbDriver = injector.getInstance(DatabaseDriver.class);

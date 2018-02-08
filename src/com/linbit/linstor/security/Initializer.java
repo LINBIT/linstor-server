@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.LinbitModule;
+import com.linbit.drbd.md.MetaDataModule;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.core.Controller;
@@ -83,6 +84,7 @@ public final class Initializer
             new LoggingModule(errorLog),
             new SecurityModule(initCtx),
             new CoreTimerModule(),
+            new MetaDataModule(),
             new LinbitModule(),
             new LinStorModule(initCtx),
             new CoreModule(),
