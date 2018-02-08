@@ -24,6 +24,7 @@ import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
+import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.numberpool.MinorNrPool;
 import com.linbit.linstor.numberpool.TcpPortPool;
 import com.linbit.linstor.security.DbAccessor;
@@ -158,8 +159,7 @@ public final class Controller extends LinStor implements CoreServices
     // Map of connected peers
     private Map<String, Peer> peerMap;
 
-    // Map of network communications connectors
-    final Map<ServiceName, TcpConnector> netComConnectors;
+    private NetComContainer netComContainer;
 
     // The current API type (e.g ProtoBuf)
     private final ApiType apiType;
@@ -217,9 +217,6 @@ public final class Controller extends LinStor implements CoreServices
 
         // Initialize and collect system services
         systemServicesMap = new TreeMap<>();
-
-        // Initialize network communications connectors map
-        netComConnectors = new TreeMap<>();
 
         apiType = ApiType.PROTOBUF;
 
@@ -364,6 +361,8 @@ public final class Controller extends LinStor implements CoreServices
 
             minorNrPool = injector.getInstance(MinorNrPool.class);
             tcpPortNrPool = injector.getInstance(TcpPortPool.class);
+
+            netComContainer = injector.getInstance(NetComContainer.class);
 
             workerThrPool = injector.getInstance(WorkerPool.class);
 
@@ -644,7 +643,7 @@ public final class Controller extends LinStor implements CoreServices
                 invalidNameExc
             );
         }
-        TcpConnector netComSvc = netComConnectors.get(serviceName);
+        TcpConnector netComSvc = netComContainer.getNetComConnector(serviceName);
         SystemService sysSvc = systemServicesMap.get(serviceName);
 
         boolean svcStarted = false;
@@ -669,7 +668,7 @@ public final class Controller extends LinStor implements CoreServices
             }
         }
 
-        netComConnectors.remove(serviceName);
+        netComContainer.removeNetComConnector(serviceName);
         systemServicesMap.remove(serviceName);
 
         if (svcStarted && issuedShutdown)
@@ -1186,7 +1185,7 @@ public final class Controller extends LinStor implements CoreServices
         if (netComSvc != null)
         {
             netComSvc.setServiceInstanceName(serviceName);
-            netComConnectors.put(serviceName, netComSvc);
+            netComContainer.putNetComContainer(serviceName, netComSvc);
             systemServicesMap.put(serviceName, netComSvc);
             errorLogRef.logInfo(
                 String.format(
@@ -1244,5 +1243,10 @@ public final class Controller extends LinStor implements CoreServices
         {
             errorLogRef.logInfo("No known nodes.");
         }
+    }
+
+    public TcpConnector getNetComConnector(ServiceName conSvcName)
+    {
+        return netComContainer.getNetComConnector(conSvcName);
     }
 }

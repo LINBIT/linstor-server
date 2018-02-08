@@ -127,7 +127,7 @@ class ApiCtrlAccessorImpl implements ApiCtrlAccessors
     @Override
     public TcpConnector getNetComConnector(ServiceName conSvcName)
     {
-        return controller.netComConnectors.get(conSvcName);
+        return controller.getNetComConnector(conSvcName);
     }
 
     @Override

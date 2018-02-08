@@ -16,6 +16,7 @@ import com.linbit.linstor.dbcp.DbConnectionPoolModule;
 import com.linbit.linstor.dbdrivers.DbDriversModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
+import com.linbit.linstor.netcom.NetComModule;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.timer.CoreTimerModule;
 
@@ -90,6 +91,7 @@ public final class Initializer
             new CoreModule(),
             new DbDriversModule(initCtx),
             new DbConnectionPoolModule(),
+            new NetComModule(),
             new NumberPoolModule(initCtx)
         );
 
